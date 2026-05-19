@@ -17,6 +17,8 @@ use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
@@ -160,8 +162,13 @@ final class LayerAssignmentCommand extends Command
         // ArchitectureProcessor's template-layer expansion, and break the
         // byte-for-byte parity contract documented above.
         $fileDiscovery = new FinderFileDiscovery($resolved->paths->excludes);
+        $cwd = AbsolutePath::fromString((string) getcwd());
+        $paths = array_map(
+            static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $cwd),
+            $resolved->paths->paths,
+        );
         $files = array_values(iterator_to_array(
-            $fileDiscovery->discover($resolved->paths->paths),
+            $fileDiscovery->discover($paths),
             false,
         ));
 

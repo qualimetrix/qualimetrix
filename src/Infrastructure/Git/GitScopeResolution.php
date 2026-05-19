@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Git;
 
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 
 /**
  * Result of resolving git scope from CLI input.
@@ -15,7 +16,7 @@ use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 final readonly class GitScopeResolution
 {
     /**
-     * @param list<string> $paths
+     * @param list<AbsolutePath> $paths
      */
     public function __construct(
         public array $paths,

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
+use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -122,17 +125,21 @@ final class HookInstallCommand extends Command
         if ($currentDir === false) {
             return null;
         }
+        $cwd = AbsolutePath::fromString($currentDir);
 
-        // Try to find scripts/pre-commit-hook.sh
         $possiblePaths = [
-            $currentDir . '/scripts/pre-commit-hook.sh',
-            __DIR__ . '/../../../../scripts/pre-commit-hook.sh',
+            PathFactory::fromCliArgument('scripts/pre-commit-hook.sh', $cwd),
+            AbsolutePath::fromString(__DIR__ . '/../../../../scripts/pre-commit-hook.sh'),
         ];
 
         foreach ($possiblePaths as $path) {
-            $realPath = realpath($path);
-            if ($realPath !== false && file_exists($realPath)) {
-                return $realPath;
+            if (!$path->exists()) {
+                continue;
+            }
+            try {
+                return $path->canonicalize()->value();
+            } catch (RuntimeException) {
+                continue;
             }
         }
 

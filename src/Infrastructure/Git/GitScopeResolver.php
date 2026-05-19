@@ -29,15 +29,22 @@ final class GitScopeResolver
      */
     public function resolve(InputInterface $input, ResolvedConfiguration $resolved): GitScopeResolution
     {
-        $paths = $resolved->paths->paths;
+        // ADR 0015 Phase 2: convert raw CLI `paths` strings into AbsolutePath VOs
+        // at the boundary, against the current working directory captured here.
+        // `Application::doRun()` has already applied `--working-dir`, so this
+        // matches the `getcwd()` value used by `CheckCommand::resolveConfiguration()`.
+        $cwd = AbsolutePath::fromString((string) getcwd());
+        $paths = array_map(
+            static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $cwd),
+            $resolved->paths->paths,
+        );
 
         $reportScope = $this->resolveReportScope($input);
 
         $gitClient = null;
         if ($reportScope !== null) {
-            // Phase 5 (ADR 0015) migrates AnalysisConfiguration::$projectRoot to AbsolutePath.
-            // For Phase 1b the string is still resolved here at the boundary.
-            $cwd = AbsolutePath::fromString((string) getcwd());
+            // Phase 5 (ADR 0015) migrates AnalysisConfiguration::$projectRoot to
+            // AbsolutePath; for Phase 2 the string is still converted here.
             $projectRoot = PathFactory::fromCliArgument($resolved->analysis->projectRoot, $cwd);
             $gitClient = new GitClient($projectRoot, $this->logger);
         }

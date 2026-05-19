@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Discovery;
 
 use Generator;
+use Qualimetrix\Core\Path\AbsolutePath;
 use SplFileInfo;
 use Symfony\Component\Finder\Finder;
 
@@ -17,58 +18,77 @@ final class FinderFileDiscovery implements FileDiscoveryInterface
         private readonly array $excludedDirs = ['vendor', 'node_modules', '.git'],
     ) {}
 
-    public function discover(string|array $paths): iterable
+    public function discover(AbsolutePath|array $paths): iterable
     {
-        $paths = \is_string($paths) ? [$paths] : $paths;
+        $paths = $paths instanceof AbsolutePath ? [$paths] : $paths;
 
         if ($paths === []) {
             return;
         }
 
+        /** @var list<AbsolutePath> $directories */
         $directories = [];
+        /** @var list<AbsolutePath> $files */
         $files = [];
 
         foreach ($paths as $path) {
-            if (!file_exists($path)) {
+            if (!$path->exists()) {
                 continue;
             }
 
-            if (is_dir($path)) {
+            if ($path->isDirectory()) {
                 $directories[] = $path;
-            } elseif (is_file($path) && pathinfo($path, \PATHINFO_EXTENSION) === 'php') {
+            } elseif ($path->isFile() && pathinfo($path->value(), \PATHINFO_EXTENSION) === 'php') {
                 $files[] = $path;
             }
         }
 
-        // Yield individual files first (sorted), using path as key to avoid conflicts
-        sort($files);
+        usort($files, static fn(AbsolutePath $a, AbsolutePath $b): int => $a->value() <=> $b->value());
+
+        // Tracks emitted file pathnames so overlapping inputs (e.g. `src/ src/sub/`,
+        // or a single-file arg that also lives inside a directory arg) yield each
+        // file exactly once. Pre-ADR-0015 this was handled implicitly by
+        // iterator_to_array(..., true) collapsing duplicate string keys; with
+        // AbsolutePath as the iterator key, dedup is now explicit at the source.
+        $seen = [];
+
         foreach ($files as $file) {
-            yield $file => new SplFileInfo($file);
+            $key = $file->value();
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            yield $file => new SplFileInfo($key);
         }
 
-        // Then yield files from directories
         if ($directories !== []) {
-            yield from $this->discoverInDirectories($directories);
+            yield from $this->discoverInDirectories($directories, $seen);
         }
     }
 
     /**
-     * @param list<string> $directories
+     * @param list<AbsolutePath> $directories
+     * @param array<string, true> $seen Pathnames already yielded (mutated by reference).
      *
-     * @return Generator<string, SplFileInfo>
+     * @return Generator<AbsolutePath, SplFileInfo>
      */
-    private function discoverInDirectories(array $directories): Generator
+    private function discoverInDirectories(array $directories, array &$seen): Generator
     {
         $finder = new Finder();
         $finder
             ->files()
             ->name('*.php')
-            ->in($directories)
+            ->in(array_map(static fn(AbsolutePath $p): string => $p->value(), $directories))
             ->exclude($this->excludedDirs)
             ->sortByName();
 
         foreach ($finder as $file) {
-            yield $file->getPathname() => $file;
+            $pathname = $file->getPathname();
+            if (isset($seen[$pathname])) {
+                continue;
+            }
+            $seen[$pathname] = true;
+            yield AbsolutePath::fromString($pathname) => $file;
         }
     }
 }

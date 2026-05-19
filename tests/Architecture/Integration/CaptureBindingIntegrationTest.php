@@ -13,6 +13,7 @@ use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Configuration\Loader\YamlConfigLoader;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
@@ -136,7 +137,7 @@ final class CaptureBindingIntegrationTest extends TestCase
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
-        return $pipeline->analyze(self::FIXTURE_PATH);
+        return $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
     }
 
     /**

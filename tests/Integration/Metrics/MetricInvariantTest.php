@@ -13,6 +13,7 @@ use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Core\Metric\AggregationMeta;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -50,7 +51,7 @@ final class MetricInvariantTest extends TestCase
         $pipeline = $container->get(AnalysisPipelineInterface::class);
 
         $fixturesPath = \dirname(__DIR__, 2) . '/Fixtures/GoldenMetrics';
-        $result = $pipeline->analyze($fixturesPath);
+        $result = $pipeline->analyze(AbsolutePath::fromString($fixturesPath));
 
         self::$repository = $result->metrics;
         self::assertNotNull($result->namespaceTree, 'NamespaceTree must be present in analysis result');
