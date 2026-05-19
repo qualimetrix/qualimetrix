@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Git\ChangedFile;
 use Qualimetrix\Infrastructure\Git\ChangeStatus;
 
@@ -17,7 +18,7 @@ final class ChangedFileTest extends TestCase
     #[Test]
     public function itReturnsIsPhpTrueForPhpFiles(): void
     {
-        $file = new ChangedFile('src/Test.php', ChangeStatus::Modified);
+        $file = new ChangedFile(RelativePath::fromString('src/Test.php'), ChangeStatus::Modified);
 
         self::assertTrue($file->isPhp());
     }
@@ -25,7 +26,7 @@ final class ChangedFileTest extends TestCase
     #[Test]
     public function itReturnsIsPhpFalseForNonPhpFiles(): void
     {
-        $file = new ChangedFile('README.md', ChangeStatus::Modified);
+        $file = new ChangedFile(RelativePath::fromString('README.md'), ChangeStatus::Modified);
 
         self::assertFalse($file->isPhp());
     }
@@ -33,7 +34,7 @@ final class ChangedFileTest extends TestCase
     #[Test]
     public function itReturnsIsDeletedTrueForDeletedFiles(): void
     {
-        $file = new ChangedFile('src/Test.php', ChangeStatus::Deleted);
+        $file = new ChangedFile(RelativePath::fromString('src/Test.php'), ChangeStatus::Deleted);
 
         self::assertTrue($file->isDeleted());
     }
@@ -41,7 +42,7 @@ final class ChangedFileTest extends TestCase
     #[Test]
     public function itReturnsIsDeletedFalseForNonDeletedFiles(): void
     {
-        $file = new ChangedFile('src/Test.php', ChangeStatus::Modified);
+        $file = new ChangedFile(RelativePath::fromString('src/Test.php'), ChangeStatus::Modified);
 
         self::assertFalse($file->isDeleted());
     }
@@ -49,17 +50,22 @@ final class ChangedFileTest extends TestCase
     #[Test]
     public function itSupportsRenamedFilesWithOldPath(): void
     {
-        $file = new ChangedFile('src/NewTest.php', ChangeStatus::Renamed, 'src/OldTest.php');
+        $file = new ChangedFile(
+            RelativePath::fromString('src/NewTest.php'),
+            ChangeStatus::Renamed,
+            RelativePath::fromString('src/OldTest.php'),
+        );
 
-        self::assertSame('src/NewTest.php', $file->path);
+        self::assertSame('src/NewTest.php', $file->path->value());
         self::assertSame(ChangeStatus::Renamed, $file->status);
-        self::assertSame('src/OldTest.php', $file->oldPath);
+        self::assertNotNull($file->oldPath);
+        self::assertSame('src/OldTest.php', $file->oldPath->value());
     }
 
     #[Test]
     public function itHasNullOldPathByDefault(): void
     {
-        $file = new ChangedFile('src/Test.php', ChangeStatus::Added);
+        $file = new ChangedFile(RelativePath::fromString('src/Test.php'), ChangeStatus::Added);
 
         self::assertNull($file->oldPath);
     }

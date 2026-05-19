@@ -74,7 +74,8 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         $allThresholdDiagnostics = [];
 
         foreach ($results as $result) {
-            $this->progress->setMessage('Registering ' . basename($result->filePath));
+            $filePathKey = $result->filePath->value();
+            $this->progress->setMessage('Registering ' . basename($filePathKey));
 
             if ($result->success) {
                 $this->registerResult($result, $repository);
@@ -87,21 +88,21 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
 
                 // Collect suppressions from result
                 if ($result->suppressions !== []) {
-                    $allSuppressions[$result->filePath] = $result->suppressions;
+                    $allSuppressions[$filePathKey] = $result->suppressions;
                 }
 
                 // Collect threshold overrides from result
                 if ($result->thresholdOverrides !== []) {
-                    $allThresholdOverrides[$result->filePath] = $result->thresholdOverrides;
+                    $allThresholdOverrides[$filePathKey] = $result->thresholdOverrides;
                 }
 
                 // Collect threshold diagnostics from result
                 if ($result->thresholdDiagnostics !== []) {
-                    $allThresholdDiagnostics[$result->filePath] = $result->thresholdDiagnostics;
+                    $allThresholdDiagnostics[$filePathKey] = $result->thresholdDiagnostics;
                 }
             } else {
                 $this->logger->warning('Failed to process file', [
-                    'file' => $result->filePath,
+                    'file' => $filePathKey,
                     'error' => $result->error,
                 ]);
                 $filesSkipped++;
@@ -130,15 +131,16 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         \assert($result->fileBag !== null);
 
         // Store file-level metrics
-        $fileSymbol = SymbolPath::forFile($result->filePath);
-        $repository->add($fileSymbol, $result->fileBag, $result->filePath, 1);
+        $filePathKey = $result->filePath->value();
+        $fileSymbol = SymbolPath::forFile($filePathKey);
+        $repository->add($fileSymbol, $result->fileBag, $filePathKey, 1);
 
         // Register method-level metrics
         foreach ($result->methodMetrics as $methodData) {
             $repository->add(
                 $methodData['symbolPath'],
                 $methodData['metrics'],
-                $result->filePath,
+                $filePathKey,
                 $methodData['line'],
             );
         }
@@ -148,12 +150,12 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
             $repository->add(
                 $classData['symbolPath'],
                 $classData['metrics'],
-                $result->filePath,
+                $filePathKey,
                 $classData['line'],
             );
         }
 
         // Extract derived metrics (like MI) from file bag and add to method symbols
-        $this->derivedMetricExtractor->extract($repository, $result->fileBag, $result->filePath);
+        $this->derivedMetricExtractor->extract($repository, $result->fileBag, $filePathKey);
     }
 }

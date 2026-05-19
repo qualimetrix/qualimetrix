@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Git;
 
-use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Filter\ViolationFilterInterface;
 use Qualimetrix\Core\Violation\Violation;
 
@@ -60,7 +59,7 @@ final class GitScopeFilter implements ViolationFilterInterface
     private function buildIndex(): void
     {
         $changedFiles = $this->git->getChangedFiles($this->scope->ref);
-        $repoRoot = $this->git->getRoot();
+        $projectRoot = $this->git->getProjectRoot();
 
         $this->changedPaths = [];
         $this->changedNamespaces = [];
@@ -70,13 +69,17 @@ final class GitScopeFilter implements ViolationFilterInterface
                 continue;
             }
 
-            // Use git-relative path for matching against violation paths
-            $this->changedPaths[PathNormalizer::relativize($file->path)] = true;
+            // Path is already project-relative (translated at the git boundary
+            // in ChangedFile::fromGitOutput).
+            $this->changedPaths[$file->path->value()] = true;
 
-            // Extract namespace from file (needs absolute path for file_exists/reading)
-            $fullPath = $repoRoot . '/' . $file->path;
-            if (file_exists($fullPath)) {
-                $namespace = $this->extractNamespace($fullPath);
+            // Extract namespace from file. Path is project-relative, so join
+            // against the project root (NOT git top-level — the two differ when
+            // the project sits in a git subdirectory). Phase 3 (ADR 0015) keeps
+            // this contract while migrating extractNamespace itself to typed I/O.
+            $fullPath = $projectRoot->joinRelative($file->path);
+            if ($fullPath->isFile()) {
+                $namespace = $this->extractNamespace($fullPath->value());
                 if ($namespace !== null) {
                     // Add all parent namespaces
                     $parts = explode('\\', $namespace);

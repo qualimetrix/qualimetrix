@@ -45,8 +45,7 @@ final class GitScopeResolverTest extends TestCase
         self::assertNotNull($result->gitClient);
 
         // Verify GitClient was constructed with projectRoot, not getcwd()
-        $repoRootProperty = new ReflectionProperty($result->gitClient, 'repoRoot');
-        self::assertSame($projectRoot, $repoRootProperty->getValue($result->gitClient));
+        self::assertSame($projectRoot, $result->gitClient->getProjectRoot()->value());
     }
 
     #[Test]

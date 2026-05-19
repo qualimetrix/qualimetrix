@@ -290,7 +290,7 @@ PHP;
 
         $resolver = new DependencyResolver();
         $visitor = new DependencyVisitor($resolver);
-        $visitor->setFile('/test.php');
+        $visitor->setFile('test.php');
 
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];

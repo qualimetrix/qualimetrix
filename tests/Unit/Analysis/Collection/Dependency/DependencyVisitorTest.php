@@ -536,7 +536,7 @@ PHP;
             return [];
         }
 
-        $this->visitor->setFile('/test.php');
+        $this->visitor->setFile('test.php');
         $this->traverser->traverse($ast);
 
         return $this->visitor->getDependencies();

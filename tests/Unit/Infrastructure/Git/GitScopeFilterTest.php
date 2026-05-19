@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -50,7 +51,7 @@ final class GitScopeFilterTest extends TestCase
         $this->createPhpFileWithNamespace('src/Service.php', 'App\\Service');
         $this->exec('git add src/Service.php');
 
-        $gitClient = new GitClient($this->tempDir);
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violation = new Violation(
@@ -73,7 +74,7 @@ final class GitScopeFilterTest extends TestCase
         $this->createPhpFileWithNamespace('src/Service.php', 'App\\Service');
         $this->exec('git add src/Service.php');
 
-        $gitClient = new GitClient($this->tempDir);
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violation = new Violation(
@@ -96,7 +97,7 @@ final class GitScopeFilterTest extends TestCase
         $this->createPhpFileWithNamespace('src/Service/User/UserService.php', 'App\\Service\\User');
         $this->exec('git add src/Service/User/UserService.php');
 
-        $gitClient = new GitClient($this->tempDir);
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         // Violation for parent namespace
@@ -120,7 +121,7 @@ final class GitScopeFilterTest extends TestCase
         $this->createPhpFileWithNamespace('src/Service/User/UserService.php', 'App\\Service\\User');
         $this->exec('git add src/Service/User/UserService.php');
 
-        $gitClient = new GitClient($this->tempDir);
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = new GitScopeFilter(
             $gitClient,
             new GitScope('staged'),
@@ -154,7 +155,7 @@ final class GitScopeFilterTest extends TestCase
         unlink($this->tempDir . '/src/Service.php');
         $this->exec('git add src/Service.php');
 
-        $gitClient = new GitClient($this->tempDir);
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violation = new Violation(
@@ -177,7 +178,7 @@ final class GitScopeFilterTest extends TestCase
         file_put_contents($this->tempDir . '/README.md', '# Test');
         $this->exec('git add README.md');
 
-        $gitClient = new GitClient($this->tempDir);
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violation = new Violation(
@@ -203,7 +204,7 @@ final class GitScopeFilterTest extends TestCase
         );
         $this->exec('git add src/Service/User/Profile/ProfileService.php');
 
-        $gitClient = new GitClient($this->tempDir);
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         // All parent namespaces should be included
@@ -240,7 +241,7 @@ final class GitScopeFilterTest extends TestCase
         $this->createPhpFile('src/legacy.php');
         $this->exec('git add src/legacy.php');
 
-        $gitClient = new GitClient($this->tempDir);
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         // Violation in the changed file should be included
@@ -275,7 +276,7 @@ final class GitScopeFilterTest extends TestCase
         rename($this->tempDir . '/src/OldRepository.php', $this->tempDir . '/src/Repository.php');
         $this->exec('git add src/OldRepository.php src/Repository.php');
 
-        $gitClient = new GitClient($this->tempDir);
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violations = [
@@ -328,7 +329,7 @@ final class GitScopeFilterTest extends TestCase
         $this->exec('git add src/Service.php');
         $this->exec('git commit -m "Feature"');
 
-        $gitClient = new GitClient($this->tempDir);
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = new GitScopeFilter($gitClient, new GitScope('main..HEAD'));
 
         // Service.php was changed in main..HEAD, should be included
@@ -373,7 +374,7 @@ final class GitScopeFilterTest extends TestCase
         $this->exec('git add src/Deleted.php');
         unlink($this->tempDir . '/src/Deleted.php');
 
-        $gitClient = new GitClient($this->tempDir);
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violation = new Violation(
@@ -398,7 +399,7 @@ final class GitScopeFilterTest extends TestCase
         $this->createPhpFileWithNamespace('src/Service.php', 'App\\Service');
         $this->exec('git add src/Service.php');
 
-        $gitClient = new GitClient($this->tempDir);
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         // File-level violation - should match by file path
@@ -435,7 +436,7 @@ PHP;
         $this->createPhpFileWithContent('src/Complex/Nested/Service.php', $content);
         $this->exec('git add src/Complex/Nested/Service.php');
 
-        $gitClient = new GitClient($this->tempDir);
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violation = new Violation(
@@ -472,7 +473,7 @@ PHP;
         $this->createPhpFileWithContent('src/Bracketed/Service.php', $content);
         $this->exec('git add src/Bracketed/Service.php');
 
-        $gitClient = new GitClient($this->tempDir);
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
         $filter = new GitScopeFilter($gitClient, new GitScope('staged'));
 
         $violation = new Violation(

@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Git\ChangedFile;
 use Qualimetrix\Infrastructure\Git\ChangeStatus;
 use Qualimetrix\Infrastructure\Git\GitClient;
@@ -42,7 +43,7 @@ final class GitClientTest extends TestCase
     public function itReturnsTrueWhenGitDirectoryExists(): void
     {
         mkdir($this->repoRoot . '/.git');
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
 
         self::assertTrue($client->isRepository());
     }
@@ -52,7 +53,7 @@ final class GitClientTest extends TestCase
     {
         // In worktrees, .git is a file pointing to the main repo
         file_put_contents($this->repoRoot . '/.git', 'gitdir: /some/other/path/.git/worktrees/test');
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
 
         self::assertTrue($client->isRepository());
     }
@@ -60,7 +61,7 @@ final class GitClientTest extends TestCase
     #[Test]
     public function itReturnsFalseWhenGitDirectoryDoesNotExist(): void
     {
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
 
         self::assertFalse($client->isRepository());
     }
@@ -69,7 +70,7 @@ final class GitClientTest extends TestCase
     public function itGetsRepositoryRoot(): void
     {
         $this->initGitRepo();
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
 
         $root = $client->getRoot();
 
@@ -86,12 +87,12 @@ final class GitClientTest extends TestCase
         file_put_contents($this->repoRoot . '/test.php', '<?php');
         $this->exec('git add test.php');
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
         $files = $client->getChangedFiles('staged');
 
         self::assertCount(1, $files);
         self::assertInstanceOf(ChangedFile::class, $files[0]); // @phpstan-ignore staticMethod.alreadyNarrowedType
-        self::assertSame('test.php', $files[0]->path);
+        self::assertSame('test.php', $files[0]->path->value());
         self::assertSame(ChangeStatus::Added, $files[0]->status);
     }
 
@@ -108,11 +109,11 @@ final class GitClientTest extends TestCase
         // Modify it
         file_put_contents($this->repoRoot . '/test.php', '<?php echo "modified";');
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
         $files = $client->getChangedFiles('HEAD');
 
         self::assertCount(1, $files);
-        self::assertSame('test.php', $files[0]->path);
+        self::assertSame('test.php', $files[0]->path->value());
         self::assertSame(ChangeStatus::Modified, $files[0]->status);
     }
 
@@ -124,7 +125,7 @@ final class GitClientTest extends TestCase
         file_put_contents($this->repoRoot . '/added.php', '<?php');
         $this->exec('git add added.php');
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
         $files = $client->getChangedFiles('staged');
 
         self::assertCount(1, $files);
@@ -145,7 +146,7 @@ final class GitClientTest extends TestCase
         file_put_contents($this->repoRoot . '/file.php', '<?php echo "test";');
         $this->exec('git add file.php');
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
         $files = $client->getChangedFiles('staged');
 
         self::assertCount(1, $files);
@@ -166,7 +167,7 @@ final class GitClientTest extends TestCase
         unlink($this->repoRoot . '/file.php');
         $this->exec('git add file.php');
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
         $files = $client->getChangedFiles('staged');
 
         self::assertCount(1, $files);
@@ -187,13 +188,13 @@ final class GitClientTest extends TestCase
         rename($this->repoRoot . '/old.php', $this->repoRoot . '/new.php');
         $this->exec('git add old.php new.php');
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
         $files = $client->getChangedFiles('staged');
 
         self::assertCount(1, $files);
-        self::assertSame('new.php', $files[0]->path);
+        self::assertSame('new.php', $files[0]->path->value());
         self::assertSame(ChangeStatus::Renamed, $files[0]->status);
-        self::assertSame('old.php', $files[0]->oldPath);
+        self::assertSame('old.php', $files[0]->oldPath?->value());
     }
 
     #[Test]
@@ -201,7 +202,7 @@ final class GitClientTest extends TestCase
     {
         $this->initGitRepo();
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
 
         // Use reflection to test parseNameStatus directly with copy format
         $method = new ReflectionMethod($client, 'parseNameStatus');
@@ -210,9 +211,9 @@ final class GitClientTest extends TestCase
         $files = $method->invoke($client, $output);
 
         self::assertCount(1, $files);
-        self::assertSame('new.php', $files[0]->path);
+        self::assertSame('new.php', $files[0]->path->value());
         self::assertSame(ChangeStatus::Copied, $files[0]->status);
-        self::assertSame('old.php', $files[0]->oldPath);
+        self::assertSame('old.php', $files[0]->oldPath?->value());
     }
 
     #[Test]
@@ -220,7 +221,7 @@ final class GitClientTest extends TestCase
     {
         $this->initGitRepo();
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
 
         $method = new ReflectionMethod($client, 'parseNameStatus');
 
@@ -229,9 +230,9 @@ final class GitClientTest extends TestCase
         $files = $method->invoke($client, $output);
 
         self::assertCount(1, $files);
-        self::assertSame('src/copy.php', $files[0]->path);
+        self::assertSame('src/copy.php', $files[0]->path->value());
         self::assertSame(ChangeStatus::Copied, $files[0]->status);
-        self::assertSame('src/original.php', $files[0]->oldPath);
+        self::assertSame('src/original.php', $files[0]->oldPath?->value());
     }
 
     #[Test]
@@ -250,11 +251,11 @@ final class GitClientTest extends TestCase
         $this->exec('git add file2.php');
         $this->exec('git commit -m "Second"');
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
         $files = $client->getChangedFiles('v1..HEAD');
 
         self::assertCount(1, $files);
-        self::assertSame('file2.php', $files[0]->path);
+        self::assertSame('file2.php', $files[0]->path->value());
     }
 
     #[Test]
@@ -273,11 +274,11 @@ final class GitClientTest extends TestCase
         $this->exec('git add feature.php');
         $this->exec('git commit -m "Feature"');
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
         $files = $client->getChangedFiles('main...feature');
 
         self::assertCount(1, $files);
-        self::assertSame('feature.php', $files[0]->path);
+        self::assertSame('feature.php', $files[0]->path->value());
     }
 
     #[Test]
@@ -296,11 +297,11 @@ final class GitClientTest extends TestCase
         $this->exec('git add file2.php');
         $this->exec('git commit -m "Second"');
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
         $files = $client->getChangedFiles('v1');
 
         self::assertCount(1, $files);
-        self::assertSame('file2.php', $files[0]->path);
+        self::assertSame('file2.php', $files[0]->path->value());
     }
 
     #[Test]
@@ -317,7 +318,7 @@ final class GitClientTest extends TestCase
         file_put_contents($this->repoRoot . '/file.php', '<?php echo "test";');
         $this->exec('git add file.php');
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
         $files = $client->getChangedFiles('staged');
 
         self::assertCount(1, $files);
@@ -326,7 +327,7 @@ final class GitClientTest extends TestCase
     #[Test]
     public function itThrowsExceptionWhenGitCommandFails(): void
     {
-        $client = new GitClient('/nonexistent');
+        $client = new GitClient(AbsolutePath::fromString('/nonexistent'));
 
         self::expectException(RuntimeException::class);
 
@@ -343,7 +344,7 @@ final class GitClientTest extends TestCase
         $this->exec('git add file.php');
         $this->exec('git commit -m "Initial"');
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
         $files = $client->getChangedFiles('staged');
 
         self::assertSame([], $files);
@@ -364,7 +365,7 @@ final class GitClientTest extends TestCase
         file_put_contents($this->repoRoot . '/normal.php', '<?php echo "modified";');
         $this->exec('git add normal.php');
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
 
         // The client should be able to parse the output without crashing
         // even when exotic statuses like T (type change), U (unmerged), X (unknown) exist
@@ -372,7 +373,7 @@ final class GitClientTest extends TestCase
         $files = $client->getChangedFiles('staged');
 
         self::assertCount(1, $files);
-        self::assertSame('normal.php', $files[0]->path);
+        self::assertSame('normal.php', $files[0]->path->value());
         self::assertSame(ChangeStatus::Modified, $files[0]->status);
     }
 
@@ -384,7 +385,7 @@ final class GitClientTest extends TestCase
         file_put_contents($this->repoRoot . '/test.php', '<?php');
         $this->exec('git add test.php');
 
-        $client = new GitClient($this->repoRoot);
+        $client = new GitClient(AbsolutePath::fromString($this->repoRoot));
         $files = $client->getChangedFiles('staged');
 
         // Should parse only valid lines

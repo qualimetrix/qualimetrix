@@ -14,6 +14,7 @@ use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
 use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
@@ -66,7 +67,7 @@ final class FileProcessor implements FileProcessorInterface
             }
 
             return FileProcessingResult::success(
-                filePath: PathNormalizer::relativize($file->getPathname()),
+                filePath: RelativePath::fromString(PathNormalizer::relativize($file->getPathname())),
                 fileBag: $output->metrics,
                 methodMetrics: $methodMetrics,
                 classMetrics: $classMetrics,
@@ -77,7 +78,7 @@ final class FileProcessor implements FileProcessorInterface
             );
         } catch (ParseException $e) {
             return FileProcessingResult::failure(
-                filePath: PathNormalizer::relativize($file->getPathname()),
+                filePath: RelativePath::fromString(PathNormalizer::relativize($file->getPathname())),
                 error: $e->getMessage(),
             );
         }

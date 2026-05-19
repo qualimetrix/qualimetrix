@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\FileProcessingResult;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(FileProcessingResult::class)]
@@ -18,14 +19,15 @@ final class FileProcessingResultTest extends TestCase
     public function itCreatesSuccessResult(): void
     {
         $fileBag = MetricBag::fromArray(['loc' => 100]);
+        $filePath = RelativePath::fromString('path/to/file.php');
 
         $result = FileProcessingResult::success(
-            filePath: '/path/to/file.php',
+            filePath: $filePath,
             fileBag: $fileBag,
         );
 
         self::assertTrue($result->success);
-        self::assertSame('/path/to/file.php', $result->filePath);
+        self::assertSame('path/to/file.php', $result->filePath->value());
         self::assertSame($fileBag, $result->fileBag);
         self::assertSame([], $result->methodMetrics);
         self::assertSame([], $result->classMetrics);
@@ -48,7 +50,7 @@ final class FileProcessingResultTest extends TestCase
         ];
 
         $result = FileProcessingResult::success(
-            filePath: '/path/to/file.php',
+            filePath: RelativePath::fromString('path/to/file.php'),
             fileBag: $fileBag,
             methodMetrics: $methodMetrics,
         );
@@ -77,7 +79,7 @@ final class FileProcessingResultTest extends TestCase
         ];
 
         $result = FileProcessingResult::success(
-            filePath: '/path/to/file.php',
+            filePath: RelativePath::fromString('path/to/file.php'),
             fileBag: $fileBag,
             classMetrics: $classMetrics,
         );
@@ -91,12 +93,12 @@ final class FileProcessingResultTest extends TestCase
     public function itCreatesFailureResult(): void
     {
         $result = FileProcessingResult::failure(
-            filePath: '/path/to/invalid.php',
+            filePath: RelativePath::fromString('path/to/invalid.php'),
             error: 'Syntax error on line 10',
         );
 
         self::assertFalse($result->success);
-        self::assertSame('/path/to/invalid.php', $result->filePath);
+        self::assertSame('path/to/invalid.php', $result->filePath->value());
         self::assertNull($result->fileBag);
         self::assertSame([], $result->methodMetrics);
         self::assertSame([], $result->classMetrics);

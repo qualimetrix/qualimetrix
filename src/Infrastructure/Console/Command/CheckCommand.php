@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Architecture\Processing\LayerExpansionException;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
@@ -51,6 +52,7 @@ final class CheckCommand extends Command
         private readonly RuntimeConfigurator $runtimeConfigurator,
         private readonly ResultPresenter $resultPresenter,
         private readonly BaselinePresenter $baselinePresenter,
+        private readonly LoggerInterface $logger,
     ) {
         parent::__construct();
     }
@@ -174,7 +176,7 @@ final class CheckCommand extends Command
         $this->warnAboutConflictingRuleFilters($resolved, $output);
         $this->logConfigSources($resolved, $output);
 
-        $scopeResolution = (new GitScopeResolver())->resolve($input, $resolved);
+        $scopeResolution = (new GitScopeResolver($this->logger))->resolve($input, $resolved);
 
         $pathErrors = $this->validatePaths($scopeResolution->paths);
         if ($pathErrors !== []) {

@@ -71,11 +71,11 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/file1.php',
+                filePath: RelativePath::fromString('tmp/file1.php'),
                 fileBag: MetricBag::fromArray(['loc' => 50]),
             ),
             FileProcessingResult::success(
-                filePath: '/tmp/file2.php',
+                filePath: RelativePath::fromString('tmp/file2.php'),
                 fileBag: MetricBag::fromArray(['loc' => 100]),
             ),
         ];
@@ -96,8 +96,8 @@ final class CollectionOrchestratorTest extends TestCase
         self::assertSame(0, $result->result->filesSkipped);
 
         // Check that file metrics were registered
-        $fileSymbol1 = SymbolPath::forFile('/tmp/file1.php');
-        $fileSymbol2 = SymbolPath::forFile('/tmp/file2.php');
+        $fileSymbol1 = SymbolPath::forFile('tmp/file1.php');
+        $fileSymbol2 = SymbolPath::forFile('tmp/file2.php');
 
         self::assertTrue($repository->has($fileSymbol1));
         self::assertTrue($repository->has($fileSymbol2));
@@ -115,11 +115,11 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/valid.php',
+                filePath: RelativePath::fromString('tmp/valid.php'),
                 fileBag: MetricBag::fromArray(['loc' => 50]),
             ),
             FileProcessingResult::failure(
-                filePath: '/tmp/invalid.php',
+                filePath: RelativePath::fromString('tmp/invalid.php'),
                 error: 'Syntax error',
             ),
         ];
@@ -147,7 +147,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/test.php',
+                filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: new MetricBag(),
                 methodMetrics: [
                     'App::Service::calculate' => [
@@ -179,7 +179,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/test.php',
+                filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: new MetricBag(),
                 classMetrics: [
                     'App::Service' => [
@@ -211,7 +211,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/test.php',
+                filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: new MetricBag(),
                 methodMetrics: [],
                 classMetrics: [],
@@ -245,12 +245,12 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/file1.php',
+                filePath: RelativePath::fromString('tmp/file1.php'),
                 fileBag: new MetricBag(),
                 dependencies: [$dep1],
             ),
             FileProcessingResult::success(
-                filePath: '/tmp/file2.php',
+                filePath: RelativePath::fromString('tmp/file2.php'),
                 fileBag: new MetricBag(),
                 dependencies: [$dep2],
             ),
@@ -276,8 +276,8 @@ final class CollectionOrchestratorTest extends TestCase
         ];
 
         $processingResults = [
-            FileProcessingResult::failure('/tmp/broken1.php', 'Parse error: unexpected token'),
-            FileProcessingResult::failure('/tmp/broken2.php', 'File not found'),
+            FileProcessingResult::failure(RelativePath::fromString('tmp/broken1.php'), 'Parse error: unexpected token'),
+            FileProcessingResult::failure(RelativePath::fromString('tmp/broken2.php'), 'File not found'),
         ];
 
         $this->strategy->method('execute')->willReturn($processingResults);
@@ -307,13 +307,13 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/good.php',
+                filePath: RelativePath::fromString('tmp/good.php'),
                 fileBag: MetricBag::fromArray(['loc' => 50]),
             ),
-            FileProcessingResult::failure('/tmp/bad1.php', 'Syntax error'),
-            FileProcessingResult::failure('/tmp/bad2.php', 'Parse error'),
+            FileProcessingResult::failure(RelativePath::fromString('tmp/bad1.php'), 'Syntax error'),
+            FileProcessingResult::failure(RelativePath::fromString('tmp/bad2.php'), 'Parse error'),
             FileProcessingResult::success(
-                filePath: '/tmp/good2.php',
+                filePath: RelativePath::fromString('tmp/good2.php'),
                 fileBag: MetricBag::fromArray(['loc' => 75]),
             ),
         ];
@@ -348,11 +348,11 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/file1.php',
+                filePath: RelativePath::fromString('tmp/file1.php'),
                 fileBag: new MetricBag(),
             ),
             FileProcessingResult::success(
-                filePath: '/tmp/file2.php',
+                filePath: RelativePath::fromString('tmp/file2.php'),
                 fileBag: new MetricBag(),
             ),
         ];
@@ -394,7 +394,7 @@ final class CollectionOrchestratorTest extends TestCase
             )
             ->willReturn([
                 FileProcessingResult::success(
-                    filePath: '/tmp/test.php',
+                    filePath: RelativePath::fromString('tmp/test.php'),
                     fileBag: new MetricBag(),
                 ),
             ]);
@@ -426,7 +426,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/test.php',
+                filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: $fileBag,
                 methodMetrics: [
                     'App::Service::calculate' => [
@@ -476,7 +476,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/test.php',
+                filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: $fileBag,
                 methodMetrics: [], // No methods registered
             ),
@@ -522,7 +522,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/test.php',
+                filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: $fileBag,
             ),
         ];
@@ -564,7 +564,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/test.php',
+                filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: $fileBag,
                 methodMetrics: [
                     '::SimpleClass::method' => [
@@ -616,7 +616,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/test.php',
+                filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: $fileBag,
                 methodMetrics: [
                     'App::Service::method' => [
@@ -670,7 +670,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/test.php',
+                filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: $fileBag,
             ),
         ];
@@ -693,7 +693,7 @@ final class CollectionOrchestratorTest extends TestCase
         self::assertSame(1, $result->result->filesAnalyzed);
 
         // Verify file metrics were registered
-        $fileSymbol = SymbolPath::forFile('/tmp/test.php');
+        $fileSymbol = SymbolPath::forFile('tmp/test.php');
         self::assertTrue($repository->has($fileSymbol));
         self::assertSame(100, $repository->get($fileSymbol)->get('totalLoc'));
     }
@@ -714,7 +714,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/test.php',
+                filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: $fileBag,
                 methodMetrics: [
                     'App::Service::method' => [
@@ -765,7 +765,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $processingResults = [
             FileProcessingResult::success(
-                filePath: '/tmp/test.php',
+                filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: $fileBag,
                 methodMetrics: [
                     'App::Service::calculate' => [
@@ -803,7 +803,7 @@ final class CollectionOrchestratorTest extends TestCase
         $files = [new SplFileInfo('/tmp/test.php')];
 
         $processingResult = FileProcessingResult::success(
-            filePath: '/tmp/test.php',
+            filePath: RelativePath::fromString('tmp/test.php'),
             fileBag: new MetricBag(),
         );
 
