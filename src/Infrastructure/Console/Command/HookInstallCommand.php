@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -47,7 +48,7 @@ final class HookInstallCommand extends Command
         }
 
         // Check if .git/hooks directory exists
-        $hooksDir = $gitDir->value() . '/hooks';
+        $hooksDir = $gitDir->joinRelative(RelativePath::fromString('hooks'))->value();
         if (!is_dir($hooksDir)) {
             $output->writeln('<error>Git hooks directory not found: ' . $hooksDir . '</error>');
 

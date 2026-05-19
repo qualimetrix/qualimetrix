@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Git;
 
+use InvalidArgumentException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use RuntimeException;
 
@@ -75,13 +76,13 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
         }
 
         // git rev-parse --git-dir may return a relative path; convert to absolute
-        $candidate = str_starts_with($output, '/')
-            ? AbsolutePath::fromString($output)
-            : AbsolutePath::fromString($workingDir->value() . '/' . $output);
-
         try {
+            $candidate = str_starts_with($output, '/')
+                ? AbsolutePath::fromString($output)
+                : AbsolutePath::fromString($workingDir->value() . '/' . $output);
+
             return $candidate->canonicalize();
-        } catch (RuntimeException) {
+        } catch (RuntimeException | InvalidArgumentException) {
             return null;
         }
     }
@@ -103,10 +104,14 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
             }
 
             if (is_file($gitDir)) {
-                $linked = $this->resolveWorktreeLink($gitDir, $currentDir);
-                if ($linked !== null) {
-                    return $linked;
-                }
+                // A `.git` file is a hard repository/worktree boundary: it
+                // declares "this is the git dir for the project at $currentDir".
+                // If the link is broken (unreadable, malformed, or pointing at a
+                // missing target), the answer is "no usable git dir here" — NOT
+                // "fall back to whichever ancestor happens to have a .git",
+                // which would silently let `hook:install` write into a parent
+                // repository's hooks directory.
+                return $this->resolveWorktreeLink($gitDir, $currentDir);
             }
 
             $parentDir = \dirname($currentDir);
@@ -137,7 +142,9 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
 
         try {
             return AbsolutePath::fromString($linkedDir)->canonicalize();
-        } catch (RuntimeException) {
+        } catch (RuntimeException | InvalidArgumentException) {
+            // RuntimeException: canonicalize() target missing.
+            // InvalidArgumentException: malformed gitdir: payload escapes root via `..`.
             return null;
         }
     }

@@ -128,6 +128,76 @@ final class GitScopeFilterProjectSubdirTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itUsesExplicitProjectRootArgumentNotGitClientProjectRoot(): void
+    {
+        // Differential test for the Phase 3 contract change: GitScopeFilter
+        // now takes $projectRoot as an explicit constructor arg. If someone
+        // silently swapped `$this->projectRoot` back to
+        // `$this->git->getProjectRoot()` in `buildIndex()`, the previous test
+        // would still pass because both VOs point at the same on-disk dir.
+        // This test deliberately diverges the two:
+        //   - GitClient is constructed with projectA, so its diff translates
+        //     paths against projectA;
+        //   - GitScopeFilter is constructed with projectB explicitly;
+        //   - The two project dirs hold files with identical project-relative
+        //     paths but distinct namespaces. The one that ends up in the index
+        //     identifies which projectRoot extractNamespace actually used.
+        $projectA = $this->gitToplevel . '/projectA';
+        $projectB = $this->gitToplevel . '/projectB';
+        mkdir($projectA . '/src', 0777, true);
+        mkdir($projectB . '/src', 0777, true);
+        file_put_contents(
+            $projectA . '/src/Service.php',
+            "<?php\nnamespace App\\GitClientRoot;\nclass Service {}\n",
+        );
+        file_put_contents(
+            $projectB . '/src/Service.php',
+            "<?php\nnamespace App\\ExplicitRoot;\nclass Service {}\n",
+        );
+
+        // Stage projectA's copy: git diff will carry `projectA/src/Service.php`,
+        // which the ChangedFile boundary translates to project-relative
+        // `src/Service.php` against GitClient's projectRoot = projectA.
+        $this->exec('git add projectA/src/Service.php', $this->gitToplevel);
+
+        $gitClientRoot = AbsolutePath::fromString($projectA);
+        $explicitRoot = AbsolutePath::fromString($projectB);
+        $gitClient = new GitClient($gitClientRoot);
+        $filter = new GitScopeFilter($gitClient, new GitScope('staged'), $explicitRoot);
+
+        // If the explicit arg is honored, buildIndex joins
+        // projectB + 'src/Service.php' → reads projectB's file → 'App\\ExplicitRoot'
+        // ends up in $changedNamespaces. If the impl swaps back to
+        // $this->git->getProjectRoot(), buildIndex reads projectA's file
+        // instead and 'App\\GitClientRoot' wins — flipping both assertions.
+        $explicit = new Violation(
+            location: new Location(RelativePath::fromString('src/Other.php'), null),
+            symbolPath: SymbolPath::forNamespace('App\\ExplicitRoot'),
+            ruleName: 'size',
+            violationCode: 'size',
+            message: 'Namespace too large',
+            severity: Severity::Warning,
+        );
+        $gitClientRoots = new Violation(
+            location: new Location(RelativePath::fromString('src/Other.php'), null),
+            symbolPath: SymbolPath::forNamespace('App\\GitClientRoot'),
+            ruleName: 'size',
+            violationCode: 'size',
+            message: 'Namespace too large',
+            severity: Severity::Warning,
+        );
+
+        self::assertTrue(
+            $filter->shouldInclude($explicit),
+            'GitScopeFilter must use its explicit $projectRoot arg, not $gitClient->getProjectRoot()',
+        );
+        self::assertFalse(
+            $filter->shouldInclude($gitClientRoots),
+            'GitClient.projectRoot must not leak into the namespace index when an explicit projectRoot is provided',
+        );
+    }
+
     private function exec(string $command, string $cwd): void
     {
         $process = Process::fromShellCommandline($command, $cwd);
