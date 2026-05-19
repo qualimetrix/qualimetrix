@@ -59,7 +59,7 @@ final class FileProcessorTest extends TestCase
         $result = $processor->process($file);
 
         self::assertTrue($result->success);
-        self::assertSame('tmp/test.php', $result->filePath);
+        self::assertSame('tmp/test.php', $result->filePath->value());
         self::assertSame(50, $result->fileBag?->get('loc'));
         self::assertNull($result->error);
     }
@@ -79,7 +79,7 @@ final class FileProcessorTest extends TestCase
         $result = $processor->process($file);
 
         self::assertFalse($result->success);
-        self::assertSame('tmp/invalid.php', $result->filePath);
+        self::assertSame('tmp/invalid.php', $result->filePath->value());
         self::assertNull($result->fileBag);
         self::assertStringContainsString('Syntax error', $result->error ?? '');
     }

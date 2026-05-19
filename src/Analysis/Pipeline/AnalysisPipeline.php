@@ -29,7 +29,6 @@ use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -249,7 +248,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
 
                 if (!$this->overrideMatchesSupportedRule($override, $supportedRules)) {
                     $violations[] = new Violation(
-                        location: new Location(RelativePath::fromString(PathNormalizer::relativize($file)), $override->line, precise: true),
+                        location: new Location(RelativePath::fromString($file), $override->line, precise: true),
                         symbolPath: SymbolPath::forFile($file),
                         ruleName: 'annotation.unsupported-threshold',
                         violationCode: 'annotation.unsupported-threshold',
@@ -366,7 +365,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
                     : 'annotation.invalid-threshold';
 
                 $violations[] = new Violation(
-                    location: new Location(RelativePath::fromString(PathNormalizer::relativize($file)), $diagnostic->line, precise: true),
+                    location: new Location(RelativePath::fromString($file), $diagnostic->line, precise: true),
                     symbolPath: SymbolPath::forFile($file),
                     ruleName: 'annotation.invalid-threshold',
                     violationCode: $violationCode,

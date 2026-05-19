@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Git;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+use Qualimetrix\Core\Path\AbsolutePath;
 use RuntimeException;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
@@ -12,11 +15,20 @@ use Symfony\Component\Process\Process;
  * Client for executing git commands.
  *
  * Provides methods to get changed files from various git scopes.
+ *
+ * Paths in the constructor argument are the **project root**, not the git
+ * top-level. When the project sits in a subdirectory of the git tree, raw
+ * paths from `git diff --name-status` are git-toplevel-relative and must be
+ * eagerly translated to project-relative form — this happens in
+ * {@see parseNameStatus()} via {@see ChangedFile::fromGitOutput()}.
  */
 final class GitClient
 {
+    private ?AbsolutePath $gitToplevelCache = null;
+
     public function __construct(
-        private readonly string $repoRoot,
+        private readonly AbsolutePath $projectRoot,
+        private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
     /**
@@ -25,7 +37,9 @@ final class GitClient
     public function isRepository(): bool
     {
         // .git is a directory in regular repos, but a file in worktrees
-        return is_dir($this->repoRoot . '/.git') || is_file($this->repoRoot . '/.git');
+        $gitDir = $this->projectRoot->value() . '/.git';
+
+        return is_dir($gitDir) || is_file($gitDir);
     }
 
     /**
@@ -34,6 +48,18 @@ final class GitClient
     public function getRoot(): string
     {
         return trim($this->exec('git rev-parse --show-toplevel'));
+    }
+
+    /**
+     * Returns the project root the client was constructed with.
+     *
+     * Note: this is the project root, not the git top-level — the two are
+     * identical when the project sits at the repository root, but the project
+     * root may be a strict subdirectory of the git tree.
+     */
+    public function getProjectRoot(): AbsolutePath
+    {
+        return $this->projectRoot;
     }
 
     /**
@@ -114,6 +140,18 @@ final class GitClient
     }
 
     /**
+     * Returns (and lazily caches) the git top-level for the current repository.
+     */
+    private function gitToplevel(): AbsolutePath
+    {
+        if ($this->gitToplevelCache === null) {
+            $this->gitToplevelCache = AbsolutePath::fromString($this->getRoot());
+        }
+
+        return $this->gitToplevelCache;
+    }
+
+    /**
      * Parses git diff --name-status output.
      *
      * Format:
@@ -123,11 +161,18 @@ final class GitClient
      * R100 old.php new.php    (renamed)
      * C100 old.php new.php    (copied)
      *
+     * Paths returned by git are git-toplevel-relative. They are translated to
+     * project-relative form via {@see ChangedFile::fromGitOutput()}; rows whose
+     * paths fall outside the project root are skipped and reported as a single
+     * PSR-3 `warning` at the end of parsing.
+     *
      * @return list<ChangedFile>
      */
     private function parseNameStatus(string $output): array
     {
+        $gitToplevel = null;
         $files = [];
+        $skippedPaths = [];
         $lines = array_filter(explode("\n", trim($output)), static fn(string $line): bool => $line !== '');
 
         foreach ($lines as $line) {
@@ -139,38 +184,67 @@ final class GitClient
                     continue;
                 }
 
-                $files[] = new ChangedFile(
-                    path: $matches[2],
-                    status: $status,
-                );
+                $gitToplevel ??= $this->gitToplevel();
+                $this->collectRow($matches[2], $status, null, $gitToplevel, $files, $skippedPaths);
 
                 continue;
             }
 
             // Rename: R<similarity>\told\tnew
             if (preg_match('/^R\d*\t(.+)\t(.+)$/', $line, $matches) === 1) {
-                $files[] = new ChangedFile(
-                    path: $matches[2],
-                    status: ChangeStatus::Renamed,
-                    oldPath: $matches[1],
-                );
+                $gitToplevel ??= $this->gitToplevel();
+                $this->collectRow($matches[2], ChangeStatus::Renamed, $matches[1], $gitToplevel, $files, $skippedPaths);
 
                 continue;
             }
 
             // Copy: C<similarity>\told\tnew
             if (preg_match('/^C\d*\t(.+)\t(.+)$/', $line, $matches) === 1) {
-                $files[] = new ChangedFile(
-                    path: $matches[2],
-                    status: ChangeStatus::Copied,
-                    oldPath: $matches[1],
-                );
+                $gitToplevel ??= $this->gitToplevel();
+                $this->collectRow($matches[2], ChangeStatus::Copied, $matches[1], $gitToplevel, $files, $skippedPaths);
 
                 continue;
             }
         }
 
+        if ($skippedPaths !== []) {
+            $this->logger->warning(
+                \sprintf(
+                    'Skipped %d changed file(s) outside project root (raw git paths shown — the project root sits in a git subdirectory): %s',
+                    \count($skippedPaths),
+                    implode(', ', $skippedPaths),
+                ),
+            );
+        }
+
         return array_values(array_unique($files, \SORT_REGULAR));
+    }
+
+    /**
+     * Translates one diff row via {@see ChangedFile::fromGitOutput()} and appends the
+     * result to `$files`, or the raw new path to `$skippedPaths` when the row falls
+     * outside the project root.
+     *
+     * @param list<ChangedFile> $files
+     * @param list<string> $skippedPaths
+     */
+    private function collectRow(
+        string $rawGitPath,
+        ChangeStatus $status,
+        ?string $rawOldGitPath,
+        AbsolutePath $gitToplevel,
+        array &$files,
+        array &$skippedPaths,
+    ): void {
+        $changed = ChangedFile::fromGitOutput($rawGitPath, $status, $rawOldGitPath, $gitToplevel, $this->projectRoot);
+
+        if ($changed === null) {
+            $skippedPaths[] = $rawGitPath;
+
+            return;
+        }
+
+        $files[] = $changed;
     }
 
     /**
@@ -182,7 +256,7 @@ final class GitClient
     {
         $process = Process::fromShellCommandline(
             $command,
-            $this->repoRoot,
+            $this->projectRoot->value(),
         );
 
         try {

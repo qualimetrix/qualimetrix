@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Git;
 
 use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**
@@ -16,6 +20,10 @@ use Symfony\Component\Console\Input\InputInterface;
  */
 final class GitScopeResolver
 {
+    public function __construct(
+        private readonly LoggerInterface $logger = new NullLogger(),
+    ) {}
+
     /**
      * Resolves analysis scope, file discovery strategy and git client from CLI input.
      */
@@ -27,7 +35,11 @@ final class GitScopeResolver
 
         $gitClient = null;
         if ($reportScope !== null) {
-            $gitClient = new GitClient($resolved->analysis->projectRoot);
+            // Phase 5 (ADR 0015) migrates AnalysisConfiguration::$projectRoot to AbsolutePath.
+            // For Phase 1b the string is still resolved here at the boundary.
+            $cwd = AbsolutePath::fromString((string) getcwd());
+            $projectRoot = PathFactory::fromCliArgument($resolved->analysis->projectRoot, $cwd);
+            $gitClient = new GitClient($projectRoot, $this->logger);
         }
 
         $fileDiscovery = new FinderFileDiscovery($resolved->paths->excludes);

@@ -266,6 +266,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(RuntimeConfigurator::class),
                 new Reference(ResultPresenter::class),
                 new Reference(BaselinePresenter::class),
+                new Reference(DelegatingLogger::class),
             ])
             ->setPublic(true);
 

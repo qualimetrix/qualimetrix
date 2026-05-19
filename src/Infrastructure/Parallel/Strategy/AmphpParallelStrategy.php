@@ -13,6 +13,9 @@ use Qualimetrix\Analysis\Collection\Strategy\ExecutionStrategyInterface;
 use Qualimetrix\Analysis\Collection\Strategy\ParallelCapableInterface;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTask;
 use SplFileInfo;
 use Throwable;
@@ -344,7 +347,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
         $executions = [];
         foreach ($batch as $file) {
             $task = new FileProcessingTask(
-                filePath: $file->getPathname(),
+                filePath: $this->absolutePath($file),
                 projectRoot: $this->projectRoot,
                 collectorClasses: $this->collectorClasses,
                 derivedCollectorClasses: $this->derivedCollectorClasses,
@@ -379,13 +382,49 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
                     ],
                 );
                 $results[] = FileProcessingResult::failure(
-                    $file->getPathname(),
+                    $this->relativePathFor($file),
                     $e->getMessage(),
                 );
             }
         }
 
         return $results;
+    }
+
+    /**
+     * Resolves the file's absolute path. SplFileInfo from Finder is typically
+     * absolute, but qmx can be invoked with relative arguments (e.g.,
+     * `bin/qmx check src/`) in which case getPathname() is relative.
+     */
+    private function absolutePath(SplFileInfo $file): AbsolutePath
+    {
+        $pathname = $file->getPathname();
+
+        if (str_starts_with($pathname, '/')) {
+            return AbsolutePath::fromString($pathname);
+        }
+
+        $resolved = $file->getRealPath();
+
+        if ($resolved !== false) {
+            return AbsolutePath::fromString($resolved);
+        }
+
+        return AbsolutePath::fromString((string) getcwd() . '/' . $pathname);
+    }
+
+    /**
+     * Project-relative path for the failure-path result. Routes through the same
+     * {@see absolutePath()} helper as the success path so SplFileInfo input is
+     * normalized consistently — then bridges via `PathNormalizer::relativize()`
+     * (kept until Phase 5 lifts `$projectRoot` to {@see AbsolutePath} and
+     * `PathFactory::tryProjectRelative` becomes type-clean here).
+     */
+    private function relativePathFor(SplFileInfo $file): RelativePath
+    {
+        return RelativePath::fromString(
+            PathNormalizer::relativize($this->absolutePath($file)->value()),
+        );
     }
 
     /**

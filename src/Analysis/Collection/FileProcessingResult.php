@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Collection;
 
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
@@ -20,7 +21,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class FileProcessingResult
 {
     /**
-     * @param string $filePath Path to the processed file
+     * @param RelativePath $filePath Project-relative path to the processed file
      * @param bool $success Whether processing succeeded
      * @param MetricBag|null $fileBag File-level metrics (null on failure)
      * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $methodMetrics
@@ -32,7 +33,7 @@ final class FileProcessingResult
      * @param list<ThresholdDiagnostic> $thresholdDiagnostics Diagnostics for invalid `@qmx-threshold` annotations
      */
     private function __construct(
-        public readonly string $filePath,
+        public readonly RelativePath $filePath,
         public readonly bool $success,
         public readonly ?MetricBag $fileBag,
         public readonly array $methodMetrics,
@@ -47,7 +48,7 @@ final class FileProcessingResult
     /**
      * Creates a successful result.
      *
-     * @param string $filePath Path to the processed file
+     * @param RelativePath $filePath Project-relative path to the processed file
      * @param MetricBag $fileBag File-level metrics
      * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $methodMetrics
      * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $classMetrics
@@ -57,7 +58,7 @@ final class FileProcessingResult
      * @param list<ThresholdDiagnostic> $thresholdDiagnostics Diagnostics for invalid `@qmx-threshold` annotations
      */
     public static function success(
-        string $filePath,
+        RelativePath $filePath,
         MetricBag $fileBag,
         array $methodMetrics = [],
         array $classMetrics = [],
@@ -83,10 +84,10 @@ final class FileProcessingResult
     /**
      * Creates a failure result.
      *
-     * @param string $filePath Path to the file that failed
+     * @param RelativePath $filePath Project-relative path to the file that failed
      * @param string $error Error message
      */
-    public static function failure(string $filePath, string $error): self
+    public static function failure(RelativePath $filePath, string $error): self
     {
         return new self(
             filePath: $filePath,

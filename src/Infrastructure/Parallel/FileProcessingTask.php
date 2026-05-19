@@ -10,6 +10,7 @@ use Amp\Sync\Channel;
 use Qualimetrix\Analysis\Collection\FileProcessingResult;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Rule\RuleInterface;
 use SplFileInfo;
 
@@ -29,7 +30,7 @@ use SplFileInfo;
 final class FileProcessingTask implements Task
 {
     /**
-     * @param string $filePath Absolute path to the PHP file to process
+     * @param AbsolutePath $filePath Absolute path to the PHP file to process
      * @param string $projectRoot Project root for autoloading
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses Collector class names
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses Derived collector class names
@@ -38,7 +39,7 @@ final class FileProcessingTask implements Task
      * @param list<class-string<RuleInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
      */
     public function __construct(
-        private readonly string $filePath,
+        private readonly AbsolutePath $filePath,
         private readonly string $projectRoot,
         private readonly array $collectorClasses,
         private readonly array $derivedCollectorClasses = [],
@@ -74,7 +75,7 @@ final class FileProcessingTask implements Task
         );
 
         // Process the file
-        $file = new SplFileInfo($this->filePath);
+        $file = new SplFileInfo($this->filePath->value());
 
         return $processor->process($file);
     }
