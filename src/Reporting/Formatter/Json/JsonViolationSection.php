@@ -89,9 +89,9 @@ final class JsonViolationSection
     private function formatViolation(Violation $violation, FormatterContext $context): array
     {
         $ns = $violation->symbolPath->namespace ?? '';
-        $file = $violation->location->isNone()
+        $file = $violation->location->file === null
             ? null
-            : $context->relativizePath($violation->location->pathString());
+            : $context->relativizePath($violation->location->file);
 
         return [
             'file' => $file,

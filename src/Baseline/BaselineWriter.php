@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Baseline;
 
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use RuntimeException;
 
 /**
@@ -56,11 +58,11 @@ final readonly class BaselineWriter
      */
     private function serializeBaseline(Baseline $baseline, string $projectRoot): array
     {
-        $normalizedRoot = self::normalizeProjectRoot($projectRoot);
+        $rootVO = self::resolveProjectRoot($projectRoot);
         $violations = [];
 
         foreach ($baseline->entries as $canonical => $entries) {
-            $portableKey = $this->relativizeCanonical($canonical, $normalizedRoot);
+            $portableKey = $this->relativizeCanonical($canonical, $rootVO);
             $violations[$portableKey] = array_map(
                 fn(BaselineEntry $entry) => $entry->toArray(),
                 $entries,
@@ -81,35 +83,38 @@ final readonly class BaselineWriter
      * Converts absolute file: canonical paths to relative for portability.
      *
      * Only affects file: keys — class:, method:, ns: keys are FQN-based
-     * and already portable.
+     * and already portable. Out-of-tree absolute paths are preserved verbatim
+     * so external baselines stay round-trippable. Malformed `file:` payloads
+     * (empty, lexically escaping segments) propagate as VO construction
+     * exceptions: the writer treats them as in-memory corruption, not as
+     * tolerated input.
      */
-    private function relativizeCanonical(string $canonical, string $projectRoot): string
+    private function relativizeCanonical(string $canonical, AbsolutePath $projectRoot): string
     {
         if (!str_starts_with($canonical, 'file:')) {
             return $canonical;
         }
 
         $filePath = substr($canonical, 5);
-        $prefix = rtrim($projectRoot, '/') . '/';
 
-        if (str_starts_with($filePath, $prefix)) {
-            return 'file:' . substr($filePath, \strlen($prefix));
+        if ($filePath === '') {
+            return $canonical;
         }
 
-        return $canonical;
+        $relative = PathFactory::tryProjectRelative($filePath, $projectRoot);
+
+        return $relative !== null ? 'file:' . $relative->value() : $canonical;
     }
 
-    /**
-     * Resolves relative projectRoot to absolute path.
-     */
-    private static function normalizeProjectRoot(string $projectRoot): string
+    private static function resolveProjectRoot(string $projectRoot): AbsolutePath
     {
         if ($projectRoot === '.' || !str_starts_with($projectRoot, '/')) {
             $resolved = realpath($projectRoot);
+            $absolute = $resolved !== false ? $resolved : ((string) getcwd());
 
-            return $resolved !== false ? $resolved : ((string) getcwd());
+            return AbsolutePath::fromString($absolute);
         }
 
-        return $projectRoot;
+        return AbsolutePath::fromString($projectRoot);
     }
 }

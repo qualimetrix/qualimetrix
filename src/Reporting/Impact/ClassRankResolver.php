@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\Impact;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Violation;
@@ -66,7 +67,7 @@ final readonly class ClassRankResolver
     /**
      * @param array<string, float> $fileIndex
      */
-    private function updateFileIndex(array &$fileIndex, ?\Qualimetrix\Core\Path\RelativePath $file, float $rank): void
+    private function updateFileIndex(array &$fileIndex, ?RelativePath $file, float $rank): void
     {
         if ($file === null) {
             return;
@@ -136,7 +137,7 @@ final readonly class ClassRankResolver
                 ? $this->resolveForClassPath(SymbolPath::forClass($sp->namespace ?? '', $sp->type), $metrics)
                 : null,
             SymbolType::Namespace_ => $index->getMaxForNamespace($sp->namespace ?? ''),
-            SymbolType::File => $index->getMaxForFile($sp->filePath?->value() ?? ''),
+            SymbolType::File => $sp->filePath !== null ? $index->getMaxForFile($sp->filePath) : null,
             SymbolType::Function_, SymbolType::Project => null,
         };
     }

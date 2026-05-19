@@ -370,32 +370,10 @@ final class SarifFormatterTest extends TestCase
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
     }
 
-    #[Test]
-    public function itNormalizesWindowsBasePathToFileUri(): void
-    {
-        $report = ReportBuilder::create()
-            ->addViolation(new Violation(
-                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
-                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
-                ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
-                message: 'test',
-                severity: Severity::Error,
-            ))
-            ->filesAnalyzed(1)
-            ->filesSkipped(0)
-            ->duration(0.1)
-            ->build();
-
-        $context = new FormatterContext(basePath: 'C:\Users\project');
-        $output = $this->formatter->format($report, $context);
-        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
-
-        $run = $data['runs'][0];
-
-        self::assertArrayHasKey('originalUriBaseIds', $run);
-        self::assertSame('file:///C:/Users/project/', $run['originalUriBaseIds']['%SRCROOT%']['uri']);
-    }
+    // ADR 0015: Windows backslash normalization in pathToFileUri was dropped
+    // because the path VO contract is POSIX-only. The corresponding regression
+    // test (`itNormalizesWindowsBasePathToFileUri`) was removed for the same
+    // reason — basePath is expected to be a POSIX-normalized absolute path.
 
     #[Test]
     public function itLeavesAlreadyRelativePathUnchanged(): void

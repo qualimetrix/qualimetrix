@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Impact;
 
+use Qualimetrix\Core\Path\RelativePath;
+
 /**
  * Pre-computed index for fast classRank lookups.
  *
@@ -23,9 +25,9 @@ final readonly class ClassRankIndex
         private ?float $medianRank,
     ) {}
 
-    public function getMaxForFile(string $filePath): ?float
+    public function getMaxForFile(RelativePath $filePath): ?float
     {
-        return $this->fileMaxRank[$filePath] ?? null;
+        return $this->fileMaxRank[$filePath->value()] ?? null;
     }
 
     public function getMaxForNamespace(string $namespace): ?float

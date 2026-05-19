@@ -29,9 +29,11 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
                 'fingerprint' => $this->generateFingerprint($violation),
                 'severity' => $this->mapSeverity($violation->severity),
                 'location' => [
-                    'path' => $violation->location->isNone() ? '_project' : $context->relativizePath($violation->location->pathString()),
+                    'path' => $violation->location->file === null
+                        ? '_project'
+                        : $context->relativizePath($violation->location->file),
                     'lines' => [
-                        'begin' => $violation->location->isNone() ? 1 : ($violation->location->line ?? 1),
+                        'begin' => $violation->location->file === null ? 1 : ($violation->location->line ?? 1),
                     ],
                 ],
             ];
