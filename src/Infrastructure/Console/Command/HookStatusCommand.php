@@ -42,7 +42,7 @@ final class HookStatusCommand extends Command
         $output->writeln('<info>Git Pre-commit Hook Status</info>');
         $output->writeln('');
 
-        $hookPath = $gitDir . '/hooks/pre-commit';
+        $hookPath = $gitDir->value() . '/hooks/pre-commit';
 
         // Check if hook exists
         if (!file_exists($hookPath)) {

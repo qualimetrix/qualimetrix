@@ -12,7 +12,8 @@ Wrapper around git commands for obtaining the list of changed files.
 
 **Methods:**
 - `isRepository(): bool` — check if directory is a git repository
-- `getRoot(): string` — get repository root
+- `getRoot(): AbsolutePath` — get git top-level (`git rev-parse --show-toplevel`)
+- `getProjectRoot(): AbsolutePath` — project root the client was constructed with (may differ from `getRoot()` when the project sits in a git subdirectory)
 - `getChangedFiles(string $scope): array` — get list of changed files by scope
 
 **Supported scopes:**
@@ -32,7 +33,7 @@ Locates the `.git` directory for the current repository. Used by hook commands
 2. Fallback: manual directory traversal (when git is not in PATH)
 
 **Methods:**
-- `findGitDir(?string $workingDir = null): ?string` — find `.git` directory path
+- `findGitDir(?AbsolutePath $workingDir = null): ?AbsolutePath` — find `.git` directory path
 
 ### GitScopeParser
 

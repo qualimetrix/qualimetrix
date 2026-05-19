@@ -48,7 +48,7 @@ final class HookUninstallCommand extends Command
             return self::FAILURE;
         }
 
-        $hookPath = $gitDir . '/hooks/pre-commit';
+        $hookPath = $gitDir->value() . '/hooks/pre-commit';
 
         if (!file_exists($hookPath)) {
             $output->writeln('<comment>Pre-commit hook not found. Nothing to uninstall.</comment>');

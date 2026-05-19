@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Git;
 
+use Qualimetrix\Core\Path\AbsolutePath;
+use RuntimeException;
+
 /**
  * Locates the .git directory for the current repository.
  *
@@ -18,18 +21,18 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
     /**
      * Finds the .git directory for the current repository.
      *
-     * @param string|null $workingDir Working directory to start from (defaults to getcwd())
+     * @param AbsolutePath|null $workingDir Working directory to start from (defaults to getcwd())
      *
-     * @return string|null Absolute path to .git directory, or null if not in a git repo
+     * @return AbsolutePath|null Absolute path to .git directory, or null if not in a git repo
      */
-    public function findGitDir(?string $workingDir = null): ?string
+    public function findGitDir(?AbsolutePath $workingDir = null): ?AbsolutePath
     {
         if ($workingDir === null) {
             $cwd = getcwd();
             if ($cwd === false) {
                 return null;
             }
-            $workingDir = $cwd;
+            $workingDir = AbsolutePath::fromString($cwd);
         }
 
         return $this->findViaGitCommand($workingDir)
@@ -41,7 +44,7 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
      *
      * This handles regular repos, worktrees, and bare repos correctly.
      */
-    private function findViaGitCommand(string $workingDir): ?string
+    private function findViaGitCommand(AbsolutePath $workingDir): ?AbsolutePath
     {
         $descriptors = [
             0 => ['pipe', 'r'],
@@ -53,7 +56,7 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
             ['git', 'rev-parse', '--git-dir'],
             $descriptors,
             $pipes,
-            $workingDir,
+            $workingDir->value(),
         );
 
         if (!\is_resource($process)) {
@@ -72,13 +75,15 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
         }
 
         // git rev-parse --git-dir may return a relative path; convert to absolute
-        if (!str_starts_with($output, '/')) {
-            $output = $workingDir . '/' . $output;
+        $candidate = str_starts_with($output, '/')
+            ? AbsolutePath::fromString($output)
+            : AbsolutePath::fromString($workingDir->value() . '/' . $output);
+
+        try {
+            return $candidate->canonicalize();
+        } catch (RuntimeException) {
+            return null;
         }
-
-        $realPath = realpath($output);
-
-        return $realPath !== false ? $realPath : null;
     }
 
     /**
@@ -86,39 +91,54 @@ final class GitRepositoryLocator implements GitRepositoryLocatorInterface
      *
      * Fallback for environments where git is not available in PATH.
      */
-    private function findViaDirectoryTraversal(string $startDir): ?string
+    private function findViaDirectoryTraversal(AbsolutePath $startDir): ?AbsolutePath
     {
-        $currentDir = $startDir;
+        $currentDir = $startDir->value();
 
         while (true) {
             $gitDir = $currentDir . '/.git';
 
             if (is_dir($gitDir)) {
-                return $gitDir;
+                return AbsolutePath::fromString($gitDir);
             }
 
-            // Also handle worktree .git files (contains "gitdir: /path/to/...")
             if (is_file($gitDir)) {
-                $content = file_get_contents($gitDir);
-                if ($content !== false && str_starts_with($content, 'gitdir: ')) {
-                    $linkedDir = trim(substr($content, 8));
-                    if (!str_starts_with($linkedDir, '/')) {
-                        $linkedDir = $currentDir . '/' . $linkedDir;
-                    }
-                    $realPath = realpath($linkedDir);
-
-                    return $realPath !== false ? $realPath : null;
+                $linked = $this->resolveWorktreeLink($gitDir, $currentDir);
+                if ($linked !== null) {
+                    return $linked;
                 }
             }
 
             $parentDir = \dirname($currentDir);
             if ($parentDir === $currentDir) {
-                break;
+                return null;
             }
 
             $currentDir = $parentDir;
         }
+    }
 
-        return null;
+    /**
+     * Resolves a worktree `.git` file (which contains `gitdir: /path/to/...`)
+     * to the absolute path of the linked git directory. Returns null if the
+     * file is not a valid worktree link or the target is unreachable.
+     */
+    private function resolveWorktreeLink(string $gitFile, string $currentDir): ?AbsolutePath
+    {
+        $content = file_get_contents($gitFile);
+        if ($content === false || !str_starts_with($content, 'gitdir: ')) {
+            return null;
+        }
+
+        $linkedDir = trim(substr($content, 8));
+        if (!str_starts_with($linkedDir, '/')) {
+            $linkedDir = $currentDir . '/' . $linkedDir;
+        }
+
+        try {
+            return AbsolutePath::fromString($linkedDir)->canonicalize();
+        } catch (RuntimeException) {
+            return null;
+        }
     }
 }

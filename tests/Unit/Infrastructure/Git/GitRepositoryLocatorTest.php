@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 
 #[CoversClass(GitRepositoryLocator::class)]
@@ -28,12 +29,12 @@ final class GitRepositoryLocatorTest extends TestCase
     }
 
     #[Test]
-    public function returnsAbsolutePathAsString(): void
+    public function returnsAbsolutePath(): void
     {
         $result = $this->locator->findGitDir();
 
         self::assertNotNull($result);
-        self::assertStringStartsWith('/', $result, 'Path should be absolute');
+        self::assertStringStartsWith('/', $result->value(), 'Path should be absolute');
     }
 
     #[Test]
@@ -43,25 +44,25 @@ final class GitRepositoryLocatorTest extends TestCase
 
         self::assertNotNull($result);
         // Regular repos end with .git; worktrees may have .git in the path
-        self::assertStringContainsString('.git', $result);
+        self::assertStringContainsString('.git', $result->value());
     }
 
     #[Test]
     public function acceptsExplicitWorkingDirectory(): void
     {
         // Use the project root as explicit working directory
-        $projectRoot = \dirname(__DIR__, 4);
+        $projectRoot = AbsolutePath::fromString(\dirname(__DIR__, 4));
         $result = $this->locator->findGitDir($projectRoot);
 
         self::assertNotNull($result, 'Expected to find .git directory from project root');
-        self::assertStringContainsString('.git', $result);
+        self::assertStringContainsString('.git', $result->value());
     }
 
     #[Test]
     public function returnsNullForNonGitDirectory(): void
     {
         // Use a path that is guaranteed not to be inside a git repository
-        $result = $this->locator->findGitDir('/');
+        $result = $this->locator->findGitDir(AbsolutePath::fromString('/'));
 
         self::assertNull($result);
     }
@@ -69,7 +70,7 @@ final class GitRepositoryLocatorTest extends TestCase
     #[Test]
     public function returnsNullForNonExistentDirectory(): void
     {
-        $result = $this->locator->findGitDir('/nonexistent/path/that/does/not/exist');
+        $result = $this->locator->findGitDir(AbsolutePath::fromString('/nonexistent/path/that/does/not/exist'));
 
         self::assertNull($result);
     }

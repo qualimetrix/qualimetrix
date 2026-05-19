@@ -75,7 +75,7 @@ final class GitClientTest extends TestCase
         $root = $client->getRoot();
 
         // Paths are already normalized with realpath in setUp
-        self::assertSame($this->repoRoot, $root);
+        self::assertSame($this->repoRoot, $root->value());
     }
 
     #[Test]
