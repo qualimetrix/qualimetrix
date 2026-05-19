@@ -97,14 +97,14 @@ final class SarifFormatter implements FormatterInterface
                     ],
                 ];
 
-                if ($v->location->isNone()) {
+                if ($v->location->file === null) {
                     // Omit locations for project-level violations (valid per SARIF 2.1.0)
                 } else {
                     $result['locations'] = [
                         [
                             'physicalLocation' => [
                                 'artifactLocation' => $this->buildArtifactLocation(
-                                    $context->relativizePath($v->location->pathString()),
+                                    $context->relativizePath($v->location->file),
                                     $context->basePath !== '',
                                 ),
                                 'region' => [
@@ -122,7 +122,7 @@ final class SarifFormatter implements FormatterInterface
                             'id' => $index,
                             'physicalLocation' => [
                                 'artifactLocation' => $this->buildArtifactLocation(
-                                    $context->relativizePath($loc->pathString()),
+                                    $context->relativizePath($loc->file),
                                     $context->basePath !== '',
                                 ),
                                 'region' => [
@@ -165,13 +165,11 @@ final class SarifFormatter implements FormatterInterface
     /**
      * Converts an absolute filesystem path to a file:/// URI (RFC 8089).
      *
-     * Handles both Unix (/home/user/project) and Windows (C:\Users\project) paths.
+     * Path separator handling is POSIX-only per ADR 0015; Windows paths must
+     * already be POSIX-normalized at the boundary that produced $context->basePath.
      */
     private static function pathToFileUri(string $path): string
     {
-        // Normalize backslashes to forward slashes (Windows)
-        $path = str_replace('\\', '/', $path);
-
         // Ensure trailing slash
         $path = rtrim($path, '/') . '/';
 

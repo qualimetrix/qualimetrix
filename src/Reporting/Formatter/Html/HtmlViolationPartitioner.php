@@ -97,9 +97,9 @@ final readonly class HtmlViolationPartitioner
                     'severity' => $violation->severity->value,
                     'metricValue' => $metricValue,
                     'symbolPath' => $violation->symbolPath->toString(),
-                    'file' => $violation->location->isNone()
+                    'file' => $violation->location->file === null
                         ? ''
-                        : $context->relativizePath($violation->location->pathString()),
+                        : $context->relativizePath($violation->location->file),
                     'line' => $violation->location->line,
                 ];
             }

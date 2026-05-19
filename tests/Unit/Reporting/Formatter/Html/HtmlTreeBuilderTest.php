@@ -300,7 +300,10 @@ final class HtmlTreeBuilderTest extends TestCase
             ->addViolation($violation)
             ->build();
 
-        $context = new FormatterContext(basePath: 'src');
+        // ADR 0015 Phase 4: Location::$file is already project-relative, so
+        // FormatterContext::relativizePath no longer strips basePath. The
+        // formatter prints the path verbatim.
+        $context = new FormatterContext();
         $result = $this->builder->build($report, $context);
 
         $tree = $result['tree'];
@@ -316,7 +319,7 @@ final class HtmlTreeBuilderTest extends TestCase
         self::assertSame('warning', $v['severity']);
         self::assertSame(15, $v['metricValue']);
         self::assertSame('App\\Service\\UserService::calculate', $v['symbolPath']);
-        self::assertSame('Service/UserService.php', $v['file']);
+        self::assertSame('src/Service/UserService.php', $v['file']);
         self::assertSame(25, $v['line']);
     }
 

@@ -99,7 +99,7 @@ final class DetailedViolationRenderer
             $header = match ($groupBy) {
                 GroupBy::File => \sprintf(
                     '%s (%d %s)',
-                    $color->bold($key !== '' ? $context->relativizePath($key) : '[project]'),
+                    $color->bold($key !== '' ? $key : '[project]'),
                     $count,
                     $count === 1 ? 'violation' : 'violations',
                 ),
@@ -184,11 +184,11 @@ final class DetailedViolationRenderer
 
     private function formatFullLocation(Violation $violation, FormatterContext $context): string
     {
-        if ($violation->location->isNone()) {
+        if ($violation->location->file === null) {
             return '[project]';
         }
 
-        $file = $context->relativizePath($violation->location->pathString());
+        $file = $context->relativizePath($violation->location->file);
         $line = $violation->location->line;
 
         if ($line === null || !$violation->location->precise) {

@@ -132,14 +132,20 @@ final readonly class FormatterContext
         public bool $useColor = true,      // from OutputInterface::isDecorated()
         public GroupBy $groupBy = GroupBy::None,
         public array $options = [],        // from --format-opt key=value
-        public string $basePath = '',      // for relativizing file paths
+        public string $basePath = '',      // retained for SARIF %SRCROOT% URI builder
         public bool $scopedReporting = false, // scoped reporting (e.g., --report=git:staged)
         public ?string $namespace = null,  // --namespace filter (boundary-aware prefix)
         public ?string $class = null,      // --class filter (exact FQCN match)
+        public int $terminalWidth = 0,     // adaptive rendering width (0 = default 80)
+        public ?int $detailLimit = null,   // --detail mode: null=off, 0=all, N=limit
+        public bool $isGroupByExplicit = false, // whether --group-by was set explicitly
+        public int $topIssuesLimit = self::DEFAULT_TOP_ISSUES_LIMIT,
     ) {}
 
     public function getOption(string $key, string $default = ''): string;
-    public function relativizePath(string $filePath): string;
+    // Renders a project-relative path as its wire-surface string; '' for null
+    // (ADR 0015 — Location::$file is already RelativePath by construction).
+    public function relativizePath(?RelativePath $filePath): string;
 }
 ```
 

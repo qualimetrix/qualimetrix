@@ -253,10 +253,13 @@ final class HtmlViolationPartitionerTest extends TestCase
             recommendation: 'Split the method',
         );
 
+        // ADR 0015 Phase 4: basePath no longer participates in path
+        // rendering; FormatterContext::relativizePath emits Location::$file
+        // verbatim (the VO is already project-relative).
         $this->partitioner->attach(
             ['App\\Service' => $node],
             ['App\\Service' => [$violation]],
-            new FormatterContext(basePath: 'src'),
+            new FormatterContext(),
         );
 
         self::assertCount(1, $node->violations);
@@ -268,7 +271,7 @@ final class HtmlViolationPartitionerTest extends TestCase
         self::assertSame('warning', $v['severity']);
         self::assertSame(15, $v['metricValue']);
         self::assertSame('App\\Service', $v['symbolPath']);
-        self::assertSame('Service.php', $v['file']);
+        self::assertSame('src/Service.php', $v['file']);
         self::assertSame(10, $v['line']);
     }
 

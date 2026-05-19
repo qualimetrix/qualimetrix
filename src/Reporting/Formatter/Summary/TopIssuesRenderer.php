@@ -93,11 +93,11 @@ final class TopIssuesRenderer
 
     private function formatLocation(Violation $violation, FormatterContext $context): string
     {
-        if ($violation->location->isNone()) {
+        if ($violation->location->file === null) {
             return '[project]';
         }
 
-        $file = $context->relativizePath($violation->location->pathString());
+        $file = $context->relativizePath($violation->location->file);
         $line = $violation->location->line;
 
         return $line !== null && $violation->location->precise

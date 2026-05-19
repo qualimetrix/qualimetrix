@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting;
 
+use Qualimetrix\Core\Path\RelativePath;
+
 /**
  * Context passed to formatters with rendering options.
  *
@@ -91,22 +93,15 @@ final readonly class FormatterContext
     }
 
     /**
-     * Strips basePath prefix from an absolute file path to produce a relative path.
+     * Renders a RelativePath as its wire-surface string; returns '' for null.
      *
-     * Returns the path unchanged if it does not start with basePath or if basePath is empty.
+     * Since Location::$file is already project-relative by construction (ADR 0015),
+     * formatters call this only to handle the null case (architectural violations
+     * with no associated file) without scattering null-checks at every print site.
+     * The basePath field is retained for SARIF's `%SRCROOT%` URI builder.
      */
-    public function relativizePath(string $filePath): string
+    public function relativizePath(?RelativePath $filePath): string
     {
-        if ($this->basePath === '') {
-            return $filePath;
-        }
-
-        $normalizedBase = rtrim($this->basePath, '/') . '/';
-
-        if (!str_starts_with($filePath, $normalizedBase)) {
-            return $filePath;
-        }
-
-        return substr($filePath, \strlen($normalizedBase));
+        return $filePath?->value() ?? '';
     }
 }

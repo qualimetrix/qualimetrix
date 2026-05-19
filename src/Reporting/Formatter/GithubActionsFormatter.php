@@ -51,8 +51,8 @@ final class GithubActionsFormatter implements FormatterInterface
 
         $params = [];
 
-        if (!$violation->location->isNone()) {
-            $params[] = 'file=' . $this->escapeProperty($context->relativizePath($violation->location->pathString()));
+        if ($violation->location->file !== null) {
+            $params[] = 'file=' . $this->escapeProperty($context->relativizePath($violation->location->file));
 
             if ($violation->location->line !== null) {
                 $params[] = 'line=' . $violation->location->line;
