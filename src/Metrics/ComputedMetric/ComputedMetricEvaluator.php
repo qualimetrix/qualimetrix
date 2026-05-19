@@ -9,6 +9,7 @@ use Psr\Log\NullLogger;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -118,7 +119,7 @@ final class ComputedMetricEvaluator
      * References to other computed metrics (`health__*`, `computed__*`) are validated
      * separately by `ComputedMetricFormulaValidator` and also skipped here.
      *
-     * @param list<array{SymbolPath, string, ?int}> $symbols
+     * @param list<array{SymbolPath, ?RelativePath, ?int}> $symbols
      *
      * @throws RuntimeException If the formula references metrics that do not exist at this level
      */
@@ -257,14 +258,14 @@ final class ComputedMetricEvaluator
     ];
 
     /**
-     * @return list<array{SymbolPath, string, ?int}>
+     * @return list<array{SymbolPath, ?RelativePath, ?int}>
      */
     private function getSymbolsForLevel(MetricRepositoryInterface $repo, SymbolType $level): array
     {
         return match ($level) {
-            SymbolType::Project => [[SymbolPath::forProject(), '', null]],
+            SymbolType::Project => [[SymbolPath::forProject(), null, null]],
             SymbolType::Namespace_ => array_map(
-                static fn(string $ns) => [SymbolPath::forNamespace($ns), '', null],
+                static fn(string $ns) => [SymbolPath::forNamespace($ns), null, null],
                 $repo->getNamespaces(),
             ),
             SymbolType::Class_ => array_map(

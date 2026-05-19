@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\AggregationMeta;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Metrics\Size\ClassCountCollector;
@@ -31,7 +32,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('App\\Service', 'UserService', 'find'),
             $method1Metrics,
-            'src/Service/UserService.php',
+            RelativePath::fromString('src/Service/UserService.php'),
             10,
         );
 
@@ -39,7 +40,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('App\\Service', 'UserService', 'save'),
             $method2Metrics,
-            'src/Service/UserService.php',
+            RelativePath::fromString('src/Service/UserService.php'),
             30,
         );
 
@@ -72,7 +73,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('App\\Service', 'OrderService', 'create'),
             $method1,
-            'src/Service/OrderService.php',
+            RelativePath::fromString('src/Service/OrderService.php'),
             10,
         );
 
@@ -80,7 +81,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('App\\Service', 'OrderService', 'update'),
             $method2,
-            'src/Service/OrderService.php',
+            RelativePath::fromString('src/Service/OrderService.php'),
             30,
         );
 
@@ -88,7 +89,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('App\\Service', 'OrderService', 'delete'),
             $method3,
-            'src/Service/OrderService.php',
+            RelativePath::fromString('src/Service/OrderService.php'),
             50,
         );
 
@@ -117,7 +118,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('App\\Service', 'ServiceA', 'execute'),
             $method1,
-            'src/Service/ServiceA.php',
+            RelativePath::fromString('src/Service/ServiceA.php'),
             10,
         );
 
@@ -126,7 +127,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('App\\Repository', 'RepoA', 'find'),
             $method2,
-            'src/Repository/RepoA.php',
+            RelativePath::fromString('src/Repository/RepoA.php'),
             10,
         );
 
@@ -168,9 +169,9 @@ final class MetricAggregatorTest extends TestCase
             ->with('loc', 50)
             ->with('classCount', 1);
         $repository->add(
-            SymbolPath::forFile('src/Entity/User.php'),
+            SymbolPath::forFile(RelativePath::fromString('src/Entity/User.php')),
             $fileMetrics,
-            'src/Entity/User.php',
+            RelativePath::fromString('src/Entity/User.php'),
             1,
         );
 
@@ -179,7 +180,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Entity', 'User'),
             $classMetrics,
-            'src/Entity/User.php',
+            RelativePath::fromString('src/Entity/User.php'),
             1,
         );
 
@@ -205,9 +206,9 @@ final class MetricAggregatorTest extends TestCase
             ->with('lloc', 80)
             ->with('cloc', 10);
         $repository->add(
-            SymbolPath::forFile('src/Service/ServiceA.php'),
+            SymbolPath::forFile(RelativePath::fromString('src/Service/ServiceA.php')),
             $file1Metrics,
-            'src/Service/ServiceA.php',
+            RelativePath::fromString('src/Service/ServiceA.php'),
             1,
         );
 
@@ -216,7 +217,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Service', 'ServiceA'),
             $classMetrics,
-            'src/Service/ServiceA.php',
+            RelativePath::fromString('src/Service/ServiceA.php'),
             1,
         );
 
@@ -241,9 +242,9 @@ final class MetricAggregatorTest extends TestCase
             ->with('classCount', 2)
             ->with('interfaceCount', 1);
         $repository->add(
-            SymbolPath::forFile('src/Service/Services.php'),
+            SymbolPath::forFile(RelativePath::fromString('src/Service/Services.php')),
             $file1Metrics,
-            'src/Service/Services.php',
+            RelativePath::fromString('src/Service/Services.php'),
             1,
         );
 
@@ -252,7 +253,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Service', 'ServiceA'),
             $classMetrics,
-            'src/Service/Services.php',
+            RelativePath::fromString('src/Service/Services.php'),
             1,
         );
 
@@ -280,7 +281,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('App', 'Service', 'method'),
             $method1,
-            'test.php',
+            RelativePath::fromString('test.php'),
             10,
         );
 
@@ -302,7 +303,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Service', 'EmptyClass'),
             $classMetrics,
-            'src/Service/EmptyClass.php',
+            RelativePath::fromString('src/Service/EmptyClass.php'),
             1,
         );
 
@@ -325,7 +326,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('', 'GlobalClass', 'method'),
             $method,
-            'global.php',
+            RelativePath::fromString('global.php'),
             10,
         );
 
@@ -354,7 +355,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('App', 'Test', 'method'),
             $method,
-            'test.php',
+            RelativePath::fromString('test.php'),
             10,
         );
 
@@ -375,7 +376,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('App\\Service', 'ServiceA', 'execute'),
             $method1,
-            'src/Service/ServiceA.php',
+            RelativePath::fromString('src/Service/ServiceA.php'),
             10,
         );
 
@@ -383,7 +384,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('App\\Service', 'ServiceB', 'run'),
             $method2,
-            'src/Service/ServiceB.php',
+            RelativePath::fromString('src/Service/ServiceB.php'),
             10,
         );
 
@@ -392,7 +393,7 @@ final class MetricAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('App\\Repository', 'UserRepo', 'find'),
             $method3,
-            'src/Repository/UserRepo.php',
+            RelativePath::fromString('src/Repository/UserRepo.php'),
             10,
         );
 

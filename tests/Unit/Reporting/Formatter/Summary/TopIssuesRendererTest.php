@@ -314,7 +314,7 @@ final class TopIssuesRendererTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('project/src/config.php'), null),
-            symbolPath: SymbolPath::forFile('src/config.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/config.php')),
             ruleName: 'security.hardcoded-credentials',
             violationCode: 'security.hardcoded-credentials',
             message: 'Hardcoded credentials detected',

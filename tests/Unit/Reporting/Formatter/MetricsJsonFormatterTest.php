@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -77,10 +78,10 @@ final class MetricsJsonFormatterTest extends TestCase
         $repository->method('all')
             ->willReturnCallback(static function (SymbolType $type) use ($classPath, $methodPath): array {
                 if ($type === SymbolType::Class_) {
-                    return [new SymbolInfo($classPath, 'src/Service/UserService.php', 10)];
+                    return [new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 10)];
                 }
                 if ($type === SymbolType::Method) {
-                    return [new SymbolInfo($methodPath, 'src/Service/UserService.php', 42)];
+                    return [new SymbolInfo($methodPath, RelativePath::fromString('src/Service/UserService.php'), 42)];
                 }
 
                 return [];
@@ -138,7 +139,7 @@ final class MetricsJsonFormatterTest extends TestCase
         $repository->method('all')
             ->willReturnCallback(static function (SymbolType $type) use ($classPath): array {
                 if ($type === SymbolType::Class_) {
-                    return [new SymbolInfo($classPath, 'src/Empty.php', 1)];
+                    return [new SymbolInfo($classPath, RelativePath::fromString('src/Empty.php'), 1)];
                 }
 
                 return [];
@@ -172,7 +173,7 @@ final class MetricsJsonFormatterTest extends TestCase
         $repository->method('all')
             ->willReturnCallback(static function (SymbolType $type) use ($classPath): array {
                 if ($type === SymbolType::Class_) {
-                    return [new SymbolInfo($classPath, 'src/Test.php', 1)];
+                    return [new SymbolInfo($classPath, RelativePath::fromString('src/Test.php'), 1)];
                 }
 
                 return [];
@@ -216,13 +217,13 @@ final class MetricsJsonFormatterTest extends TestCase
     #[Test]
     public function itFiltersInternalDerivedMetricKeys(): void
     {
-        $filePath = SymbolPath::forFile('src/Service/UserService.php');
+        $filePath = SymbolPath::forFile(RelativePath::fromString('src/Service/UserService.php'));
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
             ->willReturnCallback(static function (SymbolType $type) use ($filePath): array {
                 if ($type === SymbolType::File) {
-                    return [new SymbolInfo($filePath, 'src/Service/UserService.php', 1)];
+                    return [new SymbolInfo($filePath, RelativePath::fromString('src/Service/UserService.php'), 1)];
                 }
 
                 return [];

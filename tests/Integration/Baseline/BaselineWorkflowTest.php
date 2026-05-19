@@ -184,7 +184,7 @@ final class BaselineWorkflowTest extends TestCase
                 violationCode: 'size.loc',
                 message: 'File has 500 lines',
                 severity: Severity::Warning,
-                symbolPath: SymbolPath::forFile('src/Service.php'),
+                symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service.php')),
                 location: new Location(RelativePath::fromString('src/Service.php'), 1),
             ),
             new Violation(

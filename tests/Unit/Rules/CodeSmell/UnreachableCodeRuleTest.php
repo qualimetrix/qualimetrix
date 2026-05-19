@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -113,7 +114,7 @@ final class UnreachableCodeRuleTest extends TestCase
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('unreachableCode', 0);
 
@@ -134,7 +135,7 @@ final class UnreachableCodeRuleTest extends TestCase
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('unreachableCode', 2)
@@ -164,7 +165,7 @@ final class UnreachableCodeRuleTest extends TestCase
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('unreachableCode', 1);
 

@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -112,7 +113,7 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'LeafClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/LeafClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/LeafClass.php'), 10);
 
         // NOC of 0 means no children (should be skipped)
         $metricBag = (new MetricBag())->with('noc', 0);
@@ -135,7 +136,7 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'BaseService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/BaseService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/BaseService.php'), 10);
 
         // NOC of 12 is above warning threshold (10) but below error (15)
         $metricBag = (new MetricBag())->with('noc', 12);
@@ -164,7 +165,7 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'VeryPopularBase');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/VeryPopularBase.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/VeryPopularBase.php'), 10);
 
         // NOC of 20 is above error threshold (15)
         $metricBag = (new MetricBag())->with('noc', 20);
@@ -189,7 +190,7 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'ReasonableBase');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/ReasonableBase.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/ReasonableBase.php'), 10);
 
         // NOC of 3 is normal (below warning threshold 7)
         $metricBag = (new MetricBag())->with('noc', 3);
@@ -212,7 +213,7 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'SomeClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/SomeClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
 
         // No 'noc' metric
         $metricBag = new MetricBag();
@@ -279,7 +280,7 @@ final class NocRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('noc', $noc);
 

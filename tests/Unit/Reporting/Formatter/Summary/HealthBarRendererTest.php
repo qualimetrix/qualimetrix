@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -490,8 +491,8 @@ final class HealthBarRendererTest extends TestCase
             'classCount.sum' => 5,
         ]);
 
-        $nsInfo = new SymbolInfo($nsPath, '/src/Service', null);
-        $childInfo = new SymbolInfo($childPath, '/src/Service/Payment', null);
+        $nsInfo = new SymbolInfo($nsPath, RelativePath::fromString('src/Service'), null);
+        $childInfo = new SymbolInfo($childPath, RelativePath::fromString('src/Service/Payment'), null);
 
         $metrics = $this->createMock(MetricRepositoryInterface::class);
         $metrics->method('all')

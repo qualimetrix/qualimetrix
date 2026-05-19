@@ -10,10 +10,8 @@ use Qualimetrix\Core\ComputedMetric\HealthDimension;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Debt\DebtCalculator;
 use Qualimetrix\Reporting\Impact\ImpactCalculator;
@@ -284,7 +282,7 @@ final readonly class SummaryEnricher
                 ? (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0)
                 : 0;
 
-            $file = $symbolType === SymbolType::Class_ ? RelativePath::fromString(PathNormalizer::relativize($symbolInfo->file)) : null;
+            $file = $symbolType === SymbolType::Class_ ? $symbolInfo->file : null;
 
             $notableMetrics = $this->getNotableMetrics($metrics, $symbolType);
 

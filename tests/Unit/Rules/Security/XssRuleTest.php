@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -127,10 +128,10 @@ final class XssRuleTest extends TestCase
 
     private function createContext(MetricBag $metrics): AnalysisContext
     {
-        $filePath = SymbolPath::forFile('src/View/Template.php');
+        $filePath = SymbolPath::forFile(RelativePath::fromString('src/View/Template.php'));
         $fileInfo = new SymbolInfo(
             symbolPath: $filePath,
-            file: 'src/View/Template.php',
+            file: RelativePath::fromString('src/View/Template.php'),
             line: null,
         );
 

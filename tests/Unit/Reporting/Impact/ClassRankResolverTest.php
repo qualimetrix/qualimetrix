@@ -85,9 +85,9 @@ final class ClassRankResolverTest extends TestCase
         $metrics->method('getNamespaces')->willReturn(['App\Service']);
 
         $metrics->method('all')->willReturn([
-            new SymbolInfo(SymbolPath::forClass('App\Service', 'UserService'), 'src/UserService.php', 1),
-            new SymbolInfo(SymbolPath::forClass('App\Service', 'OrderService'), 'src/OrderService.php', 1),
-            new SymbolInfo(SymbolPath::forClass('App\Service', 'LogService'), 'src/LogService.php', 1),
+            new SymbolInfo(SymbolPath::forClass('App\Service', 'UserService'), RelativePath::fromString('src/UserService.php'), 1),
+            new SymbolInfo(SymbolPath::forClass('App\Service', 'OrderService'), RelativePath::fromString('src/OrderService.php'), 1),
+            new SymbolInfo(SymbolPath::forClass('App\Service', 'LogService'), RelativePath::fromString('src/LogService.php'), 1),
         ]);
 
         $metrics->method('get')->willReturnCallback(
@@ -115,8 +115,8 @@ final class ClassRankResolverTest extends TestCase
         $metrics->method('getNamespaces')->willReturn(['App\Service', 'App\Service\Sub']);
 
         $metrics->method('all')->willReturn([
-            new SymbolInfo(SymbolPath::forClass('App\Service', 'UserService'), 'src/UserService.php', 1),
-            new SymbolInfo(SymbolPath::forClass('App\Service\Sub', 'DeepService'), 'src/Sub/DeepService.php', 1),
+            new SymbolInfo(SymbolPath::forClass('App\Service', 'UserService'), RelativePath::fromString('src/UserService.php'), 1),
+            new SymbolInfo(SymbolPath::forClass('App\Service\Sub', 'DeepService'), RelativePath::fromString('src/Sub/DeepService.php'), 1),
         ]);
 
         $metrics->method('get')->willReturnCallback(
@@ -143,9 +143,9 @@ final class ClassRankResolverTest extends TestCase
         $metrics->method('getNamespaces')->willReturn(['App']);
 
         $metrics->method('all')->willReturn([
-            new SymbolInfo(SymbolPath::forClass('App', 'ClassA'), 'src/target.php', 1),
-            new SymbolInfo(SymbolPath::forClass('App', 'ClassB'), 'src/target.php', 20),
-            new SymbolInfo(SymbolPath::forClass('App', 'ClassC'), 'src/other.php', 1),
+            new SymbolInfo(SymbolPath::forClass('App', 'ClassA'), RelativePath::fromString('src/target.php'), 1),
+            new SymbolInfo(SymbolPath::forClass('App', 'ClassB'), RelativePath::fromString('src/target.php'), 20),
+            new SymbolInfo(SymbolPath::forClass('App', 'ClassC'), RelativePath::fromString('src/other.php'), 1),
         ]);
 
         $metrics->method('get')->willReturnCallback(
@@ -159,10 +159,57 @@ final class ClassRankResolverTest extends TestCase
             },
         );
 
-        $violation = $this->createViolation(SymbolPath::forFile('src/target.php'));
+        $violation = $this->createViolation(SymbolPath::forFile(RelativePath::fromString('src/target.php')));
 
         $index = $this->resolver->buildIndex($metrics);
         self::assertSame(0.07, $this->resolver->resolve($violation, $metrics, $index));
+    }
+
+    #[Test]
+    public function resolveSkipsClassesWithNullFileWhenBuildingFileIndex(): void
+    {
+        // ADR 0015 Phase 1c regression pin: pre-migration, CouplingCollector added
+        // class symbols with file='', which produced spurious $fileIndex[''] entries
+        // matched by violations with empty file path. After Phase 1c, the file is null
+        // (no inherent owning file for graph-derived metrics) and is skipped during
+        // index building. Lookups for a file path that's not in the index now return null.
+        $metrics = self::createStub(MetricRepositoryInterface::class);
+
+        $metrics->method('getNamespaces')->willReturn(['App']);
+        $metrics->method('all')->willReturn([
+            // File present — should land in the file index.
+            new SymbolInfo(SymbolPath::forClass('App', 'WithFile'), RelativePath::fromString('src/WithFile.php'), 1),
+            // File absent — must NOT poison the file index with a phantom entry.
+            new SymbolInfo(SymbolPath::forClass('App', 'WithoutFile'), null, 0),
+        ]);
+        $metrics->method('get')->willReturnCallback(
+            static fn(SymbolPath $sp): MetricBag => match ($sp->toCanonical()) {
+                'class:App\WithFile' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.05),
+                'class:App\WithoutFile' => (new MetricBag())->with(MetricName::COUPLING_CLASS_RANK, 0.99),
+                default => new MetricBag(),
+            },
+        );
+
+        $index = $this->resolver->buildIndex($metrics);
+
+        // The lookup for a file present in the index returns its rank.
+        self::assertSame(
+            0.05,
+            $this->resolver->resolve(
+                $this->createViolation(SymbolPath::forFile(RelativePath::fromString('src/WithFile.php'))),
+                $metrics,
+                $index,
+            ),
+        );
+
+        // A file lookup that has no entry — and the null-file class is NOT a fallback — returns null.
+        self::assertNull(
+            $this->resolver->resolve(
+                $this->createViolation(SymbolPath::forFile(RelativePath::fromString('src/Unknown.php'))),
+                $metrics,
+                $index,
+            ),
+        );
     }
 
     #[Test]

@@ -191,8 +191,8 @@ final class ImpactCalculatorTest extends TestCase
 
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $metrics->method('all')->willReturn([
-            new SymbolInfo(SymbolPath::forClass('App', 'ClassA'), 'src/a.php', 1),
-            new SymbolInfo(SymbolPath::forClass('App', 'ClassB'), 'src/b.php', 1),
+            new SymbolInfo(SymbolPath::forClass('App', 'ClassA'), RelativePath::fromString('src/a.php'), 1),
+            new SymbolInfo(SymbolPath::forClass('App', 'ClassB'), RelativePath::fromString('src/b.php'), 1),
         ]);
         $metrics->method('get')->willReturnCallback(
             static function (SymbolPath $sp): MetricBag {

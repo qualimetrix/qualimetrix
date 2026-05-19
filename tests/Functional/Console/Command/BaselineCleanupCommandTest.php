@@ -44,113 +44,125 @@ final class BaselineCleanupCommandTest extends TestCase
     #[Test]
     public function itRemovesStaleEntriesFromBaseline(): void
     {
-        // Create a test PHP file
-        $testFile = $this->tempDir . '/TestClass.php';
+        // Create a test PHP file. SymbolPath canonical keys carry project-relative paths
+        // (RelativePath VO after ADR 0015 Phase 1c); the cleanup command resolves them
+        // via file_exists() against the current working directory, so chdir into tempDir
+        // for the test scope.
+        $testRel = 'TestClass.php';
+        $nonExistingRel = 'NonExisting.php';
+        $testFile = $this->tempDir . '/' . $testRel;
+        $nonExistingFile = $this->tempDir . '/' . $nonExistingRel;
         file_put_contents($testFile, '<?php class TestClass {}');
 
-        $nonExistingFile = $this->tempDir . '/NonExisting.php';
+        $previousCwd = getcwd();
+        chdir($this->tempDir);
 
-        // Create baseline with entry for existing and non-existing file
-        // Use SymbolPath::forFile() which produces "file:path" canonical format
-        // that the cleanup command can verify via file_exists()
-        $violations = [
-            new Violation(
-                location: new Location(RelativePath::fromString(basename($testFile)), 1),
-                symbolPath: SymbolPath::forFile($testFile),
-                ruleName: 'test-rule',
-                violationCode: 'test-rule',
-                message: 'Test violation',
-                severity: Severity::Warning,
-            ),
-            new Violation(
-                location: new Location(RelativePath::fromString(basename($nonExistingFile)), 1),
-                symbolPath: SymbolPath::forFile($nonExistingFile),
-                ruleName: 'test-rule',
-                violationCode: 'test-rule',
-                message: 'Test violation',
-                severity: Severity::Warning,
-            ),
-        ];
+        try {
+            $violations = [
+                new Violation(
+                    location: new Location(RelativePath::fromString($testRel), 1),
+                    symbolPath: SymbolPath::forFile(RelativePath::fromString($testRel)),
+                    ruleName: 'test-rule',
+                    violationCode: 'test-rule',
+                    message: 'Test violation',
+                    severity: Severity::Warning,
+                ),
+                new Violation(
+                    location: new Location(RelativePath::fromString($nonExistingRel), 1),
+                    symbolPath: SymbolPath::forFile(RelativePath::fromString($nonExistingRel)),
+                    ruleName: 'test-rule',
+                    violationCode: 'test-rule',
+                    message: 'Test violation',
+                    severity: Severity::Warning,
+                ),
+            ];
 
-        $baselineGenerator = new BaselineGenerator(new ViolationHasher());
-        $baselineWriter = new BaselineWriter();
-        $baselinePath = $this->tempDir . '/baseline.json';
+            $baselineGenerator = new BaselineGenerator(new ViolationHasher());
+            $baselineWriter = new BaselineWriter();
+            $baselinePath = $this->tempDir . '/baseline.json';
 
-        $baseline = $baselineGenerator->generate($violations);
-        $baselineWriter->write($baseline, $baselinePath);
+            $baseline = $baselineGenerator->generate($violations);
+            $baselineWriter->write($baseline, $baselinePath);
 
-        // Run cleanup command
-        $command = new BaselineCleanupCommand(
-            new BaselineLoader(),
-            $baselineWriter,
-        );
+            $command = new BaselineCleanupCommand(
+                new BaselineLoader(),
+                $baselineWriter,
+            );
 
-        $application = new Application();
-        $application->addCommand($command);
+            $application = new Application();
+            $application->addCommand($command);
 
-        $commandTester = new CommandTester($command);
-        $commandTester->execute([
-            'baseline' => $baselinePath,
-        ]);
+            $commandTester = new CommandTester($command);
+            $commandTester->execute([
+                'baseline' => $baselinePath,
+            ]);
 
-        // Assert success
-        self::assertSame(0, $commandTester->getStatusCode());
-        $output = $commandTester->getDisplay();
-        self::assertStringContainsString('Removed 1 stale entries from 1 symbols', $output);
+            self::assertSame(0, $commandTester->getStatusCode());
+            $output = $commandTester->getDisplay();
+            self::assertStringContainsString('Removed 1 stale entries from 1 symbols', $output);
 
-        // Verify baseline was cleaned
-        $loader = new BaselineLoader();
-        $cleanedBaseline = $loader->load($baselinePath);
-        self::assertSame(1, $cleanedBaseline->count());
-        self::assertArrayHasKey('file:' . $testFile, $cleanedBaseline->entries);
-        self::assertArrayNotHasKey('file:' . $nonExistingFile, $cleanedBaseline->entries);
+            $loader = new BaselineLoader();
+            $cleanedBaseline = $loader->load($baselinePath);
+            self::assertSame(1, $cleanedBaseline->count());
+            self::assertArrayHasKey('file:' . $testRel, $cleanedBaseline->entries);
+            self::assertArrayNotHasKey('file:' . $nonExistingRel, $cleanedBaseline->entries);
+        } finally {
+            if ($previousCwd !== false) {
+                chdir($previousCwd);
+            }
+        }
     }
 
     #[Test]
     public function itReportsNoStaleEntriesWhenBaselineIsClean(): void
     {
-        // Create a test PHP file
-        $testFile = $this->tempDir . '/TestClass.php';
+        $testRel = 'TestClass.php';
+        $testFile = $this->tempDir . '/' . $testRel;
         file_put_contents($testFile, '<?php class TestClass {}');
 
-        // Create baseline with only existing file
-        // Use SymbolPath::forFile() which produces "file:path" canonical format
-        $violations = [
-            new Violation(
-                location: new Location(RelativePath::fromString(basename($testFile)), 1),
-                symbolPath: SymbolPath::forFile($testFile),
-                ruleName: 'test-rule',
-                violationCode: 'test-rule',
-                message: 'Test violation',
-                severity: Severity::Warning,
-            ),
-        ];
+        $previousCwd = getcwd();
+        chdir($this->tempDir);
 
-        $baselineGenerator = new BaselineGenerator(new ViolationHasher());
-        $baselineWriter = new BaselineWriter();
-        $baselinePath = $this->tempDir . '/baseline.json';
+        try {
+            $violations = [
+                new Violation(
+                    location: new Location(RelativePath::fromString($testRel), 1),
+                    symbolPath: SymbolPath::forFile(RelativePath::fromString($testRel)),
+                    ruleName: 'test-rule',
+                    violationCode: 'test-rule',
+                    message: 'Test violation',
+                    severity: Severity::Warning,
+                ),
+            ];
 
-        $baseline = $baselineGenerator->generate($violations);
-        $baselineWriter->write($baseline, $baselinePath);
+            $baselineGenerator = new BaselineGenerator(new ViolationHasher());
+            $baselineWriter = new BaselineWriter();
+            $baselinePath = $this->tempDir . '/baseline.json';
 
-        // Run cleanup command
-        $command = new BaselineCleanupCommand(
-            new BaselineLoader(),
-            $baselineWriter,
-        );
+            $baseline = $baselineGenerator->generate($violations);
+            $baselineWriter->write($baseline, $baselinePath);
 
-        $application = new Application();
-        $application->addCommand($command);
+            $command = new BaselineCleanupCommand(
+                new BaselineLoader(),
+                $baselineWriter,
+            );
 
-        $commandTester = new CommandTester($command);
-        $commandTester->execute([
-            'baseline' => $baselinePath,
-        ]);
+            $application = new Application();
+            $application->addCommand($command);
 
-        // Assert success
-        self::assertSame(0, $commandTester->getStatusCode());
-        $output = $commandTester->getDisplay();
-        self::assertStringContainsString('No stale entries found', $output);
+            $commandTester = new CommandTester($command);
+            $commandTester->execute([
+                'baseline' => $baselinePath,
+            ]);
+
+            self::assertSame(0, $commandTester->getStatusCode());
+            $output = $commandTester->getDisplay();
+            self::assertStringContainsString('No stale entries found', $output);
+        } finally {
+            if ($previousCwd !== false) {
+                chdir($previousCwd);
+            }
+        }
     }
 
     #[Test]
@@ -180,14 +192,15 @@ final class BaselineCleanupCommandTest extends TestCase
     #[Test]
     public function itShowsVerboseOutputWithRemovedSymbols(): void
     {
-        $nonExistingFile = $this->tempDir . '/NonExisting.php';
+        $nonExistingRel = 'NonExisting.php';
 
-        // Create baseline with non-existing file
-        // Use SymbolPath::forFile() which produces "file:path" canonical format
+        $previousCwd = getcwd();
+        chdir($this->tempDir);
+
         $violations = [
             new Violation(
-                location: new Location(RelativePath::fromString(basename($nonExistingFile)), 1),
-                symbolPath: SymbolPath::forFile($nonExistingFile),
+                location: new Location(RelativePath::fromString($nonExistingRel), 1),
+                symbolPath: SymbolPath::forFile(RelativePath::fromString($nonExistingRel)),
                 ruleName: 'test-rule',
                 violationCode: 'test-rule',
                 message: 'Test violation',
@@ -195,33 +208,37 @@ final class BaselineCleanupCommandTest extends TestCase
             ),
         ];
 
-        $baselineGenerator = new BaselineGenerator(new ViolationHasher());
-        $baselineWriter = new BaselineWriter();
-        $baselinePath = $this->tempDir . '/baseline.json';
+        try {
+            $baselineGenerator = new BaselineGenerator(new ViolationHasher());
+            $baselineWriter = new BaselineWriter();
+            $baselinePath = $this->tempDir . '/baseline.json';
 
-        $baseline = $baselineGenerator->generate($violations);
-        $baselineWriter->write($baseline, $baselinePath);
+            $baseline = $baselineGenerator->generate($violations);
+            $baselineWriter->write($baseline, $baselinePath);
 
-        // Run cleanup command with verbose flag
-        $command = new BaselineCleanupCommand(
-            new BaselineLoader(),
-            $baselineWriter,
-        );
+            $command = new BaselineCleanupCommand(
+                new BaselineLoader(),
+                $baselineWriter,
+            );
 
-        $application = new Application();
-        $application->addCommand($command);
+            $application = new Application();
+            $application->addCommand($command);
 
-        $commandTester = new CommandTester($command);
-        $commandTester->execute(
-            ['baseline' => $baselinePath],
-            ['verbosity' => OutputInterface::VERBOSITY_VERBOSE],
-        );
+            $commandTester = new CommandTester($command);
+            $commandTester->execute(
+                ['baseline' => $baselinePath],
+                ['verbosity' => OutputInterface::VERBOSITY_VERBOSE],
+            );
 
-        // Assert success and verbose output
-        self::assertSame(0, $commandTester->getStatusCode());
-        $output = $commandTester->getDisplay();
-        self::assertStringContainsString('Removed symbols:', $output);
-        self::assertStringContainsString('NonExisting.php', $output);
+            self::assertSame(0, $commandTester->getStatusCode());
+            $output = $commandTester->getDisplay();
+            self::assertStringContainsString('Removed symbols:', $output);
+            self::assertStringContainsString('NonExisting.php', $output);
+        } finally {
+            if ($previousCwd !== false) {
+                chdir($previousCwd);
+            }
+        }
     }
 
     #[Test]

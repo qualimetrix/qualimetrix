@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Health\ContributorRanker;
@@ -69,7 +70,7 @@ final class ContributorRankerTest extends TestCase
     public function itSkipsClassesWithoutPrimaryMetric(): void
     {
         $classPath = SymbolPath::forClass('App', 'Empty');
-        $classSymbol = new SymbolInfo($classPath, 'src/Empty.php', null);
+        $classSymbol = new SymbolInfo($classPath, RelativePath::fromString('src/Empty.php'), null);
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
@@ -90,9 +91,9 @@ final class ContributorRankerTest extends TestCase
         $classB = SymbolPath::forClass('App', 'ClassB');
         $classC = SymbolPath::forClass('App', 'ClassC');
 
-        $symbolA = new SymbolInfo($classA, 'src/ClassA.php', null);
-        $symbolB = new SymbolInfo($classB, 'src/ClassB.php', null);
-        $symbolC = new SymbolInfo($classC, 'src/ClassC.php', null);
+        $symbolA = new SymbolInfo($classA, RelativePath::fromString('src/ClassA.php'), null);
+        $symbolB = new SymbolInfo($classB, RelativePath::fromString('src/ClassB.php'), null);
+        $symbolC = new SymbolInfo($classC, RelativePath::fromString('src/ClassC.php'), null);
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
@@ -124,8 +125,8 @@ final class ContributorRankerTest extends TestCase
         $classA = SymbolPath::forClass('App', 'ClassA');
         $classB = SymbolPath::forClass('App', 'ClassB');
 
-        $symbolA = new SymbolInfo($classA, 'src/ClassA.php', null);
-        $symbolB = new SymbolInfo($classB, 'src/ClassB.php', null);
+        $symbolA = new SymbolInfo($classA, RelativePath::fromString('src/ClassA.php'), null);
+        $symbolB = new SymbolInfo($classB, RelativePath::fromString('src/ClassB.php'), null);
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
@@ -155,9 +156,9 @@ final class ContributorRankerTest extends TestCase
         $classB = SymbolPath::forClass('App', 'ClassB');
         $classC = SymbolPath::forClass('App', 'ClassC');
 
-        $symbolA = new SymbolInfo($classA, 'src/ClassA.php', null);
-        $symbolB = new SymbolInfo($classB, 'src/ClassB.php', null);
-        $symbolC = new SymbolInfo($classC, 'src/ClassC.php', null);
+        $symbolA = new SymbolInfo($classA, RelativePath::fromString('src/ClassA.php'), null);
+        $symbolB = new SymbolInfo($classB, RelativePath::fromString('src/ClassB.php'), null);
+        $symbolC = new SymbolInfo($classC, RelativePath::fromString('src/ClassC.php'), null);
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
@@ -187,8 +188,8 @@ final class ContributorRankerTest extends TestCase
         $classA = SymbolPath::forClass('App', 'Alpha');
         $classB = SymbolPath::forClass('App', 'Beta');
 
-        $symbolA = new SymbolInfo($classA, 'src/Alpha.php', null);
-        $symbolB = new SymbolInfo($classB, 'src/Beta.php', null);
+        $symbolA = new SymbolInfo($classA, RelativePath::fromString('src/Alpha.php'), null);
+        $symbolB = new SymbolInfo($classB, RelativePath::fromString('src/Beta.php'), null);
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
@@ -215,7 +216,7 @@ final class ContributorRankerTest extends TestCase
     public function itContributorIncludesAllDecompositionMetrics(): void
     {
         $classPath = SymbolPath::forClass('App', 'Service');
-        $symbol = new SymbolInfo($classPath, 'src/Service.php', null);
+        $symbol = new SymbolInfo($classPath, RelativePath::fromString('src/Service.php'), null);
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),

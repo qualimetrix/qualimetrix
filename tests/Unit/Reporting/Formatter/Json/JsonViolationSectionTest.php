@@ -100,7 +100,7 @@ final class JsonViolationSectionTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/helpers.php'), 1),
-            symbolPath: SymbolPath::forFile('src/helpers.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/helpers.php')),
             ruleName: 'size.loc',
             violationCode: 'size.loc',
             message: 'File too long',
@@ -142,7 +142,7 @@ final class JsonViolationSectionTest extends TestCase
     {
         $warning = new Violation(
             location: new Location(RelativePath::fromString('a.php'), 1),
-            symbolPath: SymbolPath::forFile('a.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'size.loc',
             violationCode: 'size.loc',
             message: 'warning',
@@ -151,7 +151,7 @@ final class JsonViolationSectionTest extends TestCase
 
         $error = new Violation(
             location: new Location(RelativePath::fromString('b.php'), 1),
-            symbolPath: SymbolPath::forFile('b.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'size.loc',
             violationCode: 'size.loc',
             message: 'error',
@@ -169,7 +169,7 @@ final class JsonViolationSectionTest extends TestCase
     {
         $low = new Violation(
             location: new Location(RelativePath::fromString('a.php'), 1),
-            symbolPath: SymbolPath::forFile('a.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
             message: 'low exceedance',
@@ -180,7 +180,7 @@ final class JsonViolationSectionTest extends TestCase
 
         $high = new Violation(
             location: new Location(RelativePath::fromString('b.php'), 1),
-            symbolPath: SymbolPath::forFile('b.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
             message: 'high exceedance',
@@ -200,7 +200,7 @@ final class JsonViolationSectionTest extends TestCase
     {
         $v1 = new Violation(
             location: new Location(RelativePath::fromString('b.php'), 10),
-            symbolPath: SymbolPath::forFile('b.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'r',
             violationCode: 'r.a',
             message: 'v1',
@@ -209,7 +209,7 @@ final class JsonViolationSectionTest extends TestCase
 
         $v2 = new Violation(
             location: new Location(RelativePath::fromString('a.php'), 20),
-            symbolPath: SymbolPath::forFile('a.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'r',
             violationCode: 'r.a',
             message: 'v2',
@@ -218,7 +218,7 @@ final class JsonViolationSectionTest extends TestCase
 
         $v3 = new Violation(
             location: new Location(RelativePath::fromString('a.php'), 10),
-            symbolPath: SymbolPath::forFile('a.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'r',
             violationCode: 'r.a',
             message: 'v3',
@@ -237,7 +237,7 @@ final class JsonViolationSectionTest extends TestCase
     {
         $inf = new Violation(
             location: new Location(RelativePath::fromString('a.php'), 1),
-            symbolPath: SymbolPath::forFile('a.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'r',
             violationCode: 'r.a',
             message: 'inf',
@@ -248,7 +248,7 @@ final class JsonViolationSectionTest extends TestCase
 
         $normal = new Violation(
             location: new Location(RelativePath::fromString('b.php'), 1),
-            symbolPath: SymbolPath::forFile('b.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'r',
             violationCode: 'r.b',
             message: 'normal',
@@ -277,7 +277,7 @@ final class JsonViolationSectionTest extends TestCase
     {
         $makeViolation = static fn(string $rule): Violation => new Violation(
             location: new Location(RelativePath::fromString('f.php'), 1),
-            symbolPath: SymbolPath::forFile('f.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('f.php')),
             ruleName: $rule,
             violationCode: $rule,
             message: 'msg',

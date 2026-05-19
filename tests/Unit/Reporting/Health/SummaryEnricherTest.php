@@ -129,7 +129,7 @@ final class SummaryEnricherTest extends TestCase
 
         $violation = new Violation(
             location: new Location(RelativePath::fromString('test.php'), 1),
-            symbolPath: SymbolPath::forFile('test.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.method',
             message: 'test',
@@ -171,7 +171,7 @@ final class SummaryEnricherTest extends TestCase
                 'health.overall' => 72.0,
             ]),
             namespaces: [
-                new SymbolInfo($nsSymbol, 'src/Payment', null),
+                new SymbolInfo($nsSymbol, RelativePath::fromString('src/Payment'), null),
             ],
             namespaceMetrics: [
                 'ns:App\\Payment' => $nsMetrics,
@@ -230,7 +230,7 @@ final class SummaryEnricherTest extends TestCase
                 'health.overall' => 72.0,
             ]),
             classes: [
-                new SymbolInfo($classSymbol, 'src/Service/PaymentService.php', 10),
+                new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/PaymentService.php'), 10),
             ],
             classMetrics: [
                 'class:App\\Service\\PaymentService' => $classMetrics,
@@ -272,7 +272,7 @@ final class SummaryEnricherTest extends TestCase
                 'health.overall' => 85.0,
             ]),
             classes: [
-                new SymbolInfo($classSymbol, 'src/Service/GoodService.php', 1),
+                new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/GoodService.php'), 1),
             ],
             classMetrics: [
                 'class:App\\Service\\GoodService' => $classMetrics,
@@ -308,7 +308,7 @@ final class SummaryEnricherTest extends TestCase
 
         $violation = new Violation(
             location: new Location(RelativePath::fromString('test.php'), 1),
-            symbolPath: SymbolPath::forFile('test.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'test',
             violationCode: 'test',
             message: 'test message',
@@ -426,7 +426,7 @@ final class SummaryEnricherTest extends TestCase
 
         $violation = new Violation(
             location: new Location(RelativePath::fromString('test.php'), 1),
-            symbolPath: SymbolPath::forFile('test.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.method',
             message: 'test',

@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\AggregationMeta;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
@@ -42,7 +43,7 @@ final class GlobalFunctionAggregationTest extends TestCase
         // Add a global function (namespace + member, no type)
         $functionPath = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
         $functionMetrics = (new MetricBag())->with('ccn', 5);
-        $repository->add($functionPath, $functionMetrics, 'src/Utils/helpers.php', 10);
+        $repository->add($functionPath, $functionMetrics, RelativePath::fromString('src/Utils/helpers.php'), 10);
 
         // Verify it's registered as Function_, not Method
         self::assertSame(SymbolType::Function_, $functionPath->getType());
@@ -64,7 +65,7 @@ final class GlobalFunctionAggregationTest extends TestCase
         // Add a global function
         $functionPath = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
         $functionMetrics = (new MetricBag())->with('ccn', 5);
-        $repository->add($functionPath, $functionMetrics, 'src/Utils/helpers.php', 10);
+        $repository->add($functionPath, $functionMetrics, RelativePath::fromString('src/Utils/helpers.php'), 10);
 
         $definitions = AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]);
         $aggregator = new MethodToClassAggregator();
@@ -88,12 +89,12 @@ final class GlobalFunctionAggregationTest extends TestCase
         // Add a global function in same namespace
         $functionPath = SymbolPath::forGlobalFunction('App\\Service', 'utility');
         $functionMetrics = (new MetricBag())->with('ccn', 10);
-        $repository->add($functionPath, $functionMetrics, 'src/Service/helpers.php', 5);
+        $repository->add($functionPath, $functionMetrics, RelativePath::fromString('src/Service/helpers.php'), 5);
 
         // Add a regular class method in same namespace
         $methodPath = SymbolPath::forMethod('App\\Service', 'UserService', 'find');
         $methodMetrics = (new MetricBag())->with('ccn', 3);
-        $repository->add($methodPath, $methodMetrics, 'src/Service/UserService.php', 20);
+        $repository->add($methodPath, $methodMetrics, RelativePath::fromString('src/Service/UserService.php'), 20);
 
         $definitions = AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]);
         $aggregator = new MethodToClassAggregator();
@@ -115,7 +116,7 @@ final class GlobalFunctionAggregationTest extends TestCase
         // Global function without namespace
         $functionPath = SymbolPath::forGlobalFunction('', 'globalHelper');
         $functionMetrics = (new MetricBag())->with('ccn', 7);
-        $repository->add($functionPath, $functionMetrics, 'src/global.php', 1);
+        $repository->add($functionPath, $functionMetrics, RelativePath::fromString('src/global.php'), 1);
 
         self::assertSame(SymbolType::Function_, $functionPath->getType());
 
@@ -137,7 +138,7 @@ final class GlobalFunctionAggregationTest extends TestCase
 
         // A standalone function with CCN
         $functionPath = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
-        $repository->add($functionPath, (new MetricBag())->with('ccn', 5), 'src/Utils/helpers.php', 10);
+        $repository->add($functionPath, (new MetricBag())->with('ccn', 5), RelativePath::fromString('src/Utils/helpers.php'), 10);
 
         $definitions = AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]);
 
@@ -160,7 +161,7 @@ final class GlobalFunctionAggregationTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         $functionPath = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
-        $repository->add($functionPath, (new MetricBag())->with('ccn', 8), 'src/Utils/helpers.php', 10);
+        $repository->add($functionPath, (new MetricBag())->with('ccn', 8), RelativePath::fromString('src/Utils/helpers.php'), 10);
 
         $definitions = AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]);
 
@@ -186,13 +187,13 @@ final class GlobalFunctionAggregationTest extends TestCase
 
         // A method and a function in the same namespace
         $methodPath = SymbolPath::forMethod('App\\Service', 'UserService', 'find');
-        $repository->add($methodPath, (new MetricBag())->with('ccn', 3), 'src/Service/UserService.php', 20);
+        $repository->add($methodPath, (new MetricBag())->with('ccn', 3), RelativePath::fromString('src/Service/UserService.php'), 20);
 
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repository->add($classPath, new MetricBag(), 'src/Service/UserService.php', 1);
+        $repository->add($classPath, new MetricBag(), RelativePath::fromString('src/Service/UserService.php'), 1);
 
         $functionPath = SymbolPath::forGlobalFunction('App\\Service', 'utility');
-        $repository->add($functionPath, (new MetricBag())->with('ccn', 10), 'src/Service/helpers.php', 5);
+        $repository->add($functionPath, (new MetricBag())->with('ccn', 10), RelativePath::fromString('src/Service/helpers.php'), 5);
 
         $symbolInfos = $repository->forNamespace('App\\Service');
         $bag = AggregationHelper::addSymbolCounts(new MetricBag(), $symbolInfos);
@@ -209,11 +210,11 @@ final class GlobalFunctionAggregationTest extends TestCase
 
         // Class method with CCN=3
         $methodPath = SymbolPath::forMethod('App\\Service', 'UserService', 'find');
-        $repository->add($methodPath, (new MetricBag())->with('ccn', 3), 'src/Service/UserService.php', 20);
+        $repository->add($methodPath, (new MetricBag())->with('ccn', 3), RelativePath::fromString('src/Service/UserService.php'), 20);
 
         // Function with CCN=10
         $functionPath = SymbolPath::forGlobalFunction('App\\Service', 'utility');
-        $repository->add($functionPath, (new MetricBag())->with('ccn', 10), 'src/Service/helpers.php', 5);
+        $repository->add($functionPath, (new MetricBag())->with('ccn', 10), RelativePath::fromString('src/Service/helpers.php'), 5);
 
         $definitions = AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]);
 

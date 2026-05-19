@@ -96,8 +96,8 @@ final class CollectionOrchestratorTest extends TestCase
         self::assertSame(0, $result->result->filesSkipped);
 
         // Check that file metrics were registered
-        $fileSymbol1 = SymbolPath::forFile('tmp/file1.php');
-        $fileSymbol2 = SymbolPath::forFile('tmp/file2.php');
+        $fileSymbol1 = SymbolPath::forFile(RelativePath::fromString('tmp/file1.php'));
+        $fileSymbol2 = SymbolPath::forFile(RelativePath::fromString('tmp/file2.php'));
 
         self::assertTrue($repository->has($fileSymbol1));
         self::assertTrue($repository->has($fileSymbol2));
@@ -693,7 +693,7 @@ final class CollectionOrchestratorTest extends TestCase
         self::assertSame(1, $result->result->filesAnalyzed);
 
         // Verify file metrics were registered
-        $fileSymbol = SymbolPath::forFile('tmp/test.php');
+        $fileSymbol = SymbolPath::forFile(RelativePath::fromString('tmp/test.php'));
         self::assertTrue($repository->has($fileSymbol));
         self::assertSame(100, $repository->get($fileSymbol)->get('totalLoc'));
     }

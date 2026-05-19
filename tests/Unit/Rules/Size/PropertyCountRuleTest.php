@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -142,7 +143,7 @@ final class PropertyCountRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass('App', 'Test');
         $symbolInfo = new SymbolInfo(
             symbolPath: $symbolPath,
-            file: __FILE__,
+            file: RelativePath::fromString(basename(__FILE__)),
             line: 1,
         );
 
@@ -292,7 +293,7 @@ final class PropertyCountRuleTest extends TestCase
         $symbolPath = SymbolPath::forClass($namespace, $class);
         $symbolInfo = new SymbolInfo(
             symbolPath: $symbolPath,
-            file: __FILE__,
+            file: RelativePath::fromString(basename(__FILE__)),
             line: 1,
         );
 

@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -141,7 +142,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(minMethods: 3));
 
         $symbolPath = SymbolPath::forClass('App\Service', 'SmallClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/SmallClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/SmallClass.php'), 10);
 
         $metricBag = $this->makeMetricBag(['methodCount' => 2]);
 
@@ -160,7 +161,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(excludeReadonly: true));
 
         $symbolPath = SymbolPath::forClass('App\Dto', 'ReadonlyDto');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Dto/ReadonlyDto.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/ReadonlyDto.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isReadonly' => 1]);
 
@@ -179,7 +180,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(excludeReadonly: false));
 
         $symbolPath = SymbolPath::forClass('App\Dto', 'ReadonlyDto');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Dto/ReadonlyDto.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/ReadonlyDto.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isReadonly' => 1]);
 
@@ -200,7 +201,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(excludePromotedOnly: true));
 
         $symbolPath = SymbolPath::forClass('App\Dto', 'PromotedDto');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Dto/PromotedDto.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/PromotedDto.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isPromotedPropertiesOnly' => 1]);
 
@@ -219,7 +220,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(excludePromotedOnly: false));
 
         $symbolPath = SymbolPath::forClass('App\Dto', 'PromotedDto');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Dto/PromotedDto.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/PromotedDto.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isPromotedPropertiesOnly' => 1]);
 
@@ -240,7 +241,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Dto', 'PureDto');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Dto/PureDto.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/PureDto.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isDataClass' => 1]);
 
@@ -259,7 +260,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = $this->makeMetricBag();
 
@@ -287,7 +288,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'GoodClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/GoodClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/GoodClass.php'), 10);
 
         $metricBag = $this->makeMetricBag(['woc' => 50]);
 
@@ -306,7 +307,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'ComplexClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/ComplexClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/ComplexClass.php'), 10);
 
         $metricBag = $this->makeMetricBag(['wmc' => 15]);
 
@@ -325,7 +326,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'NoWocClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/NoWocClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/NoWocClass.php'), 10);
 
         // Omit 'woc' key entirely to get null
         $metricBag = (new MetricBag())
@@ -356,7 +357,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Contract', 'NodeVisitor');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Contract/NodeVisitor.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Contract/NodeVisitor.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isInterface' => 1]);
 
@@ -375,7 +376,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Base', 'AbstractHandler');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Base/AbstractHandler.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Base/AbstractHandler.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isAbstract' => 1]);
 
@@ -394,7 +395,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'StatelessService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/StatelessService.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/StatelessService.php'), 5);
 
         $metricBag = $this->makeMetricBag(['propertyCount' => 0]);
 
@@ -413,7 +414,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(excludeExceptions: true));
 
         $symbolPath = SymbolPath::forClass('App\Exception', 'FileNotFoundException');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Exception/FileNotFoundException.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Exception/FileNotFoundException.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isException' => 1]);
 
@@ -432,7 +433,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(excludeExceptions: false));
 
         $symbolPath = SymbolPath::forClass('App\Exception', 'FileNotFoundException');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Exception/FileNotFoundException.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Exception/FileNotFoundException.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isException' => 1]);
 

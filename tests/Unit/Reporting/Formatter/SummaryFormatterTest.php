@@ -1026,7 +1026,7 @@ final class SummaryFormatterTest extends TestCase
         );
         $metrics->method('all')->willReturnCallback(
             static fn(\Qualimetrix\Core\Symbol\SymbolType $type): array => $type === \Qualimetrix\Core\Symbol\SymbolType::Namespace_
-                ? [new \Qualimetrix\Core\Symbol\SymbolInfo($nsPath, 'src/Service', 0)]
+                ? [new \Qualimetrix\Core\Symbol\SymbolInfo($nsPath, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service'), 0)]
                 : [],
         );
 
@@ -1084,7 +1084,7 @@ final class SummaryFormatterTest extends TestCase
         );
         $metrics->method('all')->willReturnCallback(
             static fn(\Qualimetrix\Core\Symbol\SymbolType $type): array => $type === \Qualimetrix\Core\Symbol\SymbolType::Class_
-                ? [new \Qualimetrix\Core\Symbol\SymbolInfo($classPath, 'src/Service/UserService.php', 1)]
+                ? [new \Qualimetrix\Core\Symbol\SymbolInfo($classPath, \Qualimetrix\Core\Path\RelativePath::fromString('src/Service/UserService.php'), 1)]
                 : [],
         );
 

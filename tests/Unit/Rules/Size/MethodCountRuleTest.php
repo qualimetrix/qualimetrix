@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -113,7 +114,7 @@ final class MethodCountRuleTest extends TestCase
         $rule = new MethodCountRule(new MethodCountOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('methodCount', 5);
 
@@ -134,7 +135,7 @@ final class MethodCountRuleTest extends TestCase
         $rule = new MethodCountRule(new MethodCountOptions(warning: 10, error: 20));
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('methodCount', 15);
 
@@ -161,7 +162,7 @@ final class MethodCountRuleTest extends TestCase
         $rule = new MethodCountRule(new MethodCountOptions(warning: 10, error: 20));
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('methodCount', 25);
 
@@ -190,7 +191,7 @@ final class MethodCountRuleTest extends TestCase
         $rule = new MethodCountRule(new MethodCountOptions(warning: $warning, error: $error));
 
         $symbolPath = SymbolPath::forClass('App\Test', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 10);
 
         $metricBag = (new MetricBag())->with('methodCount', $methodCount);
 

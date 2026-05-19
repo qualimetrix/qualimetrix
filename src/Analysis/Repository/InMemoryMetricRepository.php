@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Repository;
 
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -52,7 +53,7 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
      *
      * If the symbol already has metrics, new metrics are merged (new values override).
      */
-    public function add(SymbolPath $symbol, MetricBag $metrics, string $file, ?int $line): void
+    public function add(SymbolPath $symbol, MetricBag $metrics, ?RelativePath $file, ?int $line): void
     {
         $canonical = $symbol->toCanonical();
 

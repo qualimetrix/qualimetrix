@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -97,7 +98,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions(excludeReadonly: true));
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('wmc', 50)
@@ -124,7 +125,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions(minMethods: 3));
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('wmc', 50)
@@ -151,7 +152,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('wmc', 50)
@@ -183,7 +184,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // TCC = 0.2 < 0.33, so TCC criterion matched; LCOM not vetoed (TCC < 0.5)
         // WMC matched, LCOM matched, TCC matched, LOC not matched → 3/4
@@ -215,7 +216,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // TCC = 0.5 (not matched + vetoes LCOM), classLoc = 100 (not matched) → only WMC matched
         $metricBag = (new MetricBag())
@@ -243,7 +244,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Printer', 'Standard');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Printer/Standard.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Printer/Standard.php'), 10);
 
         // WMC=400 (matched), LCOM=100 (vetoed — excluded from evaluable), TCC=0.8 (not matched), LOC=1500 (matched)
         // evaluableCount=3 (WMC + TCC + LOC), matchedCount=2 (WMC + LOC) → not a god class
@@ -272,7 +273,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // TCC = 0.5 exactly → vetoes LCOM (excluded from evaluable)
         // evaluableCount=3 (WMC + TCC + LOC), matchedCount=2 (WMC + LOC) → 2/3
@@ -301,7 +302,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // TCC = 0.49 < 0.5 → does NOT veto LCOM
         // WMC matched, LCOM matched, TCC not matched (0.49 >= 0.33), LOC matched → 3/4
@@ -333,7 +334,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // No TCC metric — 3 evaluable, all 3 matched → Error
         $metricBag = (new MetricBag())
@@ -363,7 +364,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // Only WMC and classLoc — 2 evaluable, minCriteria=3 → no violation
         $metricBag = (new MetricBag())
@@ -394,7 +395,7 @@ final class GodClassRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('wmc', 25)
@@ -423,7 +424,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('wmc', 50)

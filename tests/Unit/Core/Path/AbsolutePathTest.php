@@ -214,4 +214,13 @@ final class AbsolutePathTest extends TestCase
         self::assertFalse($missing->isFile());
         self::assertFalse($missing->isDirectory());
     }
+
+    #[Test]
+    public function itSerializesToJsonAsBarePathString(): void
+    {
+        $path = AbsolutePath::fromString('/var/www/project/src/Foo.php');
+
+        self::assertSame('"\/var\/www\/project\/src\/Foo.php"', json_encode($path, \JSON_THROW_ON_ERROR));
+        self::assertSame('/var/www/project/src/Foo.php', $path->jsonSerialize());
+    }
 }

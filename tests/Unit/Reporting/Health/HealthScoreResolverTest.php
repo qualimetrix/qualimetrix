@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\FormatterContext;
@@ -86,7 +87,7 @@ final class HealthScoreResolverTest extends TestCase
     public function itNamespaceFilterReturnsSubtreeHealthScores(): void
     {
         $nsPath = SymbolPath::forNamespace('App\\Service');
-        $nsSymbol = new SymbolInfo($nsPath, '', null);
+        $nsSymbol = new SymbolInfo($nsPath, null, null);
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
@@ -146,7 +147,7 @@ final class HealthScoreResolverTest extends TestCase
     public function itClassFilterReturnsClassHealthScores(): void
     {
         $classPath = SymbolPath::forClass('App', 'UserService');
-        $classSymbol = new SymbolInfo($classPath, 'src/UserService.php', null);
+        $classSymbol = new SymbolInfo($classPath, RelativePath::fromString('src/UserService.php'), null);
 
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),

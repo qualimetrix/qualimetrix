@@ -158,13 +158,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $repository->add(
             SymbolPath::forClass('Fixtures\CircularDeps', 'ServiceA'),
             new MetricBag(),
-            '/tmp/ServiceA.php',
+            RelativePath::fromString('tmp/ServiceA.php'),
             1,
         );
         $repository->add(
             SymbolPath::forClass('Fixtures\CircularDeps', 'ServiceB'),
             new MetricBag(),
-            '/tmp/ServiceB.php',
+            RelativePath::fromString('tmp/ServiceB.php'),
             1,
         );
 
@@ -226,20 +226,20 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\Service', 'OrderService'),
             (new MetricBag())->with('loc', 50),
-            '/tmp/OrderService.php',
+            RelativePath::fromString('tmp/OrderService.php'),
             1,
         );
         $repository->add(
             SymbolPath::forClass('App\Service', 'PaymentService'),
             (new MetricBag())->with('loc', 30),
-            '/tmp/PaymentService.php',
+            RelativePath::fromString('tmp/PaymentService.php'),
             1,
         );
         // Ensure namespace symbol exists
         $repository->add(
             SymbolPath::forNamespace('App\Service'),
             new MetricBag(),
-            '',
+            null,
             null,
         );
 

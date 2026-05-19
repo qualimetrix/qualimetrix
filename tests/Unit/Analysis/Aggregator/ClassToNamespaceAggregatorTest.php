@@ -15,6 +15,7 @@ use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Metrics\Size\LocCollector;
@@ -31,7 +32,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         // Add a global function in namespace App\Utils (no class in the file)
         $functionPath = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
         $functionMetrics = (new MetricBag())->with('ccn', 2);
-        $repository->add($functionPath, $functionMetrics, 'src/Utils/helpers.php', 10);
+        $repository->add($functionPath, $functionMetrics, RelativePath::fromString('src/Utils/helpers.php'), 10);
 
         // Add file-level LOC metrics for the same file
         $fileMetrics = (new MetricBag())
@@ -39,9 +40,9 @@ final class ClassToNamespaceAggregatorTest extends TestCase
             ->with('lloc', 40)
             ->with('cloc', 5);
         $repository->add(
-            SymbolPath::forFile('src/Utils/helpers.php'),
+            SymbolPath::forFile(RelativePath::fromString('src/Utils/helpers.php')),
             $fileMetrics,
-            'src/Utils/helpers.php',
+            RelativePath::fromString('src/Utils/helpers.php'),
             1,
         );
 
@@ -67,13 +68,13 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Service', 'UserService'),
             new MetricBag(),
-            'src/Service/UserService.php',
+            RelativePath::fromString('src/Service/UserService.php'),
             5,
         );
         $repository->add(
-            SymbolPath::forFile('src/Service/UserService.php'),
+            SymbolPath::forFile(RelativePath::fromString('src/Service/UserService.php')),
             (new MetricBag())->with('loc', 100),
-            'src/Service/UserService.php',
+            RelativePath::fromString('src/Service/UserService.php'),
             1,
         );
 
@@ -81,13 +82,13 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forGlobalFunction('App\\Service', 'serviceHelper'),
             new MetricBag(),
-            'src/Service/helpers.php',
+            RelativePath::fromString('src/Service/helpers.php'),
             3,
         );
         $repository->add(
-            SymbolPath::forFile('src/Service/helpers.php'),
+            SymbolPath::forFile(RelativePath::fromString('src/Service/helpers.php')),
             (new MetricBag())->with('loc', 30),
-            'src/Service/helpers.php',
+            RelativePath::fromString('src/Service/helpers.php'),
             1,
         );
 
@@ -112,7 +113,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $repository->add($class1, (new MetricBag())
             ->with('mi.avg', 80.0)
             ->with('mi.count', 10)
-            ->with('mi.min', 70.0), 'src/Service/UserService.php', 10);
+            ->with('mi.min', 70.0), RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // Add 10 method symbols with mi=80 each
         for ($i = 1; $i <= 10; $i++) {
@@ -124,7 +125,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $repository->add($class2, (new MetricBag())
             ->with('mi.avg', 60.0)
             ->with('mi.count', 2)
-            ->with('mi.min', 50.0), 'src/Service/OrderService.php', 10);
+            ->with('mi.min', 50.0), RelativePath::fromString('src/Service/OrderService.php'), 10);
 
         // Add 2 method symbols with mi=60 each
         $this->addMethod($repository, 'App\\Service', 'OrderService', 'method1', 'src/Service/OrderService.php', 'mi', 60.0);
@@ -153,7 +154,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
         $repository->add($class1, (new MetricBag())
             ->with('mi.avg', 80.0)
-            ->with('mi.min', 70.0), 'src/Service/UserService.php', 10);
+            ->with('mi.min', 70.0), RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // 1 method with mi=80
         $this->addMethod($repository, 'App\\Service', 'UserService', 'handle', 'src/Service/UserService.php', 'mi', 80.0);
@@ -161,7 +162,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
         $repository->add($class2, (new MetricBag())
             ->with('mi.avg', 60.0)
-            ->with('mi.min', 50.0), 'src/Service/OrderService.php', 10);
+            ->with('mi.min', 50.0), RelativePath::fromString('src/Service/OrderService.php'), 10);
 
         // 1 method with mi=60
         $this->addMethod($repository, 'App\\Service', 'OrderService', 'process', 'src/Service/OrderService.php', 'mi', 60.0);
@@ -188,7 +189,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $repository->add($class1, (new MetricBag())
             ->with('mi.avg', 85.0)
             ->with('mi.count', 5)
-            ->with('mi.min', 75.0), 'src/Single/OnlyService.php', 10);
+            ->with('mi.min', 75.0), RelativePath::fromString('src/Single/OnlyService.php'), 10);
 
         // Add 5 method symbols with mi=85 each
         for ($i = 1; $i <= 5; $i++) {
@@ -217,7 +218,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $class1 = SymbolPath::forClass('App\\Service', 'UserService');
         $repository->add($class1, (new MetricBag())
             ->with('ccn.sum', 20.0)
-            ->with('ccn.avg', 5.0), 'src/Service/UserService.php', 10);
+            ->with('ccn.avg', 5.0), RelativePath::fromString('src/Service/UserService.php'), 10);
 
         for ($i = 1; $i <= 4; $i++) {
             $this->addMethod($repository, 'App\\Service', 'UserService', "method{$i}", 'src/Service/UserService.php', 'ccn', 5.0);
@@ -227,7 +228,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $class2 = SymbolPath::forClass('App\\Service', 'OrderService');
         $repository->add($class2, (new MetricBag())
             ->with('ccn.sum', 30.0)
-            ->with('ccn.avg', 10.0), 'src/Service/OrderService.php', 10);
+            ->with('ccn.avg', 10.0), RelativePath::fromString('src/Service/OrderService.php'), 10);
 
         for ($i = 1; $i <= 3; $i++) {
             $this->addMethod($repository, 'App\\Service', 'OrderService', "method{$i}", 'src/Service/OrderService.php', 'ccn', 10.0);
@@ -262,7 +263,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $repository->add($class1, (new MetricBag())
             ->with('ccn.sum', 20.0)
             ->with('ccn.avg', 5.0)
-            ->with('ccn.count', 4), 'src/Service/UserService.php', 10);
+            ->with('ccn.count', 4), RelativePath::fromString('src/Service/UserService.php'), 10);
 
         for ($i = 1; $i <= 4; $i++) {
             $this->addMethod($repository, 'App\\Service', 'UserService', "method{$i}", 'src/Service/UserService.php', 'ccn', 5.0);
@@ -273,7 +274,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $repository->add($class2, (new MetricBag())
             ->with('ccn.sum', 30.0)
             ->with('ccn.avg', 10.0)
-            ->with('ccn.count', 3), 'src/Service/OrderService.php', 10);
+            ->with('ccn.count', 3), RelativePath::fromString('src/Service/OrderService.php'), 10);
 
         for ($i = 1; $i <= 3; $i++) {
             $this->addMethod($repository, 'App\\Service', 'OrderService', "method{$i}", 'src/Service/OrderService.php', 'ccn', 10.0);
@@ -356,7 +357,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
             ->with('ccn.sum', 999)
             ->with('ccn.avg', 499.5)
             ->with('ccn.max', 999)
-            ->with('ccn.count', 2), 'src/Service/Svc.php', 10);
+            ->with('ccn.count', 2), RelativePath::fromString('src/Service/Svc.php'), 10);
 
         $this->addMethod($repository, 'App\\Service', 'Svc', 'doA', 'src/Service/Svc.php', 'ccn', 2);
         $this->addMethod($repository, 'App\\Service', 'Svc', 'doB', 'src/Service/Svc.php', 'ccn', 3);
@@ -392,7 +393,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod($namespace, $class, $method),
             (new MetricBag())->with($metric, $value),
-            $file,
+            RelativePath::fromString($file),
             1,
         );
     }

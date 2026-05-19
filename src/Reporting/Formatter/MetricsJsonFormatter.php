@@ -59,7 +59,7 @@ final class MetricsJsonFormatter implements FormatterInterface
                     $symbols[] = [
                         'type' => $type->value,
                         'name' => $symbolInfo->symbolPath->toString(),
-                        'file' => $symbolInfo->file,
+                        'file' => $symbolInfo->file?->value() ?? '',
                         'line' => $symbolInfo->line,
                         'metrics' => $metricsArray,
                     ];

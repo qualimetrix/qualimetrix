@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
@@ -119,7 +120,7 @@ final class ComplexityRuleTest extends TestCase
         $rule = new ComplexityRule(new ComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 20);
 
@@ -148,7 +149,7 @@ final class ComplexityRuleTest extends TestCase
         $rule = new ComplexityRule(new ComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'handleStatus');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // High CCN but low cognitive — typical switch/match pattern
         $metricBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 5);
@@ -176,7 +177,7 @@ final class ComplexityRuleTest extends TestCase
         $rule = new ComplexityRule(new ComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // No cognitive metric available
         $metricBag = (new MetricBag())->with('ccn', 15);
@@ -200,7 +201,7 @@ final class ComplexityRuleTest extends TestCase
         $rule = new ComplexityRule(new ComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // Cognitive exactly at threshold (15) — no divergence
         $metricBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 15);
@@ -224,7 +225,7 @@ final class ComplexityRuleTest extends TestCase
         $rule = new ComplexityRule(new ComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('ccn', 25)->with('cognitive', 30);
 
@@ -267,7 +268,7 @@ final class ComplexityRuleTest extends TestCase
         $rule = new ComplexityRule(new ComplexityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('ccn.max', 35); // Above warning (30), below error (50)
 
@@ -293,7 +294,7 @@ final class ComplexityRuleTest extends TestCase
         $rule = new ComplexityRule(new ComplexityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('ccn.max', 55); // Above error (50)
 
@@ -319,10 +320,10 @@ final class ComplexityRuleTest extends TestCase
         $rule = new ComplexityRule(new ComplexityOptions());
 
         $methodPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($methodPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($methodPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($classPath, 'src/Service/UserService.php', 5);
+        $classInfo = new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $methodBag = (new MetricBag())->with('ccn', 15)->with('cognitive', 20); // Warning
         $classBag = (new MetricBag())->with('ccn.max', 35); // Warning
@@ -466,7 +467,7 @@ final class ComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('ccn', $ccn);
 

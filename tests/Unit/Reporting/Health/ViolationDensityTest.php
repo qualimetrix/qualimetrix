@@ -56,7 +56,7 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
-            classes: [new SymbolInfo($classSymbol, 'src/Service/HeavyService.php', 1)],
+            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/HeavyService.php'), 1)],
             classMetrics: ['class:App\\Service\\HeavyService' => $classMetrics],
         );
 
@@ -92,7 +92,7 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
-            namespaces: [new SymbolInfo($nsSymbol, 'src/Payment', null)],
+            namespaces: [new SymbolInfo($nsSymbol, RelativePath::fromString('src/Payment'), null)],
             namespaceMetrics: ['ns:App\\Payment' => $nsMetrics],
         );
 
@@ -126,7 +126,7 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 80.0]),
-            classes: [new SymbolInfo($classSymbol, 'src/Service/CleanService.php', 1)],
+            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/CleanService.php'), 1)],
             classMetrics: ['class:App\\Service\\CleanService' => $classMetrics],
         );
 
@@ -158,7 +158,7 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
-            classes: [new SymbolInfo($classSymbol, 'src/Service/EmptyClass.php', 1)],
+            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/EmptyClass.php'), 1)],
             classMetrics: ['class:App\\Service\\EmptyClass' => $classMetrics],
         );
 
@@ -192,7 +192,7 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
-            classes: [new SymbolInfo($classSymbol, 'src/Service/NoLocClass.php', 1)],
+            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/NoLocClass.php'), 1)],
             classMetrics: ['class:App\\Service\\NoLocClass' => $classMetrics],
         );
 
@@ -227,7 +227,7 @@ final class ViolationDensityTest extends TestCase
 
         $metrics = $this->createMetricRepository(
             projectMetrics: MetricBag::fromArray(['health.overall' => 60.0]),
-            classes: [new SymbolInfo($classSymbol, 'src/Service/OddClass.php', 1)],
+            classes: [new SymbolInfo($classSymbol, RelativePath::fromString('src/Service/OddClass.php'), 1)],
             classMetrics: ['class:App\\Service\\OddClass' => $classMetrics],
         );
 

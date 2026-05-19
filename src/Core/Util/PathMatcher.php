@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Util;
 
+use Qualimetrix\Core\Path\RelativePath;
+
 /**
  * Matches file paths against path patterns.
  *
@@ -43,13 +45,13 @@ final readonly class PathMatcher
     /**
      * Returns true if the file path matches at least one pattern.
      */
-    public function matches(string $filePath): bool
+    public function matches(RelativePath $filePath): bool
     {
-        if ($filePath === '' || $this->normalizedPatterns === []) {
+        if ($this->normalizedPatterns === []) {
             return false;
         }
 
-        $normalizedPath = rtrim($filePath, '/');
+        $normalizedPath = rtrim($filePath->value(), '/');
 
         foreach ($this->normalizedPatterns as $pattern) {
             if ($pattern === '') {

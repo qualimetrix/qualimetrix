@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -142,7 +143,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = new MetricBag();
 
@@ -163,7 +164,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // 0.85 is above warning (0.8), below error (0.95)
         $metricBag = (new MetricBag())
@@ -195,7 +196,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // 0.97 is above error (0.95)
         $metricBag = (new MetricBag())
@@ -223,7 +224,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'LeafService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/LeafService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/LeafService.php'), 10);
 
         // Ca=0, below default minAfferent=1, should be skipped
         $metricBag = (new MetricBag())
@@ -253,7 +254,7 @@ final class InstabilityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'LeafService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/LeafService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/LeafService.php'), 10);
 
         // Ca=0, but minAfferent=0 means check all classes
         $metricBag = (new MetricBag())
@@ -284,7 +285,7 @@ final class InstabilityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'NearLeafService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/NearLeafService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/NearLeafService.php'), 10);
 
         // Ca=1, below minAfferent=2, should be skipped
         $metricBag = (new MetricBag())
@@ -314,7 +315,7 @@ final class InstabilityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'CoreService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/CoreService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/CoreService.php'), 10);
 
         // Ca=2, meets minAfferent=2, should NOT be skipped
         $metricBag = (new MetricBag())
@@ -360,7 +361,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // 0.88 is above warning (0.8), below error (0.95)
         $metricBag = (new MetricBag())
@@ -391,7 +392,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // 0.98 is above error (0.95)
         $metricBag = (new MetricBag())
@@ -420,7 +421,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // Ca=0, below default minAfferent=1, should be skipped
         $metricBag = (new MetricBag())
@@ -451,7 +452,7 @@ final class InstabilityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // Ca=0, but minAfferent=0 means check all namespaces
         $metricBag = (new MetricBag())
@@ -483,7 +484,7 @@ final class InstabilityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // Ca=1, below minAfferent=2, should be skipped
         $metricBag = (new MetricBag())
@@ -512,7 +513,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // classCount.sum = 1, below default minClassCount (3)
         $metricBag = (new MetricBag())
@@ -539,7 +540,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // classCount.sum = 5, above default minClassCount (3)
         $metricBag = (new MetricBag())
@@ -569,10 +570,10 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($classPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $nsPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($nsPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($nsPath, RelativePath::fromString('src/Service'), null);
 
         $classBag = (new MetricBag())
             ->with('instability', 0.85)
@@ -755,7 +756,7 @@ final class InstabilityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'Test');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
             ->with('instability', $instability)

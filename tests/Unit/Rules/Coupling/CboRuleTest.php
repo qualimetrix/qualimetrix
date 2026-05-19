@@ -147,7 +147,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = new MetricBag();
 
@@ -168,7 +168,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 10, below warning threshold (14)
         $metricBag = (new MetricBag())
@@ -194,7 +194,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 18, above warning (14), below error (20)
         $metricBag = (new MetricBag())
@@ -226,7 +226,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 25, above error threshold (20)
         $metricBag = (new MetricBag())
@@ -262,7 +262,7 @@ final class CboRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 12, above custom warning (10), below custom error (15)
         $metricBag = (new MetricBag())
@@ -292,7 +292,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Core', 'OutputInterface');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Core/OutputInterface.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Core/OutputInterface.php'), 5);
 
         // Ca=44, Ce=1 — strongly afferent
         $metricBag = (new MetricBag())
@@ -321,7 +321,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'GodService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/GodService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/GodService.php'), 10);
 
         // Ca=3, Ce=22 — strongly efferent
         $metricBag = (new MetricBag())
@@ -350,7 +350,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'MixedService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/MixedService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/MixedService.php'), 10);
 
         // Ca=10, Ce=10 — balanced
         $metricBag = (new MetricBag())
@@ -398,7 +398,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // CBO = 16
         $metricBag = (new MetricBag())
@@ -429,7 +429,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // CBO = 25
         $metricBag = (new MetricBag())
@@ -460,7 +460,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // classCount.sum = 1, below default minClassCount (3)
         $metricBag = (new MetricBag())
@@ -489,10 +489,10 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($classPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $nsPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($nsPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($nsPath, RelativePath::fromString('src/Service'), null);
 
         $classBag = (new MetricBag())
             ->with('cbo', 18)
@@ -665,7 +665,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'GodService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/GodService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/GodService.php'), 10);
 
         // CBO = 25, Ce = 22 — efferent dominant
         $metricBag = (new MetricBag())
@@ -716,7 +716,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'HugeService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/HugeService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/HugeService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('cbo', 25)
@@ -773,7 +773,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('cbo', 25)
@@ -801,7 +801,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'Isolated');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/Isolated.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/Isolated.php'), 10);
 
         // CBO from afferent only
         $metricBag = (new MetricBag())
@@ -834,7 +834,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         $metricBag = (new MetricBag())
             ->with('cbo', 25)
@@ -864,7 +864,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'MyService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/MyService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/MyService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('cbo', 20)
@@ -914,7 +914,7 @@ final class CboRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'Test');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
             ->with('cbo', $cbo)
@@ -966,7 +966,7 @@ final class CboRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 15 (above error), CBO_APP = 3 (below warning)
         // With scope=application, should use CBO_APP → no violation
@@ -1002,7 +1002,7 @@ final class CboRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 30, CBO_APP = 7 (between warning=5 and error=10), CE_FRAMEWORK = 23
         $metricBag = (new MetricBag())
@@ -1045,7 +1045,7 @@ final class CboRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 15 (above error), CBO_APP = 3 (below warning)
         // Default scope=all should use CBO → error

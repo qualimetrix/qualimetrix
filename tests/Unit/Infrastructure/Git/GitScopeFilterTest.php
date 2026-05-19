@@ -183,7 +183,7 @@ final class GitScopeFilterTest extends TestCase
 
         $violation = new Violation(
             location: new Location(RelativePath::fromString('README.md'), 10),
-            symbolPath: SymbolPath::forFile('README.md'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('README.md')),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -405,7 +405,7 @@ final class GitScopeFilterTest extends TestCase
         // File-level violation - should match by file path
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service.php'), null),
-            symbolPath: SymbolPath::forFile('src/Service.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service.php')),
             ruleName: 'size',
             violationCode: 'size',
             message: 'File too large',

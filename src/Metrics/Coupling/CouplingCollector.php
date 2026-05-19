@@ -258,7 +258,7 @@ final class CouplingCollector implements GlobalContextCollectorInterface
                 ->with(MetricName::COUPLING_CBO_APP, $cboApp)
                 ->with(MetricName::COUPLING_CE_FRAMEWORK, $ceFramework);
 
-            $repository->add($symbolPath, $metrics, '', 0);
+            $repository->add($symbolPath, $metrics, null, 0);
         }
     }
 
@@ -294,7 +294,7 @@ final class CouplingCollector implements GlobalContextCollectorInterface
                 ->with(MetricName::COUPLING_CBO, $cbo)
                 ->with(MetricName::COUPLING_INSTABILITY, $instability);
 
-            $repository->add($symbolPath, $metrics, '', null);
+            $repository->add($symbolPath, $metrics, null, null);
         }
     }
 

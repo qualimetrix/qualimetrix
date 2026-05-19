@@ -184,4 +184,17 @@ final class RelativePathTest extends TestCase
 
         self::assertSame('src/Sub/Foo.php', $a->join($b)->value());
     }
+
+    #[Test]
+    public function itSerializesToJsonAsBarePathString(): void
+    {
+        // Wire-format defense: anything that goes through json_encode() (formatters,
+        // baselines, metric reports) must observe the bare path string, not the
+        // RelativePath object shape. Prevents the "empty array in JSON" footgun
+        // that hit MetricsJsonFormatter during Phase 1c migration.
+        $path = RelativePath::fromString('src/Service/UserService.php');
+
+        self::assertSame('"src\/Service\/UserService.php"', json_encode($path, \JSON_THROW_ON_ERROR));
+        self::assertSame('src/Service/UserService.php', $path->jsonSerialize());
+    }
 }

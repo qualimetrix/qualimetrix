@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Core\Symbol;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MethodInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -21,7 +22,7 @@ final class MethodInfoTest extends TestCase
             namespace: 'App\Service',
             class: 'UserService',
             name: 'calculate',
-            file: 'src/Service/UserService.php',
+            file: RelativePath::fromString('src/Service/UserService.php'),
             line: 42,
         );
 
@@ -29,7 +30,7 @@ final class MethodInfoTest extends TestCase
         self::assertSame('App\Service', $methodInfo->namespace);
         self::assertSame('UserService', $methodInfo->class);
         self::assertSame('calculate', $methodInfo->name);
-        self::assertSame('src/Service/UserService.php', $methodInfo->file);
+        self::assertSame('src/Service/UserService.php', $methodInfo->file->value());
         self::assertSame(42, $methodInfo->line);
     }
 
@@ -41,7 +42,7 @@ final class MethodInfoTest extends TestCase
             namespace: 'App\Service',
             class: 'UserService',
             name: 'calculate',
-            file: 'src/Service/UserService.php',
+            file: RelativePath::fromString('src/Service/UserService.php'),
             line: 42,
         );
 
@@ -62,7 +63,7 @@ final class MethodInfoTest extends TestCase
             namespace: '',
             class: 'GlobalClass',
             name: 'method',
-            file: 'src/GlobalClass.php',
+            file: RelativePath::fromString('src/GlobalClass.php'),
             line: 10,
         );
 
@@ -82,7 +83,7 @@ final class MethodInfoTest extends TestCase
             namespace: 'App\Domain',
             class: 'User',
             name: '__construct',
-            file: 'src/Domain/User.php',
+            file: RelativePath::fromString('src/Domain/User.php'),
             line: 15,
         );
 
@@ -100,7 +101,7 @@ final class MethodInfoTest extends TestCase
             namespace: 'App\Model',
             class: 'User',
             name: '__toString',
-            file: 'src/Model/User.php',
+            file: RelativePath::fromString('src/Model/User.php'),
             line: 50,
         );
 
@@ -118,7 +119,7 @@ final class MethodInfoTest extends TestCase
             namespace: 'App\Factory',
             class: 'UserFactory',
             name: 'create',
-            file: 'src/Factory/UserFactory.php',
+            file: RelativePath::fromString('src/Factory/UserFactory.php'),
             line: 20,
         );
 
@@ -135,7 +136,7 @@ final class MethodInfoTest extends TestCase
             namespace: '',
             class: 'Test',
             name: 'method',
-            file: 'test.php',
+            file: RelativePath::fromString('test.php'),
             line: 5,
         );
 
@@ -152,7 +153,7 @@ final class MethodInfoTest extends TestCase
             namespace: 'App\Module\SubModule\Service',
             class: 'UserService',
             name: 'process',
-            file: 'src/Module/SubModule/Service/UserService.php',
+            file: RelativePath::fromString('src/Module/SubModule/Service/UserService.php'),
             line: 100,
         );
 

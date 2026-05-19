@@ -12,6 +12,7 @@ use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\Metric\AggregationMeta;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Metrics\ComputedMetric\ComputedMetricEvaluator;
@@ -43,7 +44,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
         $repo->add($classPath, MetricBag::fromArray([
             'ccn.avg' => 3.0,
-        ]), 'src/UserService.php', 10);
+        ]), RelativePath::fromString('src/UserService.php'), 10);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -65,7 +66,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
         $repo->add($classPath, MetricBag::fromArray([
             'ccn.avg' => 5.0,
-        ]), 'src/UserService.php', 10);
+        ]), RelativePath::fromString('src/UserService.php'), 10);
 
         // Define B first, which depends on A — evaluator should sort them
         $defB = new ComputedMetricDefinition(
@@ -94,7 +95,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repo->add($classPath, MetricBag::fromArray(['known' => 1.0]), 'src/UserService.php', 10);
+        $repo->add($classPath, MetricBag::fromArray(['known' => 1.0]), RelativePath::fromString('src/UserService.php'), 10);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -114,7 +115,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repo->add($classPath, MetricBag::fromArray(['known' => 1.0]), 'src/UserService.php', 10);
+        $repo->add($classPath, MetricBag::fromArray(['known' => 1.0]), RelativePath::fromString('src/UserService.php'), 10);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -137,8 +138,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // Class A has 'ccn', class B does not — but union includes 'ccn', so formula is valid
         $classA = SymbolPath::forClass('App', 'ClassA');
         $classB = SymbolPath::forClass('App', 'ClassB');
-        $repo->add($classA, MetricBag::fromArray(['ccn' => 5.0]), 'src/ClassA.php', 1);
-        $repo->add($classB, MetricBag::fromArray([]), 'src/ClassB.php', 1);
+        $repo->add($classA, MetricBag::fromArray(['ccn' => 5.0]), RelativePath::fromString('src/ClassA.php'), 1);
+        $repo->add($classB, MetricBag::fromArray([]), RelativePath::fromString('src/ClassB.php'), 1);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -158,7 +159,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repo->add($classPath, MetricBag::fromArray([]), 'src/UserService.php', 10);
+        $repo->add($classPath, MetricBag::fromArray([]), RelativePath::fromString('src/UserService.php'), 10);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -179,7 +180,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
         $repo->add($classPath, MetricBag::fromArray([
             'value' => -1.0,
-        ]), 'src/UserService.php', 10);
+        ]), RelativePath::fromString('src/UserService.php'), 10);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -200,7 +201,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
         $repo->add($classPath, MetricBag::fromArray([
             'value' => 0.0,
-        ]), 'src/UserService.php', 10);
+        ]), RelativePath::fromString('src/UserService.php'), 10);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.test',
@@ -230,7 +231,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'typeCoverage.pct' => 80.0,
             'dit' => 2.0,
             'mi.avg' => 65.0,
-        ]), 'src/UserService.php', 10);
+        ]), RelativePath::fromString('src/UserService.php'), 10);
 
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
         $this->evaluator->compute($repo, $defaults);
@@ -273,7 +274,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'pureMethodCount_cohesion' => 4,
             'ce' => 3.0,
             'typeCoverage.pct' => 100.0,
-        ]), 'src/DistanceRule.php', 10);
+        ]), RelativePath::fromString('src/DistanceRule.php'), 10);
 
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
         $this->evaluator->compute($repo, $defaults);
@@ -299,7 +300,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         // Add a class so the namespace is registered
         $classPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $repo->add($classPath, MetricBag::fromArray([]), 'src/UserService.php', 10);
+        $repo->add($classPath, MetricBag::fromArray([]), RelativePath::fromString('src/UserService.php'), 10);
 
         // Add namespace-level metrics
         $nsPath = SymbolPath::forNamespace('App\\Service');
@@ -328,7 +329,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'mi.avg' => 70.0,
             'mi.p5' => 50.0,
             'mi.min' => 25.0,
-        ]), '', null);
+        ]), null, null);
 
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
         $this->evaluator->compute($repo, $defaults);
@@ -373,7 +374,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         // Register an empty interface-like class so the namespace appears.
         $classPath = SymbolPath::forClass('App\\Shared\\Messaging', 'AsyncMessageInterface');
-        $repo->add($classPath, MetricBag::fromArray([]), 'src/AsyncMessageInterface.php', 1);
+        $repo->add($classPath, MetricBag::fromArray([]), RelativePath::fromString('src/AsyncMessageInterface.php'), 1);
 
         $nsPath = SymbolPath::forNamespace('App\\Shared\\Messaging');
         $repo->add($nsPath, MetricBag::fromArray([
@@ -384,7 +385,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'typeCoverage.paramTotal.sum' => 0.0,
             'typeCoverage.returnTotal.sum' => 0.0,
             'typeCoverage.propertyTotal.sum' => 0.0,
-        ]), '', null);
+        ]), null, null);
 
         // Evaluate the typing definition in isolation — sibling formulas would require
         // additional metrics (symbolMethodCount, mi.*, etc.) we do not stub out here.
@@ -402,10 +403,10 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $repo = new InMemoryMetricRepository();
 
         $classPath = SymbolPath::forClass('App\\Empty', 'Marker');
-        $repo->add($classPath, MetricBag::fromArray([]), 'src/Marker.php', 1);
+        $repo->add($classPath, MetricBag::fromArray([]), RelativePath::fromString('src/Marker.php'), 1);
 
         $nsPath = SymbolPath::forNamespace('App\\Empty');
-        $repo->add($nsPath, MetricBag::fromArray([]), '', null);
+        $repo->add($nsPath, MetricBag::fromArray([]), null, null);
 
         $typing = ComputedMetricDefaults::getDefaults()['health.typing'];
         $this->evaluator->compute($repo, [$typing]);
@@ -421,7 +422,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $repo = new InMemoryMetricRepository();
 
         $classPath = SymbolPath::forClass('App\\Shared\\Messaging', 'AsyncMessageInterface');
-        $repo->add($classPath, MetricBag::fromArray([]), 'src/AsyncMessageInterface.php', 1);
+        $repo->add($classPath, MetricBag::fromArray([]), RelativePath::fromString('src/AsyncMessageInterface.php'), 1);
 
         $projectPath = SymbolPath::forProject();
         $repo->add($projectPath, MetricBag::fromArray([
@@ -431,7 +432,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'typeCoverage.paramTotal.sum' => 0.0,
             'typeCoverage.returnTotal.sum' => 0.0,
             'typeCoverage.propertyTotal.sum' => 0.0,
-        ]), '', null);
+        ]), null, null);
 
         $typing = ComputedMetricDefaults::getDefaults()['health.typing'];
         $this->evaluator->compute($repo, [$typing]);
@@ -445,7 +446,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $repo = new InMemoryMetricRepository();
 
         // Register a class so the namespace appears in the repository.
-        $repo->add(SymbolPath::forClass('App\\Big', 'X'), MetricBag::fromArray([]), 'src/X.php', 1);
+        $repo->add(SymbolPath::forClass('App\\Big', 'X'), MetricBag::fromArray([]), RelativePath::fromString('src/X.php'), 1);
 
         // Namespace with high efferent coupling: ce.avg=10 (per-class), ce.max=60 (outlier),
         // ce_packages.avg=2 (touches 2 vendor packages on avg per class), ns-level ce=80.
@@ -457,7 +458,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'ce_packages.avg' => 2.0,
             'distance' => 0.2,
             AggregationMeta::SYMBOL_METHOD_COUNT => 1,
-        ]), '', null);
+        ]), null, null);
 
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
         $this->evaluator->compute($repo, $defaults);
@@ -478,7 +479,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $repo = new InMemoryMetricRepository();
 
         // Register a class so the namespace appears in the repository.
-        $repo->add(SymbolPath::forClass('App\\Contracts', 'I'), MetricBag::fromArray([]), 'src/I.php', 1);
+        $repo->add(SymbolPath::forClass('App\\Contracts', 'I'), MetricBag::fromArray([]), RelativePath::fromString('src/I.php'), 1);
 
         // Stable-contracts namespace: low outgoing coupling (ce=5, ce.avg=1.3, ce.max=4),
         // moderate distance from main sequence. Bidirectional CBO would be high here
@@ -492,7 +493,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'ce_packages.avg' => 0.0,
             'distance' => 0.4,
             AggregationMeta::SYMBOL_METHOD_COUNT => 1,
-        ]), '', null);
+        ]), null, null);
 
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
         $this->evaluator->compute($repo, $defaults);
@@ -514,7 +515,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'd' => 7.0,
             'e' => 100.0,
             'f' => 1000.0,
-        ]), 'src/Svc.php', 1);
+        ]), RelativePath::fromString('src/Svc.php'), 1);
 
         $tests = [
             ['health.sqrtTest', 'sqrt(a)', 4.0],
@@ -553,8 +554,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $class1 = SymbolPath::forClass('App', 'ClassA');
         $class2 = SymbolPath::forClass('App', 'ClassB');
 
-        $repo->add($class1, MetricBag::fromArray(['ccn' => 2.0]), 'src/ClassA.php', 1);
-        $repo->add($class2, MetricBag::fromArray(['ccn' => 8.0]), 'src/ClassB.php', 1);
+        $repo->add($class1, MetricBag::fromArray(['ccn' => 2.0]), RelativePath::fromString('src/ClassA.php'), 1);
+        $repo->add($class2, MetricBag::fromArray(['ccn' => 8.0]), RelativePath::fromString('src/ClassB.php'), 1);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.simple',
@@ -576,13 +577,13 @@ final class ComputedMetricEvaluatorTest extends TestCase
 
         // Need a class to register the namespace
         $classPath = SymbolPath::forClass('App', 'Svc');
-        $repo->add($classPath, MetricBag::fromArray([]), 'src/Svc.php', 1);
+        $repo->add($classPath, MetricBag::fromArray([]), RelativePath::fromString('src/Svc.php'), 1);
 
         $nsPath = SymbolPath::forNamespace('App');
-        $repo->add($nsPath, MetricBag::fromArray(['value' => 42.0]), '', null);
+        $repo->add($nsPath, MetricBag::fromArray(['value' => 42.0]), null, null);
 
         $projectPath = SymbolPath::forProject();
-        $repo->add($projectPath, MetricBag::fromArray(['value' => 99.0]), '', null);
+        $repo->add($projectPath, MetricBag::fromArray(['value' => 99.0]), null, null);
 
         $definition = new ComputedMetricDefinition(
             name: 'health.inherited',
@@ -603,7 +604,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
     {
         $repo = new InMemoryMetricRepository();
         $classPath = SymbolPath::forClass('App', 'Svc');
-        $repo->add($classPath, MetricBag::fromArray(['x' => 1.0]), 'src/Svc.php', 1);
+        $repo->add($classPath, MetricBag::fromArray(['x' => 1.0]), RelativePath::fromString('src/Svc.php'), 1);
 
         $defA = new ComputedMetricDefinition(
             name: 'health.a',
@@ -638,7 +639,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         // Per-method CCN avg (new formula) = (10+30)/6 = 6.67 → moderate
 
         $classA = SymbolPath::forClass('App\\Service', 'ClassA');
-        $repo->add($classA, MetricBag::fromArray([]), 'src/ClassA.php', 1);
+        $repo->add($classA, MetricBag::fromArray([]), RelativePath::fromString('src/ClassA.php'), 1);
 
         $nsPath = SymbolPath::forNamespace('App\\Service');
         $repo->add($nsPath, MetricBag::fromArray([
@@ -648,7 +649,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
             'cognitive.avg' => 15.0,    // average per-class cognitive sum
             AggregationMeta::SYMBOL_METHOD_COUNT => 6,    // total method count
             'npath.avg' => 10.0,
-        ]), '', null);
+        ]), null, null);
 
         $defaults = array_values(ComputedMetricDefaults::getDefaults());
 

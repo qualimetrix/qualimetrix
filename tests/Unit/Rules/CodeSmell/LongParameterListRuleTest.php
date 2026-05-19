@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -119,7 +120,7 @@ final class LongParameterListRuleTest extends TestCase
         $rule = new LongParameterListRule(new LongParameterListOptions(warning: 4, error: 6));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 3);
 
@@ -140,7 +141,7 @@ final class LongParameterListRuleTest extends TestCase
         $rule = new LongParameterListRule(new LongParameterListOptions(warning: 4, error: 6));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 4);
 
@@ -167,7 +168,7 @@ final class LongParameterListRuleTest extends TestCase
         $rule = new LongParameterListRule(new LongParameterListOptions(warning: 4, error: 6));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 6);
 
@@ -191,7 +192,7 @@ final class LongParameterListRuleTest extends TestCase
         $rule = new LongParameterListRule(new LongParameterListOptions(warning: 4, error: 6));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 8);
 
@@ -234,7 +235,7 @@ final class LongParameterListRuleTest extends TestCase
         $rule = new LongParameterListRule(new LongParameterListOptions(warning: $warning, error: $error));
 
         $symbolPath = SymbolPath::forMethod('App\Test', 'TestClass', 'testMethod');
-        $methodInfo = new SymbolInfo($symbolPath, 'test.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', $parameterCount);
 
@@ -379,7 +380,7 @@ final class LongParameterListRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forMethod('App\Dto', 'UserDto', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Dto/UserDto.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/UserDto.php'), 10);
 
         // 7 params in VO constructor — below vo-warning=8, but above regular warning=4
         $metricBag = (new MetricBag())
@@ -408,7 +409,7 @@ final class LongParameterListRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forMethod('App\Dto', 'UserDto', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Dto/UserDto.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/UserDto.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('parameterCount', 8)
@@ -442,7 +443,7 @@ final class LongParameterListRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forMethod('App\Dto', 'UserDto', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Dto/UserDto.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/UserDto.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('parameterCount', 13)
@@ -475,7 +476,7 @@ final class LongParameterListRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // 5 params in non-VO constructor — above warning=4, below error=6
         $metricBag = (new MetricBag())
@@ -531,7 +532,7 @@ final class LongParameterListRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forMethod('App\Dto', 'TestDto', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, 'test.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('parameterCount', $parameterCount)

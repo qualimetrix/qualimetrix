@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Symbol;
 
+use Qualimetrix\Core\Path\RelativePath;
+
 final readonly class MethodInfo
 {
     public function __construct(
@@ -11,7 +13,7 @@ final readonly class MethodInfo
         public string $namespace,
         public string $class,
         public string $name,
-        public string $file,
+        public RelativePath $file,
         public int $line,
     ) {}
 

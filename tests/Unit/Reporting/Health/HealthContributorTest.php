@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Debt\DebtCalculator;
@@ -155,8 +156,8 @@ final class HealthContributorTest extends TestCase
     {
         // Build manually with one class missing the primary metric
         $classes = [
-            new SymbolInfo(SymbolPath::forClass('App', 'HasCcn'), 'src/HasCcn.php', 1),
-            new SymbolInfo(SymbolPath::forClass('App', 'NoCcn'), 'src/NoCcn.php', 1),
+            new SymbolInfo(SymbolPath::forClass('App', 'HasCcn'), RelativePath::fromString('src/HasCcn.php'), 1),
+            new SymbolInfo(SymbolPath::forClass('App', 'NoCcn'), RelativePath::fromString('src/NoCcn.php'), 1),
         ];
 
         $classMetrics = [
@@ -249,7 +250,7 @@ final class HealthContributorTest extends TestCase
 
         foreach ($classSpecs as $spec) {
             $symbol = SymbolPath::forClass($spec['ns'], $spec['name']);
-            $classes[] = new SymbolInfo($symbol, 'src/' . $spec['name'] . '.php', 1);
+            $classes[] = new SymbolInfo($symbol, RelativePath::fromString('src/' . $spec['name'] . '.php'), 1);
 
             $bag = [];
 

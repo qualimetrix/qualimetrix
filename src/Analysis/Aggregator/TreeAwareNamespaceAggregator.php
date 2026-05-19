@@ -8,6 +8,7 @@ use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -101,12 +102,12 @@ final class TreeAwareNamespaceAggregator implements AggregationPhaseInterface
     /**
      * @param list<SymbolInfo> $symbolInfos
      */
-    private function findFirstFile(array $symbolInfos): string
+    private function findFirstFile(array $symbolInfos): ?RelativePath
     {
         foreach ($symbolInfos as $info) {
             return $info->file;
         }
 
-        return '';
+        return null;
     }
 }

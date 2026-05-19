@@ -502,7 +502,7 @@ final class ResultPresenterTest extends TestCase
     {
         return new Violation(
             location: new Location(RelativePath::fromString('test.php'), 1),
-            symbolPath: SymbolPath::forFile('test.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'test.rule',
             violationCode: 'test.rule.violation',
             message: 'Test violation',

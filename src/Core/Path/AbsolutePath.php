@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Path;
 
 use InvalidArgumentException;
+use JsonSerializable;
 use RuntimeException;
 use Stringable;
 
@@ -22,7 +23,7 @@ use Stringable;
  * {@see __unserialize()}, so cache files and amphp/parallel IPC payloads survive
  * private-property renames.
  */
-final readonly class AbsolutePath implements Stringable
+final readonly class AbsolutePath implements JsonSerializable, Stringable
 {
     private string $value;
 
@@ -55,6 +56,11 @@ final readonly class AbsolutePath implements Stringable
     }
 
     public function __toString(): string
+    {
+        return $this->value;
+    }
+
+    public function jsonSerialize(): string
     {
         return $this->value;
     }

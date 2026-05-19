@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\RulePathExclusionProvider;
+use Qualimetrix\Core\Path\RelativePath;
 
 #[CoversClass(RulePathExclusionProvider::class)]
 final class RulePathExclusionProviderTest extends TestCase
@@ -17,7 +18,7 @@ final class RulePathExclusionProviderTest extends TestCase
     {
         $provider = new RulePathExclusionProvider();
 
-        self::assertFalse($provider->isExcluded('coupling.cbo', 'src/Service/UserService.php'));
+        self::assertFalse($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Service/UserService.php')));
     }
 
     #[Test]
@@ -26,8 +27,8 @@ final class RulePathExclusionProviderTest extends TestCase
         $provider = new RulePathExclusionProvider();
         $provider->setExclusions('coupling.cbo', ['src/Metrics']);
 
-        self::assertTrue($provider->isExcluded('coupling.cbo', 'src/Metrics/CodeSmellVisitor.php'));
-        self::assertFalse($provider->isExcluded('coupling.cbo', 'src/Rules/SomeRule.php'));
+        self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Metrics/CodeSmellVisitor.php')));
+        self::assertFalse($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Rules/SomeRule.php')));
     }
 
     #[Test]
@@ -36,8 +37,8 @@ final class RulePathExclusionProviderTest extends TestCase
         $provider = new RulePathExclusionProvider();
         $provider->setExclusions('coupling.cbo', ['src/Infrastructure/DependencyInjection']);
 
-        self::assertTrue($provider->isExcluded('coupling.cbo', 'src/Infrastructure/DependencyInjection/ContainerFactory.php'));
-        self::assertFalse($provider->isExcluded('coupling.cbo', 'src/Infrastructure/Console/Command.php'));
+        self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Infrastructure/DependencyInjection/ContainerFactory.php')));
+        self::assertFalse($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Infrastructure/Console/Command.php')));
     }
 
     #[Test]
@@ -46,8 +47,8 @@ final class RulePathExclusionProviderTest extends TestCase
         $provider = new RulePathExclusionProvider();
         $provider->setExclusions('coupling.cbo', ['src/Entity']);
 
-        self::assertTrue($provider->isExcluded('coupling.cbo', 'src/Entity/User.php'));
-        self::assertFalse($provider->isExcluded('coupling.cbo', 'src/EntityManager/Foo.php'));
+        self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Entity/User.php')));
+        self::assertFalse($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/EntityManager/Foo.php')));
     }
 
     #[Test]
@@ -56,8 +57,8 @@ final class RulePathExclusionProviderTest extends TestCase
         $provider = new RulePathExclusionProvider();
         $provider->setExclusions('coupling.cbo', ['src/Metrics']);
 
-        self::assertTrue($provider->isExcluded('coupling.cbo', 'src/Metrics/SomeFile.php'));
-        self::assertFalse($provider->isExcluded('complexity.cyclomatic', 'src/Metrics/SomeFile.php'));
+        self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Metrics/SomeFile.php')));
+        self::assertFalse($provider->isExcluded('complexity.cyclomatic', RelativePath::fromString('src/Metrics/SomeFile.php')));
     }
 
     #[Test]
@@ -66,16 +67,7 @@ final class RulePathExclusionProviderTest extends TestCase
         $provider = new RulePathExclusionProvider();
         $provider->setExclusions('coupling.cbo', []);
 
-        self::assertFalse($provider->isExcluded('coupling.cbo', 'src/Any.php'));
-    }
-
-    #[Test]
-    public function itReturnsFalseForEmptyFilePath(): void
-    {
-        $provider = new RulePathExclusionProvider();
-        $provider->setExclusions('coupling.cbo', ['src']);
-
-        self::assertFalse($provider->isExcluded('coupling.cbo', ''));
+        self::assertFalse($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Any.php')));
     }
 
     #[Test]
@@ -84,11 +76,11 @@ final class RulePathExclusionProviderTest extends TestCase
         $provider = new RulePathExclusionProvider();
         $provider->setExclusions('coupling.cbo', ['src']);
 
-        self::assertTrue($provider->isExcluded('coupling.cbo', 'src/File.php'));
+        self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/File.php')));
 
         $provider->reset();
 
-        self::assertFalse($provider->isExcluded('coupling.cbo', 'src/File.php'));
+        self::assertFalse($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/File.php')));
     }
 
     #[Test]
@@ -97,8 +89,8 @@ final class RulePathExclusionProviderTest extends TestCase
         $provider = new RulePathExclusionProvider();
         $provider->setExclusions('coupling.cbo', ['src/Metrics/*Visitor.php']);
 
-        self::assertTrue($provider->isExcluded('coupling.cbo', 'src/Metrics/CboVisitor.php'));
-        self::assertFalse($provider->isExcluded('coupling.cbo', 'src/Metrics/CboCollector.php'));
+        self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Metrics/CboVisitor.php')));
+        self::assertFalse($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Metrics/CboCollector.php')));
     }
 
     #[Test]
@@ -107,7 +99,7 @@ final class RulePathExclusionProviderTest extends TestCase
         $provider = new RulePathExclusionProvider();
         $provider->setExclusions('coupling.cbo', ['src/Entity/User.php']);
 
-        self::assertTrue($provider->isExcluded('coupling.cbo', 'src/Entity/User.php'));
-        self::assertFalse($provider->isExcluded('coupling.cbo', 'src/Entity/Order.php'));
+        self::assertTrue($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Entity/User.php')));
+        self::assertFalse($provider->isExcluded('coupling.cbo', RelativePath::fromString('src/Entity/Order.php')));
     }
 }

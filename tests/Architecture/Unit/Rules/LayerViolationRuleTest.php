@@ -780,7 +780,7 @@ final class LayerViolationRuleTest extends TestCase
         $repo->add(
             SymbolPath::forClass($namespace, $class),
             new MetricBag(),
-            \sprintf('src/%s.php', str_replace('\\', '/', $class)),
+            RelativePath::fromString(\sprintf('src/%s.php', str_replace('\\', '/', $class))),
             1,
         );
     }

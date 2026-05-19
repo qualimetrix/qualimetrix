@@ -63,7 +63,7 @@ final class SarifRuleCollectorTest extends TestCase
     {
         $v1 = new Violation(
             location: new Location(RelativePath::fromString('a.php'), 1),
-            symbolPath: SymbolPath::forFile('a.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
             message: 'Too complex',
@@ -72,7 +72,7 @@ final class SarifRuleCollectorTest extends TestCase
 
         $v2 = new Violation(
             location: new Location(RelativePath::fromString('b.php'), 5),
-            symbolPath: SymbolPath::forFile('b.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
             message: 'Also too complex',
@@ -89,7 +89,7 @@ final class SarifRuleCollectorTest extends TestCase
     {
         $v1 = new Violation(
             location: new Location(RelativePath::fromString('a.php'), 1),
-            symbolPath: SymbolPath::forFile('a.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
             message: 'Complex',
@@ -98,7 +98,7 @@ final class SarifRuleCollectorTest extends TestCase
 
         $v2 = new Violation(
             location: new Location(RelativePath::fromString('b.php'), 1),
-            symbolPath: SymbolPath::forFile('b.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'size.loc',
             violationCode: 'size.loc',
             message: 'Too long',
@@ -118,7 +118,7 @@ final class SarifRuleCollectorTest extends TestCase
     {
         $warning = new Violation(
             location: new Location(RelativePath::fromString('a.php'), 1),
-            symbolPath: SymbolPath::forFile('a.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
             message: 'Complex',
@@ -127,7 +127,7 @@ final class SarifRuleCollectorTest extends TestCase
 
         $error = new Violation(
             location: new Location(RelativePath::fromString('b.php'), 1),
-            symbolPath: SymbolPath::forFile('b.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
             message: 'Very complex',

@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Aggregator\AggregationHelper;
 use Qualimetrix\Analysis\Aggregator\MetricAggregator;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
@@ -36,9 +37,9 @@ final class WmcIntegrationTest extends TestCase
         $method3Path = SymbolPath::forMethod('App\Service', 'OrderProcessor', 'save');
 
         // Add method metrics: CCN values
-        $repository->add($method1Path, (new MetricBag())->with('ccn', 5), 'test.php', 10);
-        $repository->add($method2Path, (new MetricBag())->with('ccn', 3), 'test.php', 20);
-        $repository->add($method3Path, (new MetricBag())->with('ccn', 2), 'test.php', 30);
+        $repository->add($method1Path, (new MetricBag())->with('ccn', 5), RelativePath::fromString('test.php'), 10);
+        $repository->add($method2Path, (new MetricBag())->with('ccn', 3), RelativePath::fromString('test.php'), 20);
+        $repository->add($method3Path, (new MetricBag())->with('ccn', 2), RelativePath::fromString('test.php'), 30);
 
         // Create aggregator with CCN collector
         $collector = new CyclomaticComplexityCollector();
@@ -66,8 +67,8 @@ final class WmcIntegrationTest extends TestCase
         $method2Path = SymbolPath::forMethod('App', 'TestClass', 'method2');
 
         // Add method metrics
-        $repository->add($method1Path, (new MetricBag())->with('ccn', 7), 'test.php', 10);
-        $repository->add($method2Path, (new MetricBag())->with('ccn', 4), 'test.php', 20);
+        $repository->add($method1Path, (new MetricBag())->with('ccn', 7), RelativePath::fromString('test.php'), 10);
+        $repository->add($method2Path, (new MetricBag())->with('ccn', 4), RelativePath::fromString('test.php'), 20);
 
         // Aggregate
         $collector = new CyclomaticComplexityCollector();
@@ -116,7 +117,7 @@ final class WmcIntegrationTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('App', 'Class1', 'method1'),
             (new MetricBag())->with('ccn', 10),
-            'test1.php',
+            RelativePath::fromString('test1.php'),
             10,
         );
 
@@ -125,13 +126,13 @@ final class WmcIntegrationTest extends TestCase
         $repository->add(
             SymbolPath::forMethod('App', 'Class2', 'methodA'),
             (new MetricBag())->with('ccn', 15),
-            'test2.php',
+            RelativePath::fromString('test2.php'),
             10,
         );
         $repository->add(
             SymbolPath::forMethod('App', 'Class2', 'methodB'),
             (new MetricBag())->with('ccn', 5),
-            'test2.php',
+            RelativePath::fromString('test2.php'),
             20,
         );
 

@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Collection\Metric;
 
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -31,7 +32,7 @@ final readonly class DerivedMetricExtractor
     public function extract(
         MetricRepositoryInterface $repository,
         MetricBag $fileBag,
-        string $filePath,
+        RelativePath $filePath,
     ): void {
         // Get metric names provided by derived collectors
         $derivedMetricNames = [];

@@ -56,45 +56,68 @@ final readonly class ClassRankResolver
             }
 
             $allRanks[] = $rank;
-
-            // File index
-            $file = $symbolInfo->file;
-            if (!isset($fileIndex[$file]) || $rank > $fileIndex[$file]) {
-                $fileIndex[$file] = $rank;
-            }
-
-            // Namespace index — populate for exact namespace and all parent namespaces
-            $ns = $symbolInfo->symbolPath->namespace ?? '';
-            if ($ns !== '') {
-                if (!isset($nsIndex[$ns]) || $rank > $nsIndex[$ns]) {
-                    $nsIndex[$ns] = $rank;
-                }
-
-                foreach ($tree->getAncestors($ns) as $ancestor) {
-                    if (!isset($nsIndex[$ancestor]) || $rank > $nsIndex[$ancestor]) {
-                        $nsIndex[$ancestor] = $rank;
-                    }
-                }
-            } else {
-                // Handle global namespace
-                if (!isset($nsIndex['']) || $rank > $nsIndex['']) {
-                    $nsIndex[''] = $rank;
-                }
-            }
+            $this->updateFileIndex($fileIndex, $symbolInfo->file, $rank);
+            $this->updateNamespaceIndex($nsIndex, $tree, $symbolInfo->symbolPath->namespace ?? '', $rank);
         }
 
-        // Compute median
-        $median = null;
-        if ($allRanks !== []) {
-            sort($allRanks);
-            $count = \count($allRanks);
-            $mid = intdiv($count, 2);
-            $median = $count % 2 === 0
-                ? ($allRanks[$mid - 1] + $allRanks[$mid]) / 2.0
-                : $allRanks[$mid];
+        return new ClassRankIndex($fileIndex, $nsIndex, $this->computeMedian($allRanks));
+    }
+
+    /**
+     * @param array<string, float> $fileIndex
+     */
+    private function updateFileIndex(array &$fileIndex, ?\Qualimetrix\Core\Path\RelativePath $file, float $rank): void
+    {
+        if ($file === null) {
+            return;
         }
 
-        return new ClassRankIndex($fileIndex, $nsIndex, $median);
+        $key = $file->value();
+        if (!isset($fileIndex[$key]) || $rank > $fileIndex[$key]) {
+            $fileIndex[$key] = $rank;
+        }
+    }
+
+    /**
+     * @param array<string, float> $nsIndex
+     */
+    private function updateNamespaceIndex(array &$nsIndex, NamespaceTree $tree, string $namespace, float $rank): void
+    {
+        if ($namespace === '') {
+            if (!isset($nsIndex['']) || $rank > $nsIndex['']) {
+                $nsIndex[''] = $rank;
+            }
+
+            return;
+        }
+
+        if (!isset($nsIndex[$namespace]) || $rank > $nsIndex[$namespace]) {
+            $nsIndex[$namespace] = $rank;
+        }
+
+        foreach ($tree->getAncestors($namespace) as $ancestor) {
+            if (!isset($nsIndex[$ancestor]) || $rank > $nsIndex[$ancestor]) {
+                $nsIndex[$ancestor] = $rank;
+            }
+        }
+    }
+
+    /**
+     * @param list<float> $allRanks
+     */
+    private function computeMedian(array $allRanks): ?float
+    {
+        if ($allRanks === []) {
+            return null;
+        }
+
+        sort($allRanks);
+        $count = \count($allRanks);
+        $mid = intdiv($count, 2);
+
+        return $count % 2 === 0
+            ? ($allRanks[$mid - 1] + $allRanks[$mid]) / 2.0
+            : $allRanks[$mid];
     }
 
     /**
@@ -113,7 +136,7 @@ final readonly class ClassRankResolver
                 ? $this->resolveForClassPath(SymbolPath::forClass($sp->namespace ?? '', $sp->type), $metrics)
                 : null,
             SymbolType::Namespace_ => $index->getMaxForNamespace($sp->namespace ?? ''),
-            SymbolType::File => $index->getMaxForFile($sp->filePath ?? ''),
+            SymbolType::File => $index->getMaxForFile($sp->filePath?->value() ?? ''),
             SymbolType::Function_, SymbolType::Project => null,
         };
     }

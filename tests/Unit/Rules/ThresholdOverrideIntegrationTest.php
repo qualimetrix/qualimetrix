@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
@@ -113,7 +114,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     public function itAppliesOverriddenThresholdInMethodCountRule(): void
     {
         $symbolPath = SymbolPath::forClass('App\\Service', 'BigService');
-        $symbolInfo = new SymbolInfo($symbolPath, 'src/Service/BigService.php', 10);
+        $symbolInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/BigService.php'), 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$symbolInfo]);
@@ -150,7 +151,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         // Class-level annotation scope: line 10-50
         // Method at line 20 falls within scope
         $methodPath = SymbolPath::forMethod('App\\Service', 'BigService', 'doStuff');
-        $methodInfo = new SymbolInfo($methodPath, 'src/Service/BigService.php', 20);
+        $methodInfo = new SymbolInfo($methodPath, RelativePath::fromString('src/Service/BigService.php'), 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturnCallback(function (SymbolType $type) use ($methodInfo) {
@@ -191,10 +192,10 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     public function itAppliesMethodLevelOverrideOnlyToSpecificMethod(): void
     {
         $method1Path = SymbolPath::forMethod('App\\Service', 'Service', 'complexMethod');
-        $method1Info = new SymbolInfo($method1Path, 'src/Service/Service.php', 20);
+        $method1Info = new SymbolInfo($method1Path, RelativePath::fromString('src/Service/Service.php'), 20);
 
         $method2Path = SymbolPath::forMethod('App\\Service', 'Service', 'otherMethod');
-        $method2Info = new SymbolInfo($method2Path, 'src/Service/Service.php', 60);
+        $method2Info = new SymbolInfo($method2Path, RelativePath::fromString('src/Service/Service.php'), 60);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturnCallback(function (SymbolType $type) use ($method1Info, $method2Info) {
@@ -545,7 +546,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     public function itIncludesOverriddenThresholdInViolationMessage(): void
     {
         $symbolPath = SymbolPath::forClass('App\\Service', 'BigService');
-        $symbolInfo = new SymbolInfo($symbolPath, 'src/Service/BigService.php', 10);
+        $symbolInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/BigService.php'), 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$symbolInfo]);
@@ -592,7 +593,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     public function itPrioritizesMethodLevelOverrideInRule(): void
     {
         $symbolPath = SymbolPath::forClass('App\\Service', 'BigService');
-        $symbolInfo = new SymbolInfo($symbolPath, 'src/Service/BigService.php', 20);
+        $symbolInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/BigService.php'), 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$symbolInfo]);

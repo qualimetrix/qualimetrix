@@ -15,6 +15,7 @@ use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
 
@@ -30,7 +31,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Service', 'UserService'),
             (new MetricBag())->with('mi.avg', 80.0)->with('mi.count', 10)->with('mi.min', 70.0),
-            'src/Service/UserService.php',
+            RelativePath::fromString('src/Service/UserService.php'),
             10,
         );
         $this->addMethodsWithMi($repository, 'App\\Service', 'UserService', 'src/Service/UserService.php', 10, 80.0);
@@ -38,7 +39,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Service', 'OrderService'),
             (new MetricBag())->with('mi.avg', 60.0)->with('mi.count', 2)->with('mi.min', 50.0),
-            'src/Service/OrderService.php',
+            RelativePath::fromString('src/Service/OrderService.php'),
             10,
         );
         $this->addMethodsWithMi($repository, 'App\\Service', 'OrderService', 'src/Service/OrderService.php', 2, 60.0);
@@ -47,7 +48,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Repository', 'UserRepository'),
             (new MetricBag())->with('mi.avg', 90.0)->with('mi.count', 8)->with('mi.min', 85.0),
-            'src/Repository/UserRepository.php',
+            RelativePath::fromString('src/Repository/UserRepository.php'),
             10,
         );
         $this->addMethodsWithMi($repository, 'App\\Repository', 'UserRepository', 'src/Repository/UserRepository.php', 8, 90.0);
@@ -76,13 +77,13 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Service', 'Svc'),
             new MetricBag(),
-            'src/Service/Svc.php',
+            RelativePath::fromString('src/Service/Svc.php'),
             10,
         );
         $repository->add(
             SymbolPath::forClass('App\\Repository', 'Repo'),
             new MetricBag(),
-            'src/Repository/Repo.php',
+            RelativePath::fromString('src/Repository/Repo.php'),
             10,
         );
 
@@ -90,13 +91,13 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forNamespace('App\\Service'),
             (new MetricBag())->with('distance', 0.3),
-            '',
+            null,
             null,
         );
         $repository->add(
             SymbolPath::forNamespace('App\\Repository'),
             (new MetricBag())->with('distance', 0.1),
-            '',
+            null,
             null,
         );
 
@@ -129,11 +130,12 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         int $count,
         float $miValue,
     ): void {
+        $relFile = RelativePath::fromString($file);
         for ($i = 1; $i <= $count; $i++) {
             $repository->add(
                 SymbolPath::forMethod($namespace, $class, "m{$i}"),
                 (new MetricBag())->with('mi', $miValue),
-                $file,
+                $relFile,
                 $i * 10,
             );
         }

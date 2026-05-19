@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -23,7 +24,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $symbol = SymbolPath::forMethod('App\\Service', 'UserService', 'calculate');
         $metrics = (new MetricBag())->with('ccn', 5);
 
-        $repository->add($symbol, $metrics, 'src/Service/UserService.php', 42);
+        $repository->add($symbol, $metrics, RelativePath::fromString('src/Service/UserService.php'), 42);
 
         $retrieved = $repository->get($symbol);
 
@@ -53,13 +54,13 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $metrics1 = (new MetricBag())
             ->with('classCount.sum', 10)
             ->with('methodCount', 50);
-        $repository->add($symbol, $metrics1, 'src/Service/UserService.php', 0);
+        $repository->add($symbol, $metrics1, RelativePath::fromString('src/Service/UserService.php'), 0);
 
         // Second add should merge
         $metrics2 = (new MetricBag())
             ->with('ccn.sum', 100)
             ->with('ccn.avg', 3.5);
-        $repository->add($symbol, $metrics2, 'src/Service/UserService.php', 0);
+        $repository->add($symbol, $metrics2, RelativePath::fromString('src/Service/UserService.php'), 0);
 
         $retrieved = $repository->get($symbol);
 
@@ -76,10 +77,38 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         $existing = SymbolPath::forClass('App', 'Test');
-        $repository->add($existing, new MetricBag(), 'test.php', 1);
+        $repository->add($existing, new MetricBag(), RelativePath::fromString('test.php'), 1);
 
         self::assertTrue($repository->has($existing));
         self::assertFalse($repository->has(SymbolPath::forClass('Unknown', 'Class')));
+    }
+
+    #[Test]
+    public function itPreservesExistingFileWhenMergingWithNullFile(): void
+    {
+        // Pins the CouplingCollector contract: graph-derived metric collectors call
+        // ->add(symbol, metrics, null, …) on existing class/namespace symbols.
+        // The repository must NOT overwrite the original SymbolInfo's file in that case;
+        // otherwise downstream consumers (formatters, ranking) lose file association.
+        $repository = new InMemoryMetricRepository();
+
+        $symbol = SymbolPath::forClass('App\\Service', 'UserService');
+        $originalFile = RelativePath::fromString('src/Service/UserService.php');
+
+        $repository->add($symbol, (new MetricBag())->with('methodCount', 5), $originalFile, 10);
+        // Graph-phase merge with no file context (CouplingCollector pattern).
+        $repository->add($symbol, (new MetricBag())->with('cbo', 3), null, 0);
+
+        $symbols = iterator_to_array($repository->all(SymbolType::Class_), false);
+
+        self::assertCount(1, $symbols);
+        self::assertNotNull($symbols[0]->file);
+        self::assertTrue($symbols[0]->file->equals($originalFile));
+        self::assertSame(10, $symbols[0]->line);
+
+        $bag = $repository->get($symbol);
+        self::assertSame(5, $bag->get('methodCount'));
+        self::assertSame(3, $bag->get('cbo'));
     }
 
     #[Test]
@@ -91,9 +120,9 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $method2 = SymbolPath::forMethod('App', 'Service', 'method2');
         $class = SymbolPath::forClass('App', 'Service');
 
-        $repository->add($method1, new MetricBag(), 'test.php', 10);
-        $repository->add($method2, new MetricBag(), 'test.php', 20);
-        $repository->add($class, new MetricBag(), 'test.php', 1);
+        $repository->add($method1, new MetricBag(), RelativePath::fromString('test.php'), 10);
+        $repository->add($method2, new MetricBag(), RelativePath::fromString('test.php'), 20);
+        $repository->add($class, new MetricBag(), RelativePath::fromString('test.php'), 1);
 
         $methods = iterator_to_array($repository->all(SymbolType::Method), false);
 
@@ -109,9 +138,9 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $class1 = SymbolPath::forClass('App', 'Service');
         $class2 = SymbolPath::forClass('App', 'Repository');
 
-        $repository->add($method, new MetricBag(), 'test.php', 10);
-        $repository->add($class1, new MetricBag(), 'test.php', 1);
-        $repository->add($class2, new MetricBag(), 'test2.php', 1);
+        $repository->add($method, new MetricBag(), RelativePath::fromString('test.php'), 10);
+        $repository->add($class1, new MetricBag(), RelativePath::fromString('test.php'), 1);
+        $repository->add($class2, new MetricBag(), RelativePath::fromString('test2.php'), 1);
 
         $classes = iterator_to_array($repository->all(SymbolType::Class_), false);
 
@@ -128,12 +157,12 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $class = SymbolPath::forClass('App\\Service', 'Test');
 
         $ns1Metrics = (new MetricBag())->with('classCount.sum', 5);
-        $repository->add($ns1, $ns1Metrics, 'test.php', 0);
+        $repository->add($ns1, $ns1Metrics, RelativePath::fromString('test.php'), 0);
 
         $ns2Metrics = (new MetricBag())->with('classCount.sum', 3);
-        $repository->add($ns2, $ns2Metrics, 'test2.php', 0);
+        $repository->add($ns2, $ns2Metrics, RelativePath::fromString('test2.php'), 0);
 
-        $repository->add($class, new MetricBag(), 'test.php', 1);
+        $repository->add($class, new MetricBag(), RelativePath::fromString('test.php'), 1);
 
         $namespaces = iterator_to_array($repository->all(SymbolType::Namespace_), false);
 
@@ -148,19 +177,19 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Service', 'UserService'),
             new MetricBag(),
-            'src/Service/UserService.php',
+            RelativePath::fromString('src/Service/UserService.php'),
             1,
         );
         $repository->add(
             SymbolPath::forClass('App\\Repository', 'UserRepository'),
             new MetricBag(),
-            'src/Repository/UserRepository.php',
+            RelativePath::fromString('src/Repository/UserRepository.php'),
             1,
         );
         $repository->add(
             SymbolPath::forClass('App\\Service', 'OrderService'),
             new MetricBag(),
-            'src/Service/OrderService.php',
+            RelativePath::fromString('src/Service/OrderService.php'),
             1,
         );
 
@@ -177,19 +206,19 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Service', 'UserService'),
             new MetricBag(),
-            'src/Service/UserService.php',
+            RelativePath::fromString('src/Service/UserService.php'),
             1,
         );
         $repository->add(
             SymbolPath::forClass('App\\Repository', 'UserRepository'),
             new MetricBag(),
-            'src/Repository/UserRepository.php',
+            RelativePath::fromString('src/Repository/UserRepository.php'),
             1,
         );
         $repository->add(
             SymbolPath::forMethod('App\\Service', 'UserService', 'find'),
             new MetricBag(),
-            'src/Service/UserService.php',
+            RelativePath::fromString('src/Service/UserService.php'),
             10,
         );
 
@@ -209,7 +238,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $repo1->add(
             SymbolPath::forMethod('App', 'ServiceA', 'method1'),
             $metrics1,
-            'ServiceA.php',
+            RelativePath::fromString('ServiceA.php'),
             10,
         );
 
@@ -218,7 +247,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $repo2->add(
             SymbolPath::forMethod('App', 'ServiceB', 'method2'),
             $metrics2,
-            'ServiceB.php',
+            RelativePath::fromString('ServiceB.php'),
             20,
         );
 
@@ -249,13 +278,13 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $metrics1 = (new MetricBag())
             ->with('methodCount', 5)
             ->with('loc', 100);
-        $repo1->add($symbol, $metrics1, 'Service.php', 1);
+        $repo1->add($symbol, $metrics1, RelativePath::fromString('Service.php'), 1);
 
         // Add different metrics to second repository for same symbol
         $metrics2 = (new MetricBag())
             ->with('ccn.sum', 25)
             ->with('loc', 150); // Override
-        $repo2->add($symbol, $metrics2, 'Service.php', 1);
+        $repo2->add($symbol, $metrics2, RelativePath::fromString('Service.php'), 1);
 
         $merged = $repo1->mergeWith($repo2);
 
@@ -277,7 +306,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $repo1->add(
             SymbolPath::forMethod('App', 'Service', 'method'),
             $metrics,
-            'Service.php',
+            RelativePath::fromString('Service.php'),
             10,
         );
 
@@ -295,10 +324,10 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $symbol = SymbolPath::forClass('App\\Service', 'UserService');
 
         // First add with line=0 (e.g., from aggregator)
-        $repository->add($symbol, (new MetricBag())->with('wmc', 10), 'src/Service/UserService.php', 0);
+        $repository->add($symbol, (new MetricBag())->with('wmc', 10), RelativePath::fromString('src/Service/UserService.php'), 0);
 
         // Second add with real line number
-        $repository->add($symbol, (new MetricBag())->with('loc', 100), 'src/Service/UserService.php', 42);
+        $repository->add($symbol, (new MetricBag())->with('loc', 100), RelativePath::fromString('src/Service/UserService.php'), 42);
 
         $infos = iterator_to_array($repository->all(SymbolType::Class_), false);
         $info = $infos[0];
@@ -313,10 +342,10 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $symbol = SymbolPath::forClass('App\\Service', 'UserService');
 
         // First add with real line number
-        $repository->add($symbol, (new MetricBag())->with('loc', 100), 'src/Service/UserService.php', 42);
+        $repository->add($symbol, (new MetricBag())->with('loc', 100), RelativePath::fromString('src/Service/UserService.php'), 42);
 
         // Second add with line=0 should NOT overwrite
-        $repository->add($symbol, (new MetricBag())->with('wmc', 10), 'src/Service/UserService.php', 0);
+        $repository->add($symbol, (new MetricBag())->with('wmc', 10), RelativePath::fromString('src/Service/UserService.php'), 0);
 
         $infos = iterator_to_array($repository->all(SymbolType::Class_), false);
         $info = $infos[0];
@@ -333,10 +362,10 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $symbol = SymbolPath::forClass('App', 'Service');
 
         // repo1 has line=0
-        $repo1->add($symbol, (new MetricBag())->with('wmc', 10), 'Service.php', 0);
+        $repo1->add($symbol, (new MetricBag())->with('wmc', 10), RelativePath::fromString('Service.php'), 0);
 
         // repo2 has line=42
-        $repo2->add($symbol, (new MetricBag())->with('loc', 100), 'Service.php', 42);
+        $repo2->add($symbol, (new MetricBag())->with('loc', 100), RelativePath::fromString('Service.php'), 42);
 
         $merged = $repo1->mergeWith($repo2);
 
@@ -357,7 +386,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             ->withEntry('dependencies', ['name' => 'Foo'])
             ->withEntry('dependencies', ['name' => 'Bar']);
 
-        $repository->add($symbol, $metrics, 'src/Service/UserService.php', 1);
+        $repository->add($symbol, $metrics, RelativePath::fromString('src/Service/UserService.php'), 1);
 
         $repository->addScalar($symbol, 'loc', 100);
 
@@ -388,7 +417,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
             ->with('foo', 10)
             ->with('bar', 42);
 
-        $repository->add($symbol, $metrics, 'src/Service/UserService.php', 1);
+        $repository->add($symbol, $metrics, RelativePath::fromString('src/Service/UserService.php'), 1);
 
         $repository->addScalar($symbol, 'foo', 20);
 

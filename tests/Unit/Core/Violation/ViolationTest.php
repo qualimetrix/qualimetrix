@@ -78,7 +78,7 @@ final class ViolationTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/bootstrap.php')),
-            symbolPath: SymbolPath::forFile('src/bootstrap.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/bootstrap.php')),
             ruleName: 'file-length',
             violationCode: 'file-length',
             message: 'File is too long',
@@ -138,7 +138,7 @@ final class ViolationTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/test.php')),
-            symbolPath: SymbolPath::forFile('src/test.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/test.php')),
             ruleName: 'test-rule',
             violationCode: 'test-rule',
             message: 'Test message',
@@ -170,7 +170,7 @@ final class ViolationTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/test.php')),
-            symbolPath: SymbolPath::forFile('src/test.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/test.php')),
             ruleName: 'test-rule',
             violationCode: 'test-rule',
             message: 'Test message',
