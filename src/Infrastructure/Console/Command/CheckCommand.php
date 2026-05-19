@@ -12,6 +12,7 @@ use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\BaselinePresenter;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
@@ -259,7 +260,7 @@ final class CheckCommand extends Command
     /**
      * Runs the analysis on specified paths.
      *
-     * @param list<string> $paths
+     * @param list<AbsolutePath> $paths
      */
     private function runAnalysis(array $paths, \Qualimetrix\Analysis\Discovery\FileDiscoveryInterface $fileDiscovery): \Qualimetrix\Analysis\Pipeline\AnalysisResult
     {
@@ -269,7 +270,7 @@ final class CheckCommand extends Command
     /**
      * Validates that all provided paths exist.
      *
-     * @param list<string> $paths
+     * @param list<AbsolutePath> $paths
      *
      * @return list<string> Error messages (empty if all valid)
      */
@@ -277,8 +278,8 @@ final class CheckCommand extends Command
     {
         $errors = [];
         foreach ($paths as $path) {
-            if (!file_exists($path)) {
-                $errors[] = "Error: path '{$path}' does not exist";
+            if (!$path->exists()) {
+                $errors[] = \sprintf("Error: path '%s' does not exist", $path->value());
             }
         }
 
@@ -332,12 +333,15 @@ final class CheckCommand extends Command
     /**
      * Warns when analyzed paths don't cover the full project scope.
      *
-     * @param list<string> $paths
+     * @param list<AbsolutePath> $paths
      */
     private function warnAboutPartialScope(array $paths, string $projectRoot, OutputInterface $output): void
     {
         $checker = new ScopeWarningChecker();
-        $warnings = $checker->check($projectRoot, $paths);
+        $warnings = $checker->check(
+            $projectRoot,
+            array_map(static fn(AbsolutePath $p): string => $p->value(), $paths),
+        );
         foreach ($warnings as $warning) {
             $this->writeWarning($output, \sprintf('Warning: %s', $warning));
         }

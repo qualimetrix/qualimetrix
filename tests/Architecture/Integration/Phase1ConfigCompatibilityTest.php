@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Architecture\Integration;
 
 use PHPUnit\Framework\Attributes\Group;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Architecture\Support\ArchitectureViolationProjector;
 
@@ -74,7 +76,7 @@ final class Phase1ConfigCompatibilityTest extends TestCase
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
-        $analysis = $pipeline->analyze(self::FIXTURE_PATH);
+        $analysis = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
         $actual = ArchitectureViolationProjector::project($analysis->violations);
 
         if (getenv('QMX_GOLDEN_UPDATE') === '1') {

@@ -16,6 +16,7 @@ use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
@@ -65,7 +66,7 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
         $architecture = new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore);
 
         $pipeline = $this->createPipelineWithArchitecture($architecture);
-        $analysisResult = $pipeline->analyze(self::FIXTURE_PATH);
+        $analysisResult = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
 
         // Sanity: AnalysisPipeline must surface BOTH controllers as raw
         // violations — suppression is applied downstream, not inside the

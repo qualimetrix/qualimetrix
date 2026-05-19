@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Pipeline;
 
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 
 /**
  * Main entry point for code analysis.
@@ -23,8 +24,8 @@ interface AnalysisPipelineInterface
     /**
      * Analyze the given paths.
      *
-     * @param string|list<string> $paths Single path or list of paths to analyze
+     * @param AbsolutePath|list<AbsolutePath> $paths Single path or list of paths to analyze
      * @param FileDiscoveryInterface|null $customFileDiscovery Custom file discovery strategy (e.g., for Git scope)
      */
-    public function analyze(string|array $paths, ?FileDiscoveryInterface $customFileDiscovery = null): AnalysisResult;
+    public function analyze(AbsolutePath|array $paths, ?FileDiscoveryInterface $customFileDiscovery = null): AnalysisResult;
 }

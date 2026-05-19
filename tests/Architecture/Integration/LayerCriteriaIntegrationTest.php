@@ -16,6 +16,7 @@ use Qualimetrix\Architecture\Domain\Layer\MatchMode;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
@@ -84,7 +85,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
             new ArchitectureConfiguration($registry, $policy, CoverageMode::Warn),
         );
 
-        $result = $pipeline->analyze(self::FIXTURE_PATH);
+        $result = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
 
         $layerOf = $this->buildPerSourceLayerMap($result->violations);
 
@@ -144,7 +145,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
             new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore),
         );
 
-        $result = $pipeline->analyze(self::FIXTURE_PATH);
+        $result = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
 
         $layerSources = $this->collectSourceFqns(
             $this->filterByRule($result->violations, LayerViolationRule::NAME),
@@ -203,7 +204,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
             new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore),
         );
 
-        $result = $pipeline->analyze(self::FIXTURE_PATH);
+        $result = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
 
         $layerSources = $this->collectSourceFqns(
             $this->filterByRule($result->violations, LayerViolationRule::NAME),
@@ -270,7 +271,7 @@ final class LayerCriteriaIntegrationTest extends TestCase
             new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore),
         );
 
-        $result = $pipeline->analyze(self::FIXTURE_PATH);
+        $result = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
         $violations = $this->filterByRule($result->violations, LayerViolationRule::NAME);
 
         $expectedTrailers = [

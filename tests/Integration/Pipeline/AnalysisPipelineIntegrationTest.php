@@ -29,6 +29,7 @@ use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleInterface;
@@ -103,7 +104,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Act
-        $pipeline->analyze('/tmp/src');
+        $pipeline->analyze(AbsolutePath::fromString('/tmp/src'));
 
         // Assert: the rule should have received a non-null dependency graph
         self::assertNotNull($capturedContext, 'Rule should have been executed');
@@ -175,7 +176,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Act
-        $result = $pipeline->analyze('/tmp/src');
+        $result = $pipeline->analyze(AbsolutePath::fromString('/tmp/src'));
 
         // Assert: should find circular dependency violations
         $circularViolations = array_filter(
@@ -262,7 +263,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Act
-        $result = $pipeline->analyze('/tmp/src');
+        $result = $pipeline->analyze(AbsolutePath::fromString('/tmp/src'));
 
         // Verify class-level CBO was computed (sanity check)
         $orderServiceBag = $result->metrics->get(

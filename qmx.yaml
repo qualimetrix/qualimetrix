@@ -251,6 +251,7 @@ rules:
       - Qualimetrix\Core\Symbol
       - Qualimetrix\Core\Metric
       - Qualimetrix\Core\Rule
+      - Qualimetrix\Core\Path
       - Qualimetrix\Rules\Support
       - Qualimetrix\Rules
     exclude_paths:

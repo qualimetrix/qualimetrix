@@ -28,6 +28,7 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -72,7 +73,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $pipeline = $this->createPipeline();
 
-        $result = $pipeline->analyze('/path/to/src');
+        $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
 
         self::assertSame(0, $result->filesAnalyzed);
         self::assertSame(0, $result->filesSkipped);
@@ -100,7 +101,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $pipeline = $this->createPipeline(collectionOrchestrator: $collectionOrchestrator);
 
-        $result = $pipeline->analyze('/path/to/src');
+        $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
 
         self::assertSame(2, $result->filesAnalyzed);
         self::assertSame(0, $result->filesSkipped);
@@ -118,7 +119,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $pipeline = $this->createPipeline(defaultDiscovery: $defaultDiscovery);
 
-        $pipeline->analyze('/path/to/src', $customDiscovery);
+        $pipeline->analyze(AbsolutePath::fromString('/path/to/src'), $customDiscovery);
     }
 
     #[Test]
@@ -142,7 +143,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $pipeline = $this->createPipeline(collectionOrchestrator: $collectionOrchestrator);
 
-        $result = $pipeline->analyze('/path/to/src');
+        $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
 
         self::assertSame(1, $result->filesAnalyzed);
     }
@@ -155,7 +156,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $pipeline = $this->createPipeline();
 
-        $result = $pipeline->analyze('/path/to/src');
+        $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
 
         self::assertSame(5, $result->filesAnalyzed);
         self::assertSame(2, $result->filesSkipped);
@@ -174,7 +175,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $pipeline = $this->createPipeline(ruleExecutor: $ruleExecutor);
 
-        $pipeline->analyze('/path/to/src');
+        $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
     }
 
     #[Test]
@@ -190,13 +191,16 @@ final class AnalysisPipelineTest extends TestCase
 
         $pipeline = $this->createPipeline(logger: $logger);
 
-        $pipeline->analyze('/path/to/src');
+        $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
     }
 
     #[Test]
     public function itHandlesArrayOfPaths(): void
     {
-        $paths = ['/path/to/src', '/path/to/lib'];
+        $paths = [
+            AbsolutePath::fromString('/path/to/src'),
+            AbsolutePath::fromString('/path/to/lib'),
+        ];
 
         $defaultDiscovery = $this->createMock(FileDiscoveryInterface::class);
         $defaultDiscovery->expects(self::once())
@@ -237,7 +241,10 @@ final class AnalysisPipelineTest extends TestCase
             ->willReturn(new CollectionPhaseOutput(new CollectionResult(2, 0), []));
 
         $pipeline = $this->createPipeline(collectionOrchestrator: $collectionOrchestrator);
-        $pipeline->analyze(['/path/to/src', '/path/to/src/sub']);
+        $pipeline->analyze([
+            AbsolutePath::fromString('/path/to/src'),
+            AbsolutePath::fromString('/path/to/src/sub'),
+        ]);
     }
 
     #[Test]
@@ -270,7 +277,7 @@ final class AnalysisPipelineTest extends TestCase
             ->withLogger($this->logger)
             ->build();
 
-        $result = $pipeline->analyze('/path/to/src');
+        $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
 
         self::assertSame([], $result->violations);
     }
@@ -289,7 +296,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $pipeline = $this->createPipeline(configurationProvider: $configProvider);
 
-        $result = $pipeline->analyze('/path/to/src');
+        $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
 
         self::assertSame([], $result->violations);
     }
@@ -322,7 +329,7 @@ final class AnalysisPipelineTest extends TestCase
         $ruleExecutor->method('getAllRules')->willReturn([$booleanArgRule, $complexityRule]);
 
         $pipeline = $this->createPipeline(ruleExecutor: $ruleExecutor);
-        $result = $pipeline->analyze('/path/to/src');
+        $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
 
         // Should have a warning violation for the unsupported rule
         self::assertCount(1, $result->violations);
@@ -357,7 +364,7 @@ final class AnalysisPipelineTest extends TestCase
         $ruleExecutor->method('getAllRules')->willReturn([$complexityRule]);
 
         $pipeline = $this->createPipeline(ruleExecutor: $ruleExecutor);
-        $result = $pipeline->analyze('/path/to/src');
+        $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
 
         self::assertSame([], $result->violations);
     }
@@ -402,7 +409,7 @@ final class AnalysisPipelineTest extends TestCase
         // bind() simulates the production RuntimeConfigurator handshake.
         $processor->bind(ArchitectureConfiguration::empty());
 
-        $pipeline->analyze('/path/to/src');
+        $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
     }
 
     #[Test]
@@ -436,7 +443,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $processor->bind(ArchitectureConfiguration::empty());
 
-        $pipeline->analyze('/path/to/src');
+        $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
     }
 
     #[Test]
@@ -462,7 +469,7 @@ final class AnalysisPipelineTest extends TestCase
         $ruleExecutor->method('getAllRules')->willReturn([]);
 
         $pipeline = $this->createPipeline(ruleExecutor: $ruleExecutor);
-        $result = $pipeline->analyze('/path/to/src');
+        $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
 
         self::assertSame([], $result->violations);
     }

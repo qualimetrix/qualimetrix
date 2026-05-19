@@ -18,6 +18,8 @@ use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Exception\ParseException;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -93,11 +95,17 @@ final class GraphExportCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var list<string> $paths */
-        $paths = $input->getArgument('paths');
+        /** @var list<string> $rawPaths */
+        $rawPaths = $input->getArgument('paths');
+
+        $cwd = AbsolutePath::fromString((string) getcwd());
+        $paths = array_map(
+            static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $cwd),
+            $rawPaths,
+        );
 
         $this->logger->info('Starting dependency graph export', [
-            'paths' => $paths,
+            'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $paths),
         ]);
 
         // Discover files

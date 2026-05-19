@@ -14,6 +14,7 @@ use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Metric\AggregationMeta;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -47,7 +48,7 @@ final class GoldenFileAggregationTest extends TestCase
         $pipeline = $container->get(AnalysisPipelineInterface::class);
 
         $fixturesPath = \dirname(__DIR__, 2) . '/Fixtures/GoldenMetrics';
-        $result = $pipeline->analyze($fixturesPath);
+        $result = $pipeline->analyze(AbsolutePath::fromString($fixturesPath));
 
         self::$repository = $result->metrics;
     }

@@ -19,6 +19,7 @@ use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -62,15 +63,17 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $this->graphBuilder = $graphBuilder ?? new DependencyGraphBuilder();
     }
 
-    public function analyze(string|array $paths, ?FileDiscoveryInterface $discovery = null): AnalysisResult
+    public function analyze(AbsolutePath|array $paths, ?FileDiscoveryInterface $discovery = null): AnalysisResult
     {
         $startTime = microtime(true);
         $profiler = $this->profilerHolder?->get(); // @phpstan-ignore staticMethod.dynamicCall
 
         $profiler?->start('analysis', 'pipeline');
 
+        $pathList = $paths instanceof AbsolutePath ? [$paths] : array_values($paths);
+
         $this->logger->info('Starting analysis', [
-            'paths' => \is_array($paths) ? $paths : [$paths],
+            'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $pathList),
         ]);
 
         $repository = $this->repositoryFactory->create();
@@ -78,8 +81,9 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
 
         // Phase 1: Discovery
         $profiler?->start('discovery', 'pipeline');
-        $normalizedPaths = \is_array($paths) ? array_values($paths) : $paths;
-        $files = array_values(iterator_to_array($discovery->discover($normalizedPaths), true));
+        // preserve_keys=false: discover() yields AbsolutePath as the key (object — invalid array key);
+        // we only need the SplFileInfo values for downstream phases.
+        $files = iterator_to_array($discovery->discover($pathList), false);
 
         // Filter out @generated files unless explicitly included
         $config = $this->configurationProvider->getConfiguration();
