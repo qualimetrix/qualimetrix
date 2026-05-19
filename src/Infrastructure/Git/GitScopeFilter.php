@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Git;
 
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Violation\Filter\ViolationFilterInterface;
 use Qualimetrix\Core\Violation\Violation;
 
@@ -27,6 +28,7 @@ final class GitScopeFilter implements ViolationFilterInterface
     public function __construct(
         private readonly GitClient $git,
         private readonly GitScope $scope,
+        private readonly AbsolutePath $projectRoot,
         private readonly bool $includeParentNamespaces = true,
     ) {
         $this->buildIndex();
@@ -59,7 +61,6 @@ final class GitScopeFilter implements ViolationFilterInterface
     private function buildIndex(): void
     {
         $changedFiles = $this->git->getChangedFiles($this->scope->ref);
-        $projectRoot = $this->git->getProjectRoot();
 
         $this->changedPaths = [];
         $this->changedNamespaces = [];
@@ -74,12 +75,11 @@ final class GitScopeFilter implements ViolationFilterInterface
             $this->changedPaths[$file->path->value()] = true;
 
             // Extract namespace from file. Path is project-relative, so join
-            // against the project root (NOT git top-level — the two differ when
-            // the project sits in a git subdirectory). Phase 3 (ADR 0015) keeps
-            // this contract while migrating extractNamespace itself to typed I/O.
-            $fullPath = $projectRoot->joinRelative($file->path);
+            // against the explicit project root (NOT git top-level — the two
+            // differ when the project sits in a git subdirectory).
+            $fullPath = $this->projectRoot->joinRelative($file->path);
             if ($fullPath->isFile()) {
-                $namespace = $this->extractNamespace($fullPath->value());
+                $namespace = $this->extractNamespace($fullPath);
                 if ($namespace !== null) {
                     // Add all parent namespaces
                     $parts = explode('\\', $namespace);
@@ -96,11 +96,11 @@ final class GitScopeFilter implements ViolationFilterInterface
     /**
      * Extracts namespace from a PHP file without full parsing.
      *
-     * This is a quick extraction that reads the file and looks for namespace declaration.
+     * Reads the file at its absolute path and looks for the namespace declaration.
      */
-    private function extractNamespace(string $filePath): ?string
+    private function extractNamespace(AbsolutePath $filePath): ?string
     {
-        $content = file_get_contents($filePath);
+        $content = file_get_contents($filePath->value());
 
         if ($content === false) {
             return null;

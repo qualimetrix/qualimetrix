@@ -43,11 +43,13 @@ final class GitClient
     }
 
     /**
-     * Returns the root directory of the git repository.
+     * Returns the root directory of the git repository (the `git rev-parse
+     * --show-toplevel`). May differ from {@see getProjectRoot()} when the
+     * project sits in a strict subdirectory of the git tree.
      */
-    public function getRoot(): string
+    public function getRoot(): AbsolutePath
     {
-        return trim($this->exec('git rev-parse --show-toplevel'));
+        return AbsolutePath::fromString(trim($this->exec('git rev-parse --show-toplevel')));
     }
 
     /**
@@ -144,11 +146,7 @@ final class GitClient
      */
     private function gitToplevel(): AbsolutePath
     {
-        if ($this->gitToplevelCache === null) {
-            $this->gitToplevelCache = AbsolutePath::fromString($this->getRoot());
-        }
-
-        return $this->gitToplevelCache;
+        return $this->gitToplevelCache ??= $this->getRoot();
     }
 
     /**

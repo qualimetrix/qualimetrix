@@ -141,6 +141,7 @@ final readonly class ViolationFilterPipeline
             $gitFilter = new GitScopeFilter(
                 $options->gitScope->gitClient,
                 $options->gitScope->reportScope,
+                $options->gitScope->gitClient->getProjectRoot(),
                 !$options->gitScope->strictMode,
             );
 

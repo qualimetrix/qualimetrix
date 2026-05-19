@@ -47,7 +47,7 @@ final class HookInstallCommand extends Command
         }
 
         // Check if .git/hooks directory exists
-        $hooksDir = $gitDir . '/hooks';
+        $hooksDir = $gitDir->value() . '/hooks';
         if (!is_dir($hooksDir)) {
             $output->writeln('<error>Git hooks directory not found: ' . $hooksDir . '</error>');
 
