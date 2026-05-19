@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -48,7 +49,7 @@ final class HookUninstallCommand extends Command
             return self::FAILURE;
         }
 
-        $hookPath = $gitDir->value() . '/hooks/pre-commit';
+        $hookPath = $gitDir->joinRelative(RelativePath::fromString('hooks/pre-commit'))->value();
 
         if (!file_exists($hookPath)) {
             $output->writeln('<comment>Pre-commit hook not found. Nothing to uninstall.</comment>');

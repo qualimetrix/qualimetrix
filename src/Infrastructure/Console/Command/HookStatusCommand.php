@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -42,7 +43,7 @@ final class HookStatusCommand extends Command
         $output->writeln('<info>Git Pre-commit Hook Status</info>');
         $output->writeln('');
 
-        $hookPath = $gitDir->value() . '/hooks/pre-commit';
+        $hookPath = $gitDir->joinRelative(RelativePath::fromString('hooks/pre-commit'))->value();
 
         // Check if hook exists
         if (!file_exists($hookPath)) {
