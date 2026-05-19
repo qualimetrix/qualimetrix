@@ -10,7 +10,6 @@ use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -97,7 +96,7 @@ final class MaintainabilityRule extends AbstractRule
                     : $effectiveOptions->warning;
 
                 $violations[] = new Violation(
-                    location: new Location(RelativePath::fromString(PathNormalizer::relativize($methodInfo->file)), $methodInfo->line),
+                    location: new Location($methodInfo->file, $methodInfo->line),
                     symbolPath: $methodInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: self::NAME,
@@ -123,10 +122,20 @@ final class MaintainabilityRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return MaintainabilityOptions::class;
-    }    private function isTestFile(string $file): bool
+    }
+
+    private function isTestFile(?RelativePath $file): bool
     {
-        return str_ends_with($file, 'Test.php')
-            || str_contains($file, '/tests/')
-            || str_contains($file, '/Tests/');
+        if ($file === null) {
+            return false;
+        }
+
+        $value = $file->value();
+
+        return str_ends_with($value, 'Test.php')
+            || str_starts_with($value, 'tests/')
+            || str_starts_with($value, 'Tests/')
+            || str_contains($value, '/tests/')
+            || str_contains($value, '/Tests/');
     }
 }

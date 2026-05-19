@@ -10,11 +10,9 @@ use Qualimetrix\Core\ComputedMetric\HealthDimension;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Violation;
 
 /**
@@ -199,7 +197,7 @@ final readonly class NamespaceDrillDown
 
             $offenders[] = new WorstOffender(
                 symbolPath: $symbolInfo->symbolPath,
-                file: RelativePath::fromString(PathNormalizer::relativize($symbolInfo->file)),
+                file: $symbolInfo->file,
                 healthOverall: $scoreValue,
                 label: $label,
                 reason: $reason,

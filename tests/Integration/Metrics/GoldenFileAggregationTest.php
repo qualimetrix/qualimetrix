@@ -14,6 +14,7 @@ use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Metric\AggregationMeta;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
@@ -298,21 +299,21 @@ final class GoldenFileAggregationTest extends TestCase
         $fixturesPath = 'tests/Fixtures/GoldenMetrics';
 
         // UserRepository.php
-        $m = self::$repository->get(SymbolPath::forFile("{$fixturesPath}/App/Repository/UserRepository.php"));
+        $m = self::$repository->get(SymbolPath::forFile(RelativePath::fromString("{$fixturesPath}/App/Repository/UserRepository.php")));
         self::assertNotNull($m->get('loc'), 'UserRepository.php loc exists');
         self::assertSame(1, $m->get('classCount'), 'UserRepository.php classCount');
 
         // UserRepositoryInterface.php
-        $m = self::$repository->get(SymbolPath::forFile("{$fixturesPath}/App/Repository/UserRepositoryInterface.php"));
+        $m = self::$repository->get(SymbolPath::forFile(RelativePath::fromString("{$fixturesPath}/App/Repository/UserRepositoryInterface.php")));
         self::assertSame(1, $m->get('interfaceCount'), 'UserRepositoryInterface.php interfaceCount');
 
         // UserService.php
-        $m = self::$repository->get(SymbolPath::forFile("{$fixturesPath}/App/Service/UserService.php"));
+        $m = self::$repository->get(SymbolPath::forFile(RelativePath::fromString("{$fixturesPath}/App/Service/UserService.php")));
         self::assertNotNull($m->get('loc'), 'UserService.php loc exists');
         self::assertSame(1, $m->get('classCount'), 'UserService.php classCount');
 
         // global_helper.php
-        $m = self::$repository->get(SymbolPath::forFile("{$fixturesPath}/global_helper.php"));
+        $m = self::$repository->get(SymbolPath::forFile(RelativePath::fromString("{$fixturesPath}/global_helper.php")));
         self::assertNotNull($m->get('loc'), 'global_helper.php loc exists');
         self::assertSame(1, $m->get('classCount'), 'global_helper.php classCount');
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Metric;
 
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -37,10 +38,10 @@ interface MetricRepositoryInterface
      *
      * @param SymbolPath $symbol The symbol to add metrics for
      * @param MetricBag $metrics The metrics to add
-     * @param string $file The source file path
+     * @param ?RelativePath $file The source file path; null for symbols without a single owning file (e.g., class-level coupling metrics aggregated by CouplingCollector, namespace-level graph metrics)
      * @param ?int $line The line number (null for aggregated/namespace metrics)
      */
-    public function add(SymbolPath $symbol, MetricBag $metrics, string $file, ?int $line): void;
+    public function add(SymbolPath $symbol, MetricBag $metrics, ?RelativePath $file, ?int $line): void;
 
     /**
      * Adds a single scalar metric to an existing symbol.

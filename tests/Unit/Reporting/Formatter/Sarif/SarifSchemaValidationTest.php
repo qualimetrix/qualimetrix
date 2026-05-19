@@ -102,7 +102,7 @@ final class SarifSchemaValidationTest extends TestCase
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
-                symbolPath: SymbolPath::forFile('src/Service/UserService.php'),
+                symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service/UserService.php')),
                 ruleName: 'duplication.code-duplication',
                 violationCode: 'duplication.code-duplication',
                 message: 'Duplicated code block (20 lines, 3 occurrences)',

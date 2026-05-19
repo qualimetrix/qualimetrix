@@ -15,6 +15,7 @@ use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(TreeAwareNamespaceAggregator::class)]
@@ -67,7 +68,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Service', 'Svc'),
             (new MetricBag())->with('ccn.sum', 12)->with('ccn.avg', 4.0)->with('ccn.count', 3),
-            'src/S/Svc.php',
+            RelativePath::fromString('src/S/Svc.php'),
             1,
         );
 
@@ -76,7 +77,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Domain', 'Ent'),
             (new MetricBag())->with('ccn.sum', 10)->with('ccn.avg', 10.0)->with('ccn.count', 1),
-            'src/D/Ent.php',
+            RelativePath::fromString('src/D/Ent.php'),
             1,
         );
 
@@ -145,14 +146,14 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App', 'Bootstrap'),
             (new MetricBag())->with('ccn.sum', 3),
-            'src/Bootstrap.php',
+            RelativePath::fromString('src/Bootstrap.php'),
             1,
         );
         $this->addMethodMetric($repository, 'App', 'Bootstrap', 'boot', 'src/Bootstrap.php', 'ccn', 3);
         $repository->add(
             SymbolPath::forClass('App', 'Kernel'),
             (new MetricBag())->with('ccn.sum', 7),
-            'src/Kernel.php',
+            RelativePath::fromString('src/Kernel.php'),
             1,
         );
         $this->addMethodMetric($repository, 'App', 'Kernel', 'handle', 'src/Kernel.php', 'ccn', 7);
@@ -210,13 +211,13 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Service', 'Svc'),
             (new MetricBag())->with('foo', 42),
-            'src/Svc.php',
+            RelativePath::fromString('src/Svc.php'),
             1,
         );
         $repository->add(
-            SymbolPath::forFile('src/Svc.php'),
+            SymbolPath::forFile(RelativePath::fromString('src/Svc.php')),
             (new MetricBag())->with('foo', 42),
-            'src/Svc.php',
+            RelativePath::fromString('src/Svc.php'),
             null,
         );
         $this->addNamespaceBag($repository, 'App\\Service', ['foo.sum' => 42.0]);
@@ -240,13 +241,13 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Service\\Sub', 'Bar'),
             (new MetricBag())->with('foo', 10),
-            'src/Sub/Bar.php',
+            RelativePath::fromString('src/Sub/Bar.php'),
             1,
         );
         $repository->add(
-            SymbolPath::forFile('src/Sub/Bar.php'),
+            SymbolPath::forFile(RelativePath::fromString('src/Sub/Bar.php')),
             (new MetricBag())->with('foo', 10),
-            'src/Sub/Bar.php',
+            RelativePath::fromString('src/Sub/Bar.php'),
             null,
         );
         $this->addNamespaceBag($repository, 'App\\Service\\Sub', ['foo.sum' => 10.0]);
@@ -269,19 +270,19 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass('App\\Service', 'Svc1'),
             new MetricBag(),
-            'src/S/Svc1.php',
+            RelativePath::fromString('src/S/Svc1.php'),
             1,
         );
         $repository->add(
             SymbolPath::forClass('App\\Service', 'Svc2'),
             new MetricBag(),
-            'src/S/Svc2.php',
+            RelativePath::fromString('src/S/Svc2.php'),
             1,
         );
         $repository->add(
             SymbolPath::forMethod('App\\Service', 'Svc1', 'doIt'),
             new MetricBag(),
-            'src/S/Svc1.php',
+            RelativePath::fromString('src/S/Svc1.php'),
             5,
         );
         $this->addNamespaceBag($repository, 'App\\Service', []);
@@ -313,7 +314,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forClass($namespace, $class),
             (new MetricBag())->with('ccn.sum', $ccn),
-            $file,
+            RelativePath::fromString($file),
             1,
         );
     }
@@ -333,7 +334,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         $repository->add(
             SymbolPath::forMethod($namespace, $class, $method),
             (new MetricBag())->with($metric, $value),
-            $file,
+            RelativePath::fromString($file),
             1,
         );
     }
@@ -355,7 +356,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         }
 
         $symbols = $repository->forNamespace($namespace);
-        $firstFile = $symbols !== [] ? $symbols[0]->file : 'unknown.php';
+        $firstFile = $symbols !== [] ? $symbols[0]->file : RelativePath::fromString('unknown.php');
 
         $repository->add(
             SymbolPath::forNamespace($namespace),
@@ -381,10 +382,11 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
             $bag = $bag->with($key, $value);
         }
 
+        $relFile = RelativePath::fromString($file);
         $repository->add(
-            SymbolPath::forFile($file),
+            SymbolPath::forFile($relFile),
             $bag,
-            $file,
+            $relFile,
             null,
         );
     }

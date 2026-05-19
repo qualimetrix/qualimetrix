@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -113,7 +114,7 @@ final class ClassCountRuleTest extends TestCase
         $rule = new ClassCountRule(new ClassCountOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $namespaceInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 0);
+        $namespaceInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
         $metricBag = (new MetricBag())->with('classCount.sum', 5);
 
@@ -134,7 +135,7 @@ final class ClassCountRuleTest extends TestCase
         $rule = new ClassCountRule(new ClassCountOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $namespaceInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 0);
+        $namespaceInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
         // 18 classes is above warning (15) but below error (25)
         $metricBag = (new MetricBag())->with('classCount.sum', 18);
@@ -162,7 +163,7 @@ final class ClassCountRuleTest extends TestCase
         $rule = new ClassCountRule(new ClassCountOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $namespaceInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 0);
+        $namespaceInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
         // 30 classes is above error threshold (25)
         $metricBag = (new MetricBag())->with('classCount.sum', 30);
@@ -192,7 +193,7 @@ final class ClassCountRuleTest extends TestCase
         $rule = new ClassCountRule(new ClassCountOptions(warning: $warning, error: $error));
 
         $symbolPath = SymbolPath::forNamespace('App\Test');
-        $nsInfo = new SymbolInfo($symbolPath, 'test.php', 0);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 0);
 
         $metricBag = (new MetricBag())->with('classCount.sum', $classCount);
 

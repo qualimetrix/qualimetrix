@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -57,7 +58,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
         $symbolPath = SymbolPath::forClass('App', 'Clean');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Clean.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Clean.php'), 5);
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 0);
@@ -79,7 +80,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
         $symbolPath = SymbolPath::forClass('App', 'Smelly');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), 5);
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 1)
@@ -108,7 +109,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
         $symbolPath = SymbolPath::forClass('App', 'PropClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/PropClass.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/PropClass.php'), 5);
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 1)
@@ -133,7 +134,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
         $symbolPath = SymbolPath::forClass('App', 'ConstClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/ConstClass.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/ConstClass.php'), 5);
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 1)
@@ -159,7 +160,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
         $symbolPath = SymbolPath::forClass('App', 'ManyUnused');
-        $classInfo = new SymbolInfo($symbolPath, 'src/ManyUnused.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/ManyUnused.php'), 5);
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 4)

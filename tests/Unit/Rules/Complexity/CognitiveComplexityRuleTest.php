@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
@@ -119,7 +120,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('cognitive', 20);
 
@@ -146,7 +147,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('cognitive', 35);
 
@@ -189,7 +190,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('cognitive.max', 35); // Above warning (30), below error (50)
 
@@ -215,7 +216,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('cognitive.max', 55); // Above error (50)
 
@@ -241,10 +242,10 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $methodPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($methodPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($methodPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($classPath, 'src/Service/UserService.php', 5);
+        $classInfo = new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $methodBag = (new MetricBag())->with('cognitive', 20); // Warning
         $classBag = (new MetricBag())->with('cognitive.max', 35); // Warning
@@ -388,7 +389,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('cognitive', $cognitive);
 
@@ -449,7 +450,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('cognitive', 25)
@@ -482,7 +483,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('cognitive', 20)
@@ -508,7 +509,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('cognitive', 20);
 

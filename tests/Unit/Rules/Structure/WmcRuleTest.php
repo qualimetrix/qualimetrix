@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -113,7 +114,7 @@ final class WmcRuleTest extends TestCase
         $rule = new WmcRule(new WmcOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'SimpleClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/SimpleClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/SimpleClass.php'), 10);
 
         // WMC of 20 is below warning threshold (50)
         $metricBag = (new MetricBag())->with('wmc', 20);
@@ -136,7 +137,7 @@ final class WmcRuleTest extends TestCase
         $rule = new WmcRule(new WmcOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'MediumClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/MediumClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/MediumClass.php'), 10);
 
         // WMC of 60 is above warning threshold (50) but below error (80)
         $metricBag = (new MetricBag())->with('wmc', 60)->with('methodCount', 15);
@@ -169,7 +170,7 @@ final class WmcRuleTest extends TestCase
         $rule = new WmcRule(new WmcOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'ComplexClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/ComplexClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/ComplexClass.php'), 10);
 
         // WMC of 85 is above error threshold (80)
         $metricBag = (new MetricBag())->with('wmc', 85)->with('methodCount', 10);
@@ -201,7 +202,7 @@ final class WmcRuleTest extends TestCase
         $rule = new WmcRule(new WmcOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'LargeClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/LargeClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/LargeClass.php'), 10);
 
         // WMC of 93, 31 methods -> avg 3.0 -> "many methods, consider splitting"
         $metricBag = (new MetricBag())->with('wmc', 93)->with('methodCount', 31);
@@ -228,7 +229,7 @@ final class WmcRuleTest extends TestCase
         $rule = new WmcRule(new WmcOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'HugeClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/HugeClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/HugeClass.php'), 10);
 
         // WMC of 60, 30 methods -> avg 2.0 -> "many methods, consider splitting"
         $metricBag = (new MetricBag())->with('wmc', 60)->with('methodCount', 30);
@@ -255,7 +256,7 @@ final class WmcRuleTest extends TestCase
         $rule = new WmcRule(new WmcOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'SomeClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/SomeClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
 
         // WMC without methodCount metric
         $metricBag = (new MetricBag())->with('wmc', 60);
@@ -283,7 +284,7 @@ final class WmcRuleTest extends TestCase
         $rule = new WmcRule(new WmcOptions(warning: 20, error: 40));
 
         $symbolPath = SymbolPath::forClass('App\Service', 'CustomClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/CustomClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/CustomClass.php'), 10);
 
         // WMC of 25 is above custom warning threshold (20) but below custom error (40)
         $metricBag = (new MetricBag())->with('wmc', 25);
@@ -307,7 +308,7 @@ final class WmcRuleTest extends TestCase
         $rule = new WmcRule(new WmcOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'EmptyClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/EmptyClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/EmptyClass.php'), 10);
 
         // WMC of 0 for class without methods
         $metricBag = (new MetricBag())->with('wmc', 0);
@@ -332,8 +333,8 @@ final class WmcRuleTest extends TestCase
         $symbolPath1 = SymbolPath::forClass('App', 'SimpleClass');
         $symbolPath2 = SymbolPath::forClass('App', 'ComplexClass');
 
-        $classInfo1 = new SymbolInfo($symbolPath1, 'src/SimpleClass.php', 10);
-        $classInfo2 = new SymbolInfo($symbolPath2, 'src/ComplexClass.php', 20);
+        $classInfo1 = new SymbolInfo($symbolPath1, RelativePath::fromString('src/SimpleClass.php'), 10);
+        $classInfo2 = new SymbolInfo($symbolPath2, RelativePath::fromString('src/ComplexClass.php'), 20);
 
         $metricBag1 = (new MetricBag())->with('wmc', 20); // No violation
         $metricBag2 = (new MetricBag())->with('wmc', 90); // Error
@@ -366,7 +367,7 @@ final class WmcRuleTest extends TestCase
         $rule = new WmcRule(new WmcOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'SomeClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/SomeClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
 
         // No 'wmc' metric
         $metricBag = new MetricBag();
@@ -433,7 +434,7 @@ final class WmcRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('wmc', $wmc);
 
@@ -516,7 +517,7 @@ final class WmcRuleTest extends TestCase
         $rule = new WmcRule(new WmcOptions(excludeDataClasses: true));
 
         $symbolPath = SymbolPath::forClass('App\Dto', 'UserDto');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Dto/UserDto.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/UserDto.php'), 10);
 
         // WMC of 60 is above warning threshold (50), but isDataClass = 1
         $metricBag = (new MetricBag())
@@ -542,7 +543,7 @@ final class WmcRuleTest extends TestCase
         $rule = new WmcRule(new WmcOptions(excludeDataClasses: false));
 
         $symbolPath = SymbolPath::forClass('App\Dto', 'UserDto');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Dto/UserDto.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/UserDto.php'), 10);
 
         // WMC of 90 is above error threshold (80), and isDataClass = 1
         $metricBag = (new MetricBag())

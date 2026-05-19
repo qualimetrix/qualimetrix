@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\CodeSmell;
 
 use Qualimetrix\Core\Metric\MetricName;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Rules\AbstractRule;
@@ -106,7 +104,7 @@ final class UnreachableCodeRule extends AbstractRule
         $line = $firstLine !== null ? (int) $firstLine : $symbolInfo->line;
 
         return new Violation(
-            location: new Location(RelativePath::fromString(PathNormalizer::relativize($symbolInfo->file)), $line, precise: true),
+            location: new Location($symbolInfo->file, $line, precise: true),
             symbolPath: $symbolInfo->symbolPath,
             ruleName: $this->getName(),
             violationCode: self::NAME,

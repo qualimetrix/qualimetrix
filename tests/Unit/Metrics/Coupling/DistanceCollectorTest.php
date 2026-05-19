@@ -70,7 +70,7 @@ final class DistanceCollectorTest extends TestCase
             ->with('abstractness', 0.5)
             ->with('instability', 0.5);
 
-        $repository->add($nsPath, $metrics, '', 0);
+        $repository->add($nsPath, $metrics, null, 0);
 
         $graph = $this->createEmptyGraph();
 
@@ -91,7 +91,7 @@ final class DistanceCollectorTest extends TestCase
             ->with('abstractness', 0.0)
             ->with('instability', 0.0);
 
-        $repository->add($nsPath, $metrics, '', 0);
+        $repository->add($nsPath, $metrics, null, 0);
 
         $graph = $this->createEmptyGraph();
 
@@ -112,7 +112,7 @@ final class DistanceCollectorTest extends TestCase
             ->with('abstractness', 1.0)
             ->with('instability', 1.0);
 
-        $repository->add($nsPath, $metrics, '', 0);
+        $repository->add($nsPath, $metrics, null, 0);
 
         $graph = $this->createEmptyGraph();
 
@@ -133,7 +133,7 @@ final class DistanceCollectorTest extends TestCase
             ->with('abstractness', 0.3)
             ->with('instability', 0.4);
 
-        $repository->add($nsPath, $metrics, '', 0);
+        $repository->add($nsPath, $metrics, null, 0);
 
         $graph = $this->createEmptyGraph();
 
@@ -151,7 +151,7 @@ final class DistanceCollectorTest extends TestCase
         $repository = new InMemoryMetricRepository();
         $nsPath = SymbolPath::forNamespace('App\\NoMetrics');
 
-        $repository->add($nsPath, new MetricBag(), '', 0);
+        $repository->add($nsPath, new MetricBag(), null, 0);
 
         $graph = $this->createEmptyGraph();
 

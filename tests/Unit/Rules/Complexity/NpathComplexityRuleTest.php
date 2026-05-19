@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
@@ -119,7 +120,7 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('npath', 250); // Above warning (200), below error (1000)
 
@@ -146,7 +147,7 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('npath', 1200); // Above error (1000)
 
@@ -193,7 +194,7 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('npath.max', 600); // Above warning (500), below error (1000)
 
@@ -223,7 +224,7 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('npath.max', 1200); // Above error (1000)
 
@@ -254,10 +255,10 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $methodPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($methodPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($methodPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($classPath, 'src/Service/UserService.php', 5);
+        $classInfo = new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $methodBag = (new MetricBag())->with('npath', 250); // Warning
         $classBag = (new MetricBag())->with('npath.max', 600); // Warning
@@ -292,7 +293,7 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('npath', 2_500_000); // > 1M
 
@@ -438,7 +439,7 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath', $npath);
 
@@ -523,7 +524,7 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath', $npath);
 
@@ -555,7 +556,7 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'Test');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath.max', $npath);
 
@@ -614,7 +615,7 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('npath.max', 2_500_000); // > 1M
 
@@ -648,7 +649,7 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath', 1_500_000);
 
@@ -682,7 +683,7 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'Test');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath.max', 1_500_000);
 
@@ -717,7 +718,7 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('npath', 1296)
@@ -749,7 +750,7 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('npath', 1200);
 

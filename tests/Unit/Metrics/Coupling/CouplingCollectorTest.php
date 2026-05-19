@@ -817,11 +817,11 @@ final class CouplingCollectorTest extends TestCase
 
     private function registerClass(InMemoryMetricRepository $repository, string $fqn): void
     {
-        $repository->add(SymbolPath::fromClassFqn($fqn), new MetricBag(), '/test.php', 1);
+        $repository->add(SymbolPath::fromClassFqn($fqn), new MetricBag(), RelativePath::fromString('test.php'), 1);
     }
 
     private function registerNamespace(InMemoryMetricRepository $repository, string $namespace): void
     {
-        $repository->add(SymbolPath::forNamespace($namespace), new MetricBag(), '/test.php', null);
+        $repository->add(SymbolPath::forNamespace($namespace), new MetricBag(), RelativePath::fromString('test.php'), null);
     }
 }

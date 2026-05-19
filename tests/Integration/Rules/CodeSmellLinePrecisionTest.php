@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -145,8 +146,8 @@ PHP;
     {
         $rule = new EvalRule(new CodeSmellOptions());
 
-        $symbolPath = SymbolPath::forFile('src/example.php');
-        $fileInfo = new SymbolInfo($symbolPath, 'src/example.php', null);
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/example.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/example.php'), null);
 
         // Simulate MetricBag with entry data
         $metricBag = (new MetricBag())
@@ -173,8 +174,8 @@ PHP;
     {
         $rule = new EvalRule(new CodeSmellOptions());
 
-        $symbolPath = SymbolPath::forFile('src/test.php');
-        $fileInfo = new SymbolInfo($symbolPath, 'src/test.php', null);
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/test.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/test.php'), null);
 
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.eval', ['line' => 42]);
@@ -232,8 +233,8 @@ PHP;
         self::assertSame(0, $metrics->entryCount('codeSmell.exit'));
         self::assertSame([], $metrics->entries('codeSmell.exit'));
 
-        $symbolPath = SymbolPath::forFile('src/clean.php');
-        $fileInfo = new SymbolInfo($symbolPath, 'src/clean.php', null);
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/clean.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/clean.php'), null);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -256,8 +257,8 @@ PHP;
         // a single placeholder violation at line 1.
         $rule = new ExitRule(new CodeSmellOptions());
 
-        $symbolPath = SymbolPath::forFile('src/empty.php');
-        $fileInfo = new SymbolInfo($symbolPath, 'src/empty.php', null);
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/empty.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/empty.php'), null);
 
         $metricBag = new MetricBag();
 

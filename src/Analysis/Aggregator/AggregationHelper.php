@@ -407,24 +407,30 @@ final class AggregationHelper
         foreach ($repository->all(SymbolType::Class_) as $classInfo) {
             $namespace = $classInfo->symbolPath->namespace;
 
-            if ($namespace !== null) {
-                $map[$classInfo->file] = $namespace;
+            if ($namespace !== null && $classInfo->file !== null) {
+                $map[$classInfo->file->value()] = $namespace;
             }
         }
 
         foreach ($repository->all(SymbolType::Method) as $methodInfo) {
             $namespace = $methodInfo->symbolPath->namespace;
 
-            if ($namespace !== null && !isset($map[$methodInfo->file])) {
-                $map[$methodInfo->file] = $namespace;
+            if ($namespace !== null && $methodInfo->file !== null) {
+                $key = $methodInfo->file->value();
+                if (!isset($map[$key])) {
+                    $map[$key] = $namespace;
+                }
             }
         }
 
         foreach ($repository->all(SymbolType::Function_) as $funcInfo) {
             $namespace = $funcInfo->symbolPath->namespace;
 
-            if ($namespace !== null && !isset($map[$funcInfo->file])) {
-                $map[$funcInfo->file] = $namespace;
+            if ($namespace !== null && $funcInfo->file !== null) {
+                $key = $funcInfo->file->value();
+                if (!isset($map[$key])) {
+                    $map[$key] = $namespace;
+                }
             }
         }
 
@@ -445,7 +451,11 @@ final class AggregationHelper
         $map = [];
 
         foreach ($repository->all(SymbolType::File) as $fileInfo) {
-            $filePath = $fileInfo->file;
+            if ($fileInfo->file === null) {
+                continue;
+            }
+
+            $filePath = $fileInfo->file->value();
 
             if (isset($fileToNamespace[$filePath])) {
                 $namespace = $fileToNamespace[$filePath];

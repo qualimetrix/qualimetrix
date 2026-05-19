@@ -62,7 +62,7 @@ final class DitGlobalCollectorTest extends TestCase
         $graph = (new DependencyGraphBuilder())->build([]);
 
         $path = SymbolPath::forClass('App', 'Root');
-        $repository->add($path, new MetricBag(), '/root.php', 1);
+        $repository->add($path, new MetricBag(), RelativePath::fromString('root.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
@@ -78,7 +78,7 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $path = SymbolPath::forClass('App', 'MyException');
-        $repository->add($path, new MetricBag(), '/ex.php', 1);
+        $repository->add($path, new MetricBag(), RelativePath::fromString('ex.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
@@ -96,14 +96,14 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $grandparentPath = SymbolPath::forClass('App', 'GrandParent');
-        $repository->add($grandparentPath, (new MetricBag())->with('dit', 0), '/gp.php', 1);
+        $repository->add($grandparentPath, (new MetricBag())->with('dit', 0), RelativePath::fromString('gp.php'), 1);
 
         $parentPath = SymbolPath::forClass('App', 'Parent');
-        $repository->add($parentPath, (new MetricBag())->with('dit', 1), '/p.php', 1);
+        $repository->add($parentPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('p.php'), 1);
 
         $childPath = SymbolPath::forClass('App', 'Child');
         // The per-file collector would have set dit=1 (can't see grandparent)
-        $repository->add($childPath, (new MetricBag())->with('dit', 1), '/c.php', 1);
+        $repository->add($childPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('c.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
@@ -123,16 +123,16 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $aPath = SymbolPath::forClass('App', 'A');
-        $repository->add($aPath, (new MetricBag())->with('dit', 0), '/a.php', 1);
+        $repository->add($aPath, (new MetricBag())->with('dit', 0), RelativePath::fromString('a.php'), 1);
 
         $bPath = SymbolPath::forClass('App', 'B');
-        $repository->add($bPath, (new MetricBag())->with('dit', 1), '/b.php', 1);
+        $repository->add($bPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('b.php'), 1);
 
         $cPath = SymbolPath::forClass('App', 'C');
-        $repository->add($cPath, (new MetricBag())->with('dit', 1), '/c.php', 1);
+        $repository->add($cPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('c.php'), 1);
 
         $dPath = SymbolPath::forClass('App', 'D');
-        $repository->add($dPath, (new MetricBag())->with('dit', 1), '/d.php', 1);
+        $repository->add($dPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('d.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
@@ -154,13 +154,13 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $bPath = SymbolPath::forClass('App', 'B');
-        $repository->add($bPath, new MetricBag(), '/b.php', 1);
+        $repository->add($bPath, new MetricBag(), RelativePath::fromString('b.php'), 1);
 
         $cPath = SymbolPath::forClass('App', 'C');
-        $repository->add($cPath, new MetricBag(), '/c.php', 1);
+        $repository->add($cPath, new MetricBag(), RelativePath::fromString('c.php'), 1);
 
         $dPath = SymbolPath::forClass('App', 'D');
-        $repository->add($dPath, new MetricBag(), '/d.php', 1);
+        $repository->add($dPath, new MetricBag(), RelativePath::fromString('d.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
@@ -178,10 +178,10 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $parentPath = SymbolPath::forClass('App', 'Parent');
-        $repository->add($parentPath, (new MetricBag())->with('wmc', 10)->with('dit', 0), '/p.php', 1);
+        $repository->add($parentPath, (new MetricBag())->with('wmc', 10)->with('dit', 0), RelativePath::fromString('p.php'), 1);
 
         $childPath = SymbolPath::forClass('App', 'Child');
-        $repository->add($childPath, (new MetricBag())->with('wmc', 5)->with('dit', 1), '/c.php', 1);
+        $repository->add($childPath, (new MetricBag())->with('wmc', 5)->with('dit', 1), RelativePath::fromString('c.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 
@@ -202,13 +202,13 @@ final class DitGlobalCollectorTest extends TestCase
         ]);
 
         $componentPath = SymbolPath::forClass('Vendor\\Core', 'Component');
-        $repository->add($componentPath, new MetricBag(), '/comp.php', 1);
+        $repository->add($componentPath, new MetricBag(), RelativePath::fromString('comp.php'), 1);
 
         $abstractPath = SymbolPath::forClass('Vendor\\Base', 'AbstractHandler');
-        $repository->add($abstractPath, new MetricBag(), '/abs.php', 1);
+        $repository->add($abstractPath, new MetricBag(), RelativePath::fromString('abs.php'), 1);
 
         $handlerPath = SymbolPath::forClass('App\\Service', 'Handler');
-        $repository->add($handlerPath, new MetricBag(), '/handler.php', 1);
+        $repository->add($handlerPath, new MetricBag(), RelativePath::fromString('handler.php'), 1);
 
         $this->collector->calculate($graph, $repository);
 

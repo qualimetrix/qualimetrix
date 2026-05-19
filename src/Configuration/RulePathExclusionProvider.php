@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Configuration;
 
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Util\PathMatcher;
 
 /**
@@ -29,7 +30,7 @@ final class RulePathExclusionProvider
         $this->matchers[$ruleName] = new PathMatcher($patterns);
     }
 
-    public function isExcluded(string $ruleName, string $filePath): bool
+    public function isExcluded(string $ruleName, RelativePath $filePath): bool
     {
         if (!isset($this->matchers[$ruleName])) {
             return false;

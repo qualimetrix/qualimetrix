@@ -324,6 +324,6 @@ final class ClassRankCollectorTest extends TestCase
 
     private function registerClass(InMemoryMetricRepository $repository, string $fqn): void
     {
-        $repository->add(SymbolPath::fromClassFqn($fqn), new MetricBag(), '/test.php', 1);
+        $repository->add(SymbolPath::fromClassFqn($fqn), new MetricBag(), RelativePath::fromString('test.php'), 1);
     }
 }

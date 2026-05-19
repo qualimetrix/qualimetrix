@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Core\Symbol;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -19,12 +20,12 @@ final class SymbolInfoTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $symbolInfo = new SymbolInfo(
             symbolPath: $symbolPath,
-            file: 'src/Service/UserService.php',
+            file: RelativePath::fromString('src/Service/UserService.php'),
             line: 42,
         );
 
         self::assertSame($symbolPath, $symbolInfo->symbolPath);
-        self::assertSame('src/Service/UserService.php', $symbolInfo->file);
+        self::assertSame('src/Service/UserService.php', $symbolInfo->file?->value());
         self::assertSame(42, $symbolInfo->line);
     }
 
@@ -34,12 +35,12 @@ final class SymbolInfoTest extends TestCase
         $symbolPath = SymbolPath::forClass('App\Domain', 'User');
         $symbolInfo = new SymbolInfo(
             symbolPath: $symbolPath,
-            file: 'src/Domain/User.php',
+            file: RelativePath::fromString('src/Domain/User.php'),
             line: 10,
         );
 
         self::assertSame($symbolPath, $symbolInfo->symbolPath);
-        self::assertSame('src/Domain/User.php', $symbolInfo->file);
+        self::assertSame('src/Domain/User.php', $symbolInfo->file?->value());
         self::assertSame(10, $symbolInfo->line);
     }
 
@@ -49,27 +50,27 @@ final class SymbolInfoTest extends TestCase
         $symbolPath = SymbolPath::forNamespace('App\Service');
         $symbolInfo = new SymbolInfo(
             symbolPath: $symbolPath,
-            file: 'src/Service/UserService.php',
+            file: RelativePath::fromString('src/Service/UserService.php'),
             line: 1,
         );
 
         self::assertSame($symbolPath, $symbolInfo->symbolPath);
-        self::assertSame('src/Service/UserService.php', $symbolInfo->file);
+        self::assertSame('src/Service/UserService.php', $symbolInfo->file?->value());
         self::assertSame(1, $symbolInfo->line);
     }
 
     #[Test]
     public function itConstructorForFileSymbol(): void
     {
-        $symbolPath = SymbolPath::forFile('src/bootstrap.php');
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/bootstrap.php'));
         $symbolInfo = new SymbolInfo(
             symbolPath: $symbolPath,
-            file: 'src/bootstrap.php',
+            file: RelativePath::fromString('src/bootstrap.php'),
             line: 1,
         );
 
         self::assertSame($symbolPath, $symbolInfo->symbolPath);
-        self::assertSame('src/bootstrap.php', $symbolInfo->file);
+        self::assertSame('src/bootstrap.php', $symbolInfo->file?->value());
         self::assertSame(1, $symbolInfo->line);
     }
 
@@ -79,7 +80,7 @@ final class SymbolInfoTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
         $symbolInfo = new SymbolInfo(
             symbolPath: $symbolPath,
-            file: 'test.php',
+            file: RelativePath::fromString('test.php'),
             line: 5,
         );
 
@@ -94,7 +95,7 @@ final class SymbolInfoTest extends TestCase
         $symbolPath = SymbolPath::forClass('', 'Test');
         $symbolInfo = new SymbolInfo(
             symbolPath: $symbolPath,
-            file: 'test.php',
+            file: RelativePath::fromString('test.php'),
             line: 1,
         );
 
@@ -107,7 +108,7 @@ final class SymbolInfoTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App', 'LargeClass', 'method');
         $symbolInfo = new SymbolInfo(
             symbolPath: $symbolPath,
-            file: 'large.php',
+            file: RelativePath::fromString('large.php'),
             line: 99999,
         );
 

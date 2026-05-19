@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\ClassInfo;
 use Qualimetrix\Core\Symbol\ClassType;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -22,7 +23,7 @@ final class ClassInfoTest extends TestCase
             fqn: 'App\Service\UserService',
             namespace: 'App\Service',
             name: 'UserService',
-            file: 'src/Service/UserService.php',
+            file: RelativePath::fromString('src/Service/UserService.php'),
             line: 10,
             type: ClassType::Class_,
         );
@@ -30,7 +31,7 @@ final class ClassInfoTest extends TestCase
         self::assertSame('App\Service\UserService', $classInfo->fqn);
         self::assertSame('App\Service', $classInfo->namespace);
         self::assertSame('UserService', $classInfo->name);
-        self::assertSame('src/Service/UserService.php', $classInfo->file);
+        self::assertSame('src/Service/UserService.php', $classInfo->file->value());
         self::assertSame(10, $classInfo->line);
         self::assertSame(ClassType::Class_, $classInfo->type);
     }
@@ -43,7 +44,7 @@ final class ClassInfoTest extends TestCase
             fqn: 'App\Test',
             namespace: 'App',
             name: 'Test',
-            file: 'test.php',
+            file: RelativePath::fromString('test.php'),
             line: 1,
             type: $classType,
         );
@@ -69,7 +70,7 @@ final class ClassInfoTest extends TestCase
             fqn: 'App\Service\UserService',
             namespace: 'App\Service',
             name: 'UserService',
-            file: 'src/Service/UserService.php',
+            file: RelativePath::fromString('src/Service/UserService.php'),
             line: 10,
             type: ClassType::Class_,
         );
@@ -90,7 +91,7 @@ final class ClassInfoTest extends TestCase
             fqn: 'GlobalClass',
             namespace: '',
             name: 'GlobalClass',
-            file: 'src/GlobalClass.php',
+            file: RelativePath::fromString('src/GlobalClass.php'),
             line: 5,
             type: ClassType::Class_,
         );
@@ -109,7 +110,7 @@ final class ClassInfoTest extends TestCase
             fqn: 'App\Contract\UserRepositoryInterface',
             namespace: 'App\Contract',
             name: 'UserRepositoryInterface',
-            file: 'src/Contract/UserRepositoryInterface.php',
+            file: RelativePath::fromString('src/Contract/UserRepositoryInterface.php'),
             line: 8,
             type: ClassType::Interface_,
         );
@@ -126,7 +127,7 @@ final class ClassInfoTest extends TestCase
             fqn: 'App\Trait\Timestampable',
             namespace: 'App\Trait',
             name: 'Timestampable',
-            file: 'src/Trait/Timestampable.php',
+            file: RelativePath::fromString('src/Trait/Timestampable.php'),
             line: 12,
             type: ClassType::Trait_,
         );
@@ -143,7 +144,7 @@ final class ClassInfoTest extends TestCase
             fqn: 'App\Enum\Status',
             namespace: 'App\Enum',
             name: 'Status',
-            file: 'src/Enum/Status.php',
+            file: RelativePath::fromString('src/Enum/Status.php'),
             line: 7,
             type: ClassType::Enum_,
         );
@@ -160,7 +161,7 @@ final class ClassInfoTest extends TestCase
             fqn: 'Test',
             namespace: '',
             name: 'Test',
-            file: 'test.php',
+            file: RelativePath::fromString('test.php'),
             line: 1,
             type: ClassType::Class_,
         );

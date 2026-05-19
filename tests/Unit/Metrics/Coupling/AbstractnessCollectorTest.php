@@ -60,7 +60,7 @@ final class AbstractnessCollectorTest extends TestCase
             ->with('abstractClassCount.sum', 2)
             ->with('interfaceCount.sum', 3);
 
-        $repository->add($nsPath, $metrics, '', 0);
+        $repository->add($nsPath, $metrics, null, 0);
 
         $graph = $this->createEmptyGraph();
 
@@ -84,7 +84,7 @@ final class AbstractnessCollectorTest extends TestCase
             ->with('abstractClassCount.sum', 0)
             ->with('interfaceCount.sum', 0);
 
-        $repository->add($nsPath, $metrics, '', 0);
+        $repository->add($nsPath, $metrics, null, 0);
 
         $graph = $this->createEmptyGraph();
 
@@ -112,7 +112,7 @@ final class AbstractnessCollectorTest extends TestCase
             ->with('abstractClassCount.sum', 2)
             ->with('interfaceCount.sum', 3);
 
-        $repository->add($nsPath, $metrics, '', 0);
+        $repository->add($nsPath, $metrics, null, 0);
 
         $graph = $this->createEmptyGraph();
 
@@ -135,7 +135,7 @@ final class AbstractnessCollectorTest extends TestCase
             ->with('abstractClassCount.sum', 0)
             ->with('interfaceCount.sum', 0);
 
-        $repository->add($nsPath, $metrics, '', 0);
+        $repository->add($nsPath, $metrics, null, 0);
 
         $graph = $this->createEmptyGraph();
 
@@ -162,7 +162,7 @@ final class AbstractnessCollectorTest extends TestCase
             ->with('abstractClassCount.sum', 0)
             ->with('interfaceCount.sum', 2);
 
-        $repository->add($nsPath, $metrics, '', 0);
+        $repository->add($nsPath, $metrics, null, 0);
 
         $graph = $this->createEmptyGraph();
 
@@ -194,7 +194,7 @@ final class AbstractnessCollectorTest extends TestCase
             ->with('abstractClassCount.sum', 0)
             ->with('interfaceCount.sum', 3);
 
-        $repository->add($nsPath, $metrics, '', 0);
+        $repository->add($nsPath, $metrics, null, 0);
 
         $graph = $this->createEmptyGraph();
 
@@ -220,7 +220,7 @@ final class AbstractnessCollectorTest extends TestCase
             ->with('abstractClassCount.sum', 0)
             ->with('interfaceCount.sum', 1);
 
-        $repository->add($nsPath, $metrics, '', 0);
+        $repository->add($nsPath, $metrics, null, 0);
 
         $graph = $this->createEmptyGraph();
 

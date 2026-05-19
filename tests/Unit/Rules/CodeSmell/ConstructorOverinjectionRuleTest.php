@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -114,7 +115,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 2, error: 4));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 10);
 
@@ -135,7 +136,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 2, error: 4));
 
         $symbolPath = SymbolPath::forGlobalFunction('App\Helpers', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Helpers/functions.php', 5);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Helpers/functions.php'), 5);
 
         $metricBag = (new MetricBag())->with('parameterCount', 10);
 
@@ -156,7 +157,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 7);
 
@@ -177,7 +178,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 8);
 
@@ -204,7 +205,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 12);
 
@@ -228,7 +229,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 15);
 
@@ -257,7 +258,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: $warning, error: $error));
 
         $symbolPath = SymbolPath::forMethod('App\Test', 'TestClass', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, 'test.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', $parameterCount);
 
@@ -296,7 +297,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = new MetricBag();
 

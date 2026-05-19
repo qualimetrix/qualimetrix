@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -112,7 +113,7 @@ final class InheritanceRuleTest extends TestCase
         $rule = new InheritanceRule(new InheritanceOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'DeepClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/DeepClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/DeepClass.php'), 10);
 
         // DIT of 5 is at warning threshold (5) but below error (7)
         $metricBag = (new MetricBag())->with('dit', 5);
@@ -141,7 +142,7 @@ final class InheritanceRuleTest extends TestCase
         $rule = new InheritanceRule(new InheritanceOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'VeryDeepClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/VeryDeepClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/VeryDeepClass.php'), 10);
 
         // DIT of 8 is above error threshold (7)
         $metricBag = (new MetricBag())->with('dit', 8);
@@ -166,7 +167,7 @@ final class InheritanceRuleTest extends TestCase
         $rule = new InheritanceRule(new InheritanceOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'ShallowClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/ShallowClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/ShallowClass.php'), 10);
 
         // DIT of 2 is normal (below warning threshold 5)
         $metricBag = (new MetricBag())->with('dit', 2);
@@ -189,7 +190,7 @@ final class InheritanceRuleTest extends TestCase
         $rule = new InheritanceRule(new InheritanceOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'SomeClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/SomeClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
 
         // No 'dit' metric
         $metricBag = new MetricBag();
@@ -256,7 +257,7 @@ final class InheritanceRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('dit', $dit);
 

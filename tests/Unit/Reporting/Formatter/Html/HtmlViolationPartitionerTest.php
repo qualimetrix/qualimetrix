@@ -107,7 +107,7 @@ final class HtmlViolationPartitionerTest extends TestCase
 
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/helpers.php'), 1),
-            symbolPath: SymbolPath::forFile('src/helpers.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/helpers.php')),
             ruleName: 'size.loc',
             violationCode: 'size.loc',
             message: 'File too large',

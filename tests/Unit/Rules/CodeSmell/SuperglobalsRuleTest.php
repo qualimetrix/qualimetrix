@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -63,8 +64,8 @@ final class SuperglobalsRuleTest extends TestCase
     {
         $rule = new SuperglobalsRule(new CodeSmellOptions());
 
-        $symbolPath = SymbolPath::forFile('src/Clean.php');
-        $fileInfo = new SymbolInfo($symbolPath, 'src/Clean.php', null);
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Clean.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Clean.php'), null);
 
         $metricBag = new MetricBag();
 
@@ -84,8 +85,8 @@ final class SuperglobalsRuleTest extends TestCase
     {
         $rule = new SuperglobalsRule(new CodeSmellOptions());
 
-        $symbolPath = SymbolPath::forFile('src/Smelly.php');
-        $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Smelly.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
 
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.superglobals', ['line' => 5])

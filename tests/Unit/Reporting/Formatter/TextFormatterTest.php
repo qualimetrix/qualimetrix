@@ -184,7 +184,7 @@ final class TextFormatterTest extends TestCase
         $report = ReportBuilder::create()
             ->addViolation(new Violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php')),
-                symbolPath: SymbolPath::forFile('src/Service/UserService.php'),
+                symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service/UserService.php')),
                 ruleName: 'file-size',
                 violationCode: 'file-size',
                 message: 'File is too large',

@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Coupling;
 
 use Qualimetrix\Core\Metric\MetricName;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -102,7 +100,7 @@ final class ClassRankRule extends AbstractRule
                     : $effectiveScaledWarning;
 
                 $violations[] = new Violation(
-                    location: new Location(RelativePath::fromString(PathNormalizer::relativize($classInfo->file)), $classInfo->line),
+                    location: new Location($classInfo->file, $classInfo->line),
                     symbolPath: $classInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: self::NAME,

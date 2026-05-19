@@ -8,7 +8,6 @@ use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
@@ -17,7 +16,6 @@ use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -213,7 +211,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
 
         if ($cbo >= $options->error) {
             return new Violation(
-                location: new Location(RelativePath::fromString(PathNormalizer::relativize($symbolInfo->file)), $symbolInfo->line),
+                location: new Location($symbolInfo->file, $symbolInfo->line),
                 symbolPath: $symbolInfo->symbolPath,
                 ruleName: $this->getName(),
                 violationCode: $violationCode,
@@ -228,7 +226,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
 
         if ($cbo >= $options->warning) {
             return new Violation(
-                location: new Location(RelativePath::fromString(PathNormalizer::relativize($symbolInfo->file)), $symbolInfo->line),
+                location: new Location($symbolInfo->file, $symbolInfo->line),
                 symbolPath: $symbolInfo->symbolPath,
                 ruleName: $this->getName(),
                 violationCode: $violationCode,

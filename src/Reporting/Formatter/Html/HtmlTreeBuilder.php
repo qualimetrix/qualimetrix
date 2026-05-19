@@ -140,8 +140,8 @@ final class HtmlTreeBuilder
             $classNode->metrics = $this->filterMetrics($classBag->all());
 
             // Class-level MetricBag doesn't have LOC — get it from the file
-            if (!isset($classNode->metrics[MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)]) && $symbolInfo->file !== '') {
-                $loc = $fileLoc[$symbolInfo->file] ?? null;
+            if (!isset($classNode->metrics[MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)]) && $symbolInfo->file !== null) {
+                $loc = $fileLoc[$symbolInfo->file->value()] ?? null;
                 if ($loc !== null) {
                     $classNode->metrics[MetricName::agg(MetricName::SIZE_LOC, AggregationStrategy::Sum)] = $loc;
                 }
@@ -226,10 +226,14 @@ final class HtmlTreeBuilder
         $index = [];
 
         foreach ($metrics->all(SymbolType::File) as $symbolInfo) {
+            if ($symbolInfo->file === null) {
+                continue;
+            }
+
             $bag = $metrics->get($symbolInfo->symbolPath);
             $loc = $bag->get(MetricName::SIZE_LOC);
             if ($loc !== null) {
-                $index[$symbolInfo->file] = $loc;
+                $index[$symbolInfo->file->value()] = $loc;
             }
         }
 

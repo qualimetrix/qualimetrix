@@ -241,6 +241,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $violations = [];
 
         foreach ($overridesByFile as $file => $overrides) {
+            $relFile = RelativePath::fromString($file);
+
             foreach ($overrides as $override) {
                 if ($override->rulePattern === '*') {
                     continue;
@@ -248,8 +250,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
 
                 if (!$this->overrideMatchesSupportedRule($override, $supportedRules)) {
                     $violations[] = new Violation(
-                        location: new Location(RelativePath::fromString($file), $override->line, precise: true),
-                        symbolPath: SymbolPath::forFile($file),
+                        location: new Location($relFile, $override->line, precise: true),
+                        symbolPath: SymbolPath::forFile($relFile),
                         ruleName: 'annotation.unsupported-threshold',
                         violationCode: 'annotation.unsupported-threshold',
                         message: \sprintf(
@@ -359,14 +361,16 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $violations = [];
 
         foreach ($diagnosticsByFile as $file => $diagnostics) {
+            $relFile = RelativePath::fromString($file);
+
             foreach ($diagnostics as $diagnostic) {
                 $violationCode = $diagnostic->code !== null
                     ? 'annotation.invalid-threshold.' . $diagnostic->code
                     : 'annotation.invalid-threshold';
 
                 $violations[] = new Violation(
-                    location: new Location(RelativePath::fromString($file), $diagnostic->line, precise: true),
-                    symbolPath: SymbolPath::forFile($file),
+                    location: new Location($relFile, $diagnostic->line, precise: true),
+                    symbolPath: SymbolPath::forFile($relFile),
                     ruleName: 'annotation.invalid-threshold',
                     violationCode: $violationCode,
                     message: $diagnostic->message,

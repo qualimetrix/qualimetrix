@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -112,7 +113,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // MI of 30 is below warning threshold (40) but above error (20)
         $metricBag = (new MetricBag())
@@ -141,7 +142,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // MI of 15 is below error threshold (20) - very poor maintainability
         $metricBag = (new MetricBag())
@@ -168,7 +169,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'simple');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // MI of 90 is good (above warning threshold 65)
         $metricBag = (new MetricBag())
@@ -193,7 +194,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('mi', 25.67)
@@ -219,7 +220,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // No 'mi' metric
         $metricBag = new MetricBag();
@@ -286,7 +287,7 @@ final class MaintainabilityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
             ->with('mi', $mi)
@@ -362,12 +363,38 @@ final class MaintainabilityRuleTest extends TestCase
     }
 
     #[Test]
+    public function itSkipsHelperUnderTopLevelTestsDir(): void
+    {
+        // Regression: project-relative paths start with 'tests/', no leading '/'.
+        // A helper file (no Test.php suffix) under tests/ must still be recognized.
+        $rule = new MaintainabilityRule(new MaintainabilityOptions(excludeTests: true));
+
+        $symbolPath = SymbolPath::forMethod('App\Tests\Helpers', 'AssertionHelper', 'assertThing');
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('tests/Helpers/AssertionHelper.php'), 10);
+
+        $metricBag = (new MetricBag())
+            ->with('mi', 15.0)
+            ->with('methodLoc', 20);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturn([$methodInfo]);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(0, $violations);
+    }
+
+    #[Test]
     public function itSkipsTestFilesWhenExcluded(): void
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions(excludeTests: true));
 
         $symbolPath = SymbolPath::forMethod('App\Tests', 'UserServiceTest', 'testCalculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'tests/Service/UserServiceTest.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('tests/Service/UserServiceTest.php'), 10);
 
         // Low MI that would normally trigger a violation
         $metricBag = (new MetricBag())
@@ -393,7 +420,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions(excludeTests: false));
 
         $symbolPath = SymbolPath::forMethod('App\Tests', 'UserServiceTest', 'testCalculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'tests/Service/UserServiceTest.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('tests/Service/UserServiceTest.php'), 10);
 
         // Low MI that would trigger a violation
         $metricBag = (new MetricBag())
@@ -420,7 +447,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions(minLoc: 15));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // Low MI and low LOC (below minLoc threshold)
         $metricBag = (new MetricBag())
@@ -446,7 +473,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions(minLoc: 15));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // Low MI and sufficient LOC (above minLoc threshold)
         $metricBag = (new MetricBag())

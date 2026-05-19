@@ -481,7 +481,7 @@ final class RuleExecutorTest extends TestCase
                 file: RelativePath::fromString('test/file.php'),
                 line: 1,
             ),
-            symbolPath: SymbolPath::forFile('/test/file.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('test/file.php')),
             ruleName: $ruleName,
             violationCode: $violationCode ?? $ruleName,
             message: "Violation from $ruleName",
@@ -572,12 +572,14 @@ final class RuleExecutorTest extends TestCase
 
     private function createViolationWithFile(string $ruleName, string $file): Violation
     {
+        $symbolPathFile = RelativePath::fromString($file !== '' ? $file : 'unknown');
+
         return new Violation(
             location: new Location(
                 file: $file !== '' ? RelativePath::fromString($file) : null,
                 line: 1,
             ),
-            symbolPath: SymbolPath::forFile($file !== '' ? $file : '/unknown'),
+            symbolPath: SymbolPath::forFile($symbolPathFile),
             ruleName: $ruleName,
             violationCode: $ruleName,
             message: "Violation from $ruleName in $file",

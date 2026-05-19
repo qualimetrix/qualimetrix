@@ -37,7 +37,7 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             namespaces: [
-                new SymbolInfo(SymbolPath::forNamespace('App\\Other'), 'src/Other.php', 1),
+                new SymbolInfo(SymbolPath::forNamespace('App\\Other'), RelativePath::fromString('src/Other.php'), 1),
             ],
             namespaceMetrics: [
                 'ns:App\\Other' => MetricBag::fromArray([
@@ -59,7 +59,7 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             namespaces: [
-                new SymbolInfo(SymbolPath::forNamespace('App\\Service'), 'src/Service.php', 1),
+                new SymbolInfo(SymbolPath::forNamespace('App\\Service'), RelativePath::fromString('src/Service.php'), 1),
             ],
             namespaceMetrics: [
                 'ns:App\\Service' => MetricBag::fromArray([
@@ -84,7 +84,7 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             namespaces: [
-                new SymbolInfo(SymbolPath::forNamespace('App\\Service\\Payment'), 'src/Service/Payment.php', 1),
+                new SymbolInfo(SymbolPath::forNamespace('App\\Service\\Payment'), RelativePath::fromString('src/Service/Payment.php'), 1),
             ],
             namespaceMetrics: [
                 'ns:App\\Service\\Payment' => MetricBag::fromArray([
@@ -107,7 +107,7 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             namespaces: [
-                new SymbolInfo(SymbolPath::forNamespace('App\\ServiceManager'), 'src/ServiceManager.php', 1),
+                new SymbolInfo(SymbolPath::forNamespace('App\\ServiceManager'), RelativePath::fromString('src/ServiceManager.php'), 1),
             ],
             namespaceMetrics: [
                 'ns:App\\ServiceManager' => MetricBag::fromArray([
@@ -128,8 +128,8 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             namespaces: [
-                new SymbolInfo(SymbolPath::forNamespace('App\\Service'), 'src/Service.php', 1),
-                new SymbolInfo(SymbolPath::forNamespace('App\\Service\\Sub'), 'src/Service/Sub.php', 1),
+                new SymbolInfo(SymbolPath::forNamespace('App\\Service'), RelativePath::fromString('src/Service.php'), 1),
+                new SymbolInfo(SymbolPath::forNamespace('App\\Service\\Sub'), RelativePath::fromString('src/Service/Sub.php'), 1),
             ],
             namespaceMetrics: [
                 'ns:App\\Service' => MetricBag::fromArray([
@@ -156,7 +156,7 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             namespaces: [
-                new SymbolInfo(SymbolPath::forNamespace('App\\Service'), 'src/Service.php', 1),
+                new SymbolInfo(SymbolPath::forNamespace('App\\Service'), RelativePath::fromString('src/Service.php'), 1),
             ],
             namespaceMetrics: [
                 'ns:App\\Service' => MetricBag::fromArray([
@@ -180,7 +180,7 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo(SymbolPath::forClass('App\\Other', 'Foo'), 'src/Other/Foo.php', 1),
+                new SymbolInfo(SymbolPath::forClass('App\\Other', 'Foo'), RelativePath::fromString('src/Other/Foo.php'), 1),
             ],
             classMetrics: [
                 'class:App\\Other\\Foo' => MetricBag::fromArray([
@@ -203,8 +203,8 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classA, 'src/Service/Alpha.php', 1),
-                new SymbolInfo($classB, 'src/Service/Beta.php', 1),
+                new SymbolInfo($classA, RelativePath::fromString('src/Service/Alpha.php'), 1),
+                new SymbolInfo($classB, RelativePath::fromString('src/Service/Beta.php'), 1),
             ],
             classMetrics: [
                 'class:App\\Service\\Alpha' => MetricBag::fromArray([
@@ -235,7 +235,7 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, 'src/Service/Foo.php', 1),
+                new SymbolInfo($classPath, RelativePath::fromString('src/Service/Foo.php'), 1),
             ],
             classMetrics: [
                 'class:App\\Service\\Foo' => MetricBag::fromArray([
@@ -280,7 +280,7 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, 'src/Service/Foo.php', 1),
+                new SymbolInfo($classPath, RelativePath::fromString('src/Service/Foo.php'), 1),
             ],
             classMetrics: [
                 'class:App\\Service\\Foo' => MetricBag::fromArray([
@@ -314,7 +314,7 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, 'src/Service/NoHealth.php', 1),
+                new SymbolInfo($classPath, RelativePath::fromString('src/Service/NoHealth.php'), 1),
             ],
             classMetrics: [
                 'class:App\\Service\\NoHealth' => MetricBag::fromArray([
@@ -337,7 +337,7 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, 'src/Service/Rich.php', 1),
+                new SymbolInfo($classPath, RelativePath::fromString('src/Service/Rich.php'), 1),
             ],
             classMetrics: [
                 'class:App\\Service\\Rich' => MetricBag::fromArray([
@@ -366,7 +366,7 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, 'src/Service/Simple.php', 1),
+                new SymbolInfo($classPath, RelativePath::fromString('src/Service/Simple.php'), 1),
             ],
             classMetrics: [
                 'class:App\\Service\\Simple' => MetricBag::fromArray([
@@ -405,7 +405,7 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, 'src/Service/UserService.php', 1),
+                new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 1),
             ],
             classMetrics: [
                 'class:App\\Service\\UserService' => MetricBag::fromArray([
@@ -440,7 +440,7 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, 'src/Service/Partial.php', 1),
+                new SymbolInfo($classPath, RelativePath::fromString('src/Service/Partial.php'), 1),
             ],
             classMetrics: [
                 'class:App\\Service\\Partial' => MetricBag::fromArray([
@@ -464,7 +464,7 @@ final class NamespaceDrillDownTest extends TestCase
         $metrics = $this->createMetricRepository(
             projectMetrics: new MetricBag(),
             classes: [
-                new SymbolInfo($classPath, 'src/GlobalClass.php', 1),
+                new SymbolInfo($classPath, RelativePath::fromString('src/GlobalClass.php'), 1),
             ],
             classMetrics: [
                 'class:GlobalClass' => MetricBag::fromArray([

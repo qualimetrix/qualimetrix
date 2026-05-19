@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Metric;
 
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -33,7 +34,7 @@ final readonly class ClassWithMetrics
     /**
      * Creates SymbolInfo for this class with the given file path.
      */
-    public function toSymbolInfo(string $filePath): SymbolInfo
+    public function toSymbolInfo(RelativePath $filePath): SymbolInfo
     {
         return new SymbolInfo($this->getSymbolPath(), $filePath, $this->line);
     }

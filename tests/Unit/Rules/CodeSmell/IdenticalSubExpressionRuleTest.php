@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -213,8 +214,8 @@ final class IdenticalSubExpressionRuleTest extends TestCase
 
     private function createContext(MetricBag $metricBag): AnalysisContext
     {
-        $symbolPath = SymbolPath::forFile('src/file.php');
-        $fileInfo = new SymbolInfo($symbolPath, 'src/file.php', 1);
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/file.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/file.php'), 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')

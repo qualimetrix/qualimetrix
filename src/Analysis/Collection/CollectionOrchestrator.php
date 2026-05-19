@@ -131,16 +131,16 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         \assert($result->fileBag !== null);
 
         // Store file-level metrics
-        $filePathKey = $result->filePath->value();
-        $fileSymbol = SymbolPath::forFile($filePathKey);
-        $repository->add($fileSymbol, $result->fileBag, $filePathKey, 1);
+        $filePath = $result->filePath;
+        $fileSymbol = SymbolPath::forFile($filePath);
+        $repository->add($fileSymbol, $result->fileBag, $filePath, 1);
 
         // Register method-level metrics
         foreach ($result->methodMetrics as $methodData) {
             $repository->add(
                 $methodData['symbolPath'],
                 $methodData['metrics'],
-                $filePathKey,
+                $filePath,
                 $methodData['line'],
             );
         }
@@ -150,12 +150,12 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
             $repository->add(
                 $classData['symbolPath'],
                 $classData['metrics'],
-                $filePathKey,
+                $filePath,
                 $classData['line'],
             );
         }
 
         // Extract derived metrics (like MI) from file bag and add to method symbols
-        $this->derivedMetricExtractor->extract($repository, $result->fileBag, $filePathKey);
+        $this->derivedMetricExtractor->extract($repository, $result->fileBag, $filePath);
     }
 }

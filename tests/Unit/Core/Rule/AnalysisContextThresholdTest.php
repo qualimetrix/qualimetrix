@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 
@@ -21,7 +22,7 @@ final class AnalysisContextThresholdTest extends TestCase
             metrics: self::createStub(MetricRepositoryInterface::class),
         );
 
-        self::assertNull($context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 10));
+        self::assertNull($context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 10));
     }
 
     #[Test]
@@ -36,7 +37,7 @@ final class AnalysisContextThresholdTest extends TestCase
             ],
         );
 
-        self::assertNull($context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 10));
+        self::assertNull($context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 10));
     }
 
     #[Test]
@@ -50,7 +51,7 @@ final class AnalysisContextThresholdTest extends TestCase
             ],
         );
 
-        $result = $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 20);
+        $result = $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 20);
 
         self::assertSame($override, $result);
     }
@@ -66,7 +67,7 @@ final class AnalysisContextThresholdTest extends TestCase
             ],
         );
 
-        $result = $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 20);
+        $result = $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 20);
 
         self::assertSame($override, $result);
     }
@@ -83,13 +84,13 @@ final class AnalysisContextThresholdTest extends TestCase
         );
 
         // Inside scope
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 10));
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 50));
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 30));
+        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 10));
+        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 50));
+        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 30));
 
         // Outside scope
-        self::assertNull($context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 9));
-        self::assertNull($context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 51));
+        self::assertNull($context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 9));
+        self::assertNull($context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 51));
     }
 
     #[Test]
@@ -103,7 +104,7 @@ final class AnalysisContextThresholdTest extends TestCase
             ],
         );
 
-        self::assertNull($context->getThresholdOverride('coupling.cbo', 'src/Foo.php', 20));
+        self::assertNull($context->getThresholdOverride('coupling.cbo', RelativePath::fromString('src/Foo.php'), 20));
     }
 
     #[Test]
@@ -118,9 +119,9 @@ final class AnalysisContextThresholdTest extends TestCase
         );
 
         // With null endLine, any line >= startLine matches
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 10));
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 100));
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 1000));
+        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 10));
+        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 100));
+        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 1000));
     }
 
     #[Test]
@@ -136,7 +137,7 @@ final class AnalysisContextThresholdTest extends TestCase
         );
 
         // Same span — first matching override wins
-        $result = $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 20);
+        $result = $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 20);
         self::assertSame($override1, $result);
     }
 
@@ -156,11 +157,11 @@ final class AnalysisContextThresholdTest extends TestCase
         );
 
         // Line 30 is within both scopes — method-level (narrower) wins
-        $result = $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 30);
+        $result = $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 30);
         self::assertSame($methodOverride, $result);
 
         // Line 50 is within class scope only — class-level wins
-        $result = $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 50);
+        $result = $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 50);
         self::assertSame($classOverride, $result);
     }
 
@@ -180,11 +181,11 @@ final class AnalysisContextThresholdTest extends TestCase
         );
 
         // Line 20 is within both — bounded (smaller span) wins
-        $result = $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 20);
+        $result = $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 20);
         self::assertSame($bounded, $result);
 
         // Line 60 is only within unbounded scope
-        $result = $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 60);
+        $result = $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 60);
         self::assertSame($unbounded, $result);
     }
 
@@ -199,7 +200,7 @@ final class AnalysisContextThresholdTest extends TestCase
             ],
         );
 
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', 'src/Foo.php', 20));
-        self::assertSame($override, $context->getThresholdOverride('coupling.cbo', 'src/Foo.php', 20));
+        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 20));
+        self::assertSame($override, $context->getThresholdOverride('coupling.cbo', RelativePath::fromString('src/Foo.php'), 20));
     }
 }

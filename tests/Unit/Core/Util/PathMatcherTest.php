@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Util\PathMatcher;
 
 #[CoversClass(PathMatcher::class)]
@@ -34,15 +35,7 @@ final class PathMatcherTest extends TestCase
     {
         $matcher = new PathMatcher([]);
 
-        self::assertFalse($matcher->matches('src/Entity/User.php'));
-    }
-
-    #[Test]
-    public function itMatchesReturnsFalseForEmptyFilePath(): void
-    {
-        $matcher = new PathMatcher(['src/Entity']);
-
-        self::assertFalse($matcher->matches(''));
+        self::assertFalse($matcher->matches(RelativePath::fromString('src/Entity/User.php')));
     }
 
     /**
@@ -54,7 +47,7 @@ final class PathMatcherTest extends TestCase
     {
         $matcher = new PathMatcher($patterns);
 
-        self::assertTrue($matcher->matches($filePath), $description);
+        self::assertTrue($matcher->matches(RelativePath::fromString($filePath)), $description);
     }
 
     /**
@@ -66,7 +59,7 @@ final class PathMatcherTest extends TestCase
     {
         $matcher = new PathMatcher($patterns);
 
-        self::assertFalse($matcher->matches($filePath), $description);
+        self::assertFalse($matcher->matches(RelativePath::fromString($filePath)), $description);
     }
 
     /**

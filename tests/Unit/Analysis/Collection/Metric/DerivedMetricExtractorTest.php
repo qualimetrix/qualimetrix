@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Collection\Metric\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(DerivedMetricExtractor::class)]
@@ -28,13 +29,13 @@ final class DerivedMetricExtractorTest extends TestCase
 
         $repository = new InMemoryMetricRepository();
         $methodSymbol = SymbolPath::forMethod('App', 'Service', 'calculate');
-        $repository->add($methodSymbol, MetricBag::fromArray(['ccn' => 5]), '/tmp/test.php', 15);
+        $repository->add($methodSymbol, MetricBag::fromArray(['ccn' => 5]), RelativePath::fromString('tmp/test.php'), 15);
 
         $fileBag = MetricBag::fromArray([
             'mi:App\Service::calculate' => 85.5,
         ]);
 
-        $extractor->extract($repository, $fileBag, '/tmp/test.php');
+        $extractor->extract($repository, $fileBag, RelativePath::fromString('tmp/test.php'));
 
         self::assertTrue($repository->has($methodSymbol));
         $methodBag = $repository->get($methodSymbol);
@@ -62,7 +63,7 @@ final class DerivedMetricExtractorTest extends TestCase
         ]);
 
         // Should not throw exceptions
-        $extractor->extract($repository, $fileBag, '/tmp/test.php');
+        $extractor->extract($repository, $fileBag, RelativePath::fromString('tmp/test.php'));
 
         // No symbols should be created
         self::assertFalse($repository->has(SymbolPath::forMethod('', 'InvalidFqn', '')));
@@ -79,7 +80,7 @@ final class DerivedMetricExtractorTest extends TestCase
 
         $repository = new InMemoryMetricRepository();
         $methodSymbol = SymbolPath::forMethod('App', 'Service', 'method');
-        $repository->add($methodSymbol, new MetricBag(), '/tmp/test.php', 10);
+        $repository->add($methodSymbol, new MetricBag(), RelativePath::fromString('tmp/test.php'), 10);
 
         $fileBag = MetricBag::fromArray([
             'ccn:App\Service::method' => 5,   // not a derived metric
@@ -87,7 +88,7 @@ final class DerivedMetricExtractorTest extends TestCase
             'mi:App\Service::method' => 85.5,  // IS a derived metric
         ]);
 
-        $extractor->extract($repository, $fileBag, '/tmp/test.php');
+        $extractor->extract($repository, $fileBag, RelativePath::fromString('tmp/test.php'));
 
         $methodBag = $repository->get($methodSymbol);
         self::assertTrue($methodBag->has('mi'));
@@ -103,13 +104,13 @@ final class DerivedMetricExtractorTest extends TestCase
 
         $repository = new InMemoryMetricRepository();
         $methodSymbol = SymbolPath::forMethod('App', 'Service', 'method');
-        $repository->add($methodSymbol, MetricBag::fromArray(['ccn' => 5]), '/tmp/test.php', 10);
+        $repository->add($methodSymbol, MetricBag::fromArray(['ccn' => 5]), RelativePath::fromString('tmp/test.php'), 10);
 
         $fileBag = MetricBag::fromArray([
             'ccn:App\Service::method' => 5,
         ]);
 
-        $extractor->extract($repository, $fileBag, '/tmp/test.php');
+        $extractor->extract($repository, $fileBag, RelativePath::fromString('tmp/test.php'));
 
         $methodBag = $repository->get($methodSymbol);
         // Original metrics untouched, no derived metrics added
@@ -131,7 +132,7 @@ final class DerivedMetricExtractorTest extends TestCase
             'mi:App\NonExistent::method' => 85.5,
         ]);
 
-        $extractor->extract($repository, $fileBag, '/tmp/test.php');
+        $extractor->extract($repository, $fileBag, RelativePath::fromString('tmp/test.php'));
 
         $nonExistentSymbol = SymbolPath::forMethod('App', 'NonExistent', 'method');
         self::assertFalse($repository->has($nonExistentSymbol));
@@ -148,13 +149,13 @@ final class DerivedMetricExtractorTest extends TestCase
 
         $repository = new InMemoryMetricRepository();
         $methodSymbol = SymbolPath::forMethod('', 'SimpleClass', 'method');
-        $repository->add($methodSymbol, MetricBag::fromArray(['ccn' => 3]), '/tmp/test.php', 10);
+        $repository->add($methodSymbol, MetricBag::fromArray(['ccn' => 3]), RelativePath::fromString('tmp/test.php'), 10);
 
         $fileBag = MetricBag::fromArray([
             'mi:SimpleClass::method' => 85.5,
         ]);
 
-        $extractor->extract($repository, $fileBag, '/tmp/test.php');
+        $extractor->extract($repository, $fileBag, RelativePath::fromString('tmp/test.php'));
 
         self::assertTrue($repository->has($methodSymbol));
         self::assertSame(85.5, $repository->get($methodSymbol)->get('mi'));
@@ -177,7 +178,7 @@ final class DerivedMetricExtractorTest extends TestCase
         ]);
 
         // Should not throw exceptions
-        $extractor->extract($repository, $fileBag, '/tmp/test.php');
+        $extractor->extract($repository, $fileBag, RelativePath::fromString('tmp/test.php'));
 
         // No method symbols should have been created
         self::expectNotToPerformAssertions();
@@ -195,14 +196,14 @@ final class DerivedMetricExtractorTest extends TestCase
         $repository = new InMemoryMetricRepository();
         // Register a function (not a class) in the repository
         $functionSymbol = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
-        $repository->add($functionSymbol, MetricBag::fromArray(['ccn' => 5]), '/tmp/test.php', 10);
+        $repository->add($functionSymbol, MetricBag::fromArray(['ccn' => 5]), RelativePath::fromString('tmp/test.php'), 10);
 
         // Derived collector outputs MI keyed by FQN — same format as class FQN
         $fileBag = MetricBag::fromArray([
             'mi:App\\Utils\\helper' => 72.5,
         ]);
 
-        $extractor->extract($repository, $fileBag, '/tmp/test.php');
+        $extractor->extract($repository, $fileBag, RelativePath::fromString('tmp/test.php'));
 
         // MI should be resolved to the function, not silently discarded
         self::assertTrue($repository->has($functionSymbol));
@@ -223,16 +224,16 @@ final class DerivedMetricExtractorTest extends TestCase
         $repository = new InMemoryMetricRepository();
         // Both a class and a function with same short name
         $classSymbol = SymbolPath::forClass('App\\Utils', 'helper');
-        $repository->add($classSymbol, MetricBag::fromArray(['tcc' => 0.5]), '/tmp/test.php', 1);
+        $repository->add($classSymbol, MetricBag::fromArray(['tcc' => 0.5]), RelativePath::fromString('tmp/test.php'), 1);
 
         $functionSymbol = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
-        $repository->add($functionSymbol, MetricBag::fromArray(['ccn' => 3]), '/tmp/test.php', 20);
+        $repository->add($functionSymbol, MetricBag::fromArray(['ccn' => 3]), RelativePath::fromString('tmp/test.php'), 20);
 
         $fileBag = MetricBag::fromArray([
             'mi:App\\Utils\\helper' => 80.0,
         ]);
 
-        $extractor->extract($repository, $fileBag, '/tmp/test.php');
+        $extractor->extract($repository, $fileBag, RelativePath::fromString('tmp/test.php'));
 
         // Class takes priority
         self::assertSame(80.0, $repository->get($classSymbol)->get('mi'));

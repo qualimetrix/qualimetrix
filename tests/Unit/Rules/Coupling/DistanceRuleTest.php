@@ -13,6 +13,7 @@ use Psr\Log\LoggerInterface;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -114,7 +115,7 @@ final class DistanceRuleTest extends TestCase
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         $metricBag = new MetricBag();
 
@@ -135,7 +136,7 @@ final class DistanceRuleTest extends TestCase
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // 0.35 is above warning (0.3), below error (0.5)
         $metricBag = (new MetricBag())
@@ -168,7 +169,7 @@ final class DistanceRuleTest extends TestCase
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // 0.6 is above error (0.5)
         $metricBag = (new MetricBag())
@@ -196,7 +197,7 @@ final class DistanceRuleTest extends TestCase
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // Distance close to 0 = on main sequence
         $metricBag = (new MetricBag())
@@ -222,10 +223,10 @@ final class DistanceRuleTest extends TestCase
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $nsPath1 = SymbolPath::forNamespace('App\Service');
-        $nsInfo1 = new SymbolInfo($nsPath1, 'src/Service', null);
+        $nsInfo1 = new SymbolInfo($nsPath1, RelativePath::fromString('src/Service'), null);
 
         $nsPath2 = SymbolPath::forNamespace('App\Controller');
-        $nsInfo2 = new SymbolInfo($nsPath2, 'src/Controller', null);
+        $nsInfo2 = new SymbolInfo($nsPath2, RelativePath::fromString('src/Controller'), null);
 
         $nsBag1 = (new MetricBag())
             ->with('distance', 0.4) // Warning
@@ -318,7 +319,7 @@ final class DistanceRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('App');
-        $nsInfo = new SymbolInfo($symbolPath, 'src', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src'), null);
 
         $metricBag = (new MetricBag())
             ->with('distance', $distance)
@@ -363,7 +364,7 @@ final class DistanceRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // classCount.sum=2 is below minClassCount=3, so no violation despite high distance
         $metricBag = (new MetricBag())
@@ -392,7 +393,7 @@ final class DistanceRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // classCount.sum=3 meets minClassCount=3, so violation is reported
         $metricBag = (new MetricBag())
@@ -422,7 +423,7 @@ final class DistanceRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // No classCount.sum metric at all, but minClassCount=0 so it should still be analyzed
         $metricBag = (new MetricBag())
@@ -503,7 +504,7 @@ final class DistanceRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('Vendor\Package');
-        $nsInfo = new SymbolInfo($symbolPath, 'vendor/package/src', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('vendor/package/src'), null);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -529,7 +530,7 @@ final class DistanceRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, 'src/Service', null);
+        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         $metricBag = (new MetricBag())
             ->with('distance', 0.1)
@@ -589,10 +590,10 @@ final class DistanceRuleTest extends TestCase
         );
 
         $nsPath1 = SymbolPath::forNamespace('Vendor\PackageA');
-        $nsInfo1 = new SymbolInfo($nsPath1, 'vendor/a/src', null);
+        $nsInfo1 = new SymbolInfo($nsPath1, RelativePath::fromString('vendor/a/src'), null);
 
         $nsPath2 = SymbolPath::forNamespace('Vendor\PackageB');
-        $nsInfo2 = new SymbolInfo($nsPath2, 'vendor/b/src', null);
+        $nsInfo2 = new SymbolInfo($nsPath2, RelativePath::fromString('vendor/b/src'), null);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')

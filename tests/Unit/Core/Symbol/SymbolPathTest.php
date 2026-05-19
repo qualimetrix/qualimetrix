@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -62,7 +63,7 @@ final class SymbolPathTest extends TestCase
         ];
 
         yield 'file' => [
-            SymbolPath::forFile('src/Service/UserService.php'),
+            SymbolPath::forFile(RelativePath::fromString('src/Service/UserService.php')),
             'file:src/Service/UserService.php',
         ];
 
@@ -110,7 +111,7 @@ final class SymbolPathTest extends TestCase
     #[Test]
     public function itForFileCreatesCorrectSymbolPath(): void
     {
-        $symbolPath = SymbolPath::forFile('src/test.php');
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/test.php'));
 
         self::assertNull($symbolPath->namespace);
         self::assertNull($symbolPath->type);
@@ -183,7 +184,7 @@ final class SymbolPathTest extends TestCase
         ];
 
         yield 'file' => [
-            SymbolPath::forFile('src/test.php'),
+            SymbolPath::forFile(RelativePath::fromString('src/test.php')),
             SymbolType::File,
         ];
 
@@ -265,7 +266,7 @@ final class SymbolPathTest extends TestCase
         ];
 
         yield 'file' => [
-            SymbolPath::forFile('src/test.php'),
+            SymbolPath::forFile(RelativePath::fromString('src/test.php')),
             null,
         ];
 

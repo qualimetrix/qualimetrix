@@ -145,7 +145,7 @@ final class AnalysisResultTest extends TestCase
         $repo1->add(
             SymbolPath::forMethod('App', 'ServiceA', 'method1'),
             $metrics1,
-            'ServiceA.php',
+            RelativePath::fromString('ServiceA.php'),
             10,
         );
 
@@ -154,7 +154,7 @@ final class AnalysisResultTest extends TestCase
         $repo2->add(
             SymbolPath::forMethod('App', 'ServiceB', 'method2'),
             $metrics2,
-            'ServiceB.php',
+            RelativePath::fromString('ServiceB.php'),
             20,
         );
 
@@ -305,9 +305,11 @@ final class AnalysisResultTest extends TestCase
         string $file = 'test.php',
         ?int $line = 1,
     ): Violation {
+        $relFile = RelativePath::fromString($file);
+
         return new Violation(
-            location: new Location(RelativePath::fromString($file), $line),
-            symbolPath: SymbolPath::forFile($file),
+            location: new Location($relFile, $line),
+            symbolPath: SymbolPath::forFile($relFile),
             ruleName: 'test-rule',
             violationCode: 'test-rule',
             message: 'Test message',

@@ -450,7 +450,7 @@ final class ViolationFilterPipelineTest extends TestCase
     {
         $vFile = new Violation(
             location: new Location(RelativePath::fromString('src/helpers.php'), 10),
-            symbolPath: SymbolPath::forFile('src/helpers.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/helpers.php')),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.method',
             message: 'CCN too high',

@@ -9,6 +9,7 @@ use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Duplication\DuplicateBlock;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 
 /**
@@ -53,16 +54,21 @@ final readonly class AnalysisContext
      * Overrides with null endLine (unbounded scope) are treated as having
      * infinite span, so any bounded override will win over an unbounded one.
      */
-    public function getThresholdOverride(string $ruleName, string $file, int $line): ?ThresholdOverride
+    public function getThresholdOverride(string $ruleName, ?RelativePath $file, int $line): ?ThresholdOverride
     {
-        if (!isset($this->thresholdOverrides[$file])) {
+        if ($file === null) {
+            return null;
+        }
+
+        $fileKey = $file->value();
+        if (!isset($this->thresholdOverrides[$fileKey])) {
             return null;
         }
 
         $bestMatch = null;
         $bestSpan = \PHP_INT_MAX;
 
-        foreach ($this->thresholdOverrides[$file] as $override) {
+        foreach ($this->thresholdOverrides[$fileKey] as $override) {
             if (!$override->matches($ruleName)) {
                 continue;
             }

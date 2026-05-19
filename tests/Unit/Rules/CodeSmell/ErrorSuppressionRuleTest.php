@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -63,8 +64,8 @@ final class ErrorSuppressionRuleTest extends TestCase
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
-        $symbolPath = SymbolPath::forFile('src/Clean.php');
-        $fileInfo = new SymbolInfo($symbolPath, 'src/Clean.php', null);
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Clean.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Clean.php'), null);
 
         $metricBag = new MetricBag();
 
@@ -84,8 +85,8 @@ final class ErrorSuppressionRuleTest extends TestCase
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
-        $symbolPath = SymbolPath::forFile('src/Smelly.php');
-        $fileInfo = new SymbolInfo($symbolPath, 'src/Smelly.php', null);
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Smelly.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
 
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.error_suppression', ['line' => 8])
@@ -113,8 +114,8 @@ final class ErrorSuppressionRuleTest extends TestCase
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
-        $symbolPath = SymbolPath::forFile('src/File.php');
-        $fileInfo = new SymbolInfo($symbolPath, 'src/File.php', null);
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/File.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/File.php'), null);
 
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.error_suppression', ['line' => 10, 'extra' => 'fopen']);
@@ -139,8 +140,8 @@ final class ErrorSuppressionRuleTest extends TestCase
             allowedFunctions: ['fopen', 'unlink'],
         ));
 
-        $symbolPath = SymbolPath::forFile('src/File.php');
-        $fileInfo = new SymbolInfo($symbolPath, 'src/File.php', null);
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/File.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/File.php'), null);
 
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.error_suppression', ['line' => 10, 'extra' => 'fopen'])
@@ -167,8 +168,8 @@ final class ErrorSuppressionRuleTest extends TestCase
     {
         $rule = new ErrorSuppressionRule(new ErrorSuppressionOptions());
 
-        $symbolPath = SymbolPath::forFile('src/File.php');
-        $fileInfo = new SymbolInfo($symbolPath, 'src/File.php', null);
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/File.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/File.php'), null);
 
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.error_suppression', ['line' => 10, 'extra' => '']);
@@ -197,8 +198,8 @@ final class ErrorSuppressionRuleTest extends TestCase
             allowedFunctions: ['fopen'],
         ));
 
-        $symbolPath = SymbolPath::forFile('src/File.php');
-        $fileInfo = new SymbolInfo($symbolPath, 'src/File.php', null);
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/File.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/File.php'), null);
 
         $metricBag = (new MetricBag())
             ->withEntry('codeSmell.error_suppression', ['line' => 5]); // no extra = method call or other

@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -122,7 +123,7 @@ final class TypeCoverageRuleTest extends TestCase
         $rule = new TypeCoverageRule(new TypeCoverageOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/UserService.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 5)
@@ -155,7 +156,7 @@ final class TypeCoverageRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 5);
 
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 10)
@@ -189,7 +190,7 @@ final class TypeCoverageRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 5);
 
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 10)
@@ -221,7 +222,7 @@ final class TypeCoverageRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 5);
 
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 0)
@@ -253,7 +254,7 @@ final class TypeCoverageRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 5);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 5);
 
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 0)
@@ -289,7 +290,7 @@ final class TypeCoverageRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forClass('App', 'BadClass');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 10)
@@ -323,7 +324,7 @@ final class TypeCoverageRuleTest extends TestCase
         $rule = new TypeCoverageRule(new TypeCoverageOptions());
 
         $symbolPath = SymbolPath::forClass('App', 'EmptyClass');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 0)

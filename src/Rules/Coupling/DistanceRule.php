@@ -8,13 +8,11 @@ use Psr\Log\LoggerInterface;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -132,7 +130,7 @@ final class DistanceRule extends AbstractRule
                 $threshold = $severity === Severity::Error ? $effectiveOptions->maxDistanceError : $effectiveOptions->maxDistanceWarning;
 
                 $violations[] = new Violation(
-                    location: new Location(RelativePath::fromString(PathNormalizer::relativize($nsInfo->file)), $nsInfo->line),
+                    location: new Location($nsInfo->file, $nsInfo->line),
                     symbolPath: $nsInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: self::NAME,

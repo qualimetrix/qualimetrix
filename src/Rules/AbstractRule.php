@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules;
 
 use InvalidArgumentException;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -50,7 +51,7 @@ abstract class AbstractRule implements RuleInterface
      * @template T of RuleOptionsInterface|LevelOptionsInterface
      *
      * @param T $options The options to apply overrides to
-     * @param string $file File path of the symbol
+     * @param ?RelativePath $file File path of the symbol (null for symbols without a single owning file, e.g. dependency cycles)
      * @param int $line Line number of the symbol
      *
      * @return T
@@ -58,7 +59,7 @@ abstract class AbstractRule implements RuleInterface
     protected function getEffectiveOptions(
         AnalysisContext $context,
         RuleOptionsInterface|LevelOptionsInterface $options,
-        string $file,
+        ?RelativePath $file,
         int $line,
     ): RuleOptionsInterface|LevelOptionsInterface {
         $override = $context->getThresholdOverride($this->getName(), $file, $line);
@@ -77,14 +78,14 @@ abstract class AbstractRule implements RuleInterface
      * per-symbol threshold overrides via `@qmx-threshold` annotations.
      *
      * @param RuleOptionsInterface|LevelOptionsInterface $options The options to use for severity check
-     * @param string $file File path of the symbol
+     * @param ?RelativePath $file File path of the symbol (null for symbols without a single owning file, e.g. dependency cycles)
      * @param int $line Line number of the symbol
      * @param int|float $value The metric value to check
      */
     protected function getEffectiveSeverity(
         AnalysisContext $context,
         RuleOptionsInterface|LevelOptionsInterface $options,
-        string $file,
+        ?RelativePath $file,
         int $line,
         int|float $value,
     ): ?Severity {

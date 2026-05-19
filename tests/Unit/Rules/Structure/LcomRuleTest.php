@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -112,7 +113,7 @@ final class LcomRuleTest extends TestCase
         $rule = new LcomRule(new LcomOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'GodClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/GodClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/GodClass.php'), 10);
 
         // LCOM of 4 is above warning threshold (3) but below error (5)
         $metricBag = (new MetricBag())
@@ -144,7 +145,7 @@ final class LcomRuleTest extends TestCase
         $rule = new LcomRule(new LcomOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'VeryLargeClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/VeryLargeClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/VeryLargeClass.php'), 10);
 
         // LCOM of 5 is above error threshold (4)
         $metricBag = (new MetricBag())
@@ -172,7 +173,7 @@ final class LcomRuleTest extends TestCase
         $rule = new LcomRule(new LcomOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'CohesiveClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/CohesiveClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/CohesiveClass.php'), 10);
 
         // LCOM of 1 means perfectly cohesive (below warning threshold 2)
         $metricBag = (new MetricBag())->with('lcom', 1);
@@ -195,7 +196,7 @@ final class LcomRuleTest extends TestCase
         $rule = new LcomRule(new LcomOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'SomeClass');
-        $classInfo = new SymbolInfo($symbolPath, 'src/Service/SomeClass.php', 10);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
 
         // No 'lcom' metric
         $metricBag = new MetricBag();
@@ -262,7 +263,7 @@ final class LcomRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, 'test.php', 1);
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
             ->with('lcom', $lcom)

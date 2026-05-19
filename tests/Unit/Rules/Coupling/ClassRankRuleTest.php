@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -148,7 +149,7 @@ final class ClassRankRuleTest extends TestCase
         $rule = new ClassRankRule(new ClassRankOptions());
 
         $targetPath = SymbolPath::forClass('App', 'ImportantClass');
-        $targetInfo = new SymbolInfo($targetPath, 'src/ImportantClass.php', 10);
+        $targetInfo = new SymbolInfo($targetPath, RelativePath::fromString('src/ImportantClass.php'), 10);
 
         // 0.03 is above warning (0.02) but below error (0.05)
         $targetBag = (new MetricBag())->with('classRank', 0.03);
@@ -183,7 +184,7 @@ final class ClassRankRuleTest extends TestCase
         $rule = new ClassRankRule(new ClassRankOptions());
 
         $targetPath = SymbolPath::forClass('App', 'CriticalHub');
-        $targetInfo = new SymbolInfo($targetPath, 'src/CriticalHub.php', 10);
+        $targetInfo = new SymbolInfo($targetPath, RelativePath::fromString('src/CriticalHub.php'), 10);
 
         // 0.08 is above error threshold (0.05)
         $targetBag = (new MetricBag())->with('classRank', 0.08);
@@ -220,7 +221,7 @@ final class ClassRankRuleTest extends TestCase
         ));
 
         $targetPath = SymbolPath::forClass('App', 'TestClass');
-        $targetInfo = new SymbolInfo($targetPath, 'test.php', 1);
+        $targetInfo = new SymbolInfo($targetPath, RelativePath::fromString('test.php'), 1);
 
         $targetBag = (new MetricBag())->with('classRank', $classRank);
         $normalBag = (new MetricBag())->with('classRank', 0.001);
@@ -300,7 +301,7 @@ final class ClassRankRuleTest extends TestCase
         $rule = new ClassRankRule(new ClassRankOptions());
 
         $targetPath = SymbolPath::forClass('App', 'Hub');
-        $targetInfo = new SymbolInfo($targetPath, 'src/Hub.php', 10);
+        $targetInfo = new SymbolInfo($targetPath, RelativePath::fromString('src/Hub.php'), 10);
 
         // 0.015 would be below unscaled warning (0.02), but above scaled warning (0.01)
         $targetBag = (new MetricBag())->with('classRank', 0.015);
@@ -335,7 +336,7 @@ final class ClassRankRuleTest extends TestCase
         $rule = new ClassRankRule(new ClassRankOptions());
 
         $targetPath = SymbolPath::forClass('App', 'SmallHub');
-        $targetInfo = new SymbolInfo($targetPath, 'src/SmallHub.php', 10);
+        $targetInfo = new SymbolInfo($targetPath, RelativePath::fromString('src/SmallHub.php'), 10);
 
         // 0.03 would normally be a warning with default thresholds,
         // but with 25 classes, scaled warning = 0.04, so no violation
@@ -370,7 +371,7 @@ final class ClassRankRuleTest extends TestCase
         $rule = new ClassRankRule(new ClassRankOptions());
 
         $targetPath = SymbolPath::forClass('App', 'MegaHub');
-        $targetInfo = new SymbolInfo($targetPath, 'src/MegaHub.php', 10);
+        $targetInfo = new SymbolInfo($targetPath, RelativePath::fromString('src/MegaHub.php'), 10);
 
         // 0.02 would normally just be a warning, but with 1600 classes it's an error
         $targetBag = (new MetricBag())->with('classRank', 0.02);
@@ -403,7 +404,7 @@ final class ClassRankRuleTest extends TestCase
         $rule = new ClassRankRule(new ClassRankOptions());
 
         $targetPath = SymbolPath::forClass('App', 'Hub');
-        $targetInfo = new SymbolInfo($targetPath, 'src/Hub.php', 10);
+        $targetInfo = new SymbolInfo($targetPath, RelativePath::fromString('src/Hub.php'), 10);
 
         $targetBag = (new MetricBag())->with('classRank', 0.03);
         $normalBag = (new MetricBag())->with('classRank', 0.001);
@@ -515,10 +516,11 @@ final class ClassRankRuleTest extends TestCase
      */
     private function createDummyClasses(int $count, string $file = 'src/Dummy.php', int $line = 1): array
     {
+        $relFile = RelativePath::fromString($file);
         $classes = [];
         for ($i = 0; $i < $count; $i++) {
             $path = SymbolPath::forClass('App\\Dummy', 'DummyClass' . $i);
-            $classes[] = new SymbolInfo($path, $file, $line);
+            $classes[] = new SymbolInfo($path, $relFile, $line);
         }
 
         return $classes;

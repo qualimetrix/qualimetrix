@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Symbol;
 
+use Qualimetrix\Core\Path\RelativePath;
+
 final readonly class SymbolPath
 {
     /**
@@ -16,7 +18,7 @@ final readonly class SymbolPath
         public ?string $namespace,
         public ?string $type,
         public ?string $member,
-        public ?string $filePath = null,
+        public ?RelativePath $filePath = null,
     ) {}
 
     public static function forMethod(string $namespace, string $class, string $method): self
@@ -84,7 +86,7 @@ final readonly class SymbolPath
         return self::forNamespace(ltrim($fqn, '\\'));
     }
 
-    public static function forFile(string $path): self
+    public static function forFile(RelativePath $path): self
     {
         return new self(
             namespace: null,
@@ -154,7 +156,7 @@ final readonly class SymbolPath
         $type = $this->getType();
 
         return match ($type) {
-            SymbolType::File => 'file:' . $this->filePath,
+            SymbolType::File => 'file:' . ($this->filePath?->value() ?? ''),
             SymbolType::Project => 'project:',
             SymbolType::Function_ => $this->buildFunctionCanonical(),
             SymbolType::Method => $this->buildMethodCanonical(),
@@ -181,7 +183,7 @@ final readonly class SymbolPath
         $type = $this->getType();
 
         return match ($type) {
-            SymbolType::File => $this->filePath ?? '',
+            SymbolType::File => $this->filePath?->value() ?? '',
             SymbolType::Project => '(project)',
             SymbolType::Function_ => $this->buildFunctionString(),
             SymbolType::Method => $this->buildMethodString(),

@@ -297,7 +297,7 @@ final class ViolationHasherTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/bootstrap.php')),
-            symbolPath: SymbolPath::forFile('src/bootstrap.php'),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/bootstrap.php')),
             ruleName: 'file-length',
             violationCode: 'file-length',
             message: 'File has 500 lines',
