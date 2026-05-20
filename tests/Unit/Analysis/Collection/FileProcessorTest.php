@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Analysis\Collection;
 
+use LogicException;
 use PhpParser\Comment\Doc;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
@@ -44,6 +45,21 @@ final class FileProcessorTest extends TestCase
         $processor->setProjectRoot(AbsolutePath::fromString('/tmp'));
 
         return $processor;
+    }
+
+    #[Test]
+    public function itThrowsLogicExceptionWhenProcessCalledBeforeSetProjectRoot(): void
+    {
+        // Phase 6 review MEDIUM: assert() was no-op under zend.assertions=-1
+        // and let process() fall through to a TypeError. Explicit throw now
+        // guarantees a clean LogicException whether assertions are enabled
+        // or not.
+        $processor = new FileProcessor($this->parser, new CompositeCollector([]));
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('projectRoot must be set');
+
+        $processor->process(new SplFileInfo('/tmp/test.php'));
     }
 
     #[Test]

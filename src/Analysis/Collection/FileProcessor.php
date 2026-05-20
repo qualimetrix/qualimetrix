@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Collection;
 
+use LogicException;
 use PhpParser\Node;
 use PhpParser\NodeFinder;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
@@ -16,7 +17,6 @@ use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
@@ -56,9 +56,11 @@ final class FileProcessor implements FileProcessorInterface
 
     public function process(SplFileInfo $file): FileProcessingResult
     {
-        \assert($this->projectRoot !== null, 'projectRoot must be set via setProjectRoot() before process()');
-        $relativePath = PathFactory::tryProjectRelative($file->getPathname(), $this->projectRoot)
-            ?? RelativePath::fromString(basename($file->getPathname()));
+        if ($this->projectRoot === null) {
+            throw new LogicException('projectRoot must be set via setProjectRoot() before process()');
+        }
+
+        $relativePath = PathFactory::bestEffortRelative($file->getPathname(), $this->projectRoot);
 
         try {
             // 1. Parse AST

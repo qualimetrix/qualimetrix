@@ -9,8 +9,9 @@ catches. Currently houses the banned-string-path pair introduced by
 - `BannedStringPathPromotedPropertyRule` — checks promoted constructor properties
   (`Node\Param` with `flags !== 0`), which the plain Property rule cannot see.
 
-The rules are committed but **not yet wired into `phpstan.neon`** — the wiring
-ships with the last phase of the RelativePath VO migration, once existing
-`string $file|$filePath|$oldPath` declarations across `Core`, `Analysis`,
-`Reporting`, `Baseline`, and the relevant `Infrastructure` subtrees have been
-converted to the typed VOs.
+Wired into `phpstan.neon` as part of ADR 0015 Phase 6 — the rules now run on
+every PHPStan invocation under the identifiers
+`qmx.bannedStringPathProperty` and `qmx.bannedStringPathPromotedProperty`,
+guarding against regression of typed-path properties in
+`Core`, `Analysis`, `Reporting`, `Baseline`, and the relevant
+`Infrastructure` subtrees.

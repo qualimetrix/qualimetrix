@@ -79,8 +79,7 @@ final class DuplicationDetector implements DuplicationDetectorInterface
 
         foreach ($files as $file) {
             $ioPath = $file->getPathname();
-            $relativePath = (PathFactory::tryProjectRelative($ioPath, $projectRoot)
-                ?? RelativePath::fromString(basename($ioPath)))->value();
+            $relativePath = PathFactory::bestEffortRelative($ioPath, $projectRoot)->value();
 
             $source = @file_get_contents($ioPath);
             if ($source === false) {

@@ -136,6 +136,116 @@ final class PathFactoryTest extends TestCase
     }
 
     #[Test]
+    public function itTryProjectRelativeReturnsNullForRelativeWithLeadingDotDot(): void
+    {
+        // Phase 6 review MEDIUM: tryProjectRelative was asymmetric — returned null for
+        // absolute paths outside the base but threw for relative inputs that would
+        // escape via leading "..". Now uniform: returns null in both cases.
+        self::assertNull(
+            PathFactory::tryProjectRelative('../escapes/Foo.php', AbsolutePath::fromString('/project')),
+        );
+    }
+
+    #[Test]
+    public function itBestEffortRelativeResolvesInsideProjectRoot(): void
+    {
+        $root = AbsolutePath::fromString('/project');
+
+        self::assertSame(
+            'src/Foo.php',
+            PathFactory::bestEffortRelative('/project/src/Foo.php', $root)->value(),
+        );
+    }
+
+    #[Test]
+    public function itBestEffortRelativePreservesStructureForOutOfRootFiles(): void
+    {
+        // Phase 6 review HIGH: distinct files outside projectRoot must not collide
+        // to the same key. Old basename() fallback would have collapsed both to
+        // 'Foo.php'; structure-preserving fallback keeps them disambiguated.
+        $root = AbsolutePath::fromString('/project');
+
+        $a = PathFactory::bestEffortRelative('/elsewhere/lib/Foo.php', $root)->value();
+        $b = PathFactory::bestEffortRelative('/elsewhere/api/Foo.php', $root)->value();
+
+        self::assertSame('elsewhere/lib/Foo.php', $a);
+        self::assertSame('elsewhere/api/Foo.php', $b);
+    }
+
+    #[Test]
+    public function itBestEffortRelativeCollapsesEscapeSegments(): void
+    {
+        // ".." segments are resolved lexically and any unresolvable leading
+        // ".." drops away so RelativePath::fromString never throws. Out-of-root
+        // structure is preserved, with the in-line ".." collapsing one level.
+        $root = AbsolutePath::fromString('/project');
+
+        self::assertSame(
+            'elsewhere/lib/Foo.php',
+            PathFactory::bestEffortRelative('/elsewhere/lib/sub/../Foo.php', $root)->value(),
+        );
+    }
+
+    #[Test]
+    public function itBestEffortRelativeDropsLeadingEscapesAfterStrip(): void
+    {
+        // A path that resolves to leading ".." after strip can't be a valid
+        // RelativePath; the helper drops the unresolvable head and keeps the
+        // structural remainder.
+        $root = AbsolutePath::fromString('/project');
+
+        self::assertSame(
+            'Foo.php',
+            PathFactory::bestEffortRelative('/../Foo.php', $root)->value(),
+        );
+    }
+
+    #[Test]
+    public function itBestEffortRelativeUsesPlaceholderForFullyCollapsedPath(): void
+    {
+        // Edge case the helper has to handle for the "never throws" contract:
+        // path that collapses to empty after segment resolution.
+        $root = AbsolutePath::fromString('/project');
+
+        self::assertSame('unknown', PathFactory::bestEffortRelative('/', $root)->value());
+    }
+
+    #[Test]
+    public function itBestEffortRelativeCanonicalizesSymlinkedInput(): void
+    {
+        // Phase 6 review HIGH (symlink asymmetry): StrategySelector canonicalizes
+        // $projectRoot via realpath() for cache stability, so a symlinked source
+        // file must also canonicalize before relativizing — otherwise it falls
+        // into the out-of-root fallback and loses its in-project identity.
+        $tmpBase = realpath(sys_get_temp_dir());
+        self::assertIsString($tmpBase);
+
+        $target = $tmpBase . '/qmx-besteffort-target-' . uniqid('', true);
+        $link = $tmpBase . '/qmx-besteffort-link-' . uniqid('', true);
+
+        mkdir($target);
+        mkdir($target . '/src');
+        $realFile = $target . '/src/Foo.php';
+        file_put_contents($realFile, '<?php');
+        symlink($target, $link);
+
+        try {
+            $linkedFile = $link . '/src/Foo.php';
+            $root = AbsolutePath::fromString($target); // canonicalized projectRoot
+
+            self::assertSame(
+                'src/Foo.php',
+                PathFactory::bestEffortRelative($linkedFile, $root)->value(),
+            );
+        } finally {
+            unlink($realFile);
+            unlink($link);
+            rmdir($target . '/src');
+            rmdir($target);
+        }
+    }
+
+    #[Test]
     public function itPreservesSymlinkInResolvedCliArgument(): void
     {
         // fromCliArgument does NOT call realpath(); symlink resolution is opt-in via canonicalize().

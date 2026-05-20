@@ -92,7 +92,11 @@ final class CompositeCollector
         // matches the relative-keyed suppression map, so `@qmx-ignore` tags on
         // classes can't drop them.
         if ($this->dependencyVisitor !== null) {
-            \assert($filePath !== null, 'filePath required when dependency visitor is configured');
+            if ($filePath === null) {
+                throw new LogicException(
+                    'filePath is required when a dependency visitor is configured (CompositeCollector::collect)',
+                );
+            }
             $this->dependencyVisitor->setFile($filePath);
             $traverser->addVisitor($this->dependencyVisitor);
         }

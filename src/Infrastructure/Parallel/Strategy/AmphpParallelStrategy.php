@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Parallel\Strategy;
 
 use Amp\Parallel\Worker\ContextWorkerPool;
 use Amp\Parallel\Worker\Execution;
+use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Collection\FileProcessingResult;
@@ -14,6 +15,7 @@ use Qualimetrix\Analysis\Collection\Strategy\ParallelCapableInterface;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTask;
 use SplFileInfo;
@@ -390,13 +392,21 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
      * Resolves the file's absolute path. SplFileInfo from Finder is typically
      * absolute, but qmx can be invoked with relative arguments (e.g.,
      * `bin/qmx check src/`) in which case getPathname() is relative.
+     *
+     * Canonicalizes via realpath() in both branches so symlinked source trees
+     * relativize correctly against the canonicalized {@see $projectRoot}
+     * (StrategySelector calls `canonicalize()` on the root for cache-key
+     * stability — a Phase-6 review HIGH surfaced the asymmetry when the
+     * pathname branch skipped canonicalization).
      */
     private function absolutePath(SplFileInfo $file): AbsolutePath
     {
         $pathname = $file->getPathname();
 
         if (str_starts_with($pathname, '/')) {
-            return AbsolutePath::fromString($pathname);
+            $real = @realpath($pathname);
+
+            return AbsolutePath::fromString($real !== false ? $real : $pathname);
         }
 
         $resolved = $file->getRealPath();
@@ -409,18 +419,23 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
     }
 
     /**
-     * Project-relative path for the failure-path result. Routes through the same
-     * {@see absolutePath()} helper as the success path so SplFileInfo input is
-     * normalized consistently before relativizing against the (now AbsolutePath)
-     * `$projectRoot`. Falls back to a `..`-stripped name for the rare case
-     * where Finder yields a file outside the project root.
+     * Project-relative path for the failure-path result. Routes through the
+     * same {@see absolutePath()} helper as the success path so SplFileInfo
+     * input is canonicalized consistently before relativizing against the
+     * `$projectRoot`. For the rare file outside the project root,
+     * {@see PathFactory::bestEffortRelative()} preserves directory structure
+     * to avoid the basename collision that an earlier draft introduced.
      */
     private function relativePathFor(SplFileInfo $file): RelativePath
     {
-        \assert($this->projectRoot !== null, 'projectRoot must be set before relativePathFor');
+        if ($this->projectRoot === null) {
+            throw new LogicException('projectRoot must be set before relativePathFor');
+        }
 
-        return $this->absolutePath($file)->tryRelativizeTo($this->projectRoot)
-            ?? RelativePath::fromString(basename($file->getPathname()));
+        return PathFactory::bestEffortRelative(
+            $this->absolutePath($file)->value(),
+            $this->projectRoot,
+        );
     }
 
     /**
