@@ -1,8 +1,8 @@
 # 0015. Typed `AbsolutePath` and `RelativePath` Value Objects
 
 **Date:** 2026-05-17
-**Status:** Proposed (round-2 of plan-stage triple review applied; round-2 Gemini unavailable due to auth/transport failure — accepted with Claude + Codex round-2 coverage)
-**Related:** Concept plan at [`docs/internal/plans/relative-path-vo-concept.md`](../internal/plans/relative-path-vo-concept.md); ADR 0012 (hybrid direction — `Core\Path` lives in the cross-cutting `Core` layer per the framework).
+**Status:** Accepted (landed 2026-05-20 across Phases 0–6; PathNormalizer removed and `qmx.bannedStringPathProperty` PHPStan rule wired as regression guard)
+**Related:** ADR 0012 (hybrid direction — `Core\Path` lives in the cross-cutting `Core` layer per the framework).
 
 ## Context
 
