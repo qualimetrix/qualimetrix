@@ -7,8 +7,8 @@ namespace Qualimetrix\Analysis\Duplication;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Duplication\DuplicateBlock;
 use Qualimetrix\Core\Duplication\DuplicateLocation;
+use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Util\PathNormalizer;
 use SplFileInfo;
 
 /**
@@ -66,6 +66,8 @@ final class DuplicationDetector implements DuplicationDetectorInterface
         $this->minTokens = (int) ($dupOptions['min_tokens'] ?? $dupOptions['minTokens'] ?? 70);
         $this->minLines = (int) ($dupOptions['min_lines'] ?? $dupOptions['minLines'] ?? 5);
 
+        $projectRoot = $this->configurationProvider->getConfiguration()->projectRoot;
+
         // Pass 1: Build hash index streaming (tokenize → hash → discard tokens)
         // Positions are packed as (fileIdx << 20 | offset) to avoid array-per-position overhead
         /** @var list<string> $filePaths maps fileIdx → project-relative path (identifier surface for DuplicateLocation) */
@@ -77,7 +79,8 @@ final class DuplicationDetector implements DuplicationDetectorInterface
 
         foreach ($files as $file) {
             $ioPath = $file->getPathname();
-            $relativePath = PathNormalizer::relativize($ioPath);
+            $relativePath = (PathFactory::tryProjectRelative($ioPath, $projectRoot)
+                ?? RelativePath::fromString(basename($ioPath)))->value();
 
             $source = @file_get_contents($ioPath);
             if ($source === false) {

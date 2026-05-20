@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Collection;
 
+use Qualimetrix\Core\Path\AbsolutePath;
 use SplFileInfo;
 
 /**
@@ -14,6 +15,14 @@ use SplFileInfo;
  */
 interface FileProcessorInterface
 {
+    /**
+     * Sets the project root used to relativize result paths. Must be called
+     * before {@see process()}; called from {@see CollectionOrchestrator::collect()}
+     * (sequential side) and from {@see \Qualimetrix\Infrastructure\Parallel\WorkerBootstrap}
+     * (parallel side).
+     */
+    public function setProjectRoot(AbsolutePath $projectRoot): void;
+
     /**
      * Processes a single file: parse -> collect metrics + dependencies -> cleanup.
      *

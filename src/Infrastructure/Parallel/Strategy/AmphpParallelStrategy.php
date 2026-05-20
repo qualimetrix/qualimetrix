@@ -15,7 +15,6 @@ use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTask;
 use SplFileInfo;
 use Throwable;
@@ -412,15 +411,16 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
     /**
      * Project-relative path for the failure-path result. Routes through the same
      * {@see absolutePath()} helper as the success path so SplFileInfo input is
-     * normalized consistently — then bridges via `PathNormalizer::relativize()`
-     * (kept until Phase 5 lifts `$projectRoot` to {@see AbsolutePath} and
-     * `PathFactory::tryProjectRelative` becomes type-clean here).
+     * normalized consistently before relativizing against the (now AbsolutePath)
+     * `$projectRoot`. Falls back to a `..`-stripped name for the rare case
+     * where Finder yields a file outside the project root.
      */
     private function relativePathFor(SplFileInfo $file): RelativePath
     {
-        return RelativePath::fromString(
-            PathNormalizer::relativize($this->absolutePath($file)->value()),
-        );
+        \assert($this->projectRoot !== null, 'projectRoot must be set before relativePathFor');
+
+        return $this->absolutePath($file)->tryRelativizeTo($this->projectRoot)
+            ?? RelativePath::fromString(basename($file->getPathname()));
     }
 
     /**

@@ -9,7 +9,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -426,7 +425,7 @@ final class TopIssuesRendererTest extends TestCase
         int $debt,
     ): RankedIssue {
         $violation = new Violation(
-            location: new Location(RelativePath::fromString(PathNormalizer::relativize($file)), $line),
+            location: new Location(RelativePath::fromString(ltrim($file, '/')), $line),
             symbolPath: SymbolPath::forMethod('App\Service', $symbol, 'process'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',

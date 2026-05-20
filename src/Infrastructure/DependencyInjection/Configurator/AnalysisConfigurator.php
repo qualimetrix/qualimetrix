@@ -68,9 +68,10 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         $container->register(ThresholdOverrideExtractor::class)
             ->setArguments(['$validators' => []]);
 
-        // FileProcessor - processes single files
-        // Named arguments — the 3rd positional is SuppressionExtractor (uses default new()),
-        // ThresholdOverrideExtractor is the 4th constructor parameter
+        // FileProcessor - processes single files. projectRoot is set at runtime
+        // by CollectionOrchestrator (sequential side) and WorkerBootstrap
+        // (parallel side) so the path-VO boundary stays at the file-result edge
+        // without a cross-namespace ConfigurationProvider dependency.
         $container->register(FileProcessor::class)
             ->setArguments([
                 '$parser' => new Reference(FileParserInterface::class),

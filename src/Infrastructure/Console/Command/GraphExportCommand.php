@@ -21,7 +21,6 @@ use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -133,7 +132,10 @@ final class GraphExportCommand extends Command
         foreach ($files as $file) {
             try {
                 $ast = $this->fileParser->parse($file);
-                $this->dependencyVisitor->setFile(RelativePath::fromString(PathNormalizer::relativize($file->getPathname())));
+                $this->dependencyVisitor->setFile(
+                    PathFactory::tryProjectRelative($file->getPathname(), $cwd)
+                        ?? RelativePath::fromString(basename($file->getPathname())),
+                );
                 $traverser->traverse($ast);
 
                 foreach ($this->dependencyVisitor->getDependencies() as $dependency) {

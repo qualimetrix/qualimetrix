@@ -180,11 +180,14 @@ final class WorkerBootstrap
         $validators = RuleValidatorMapFactory::build($ruleClasses);
         $extractor = new ThresholdOverrideExtractor($validators);
 
-        return new FileProcessor(
+        $processor = new FileProcessor(
             parser: $parser,
             collector: $compositeCollector,
             thresholdOverrideExtractor: $extractor,
         );
+        $processor->setProjectRoot($projectRoot);
+
+        return $processor;
     }
 
     /**

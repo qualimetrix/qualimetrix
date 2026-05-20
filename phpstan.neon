@@ -18,3 +18,17 @@ parameters:
     tmpDir: .phpstan.cache
     reportUnmatchedIgnoredErrors: true
     treatPhpDocTypesAsCertain: false
+
+services:
+    # ADR 0015 Phase 6: regression guard against re-introducing string-typed
+    # properties that should travel through the Path VOs.
+    -
+        class: Qualimetrix\PhpStan\Rules\PathPropertyMatcher
+    -
+        class: Qualimetrix\PhpStan\Rules\BannedStringPathPropertyRule
+        tags:
+            - phpstan.rules.rule
+    -
+        class: Qualimetrix\PhpStan\Rules\BannedStringPathPromotedPropertyRule
+        tags:
+            - phpstan.rules.rule

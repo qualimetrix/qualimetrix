@@ -21,6 +21,7 @@ use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Progress\ProgressReporter;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -54,7 +55,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = $this->createOrchestrator();
         $repository = new InMemoryMetricRepository();
 
-        $result = $orchestrator->collect([], $repository);
+        $result = $orchestrator->collect([], $repository, AbsolutePath::fromString('/tmp'));
 
         self::assertSame(0, $result->result->filesAnalyzed);
         self::assertSame(0, $result->result->filesSkipped);
@@ -90,7 +91,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = $this->createOrchestratorWith(progress: $progress);
         $repository = new InMemoryMetricRepository();
 
-        $result = $orchestrator->collect($files, $repository);
+        $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         self::assertSame(2, $result->result->filesAnalyzed);
         self::assertSame(0, $result->result->filesSkipped);
@@ -132,7 +133,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = $this->createOrchestratorWith(logger: $logger);
         $repository = new InMemoryMetricRepository();
 
-        $result = $orchestrator->collect($files, $repository);
+        $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         self::assertSame(1, $result->result->filesAnalyzed);
         self::assertSame(1, $result->result->filesSkipped);
@@ -164,7 +165,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = $this->createOrchestrator();
         $repository = new InMemoryMetricRepository();
 
-        $orchestrator->collect($files, $repository);
+        $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         self::assertTrue($repository->has($symbolPath));
         self::assertSame(5, $repository->get($symbolPath)->get('ccn'));
@@ -196,7 +197,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = $this->createOrchestrator();
         $repository = new InMemoryMetricRepository();
 
-        $orchestrator->collect($files, $repository);
+        $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         self::assertTrue($repository->has($symbolPath));
         self::assertSame(25, $repository->get($symbolPath)->get('wmc'));
@@ -224,7 +225,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = $this->createOrchestrator();
         $repository = new InMemoryMetricRepository();
 
-        $result = $orchestrator->collect($files, $repository);
+        $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         self::assertCount(2, $result->dependencies);
         self::assertSame('App\Foo', $result->dependencies[0]->source->toString());
@@ -261,7 +262,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = $this->createOrchestrator();
         $repository = new InMemoryMetricRepository();
 
-        $result = $orchestrator->collect($files, $repository);
+        $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         self::assertSame(2, $result->result->filesAnalyzed);
         self::assertCount(2, $result->dependencies);
@@ -288,7 +289,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = $this->createOrchestratorWith(logger: $logger);
         $repository = new InMemoryMetricRepository();
 
-        $result = $orchestrator->collect($files, $repository);
+        $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         self::assertSame(0, $result->result->filesAnalyzed);
         self::assertSame(2, $result->result->filesSkipped);
@@ -332,7 +333,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = $this->createOrchestratorWith(logger: $logger);
         $repository = new InMemoryMetricRepository();
 
-        $result = $orchestrator->collect($files, $repository);
+        $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         self::assertSame(2, $result->result->filesAnalyzed);
         self::assertSame(2, $result->result->filesSkipped);
@@ -372,7 +373,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = $this->createOrchestratorWith(progress: $progress);
         $repository = new InMemoryMetricRepository();
 
-        $orchestrator->collect($files, $repository);
+        $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
     }
 
     #[Test]
@@ -402,7 +403,7 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = $this->createOrchestratorWith(strategySelector: $strategySelector);
         $repository = new InMemoryMetricRepository();
 
-        $orchestrator->collect($files, $repository);
+        $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
     }
 
     #[Test]
@@ -450,7 +451,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $repository = new InMemoryMetricRepository();
 
-        $orchestrator->collect($files, $repository);
+        $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         // Verify that derived metric was added to method symbol
         self::assertTrue($repository->has($methodSymbol));
@@ -494,7 +495,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $repository = new InMemoryMetricRepository();
 
-        $orchestrator->collect($files, $repository);
+        $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         // Verify that derived metric was NOT added (method doesn't exist)
         $nonExistentSymbol = SymbolPath::forMethod('App', 'NonExistent', 'method');
@@ -540,7 +541,7 @@ final class CollectionOrchestratorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Should not throw exceptions
-        $result = $orchestrator->collect($files, $repository);
+        $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         self::assertSame(1, $result->result->filesAnalyzed);
     }
@@ -588,7 +589,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $repository = new InMemoryMetricRepository();
 
-        $orchestrator->collect($files, $repository);
+        $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         // Verify that derived metric was added
         self::assertTrue($repository->has($methodSymbol));
@@ -640,7 +641,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $repository = new InMemoryMetricRepository();
 
-        $orchestrator->collect($files, $repository);
+        $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         // Only 'mi' should be added as derived metric
         $methodSymbol = SymbolPath::forMethod('App', 'Service', 'method');
@@ -688,7 +689,7 @@ final class CollectionOrchestratorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Should not throw exceptions
-        $result = $orchestrator->collect($files, $repository);
+        $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         self::assertSame(1, $result->result->filesAnalyzed);
 
@@ -738,7 +739,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $repository = new InMemoryMetricRepository();
 
-        $orchestrator->collect($files, $repository);
+        $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         // Verify that method metrics were registered normally
         self::assertTrue($repository->has($methodSymbol));
@@ -789,7 +790,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $repository = new InMemoryMetricRepository();
 
-        $orchestrator->collect($files, $repository);
+        $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         // Verify that derived metric was added for method with non-ASCII identifiers
         self::assertTrue($repository->has($methodSymbol));
@@ -818,10 +819,10 @@ final class CollectionOrchestratorTest extends TestCase
         $orchestrator = $this->createOrchestratorWith(strategySelector: $strategySelector);
 
         $repository1 = new InMemoryMetricRepository();
-        $orchestrator->collect($files, $repository1);
+        $orchestrator->collect($files, $repository1, AbsolutePath::fromString('/tmp'));
 
         $repository2 = new InMemoryMetricRepository();
-        $orchestrator->collect($files, $repository2);
+        $orchestrator->collect($files, $repository2, AbsolutePath::fromString('/tmp'));
     }
 
     private function createOrchestrator(): CollectionOrchestrator

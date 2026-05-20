@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - `deptrac/deptrac` dev-dependency. `composer check` is now `cs-check + test + phpstan + selfcheck`; architecture enforcement runs entirely through Qualimetrix's own `architecture.layer-violation` rule.
+- Internal `Qualimetrix\Core\Util\PathNormalizer` helper (was `@internal` since v0.18). Superseded by `Core\Path\PathFactory`. ADR 0015 Phase 6 also wires a PHPStan rule (`qmx.bannedStringPathProperty`) as a regression guard against re-introducing `string`-typed `$file` / `$filePath` / `$oldPath` properties in scoped namespaces.
 
 ## [0.19.0] - 2026-05-17
 

@@ -15,7 +15,6 @@ use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Util\PathNormalizer;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Metrics\Structure\NocCollector;
 
@@ -32,13 +31,13 @@ final class NocCollectorTest extends TestCase
     /**
      * Helper method to create an extends dependency.
      */
-    private function createExtends(string $childClass, string $parentClass, string $file = '/test.php', int $line = 1): Dependency
+    private function createExtends(string $childClass, string $parentClass, string $file = 'test.php', int $line = 1): Dependency
     {
         return new Dependency(
             source: SymbolPath::fromClassFqn($childClass),
             target: SymbolPath::fromClassFqn($parentClass),
             type: DependencyType::Extends,
-            location: new Location(RelativePath::fromString(PathNormalizer::relativize($file)), $line),
+            location: new Location(RelativePath::fromString($file), $line),
         );
     }
 
@@ -117,8 +116,8 @@ final class NocCollectorTest extends TestCase
 
         // Create dependency graph with two extends relationships
         $graph = (new DependencyGraphBuilder())->build([
-            $this->createExtends('App\\ChildA', 'App\\BaseClass', '/child1.php', 20),
-            $this->createExtends('App\\ChildB', 'App\\BaseClass', '/child2.php', 30),
+            $this->createExtends('App\\ChildA', 'App\\BaseClass', 'child1.php', 20),
+            $this->createExtends('App\\ChildB', 'App\\BaseClass', 'child2.php', 30),
         ]);
 
         // Add parent class
@@ -148,8 +147,8 @@ final class NocCollectorTest extends TestCase
 
         // Create dependency graph with two-level inheritance chain
         $graph = (new DependencyGraphBuilder())->build([
-            $this->createExtends('App\\Parent', 'App\\GrandParent', '/parent.php', 20),
-            $this->createExtends('App\\Child', 'App\\Parent', '/child.php', 30),
+            $this->createExtends('App\\Parent', 'App\\GrandParent', 'parent.php', 20),
+            $this->createExtends('App\\Child', 'App\\Parent', 'child.php', 30),
         ]);
 
         // Add grandparent
@@ -187,8 +186,8 @@ final class NocCollectorTest extends TestCase
 
         // Create dependency graph with cross-namespace extends
         $graph = (new DependencyGraphBuilder())->build([
-            $this->createExtends('App\\ServiceA', 'Vendor\\BaseService', '/app/service-a.php', 20),
-            $this->createExtends('App\\ServiceB', 'Vendor\\BaseService', '/app/service-b.php', 30),
+            $this->createExtends('App\\ServiceA', 'Vendor\\BaseService', 'app/service-a.php', 20),
+            $this->createExtends('App\\ServiceB', 'Vendor\\BaseService', 'app/service-b.php', 30),
         ]);
 
         // Add parent in Vendor namespace
@@ -216,7 +215,7 @@ final class NocCollectorTest extends TestCase
 
         // Create dependency graph with global namespace parent
         $graph = (new DependencyGraphBuilder())->build([
-            $this->createExtends('App\\Child', 'GlobalParent', '/child.php', 20),
+            $this->createExtends('App\\Child', 'GlobalParent', 'child.php', 20),
         ]);
 
         // Add parent in global namespace
@@ -241,7 +240,7 @@ final class NocCollectorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         $graph = (new DependencyGraphBuilder())->build([
-            $this->createExtends('App\\Service\\MyException', 'Exception', '/exception.php', 10),
+            $this->createExtends('App\\Service\\MyException', 'Exception', 'exception.php', 10),
         ]);
 
         // Only the project class is in the repository
@@ -290,7 +289,7 @@ final class NocCollectorTest extends TestCase
 
         // Create dependency graph
         $graph = (new DependencyGraphBuilder())->build([
-            $this->createExtends('App\\ChildClass', 'App\\BaseClass', '/child.php', 20),
+            $this->createExtends('App\\ChildClass', 'App\\BaseClass', 'child.php', 20),
         ]);
 
         // Add parent with existing metrics

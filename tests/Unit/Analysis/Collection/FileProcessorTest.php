@@ -38,6 +38,14 @@ final class FileProcessorTest extends TestCase
         $this->parser = self::createStub(FileParserInterface::class);
     }
 
+    private function makeProcessor(CompositeCollector $collector): FileProcessor
+    {
+        $processor = new FileProcessor($this->parser, $collector);
+        $processor->setProjectRoot(AbsolutePath::fromString('/tmp'));
+
+        return $processor;
+    }
+
     #[Test]
     public function itProcessesFileSuccessfully(): void
     {
@@ -55,11 +63,11 @@ final class FileProcessorTest extends TestCase
 
         $compositeCollector = new CompositeCollector([$collector]);
 
-        $processor = new FileProcessor($this->parser, $compositeCollector);
+        $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
 
         self::assertTrue($result->success);
-        self::assertSame('tmp/test.php', $result->filePath->value());
+        self::assertSame('test.php', $result->filePath->value());
         self::assertSame(50, $result->fileBag?->get('loc'));
         self::assertNull($result->error);
     }
@@ -75,11 +83,11 @@ final class FileProcessorTest extends TestCase
 
         $compositeCollector = new CompositeCollector([]);
 
-        $processor = new FileProcessor($this->parser, $compositeCollector);
+        $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
 
         self::assertFalse($result->success);
-        self::assertSame('tmp/invalid.php', $result->filePath->value());
+        self::assertSame('invalid.php', $result->filePath->value());
         self::assertNull($result->fileBag);
         self::assertStringContainsString('Syntax error', $result->error ?? '');
     }
@@ -107,7 +115,7 @@ final class FileProcessorTest extends TestCase
 
         $compositeCollector = new CompositeCollector([$collector]);
 
-        $processor = new FileProcessor($this->parser, $compositeCollector);
+        $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
 
         self::assertTrue($result->success);
@@ -138,7 +146,7 @@ final class FileProcessorTest extends TestCase
 
         $compositeCollector = new CompositeCollector([$collector]);
 
-        $processor = new FileProcessor($this->parser, $compositeCollector);
+        $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
 
         self::assertTrue($result->success);
@@ -162,7 +170,7 @@ final class FileProcessorTest extends TestCase
         $compositeCollector = new CompositeCollector([]);
         $compositeCollector->setDependencyVisitor($dependencyVisitor);
 
-        $processor = new FileProcessor($this->parser, $compositeCollector);
+        $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
 
         // With empty AST, no dependencies should be collected
@@ -190,7 +198,7 @@ final class FileProcessorTest extends TestCase
 
         $compositeCollector = new CompositeCollector([$collector]);
 
-        $processor = new FileProcessor($this->parser, $compositeCollector);
+        $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
 
         self::assertTrue($result->success);
@@ -222,7 +230,7 @@ final class FileProcessorTest extends TestCase
 
         $compositeCollector = new CompositeCollector([]);
 
-        $processor = new FileProcessor($this->parser, $compositeCollector);
+        $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
 
         self::assertTrue($result->success);

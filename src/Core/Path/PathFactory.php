@@ -8,7 +8,7 @@ use InvalidArgumentException;
 
 /**
  * Boundary factory consolidating the three string-to-VO conversions previously
- * spread across {@see \Qualimetrix\Core\Util\PathNormalizer} and ad-hoc call sites.
+ * spread across the (now removed) `Core\Util\PathNormalizer` and ad-hoc call sites.
  *
  * The three boundaries:
  * - **CLI input** — {@see fromCliArgument()} resolves a user-supplied path against cwd.

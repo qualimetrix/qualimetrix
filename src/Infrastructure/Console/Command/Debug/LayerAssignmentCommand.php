@@ -176,7 +176,7 @@ final class LayerAssignmentCommand extends Command
             $files = (new GeneratedFileFilter())->filter($files);
         }
 
-        $collection = $this->collectionOrchestrator->collect($files, $repository);
+        $collection = $this->collectionOrchestrator->collect($files, $repository, $resolved->analysis->projectRoot);
         $graph = $this->graphBuilder->build($collection->dependencies);
 
         $classPaths = [];

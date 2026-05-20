@@ -10,9 +10,11 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Duplication\NormalizedToken;
 use Qualimetrix\Analysis\Duplication\TokenNormalizer;
+use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Duplication\DuplicateBlock;
 use Qualimetrix\Core\Duplication\DuplicateLocation;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use SplFileInfo;
 
@@ -291,6 +293,9 @@ PHP;
                 'min_lines' => $minLines,
             ],
         ]);
+        $configProvider->method('getConfiguration')->willReturn(
+            new AnalysisConfiguration(projectRoot: AbsolutePath::fromString($this->tmpDir)),
+        );
 
         return new DuplicationDetector($configProvider);
     }

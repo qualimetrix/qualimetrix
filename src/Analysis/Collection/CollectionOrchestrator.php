@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Collection\Metric\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Collection\Strategy\StrategySelectorInterface;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Progress\NullProgressReporter;
 use Qualimetrix\Core\Progress\ProgressReporter;
@@ -38,10 +39,16 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
     public function collect(
         array $files,
         MetricRepositoryInterface $repository,
+        AbsolutePath $projectRoot,
     ): CollectionPhaseOutput {
         if ($files === []) {
             return new CollectionPhaseOutput(new CollectionResult(0, 0), []);
         }
+
+        // Lifts projectRoot into the sequential FileProcessor instance. The
+        // parallel strategy ships its own FileProcessor through WorkerBootstrap,
+        // which calls the same setter on the worker side.
+        $this->fileProcessor->setProjectRoot($projectRoot);
 
         $profiler = ProfilerHolder::get();
 

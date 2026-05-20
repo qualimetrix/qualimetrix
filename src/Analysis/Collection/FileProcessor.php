@@ -14,12 +14,13 @@ use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
 use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Util\PathNormalizer;
 use SplFileInfo;
 
 /**
@@ -33,6 +34,8 @@ use SplFileInfo;
  */
 final class FileProcessor implements FileProcessorInterface
 {
+    private ?AbsolutePath $projectRoot = null;
+
     public function __construct(
         private readonly FileParserInterface $parser,
         private readonly CompositeCollector $collector,
@@ -40,15 +43,30 @@ final class FileProcessor implements FileProcessorInterface
         private readonly ThresholdOverrideExtractor $thresholdOverrideExtractor = new ThresholdOverrideExtractor(),
     ) {}
 
+    /**
+     * Sets the project root used to relativize file paths. The orchestrator
+     * (sequential side) and {@see WorkerBootstrap} (parallel side) both call
+     * this before invoking {@see process()} so projectRoot isn't carried as a
+     * cross-namespace constructor dependency.
+     */
+    public function setProjectRoot(AbsolutePath $projectRoot): void
+    {
+        $this->projectRoot = $projectRoot;
+    }
+
     public function process(SplFileInfo $file): FileProcessingResult
     {
+        \assert($this->projectRoot !== null, 'projectRoot must be set via setProjectRoot() before process()');
+        $relativePath = PathFactory::tryProjectRelative($file->getPathname(), $this->projectRoot)
+            ?? RelativePath::fromString(basename($file->getPathname()));
+
         try {
             // 1. Parse AST
             $ast = $this->parser->parse($file);
 
             // 2. Reset collectors & collect metrics + dependencies (single traversal)
             $this->collector->reset();
-            $output = $this->collector->collect($file, $ast);
+            $output = $this->collector->collect($file, $ast, $relativePath);
 
             // 3. Extract method/class metrics
             $methodMetrics = $this->extractMethodMetrics();
@@ -67,7 +85,7 @@ final class FileProcessor implements FileProcessorInterface
             }
 
             return FileProcessingResult::success(
-                filePath: RelativePath::fromString(PathNormalizer::relativize($file->getPathname())),
+                filePath: $relativePath,
                 fileBag: $output->metrics,
                 methodMetrics: $methodMetrics,
                 classMetrics: $classMetrics,
@@ -78,7 +96,7 @@ final class FileProcessor implements FileProcessorInterface
             );
         } catch (ParseException $e) {
             return FileProcessingResult::failure(
-                filePath: RelativePath::fromString(PathNormalizer::relativize($file->getPathname())),
+                filePath: $relativePath,
                 error: $e->getMessage(),
             );
         }

@@ -108,7 +108,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $this->logger->debug('Starting collection phase', ['files' => \count($files)]);
 
         $profiler?->start('collection', 'pipeline');
-        $collectionOutput = $this->collectionOrchestrator->collect($files, $repository);
+        $collectionOutput = $this->collectionOrchestrator->collect($files, $repository, $config->projectRoot);
         $collectionResult = $collectionOutput->result;
         $profiler?->stop('collection');
 

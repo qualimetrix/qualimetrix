@@ -12,7 +12,6 @@ use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Util\PathNormalizer;
 use SplFileInfo;
 use Traversable;
 
@@ -67,8 +66,13 @@ final class CompositeCollector
      * Collects metrics and optionally dependencies via single AST traversal.
      *
      * @param Node[] $ast
+     * @param RelativePath|null $filePath Project-relative path for dependency-visitor
+     *                                    keying. May be null only when no dependency
+     *                                    visitor is configured. Caller (FileProcessor)
+     *                                    computes this once so projectRoot threading
+     *                                    stays at the boundary.
      */
-    public function collect(SplFileInfo $file, array $ast): CollectionOutput
+    public function collect(SplFileInfo $file, array $ast, ?RelativePath $filePath = null): CollectionOutput
     {
         if ($this->collectors === [] && $this->dependencyVisitor === null) {
             return new CollectionOutput(new MetricBag(), []);
@@ -81,15 +85,15 @@ final class CompositeCollector
             $traverser->addVisitor($collector->getVisitor());
         }
 
-        // Add dependency visitor if configured. The file path is normalised
-        // to the project-relative form (same key shape used by
-        // {@see \Qualimetrix\Analysis\Collection\FileProcessor::process()}
-        // for `filePath` and the per-file suppression dict). Without this,
-        // dependency-derived violations (e.g. `architecture.layer-violation`)
-        // carry an absolute path that never matches the relative-keyed
-        // suppression map, so `@qmx-ignore` tags on classes can't drop them.
+        // Add dependency visitor if configured. The file path comes pre-relativized
+        // from FileProcessor (same key shape used for `filePath` and the per-file
+        // suppression dict). Without this, dependency-derived violations
+        // (e.g. `architecture.layer-violation`) carry an absolute path that never
+        // matches the relative-keyed suppression map, so `@qmx-ignore` tags on
+        // classes can't drop them.
         if ($this->dependencyVisitor !== null) {
-            $this->dependencyVisitor->setFile(RelativePath::fromString(PathNormalizer::relativize($file->getPathname())));
+            \assert($filePath !== null, 'filePath required when dependency visitor is configured');
+            $this->dependencyVisitor->setFile($filePath);
             $traverser->addVisitor($this->dependencyVisitor);
         }
 
