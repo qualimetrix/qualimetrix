@@ -47,8 +47,6 @@ Core/
 │   ├── SymbolType.php
 │   ├── SymbolPath.php                     # Stable symbol identifier (moved from Violation/)
 │   ├── SymbolInfo.php
-│   ├── MethodInfo.php
-│   ├── ClassInfo.php
 │   ├── ClassType.php
 │   └── PhpBuiltinClassRegistry.php        # Single source of truth for PHP built-in classes
 ├── Ast/
@@ -207,7 +205,6 @@ Value Object — a class with collected metrics.
 
 **Methods:**
 - `getSymbolPath(): SymbolPath` — creates SymbolPath for this class
-- `toSymbolInfo(string $filePath): SymbolInfo` — creates SymbolInfo with file path
 
 ### MetricBag
 
@@ -820,34 +817,8 @@ Determines whether a namespace belongs to the project (not an external dependenc
 
 **Fields:**
 - `symbolPath: SymbolPath`
-- `file: string`
+- `file: ?RelativePath`
 - `line: ?int`
-
-### MethodInfo
-
-**Fields:**
-- `fqn: string` — `App\Service\User::calculate`
-- `namespace: string`
-- `class: string`
-- `name: string`
-- `file: string`
-- `line: int`
-
-**Methods:**
-- `getSymbolPath(): SymbolPath` — creates SymbolPath for the method
-
-### ClassInfo
-
-**Fields:**
-- `fqn: string` — `App\Service\User`
-- `namespace: string`
-- `name: string`
-- `file: string`
-- `line: int`
-- `type: ClassType` — class/interface/trait/enum
-
-**Methods:**
-- `getSymbolPath(): SymbolPath` — creates SymbolPath for the class
 
 ---
 
@@ -864,7 +835,6 @@ Determines whether a namespace belongs to the project (not an external dependenc
 7. [x] AggregationStrategy enum
 8. [x] SymbolLevel enum
 9. [x] MetricDefinition VO
-10. [x] MethodInfo, ClassInfo
 11. [x] MetricCollectorInterface (with getMetricDefinitions)
 12. [x] MetricRepositoryInterface (unified MetricBag)
 13. [x] RuleInterface

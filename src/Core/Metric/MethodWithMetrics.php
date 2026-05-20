@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Metric;
 
-use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -43,21 +41,5 @@ final readonly class MethodWithMetrics
 
         // Global function
         return SymbolPath::forGlobalFunction($this->namespace ?? '', $this->method);
-    }
-
-    /**
-     * Creates SymbolInfo for this method with the given file path.
-     *
-     * Returns null for closures (they don't have stable identity).
-     */
-    public function toSymbolInfo(RelativePath $filePath): ?SymbolInfo
-    {
-        $symbolPath = $this->getSymbolPath();
-
-        if ($symbolPath === null) {
-            return null;
-        }
-
-        return new SymbolInfo($symbolPath, $filePath, $this->line);
     }
 }
