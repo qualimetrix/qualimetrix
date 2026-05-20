@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Namespace_\ProjectNamespaceResolver;
+use Qualimetrix\Core\Path\AbsolutePath;
 
 #[CoversClass(ProjectNamespaceResolver::class)]
 final class ProjectNamespaceResolverTest extends TestCase
@@ -84,7 +85,7 @@ JSON;
         $path = $this->tempDir . '/composer.json';
         file_put_contents($path, $composerJson);
 
-        $resolver = new ProjectNamespaceResolver(composerJsonPath: $path);
+        $resolver = new ProjectNamespaceResolver(composerJsonPath: AbsolutePath::fromString($path));
 
         self::assertTrue($resolver->isProjectNamespace('App\\Service'));
         self::assertTrue($resolver->isProjectNamespace('Tests\\Unit'));
@@ -158,7 +159,7 @@ JSON;
     #[Test]
     public function itGracefullyDegradeIfComposerJsonNotFound(): void
     {
-        $resolver = new ProjectNamespaceResolver(composerJsonPath: $this->tempDir . '/nonexistent.json');
+        $resolver = new ProjectNamespaceResolver(composerJsonPath: AbsolutePath::fromString($this->tempDir . '/nonexistent.json'));
 
         // All namespaces treated as project when composer.json is missing
         self::assertTrue($resolver->isProjectNamespace('Any\\Namespace'));
@@ -171,7 +172,7 @@ JSON;
         $path = $this->tempDir . '/composer.json';
         file_put_contents($path, 'invalid json');
 
-        $resolver = new ProjectNamespaceResolver(composerJsonPath: $path);
+        $resolver = new ProjectNamespaceResolver(composerJsonPath: AbsolutePath::fromString($path));
 
         self::assertTrue($resolver->isProjectNamespace('Any\\Namespace'));
         self::assertSame([], $resolver->getProjectPrefixes());
@@ -189,7 +190,7 @@ JSON;
         $path = $this->tempDir . '/composer.json';
         file_put_contents($path, $composerJson);
 
-        $resolver = new ProjectNamespaceResolver(composerJsonPath: $path);
+        $resolver = new ProjectNamespaceResolver(composerJsonPath: AbsolutePath::fromString($path));
 
         self::assertTrue($resolver->isProjectNamespace('Any\\Namespace'));
         self::assertSame([], $resolver->getProjectPrefixes());
@@ -268,7 +269,7 @@ JSON;
         $path = $this->tempDir . '/composer.json';
         file_put_contents($path, $composerJson);
 
-        $resolver = new ProjectNamespaceResolver(composerJsonPath: $path);
+        $resolver = new ProjectNamespaceResolver(composerJsonPath: AbsolutePath::fromString($path));
 
         self::assertTrue($resolver->isProjectNamespace('App\\Service'));
         self::assertTrue($resolver->isProjectNamespace('Domain\\Entity'));

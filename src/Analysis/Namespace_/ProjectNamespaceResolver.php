@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Namespace_;
 
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
+use RuntimeException;
 
 /**
  * Resolves project namespaces from composer.json autoload configuration.
@@ -23,11 +26,11 @@ final class ProjectNamespaceResolver implements ProjectNamespaceResolverInterfac
     private readonly array $projectPrefixes;
 
     /**
-     * @param string|null $composerJsonPath Absolute path to composer.json (null = project root / composer.json)
+     * @param AbsolutePath|null $composerJsonPath Absolute path to composer.json (null = `getcwd()/composer.json`)
      * @param list<string>|null $overridePrefixes Override detected prefixes
      */
     public function __construct(
-        ?string $composerJsonPath = null,
+        ?AbsolutePath $composerJsonPath = null,
         ?array $overridePrefixes = null,
     ) {
         if ($overridePrefixes !== null) {
@@ -35,8 +38,20 @@ final class ProjectNamespaceResolver implements ProjectNamespaceResolverInterfac
             return;
         }
 
-        $path = $composerJsonPath ?? getcwd() . '/composer.json';
-        $this->projectPrefixes = $this->extractPrefixesFromComposer($path);
+        $path = $composerJsonPath ?? self::cwdComposerJson();
+        $this->projectPrefixes = $this->extractPrefixesFromComposer($path->value());
+    }
+
+    private static function cwdComposerJson(): AbsolutePath
+    {
+        $cwd = getcwd();
+
+        if ($cwd === false) {
+            throw new RuntimeException('Cannot determine current working directory');
+        }
+
+        return AbsolutePath::fromString($cwd)
+            ->joinRelative(RelativePath::fromString('composer.json'));
     }
 
     /**

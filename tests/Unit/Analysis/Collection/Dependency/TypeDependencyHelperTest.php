@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\TypeDependencyHelper;
+use Qualimetrix\Core\Path\RelativePath;
 
 #[CoversClass(TypeDependencyHelper::class)]
 final class TypeDependencyHelperTest extends TestCase
@@ -157,7 +158,7 @@ PHP;
             return [];
         }
 
-        $this->visitor->setFile('test.php');
+        $this->visitor->setFile(RelativePath::fromString('test.php'));
         $this->traverser->traverse($ast);
 
         return $this->visitor->getDependencies();

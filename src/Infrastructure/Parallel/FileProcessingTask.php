@@ -31,19 +31,19 @@ final class FileProcessingTask implements Task
 {
     /**
      * @param AbsolutePath $filePath Absolute path to the PHP file to process
-     * @param string $projectRoot Project root for autoloading
+     * @param AbsolutePath $projectRoot Project root for autoloading
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses Collector class names
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses Derived collector class names
-     * @param string|null $cacheDir Optional cache directory for AST caching
+     * @param AbsolutePath|null $cacheDir Optional cache directory for AST caching
      * @param array<string, mixed> $collectorConfig Collector-level configuration (e.g., LCOM exclude methods)
      * @param list<class-string<RuleInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
      */
     public function __construct(
         private readonly AbsolutePath $filePath,
-        private readonly string $projectRoot,
+        private readonly AbsolutePath $projectRoot,
         private readonly array $collectorClasses,
         private readonly array $derivedCollectorClasses = [],
-        private readonly ?string $cacheDir = null,
+        private readonly ?AbsolutePath $cacheDir = null,
         private readonly array $collectorConfig = [],
         private readonly array $ruleClasses = [],
     ) {}

@@ -320,12 +320,12 @@ final class CheckCommand extends Command
     /**
      * Warns when composer.json is not found in project root.
      */
-    private function warnIfComposerJsonMissing(string $projectRoot, OutputInterface $output): void
+    private function warnIfComposerJsonMissing(AbsolutePath $projectRoot, OutputInterface $output): void
     {
-        if (!file_exists($projectRoot . '/composer.json')) {
+        if (!file_exists($projectRoot->value() . '/composer.json')) {
             $this->writeWarning(
                 $output,
-                \sprintf('Warning: No composer.json found in %s. Namespace detection and coupling metrics may be inaccurate.', $projectRoot),
+                \sprintf('Warning: No composer.json found in %s. Namespace detection and coupling metrics may be inaccurate.', $projectRoot->value()),
             );
         }
     }
@@ -335,13 +335,10 @@ final class CheckCommand extends Command
      *
      * @param list<AbsolutePath> $paths
      */
-    private function warnAboutPartialScope(array $paths, string $projectRoot, OutputInterface $output): void
+    private function warnAboutPartialScope(array $paths, AbsolutePath $projectRoot, OutputInterface $output): void
     {
         $checker = new ScopeWarningChecker();
-        $warnings = $checker->check(
-            $projectRoot,
-            array_map(static fn(AbsolutePath $p): string => $p->value(), $paths),
-        );
+        $warnings = $checker->check($projectRoot, $paths);
         foreach ($warnings as $warning) {
             $this->writeWarning($output, \sprintf('Warning: %s', $warning));
         }

@@ -278,6 +278,7 @@ rules:
       - Qualimetrix\Core\Metric
       - Qualimetrix\Core\Rule
       - Qualimetrix\Core\Dependency
+      - Qualimetrix\Core\Path
 
   # Distance: leaf namespaces holding pure value objects, enums, and exceptions
   # are maximally concrete with few abstractions — that is the point of a

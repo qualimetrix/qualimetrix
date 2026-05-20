@@ -12,6 +12,7 @@ use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEntry;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
+use Qualimetrix\Core\Path\AbsolutePath;
 
 /**
  * ADR 0015 Phase 4 regression pin: BaselineWriter now relies on
@@ -66,7 +67,7 @@ final class BaselineRoundTripVOTest extends TestCase
         );
 
         $path = $this->tempDir . '/baseline.json';
-        $this->writer->write($original, $path, '/home/user/project');
+        $this->writer->write($original, $path, AbsolutePath::fromString('/home/user/project'));
 
         $reloaded = $this->loader->load($path);
 
@@ -89,7 +90,7 @@ final class BaselineRoundTripVOTest extends TestCase
         );
 
         $path = $this->tempDir . '/baseline.json';
-        $this->writer->write($original, $path, '/home/user/project');
+        $this->writer->write($original, $path, AbsolutePath::fromString('/home/user/project'));
 
         $reloaded = $this->loader->load($path);
 
@@ -113,7 +114,7 @@ final class BaselineRoundTripVOTest extends TestCase
         );
 
         $path = $this->tempDir . '/baseline.json';
-        $this->writer->write($original, $path, '/home/user/project');
+        $this->writer->write($original, $path, AbsolutePath::fromString('/home/user/project'));
 
         $reloaded = $this->loader->load($path);
 

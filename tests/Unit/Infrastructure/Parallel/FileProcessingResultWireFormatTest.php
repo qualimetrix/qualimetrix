@@ -33,8 +33,9 @@ final class FileProcessingResultWireFormatTest extends TestCase
     {
         $task = new FileProcessingTask(
             filePath: AbsolutePath::fromString('/tmp/x.php'),
-            projectRoot: '/tmp',
+            projectRoot: AbsolutePath::fromString('/tmp'),
             collectorClasses: [],
+            cacheDir: AbsolutePath::fromString('/tmp/cache'),
         );
 
         $payload = serialize($task);
@@ -52,6 +53,17 @@ final class FileProcessingResultWireFormatTest extends TestCase
         $filePath = $filePathProperty->getValue($restored);
         self::assertInstanceOf(AbsolutePath::class, $filePath);
         self::assertSame('/tmp/x.php', $filePath->value());
+
+        // Round-trip projectRoot + cacheDir (ADR 0015 Phase 5)
+        $projectRootProperty = new ReflectionProperty($restored, 'projectRoot');
+        $projectRoot = $projectRootProperty->getValue($restored);
+        self::assertInstanceOf(AbsolutePath::class, $projectRoot);
+        self::assertSame('/tmp', $projectRoot->value());
+
+        $cacheDirProperty = new ReflectionProperty($restored, 'cacheDir');
+        $cacheDir = $cacheDirProperty->getValue($restored);
+        self::assertInstanceOf(AbsolutePath::class, $cacheDir);
+        self::assertSame('/tmp/cache', $cacheDir->value());
     }
 
     #[Test]

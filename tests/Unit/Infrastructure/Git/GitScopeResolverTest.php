@@ -12,6 +12,7 @@ use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\PathsConfiguration;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Git\GitScopeResolver;
 use ReflectionProperty;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -24,7 +25,7 @@ final class GitScopeResolverTest extends TestCase
     #[Test]
     public function itUsesProjectRootForGitClient(): void
     {
-        $projectRoot = \dirname(__DIR__, 4); // repo root
+        $projectRoot = AbsolutePath::fromString(\dirname(__DIR__, 4)); // repo root
 
         $resolved = new ResolvedConfiguration(
             paths: new PathsConfiguration(['src']),
@@ -44,8 +45,10 @@ final class GitScopeResolverTest extends TestCase
 
         self::assertNotNull($result->gitClient);
 
-        // Verify GitClient was constructed with projectRoot, not getcwd()
-        self::assertSame($projectRoot, $result->gitClient->getProjectRoot()->value());
+        // The explicit projectRoot on the resolution carries the same value
+        // we configured (Phase 5 collapsed the GitClient::getProjectRoot
+        // accessor — the resolution VO is the canonical source).
+        self::assertTrue($result->projectRoot->equals($projectRoot));
     }
 
     #[Test]
@@ -53,7 +56,7 @@ final class GitScopeResolverTest extends TestCase
     {
         $resolved = new ResolvedConfiguration(
             paths: new PathsConfiguration(['src']),
-            analysis: new AnalysisConfiguration(projectRoot: '/some/project'),
+            analysis: new AnalysisConfiguration(projectRoot: AbsolutePath::fromString('/some/project')),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -73,7 +76,7 @@ final class GitScopeResolverTest extends TestCase
     #[Test]
     public function itAlwaysUsesFinderFileDiscoveryWithExcludes(): void
     {
-        $projectRoot = \dirname(__DIR__, 4); // repo root
+        $projectRoot = AbsolutePath::fromString(\dirname(__DIR__, 4)); // repo root
 
         $resolved = new ResolvedConfiguration(
             paths: new PathsConfiguration(['src'], ['vendor', 'tests']),
@@ -103,7 +106,7 @@ final class GitScopeResolverTest extends TestCase
     {
         $resolved = new ResolvedConfiguration(
             paths: new PathsConfiguration(['src']),
-            analysis: new AnalysisConfiguration(projectRoot: '/some/project'),
+            analysis: new AnalysisConfiguration(projectRoot: AbsolutePath::fromString('/some/project')),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );

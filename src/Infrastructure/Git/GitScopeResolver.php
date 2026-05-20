@@ -39,15 +39,14 @@ final class GitScopeResolver
             $resolved->paths->paths,
         );
 
+        // ADR 0015 Phase 5: $projectRoot is already an AbsolutePath in the configuration.
+        $projectRoot = $resolved->analysis->projectRoot;
+
         $reportScope = $this->resolveReportScope($input);
 
-        $gitClient = null;
-        if ($reportScope !== null) {
-            // Phase 5 (ADR 0015) migrates AnalysisConfiguration::$projectRoot to
-            // AbsolutePath; for Phase 2 the string is still converted here.
-            $projectRoot = PathFactory::fromCliArgument($resolved->analysis->projectRoot, $cwd);
-            $gitClient = new GitClient($projectRoot, $this->logger);
-        }
+        $gitClient = $reportScope !== null
+            ? new GitClient($projectRoot, $this->logger)
+            : null;
 
         $fileDiscovery = new FinderFileDiscovery($resolved->paths->excludes);
 
@@ -56,6 +55,7 @@ final class GitScopeResolver
             fileDiscovery: $fileDiscovery,
             gitClient: $gitClient,
             reportScope: $reportScope,
+            projectRoot: $projectRoot,
         );
     }
 

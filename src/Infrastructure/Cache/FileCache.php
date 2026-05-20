@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Cache;
 
 use FilesystemIterator;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Serializer\SerializerInterface;
 use Qualimetrix\Infrastructure\Serializer\SerializerSelector;
 use RecursiveDirectoryIterator;
@@ -27,7 +28,7 @@ final class FileCache implements CacheInterface
     private bool $serializerVerified = false;
 
     public function __construct(
-        private readonly string $directory,
+        private readonly AbsolutePath $directory,
         ?SerializerInterface $serializer = null,
     ) {
         $this->serializer = $serializer ?? SerializerSelector::createDefault()->select();
@@ -103,12 +104,14 @@ final class FileCache implements CacheInterface
     {
         $this->serializerVerified = false;
 
-        if (!is_dir($this->directory)) {
+        $directory = $this->directory->value();
+
+        if (!is_dir($directory)) {
             return;
         }
 
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($this->directory, FilesystemIterator::SKIP_DOTS),
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
             RecursiveIteratorIterator::CHILD_FIRST,
         );
 
@@ -124,7 +127,7 @@ final class FileCache implements CacheInterface
     /**
      * Get the cache directory.
      */
-    public function getDirectory(): string
+    public function getDirectory(): AbsolutePath
     {
         return $this->directory;
     }
@@ -140,7 +143,8 @@ final class FileCache implements CacheInterface
         }
 
         $this->serializerVerified = true;
-        $markerPath = $this->directory . '/' . self::SERIALIZER_MARKER;
+        $directory = $this->directory->value();
+        $markerPath = $directory . '/' . self::SERIALIZER_MARKER;
         $currentName = $this->serializer->getName();
 
         $storedName = @file_get_contents($markerPath);
@@ -155,7 +159,7 @@ final class FileCache implements CacheInterface
         }
 
         // Write marker (create directory if needed)
-        if (!is_dir($this->directory) && !@mkdir($this->directory, 0755, true) && !is_dir($this->directory)) {
+        if (!is_dir($directory) && !@mkdir($directory, 0755, true) && !is_dir($directory)) {
             return;
         }
 
@@ -170,6 +174,6 @@ final class FileCache implements CacheInterface
     {
         $shard = substr($key, 0, 2);
 
-        return $this->directory . '/' . $shard . '/' . $key . self::EXTENSION;
+        return $this->directory->value() . '/' . $shard . '/' . $key . self::EXTENSION;
     }
 }

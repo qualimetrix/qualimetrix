@@ -275,6 +275,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(BaselineLoader::class),
                 new Reference(BaselineWriter::class),
+                new Reference(ConfigurationProviderInterface::class),
             ])
             ->setPublic(true);
 

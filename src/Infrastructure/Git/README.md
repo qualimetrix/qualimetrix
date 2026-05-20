@@ -12,9 +12,10 @@ Wrapper around git commands for obtaining the list of changed files.
 
 **Methods:**
 - `isRepository(): bool` — check if directory is a git repository
-- `getRoot(): AbsolutePath` — get git top-level (`git rev-parse --show-toplevel`)
-- `getProjectRoot(): AbsolutePath` — project root the client was constructed with (may differ from `getRoot()` when the project sits in a git subdirectory)
+- `getRoot(): AbsolutePath` — get git top-level (`git rev-parse --show-toplevel`); may differ from the project root passed to the constructor when the project sits in a git subdirectory
 - `getChangedFiles(string $scope): array` — get list of changed files by scope
+
+The project root is owned by `GitScopeResolution` (ADR 0015 Phase 5) — pass it explicitly to consumers like `GitScopeFilter` instead of re-extracting it from the client.
 
 **Supported scopes:**
 - `staged` — files in staging area

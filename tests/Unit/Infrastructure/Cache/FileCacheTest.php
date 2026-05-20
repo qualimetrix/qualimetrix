@@ -8,6 +8,7 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\FileCache;
 use Qualimetrix\Infrastructure\Serializer\PhpSerializer;
 use Qualimetrix\Infrastructure\Serializer\SerializerInterface;
@@ -24,7 +25,7 @@ final class FileCacheTest extends TestCase
     protected function setUp(): void
     {
         $this->cacheDir = sys_get_temp_dir() . '/qmx-cache-test-' . uniqid();
-        $this->cache = new FileCache($this->cacheDir);
+        $this->cache = new FileCache(AbsolutePath::fromString($this->cacheDir));
     }
 
     protected function tearDown(): void
@@ -89,7 +90,7 @@ final class FileCacheTest extends TestCase
     public function itCreatesDirectoryIfNotExists(): void
     {
         $newDir = $this->cacheDir . '/nested/dir';
-        $cache = new FileCache($newDir);
+        $cache = new FileCache(AbsolutePath::fromString($newDir));
 
         $cache->set('test-key', 'value');
 
@@ -151,7 +152,7 @@ final class FileCacheTest extends TestCase
     #[Test]
     public function itClearsNonExistentDirectoryGracefully(): void
     {
-        $cache = new FileCache('/non/existent/directory');
+        $cache = new FileCache(AbsolutePath::fromString('/non/existent/directory'));
 
         // Should not throw
         $cache->clear();
@@ -163,7 +164,7 @@ final class FileCacheTest extends TestCase
     #[Test]
     public function itReturnsDirectory(): void
     {
-        self::assertSame($this->cacheDir, $this->cache->getDirectory());
+        self::assertSame($this->cacheDir, $this->cache->getDirectory()->value());
     }
 
     #[Test]
@@ -198,7 +199,7 @@ final class FileCacheTest extends TestCase
     public function itClearsCacheWhenSerializerChanges(): void
     {
         // Write data with default serializer
-        $cache1 = new FileCache($this->cacheDir, new PhpSerializer());
+        $cache1 = new FileCache(AbsolutePath::fromString($this->cacheDir), new PhpSerializer());
         $cache1->set('key1', 'value1');
         self::assertSame('value1', $cache1->get('key1'));
 
@@ -206,7 +207,7 @@ final class FileCacheTest extends TestCase
         $otherSerializer = $this->createFakeSerializer('other');
 
         // Create a new cache with the different serializer — should clear old data
-        $cache2 = new FileCache($this->cacheDir, $otherSerializer);
+        $cache2 = new FileCache(AbsolutePath::fromString($this->cacheDir), $otherSerializer);
         self::assertNull($cache2->get('key1'));
 
         // New writes should work
@@ -217,11 +218,11 @@ final class FileCacheTest extends TestCase
     #[Test]
     public function itPreservesCacheWhenSerializerIsSame(): void
     {
-        $cache1 = new FileCache($this->cacheDir, new PhpSerializer());
+        $cache1 = new FileCache(AbsolutePath::fromString($this->cacheDir), new PhpSerializer());
         $cache1->set('key1', 'value1');
 
         // Same serializer — cache should be preserved
-        $cache2 = new FileCache($this->cacheDir, new PhpSerializer());
+        $cache2 = new FileCache(AbsolutePath::fromString($this->cacheDir), new PhpSerializer());
         self::assertSame('value1', $cache2->get('key1'));
     }
 

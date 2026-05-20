@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationHolder;
+use Qualimetrix\Core\Path\AbsolutePath;
 use RuntimeException;
 
 #[CoversClass(ConfigurationHolder::class)]
@@ -38,7 +39,7 @@ final class ConfigurationHolderTest extends TestCase
     {
         $provider = new ConfigurationHolder();
         $config = new AnalysisConfiguration(
-            cacheDir: '/custom/cache',
+            cacheDir: AbsolutePath::fromString('/custom/cache'),
             format: 'json',
         );
 

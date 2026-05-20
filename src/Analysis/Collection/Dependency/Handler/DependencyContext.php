@@ -16,16 +16,9 @@ final class DependencyContext
     /** @var list<Dependency> */
     private array $dependencies = [];
 
-    /**
-     * @param string $file Project-relative path (the producer side — `CompositeCollector`
-     *                     and `GraphExportCommand` — applies `PathNormalizer::relativize()`
-     *                     before constructing this context). Passing an absolute path
-     *                     will throw at {@see addDependency()} via `RelativePath::fromString`.
-     *                     Phase 1c (ADR 0015) will narrow this to `RelativePath`.
-     */
     public function __construct(
         private readonly DependencyResolver $resolver,
-        private readonly string $file,
+        private readonly ?RelativePath $file,
         private readonly string $currentClass,
     ) {}
 
@@ -43,7 +36,7 @@ final class DependencyContext
             SymbolPath::fromClassFqn($this->currentClass),
             SymbolPath::fromClassFqn($resolvedTargetClass),
             $type,
-            new Location(RelativePath::fromString($this->file), $line),
+            new Location($this->file, $line),
         );
     }
 
@@ -60,7 +53,7 @@ final class DependencyContext
         return $this->resolver;
     }
 
-    public function getFile(): string
+    public function getFile(): ?RelativePath
     {
         return $this->file;
     }

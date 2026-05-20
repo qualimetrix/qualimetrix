@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Namespace_\Psr4NamespaceDetector;
+use Qualimetrix\Core\Path\AbsolutePath;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -43,7 +44,7 @@ final class Psr4NamespaceDetectorTest extends TestCase
             'src/Service/UserService.php' => '<?php namespace App\\Service; class UserService {}',
         ]);
 
-        $detector = new Psr4NamespaceDetector($this->fixturesDir . '/composer.json');
+        $detector = new Psr4NamespaceDetector(AbsolutePath::fromString($this->fixturesDir . '/composer.json'));
         $file = new SplFileInfo($this->fixturesDir . '/src/Service/UserService.php');
 
         self::assertSame('App\\Service', $detector->detect($file));
@@ -63,7 +64,7 @@ final class Psr4NamespaceDetectorTest extends TestCase
             'src/Application.php' => '<?php namespace App; class Application {}',
         ]);
 
-        $detector = new Psr4NamespaceDetector($this->fixturesDir . '/composer.json');
+        $detector = new Psr4NamespaceDetector(AbsolutePath::fromString($this->fixturesDir . '/composer.json'));
         $file = new SplFileInfo($this->fixturesDir . '/src/Application.php');
 
         self::assertSame('App', $detector->detect($file));
@@ -83,7 +84,7 @@ final class Psr4NamespaceDetectorTest extends TestCase
             'src/Domain/User/Repository/UserRepository.php' => '<?php namespace MyApp\\Domain\\User\\Repository; class UserRepository {}',
         ]);
 
-        $detector = new Psr4NamespaceDetector($this->fixturesDir . '/composer.json');
+        $detector = new Psr4NamespaceDetector(AbsolutePath::fromString($this->fixturesDir . '/composer.json'));
         $file = new SplFileInfo($this->fixturesDir . '/src/Domain/User/Repository/UserRepository.php');
 
         self::assertSame('MyApp\\Domain\\User\\Repository', $detector->detect($file));
@@ -108,7 +109,7 @@ final class Psr4NamespaceDetectorTest extends TestCase
             'tests/Unit/ServiceTest.php' => '<?php namespace App\\Tests\\Unit; class ServiceTest {}',
         ]);
 
-        $detector = new Psr4NamespaceDetector($this->fixturesDir . '/composer.json');
+        $detector = new Psr4NamespaceDetector(AbsolutePath::fromString($this->fixturesDir . '/composer.json'));
         $file = new SplFileInfo($this->fixturesDir . '/tests/Unit/ServiceTest.php');
 
         self::assertSame('App\\Tests\\Unit', $detector->detect($file));
@@ -129,7 +130,7 @@ final class Psr4NamespaceDetectorTest extends TestCase
             'src/Core/Entity.php' => '<?php namespace App\\Core; class Entity {}',
         ]);
 
-        $detector = new Psr4NamespaceDetector($this->fixturesDir . '/composer.json');
+        $detector = new Psr4NamespaceDetector(AbsolutePath::fromString($this->fixturesDir . '/composer.json'));
         $file = new SplFileInfo($this->fixturesDir . '/src/Core/Entity.php');
 
         self::assertSame('App\\Core', $detector->detect($file));
@@ -149,7 +150,7 @@ final class Psr4NamespaceDetectorTest extends TestCase
             'lib/Legacy.php' => '<?php class Legacy {}',
         ]);
 
-        $detector = new Psr4NamespaceDetector($this->fixturesDir . '/composer.json');
+        $detector = new Psr4NamespaceDetector(AbsolutePath::fromString($this->fixturesDir . '/composer.json'));
         $file = new SplFileInfo($this->fixturesDir . '/lib/Legacy.php');
 
         self::assertSame('', $detector->detect($file));
@@ -162,7 +163,7 @@ final class Psr4NamespaceDetectorTest extends TestCase
             'src/Test.php' => '<?php namespace App; class Test {}',
         ]);
 
-        $detector = new Psr4NamespaceDetector($this->fixturesDir . '/composer.json');
+        $detector = new Psr4NamespaceDetector(AbsolutePath::fromString($this->fixturesDir . '/composer.json'));
         $file = new SplFileInfo($this->fixturesDir . '/src/Test.php');
 
         self::assertSame('', $detector->detect($file));
@@ -183,7 +184,7 @@ final class Psr4NamespaceDetectorTest extends TestCase
             'lib/Service/BarService.php' => '<?php namespace App\\Service; class BarService {}',
         ]);
 
-        $detector = new Psr4NamespaceDetector($this->fixturesDir . '/composer.json');
+        $detector = new Psr4NamespaceDetector(AbsolutePath::fromString($this->fixturesDir . '/composer.json'));
 
         $srcFile = new SplFileInfo($this->fixturesDir . '/src/Service/FooService.php');
         self::assertSame('App\\Service', $detector->detect($srcFile));
@@ -206,7 +207,7 @@ final class Psr4NamespaceDetectorTest extends TestCase
             'src/Sub/Foo.php' => '<?php namespace Sub; class Foo {}',
         ]);
 
-        $detector = new Psr4NamespaceDetector($this->fixturesDir . '/composer.json');
+        $detector = new Psr4NamespaceDetector(AbsolutePath::fromString($this->fixturesDir . '/composer.json'));
         $file = new SplFileInfo($this->fixturesDir . '/src/Sub/Foo.php');
 
         // Should return 'Sub', not '\Sub'
@@ -233,7 +234,7 @@ final class Psr4NamespaceDetectorTest extends TestCase
             'tests/Service/FooServiceTest.php' => '<?php namespace App\\Service; class FooServiceTest {}',
         ]);
 
-        $detector = new Psr4NamespaceDetector($this->fixturesDir . '/composer.json');
+        $detector = new Psr4NamespaceDetector(AbsolutePath::fromString($this->fixturesDir . '/composer.json'));
 
         // Both src/ and tests/ should resolve under App\ prefix
         $srcFile = new SplFileInfo($this->fixturesDir . '/src/Service/FooService.php');
@@ -256,7 +257,7 @@ final class Psr4NamespaceDetectorTest extends TestCase
             ], \JSON_THROW_ON_ERROR),
         ]);
 
-        $detector = new Psr4NamespaceDetector($this->fixturesDir . '/composer.json');
+        $detector = new Psr4NamespaceDetector(AbsolutePath::fromString($this->fixturesDir . '/composer.json'));
         $file = new SplFileInfo('/non/existent/file.php');
 
         self::assertSame('', $detector->detect($file));

@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationHolder;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\FileParserFactory;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
@@ -22,7 +23,7 @@ final class FileParserFactoryTest extends TestCase
     public function itCreatesCachedParserWhenCacheEnabled(): void
     {
         $config = new AnalysisConfiguration(
-            cacheDir: '/tmp/cache',
+            cacheDir: AbsolutePath::fromString('/tmp/cache'),
             cacheEnabled: true,
         );
 
@@ -45,7 +46,7 @@ final class FileParserFactoryTest extends TestCase
     public function itCreatesDirectParserWhenCacheDisabled(): void
     {
         $config = new AnalysisConfiguration(
-            cacheDir: '/tmp/cache',
+            cacheDir: AbsolutePath::fromString('/tmp/cache'),
             cacheEnabled: false,
         );
 

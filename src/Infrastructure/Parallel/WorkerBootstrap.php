@@ -15,6 +15,7 @@ use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
 use Qualimetrix\Core\Metric\ParallelSafeCollectorInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
@@ -55,18 +56,18 @@ final class WorkerBootstrap
      * The processor is cached and reused for subsequent calls with the same
      * configuration. If configuration changes, a new processor is created.
      *
-     * @param string $projectRoot Project root directory
+     * @param AbsolutePath $projectRoot Project root directory
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses Collector class names from DI
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses Derived collector class names
-     * @param string|null $cacheDir Cache directory (null to disable caching)
+     * @param AbsolutePath|null $cacheDir Cache directory (null to disable caching)
      * @param array<string, mixed> $collectorConfig Collector-level configuration (e.g., LCOM exclude methods)
      * @param list<class-string<RuleInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
      */
     public static function getFileProcessor(
-        string $projectRoot,
+        AbsolutePath $projectRoot,
         array $collectorClasses,
         array $derivedCollectorClasses = [],
-        ?string $cacheDir = null,
+        ?AbsolutePath $cacheDir = null,
         array $collectorConfig = [],
         array $ruleClasses = [],
     ): FileProcessorInterface {
@@ -113,10 +114,10 @@ final class WorkerBootstrap
      * @param list<class-string<RuleInterface>> $ruleClasses
      */
     private static function buildCacheKey(
-        string $projectRoot,
+        AbsolutePath $projectRoot,
         array $collectorClasses,
         array $derivedCollectorClasses,
-        ?string $cacheDir,
+        ?AbsolutePath $cacheDir,
         array $collectorConfig = [],
         array $ruleClasses = [],
     ): string {
@@ -137,7 +138,7 @@ final class WorkerBootstrap
         ksort($sortedConfig);
         $configHash = $sortedConfig !== [] ? md5(serialize($sortedConfig)) : '';
 
-        return $projectRoot . '|' . ($cacheDir ?? 'no-cache') . '|' . $collectorsHash . '|' . $rulesHash . '|' . $configHash;
+        return $projectRoot->value() . '|' . ($cacheDir?->value() ?? 'no-cache') . '|' . $collectorsHash . '|' . $rulesHash . '|' . $configHash;
     }
 
     /**
@@ -148,10 +149,10 @@ final class WorkerBootstrap
      * @param list<class-string<RuleInterface>> $ruleClasses
      */
     private static function createFileProcessor(
-        string $projectRoot,
+        AbsolutePath $projectRoot,
         array $collectorClasses,
         array $derivedCollectorClasses,
-        ?string $cacheDir,
+        ?AbsolutePath $cacheDir,
         array $ruleClasses = [],
     ): FileProcessorInterface {
         // Create parser (with optional caching)

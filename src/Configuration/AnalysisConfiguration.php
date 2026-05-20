@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Configuration;
 
 use InvalidArgumentException;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\RuleMatcher;
 use Qualimetrix\Core\Violation\Severity;
+use RuntimeException;
 
 /**
  * Value object containing general analysis configuration (not rule-specific).
@@ -33,11 +37,26 @@ final readonly class AnalysisConfiguration
     public const int WORKERS_SEQUENTIAL = 0;
 
     /**
-     * @param string $cacheDir Directory for cache files
+     * Cache directory. Lazy default: `$projectRoot/.qmx-cache`. See ADR 0015 Phase 5.
+     */
+    public AbsolutePath $cacheDir;
+
+    /**
+     * composer.json path used by PSR-4 detection. Null when not configured.
+     */
+    public ?AbsolutePath $composerJsonPath;
+
+    /**
+     * Project root directory. Lazy default: current working directory.
+     */
+    public AbsolutePath $projectRoot;
+
+    /**
+     * @param AbsolutePath|null $cacheDir Cache directory (null = `$projectRoot/.qmx-cache`)
      * @param bool $cacheEnabled Whether caching is enabled
      * @param string $format Output format (text)
      * @param string $namespaceStrategy Namespace detection strategy (psr4, tokenizer, chain)
-     * @param string|null $composerJsonPath Path to composer.json for PSR-4 detection
+     * @param AbsolutePath|null $composerJsonPath Path to composer.json for PSR-4 detection
      * @param list<string> $aggregationPrefixes Namespace prefixes for aggregation
      * @param int|null $aggregationAutoDepth Auto-detect depth for namespace aggregation
      * @param list<string> $disabledRules List of disabled rule names
@@ -45,7 +64,7 @@ final readonly class AnalysisConfiguration
      * @param list<string> $excludePaths Path patterns to suppress violations for
      * @param list<string> $excludeNamespaces Namespace prefixes to suppress violations for
      * @param int|null $workers Number of parallel workers (null = auto-detect, 1 = sequential)
-     * @param string $projectRoot Project root directory (for parallel workers)
+     * @param AbsolutePath|null $projectRoot Project root directory (null = current working directory)
      * @param Severity|false|null $failOn Minimum severity to trigger non-zero exit code (null = default/error, false = none/never fail)
      * @param list<string> $excludeHealth Health dimensions to exclude from scoring (e.g., 'typing', 'complexity')
      * @param bool $includeGenerated Whether to include files marked with @generated annotation
@@ -53,11 +72,11 @@ final readonly class AnalysisConfiguration
      * @param string|null $memoryLimit PHP memory limit override (e.g., '512M', '1G', '-1' for unlimited)
      */
     public function __construct(
-        public string $cacheDir = self::DEFAULT_CACHE_DIR,
+        ?AbsolutePath $cacheDir = null,
         public bool $cacheEnabled = true,
         public string $format = self::DEFAULT_FORMAT,
         public string $namespaceStrategy = self::DEFAULT_NAMESPACE_STRATEGY,
-        public ?string $composerJsonPath = null,
+        ?AbsolutePath $composerJsonPath = null,
         public array $aggregationPrefixes = [],
         public ?int $aggregationAutoDepth = null,
         public array $disabledRules = [],
@@ -65,16 +84,25 @@ final readonly class AnalysisConfiguration
         public array $excludePaths = [],
         public array $excludeNamespaces = [],
         public ?int $workers = null,
-        public string $projectRoot = '.',
+        ?AbsolutePath $projectRoot = null,
         public Severity|false|null $failOn = null,
         public array $excludeHealth = [],
         public bool $includeGenerated = false,
         public array $frameworkNamespaces = [],
         public ?string $memoryLimit = null,
-    ) {}
+    ) {
+        $this->projectRoot = $projectRoot ?? self::cwdAsAbsolutePath();
+        $this->cacheDir = $cacheDir ?? $this->projectRoot->joinRelative(RelativePath::fromString(self::DEFAULT_CACHE_DIR));
+        $this->composerJsonPath = $composerJsonPath;
+    }
 
     /**
-     * Creates configuration from array.
+     * Creates configuration from a merged config array.
+     *
+     * Path resolution contract (ADR 0015 Phase 5):
+     * 1. `project_root` (default `'.'`) resolves against current working directory via PathFactory::fromCliArgument
+     * 2. `cache.dir` (default `'.qmx-cache'`) resolves against the resolved `$projectRoot`
+     * 3. `namespace.composer_json` (default null) resolves against the resolved `$projectRoot` if non-null
      *
      * @param array<string, mixed> $config
      */
@@ -108,12 +136,26 @@ final readonly class AnalysisConfiguration
             ));
         }
 
+        $cwd = self::cwdAsAbsolutePath();
+        $projectRoot = PathFactory::fromCliArgument(
+            self::getString($config, ConfigSchema::PROJECT_ROOT, '.'),
+            $cwd,
+        );
+        $cacheDir = PathFactory::fromCliArgument(
+            self::getString($config, ConfigSchema::CACHE_DIR, self::DEFAULT_CACHE_DIR),
+            $projectRoot,
+        );
+        $rawComposerJson = self::getStringOrNull($config, ConfigSchema::NAMESPACE_COMPOSER_JSON);
+        $composerJsonPath = $rawComposerJson !== null
+            ? PathFactory::fromCliArgument($rawComposerJson, $projectRoot)
+            : null;
+
         return new self(
-            cacheDir: self::getString($config, ConfigSchema::CACHE_DIR, self::DEFAULT_CACHE_DIR),
+            cacheDir: $cacheDir,
             cacheEnabled: self::getBool($config, ConfigSchema::CACHE_ENABLED, true),
             format: self::getString($config, ConfigSchema::FORMAT, self::DEFAULT_FORMAT),
             namespaceStrategy: $namespaceStrategy,
-            composerJsonPath: self::getStringOrNull($config, ConfigSchema::NAMESPACE_COMPOSER_JSON),
+            composerJsonPath: $composerJsonPath,
             aggregationPrefixes: self::getStringList($config, ConfigSchema::AGGREGATION_PREFIXES),
             aggregationAutoDepth: $aggregationAutoDepth,
             disabledRules: self::getStringList($config, ConfigSchema::DISABLED_RULES),
@@ -121,7 +163,7 @@ final readonly class AnalysisConfiguration
             excludePaths: self::getStringList($config, ConfigSchema::EXCLUDE_PATHS),
             excludeNamespaces: self::getStringList($config, ConfigSchema::EXCLUDE_NAMESPACES),
             workers: $workers,
-            projectRoot: self::getString($config, ConfigSchema::PROJECT_ROOT, '.'),
+            projectRoot: $projectRoot,
             failOn: self::getFailOn($config, ConfigSchema::FAIL_ON),
             excludeHealth: self::getStringList($config, ConfigSchema::EXCLUDE_HEALTH),
             includeGenerated: self::getBool($config, ConfigSchema::INCLUDE_GENERATED, false),
@@ -133,16 +175,41 @@ final readonly class AnalysisConfiguration
     /**
      * Creates new configuration with values merged from another config array.
      *
+     * Path fields follow the same resolution contract as {@see fromArray()}:
+     * raw string overrides are re-resolved via {@see PathFactory::fromCliArgument}
+     * before merging (so we never store a mixed AbsolutePath/string in the layer).
+     *
+     * When `project_root` is overridden, pre-existing relative-style paths
+     * (`cacheDir`, `composerJsonPath`) inherited from the base configuration
+     * intentionally stay anchored to the *original* project root — the override
+     * targets project_root alone, not the dependent paths. Override the
+     * dependent paths explicitly to re-anchor them.
+     *
      * @param array<string, mixed> $overrides
      */
     public function merge(array $overrides): self
     {
+        $rawProjectRoot = self::getStringOrNull($overrides, ConfigSchema::PROJECT_ROOT);
+        $projectRoot = $rawProjectRoot !== null
+            ? PathFactory::fromCliArgument($rawProjectRoot, self::cwdAsAbsolutePath())
+            : $this->projectRoot;
+
+        $rawCacheDir = self::getStringOrNull($overrides, ConfigSchema::CACHE_DIR);
+        $cacheDir = $rawCacheDir !== null
+            ? PathFactory::fromCliArgument($rawCacheDir, $projectRoot)
+            : $this->cacheDir;
+
+        $rawComposerJson = self::getStringOrNull($overrides, ConfigSchema::NAMESPACE_COMPOSER_JSON);
+        $composerJsonPath = $rawComposerJson !== null
+            ? PathFactory::fromCliArgument($rawComposerJson, $projectRoot)
+            : $this->composerJsonPath;
+
         return new self(
-            cacheDir: self::getString($overrides, ConfigSchema::CACHE_DIR, $this->cacheDir),
+            cacheDir: $cacheDir,
             cacheEnabled: self::getBool($overrides, ConfigSchema::CACHE_ENABLED, $this->cacheEnabled),
             format: self::getString($overrides, ConfigSchema::FORMAT, $this->format),
             namespaceStrategy: self::getString($overrides, ConfigSchema::NAMESPACE_STRATEGY, $this->namespaceStrategy),
-            composerJsonPath: self::getStringOrNull($overrides, ConfigSchema::NAMESPACE_COMPOSER_JSON) ?? $this->composerJsonPath,
+            composerJsonPath: $composerJsonPath,
             aggregationPrefixes: self::hasNestedValue($overrides, ConfigSchema::AGGREGATION_PREFIXES)
                 ? self::getStringList($overrides, ConfigSchema::AGGREGATION_PREFIXES)
                 : $this->aggregationPrefixes,
@@ -154,7 +221,7 @@ final readonly class AnalysisConfiguration
             excludePaths: array_values(array_unique([...$this->excludePaths, ...self::getStringList($overrides, ConfigSchema::EXCLUDE_PATHS)])),
             excludeNamespaces: array_values(array_unique([...$this->excludeNamespaces, ...self::getStringList($overrides, ConfigSchema::EXCLUDE_NAMESPACES)])),
             workers: self::getIntOrNull($overrides, ConfigSchema::PARALLEL_WORKERS) ?? $this->workers,
-            projectRoot: self::getString($overrides, ConfigSchema::PROJECT_ROOT, $this->projectRoot),
+            projectRoot: $projectRoot,
             failOn: self::getFailOn($overrides, ConfigSchema::FAIL_ON) ?? $this->failOn,
             excludeHealth: self::hasNestedValue($overrides, ConfigSchema::EXCLUDE_HEALTH)
                 ? self::getStringList($overrides, ConfigSchema::EXCLUDE_HEALTH)
@@ -206,6 +273,17 @@ final readonly class AnalysisConfiguration
         }
 
         return RuleMatcher::anyMatches($this->onlyRules, $violationCode);
+    }
+
+    private static function cwdAsAbsolutePath(): AbsolutePath
+    {
+        $cwd = getcwd();
+
+        if ($cwd === false) {
+            throw new RuntimeException('Cannot determine current working directory');
+        }
+
+        return AbsolutePath::fromString($cwd);
     }
 
     /**

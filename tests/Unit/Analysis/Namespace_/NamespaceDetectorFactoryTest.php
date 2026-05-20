@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Namespace_\ChainNamespaceDetector;
 use Qualimetrix\Analysis\Namespace_\NamespaceDetectorFactory;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationHolder;
+use Qualimetrix\Core\Path\AbsolutePath;
 
 #[CoversClass(NamespaceDetectorFactory::class)]
 final class NamespaceDetectorFactoryTest extends TestCase
@@ -32,7 +33,7 @@ final class NamespaceDetectorFactoryTest extends TestCase
     {
         $configProvider = new ConfigurationHolder();
         $configProvider->setConfiguration(new AnalysisConfiguration(
-            composerJsonPath: '/custom/path/composer.json',
+            composerJsonPath: AbsolutePath::fromString('/custom/path/composer.json'),
         ));
 
         $factory = new NamespaceDetectorFactory($configProvider);

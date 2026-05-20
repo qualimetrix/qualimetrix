@@ -11,6 +11,7 @@ use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Baseline\Filter\BaselineFilter;
 use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -84,7 +85,7 @@ final class BaselineWorkflowTest extends TestCase
 
         // Step 2: Write baseline to file
         $writer = new BaselineWriter();
-        $writer->write($baseline, $this->baselinePath);
+        $writer->write($baseline, $this->baselinePath, AbsolutePath::fromString($this->tempDir));
 
         self::assertFileExists($this->baselinePath);
 
@@ -144,7 +145,7 @@ final class BaselineWorkflowTest extends TestCase
 
         $baseline = $generator->generate($initialViolations);
         $writer = new BaselineWriter();
-        $writer->write($baseline, $this->baselinePath);
+        $writer->write($baseline, $this->baselinePath, AbsolutePath::fromString($this->tempDir));
 
         // Load baseline
         $loader = new BaselineLoader();
@@ -202,7 +203,7 @@ final class BaselineWorkflowTest extends TestCase
         $generator = new BaselineGenerator($hasher);
         $baseline = $generator->generate($violations);
         $writer = new BaselineWriter();
-        $writer->write($baseline, $this->baselinePath, $projectRoot);
+        $writer->write($baseline, $this->baselinePath, AbsolutePath::fromString($projectRoot));
 
         // Verify JSON contains relative file: path
         $data = json_decode((string) file_get_contents($this->baselinePath), true);

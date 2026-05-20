@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\FileProcessorInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Parallel\WorkerBootstrap;
@@ -44,7 +45,7 @@ final class WorkerBootstrapTest extends TestCase
     public function itCreatesFileProcessorOnFirstCall(): void
     {
         $processor = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -57,17 +58,17 @@ final class WorkerBootstrapTest extends TestCase
     public function itCachesProcessorForRepeatedCallsWithSameParameters(): void
     {
         $processor1 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class, LocCollector::class],
             derivedCollectorClasses: [],
-            cacheDir: $this->tempCacheDir,
+            cacheDir: AbsolutePath::fromString($this->tempCacheDir),
         );
 
         $processor2 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class, LocCollector::class],
             derivedCollectorClasses: [],
-            cacheDir: $this->tempCacheDir,
+            cacheDir: AbsolutePath::fromString($this->tempCacheDir),
         );
 
         self::assertSame($processor1, $processor2, 'Expected same processor instance for identical parameters');
@@ -77,14 +78,14 @@ final class WorkerBootstrapTest extends TestCase
     public function itCreatesNewProcessorWhenProjectRootChanges(): void
     {
         $processor1 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project-1',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project-1'),
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
         );
 
         $processor2 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project-2',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project-2'),
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -97,14 +98,14 @@ final class WorkerBootstrapTest extends TestCase
     public function itCreatesNewProcessorWhenCollectorClassesChange(): void
     {
         $processor1 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
         );
 
         $processor2 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class, LocCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -117,14 +118,14 @@ final class WorkerBootstrapTest extends TestCase
     public function itCreatesNewProcessorWhenDerivedCollectorClassesChange(): void
     {
         $processor1 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
         );
 
         $processor2 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [MaintainabilityIndexCollector::class],
             cacheDir: null,
@@ -137,17 +138,17 @@ final class WorkerBootstrapTest extends TestCase
     public function itCreatesNewProcessorWhenCacheDirChanges(): void
     {
         $processor1 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
         );
 
         $processor2 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
-            cacheDir: $this->tempCacheDir,
+            cacheDir: AbsolutePath::fromString($this->tempCacheDir),
         );
 
         self::assertNotSame($processor1, $processor2, 'Expected different processor instances for different cache directories');
@@ -157,10 +158,10 @@ final class WorkerBootstrapTest extends TestCase
     public function itCreatesCachedFileParserWhenCacheDirProvided(): void
     {
         $processor = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
-            cacheDir: $this->tempCacheDir,
+            cacheDir: AbsolutePath::fromString($this->tempCacheDir),
         );
 
         $parser = $this->getParserFromProcessor($processor);
@@ -172,7 +173,7 @@ final class WorkerBootstrapTest extends TestCase
     public function itCreatesPlainFileParserWhenCacheDirIsNull(): void
     {
         $processor = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -188,7 +189,7 @@ final class WorkerBootstrapTest extends TestCase
     {
         // Create processor and cache it
         $processor1 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -210,7 +211,7 @@ final class WorkerBootstrapTest extends TestCase
     public function itCreatesNewProcessorAfterReset(): void
     {
         $processor1 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -219,7 +220,7 @@ final class WorkerBootstrapTest extends TestCase
         WorkerBootstrap::reset();
 
         $processor2 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -232,7 +233,7 @@ final class WorkerBootstrapTest extends TestCase
     public function itHandlesEmptyCollectorLists(): void
     {
         $processor = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -245,7 +246,7 @@ final class WorkerBootstrapTest extends TestCase
     public function itHandlesMultipleCollectors(): void
     {
         $processor = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [
                 CyclomaticComplexityCollector::class,
                 LocCollector::class,
@@ -271,17 +272,17 @@ final class WorkerBootstrapTest extends TestCase
         ];
 
         $processor1 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: $collectorClasses,
             derivedCollectorClasses: $derivedCollectorClasses,
-            cacheDir: $this->tempCacheDir,
+            cacheDir: AbsolutePath::fromString($this->tempCacheDir),
         );
 
         $processor2 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: $collectorClasses,
             derivedCollectorClasses: $derivedCollectorClasses,
-            cacheDir: $this->tempCacheDir,
+            cacheDir: AbsolutePath::fromString($this->tempCacheDir),
         );
 
         self::assertSame($processor1, $processor2, 'Expected same processor instance for complex configuration');
@@ -295,7 +296,7 @@ final class WorkerBootstrapTest extends TestCase
         // but the cache key should not depend on registration order across
         // processes.
         $processor1 = WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [CyclomaticComplexityCollector::class, LocCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -306,7 +307,7 @@ final class WorkerBootstrapTest extends TestCase
         WorkerBootstrap::reset();
 
         WorkerBootstrap::getFileProcessor(
-            projectRoot: '/tmp/test-project',
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
             collectorClasses: [LocCollector::class, CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,

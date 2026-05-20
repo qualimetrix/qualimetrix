@@ -12,6 +12,7 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use RuntimeException;
 
 /**
  * Selects and configures the best available execution strategy.
@@ -65,7 +66,7 @@ final class StrategySelector implements StrategySelectorInterface
 
         $this->logger->debug('StrategySelector: selecting strategy', [
             'requestedWorkers' => $requestedWorkers,
-            'projectRoot' => $config->projectRoot,
+            'projectRoot' => $config->projectRoot->value(),
             'collectors' => \count($this->collectorClasses),
         ]);
 
@@ -108,32 +109,25 @@ final class StrategySelector implements StrategySelectorInterface
         $this->amphpStrategy->setDerivedCollectorClasses($this->derivedCollectorClasses);
         $this->amphpStrategy->setRuleClasses($this->ruleClasses);
 
-        // Set project root (resolve to absolute path)
-        $projectRoot = $config->projectRoot;
-        if (!str_starts_with($projectRoot, '/')) {
-            $projectRoot = getcwd() . '/' . $projectRoot;
-        }
-        $resolvedRoot = realpath($projectRoot);
-        if ($resolvedRoot === false) {
+        // Project root is already an AbsolutePath after ADR 0015 Phase 5;
+        // canonicalize via realpath() so worker-process cache keys remain
+        // stable across symlinked invocations (e.g., /var/build → /opt/project).
+        // canonicalize() throws RuntimeException when the path does not exist —
+        // map that to the sequential fallback the user has expected since v0.x.
+        try {
+            $projectRoot = $config->projectRoot->canonicalize();
+        } catch (RuntimeException) {
             $this->logger->warning(
                 'StrategySelector: project root does not exist, using sequential fallback',
-                ['projectRoot' => $projectRoot],
+                ['projectRoot' => $config->projectRoot->value()],
             );
 
             return $this->sequentialStrategy;
         }
-        $this->amphpStrategy->setProjectRoot($resolvedRoot);
+        $this->amphpStrategy->setProjectRoot($projectRoot);
 
-        // Set cache directory if caching is enabled
-        if ($config->cacheEnabled) {
-            $cacheDir = $config->cacheDir;
-            if (!str_starts_with($cacheDir, '/')) {
-                $cacheDir = $resolvedRoot . '/' . $cacheDir;
-            }
-            $this->amphpStrategy->setCacheDir($cacheDir);
-        } else {
-            $this->amphpStrategy->setCacheDir(null);
-        }
+        // Cache directory is already AbsolutePath-resolved against projectRoot in AnalysisConfiguration.
+        $this->amphpStrategy->setCacheDir($config->cacheEnabled ? $config->cacheDir : null);
 
         // Pass collector config to worker processes
         $this->amphpStrategy->setCollectorConfig(CollectorConfigHolder::all());
@@ -142,7 +136,7 @@ final class StrategySelector implements StrategySelectorInterface
             'StrategySelector: using parallel strategy',
             [
                 'workers' => $workerCount,
-                'projectRoot' => $resolvedRoot,
+                'projectRoot' => $projectRoot->value(),
                 'cacheEnabled' => $config->cacheEnabled,
                 'collectors' => \count($this->collectorClasses),
             ],

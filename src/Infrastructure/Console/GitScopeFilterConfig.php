@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Git\GitClient;
 use Qualimetrix\Infrastructure\Git\GitScope;
 
@@ -16,5 +17,6 @@ final readonly class GitScopeFilterConfig
         public GitClient $gitClient,
         public ?GitScope $reportScope,
         public bool $strictMode,
+        public AbsolutePath $projectRoot,
     ) {}
 }

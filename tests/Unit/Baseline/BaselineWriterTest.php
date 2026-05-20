@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEntry;
 use Qualimetrix\Baseline\BaselineWriter;
+use Qualimetrix\Core\Path\AbsolutePath;
 
 #[CoversClass(BaselineWriter::class)]
 final class BaselineWriterTest extends TestCase
@@ -46,7 +47,7 @@ final class BaselineWriterTest extends TestCase
         );
 
         $path = $this->tempDir . '/baseline.json';
-        $this->writer->write($baseline, $path);
+        $this->writer->write($baseline, $path, AbsolutePath::fromString($this->tempDir));
 
         self::assertFileExists($path);
 
@@ -71,7 +72,7 @@ final class BaselineWriterTest extends TestCase
         );
 
         $path = $this->tempDir . '/subdir/baseline.json';
-        $this->writer->write($baseline, $path);
+        $this->writer->write($baseline, $path, AbsolutePath::fromString($this->tempDir));
 
         self::assertFileExists($path);
         self::assertDirectoryExists($this->tempDir . '/subdir');
@@ -91,7 +92,7 @@ final class BaselineWriterTest extends TestCase
         );
 
         $path = $this->tempDir . '/baseline.json';
-        $this->writer->write($baseline, $path);
+        $this->writer->write($baseline, $path, AbsolutePath::fromString($this->tempDir));
 
         // Verify no temp files left behind
         $files = glob($this->tempDir . '/*.tmp.*');
@@ -113,7 +114,7 @@ final class BaselineWriterTest extends TestCase
                 ],
             ],
         );
-        $this->writer->write($baseline1, $path);
+        $this->writer->write($baseline1, $path, AbsolutePath::fromString($this->tempDir));
 
         // Write second baseline (overwrite)
         $baseline2 = new Baseline(
@@ -125,7 +126,7 @@ final class BaselineWriterTest extends TestCase
                 ],
             ],
         );
-        $this->writer->write($baseline2, $path);
+        $this->writer->write($baseline2, $path, AbsolutePath::fromString($this->tempDir));
 
         $content = file_get_contents($path);
         self::assertNotFalse($content);
@@ -146,7 +147,7 @@ final class BaselineWriterTest extends TestCase
         );
 
         $path = $this->tempDir . '/baseline.json';
-        $this->writer->write($baseline, $path);
+        $this->writer->write($baseline, $path, AbsolutePath::fromString($this->tempDir));
 
         $content = file_get_contents($path);
         self::assertNotFalse($content);
@@ -177,7 +178,7 @@ final class BaselineWriterTest extends TestCase
         );
 
         $path = $this->tempDir . '/baseline.json';
-        $this->writer->write($baseline, $path, $projectRoot);
+        $this->writer->write($baseline, $path, AbsolutePath::fromString($projectRoot));
 
         $data = json_decode((string) file_get_contents($path), true);
         self::assertArrayHasKey('file:src/Foo.php', $data['violations'], 'Absolute file: path should be relativized');
@@ -202,7 +203,7 @@ final class BaselineWriterTest extends TestCase
 
         $path = $this->tempDir . '/baseline.json';
         // '.' should be normalized to getcwd(), then relativize correctly
-        $this->writer->write($baseline, $path, '.');
+        $this->writer->write($baseline, $path, AbsolutePath::fromString((string) getcwd()));
 
         $data = json_decode((string) file_get_contents($path), true);
         self::assertArrayHasKey('file:src/Foo.php', $data['violations'], 'projectRoot="." should normalize to getcwd() and relativize');
@@ -223,7 +224,7 @@ final class BaselineWriterTest extends TestCase
         );
 
         $path = $this->tempDir . '/baseline.json';
-        $this->writer->write($baseline, $path, '/some/project');
+        $this->writer->write($baseline, $path, AbsolutePath::fromString('/some/project'));
 
         $data = json_decode((string) file_get_contents($path), true);
         self::assertArrayHasKey('file:src/Foo.php', $data['violations']);

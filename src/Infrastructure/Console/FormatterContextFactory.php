@@ -100,7 +100,7 @@ final class FormatterContextFactory
             useColor: $output->isDecorated(),
             groupBy: $groupBy,
             options: $options,
-            basePath: $this->configurationProvider->getConfiguration()->projectRoot,
+            basePath: $this->configurationProvider->getConfiguration()->projectRoot->value(),
             scopedReporting: $scopedReporting,
             namespace: $namespaceFilter,
             class: $classFilter,

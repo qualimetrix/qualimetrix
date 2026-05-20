@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Namespace_;
 
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Namespace_\NamespaceDetectorInterface;
+use Qualimetrix\Core\Path\RelativePath;
 
 /**
  * Factory for creating namespace detectors based on runtime configuration.
@@ -31,7 +32,8 @@ final class NamespaceDetectorFactory
     public function create(): NamespaceDetectorInterface
     {
         $config = $this->configurationProvider->getConfiguration();
-        $composerJsonPath = $config->composerJsonPath ?? self::DEFAULT_COMPOSER_JSON;
+        $composerJsonPath = $config->composerJsonPath
+            ?? $config->projectRoot->joinRelative(RelativePath::fromString(self::DEFAULT_COMPOSER_JSON));
 
         $psr4Detector = new Psr4NamespaceDetector($composerJsonPath);
         $tokenizerDetector = new TokenizerNamespaceDetector();

@@ -58,8 +58,8 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
 
     private int $workerCount = 4;
     private int $minFilesForParallel = self::DEFAULT_MIN_FILES_FOR_PARALLEL;
-    private ?string $projectRoot = null;
-    private ?string $cacheDir = null;
+    private ?AbsolutePath $projectRoot = null;
+    private ?AbsolutePath $cacheDir = null;
 
     /** @var list<class-string<MetricCollectorInterface>> */
     private array $collectorClasses = [];
@@ -115,20 +115,16 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
 
     /**
      * Sets the project root directory (required for worker bootstrap).
-     *
-     * @param string $projectRoot Absolute path to project root
      */
-    public function setProjectRoot(string $projectRoot): void
+    public function setProjectRoot(AbsolutePath $projectRoot): void
     {
         $this->projectRoot = $projectRoot;
     }
 
     /**
-     * Sets the cache directory for AST caching in workers.
-     *
-     * @param string|null $cacheDir Cache directory or null to disable caching
+     * Sets the cache directory for AST caching in workers (null disables caching).
      */
-    public function setCacheDir(?string $cacheDir): void
+    public function setCacheDir(?AbsolutePath $cacheDir): void
     {
         $this->cacheDir = $cacheDir;
     }

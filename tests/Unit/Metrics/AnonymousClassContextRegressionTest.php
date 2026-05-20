@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\Complexity\CognitiveComplexityVisitor;
 use Qualimetrix\Metrics\Complexity\CyclomaticComplexityVisitor;
 use Qualimetrix\Metrics\Complexity\NpathComplexityVisitor;
@@ -290,7 +291,7 @@ PHP;
 
         $resolver = new DependencyResolver();
         $visitor = new DependencyVisitor($resolver);
-        $visitor->setFile('test.php');
+        $visitor->setFile(RelativePath::fromString('test.php'));
 
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];

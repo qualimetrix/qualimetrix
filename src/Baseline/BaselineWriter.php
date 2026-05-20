@@ -22,7 +22,7 @@ final readonly class BaselineWriter
      *
      * @throws RuntimeException if write fails
      */
-    public function write(Baseline $baseline, string $path, string $projectRoot = '.'): void
+    public function write(Baseline $baseline, string $path, AbsolutePath $projectRoot): void
     {
         $directory = \dirname($path);
         if (!is_dir($directory)) {
@@ -56,13 +56,12 @@ final readonly class BaselineWriter
     /**
      * @return array<string, mixed>
      */
-    private function serializeBaseline(Baseline $baseline, string $projectRoot): array
+    private function serializeBaseline(Baseline $baseline, AbsolutePath $projectRoot): array
     {
-        $rootVO = self::resolveProjectRoot($projectRoot);
         $violations = [];
 
         foreach ($baseline->entries as $canonical => $entries) {
-            $portableKey = $this->relativizeCanonical($canonical, $rootVO);
+            $portableKey = $this->relativizeCanonical($canonical, $projectRoot);
             $violations[$portableKey] = array_map(
                 fn(BaselineEntry $entry) => $entry->toArray(),
                 $entries,
@@ -104,17 +103,5 @@ final readonly class BaselineWriter
         $relative = PathFactory::tryProjectRelative($filePath, $projectRoot);
 
         return $relative !== null ? 'file:' . $relative->value() : $canonical;
-    }
-
-    private static function resolveProjectRoot(string $projectRoot): AbsolutePath
-    {
-        if ($projectRoot === '.' || !str_starts_with($projectRoot, '/')) {
-            $resolved = realpath($projectRoot);
-            $absolute = $resolved !== false ? $resolved : ((string) getcwd());
-
-            return AbsolutePath::fromString($absolute);
-        }
-
-        return AbsolutePath::fromString($projectRoot);
     }
 }

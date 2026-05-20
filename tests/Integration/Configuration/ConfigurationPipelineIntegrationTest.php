@@ -317,7 +317,11 @@ YAML;
         self::assertContains('cache/', $excludes, 'excludes from config file');
         self::assertContains('temp/', $excludes, 'excludes from CLI');
         self::assertSame('json', $resolved->analysis->format, 'format from config file (overrides defaults)');
-        self::assertSame('.qmx-cache', $resolved->analysis->cacheDir, 'cache.dir defaults to .qmx-cache');
+        self::assertSame(
+            $resolved->analysis->projectRoot->value() . '/.qmx-cache',
+            $resolved->analysis->cacheDir->value(),
+            'cache.dir defaults to .qmx-cache resolved against project root',
+        );
         self::assertTrue($resolved->analysis->cacheEnabled, 'cache.enabled defaults to true');
     }
 
@@ -460,7 +464,10 @@ YAML;
         $resolved = $pipeline->resolve($context);
 
         // Assert: Config file cache dir should be used (not overridden by CLI default)
-        self::assertSame('custom-cache', $resolved->analysis->cacheDir);
+        self::assertSame(
+            $resolved->analysis->projectRoot->value() . '/custom-cache',
+            $resolved->analysis->cacheDir->value(),
+        );
     }
 
     #[Test]
@@ -482,7 +489,7 @@ YAML;
         $resolved = $pipeline->resolve($context);
 
         // Assert: CLI explicit cache-dir should override config file
-        self::assertSame('/explicit/cache', $resolved->analysis->cacheDir);
+        self::assertSame('/explicit/cache', $resolved->analysis->cacheDir->value());
     }
 
     private function createPipeline(): ConfigurationPipeline

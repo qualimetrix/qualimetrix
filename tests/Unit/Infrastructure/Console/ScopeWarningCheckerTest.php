@@ -4,21 +4,28 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Infrastructure\Console;
 
+use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\ScopeWarningChecker;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 #[CoversClass(ScopeWarningChecker::class)]
 final class ScopeWarningCheckerTest extends TestCase
 {
     private string $tempDir;
+    private AbsolutePath $projectRoot;
     private ScopeWarningChecker $checker;
 
     protected function setUp(): void
     {
         $this->tempDir = sys_get_temp_dir() . '/qmx_scope_test_' . uniqid();
         mkdir($this->tempDir, 0o755, true);
+        $this->projectRoot = AbsolutePath::fromString($this->tempDir);
         $this->checker = new ScopeWarningChecker();
     }
 
@@ -31,7 +38,7 @@ final class ScopeWarningCheckerTest extends TestCase
     public function itReturnsNoWarningsWhenComposerJsonIsMissing(): void
     {
         // Missing composer.json is reported by CheckCommand, not ScopeWarningChecker
-        $warnings = $this->checker->check($this->tempDir, ['src']);
+        $warnings = $this->checker->check($this->projectRoot, [$this->subPath('src')]);
 
         self::assertSame([], $warnings);
     }
@@ -48,7 +55,7 @@ final class ScopeWarningCheckerTest extends TestCase
         ]);
         mkdir($this->tempDir . '/src', 0o755, true);
 
-        $warnings = $this->checker->check($this->tempDir, ['src']);
+        $warnings = $this->checker->check($this->projectRoot, [$this->subPath('src')]);
 
         self::assertSame([], $warnings);
     }
@@ -67,7 +74,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/src', 0o755, true);
         mkdir($this->tempDir . '/lib', 0o755, true);
 
-        $warnings = $this->checker->check($this->tempDir, ['src']);
+        $warnings = $this->checker->check($this->projectRoot, [$this->subPath('src')]);
 
         self::assertCount(1, $warnings);
         self::assertStringContainsString('lib', $warnings[0]);
@@ -92,7 +99,7 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/tests', 0o755, true);
 
         // Analyzing only src/ should NOT warn about missing tests/ (autoload-dev)
-        $warnings = $this->checker->check($this->tempDir, ['src']);
+        $warnings = $this->checker->check($this->projectRoot, [$this->subPath('src')]);
 
         self::assertSame([], $warnings);
     }
@@ -115,7 +122,8 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/src', 0o755, true);
         mkdir($this->tempDir . '/tests', 0o755, true);
 
-        $warnings = $this->checker->check($this->tempDir, ['.']);
+        // Passing the project root itself models the `qmx check .` invocation
+        $warnings = $this->checker->check($this->projectRoot, [$this->projectRoot]);
 
         self::assertSame([], $warnings);
     }
@@ -134,9 +142,14 @@ final class ScopeWarningCheckerTest extends TestCase
         mkdir($this->tempDir . '/src', 0o755, true);
 
         // Analyzing src covers src; lib doesn't exist so it's skipped — no warning
-        $warnings = $this->checker->check($this->tempDir, ['src']);
+        $warnings = $this->checker->check($this->projectRoot, [$this->subPath('src')]);
 
         self::assertSame([], $warnings);
+    }
+
+    private function subPath(string $relative): AbsolutePath
+    {
+        return $this->projectRoot->joinRelative(RelativePath::fromString($relative));
     }
 
     /**
@@ -150,30 +163,25 @@ final class ScopeWarningCheckerTest extends TestCase
         );
     }
 
-    private function removeDirectory(string $dir): void
+    private function removeDirectory(string $path): void
     {
-        if (!is_dir($dir)) {
+        if (!is_dir($path)) {
             return;
         }
 
-        $items = scandir($dir);
-        if ($items === false) {
-            return;
-        }
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST,
+        );
 
-        foreach ($items as $item) {
-            if ($item === '.' || $item === '..') {
-                continue;
-            }
-
-            $path = $dir . '/' . $item;
-            if (is_dir($path)) {
-                $this->removeDirectory($path);
+        foreach ($iterator as $item) {
+            if ($item->isDir()) {
+                rmdir($item->getPathname());
             } else {
-                unlink($path);
+                unlink($item->getPathname());
             }
         }
 
-        rmdir($dir);
+        rmdir($path);
     }
 }

@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Ast\FileParserInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
@@ -134,7 +135,7 @@ final class CachedFileParserTest extends TestCase
         $file = new SplFileInfo($this->tempFile);
         $freshAst = [new Class_('RealTest')];
         $keyGenerator = new CacheKeyGenerator();
-        $cache = new FileCache($this->cacheDir);
+        $cache = new FileCache(AbsolutePath::fromString($this->cacheDir));
 
         $inner = $this->createMock(FileParserInterface::class);
         // First call: parse and cache

@@ -13,6 +13,7 @@ use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
 use Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy;
 use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
@@ -64,7 +65,7 @@ final class StrategySelectorTest extends TestCase
     {
         $config = new AnalysisConfiguration(
             workers: 1, // explicitly sequential
-            projectRoot: __DIR__,
+            projectRoot: AbsolutePath::fromString(__DIR__),
         );
         $this->configProvider->method('getConfiguration')->willReturn($config);
 
@@ -80,9 +81,9 @@ final class StrategySelectorTest extends TestCase
     {
         $config = new AnalysisConfiguration(
             workers: 4,
-            projectRoot: __DIR__,
+            projectRoot: AbsolutePath::fromString(__DIR__),
             cacheEnabled: true,
-            cacheDir: '/tmp/cache',
+            cacheDir: AbsolutePath::fromString('/tmp/cache'),
         );
         $this->configProvider->method('getConfiguration')->willReturn($config);
 
@@ -102,7 +103,7 @@ final class StrategySelectorTest extends TestCase
     {
         $config = new AnalysisConfiguration(
             workers: null, // auto-detect
-            projectRoot: __DIR__,
+            projectRoot: AbsolutePath::fromString(__DIR__),
         );
         $this->configProvider->method('getConfiguration')->willReturn($config);
 
@@ -122,7 +123,7 @@ final class StrategySelectorTest extends TestCase
     {
         $config = new AnalysisConfiguration(
             workers: 4, // explicit count
-            projectRoot: __DIR__,
+            projectRoot: AbsolutePath::fromString(__DIR__),
         );
         $this->configProvider->method('getConfiguration')->willReturn($config);
 
@@ -135,11 +136,11 @@ final class StrategySelectorTest extends TestCase
     }
 
     #[Test]
-    public function itConvertsRelativeProjectRootToAbsolute(): void
+    public function itPropagatesCwdProjectRootIntoStrategy(): void
     {
         $config = new AnalysisConfiguration(
             workers: 4,
-            projectRoot: '.', // relative path
+            projectRoot: AbsolutePath::fromString((string) getcwd()),
         );
         $this->configProvider->method('getConfiguration')->willReturn($config);
 
@@ -155,7 +156,7 @@ final class StrategySelectorTest extends TestCase
     {
         $config = new AnalysisConfiguration(
             workers: 4,
-            projectRoot: '/non/existent/path',
+            projectRoot: AbsolutePath::fromString('/non/existent/path'),
         );
         $this->configProvider->method('getConfiguration')->willReturn($config);
 
@@ -171,7 +172,7 @@ final class StrategySelectorTest extends TestCase
     {
         $config = new AnalysisConfiguration(
             workers: 4,
-            projectRoot: __DIR__,
+            projectRoot: AbsolutePath::fromString(__DIR__),
             cacheEnabled: false,
         );
         $this->configProvider->method('getConfiguration')->willReturn($config);
@@ -184,14 +185,17 @@ final class StrategySelectorTest extends TestCase
     }
 
     #[Test]
-    public function itUsesResolvedRootForRelativeCacheDir(): void
+    public function itPropagatesLazyDefaultCacheDirIntoStrategy(): void
     {
-        // Use a relative project root that gets resolved via realpath()
+        // Lazy default cacheDir (null) resolves at AnalysisConfiguration ctor time
+        // to "$projectRoot/.qmx-cache". This test pins that the resolved cache dir
+        // is propagated as-is to the parallel strategy.
+        $projectRoot = AbsolutePath::fromString((string) getcwd());
         $config = new AnalysisConfiguration(
             workers: 4,
-            projectRoot: '.', // relative
+            projectRoot: $projectRoot,
             cacheEnabled: true,
-            cacheDir: '.qmx-cache', // relative cache dir
+            cacheDir: null,
         );
         $this->configProvider->method('getConfiguration')->willReturn($config);
 
@@ -200,14 +204,11 @@ final class StrategySelectorTest extends TestCase
 
         self::assertInstanceOf(AmphpParallelStrategy::class, $strategy);
 
-        // Verify cache dir via reflection — it must use the resolved root, not '.'
         $reflection = new ReflectionProperty(AmphpParallelStrategy::class, 'cacheDir');
         $cacheDir = $reflection->getValue($this->amphpStrategy);
 
-        self::assertIsString($cacheDir);
-        self::assertStringStartsWith('/', $cacheDir);
-        self::assertStringNotContainsString('/./', $cacheDir, 'Cache dir should use resolved root, not relative path');
-        self::assertStringEndsWith('/.qmx-cache', $cacheDir);
+        self::assertInstanceOf(AbsolutePath::class, $cacheDir);
+        self::assertSame($projectRoot->value() . '/.qmx-cache', $cacheDir->value());
     }
 
     #[Test]
@@ -215,9 +216,9 @@ final class StrategySelectorTest extends TestCase
     {
         $config = new AnalysisConfiguration(
             workers: 4,
-            projectRoot: __DIR__,
+            projectRoot: AbsolutePath::fromString(__DIR__),
             cacheEnabled: true,
-            cacheDir: '/absolute/cache',
+            cacheDir: AbsolutePath::fromString('/absolute/cache'),
         );
         $this->configProvider->method('getConfiguration')->willReturn($config);
 

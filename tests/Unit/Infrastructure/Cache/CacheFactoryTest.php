@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\FileCache;
 
@@ -55,7 +56,7 @@ final class CacheFactoryTest extends TestCase
     #[Test]
     public function createUsesCacheDirFromCurrentConfigurationAtFirstCall(): void
     {
-        $config = new AnalysisConfiguration(cacheDir: '/tmp/qmx-initial-cache');
+        $config = new AnalysisConfiguration(cacheDir: AbsolutePath::fromString('/tmp/qmx-initial-cache'));
         $provider = self::createStub(ConfigurationProviderInterface::class);
         $provider->method('getConfiguration')->willReturn($config);
 
@@ -69,7 +70,7 @@ final class CacheFactoryTest extends TestCase
 
     private function makeFactoryWithCacheDir(string $cacheDir): CacheFactory
     {
-        $config = new AnalysisConfiguration(cacheDir: $cacheDir);
+        $config = new AnalysisConfiguration(cacheDir: AbsolutePath::fromString($cacheDir));
         $provider = self::createStub(ConfigurationProviderInterface::class);
         $provider->method('getConfiguration')->willReturn($config);
 

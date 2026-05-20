@@ -15,6 +15,7 @@ use Qualimetrix\Configuration\ConfigurationHolder;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -144,6 +145,16 @@ final class ContainerFactoryTest extends TestCase
     }
 
     #[Test]
+    public function itHasBaselineCleanupCommandWithAllDependencies(): void
+    {
+        $container = $this->factory->create();
+
+        self::assertTrue($container->has(\Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand::class));
+        $command = $container->get(\Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand::class);
+        self::assertInstanceOf(\Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand::class, $command);
+    }
+
+    #[Test]
     public function itRegistersAllCollectorsViaCompilerPass(): void
     {
         $container = $this->factory->create();
@@ -212,7 +223,7 @@ final class ContainerFactoryTest extends TestCase
         self::assertInstanceOf(ConfigurationHolder::class, $configProvider);
 
         $config = new AnalysisConfiguration(
-            cacheDir: $this->tempDir . '/cache',
+            cacheDir: AbsolutePath::fromString($this->tempDir . '/cache'),
             cacheEnabled: false,
         );
         $configProvider->setConfiguration($config);

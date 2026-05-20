@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
 use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Metrics\Size\LocCollector;
@@ -111,7 +112,7 @@ final class AmphpParallelStrategyTest extends TestCase
     #[Test]
     public function itSetsProjectRoot(): void
     {
-        $this->strategy->setProjectRoot('/path/to/project');
+        $this->strategy->setProjectRoot(AbsolutePath::fromString('/path/to/project'));
 
         // We can't directly verify the private property, but method should not throw
         self::expectNotToPerformAssertions();
@@ -120,7 +121,7 @@ final class AmphpParallelStrategyTest extends TestCase
     #[Test]
     public function itSetsCacheDir(): void
     {
-        $this->strategy->setCacheDir('/path/to/cache');
+        $this->strategy->setCacheDir(AbsolutePath::fromString('/path/to/cache'));
 
         // We can't directly verify the private property, but method should not throw
         self::expectNotToPerformAssertions();
@@ -250,7 +251,7 @@ final class AmphpParallelStrategyTest extends TestCase
         $files = $this->createTestFiles(20);
 
         // Set project root (required condition)
-        $this->strategy->setProjectRoot($this->tempDir);
+        $this->strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
 
         // Don't set collector classes (or set empty) - should cause fallback
         $this->strategy->setCollectorClasses([]);
@@ -345,7 +346,7 @@ final class AmphpParallelStrategyTest extends TestCase
 
         $strategy = new AmphpParallelStrategy($logger);
         $strategy->setMinFilesForParallel(10);
-        $strategy->setProjectRoot($this->tempDir);
+        $strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
         // Don't set collector classes
 
         $files = $this->createTestFiles(20);
@@ -406,7 +407,7 @@ final class AmphpParallelStrategyTest extends TestCase
 
         // Setup strategy with all required configuration
         $this->strategy->setMinFilesForParallel(10);
-        $this->strategy->setProjectRoot($this->tempDir);
+        $this->strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
         $this->strategy->setCollectorClasses([LocCollector::class]);
         $this->strategy->setDerivedCollectorClasses([MaintainabilityIndexCollector::class]);
 
@@ -450,7 +451,7 @@ final class AmphpParallelStrategyTest extends TestCase
 
         $strategy = new AmphpParallelStrategy($logger);
         $strategy->setMinFilesForParallel(10);
-        $strategy->setProjectRoot($this->tempDir);
+        $strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
         $strategy->setCollectorClasses([LocCollector::class]);
 
         $files = $this->createTestFiles(20);

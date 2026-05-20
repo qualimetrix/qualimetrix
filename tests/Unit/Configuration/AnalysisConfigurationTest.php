@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigSchema;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Violation\Severity;
 
 #[CoversClass(AnalysisConfiguration::class)]
@@ -20,7 +21,7 @@ final class AnalysisConfigurationTest extends TestCase
     {
         $config = new AnalysisConfiguration();
 
-        self::assertSame('.qmx-cache', $config->cacheDir);
+        self::assertSame((string) getcwd() . '/.qmx-cache', $config->cacheDir->value());
         self::assertTrue($config->cacheEnabled);
         self::assertSame('summary', $config->format);
         self::assertSame('chain', $config->namespaceStrategy);
@@ -39,7 +40,7 @@ final class AnalysisConfigurationTest extends TestCase
     {
         $config = AnalysisConfiguration::fromArray([]);
 
-        self::assertSame('.qmx-cache', $config->cacheDir);
+        self::assertSame((string) getcwd() . '/.qmx-cache', $config->cacheDir->value());
         self::assertTrue($config->cacheEnabled);
         self::assertSame('summary', $config->format);
     }
@@ -66,11 +67,12 @@ final class AnalysisConfigurationTest extends TestCase
             'exclude_paths' => ['src/Generated/*', 'src/Legacy/*'],
         ]);
 
-        self::assertSame('/tmp/cache', $config->cacheDir);
+        self::assertSame('/tmp/cache', $config->cacheDir->value());
         self::assertFalse($config->cacheEnabled);
         self::assertSame('json', $config->format);
         self::assertSame('psr4', $config->namespaceStrategy);
-        self::assertSame('composer.json', $config->composerJsonPath);
+        self::assertNotNull($config->composerJsonPath);
+        self::assertSame((string) getcwd() . '/composer.json', $config->composerJsonPath->value());
         self::assertSame(['App\\Domain', 'App\\Infrastructure'], $config->aggregationPrefixes);
         self::assertSame(2, $config->aggregationAutoDepth);
         self::assertSame(['complexity.cyclomatic'], $config->disabledRules);
@@ -82,7 +84,7 @@ final class AnalysisConfigurationTest extends TestCase
     public function itMergesConfigurations(): void
     {
         $base = new AnalysisConfiguration(
-            cacheDir: '/original/cache',
+            cacheDir: AbsolutePath::fromString('/original/cache'),
             cacheEnabled: true,
             format: 'text',
             namespaceStrategy: 'chain',
@@ -96,7 +98,7 @@ final class AnalysisConfigurationTest extends TestCase
         ]);
 
         // Merged values
-        self::assertSame('/new/cache', $merged->cacheDir);
+        self::assertSame('/new/cache', $merged->cacheDir->value());
         self::assertSame('json', $merged->format);
 
         // Preserved values
@@ -368,7 +370,7 @@ final class AnalysisConfigurationTest extends TestCase
     {
         $config = AnalysisConfiguration::fromArray([]);
 
-        self::assertSame('.qmx-cache', $config->cacheDir);
+        self::assertSame((string) getcwd() . '/.qmx-cache', $config->cacheDir->value());
         self::assertTrue($config->cacheEnabled);
         self::assertSame('summary', $config->format);
         self::assertSame('chain', $config->namespaceStrategy);
@@ -409,7 +411,7 @@ final class AnalysisConfigurationTest extends TestCase
 
         self::assertSame('summary', $config->format);
         self::assertTrue($config->cacheEnabled);
-        self::assertSame('.qmx-cache', $config->cacheDir);
+        self::assertSame((string) getcwd() . '/.qmx-cache', $config->cacheDir->value());
         self::assertSame([], $config->disabledRules);
     }
 

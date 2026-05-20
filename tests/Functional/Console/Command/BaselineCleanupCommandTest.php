@@ -11,6 +11,9 @@ use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Configuration\AnalysisConfiguration;
+use Qualimetrix\Configuration\ConfigurationHolder;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -82,11 +85,12 @@ final class BaselineCleanupCommandTest extends TestCase
             $baselinePath = $this->tempDir . '/baseline.json';
 
             $baseline = $baselineGenerator->generate($violations);
-            $baselineWriter->write($baseline, $baselinePath);
+            $baselineWriter->write($baseline, $baselinePath, AbsolutePath::fromString($this->tempDir));
 
             $command = new BaselineCleanupCommand(
                 new BaselineLoader(),
                 $baselineWriter,
+                $this->makeProvider(),
             );
 
             $application = new Application();
@@ -140,11 +144,12 @@ final class BaselineCleanupCommandTest extends TestCase
             $baselinePath = $this->tempDir . '/baseline.json';
 
             $baseline = $baselineGenerator->generate($violations);
-            $baselineWriter->write($baseline, $baselinePath);
+            $baselineWriter->write($baseline, $baselinePath, AbsolutePath::fromString($this->tempDir));
 
             $command = new BaselineCleanupCommand(
                 new BaselineLoader(),
                 $baselineWriter,
+                $this->makeProvider(),
             );
 
             $application = new Application();
@@ -173,6 +178,7 @@ final class BaselineCleanupCommandTest extends TestCase
         $command = new BaselineCleanupCommand(
             new BaselineLoader(),
             new BaselineWriter(),
+            $this->makeProvider(),
         );
 
         $application = new Application();
@@ -214,11 +220,12 @@ final class BaselineCleanupCommandTest extends TestCase
             $baselinePath = $this->tempDir . '/baseline.json';
 
             $baseline = $baselineGenerator->generate($violations);
-            $baselineWriter->write($baseline, $baselinePath);
+            $baselineWriter->write($baseline, $baselinePath, AbsolutePath::fromString($this->tempDir));
 
             $command = new BaselineCleanupCommand(
                 new BaselineLoader(),
                 $baselineWriter,
+                $this->makeProvider(),
             );
 
             $application = new Application();
@@ -277,6 +284,7 @@ final class BaselineCleanupCommandTest extends TestCase
             $command = new BaselineCleanupCommand(
                 new BaselineLoader(),
                 new BaselineWriter(),
+                $this->makeProvider(),
             );
 
             $application = new Application();
@@ -300,6 +308,16 @@ final class BaselineCleanupCommandTest extends TestCase
     /**
      * Recursively remove a directory.
      */
+    private function makeProvider(): ConfigurationHolder
+    {
+        $holder = new ConfigurationHolder();
+        $holder->setConfiguration(new AnalysisConfiguration(
+            projectRoot: AbsolutePath::fromString($this->tempDir),
+        ));
+
+        return $holder;
+    }
+
     private function removeDirectory(string $dir): void
     {
         if (!is_dir($dir)) {

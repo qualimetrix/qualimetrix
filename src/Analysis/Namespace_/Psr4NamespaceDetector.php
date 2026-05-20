@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Namespace_;
 
 use Qualimetrix\Core\Namespace_\NamespaceDetectorInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
+use RuntimeException;
 use SplFileInfo;
 
 final class Psr4NamespaceDetector implements NamespaceDetectorInterface
@@ -14,7 +16,7 @@ final class Psr4NamespaceDetector implements NamespaceDetectorInterface
 
     private string $baseDir;
 
-    public function __construct(string $composerJsonPath)
+    public function __construct(AbsolutePath $composerJsonPath)
     {
         $this->loadMapping($composerJsonPath);
     }
@@ -64,13 +66,13 @@ final class Psr4NamespaceDetector implements NamespaceDetectorInterface
         return '';
     }
 
-    private function loadMapping(string $composerJsonPath): void
+    private function loadMapping(AbsolutePath $composerJsonPath): void
     {
-        if (!file_exists($composerJsonPath)) {
+        if (!$composerJsonPath->exists()) {
             return;
         }
 
-        $content = file_get_contents($composerJsonPath);
+        $content = file_get_contents($composerJsonPath->value());
         if ($content === false) {
             return;
         }
@@ -80,8 +82,7 @@ final class Psr4NamespaceDetector implements NamespaceDetectorInterface
             return;
         }
 
-        $resolved = realpath($composerJsonPath);
-        $this->baseDir = \dirname($resolved !== false ? $resolved : $composerJsonPath);
+        $this->baseDir = $this->resolveBaseDir($composerJsonPath);
 
         $psr4 = [];
 
@@ -126,5 +127,14 @@ final class Psr4NamespaceDetector implements NamespaceDetectorInterface
 
             return $maxB <=> $maxA;
         });
+    }
+
+    private function resolveBaseDir(AbsolutePath $composerJsonPath): string
+    {
+        try {
+            return \dirname($composerJsonPath->canonicalize()->value());
+        } catch (RuntimeException) {
+            return \dirname($composerJsonPath->value());
+        }
     }
 }

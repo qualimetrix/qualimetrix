@@ -23,6 +23,7 @@ use Qualimetrix\Analysis\Collection\Dependency\Handler\PropertyHandler;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\StaticAccessHandler;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\TraitUseHandler;
 use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Path\RelativePath;
 
 /**
  * Visitor that collects all class dependencies from AST.
@@ -38,7 +39,7 @@ use Qualimetrix\Core\Dependency\Dependency;
  */
 final class DependencyVisitor extends NodeVisitorAbstract
 {
-    private string $file = '';
+    private ?RelativePath $file = null;
     private ?string $currentClass = null;
     private ?DependencyContext $currentContext = null;
 
@@ -58,9 +59,9 @@ final class DependencyVisitor extends NodeVisitorAbstract
     }
 
     /**
-     * Initializes the visitor for a new file.
+     * Initializes the visitor for a new file (null clears the current file).
      */
-    public function setFile(string $file): void
+    public function setFile(?RelativePath $file): void
     {
         $this->file = $file;
         $this->reset();

@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Util\PathNormalizer;
 use SplFileInfo;
 use Traversable;
@@ -88,7 +89,7 @@ final class CompositeCollector
         // carry an absolute path that never matches the relative-keyed
         // suppression map, so `@qmx-ignore` tags on classes can't drop them.
         if ($this->dependencyVisitor !== null) {
-            $this->dependencyVisitor->setFile(PathNormalizer::relativize($file->getPathname()));
+            $this->dependencyVisitor->setFile(RelativePath::fromString(PathNormalizer::relativize($file->getPathname())));
             $traverser->addVisitor($this->dependencyVisitor);
         }
 

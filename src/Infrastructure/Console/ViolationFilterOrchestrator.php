@@ -49,6 +49,7 @@ final readonly class ViolationFilterOrchestrator
                 gitClient: $scopeResolution->gitClient,
                 reportScope: $scopeResolution->reportScope,
                 strictMode: (bool) $input->getOption('report-strict'),
+                projectRoot: $scopeResolution->projectRoot,
             );
         }
 

@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+- `AnalysisConfiguration::{projectRoot, cacheDir, composerJsonPath}` are now typed as `AbsolutePath` / `?AbsolutePath` instead of `string` / `?string`. Embedding consumers that construct `AnalysisConfiguration` directly must wrap path arguments in `AbsolutePath::fromString(...)`. The no-arg constructor still works as before — defaults resolve lazily to `getcwd()` and `${projectRoot}/.qmx-cache`. `fromArray()` and `merge()` continue to accept string values from YAML / CLI input and resolve them via `PathFactory::fromCliArgument()`. ADR 0015 Phase 5.
+- `BaselineWriter::write()` now requires `AbsolutePath` for the `$projectRoot` parameter (was optional `string = '.'`). Embedded callers must wrap their project root and pass it explicitly.
+- `GitClient::getProjectRoot()` accessor removed. The project root is now owned by `GitScopeResolution` (returned from `GitScopeResolver::resolve()`); pass it explicitly to consumers that previously read it from `GitClient`.
+
 ### Changed
+- Configuration, cache, parallel pipeline, namespace detection, and dependency analysis now consume `AbsolutePath` / `RelativePath` VOs at every internal boundary instead of untyped strings. The migration closes the path-type ambiguity that motivated the T10 git-subdirectory bug class. ADR 0015 Phase 5.
 - Git infrastructure now uses typed `AbsolutePath` and `RelativePath` VOs instead of `string` throughout `GitClient`, `GitRepositoryLocator`, and `GitScopeFilter`. ADR 0015 Phase 1b.
 - `GitScopeFilter` now performs eager git-to-project path translation at the `GitClient` boundary. Project roots that sit in a strict subdirectory of the git tree (T10) are now handled correctly: changed files outside the project are filtered out early, and namespace extraction for violations is resolved against the project root instead of the git top-level.
 - The project's own dogfooding `qmx.yaml` now declares the full 27-layer architecture topology (Core + Configuration + Architecture slice + per-category `metrics-{Category}` template + 10 `analysis-*` sub-layers + 10 `infra-*` sub-layers) that previously lived in `deptrac.yaml`. Sub-layer enforcement (e.g. `analysis-discovery → analysis-pipeline` is now caught) gained, on top of features deptrac never had: per-category metric isolation via template expansion, and a `relations:` filter that permits `infra-di → metrics-*` references but forbids inheritance. ADR 0014.

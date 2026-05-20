@@ -8,6 +8,8 @@ use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigSchema;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationLayer;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Throwable;
 
 /**
  * Default configuration values (priority: 0).
@@ -37,7 +39,22 @@ final class DefaultsStage implements ConfigurationStageInterface
             ConfigSchema::CACHE_ENABLED => true,
             ConfigSchema::FORMAT => AnalysisConfiguration::DEFAULT_FORMAT,
             ConfigSchema::NAMESPACE_STRATEGY => AnalysisConfiguration::DEFAULT_NAMESPACE_STRATEGY,
-            ConfigSchema::PROJECT_ROOT => (realpath($context->workingDirectory) !== false ? realpath($context->workingDirectory) : $context->workingDirectory),
+            ConfigSchema::PROJECT_ROOT => $this->resolveProjectRoot($context->workingDirectory),
         ]);
+    }
+
+    /**
+     * Returns the canonical (symlink-resolved) project root, falling back to
+     * the raw input when canonicalization fails (path doesn't exist).
+     * {@see AnalysisConfiguration::fromArray()} re-resolves the resulting string
+     * to {@see AbsolutePath} via {@see \Qualimetrix\Core\Path\PathFactory::fromCliArgument()}.
+     */
+    private function resolveProjectRoot(string $workingDirectory): string
+    {
+        try {
+            return AbsolutePath::fromString($workingDirectory)->canonicalize()->value();
+        } catch (Throwable) {
+            return $workingDirectory;
+        }
     }
 }

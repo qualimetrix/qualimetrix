@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
+use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -22,6 +23,7 @@ final class BaselineCleanupCommand extends Command
     public function __construct(
         private readonly BaselineLoader $baselineLoader,
         private readonly BaselineWriter $baselineWriter,
+        private readonly ConfigurationProviderInterface $configurationProvider,
     ) {
         parent::__construct();
     }
@@ -82,7 +84,11 @@ final class BaselineCleanupCommand extends Command
         );
 
         // Write cleaned baseline
-        $this->baselineWriter->write($cleanedBaseline, $baselinePath);
+        $this->baselineWriter->write(
+            $cleanedBaseline,
+            $baselinePath,
+            $this->configurationProvider->getConfiguration()->projectRoot,
+        );
 
         // Output statistics
         $output->writeln(\sprintf(

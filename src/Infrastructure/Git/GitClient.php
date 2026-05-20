@@ -44,24 +44,13 @@ final class GitClient
 
     /**
      * Returns the root directory of the git repository (the `git rev-parse
-     * --show-toplevel`). May differ from {@see getProjectRoot()} when the
-     * project sits in a strict subdirectory of the git tree.
+     * --show-toplevel`). May differ from the project root the client was
+     * constructed with when the project sits in a strict subdirectory of
+     * the git tree.
      */
     public function getRoot(): AbsolutePath
     {
         return AbsolutePath::fromString(trim($this->exec('git rev-parse --show-toplevel')));
-    }
-
-    /**
-     * Returns the project root the client was constructed with.
-     *
-     * Note: this is the project root, not the git top-level — the two are
-     * identical when the project sits at the repository root, but the project
-     * root may be a strict subdirectory of the git tree.
-     */
-    public function getProjectRoot(): AbsolutePath
-    {
-        return $this->projectRoot;
     }
 
     /**
