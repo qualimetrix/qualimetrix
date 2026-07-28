@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-07-28
+
 ### Fixed
 - Rule options set through the config file or `--rule-opt` were silently ignored when the option name had more than one word (`vo-warning`, `param_threshold`, …), while the dedicated CLI flag for the same option worked but printed a bogus `Unknown option` warning. All three channels now agree, and `--preset=strict` applies its `vo-error` value instead of dropping it. Values were dropped for `code-smell.long-parameter-list` and `design.type-coverage`; `coupling.distance` only ever suffered the false warning.
 - The documented `threshold:` shorthand crashed the whole run with `Cannot mix "threshold" with "warning"/"error"` (exit code 3) whenever it was written at the top level of a rule, which is exactly how `website/docs/getting-started/configuration.md` shows it. 15 rules were affected; the nested `method: {threshold: …}` form was never broken.
@@ -400,7 +402,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.21.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.22.0...HEAD
+[0.22.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.20.1...v0.21.0
 [0.20.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.20.0...v0.20.1
 [0.20.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.19.0...v0.20.0
