@@ -692,17 +692,29 @@ bin/qmx rules
 bin/qmx rules --group=complexity
 ```
 
-**Пример вывода:**
+**Пример вывода** (для `--group=complexity`):
 
 ```
-complexity.cyclomatic    Cyclomatic complexity (McCabe)
-  --cyclomatic-warning=N         method.warning (default: 10)
-  --cyclomatic-error=N           method.error (default: 20)
-  --cyclomatic-class-warning=N   class.max_warning (default: 30)
-  --cyclomatic-class-error=N     class.max_error (default: 50)
+4 rules available
 
-complexity.cognitive     Cognitive complexity (SonarSource)
-  --cognitive-warning=N          method.warning (default: 15)
-  --cognitive-error=N            method.error (default: 30)
+Complexity
+  complexity.cognitive                     Checks cognitive complexity at method and class levels
+    --cognitive-warning (--rule-opt=complexity.cognitive:method.warning=...)
+    --cognitive-error (--rule-opt=complexity.cognitive:method.error=...)
+    --cognitive-class-warning (--rule-opt=complexity.cognitive:class.max_warning=...)
+    --cognitive-class-error (--rule-opt=complexity.cognitive:class.max_error=...)
+  complexity.cyclomatic                    Checks cyclomatic complexity at method and class levels
+    --cyclomatic-warning (--rule-opt=complexity.cyclomatic:method.warning=...)
+    --cyclomatic-error (--rule-opt=complexity.cyclomatic:method.error=...)
+    --cyclomatic-class-warning (--rule-opt=complexity.cyclomatic:class.max_warning=...)
+    --cyclomatic-class-error (--rule-opt=complexity.cyclomatic:class.max_error=...)
   ...
+
+Usage: bin/qmx check --disable-rule=<name> | --only-rule=<name>
+        bin/qmx check --rule-opt=<name>:<option>=<value>
 ```
+
+Правила сгруппированы по категориям, рядом с каждым CLI-алиасом показана
+длинная форма `--rule-opt`, в которую он разворачивается. Значений порогов по
+умолчанию в этом выводе нет — они описаны в
+[Пороговых значениях по умолчанию](../reference/default-thresholds.ru.md).
