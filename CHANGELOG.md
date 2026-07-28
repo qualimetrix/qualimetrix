@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.20.1] - 2026-07-28
+
 ### Fixed
 - Qualimetrix reported the *consuming project's* version as its own. `qmx --version` printed things like `1.0.0+no-version-set`, and the same wrong value was stamped into every analysis artifact — `version` in JSON and SARIF, `toolVersion` in the metrics format, and the HTML report footer. The version is now resolved by package name instead of through Composer's root package, which is the host project whenever Qualimetrix is installed as a dependency.
 
@@ -368,7 +370,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.20.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.20.1...HEAD
+[0.20.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.20.0...v0.20.1
 [0.20.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.17.0...v0.18.0
