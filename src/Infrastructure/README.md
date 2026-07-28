@@ -197,11 +197,14 @@ Rules and their Options are made lazy via `->setLazy(true)`:
 
 **RuleCompilerPass:**
 - Collects services with tag `qmx.rule`
-- Injects into `RuleExecutor`
+- Injects into `RuleExecutor` and `RulesCommand` — the only supported source of
+  rule *instances* (a rule may take constructor dependencies besides its
+  Options object, so nothing outside the container may build rules)
 
 **RuleRegistryCompilerPass:**
 - Collects rule classes (not instances)
 - Injects into `RuleRegistry` for CLI option discovery
+- Fails the container build when a rule class omits its `NAME` constant
 
 **FormatterCompilerPass:**
 - Collects services with tag `qmx.formatter`

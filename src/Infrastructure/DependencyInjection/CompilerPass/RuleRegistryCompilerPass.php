@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
 use LogicException;
+use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Rule\RuleNameReader;
 use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
-use ReflectionClass;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -39,7 +40,7 @@ final class RuleRegistryCompilerPass implements CompilerPassInterface
             }
         }
 
-        /** @var list<class-string> $ruleClasses */
+        /** @var list<class-string<RuleInterface>> $ruleClasses */
         $this->validateNoDuplicateNames($ruleClasses);
 
         $definition->setArgument('$ruleClasses', $ruleClasses);
@@ -51,7 +52,14 @@ final class RuleRegistryCompilerPass implements CompilerPassInterface
     }
 
     /**
-     * @param list<class-string> $ruleClasses
+     * Validates that every registered rule declares a unique string NAME.
+     *
+     * The NAME constant is mandatory: rule metadata is read by reflection
+     * (see {@see RuleNameReader}) because rules may declare constructor
+     * dependencies that only the container can resolve. A missing NAME is
+     * therefore a wiring error and fails the container build.
+     *
+     * @param list<class-string<RuleInterface>> $ruleClasses
      */
     private function validateNoDuplicateNames(array $ruleClasses): void
     {
@@ -59,17 +67,7 @@ final class RuleRegistryCompilerPass implements CompilerPassInterface
         $nameToClass = [];
 
         foreach ($ruleClasses as $class) {
-            $reflection = new ReflectionClass($class);
-
-            if (!$reflection->hasConstant('NAME')) {
-                continue;
-            }
-
-            $name = $reflection->getConstant('NAME');
-
-            if (!\is_string($name)) {
-                continue;
-            }
+            $name = RuleNameReader::read($class);
 
             if (isset($nameToClass[$name])) {
                 throw new LogicException(\sprintf(

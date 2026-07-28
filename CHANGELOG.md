@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `qmx rules` crashed with a fatal `ArgumentCountError` instead of listing the rules. The command built rule objects itself, which breaks for rules that take constructor dependencies besides their options (`architecture.layer-violation`). Rule instances now always come from the DI container; `qmx check` was never affected.
+
+### Breaking
+- `RuleRegistryInterface::getAll()` removed — it could not build rules that declare constructor dependencies beyond their options. Embedding consumers that need rule instances should take them from the container (tag `qmx.rule`); `getClasses()` and `getAllCliAliases()` still cover metadata.
+- `RulesCommand::__construct()` now takes `iterable<RuleInterface> $rules` instead of a `RuleRegistryInterface`. Only affects code that constructs the command directly; the container wires it automatically.
+
 ## [0.20.1] - 2026-07-28
 
 ### Fixed

@@ -13,19 +13,10 @@ use Qualimetrix\Rules\Size\ClassCountRule;
 
 final class RuleRegistryTest extends TestCase
 {
-    #[Test]
-    public function getAllCreatesInstancesWithDefaultOptions(): void
-    {
-        $registry = new RuleRegistry([
-            ComplexityRule::class,
-            ClassCountRule::class,
-        ]);
-
-        $rules = iterator_to_array($registry->getAll());
-        self::assertCount(2, $rules);
-        self::assertInstanceOf(ComplexityRule::class, $rules[0]);
-        self::assertInstanceOf(ClassCountRule::class, $rules[1]);
-    }
+    // The registry deliberately exposes no rule factory: rules may declare
+    // constructor dependencies beyond their Options object (LayerViolationRule
+    // takes an ArchitectureProcessorInterface), so only the DI container may
+    // build them. Instance wiring is covered by RulesCommandWiringTest.
 
     #[Test]
     public function getClassesReturnsClassNames(): void
@@ -84,7 +75,6 @@ final class RuleRegistryTest extends TestCase
     {
         $registry = new RuleRegistry([]);
 
-        self::assertSame([], iterator_to_array($registry->getAll()));
         self::assertSame([], $registry->getClasses());
         self::assertSame([], $registry->getAllCliAliases());
     }

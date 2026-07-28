@@ -42,7 +42,11 @@ Core/
 │   ├── ThresholdAwareOptionsInterface.php # Options that support @qmx-threshold overrides
 │   ├── RuleLevel.php                      # Rule level enum
 │   ├── RuleOptionKey.php                  # Common option key constants (enabled, warning, error, threshold)
-│   └── RuleMatcher.php                    # Prefix matching utility
+│   ├── RuleMatcher.php                    # Prefix matching utility
+│   ├── RuleNameReader.php                 # Reads the NAME constant (reflection, no instantiation)
+│   ├── CliAliasReader.php                 # Reads #[CliAlias] attributes (reflection, no instantiation)
+│   └── Attribute/
+│       └── CliAlias.php                   # Repeatable attribute declaring a rule's CLI aliases
 ├── Symbol/
 │   ├── SymbolType.php
 │   ├── SymbolPath.php                     # Stable symbol identifier (moved from Violation/)
@@ -363,6 +367,14 @@ A rule analyzes metrics and generates violations. **Completely stateless.**
 `#[CliAlias('alias', 'optionName')]` (see `src/Core/Rule/Attribute/CliAlias.php`).
 They are read by `CliAliasReader::read(class-string): array<string, string>` via
 reflection, so no rule instantiation is required to enumerate them.
+
+**Rule name** — every rule class must declare a `public const string NAME` with
+its slug. It is read by `RuleNameReader::read(class-string): string` via
+reflection (missing or non-string `NAME` throws `LogicException`, and the
+container build fails). Reflection is mandatory here because rules may take
+constructor dependencies beyond their Options object, so rule metadata must be
+obtainable without instantiation and rule instances must come from the DI
+container.
 
 **DI Tags:** `qmx.rule`
 

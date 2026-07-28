@@ -6,7 +6,7 @@ namespace Qualimetrix\Infrastructure\Rule;
 
 use Qualimetrix\Configuration\KnownRuleNamesProviderInterface;
 use Qualimetrix\Core\Rule\RuleInterface;
-use ReflectionClass;
+use Qualimetrix\Core\Rule\RuleNameReader;
 
 /**
  * Adapter that extracts known rule names from registered rule classes.
@@ -31,15 +31,7 @@ final readonly class KnownRuleNamesAdapter implements KnownRuleNamesProviderInte
         $names = [];
 
         foreach ($this->ruleClasses as $ruleClass) {
-            $reflection = new ReflectionClass($ruleClass);
-
-            if ($reflection->hasConstant('NAME')) {
-                $name = $reflection->getConstant('NAME');
-
-                if (\is_string($name)) {
-                    $names[] = $name;
-                }
-            }
+            $names[] = RuleNameReader::read($ruleClass);
         }
 
         return $names;

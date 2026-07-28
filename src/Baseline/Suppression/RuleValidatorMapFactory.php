@@ -8,8 +8,8 @@ use LogicException;
 use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Core\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Rule\RuleNameReader;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
-use ReflectionClass;
 
 /**
  * Builds the `rule-name => OverrideValidatorInterface` map consumed by
@@ -47,10 +47,7 @@ final readonly class RuleValidatorMapFactory
                 continue;
             }
 
-            $ruleName = self::resolveRuleName($ruleClass);
-            if ($ruleName === null) {
-                continue;
-            }
+            $ruleName = RuleNameReader::read($ruleClass);
 
             $optionsClass = $ruleClass::getOptionsClass();
             $validator = self::resolveValidator($optionsClass);
@@ -120,22 +117,5 @@ final readonly class RuleValidatorMapFactory
         }
 
         return $selected;
-    }
-
-    /**
-     * @param class-string<RuleInterface> $ruleClass
-     */
-    private static function resolveRuleName(string $ruleClass): ?string
-    {
-        $reflection = new ReflectionClass($ruleClass);
-
-        if ($reflection->hasConstant('NAME')) {
-            $name = $reflection->getConstant('NAME');
-            if (\is_string($name)) {
-                return $name;
-            }
-        }
-
-        return null;
     }
 }

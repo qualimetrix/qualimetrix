@@ -306,7 +306,12 @@ Decide between the **layered** and **vertical-slice** layouts per ADR 0010
    tag in either case
 3. `RuleOptionsCompilerPass` automatically registers Options via
    `RuleOptionsFactory::create()`
-4. `RuleCompilerPass` collects all rules into `RuleExecutor`
+4. `RuleCompilerPass` collects all rules into `RuleExecutor` and `RulesCommand`
+   — the only supported source of rule *instances*. Never build a rule with
+   `new $ruleClass($options)`: a rule may declare constructor dependencies
+   beyond its options (e.g. `LayerViolationRule`)
+5. Every rule class must declare a `public const string NAME`; metadata is read
+   from it by reflection (`Core\Rule\RuleNameReader`), never by instantiation
 
 **Important:** Rules do NOT use autowiring for the constructor (due to `RuleOptionsInterface`). The `$options` argument is injected via `RuleOptionsCompilerPass`.
 
@@ -322,7 +327,7 @@ Decide between the **layered** and **vertical-slice** layouts per ADR 0010
 - `CollectorCompilerPass` -> `CompositeCollector`
 - `GlobalCollectorCompilerPass` -> `GlobalCollectorRunner`
 - `RuleOptionsCompilerPass` -> registers Options for rules
-- `RuleCompilerPass` -> `RuleExecutor::$rules`
+- `RuleCompilerPass` -> `RuleExecutor::$rules`, `RulesCommand::$rules`
 - `RuleRegistryCompilerPass` -> `RuleRegistry::$ruleClasses`
 - `FormatterCompilerPass` -> `FormatterRegistry`
 - `ConfigurationStageCompilerPass` -> `ConfigurationPipeline`

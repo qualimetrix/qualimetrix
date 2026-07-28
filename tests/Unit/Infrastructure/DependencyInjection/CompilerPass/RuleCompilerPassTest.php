@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
+use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
 use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Qualimetrix\Rules\Size\ClassCountRule;
@@ -39,7 +40,26 @@ final class RuleCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function doesNothingWhenExecutorNotRegistered(): void
+    public function itCollectsTaggedRulesIntoRulesCommand(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register(RulesCommand::class)->setArguments([[]]);
+        $container->register(ComplexityRule::class)
+            ->addTag(RuleCompilerPass::TAG);
+        $container->register(ClassCountRule::class)
+            ->addTag(RuleCompilerPass::TAG);
+
+        $pass = new RuleCompilerPass();
+        $pass->process($container);
+
+        $rules = $container->getDefinition(RulesCommand::class)->getArgument(0);
+
+        self::assertCount(2, $rules);
+        self::assertContainsOnlyInstancesOf(Reference::class, $rules);
+    }
+
+    #[Test]
+    public function itDoesNothingWhenNoConsumerIsRegistered(): void
     {
         $container = new ContainerBuilder();
         $container->register(ComplexityRule::class)
@@ -49,6 +69,23 @@ final class RuleCompilerPassTest extends TestCase
         $pass->process($container);
 
         self::assertFalse($container->hasDefinition(RuleExecutor::class));
+        self::assertFalse($container->hasDefinition(RulesCommand::class));
+    }
+
+    #[Test]
+    public function itInjectsIntoEveryRegisteredConsumerAtOnce(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register(RuleExecutor::class);
+        $container->register(RulesCommand::class)->setArguments([[]]);
+        $container->register(ComplexityRule::class)
+            ->addTag(RuleCompilerPass::TAG);
+
+        $pass = new RuleCompilerPass();
+        $pass->process($container);
+
+        self::assertCount(1, $container->getDefinition(RuleExecutor::class)->getArgument(0));
+        self::assertCount(1, $container->getDefinition(RulesCommand::class)->getArgument(0));
     }
 
     #[Test]

@@ -6,7 +6,7 @@ namespace Qualimetrix\Configuration;
 
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleInterface;
-use ReflectionClass;
+use Qualimetrix\Core\Rule\RuleNameReader;
 
 /**
  * Creates RuleOptionsParser with short aliases collected from rules.
@@ -25,7 +25,7 @@ final readonly class RuleOptionsParserFactory
         $shortAliases = [];
 
         foreach ($ruleClasses as $ruleClass) {
-            $ruleName = $this->getRuleName($ruleClass);
+            $ruleName = RuleNameReader::read($ruleClass);
 
             $aliases = CliAliasReader::read($ruleClass);
 
@@ -38,30 +38,5 @@ final readonly class RuleOptionsParserFactory
         }
 
         return new RuleOptionsParser($shortAliases);
-    }
-
-    /**
-     * Gets rule name from class constant NAME or by instantiation (fallback).
-     *
-     * @param class-string<RuleInterface> $ruleClass
-     */
-    private function getRuleName(string $ruleClass): string
-    {
-        $reflection = new ReflectionClass($ruleClass);
-
-        // Try to get NAME constant (preferred - no instantiation)
-        if ($reflection->hasConstant('NAME')) {
-            $name = $reflection->getConstant('NAME');
-            if (\is_string($name)) {
-                return $name;
-            }
-        }
-
-        // Fallback: create instance with default options
-        $optionsClass = $ruleClass::getOptionsClass();
-        $options = $optionsClass::fromArray([]);
-        $rule = new $ruleClass($options);
-
-        return $rule->getName();
     }
 }

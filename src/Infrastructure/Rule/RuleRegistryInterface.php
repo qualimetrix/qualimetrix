@@ -10,17 +10,12 @@ use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 /**
  * Registry of available rules.
  *
- * Provides access to rule instances and their CLI metadata.
+ * Provides access to rule classes and their CLI metadata. Rule *instances* are
+ * built by the DI container only — a rule may declare constructor dependencies
+ * beyond its Options object, so the registry deliberately exposes no factory.
  */
 interface RuleRegistryInterface
 {
-    /**
-     * Returns all registered rules.
-     *
-     * @return iterable<RuleInterface>
-     */
-    public function getAll(): iterable;
-
     /**
      * Returns class names of all registered rules.
      *

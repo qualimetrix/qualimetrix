@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Core\Rule\CliAliasReader;
-use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Core\Rule\RuleInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -14,6 +14,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Lists all available rules with their options and CLI aliases.
+ *
+ * Rules arrive as container-built instances (injected by
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass}),
+ * never as hand-constructed objects: a rule may declare constructor
+ * dependencies beyond its Options object that only the container can resolve.
  */
 #[AsCommand(
     name: 'rules',
@@ -21,8 +26,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class RulesCommand extends Command
 {
+    /**
+     * @param iterable<RuleInterface> $rules
+     */
     public function __construct(
-        private readonly RuleRegistryInterface $ruleRegistry,
+        private readonly iterable $rules,
     ) {
         parent::__construct();
     }
@@ -43,7 +51,7 @@ final class RulesCommand extends Command
         $groupFilter = $input->getOption('group');
 
         $rules = [];
-        foreach ($this->ruleRegistry->getAll() as $rule) {
+        foreach ($this->rules as $rule) {
             $name = $rule->getName();
             $group = $rule->getCategory()->value;
 

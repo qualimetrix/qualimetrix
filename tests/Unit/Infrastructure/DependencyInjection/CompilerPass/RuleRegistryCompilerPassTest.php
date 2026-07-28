@@ -8,8 +8,12 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
+use Qualimetrix\Rules\Complexity\ComplexityOptions;
 use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Qualimetrix\Rules\Size\ClassCountRule;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -77,6 +81,23 @@ final class RuleRegistryCompilerPassTest extends TestCase
     }
 
     #[Test]
+    public function itThrowsWhenARegisteredRuleDeclaresNoNameConstant(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register(RuleRegistry::class);
+        $container->register('rule.nameless')
+            ->setClass(FixtureNamelessRule::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        $pass = new RuleRegistryCompilerPass();
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('must declare a string NAME constant');
+
+        $pass->process($container);
+    }
+
+    #[Test]
     public function skipsServicesWithNullClass(): void
     {
         $container = new ContainerBuilder();
@@ -91,5 +112,43 @@ final class RuleRegistryCompilerPassTest extends TestCase
         $ruleClasses = $registry->getArgument('$ruleClasses');
 
         self::assertSame([], $ruleClasses);
+    }
+}
+
+/**
+ * A real rule implementation whose class omits the mandatory NAME constant.
+ *
+ * @internal
+ */
+final class FixtureNamelessRule implements RuleInterface
+{
+    public function getName(): string
+    {
+        return 'fixture.nameless';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Rule fixture without a NAME constant';
+    }
+
+    public function getCategory(): RuleCategory
+    {
+        return RuleCategory::Complexity;
+    }
+
+    public function requires(): array
+    {
+        return [];
+    }
+
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    public static function getOptionsClass(): string
+    {
+        return ComplexityOptions::class;
     }
 }

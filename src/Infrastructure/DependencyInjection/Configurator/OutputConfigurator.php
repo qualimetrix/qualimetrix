@@ -307,7 +307,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // RulesCommand
         $container->register(RulesCommand::class)
             ->setArguments([
-                new Reference(RuleRegistryInterface::class),
+                [], // Will be set by RuleCompilerPass
             ])
             ->setPublic(true);
 

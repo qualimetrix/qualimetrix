@@ -6,14 +6,19 @@ namespace Qualimetrix\Infrastructure\Rule;
 
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Rule\RuleNameReader;
 use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
-use ReflectionClass;
 
 /**
  * Registry of rule classes.
  *
  * Works with class names instead of instances, enabling metadata extraction
  * via reflection without instantiation. This is essential for lazy rule loading.
+ *
+ * The registry never instantiates rules: rules may declare constructor
+ * dependencies beyond their Options object, so only the DI container can build
+ * them. Consumers that need instances receive them from the container (see
+ * {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass}).
  */
 final readonly class RuleRegistry implements RuleRegistryInterface
 {
@@ -26,24 +31,6 @@ final readonly class RuleRegistry implements RuleRegistryInterface
     public function __construct(array $ruleClasses)
     {
         $this->ruleClasses = array_values($ruleClasses);
-    }
-
-    /**
-     * Creates instances of all rules with default options.
-     *
-     * Note: This method instantiates rules. For metadata-only access,
-     * use getClasses() and getAllCliAliases() instead.
-     *
-     * @return iterable<RuleInterface>
-     */
-    public function getAll(): iterable
-    {
-        foreach ($this->ruleClasses as $ruleClass) {
-            $optionsClass = $ruleClass::getOptionsClass();
-            $options = $optionsClass::fromArray([]);
-
-            yield new $ruleClass($options);
-        }
     }
 
     public function getClasses(): array
@@ -63,7 +50,7 @@ final readonly class RuleRegistry implements RuleRegistryInterface
         $aliases = [];
 
         foreach ($this->ruleClasses as $ruleClass) {
-            $ruleName = $this->getRuleName($ruleClass);
+            $ruleName = RuleNameReader::read($ruleClass);
 
             $ruleAliases = CliAliasReader::read($ruleClass);
 
@@ -84,30 +71,5 @@ final readonly class RuleRegistry implements RuleRegistryInterface
         }
 
         return $aliases;
-    }
-
-    /**
-     * Gets rule name from class constant NAME or by instantiation (fallback).
-     *
-     * @param class-string<RuleInterface> $ruleClass
-     */
-    private function getRuleName(string $ruleClass): string
-    {
-        $reflection = new ReflectionClass($ruleClass);
-
-        // Try to get NAME constant (preferred - no instantiation)
-        if ($reflection->hasConstant('NAME')) {
-            $name = $reflection->getConstant('NAME');
-            if (\is_string($name)) {
-                return $name;
-            }
-        }
-
-        // Fallback: create instance with default options
-        $optionsClass = $ruleClass::getOptionsClass();
-        $options = $optionsClass::fromArray([]);
-        $rule = new $ruleClass($options);
-
-        return $rule->getName();
     }
 }
