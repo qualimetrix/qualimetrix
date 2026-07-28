@@ -60,6 +60,10 @@ examples/
 *.json
 !/docs/internal/benchmark-baselines.json
 !/tests/Fixtures/**/*.json
+# HTML report build manifest: without these the JS bundle cannot be rebuilt or
+# audited from a fresh clone, and dependency versions cannot be pinned.
+!/src/Reporting/Template/package.json
+!/src/Reporting/Template/package-lock.json
 
 # Node modules (HTML report build pipeline)
 node_modules/
