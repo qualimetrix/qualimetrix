@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-07-28
+
+> **Earlier releases can no longer be installed.** The repository history was
+> rewritten to remove content that should never have been published. Every tag
+> before v0.20.0 now points at a commit that no longer exists, so
+> `composer require qualimetrix/qualimetrix:<older version>` fails with a 404
+> from GitHub. The published archives cannot be restored — upgrade to v0.20.0.
+
+### Security
+- `symfony/yaml` updated to v8.0.14, clearing three advisories: a ReDoS via catastrophic backtracking in the parser cleanup regex (CVE-2026-45305), stack exhaustion via unbounded recursion in nested blocks (CVE-2026-45133), and CVE-2026-45304. Qualimetrix parses YAML configuration on every run, so this affects all users.
+- `symfony/cache` updated to v8.0.14, clearing CVE-2026-45073. It is pulled in transitively by `symfony/expression-language`, which backs computed metric formulas.
+
 ### Breaking
 - `AnalysisConfiguration::{projectRoot, cacheDir, composerJsonPath}` are now typed as `AbsolutePath` / `?AbsolutePath` instead of `string` / `?string`. Embedding consumers that construct `AnalysisConfiguration` directly must wrap path arguments in `AbsolutePath::fromString(...)`. The no-arg constructor still works as before — defaults resolve lazily to `getcwd()` and `${projectRoot}/.qmx-cache`. `fromArray()` and `merge()` continue to accept string values from YAML / CLI input and resolve them via `PathFactory::fromCliArgument()`. ADR 0015 Phase 5.
 - `BaselineWriter::write()` now requires `AbsolutePath` for the `$projectRoot` parameter (was optional `string = '.'`). Embedded callers must wrap their project root and pass it explicitly.
@@ -23,6 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - `deptrac/deptrac` dev-dependency. `composer check` is now `cs-check + test + phpstan + selfcheck`; architecture enforcement runs entirely through Qualimetrix's own `architecture.layer-violation` rule.
 - Internal `Qualimetrix\Core\Util\PathNormalizer` helper (was `@internal` since v0.18). Superseded by `Core\Path\PathFactory`. ADR 0015 Phase 6 also wires a PHPStan rule (`qmx.bannedStringPathProperty`) as a regression guard against re-introducing `string`-typed `$file` / `$filePath` / `$oldPath` properties in scoped namespaces.
+
+### Fixed
+- The HTML report build manifest (`src/Reporting/Template/package.json` and its lockfile) is now tracked. A blanket `*.json` ignore rule had been excluding it, so a fresh clone could not run `composer test:js` or `composer build:js`, and the committed `dist/` bundle could not be regenerated or audited.
 
 ## [0.19.0] - 2026-05-17
 
@@ -350,7 +365,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.19.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.20.0...HEAD
+[0.20.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.16.0...v0.17.0
