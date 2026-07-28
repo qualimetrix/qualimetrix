@@ -6,6 +6,15 @@
 COMMIT_MSG_FILE=$1
 COMMIT_MSG=$(cat "$COMMIT_MSG_FILE")
 
+# Private disclosure guard. A commit message is not covered by the file-content
+# check, and scrubbing one afterwards needs a full history rewrite — so refuse
+# before the commit exists.
+if ! bash "$(dirname "$0")/../scripts/check-private-leaks.sh" --message "$COMMIT_MSG_FILE"; then
+    echo ""
+    echo "❌ Refusing to commit: private term in the commit message"
+    exit 1
+fi
+
 # Pattern for conventional commits: type: description
 # Allowed types: feat, fix, refactor, test, docs, chore, style, perf, ci, build
 PATTERN="^(feat|fix|refactor|test|docs|chore|style|perf|ci|build)(\(.+\))?: .+"

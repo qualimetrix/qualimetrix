@@ -10,6 +10,37 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  # Commit messages are not covered by the file-content guard that runs inside
+  # `composer check`, and scrubbing one after the fact needs a history rewrite.
+  # Needs full history, so it is a separate job rather than a step in the
+  # PHP matrix.
+  commit-messages:
+    name: Commit messages (private terms)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Check commit messages
+        env:
+          # Optional. Without it the job is a no-op; the term list must never be
+          # committed. Values from secrets are masked in logs, and the script
+          # additionally never echoes a matched term.
+          QMX_PRIVATE_TERMS: ${{ secrets.QMX_PRIVATE_TERMS }}
+        run: |
+          base='${{ github.event.before }}'
+          if [ "${{ github.event_name }}" = 'pull_request' ]; then
+            range='${{ github.event.pull_request.base.sha }}..HEAD'
+          elif [ -z "$base" ] || [ "$base" = '0000000000000000000000000000000000000000' ]; then
+            range='HEAD~20..HEAD'
+          else
+            range="$base..HEAD"
+          fi
+          bash scripts/check-private-leaks.sh --commits "$range"
+
   # Example: Using the local GitHub Action
   analyze-with-action:
     name: Analyze with Action
@@ -87,6 +118,11 @@ jobs:
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
       - name: Run full validation
+        env:
+          # Feeds the name half of scripts/check-private-leaks.sh, which runs
+          # first inside `composer check`. Absent secret = path and shape checks
+          # only; the term list must never be committed.
+          QMX_PRIVATE_TERMS: ${{ secrets.QMX_PRIVATE_TERMS }}
         run: composer check
 
       - name: Upload qmx results (if failed)

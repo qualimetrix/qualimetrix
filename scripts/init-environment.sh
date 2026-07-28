@@ -289,11 +289,25 @@ for dir in "${CRITICAL_DIRS[@]}"; do
     fi
 done
 
+# Materialize the private-terms denylist from the environment.
+#
+# The list must never be committed, so a fresh remote workspace has no local
+# copy and the name half of scripts/check-private-leaks.sh would silently do
+# nothing — the failure mode that let the previous disclosure through. Set
+# QMX_PRIVATE_TERMS in the environment (newline-separated) to restore it.
+if [ -n "${QMX_PRIVATE_TERMS:-}" ]; then
+    printf '%s\n' "$QMX_PRIVATE_TERMS" > scripts/private-terms.local.txt
+    log_info "Private-terms denylist restored from QMX_PRIVATE_TERMS"
+else
+    log_warning "QMX_PRIVATE_TERMS is not set — the private-name check is inactive here"
+    log_warning "  (absolute-path and inventory-shape checks still run)"
+fi
+
 CRITICAL_FILES=(
     "composer.json"
     "phpunit.xml.dist"
     "phpstan.neon"
-    "deptrac.yaml"
+    "qmx.yaml"
     "CLAUDE.md"
 )
 
@@ -339,8 +353,8 @@ log_info "Available composer commands:"
 log_info "  composer test         - Run PHPUnit tests"
 log_info "  composer test:coverage - Tests with HTML coverage"
 log_info "  composer phpstan      - Static analysis (level 8)"
-log_info "  composer deptrac      - Check architectural layers"
-log_info "  composer check        - All checks (test + phpstan + deptrac)"
+log_info "  composer selfcheck    - Analyze this codebase with qmx (architecture included)"
+log_info "  composer check        - All checks (leaks + cs + test + phpstan + selfcheck)"
 log_info "  composer cs-fix       - Fix code style"
 log_info ""
 

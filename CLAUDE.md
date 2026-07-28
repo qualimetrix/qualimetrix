@@ -381,12 +381,30 @@ comments, not in benchmark tooling.
 - Private benchmark targets live in `benchmarks/local-projects.json` and
   `benchmarks/local.env` — both git-ignored, both with committed `.example` files.
 - In docs, write "a private production backend", never the real name.
-- `scripts/check-private-leaks.sh` enforces this: it runs inside `composer check`
-  (so CI enforces it) and in the pre-commit hook. It rejects absolute
-  `/Users|/home` paths, and any term listed in `scripts/private-terms.local.txt`.
-- That denylist is git-ignored by design — committing the names would be the very
-  leak it prevents. It is therefore **absent on a fresh clone**, where only the
-  path half of the check is active. Recreate it when setting up a new machine.
+
+`scripts/check-private-leaks.sh` enforces this. It runs in `composer check` (so
+also in CI), in the pre-commit hook, and — for commit messages — in the
+commit-msg hook and a dedicated CI job. Three checks:
+
+| Check                                                                                                              | Needs the denylist? |
+| ------------------------------------------------------------------------------------------------------------------ | ------------------- |
+| Absolute `/Users` / `/home` paths                                                                                  | no                  |
+| Private project names                                                                                              | **yes**             |
+| Inventory shapes: `'type' => 'proprietary'` with a hardcoded path, markdown tables listing codebases by `~N files` | no                  |
+
+**The denylist is never committed** — the names are exactly what is being
+protected. It is read from `$QMX_PRIVATE_TERMS` (newline-separated) or, failing
+that, from the git-ignored `scripts/private-terms.local.txt`.
+
+- **Local machine:** create `scripts/private-terms.local.txt`.
+- **CI:** set the `QMX_PRIVATE_TERMS` repository secret. Absent, the name check
+  is skipped and the run still passes — so a green build does not prove the
+  names were checked.
+- **Remote/web workspace:** `scripts/init-environment.sh` writes the local file
+  from `$QMX_PRIVATE_TERMS` at session start, and warns loudly when unset.
+
+The script never prints matched content — only `file:line`. A matching line can
+itself contain the private name, so echoing it would leak it into the build log.
 
 ---
 
