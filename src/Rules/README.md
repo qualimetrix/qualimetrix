@@ -321,6 +321,14 @@ Checks instability = Ce / (Ca + Ce), where:
 --instability-ns-warning=0.8 --instability-ns-error=0.95
 ```
 
+**Configuration (threshold shorthand — sets both levels' warning=error uniformly):**
+```yaml
+rules:
+  coupling.instability:
+    threshold: 0.5   # class AND namespace: warning=error=0.5
+```
+Equivalent via CLI: `--rule-opt=coupling.instability:threshold=0.5`.
+
 ---
 
 ## CBO Rule (Hierarchical)
@@ -334,6 +342,14 @@ Checks Coupling Between Objects (CBO) — the number of classes a given class de
 --cbo-warning=... --cbo-error=...
 --cbo-ns-warning=... --cbo-ns-error=...
 ```
+
+**Configuration (threshold shorthand — sets both levels' warning=error uniformly):**
+```yaml
+rules:
+  coupling.cbo:
+    threshold: 15   # class AND namespace: warning=error=15
+```
+Equivalent via CLI: `--rule-opt=coupling.cbo:threshold=15`.
 
 ---
 
@@ -894,9 +910,14 @@ Violations are triggered when a metric value meets or exceeds the threshold (`>=
      this, `RuleOptionsFactory::warnAboutUnknownKeys()` — which only sees constructor
      parameter names via reflection — falsely reports the shorthand as an "Unknown
      option", even though `fromArray()` accepts it correctly. Options classes whose
-     `fromArray()` has no such branch (e.g. hierarchical wrappers like `CboOptions`
-     that only understand `class`/`namespace` sub-configs) must NOT implement it, so
-     an unsupported top-level `threshold` still warns.
+     `fromArray()` has no such branch at all must NOT implement it, so an unsupported
+     top-level `threshold` still warns. Hierarchical wrappers with more than one level
+     (`method`/`class`, `class`/`namespace`, ...) CAN still implement it even though
+     their top-level `fromArray()` only understands the nested sub-configs by name —
+     see `CboOptions`/`InstabilityOptions` for the pattern: a bare top-level
+     `threshold` (or `warning`/`error`) is parsed once via `ThresholdParser::parse()`
+     and applied uniformly to every nested level, instead of routing through the
+     nested `class:`/`namespace:` sub-configs.
 5. In `analyze()`, use `$this->getEffectiveSeverity()` instead of `$options->getSeverity()` to support `@qmx-threshold` overrides
 6. Write unit tests
 7. Add value hints to `src/Reporting/Template/src/hints.js` — range-based interpretations for the HTML report

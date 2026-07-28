@@ -161,6 +161,14 @@ bin/qmx check src/ --rule-opt=size.method-count:threshold=25
 
 The same applies in the other direction (a lower layer's `threshold` overridden by a higher layer's `warning`/`error`), and to hierarchical rules at the level the keys are set (e.g. `complexity.cyclomatic`'s `method:`/`class:`).
 
+`coupling.cbo` and `coupling.instability` accept the same bare `threshold` shorthand at their own top level too, but with a different effect than `complexity.cyclomatic`'s: since their `class`/`namespace` defaults already match, a top-level `threshold` applies uniformly to BOTH levels at once, instead of only the more granular one:
+
+```yaml
+rules:
+  coupling.cbo:
+    threshold: 15   # class AND namespace: warning=error=15
+```
+
 For type coverage, dedicated shorthand keys are available:
 
 ```yaml

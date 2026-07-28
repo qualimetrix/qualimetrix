@@ -119,7 +119,7 @@ rules:
       min_class_count: 5
 ```
 
-For a simple pass/fail threshold:
+For a simple pass/fail threshold on a single level:
 
 ```yaml
 rules:
@@ -135,6 +135,31 @@ bin/qmx check src/ --rule-opt="coupling.cbo:namespace.min_class_count=5"
 bin/qmx check src/ --rule-opt="coupling.cbo:namespace.enabled=false"
 bin/qmx check src/ --rule-opt="coupling.cbo:scope=application"
 ```
+
+**Flat threshold shorthand (both levels at once):** a bare `threshold` at the
+rule's own top level -- not nested under `class:`/`namespace:` -- sets
+`warning`/`error` to the same value on **both** the class and namespace
+dimensions in one go. This differs from `complexity.cyclomatic`'s top-level
+`threshold`, which applies to the method level only: CBO's class/namespace
+defaults already match (14/20), so there is no single "primary" level to
+prefer.
+
+```yaml
+rules:
+  coupling.cbo:
+    threshold: 15   # class AND namespace: warning=15, error=15
+```
+
+```bash
+bin/qmx check src/ --rule-opt="coupling.cbo:threshold=15"
+```
+
+!!! warning "Flat threshold wins over a nested class:/namespace: config"
+    If a `threshold` at the rule's top level and a nested `class:`/`namespace:`
+    section both end up configured for `coupling.cbo` at once, the flat
+    `threshold` takes full precedence -- the nested section is ignored, not
+    merged with it. Configure one form or the other for a given rule, not
+    both.
 
 ### Framework CBO distinction
 
@@ -289,7 +314,7 @@ rules:
 
 **`min_afferent`** -- minimum afferent coupling (Ca) required for a class or namespace to be checked. Default: `1` (symbols with Ca = 0 are skipped). Set to `0` to check all symbols, or to `2` to also skip symbols with only one dependent. Symbols with very few dependents have high instability by definition, which is architecturally expected for concrete implementation classes.
 
-For a simple pass/fail threshold:
+For a simple pass/fail threshold on a single level:
 
 ```yaml
 rules:
@@ -305,6 +330,27 @@ bin/qmx check src/ --rule-opt="coupling.instability:class.min_afferent=0"
 bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_class_count=5"
 bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_afferent=2"
 ```
+
+**Flat threshold shorthand (both levels at once):** a bare `threshold` at the
+rule's own top level -- not nested under `class:`/`namespace:` -- sets
+`max_warning`/`max_error` to the same value on **both** the class and
+namespace dimensions in one go, since their defaults already match (0.8/0.95).
+
+```yaml
+rules:
+  coupling.instability:
+    threshold: 0.9   # class AND namespace: warning=0.9, error=0.9
+```
+
+```bash
+bin/qmx check src/ --rule-opt="coupling.instability:threshold=0.9"
+```
+
+!!! warning "Flat threshold wins over a nested class:/namespace: config"
+    Same rule as `coupling.cbo` above: if a top-level `threshold` and a
+    nested `class:`/`namespace:` section both end up configured at once, the
+    flat `threshold` takes full precedence over the nested section rather
+    than being merged with it.
 
 ---
 

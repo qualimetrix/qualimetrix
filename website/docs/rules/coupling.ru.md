@@ -119,7 +119,7 @@ rules:
       min_class_count: 5
 ```
 
-Сокращённая запись с `threshold`:
+Сокращённая запись с `threshold` для одного уровня:
 
 ```yaml
 rules:
@@ -135,6 +135,31 @@ bin/qmx check src/ --rule-opt="coupling.cbo:namespace.min_class_count=5"
 bin/qmx check src/ --rule-opt="coupling.cbo:namespace.enabled=false"
 bin/qmx check src/ --rule-opt="coupling.cbo:scope=application"
 ```
+
+**Плоский ярлык `threshold` (сразу для обоих уровней):** голый `threshold`
+на верхнем уровне правила — НЕ вложенный в `class:`/`namespace:` — задаёт
+`warning`/`error` одним и тем же значением сразу **на обоих** измерениях,
+class и namespace. Это отличается от `complexity.cyclomatic`, где верхний
+`threshold` применяется только к уровню method: у CBO дефолты class и
+namespace уже совпадают (14/20), поэтому нет одного «основного» уровня,
+которому стоило бы отдавать предпочтение.
+
+```yaml
+rules:
+  coupling.cbo:
+    threshold: 15   # class И namespace: warning=15, error=15
+```
+
+```bash
+bin/qmx check src/ --rule-opt="coupling.cbo:threshold=15"
+```
+
+!!! warning "Плоский threshold побеждает вложенную секцию class:/namespace:"
+    Если для `coupling.cbo` одновременно заданы и `threshold` на верхнем
+    уровне, и вложенная секция `class:`/`namespace:`, побеждает плоский
+    `threshold` целиком — вложенная секция игнорируется, а не сливается с
+    ним. Используйте одну форму или другую, но не обе сразу для одного и
+    того же правила.
 
 ### Разделение фреймворк/приложение
 
@@ -289,7 +314,7 @@ rules:
 
 **`min_afferent`** -- минимальное афферентное сцепление (Ca), необходимое для проверки класса или пространства имён. По умолчанию: `1` (символы с Ca = 0 пропускаются). Установите `0`, чтобы проверять все символы, или `2`, чтобы также пропускать символы с единственным зависимым. Символы с малым числом зависимых имеют высокую нестабильность по определению, что архитектурно ожидаемо для конкретных классов-реализаций.
 
-Сокращённая запись с `threshold`:
+Сокращённая запись с `threshold` для одного уровня:
 
 ```yaml
 rules:
@@ -305,6 +330,27 @@ bin/qmx check src/ --rule-opt="coupling.instability:class.min_afferent=0"
 bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_class_count=5"
 bin/qmx check src/ --rule-opt="coupling.instability:namespace.min_afferent=2"
 ```
+
+**Плоский ярлык `threshold` (сразу для обоих уровней):** голый `threshold`
+на верхнем уровне правила — НЕ вложенный в `class:`/`namespace:` — задаёт
+`max_warning`/`max_error` одним и тем же значением сразу **на обоих**
+измерениях, поскольку их дефолты уже совпадают (0.8/0.95).
+
+```yaml
+rules:
+  coupling.instability:
+    threshold: 0.9   # class И namespace: warning=0.9, error=0.9
+```
+
+```bash
+bin/qmx check src/ --rule-opt="coupling.instability:threshold=0.9"
+```
+
+!!! warning "Плоский threshold побеждает вложенную секцию class:/namespace:"
+    Правило то же, что и у `coupling.cbo` выше: если верхнеуровневый
+    `threshold` и вложенная секция `class:`/`namespace:` заданы
+    одновременно, плоский `threshold` побеждает целиком, а не сливается со
+    вложенной секцией.
 
 ---
 

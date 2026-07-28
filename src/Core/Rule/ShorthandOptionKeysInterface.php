@@ -20,12 +20,19 @@ namespace Qualimetrix\Core\Rule;
  * actually accepts, in the canonical kebab-case spelling shown to users in
  * `qmx.yaml`, presets, and `--rule-opt` (see
  * `docs/internal/CLI_CONVENTIONS.md`). Options classes whose `fromArray()`
- * has no such branch — e.g. hierarchical options like `CboOptions` or
- * `InstabilityOptions`, whose top level only understands `class`/`namespace`
- * sub-configs and never routes a top-level `threshold` anywhere — must NOT
+ * has no such branch at all — e.g. `CodeSmellOptions`, which has no
+ * threshold concept and never calls `ThresholdParser::parse()` — must NOT
  * implement this interface: the factory then falls back to
  * constructor-parameter-only validation, which correctly keeps warning about
- * a top-level `threshold` those classes do not support.
+ * any unrecognized key.
+ *
+ * This applies to hierarchical options too: `CboOptions`/`InstabilityOptions`
+ * (`class`/`namespace` levels) DO implement it, because their top level ALSO
+ * parses a bare `threshold` via `ThresholdParser::parse()` and applies it
+ * uniformly to every nested level — see their own `fromArray()` for the
+ * pattern. A hierarchical wrapper only stays unimplementing if none of its
+ * levels — including its own top level — ever routes a shorthand key
+ * anywhere.
  */
 interface ShorthandOptionKeysInterface
 {

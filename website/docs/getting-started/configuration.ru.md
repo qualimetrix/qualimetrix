@@ -166,6 +166,14 @@ bin/qmx check src/ --rule-opt=size.method-count:threshold=25
 
 То же самое работает и в обратную сторону (`threshold` из нижнего слоя перекрывается парой `warning`/`error` из более приоритетного), а также для составных правил — на том уровне вложенности, где заданы ключи (например, `method:`/`class:` у `complexity.cyclomatic`).
 
+`coupling.cbo` и `coupling.instability` тоже принимают голый `threshold` на своём верхнем уровне, но с другим эффектом, чем у `complexity.cyclomatic`: поскольку их дефолты для `class`/`namespace` совпадают, `threshold` на верхнем уровне применяется РАВНОМЕРНО к ОБОИМ уровням сразу, а не только к более детальному:
+
+```yaml
+rules:
+  coupling.cbo:
+    threshold: 15   # class И namespace: warning=error=15
+```
+
 Для правила `design.type-coverage` доступны специализированные варианты: `param_threshold`, `return_threshold`, `property_threshold`.
 
 Вычисляемые метрики (computed metrics) также поддерживают `threshold`.

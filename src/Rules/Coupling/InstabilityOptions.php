@@ -9,14 +9,16 @@ use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Rule\RuleOptionKey;
+use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Support\ThresholdParser;
 
 /**
  * Options for InstabilityRule (hierarchical).
  *
  * Supports class and namespace levels for instability thresholds.
  */
-final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterface
+final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterface, ShorthandOptionKeysInterface
 {
     public function __construct(
         public ClassInstabilityOptions $class = new ClassInstabilityOptions(),
@@ -36,6 +38,38 @@ final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterf
             );
         }
 
+        // Flat shorthand at the rule's own top level: a bare `threshold` (or
+        // bare `max_warning`/`max_error`) applies UNIFORMLY to both the class
+        // and namespace dimensions, instead of the nested `class:`/
+        // `namespace:` sub-configs below. Mirrors CboOptions's own top-level
+        // branch — see its docblock for why both levels stay enabled with
+        // the same threshold rather than one being disabled. Intentionally
+        // NOT declared via getShorthandOptionKeys() beyond `threshold`
+        // itself, matching CboOptions.
+        $hasFlatMaxWarning = \array_key_exists('max_warning', $config) || \array_key_exists('maxWarning', $config);
+        $hasFlatMaxError = \array_key_exists('max_error', $config) || \array_key_exists('maxError', $config);
+
+        if (\array_key_exists(RuleOptionKey::THRESHOLD, $config) || $hasFlatMaxWarning || $hasFlatMaxError) {
+            $thresholds = ThresholdParser::parse(
+                $config,
+                'max_warning',
+                'max_error',
+                0.8,
+                0.95,
+                legacyKeys: ['warning' => ['maxWarning'], 'error' => ['maxError']],
+            );
+            $levelConfig = [
+                RuleOptionKey::ENABLED => (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+                'max_warning' => $thresholds['warning'],
+                'max_error' => $thresholds['error'],
+            ];
+
+            return new self(
+                class: ClassInstabilityOptions::fromArray($levelConfig),
+                namespace: NamespaceInstabilityOptions::fromArray($levelConfig),
+            );
+        }
+
         // Handle hierarchical format: {class: {...}, namespace: {...}}
         $classConfig = isset($config['class']) && \is_array($config['class'])
             ? $config['class']
@@ -48,6 +82,14 @@ final readonly class InstabilityOptions implements HierarchicalRuleOptionsInterf
             class: ClassInstabilityOptions::fromArray($classConfig),
             namespace: NamespaceInstabilityOptions::fromArray($namespaceConfig),
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getShorthandOptionKeys(): array
+    {
+        return ['threshold'];
     }
 
     public function isEnabled(): bool

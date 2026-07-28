@@ -9,14 +9,16 @@ use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Rule\RuleOptionKey;
+use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Rules\Support\ThresholdParser;
 
 /**
  * Options for CboRule (hierarchical).
  *
  * Supports class and namespace levels for CBO thresholds.
  */
-final readonly class CboOptions implements HierarchicalRuleOptionsInterface
+final readonly class CboOptions implements HierarchicalRuleOptionsInterface, ShorthandOptionKeysInterface
 {
     public function __construct(
         public ClassCboOptions $class = new ClassCboOptions(),
@@ -33,6 +35,48 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface
             return new self(
                 class: new ClassCboOptions(enabled: false),
                 namespace: new NamespaceCboOptions(enabled: false),
+            );
+        }
+
+        // Flat shorthand at the rule's own top level: a bare `threshold` (or
+        // bare `warning`/`error`) applies UNIFORMLY to both the class and
+        // namespace dimensions, instead of the nested `class:`/`namespace:`
+        // sub-configs below. This mirrors the legacy-flat branch pattern used
+        // by ComplexityOptions/CognitiveComplexityOptions/NpathComplexityOptions
+        // (bare top-level `threshold` short-circuits the nested form
+        // entirely), but — unlike those — applies to BOTH levels rather than
+        // disabling one: CBO's class/namespace defaults already match
+        // (14/20), and there is no historical single-level format to stay
+        // compatible with here, so there is no reason to silence a level.
+        // A bare top-level `warning`/`error` is accepted for the same reason
+        // ComplexityOptions accepts `warningThreshold`/`errorThreshold` in its
+        // own legacy-flat branch: it lets ThresholdParser detect a genuine
+        // same-layer "threshold mixed with warning/error" conflict, and lets
+        // a higher-priority layer switch mode against a lower layer's flat
+        // form at this same nesting level. It is intentionally NOT declared
+        // via getShorthandOptionKeys() (only `threshold` is advertised),
+        // matching how ComplexityOptions leaves its own legacy aliases
+        // unadvertised.
+        if (
+            \array_key_exists(RuleOptionKey::THRESHOLD, $config)
+            || \array_key_exists(RuleOptionKey::WARNING, $config)
+            || \array_key_exists(RuleOptionKey::ERROR, $config)
+        ) {
+            $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 14, 20);
+            $levelConfig = [
+                RuleOptionKey::ENABLED => (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+                RuleOptionKey::WARNING => $thresholds['warning'],
+                RuleOptionKey::ERROR => $thresholds['error'],
+            ];
+
+            $classLevelConfig = $levelConfig;
+            if (isset($config['scope'])) {
+                $classLevelConfig['scope'] = $config['scope'];
+            }
+
+            return new self(
+                class: ClassCboOptions::fromArray($classLevelConfig),
+                namespace: NamespaceCboOptions::fromArray($levelConfig),
             );
         }
 
@@ -53,6 +97,14 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface
             class: ClassCboOptions::fromArray($classConfig),
             namespace: NamespaceCboOptions::fromArray($namespaceConfig),
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getShorthandOptionKeys(): array
+    {
+        return ['threshold'];
     }
 
     public function isEnabled(): bool

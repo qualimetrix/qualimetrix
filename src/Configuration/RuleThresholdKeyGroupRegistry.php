@@ -43,8 +43,15 @@ namespace Qualimetrix\Configuration;
  * ## Maintenance
  *
  * Adding or changing a rule's graduated/threshold key spelling? Update (or
- * add) its entry here, matching the corresponding `ThresholdParser::parse()`
- * call's arguments. A rule with NO entry here falls back to
+ * add) its entry in {@see GROUPS}, matching the corresponding
+ * `ThresholdParser::parse()` call's arguments. Reuse one of the shared
+ * key-group constants below ({@see BARE_PAIR}, {@see MAX_PREFIXED_PAIR},
+ * {@see LEGACY_FLAT_ALIAS_PAIR}) when a rule's spelling matches one exactly
+ * — most rules do, since bare `warning`/`error` and `max_`-prefixed
+ * `warning`/`error` are by far the two most common spellings across the
+ * codebase. Only write out a fresh literal group when the spelling is
+ * actually unique to that rule (e.g. `max_distance_warning`, `vo_warning`,
+ * `param_warning`). A rule with NO entry here falls back to
  * {@see RuleOptionThresholdModeResolver}'s suffix/prefix heuristic, which is
  * unreliable for non-bare key spellings (see that method's docblock) — every
  * rule known to this codebase at the time of writing has an entry, so the
@@ -74,11 +81,44 @@ final class RuleThresholdKeyGroupRegistry
     }
 
     /**
+     * Bare `warning`/`error`/`threshold` — the single most common spelling in
+     * the codebase. Used verbatim (no prefix, no rule-specific word) by every
+     * rule below that references it.
+     *
+     * @var ThresholdKeyGroupShape
+     */
+    private const array BARE_PAIR = ['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']];
+
+    /**
+     * `max_warning`/`max_error`/`threshold` — the second most common
+     * spelling, used for metrics where lower is better (instability,
+     * cognitive/cyclomatic/npath complexity's class level: "no MORE than
+     * this many").
+     *
+     * @var ThresholdKeyGroupShape
+     */
+    private const array MAX_PREFIXED_PAIR = ['warning' => ['max_warning'], 'error' => ['max_error'], 'threshold' => ['threshold']];
+
+    /**
+     * `warningThreshold`/`errorThreshold`/`threshold` — legacy top-level
+     * ALIASES for warning/error on `complexity.cyclomatic`/`cognitive`/
+     * `npath`'s method dimension, not a `max_`-style rename. Kept as its own
+     * constant (rather than folded into {@see BARE_PAIR}) precisely because
+     * a plain suffix heuristic would otherwise misclassify `warningThreshold`
+     * as a `threshold` marker (it ends in "Threshold") instead of a
+     * `warning` alias — see this class's own docblock.
+     *
+     * @var ThresholdKeyGroupShape
+     */
+    private const array LEGACY_FLAT_ALIAS_PAIR = ['warning' => ['warningThreshold'], 'error' => ['errorThreshold'], 'threshold' => ['threshold']];
+
+    /**
      * @var array<string, array<string, list<ThresholdKeyGroupShape>>>
      */
     private const array GROUPS = [
         // design.type-coverage — 3 independent, prefix-consistent dimensions
-        // (TypeCoverageOptions::fromArray()).
+        // (TypeCoverageOptions::fromArray()). Each prefix is unique to this
+        // rule, so no shared constant applies.
         'design.type-coverage' => [
             '' => [
                 ['warning' => ['param_warning'], 'error' => ['param_error'], 'threshold' => ['param_threshold']],
@@ -87,90 +127,57 @@ final class RuleThresholdKeyGroupRegistry
             ],
         ],
 
-        // complexity.cyclomatic (ComplexityOptions: hierarchical method/class).
+        // complexity.cyclomatic / complexity.cognitive / complexity.npath
+        // (hierarchical method/class options with an identical shape):
+        // top-level legacy-flat shorthand applies only to the method
+        // dimension — the bare `warning`/`error` keys are NOT part of that
+        // top-level group: the legacy-flat branch's own trigger condition
+        // (`ComplexityOptions::fromArray()` et al.) only checks for
+        // `warningThreshold`/`errorThreshold`/`threshold` — bare
+        // `warning`/`error` at the rule's top level are never inspected by
+        // it at all and fall through as unknown options.
         'complexity.cyclomatic' => [
-            // Top-level legacy-flat shorthand — applies only to the method
-            // dimension. `warningThreshold`/`errorThreshold` are legacy
-            // ALIASES for warning/error, not threshold markers, despite the
-            // "Threshold" suffix in their name. The bare `warning`/`error`
-            // keys are NOT part of this group: the legacy-flat branch's own
-            // trigger condition (`ComplexityOptions::fromArray()` et al.)
-            // only checks for `warningThreshold`/`errorThreshold`/`threshold`
-            // — bare `warning`/`error` at the rule's top level are never
-            // inspected by it at all and fall through as unknown options.
-            '' => [
-                ['warning' => ['warningThreshold'], 'error' => ['errorThreshold'], 'threshold' => ['threshold']],
-            ],
-            'method' => [
-                ['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']],
-            ],
-            'class' => [
-                ['warning' => ['max_warning'], 'error' => ['max_error'], 'threshold' => ['threshold']],
-            ],
+            '' => [self::LEGACY_FLAT_ALIAS_PAIR],
+            'method' => [self::BARE_PAIR],
+            'class' => [self::MAX_PREFIXED_PAIR],
         ],
-
-        // complexity.cognitive (CognitiveComplexityOptions: hierarchical method/class).
         'complexity.cognitive' => [
-            // The bare `warning`/`error` keys are NOT part of this group: the
-            // legacy-flat branch's own trigger condition
-            // (`ComplexityOptions::fromArray()` et al.) only checks for
-            // `warningThreshold`/`errorThreshold`/`threshold` — bare
-            // `warning`/`error` at the rule's top level are never inspected
-            // by it at all and fall through as unknown options.
-            '' => [
-                ['warning' => ['warningThreshold'], 'error' => ['errorThreshold'], 'threshold' => ['threshold']],
-            ],
-            'method' => [
-                ['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']],
-            ],
-            'class' => [
-                ['warning' => ['max_warning'], 'error' => ['max_error'], 'threshold' => ['threshold']],
-            ],
+            '' => [self::LEGACY_FLAT_ALIAS_PAIR],
+            'method' => [self::BARE_PAIR],
+            'class' => [self::MAX_PREFIXED_PAIR],
         ],
-
-        // complexity.npath (NpathComplexityOptions: hierarchical method/class).
         'complexity.npath' => [
-            // The bare `warning`/`error` keys are NOT part of this group: the
-            // legacy-flat branch's own trigger condition
-            // (`ComplexityOptions::fromArray()` et al.) only checks for
-            // `warningThreshold`/`errorThreshold`/`threshold` — bare
-            // `warning`/`error` at the rule's top level are never inspected
-            // by it at all and fall through as unknown options.
-            '' => [
-                ['warning' => ['warningThreshold'], 'error' => ['errorThreshold'], 'threshold' => ['threshold']],
-            ],
-            'method' => [
-                ['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']],
-            ],
-            'class' => [
-                ['warning' => ['max_warning'], 'error' => ['max_error'], 'threshold' => ['threshold']],
-            ],
+            '' => [self::LEGACY_FLAT_ALIAS_PAIR],
+            'method' => [self::BARE_PAIR],
+            'class' => [self::MAX_PREFIXED_PAIR],
         ],
 
-        // coupling.cbo (CboOptions: hierarchical class/namespace, bare keys,
-        // no top-level legacy-flat branch).
+        // coupling.cbo (CboOptions: hierarchical class/namespace, bare keys).
+        // The '' (top-level) entry is the rule's own flat-shorthand branch —
+        // a bare threshold/warning/error applied uniformly to BOTH the class
+        // and namespace dimensions instead of the nested sub-configs (see
+        // CboOptions::fromArray()'s docblock for why, unlike
+        // complexity.cyclomatic/cognitive/npath's top-level legacy-flat
+        // branch, this one does NOT disable a level).
         'coupling.cbo' => [
-            'class' => [
-                ['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']],
-            ],
-            'namespace' => [
-                ['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']],
-            ],
+            '' => [self::BARE_PAIR],
+            'class' => [self::BARE_PAIR],
+            'namespace' => [self::BARE_PAIR],
         ],
 
         // coupling.instability (InstabilityOptions: hierarchical
-        // class/namespace, max_* graduated keys, no top-level legacy branch).
+        // class/namespace, max_* graduated keys). The '' entry mirrors
+        // coupling.cbo's own top-level flat-shorthand branch, applied
+        // uniformly to both levels.
         'coupling.instability' => [
-            'class' => [
-                ['warning' => ['max_warning'], 'error' => ['max_error'], 'threshold' => ['threshold']],
-            ],
-            'namespace' => [
-                ['warning' => ['max_warning'], 'error' => ['max_error'], 'threshold' => ['threshold']],
-            ],
+            '' => [self::MAX_PREFIXED_PAIR],
+            'class' => [self::MAX_PREFIXED_PAIR],
+            'namespace' => [self::MAX_PREFIXED_PAIR],
         ],
 
         // coupling.distance (DistanceOptions) — flat, max_distance_* graduated
-        // keys paired with a bare `threshold` shorthand.
+        // keys paired with a bare `threshold` shorthand. Prefix is unique to
+        // this rule, so no shared constant applies.
         'coupling.distance' => [
             '' => [
                 ['warning' => ['max_distance_warning'], 'error' => ['max_distance_error'], 'threshold' => ['threshold']],
@@ -179,62 +186,63 @@ final class RuleThresholdKeyGroupRegistry
 
         // coupling.class-rank (ClassRankOptions) — flat, bare keys.
         'coupling.class-rank' => [
-            '' => [['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']]],
+            '' => [self::BARE_PAIR],
         ],
 
         // code-smell.long-parameter-list (LongParameterListOptions) — flat,
         // TWO independent dimensions at the same level: the bare pair and
-        // the vo-prefixed pair (readonly VO constructor thresholds).
+        // the vo-prefixed pair (readonly VO constructor thresholds, unique
+        // to this rule).
         'code-smell.long-parameter-list' => [
             '' => [
-                ['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']],
+                self::BARE_PAIR,
                 ['warning' => ['vo_warning'], 'error' => ['vo_error'], 'threshold' => ['vo_threshold']],
             ],
         ],
 
         // code-smell.constructor-overinjection (ConstructorOverinjectionOptions) — flat, bare.
         'code-smell.constructor-overinjection' => [
-            '' => [['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']]],
+            '' => [self::BARE_PAIR],
         ],
 
         // code-smell.unreachable-code (UnreachableCodeOptions) — flat, bare.
         'code-smell.unreachable-code' => [
-            '' => [['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']]],
+            '' => [self::BARE_PAIR],
         ],
 
         // maintainability.index (MaintainabilityOptions) — flat, bare.
         'maintainability.index' => [
-            '' => [['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']]],
+            '' => [self::BARE_PAIR],
         ],
 
         // size.method-count / size.class-count / size.property-count — flat, bare.
         'size.method-count' => [
-            '' => [['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']]],
+            '' => [self::BARE_PAIR],
         ],
         'size.class-count' => [
-            '' => [['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']]],
+            '' => [self::BARE_PAIR],
         ],
         'size.property-count' => [
-            '' => [['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']]],
+            '' => [self::BARE_PAIR],
         ],
 
         // design.inheritance / design.noc / design.lcom / complexity.wmc — flat, bare.
         'design.inheritance' => [
-            '' => [['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']]],
+            '' => [self::BARE_PAIR],
         ],
         'design.noc' => [
-            '' => [['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']]],
+            '' => [self::BARE_PAIR],
         ],
         'design.lcom' => [
-            '' => [['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']]],
+            '' => [self::BARE_PAIR],
         ],
         'complexity.wmc' => [
-            '' => [['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']]],
+            '' => [self::BARE_PAIR],
         ],
 
         // duplication.code-duplication (CodeDuplicationOptions) — flat, bare.
         'duplication.code-duplication' => [
-            '' => [['warning' => ['warning'], 'error' => ['error'], 'threshold' => ['threshold']]],
+            '' => [self::BARE_PAIR],
         ],
     ];
 }

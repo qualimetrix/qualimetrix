@@ -1306,7 +1306,7 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
-    public function itStillWarnsWhenThresholdIsUsedOnCboWhichHasNoFlatShorthandBranch(): void
+    public function itDoesNotWarnAboutTheThresholdShorthandOnCboAndAppliesItToBothLevels(): void
     {
         $logger = new RecordingLogger();
         $factory = new RuleOptionsFactory($this->registry, $logger);
@@ -1318,17 +1318,18 @@ final class RuleOptionsFactoryTest extends TestCase
         /** @var CboOptions $options */
         $options = $factory->create('coupling.cbo', CboOptions::class);
 
-        // CboOptions::fromArray() has no top-level `threshold` branch — only
-        // nested `class: {...}` / `namespace: {...}` configs are read — so
-        // the value is silently ignored and defaults apply.
-        self::assertSame(14, $options->class->warning);
-        self::assertSame(20, $options->class->error);
-        self::assertCount(1, $logger->records);
-        self::assertStringContainsString('Unknown option "threshold" for rule "coupling.cbo"', $logger->records[0]['message']);
+        // CboOptions::fromArray() now has a top-level `threshold`
+        // flat-shorthand branch that applies uniformly to BOTH the class and
+        // namespace dimensions (their defaults already match: 14/20).
+        self::assertSame(30, $options->class->warning);
+        self::assertSame(30, $options->class->error);
+        self::assertSame(30, $options->namespace->warning);
+        self::assertSame(30, $options->namespace->error);
+        self::assertSame([], $logger->records, 'The documented `threshold` shorthand must not trigger a false Unknown option warning');
     }
 
     #[Test]
-    public function itStillWarnsWhenThresholdIsUsedOnInstabilityWhichHasNoFlatShorthandBranch(): void
+    public function itDoesNotWarnAboutTheThresholdShorthandOnInstabilityAndAppliesItToBothLevels(): void
     {
         $logger = new RecordingLogger();
         $factory = new RuleOptionsFactory($this->registry, $logger);
@@ -1340,10 +1341,11 @@ final class RuleOptionsFactoryTest extends TestCase
         /** @var InstabilityOptions $options */
         $options = $factory->create('coupling.instability', InstabilityOptions::class);
 
-        self::assertSame(0.8, $options->class->maxWarning);
-        self::assertSame(0.95, $options->class->maxError);
-        self::assertCount(1, $logger->records);
-        self::assertStringContainsString('Unknown option "threshold" for rule "coupling.instability"', $logger->records[0]['message']);
+        self::assertSame(0.9, $options->class->maxWarning);
+        self::assertSame(0.9, $options->class->maxError);
+        self::assertSame(0.9, $options->namespace->maxWarning);
+        self::assertSame(0.9, $options->namespace->maxError);
+        self::assertSame([], $logger->records, 'The documented `threshold` shorthand must not trigger a false Unknown option warning');
     }
 
     #[Test]

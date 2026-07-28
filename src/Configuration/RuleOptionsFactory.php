@@ -335,11 +335,15 @@ final class RuleOptionsFactory
      * > to reflection. `ShorthandOptionKeysInterface` closes that gap: an
      * > Options class implements it to declare the extra keys its
      * > `fromArray()` actually accepts, and this method merges them into the
-     * > known-keys set. Options classes that don't implement it (e.g.
-     * > `CboOptions`, `InstabilityOptions` — hierarchical options whose
-     * > top-level `fromArray()` has no flat-shorthand branch at all) keep the
-     * > old constructor-only behavior, so `threshold` on `coupling.cbo`
-     * > correctly still warns.
+     * > known-keys set. Options classes that don't implement it (e.g. most
+     * > `CodeSmellOptions`-based rules, which have no threshold concept at
+     * > all beyond `enabled`) keep the old constructor-only behavior, so a
+     * > `threshold` key on one of them correctly still warns. This also
+     * > covers hierarchical rules: `CboOptions`/`InstabilityOptions` DO
+     * > implement it, because their own top-level `fromArray()` also parses
+     * > a bare `threshold` (applied uniformly to every nested level) — only
+     * > a hierarchical wrapper whose top level routes nothing at all would
+     * > stay unimplementing.
      *
      * @param array<string, mixed> $merged
      * @param array<string, mixed> $defaults

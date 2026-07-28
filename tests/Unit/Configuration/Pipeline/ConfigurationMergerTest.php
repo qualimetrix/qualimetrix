@@ -606,4 +606,129 @@ final class ConfigurationMergerTest extends TestCase
 
         self::assertSame(['threshold' => 25, 'warning' => 10], $result['rules']['size.method-count']);
     }
+
+    // -- coupling.cbo / coupling.instability's new top-level (`''`) flat
+    // shorthand — RuleThresholdKeyGroupRegistry now declares an entry for
+    // this level, matching the pattern already proven above for
+    // size.method-count (bare keys) and coupling.distance (prefixed keys).
+
+    #[Test]
+    public function itEvictsBaseGraduatedKeysWhenOverlaySwitchesCouplingCboToTheFlatThreshold(): void
+    {
+        $base = [
+            'rules' => [
+                'coupling.cbo' => ['warning' => 10, 'error' => 20],
+            ],
+        ];
+        $overlay = [
+            'rules' => [
+                'coupling.cbo' => ['threshold' => 30],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(
+            ['threshold' => 30],
+            $result['rules']['coupling.cbo'],
+            'A later layer switching coupling.cbo to `threshold` must evict the earlier layer\'s bare `warning`/`error`',
+        );
+    }
+
+    #[Test]
+    public function itEvictsBaseThresholdWhenOverlaySwitchesCouplingCboToGraduatedKeys(): void
+    {
+        $base = [
+            'rules' => [
+                'coupling.cbo' => ['threshold' => 25],
+            ],
+        ];
+        $overlay = [
+            'rules' => [
+                'coupling.cbo' => ['warning' => 10, 'error' => 20],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(['warning' => 10, 'error' => 20], $result['rules']['coupling.cbo']);
+    }
+
+    #[Test]
+    public function itEvictsBaseGraduatedKeysWhenOverlaySwitchesCouplingInstabilityToTheFlatThreshold(): void
+    {
+        $base = [
+            'rules' => [
+                'coupling.instability' => ['max_warning' => 0.7, 'max_error' => 0.9],
+            ],
+        ];
+        $overlay = [
+            'rules' => [
+                'coupling.instability' => ['threshold' => 0.85],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(
+            ['threshold' => 0.85],
+            $result['rules']['coupling.instability'],
+            'A later layer switching coupling.instability to `threshold` must evict the earlier layer\'s `max_warning`/`max_error`',
+        );
+    }
+
+    #[Test]
+    public function itEvictsBaseThresholdWhenOverlaySwitchesCouplingInstabilityToGraduatedKeys(): void
+    {
+        $base = [
+            'rules' => [
+                'coupling.instability' => ['threshold' => 0.85],
+            ],
+        ];
+        $overlay = [
+            'rules' => [
+                'coupling.instability' => ['max_warning' => 0.7, 'max_error' => 0.9],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(['max_warning' => 0.7, 'max_error' => 0.9], $result['rules']['coupling.instability']);
+    }
+
+    #[Test]
+    public function itLeavesNestedClassAndNamespaceConfigsUntouchedWhenOverlaySetsTheFlatThresholdOnCouplingCbo(): void
+    {
+        // The merger's eviction only ever operates on scalar marker keys at
+        // a matching nesting level — it does not reach into a sibling
+        // `class:`/`namespace:` sub-array (a different nesting level from
+        // the rule's own top level where `threshold` lives). Both survive
+        // the merge unchanged; it is CboOptions::fromArray()'s own
+        // precedence (see CboOptionsTest) that then makes the flat
+        // `threshold` win outright once both reach it together.
+        $base = [
+            'rules' => [
+                'coupling.cbo' => [
+                    'class' => ['warning' => 10, 'error' => 15],
+                    'namespace' => ['warning' => 10, 'error' => 15],
+                ],
+            ],
+        ];
+        $overlay = [
+            'rules' => [
+                'coupling.cbo' => ['threshold' => 30],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(
+            [
+                'class' => ['warning' => 10, 'error' => 15],
+                'namespace' => ['warning' => 10, 'error' => 15],
+                'threshold' => 30,
+            ],
+            $result['rules']['coupling.cbo'],
+        );
+    }
 }
