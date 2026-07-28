@@ -44,11 +44,20 @@ use Qualimetrix\Rules\AbstractRule;
  * - `architecture.coverage` — when {@see ArchitectureConfiguration::coverage()}
  *   is not {@see CoverageMode::Ignore}, one aggregated Violation summarising
  *   edges that touch unclassified classes.
- * - `architecture.unreachable-layer` — info-severity, one Violation per
- *   declared layer that matched zero classes during the run (catches the
- *   loud failure mode where a broader pattern earlier in the order
- *   silently swallowed everything).
- * - `architecture.potential-shadow` — info-severity, one Violation per
+ * - `architecture.unreachable-layer` — severity configurable via
+ *   {@see LayerViolationOptions::$unreachableLayerSeverity} (default
+ *   {@see \Qualimetrix\Core\Violation\Severity::Info}), one Violation per
+ *   declared layer that matched zero classes AND zero dependency-edge ends
+ *   during the run (catches the loud failure mode where a broader pattern
+ *   earlier in the order silently swallowed everything). Counting edge ends
+ *   as well as classes matters for layers that exist only to classify
+ *   out-of-tree code — e.g. a vendor namespace like `ClickHouseDB\**` is
+ *   never itself analysed, so it only ever shows up as a dependency TARGET;
+ *   without that second count it would always read as unreachable even
+ *   while `architecture.layer-violation` reports a real edge into it.
+ * - `architecture.potential-shadow` — severity configurable via
+ *   {@see LayerViolationOptions::$potentialShadowSeverity} (default
+ *   {@see \Qualimetrix\Core\Violation\Severity::Info}), one Violation per
  *   (assigned, shadowed) layer pair seen in practice. Evidence-based:
  *   every class is walked and all matching layers are recorded; classes
  *   matching more than one layer contribute a (first-match, later-match)
@@ -163,7 +172,16 @@ final class LayerViolationRule extends AbstractRule
         [$layerHits, $shadowEvidence] = $this->collectClassEvidence($registry, $context);
 
         // Per-edge violations + coverage state (also local).
-        [$edgeViolations, $coverageState] = $this->collectEdgeViolations($architecture, $context);
+        [$edgeViolations, $coverageState, $edgeLayerHits] = $this->collectEdgeViolations($architecture, $context);
+
+        // A layer matched only as one end of a dependency edge (e.g. a vendor
+        // namespace outside `paths:`, never a class in the analysed set) is
+        // still "reached" — merge edge-side hits into the class-side hit map
+        // so `architecture.unreachable-layer` doesn't contradict
+        // `architecture.layer-violation` about the very same layer.
+        foreach ($edgeLayerHits as $layerName => $count) {
+            $layerHits[$layerName] = ($layerHits[$layerName] ?? 0) + $count;
+        }
 
         // O(1) name → definition lookup for diagnostic builders that need pattern lists.
         $definitionsByName = [];
@@ -176,13 +194,13 @@ final class LayerViolationRule extends AbstractRule
             ...$this->buildCoverageDiagnosticAsList($architecture->coverage(), $coverageState),
             ...$this->buildUnreachableLayerDiagnostics($registry, $layerHits, $definitionsByName),
             ...$this->buildPotentialShadowDiagnostics($shadowEvidence),
-            ...self::buildEmptyTemplateDiagnostics($architecture->emptyTemplateNames()),
+            ...$this->buildEmptyTemplateDiagnostics($architecture->emptyTemplateNames()),
         ];
     }
 
     /**
-     * Emits one warning diagnostic per template name that produced zero
-     * concrete layers during expansion (Phase 2 direction 2).
+     * Emits one diagnostic per template name that produced zero concrete
+     * layers during expansion (Phase 2 direction 2).
      *
      * The list is populated by
      * {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage} and
@@ -190,20 +208,24 @@ final class LayerViolationRule extends AbstractRule
      * {@see ArchitectureProcessorInterface::getPreparedConfiguration()} on
      * the configuration returned to the rule.
      *
-     * Severity is {@see Severity::Warning} rather than {@see Severity::Info}
-     * because an empty template is usually a typo, missing dependency in the
-     * scanned paths, or recent refactor that removed the matching classes —
-     * all conditions a user wants to be loud.
+     * Severity defaults to {@see Severity::Warning} rather than
+     * {@see Severity::Info} because an empty template is usually a typo,
+     * missing dependency in the scanned paths, or recent refactor that
+     * removed the matching classes — all conditions a user wants to be
+     * loud about. Configurable via
+     * {@see LayerViolationOptions::$emptyTemplateSeverity}.
      *
      * @param list<string> $emptyTemplateNames
      *
      * @return list<Violation>
      */
-    private static function buildEmptyTemplateDiagnostics(array $emptyTemplateNames): array
+    private function buildEmptyTemplateDiagnostics(array $emptyTemplateNames): array
     {
         if ($emptyTemplateNames === []) {
             return [];
         }
+
+        \assert($this->options instanceof LayerViolationOptions);
 
         $diagnostics = [];
         foreach ($emptyTemplateNames as $template) {
@@ -221,7 +243,7 @@ final class LayerViolationRule extends AbstractRule
                     . 'multiple namespace segments — try `{var:**}` for cross-segment captures.',
                     $template,
                 ),
-                severity: Severity::Warning,
+                severity: $this->options->emptyTemplateSeverity,
                 recommendation: 'Verify the template patterns against the project structure, or remove the '
                     . 'template if no longer relevant.',
             );
@@ -289,11 +311,23 @@ final class LayerViolationRule extends AbstractRule
 
     /**
      * Walks the dependency graph and produces per-edge layer violations.
-     * Returns the violation list and the coverage-state struct used by
+     * Returns the violation list, the coverage-state struct used by
      * `architecture.coverage` (counts of unmatched ends + the set of
-     * unclassified class FQNs).
+     * unclassified class FQNs), and a layer-hit map keyed by every layer
+     * matched at either end of an edge.
      *
-     * @return array{0: list<Violation>, 1: array{sourceEdges: int, targetEdges: int, classes: array<string, string>}}
+     * The hit map exists because {@see collectClassEvidence()} only walks
+     * `metrics->all(SymbolType::Class_)` — classes in the analysed path set.
+     * A layer that matches exclusively outside that set (e.g. a vendor
+     * namespace such as `ClickHouseDB\**`, reachable only as a dependency
+     * TARGET) would otherwise always show zero hits and be reported
+     * `architecture.unreachable-layer` even while `architecture.layer-violation`
+     * reports a real edge into it — a self-contradictory diagnostic pair.
+     * Merging edge-side hits into the class-side count in {@see analyze()}
+     * fixes that without weakening unreachable-layer's typo-detection case:
+     * a layer matching neither a class nor an edge end still gets zero hits.
+     *
+     * @return array{0: list<Violation>, 1: array{sourceEdges: int, targetEdges: int, classes: array<string, string>}, 2: array<string, int>}
      */
     private function collectEdgeViolations(ArchitectureConfiguration $architecture, AnalysisContext $context): array
     {
@@ -301,10 +335,11 @@ final class LayerViolationRule extends AbstractRule
         $sourceEdges = 0;
         $targetEdges = 0;
         $classes = [];
+        $edgeLayerHits = [];
 
         $graph = $context->dependencyGraph;
         if ($graph === null) {
-            return [$violations, ['sourceEdges' => 0, 'targetEdges' => 0, 'classes' => []]];
+            return [$violations, ['sourceEdges' => 0, 'targetEdges' => 0, 'classes' => []], $edgeLayerHits];
         }
 
         $registry = $architecture->registry();
@@ -318,11 +353,15 @@ final class LayerViolationRule extends AbstractRule
             if ($fromMatch === null) {
                 $sourceEdges++;
                 $classes[$dependency->source->toCanonical()] = $dependency->source->toString();
+            } else {
+                $edgeLayerHits[$fromMatch->layerName] = ($edgeLayerHits[$fromMatch->layerName] ?? 0) + 1;
             }
 
             if ($toMatch === null) {
                 $targetEdges++;
                 $classes[$dependency->target->toCanonical()] = $dependency->target->toString();
+            } else {
+                $edgeLayerHits[$toMatch->layerName] = ($edgeLayerHits[$toMatch->layerName] ?? 0) + 1;
             }
 
             $violation = $this->buildViolation($dependency, $fromMatch, $toMatch, $architecture);
@@ -331,7 +370,11 @@ final class LayerViolationRule extends AbstractRule
             }
         }
 
-        return [$violations, ['sourceEdges' => $sourceEdges, 'targetEdges' => $targetEdges, 'classes' => $classes]];
+        return [
+            $violations,
+            ['sourceEdges' => $sourceEdges, 'targetEdges' => $targetEdges, 'classes' => $classes],
+            $edgeLayerHits,
+        ];
     }
 
     /**
@@ -528,6 +571,16 @@ final class LayerViolationRule extends AbstractRule
      * Builds the coverage diagnostic Violation when {@see CoverageMode} is not
      * {@see CoverageMode::Ignore} and at least one out-of-layer end was seen.
      *
+     * Severity mirrors the mode name exactly (`warn` → {@see Severity::Warning},
+     * `error` → {@see Severity::Error}) — an exhaustive `match` over the two
+     * cases remaining after the {@see CoverageMode::Ignore} guard above,
+     * rather than a ternary, so a future {@see CoverageMode} case that isn't
+     * also added here fails PHPStan's exhaustiveness check instead of
+     * silently falling back to a stale default (fixed: `warn` used to report
+     * `Severity::Info`, so `fail_on: warning` never caught it — the exact
+     * silent-severity-mismatch class of bug this rule now guards against for
+     * its own sibling diagnostics too).
+     *
      * @param list<string> $unmatchedClasses Deduplicated class display-name FQNs seen at out-of-layer ends.
      */
     private function buildCoverageDiagnostic(
@@ -545,7 +598,16 @@ final class LayerViolationRule extends AbstractRule
             return null;
         }
 
-        $severity = $mode === CoverageMode::Error ? Severity::Error : Severity::Info;
+        // Exhaustive over the two remaining cases (Ignore already returned
+        // above) rather than a ternary, so a future CoverageMode case that
+        // is not also added here fails PHPStan's match.unhandled check
+        // instead of silently falling back to a stale default — the exact
+        // silent-severity-mismatch bug class this method used to have
+        // (`warn` previously mapped to `Severity::Info`).
+        $severity = match ($mode) {
+            CoverageMode::Warn => Severity::Warning,
+            CoverageMode::Error => Severity::Error,
+        };
 
         sort($unmatchedClasses);
         $sample = \array_slice($unmatchedClasses, 0, self::COVERAGE_SAMPLE_LIMIT);
@@ -579,11 +641,16 @@ final class LayerViolationRule extends AbstractRule
     }
 
     /**
-     * Emits one info diagnostic per declared layer whose patterns matched
-     * zero classes during analysis.
+     * Emits one diagnostic (default severity {@see Severity::Info},
+     * configurable via {@see LayerViolationOptions::$unreachableLayerSeverity})
+     * per declared layer whose patterns matched zero classes AND zero
+     * dependency-edge ends during analysis.
      *
-     * @param array<string, int> $layerHits Local map (NOT a field) of
-     *                                      layerName → number of classes assigned.
+     * @param array<string, int> $layerHits Local map (NOT a field) of layerName → hit count,
+     *                                      merged in {@see analyze()} from both the per-class
+     *                                      walk ({@see collectClassEvidence()}) and the
+     *                                      per-edge walk ({@see collectEdgeViolations()}) —
+     *                                      see the latter's docblock for why edge ends count.
      * @param array<string, LayerDefinition> $definitionsByName Precomputed name → definition lookup
      *                                                          for O(1) pattern access.
      *
@@ -591,6 +658,8 @@ final class LayerViolationRule extends AbstractRule
      */
     private function buildUnreachableLayerDiagnostics(LayerRegistry $registry, array $layerHits, array $definitionsByName): array
     {
+        \assert($this->options instanceof LayerViolationOptions);
+
         $violations = [];
 
         foreach ($registry->layerNames() as $layerName) {
@@ -612,7 +681,7 @@ final class LayerViolationRule extends AbstractRule
                 ruleName: self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
                 violationCode: self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
                 message: $message,
-                severity: Severity::Info,
+                severity: $this->options->unreachableLayerSeverity,
                 recommendation: 'Move the layer above any broader layer that captures its classes, or remove the layer if its pattern intentionally covers no class.',
             );
         }
@@ -621,8 +690,10 @@ final class LayerViolationRule extends AbstractRule
     }
 
     /**
-     * Emits one info diagnostic per (assigned, shadowed) layer pair observed
-     * during the class iteration.
+     * Emits one diagnostic (default severity {@see Severity::Info},
+     * configurable via {@see LayerViolationOptions::$potentialShadowSeverity})
+     * per (assigned, shadowed) layer pair observed during the class
+     * iteration.
      *
      * Determinism: `metrics->all()` iteration order is not stable under
      * parallel collection. The per-pair sample is sorted lexicographically by
@@ -639,6 +710,8 @@ final class LayerViolationRule extends AbstractRule
      */
     private function buildPotentialShadowDiagnostics(array $shadowEvidence): array
     {
+        \assert($this->options instanceof LayerViolationOptions);
+
         $pairs = [];
         foreach ($shadowEvidence as $assigned => $shadowedMap) {
             foreach ($shadowedMap as $shadowed => $entries) {
@@ -698,7 +771,7 @@ final class LayerViolationRule extends AbstractRule
                 ruleName: self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
                 violationCode: self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
                 message: $message,
-                severity: Severity::Info,
+                severity: $this->options->potentialShadowSeverity,
                 recommendation: \sprintf(
                     'If layer "%s" should own these classes, declare it BEFORE "%s" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.',
                     $shadowedLayer,

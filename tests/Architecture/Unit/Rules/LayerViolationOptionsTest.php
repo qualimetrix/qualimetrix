@@ -21,6 +21,9 @@ final class LayerViolationOptionsTest extends TestCase
 
         self::assertTrue($options->isEnabled());
         self::assertSame(Severity::Warning, $options->severity);
+        self::assertSame(Severity::Info, $options->unreachableLayerSeverity);
+        self::assertSame(Severity::Info, $options->potentialShadowSeverity);
+        self::assertSame(Severity::Warning, $options->emptyTemplateSeverity);
     }
 
     #[Test]
@@ -30,6 +33,9 @@ final class LayerViolationOptionsTest extends TestCase
 
         self::assertTrue($options->isEnabled());
         self::assertSame(Severity::Warning, $options->severity);
+        self::assertSame(Severity::Info, $options->unreachableLayerSeverity);
+        self::assertSame(Severity::Info, $options->potentialShadowSeverity);
+        self::assertSame(Severity::Warning, $options->emptyTemplateSeverity);
     }
 
     #[Test]
@@ -80,6 +86,68 @@ final class LayerViolationOptionsTest extends TestCase
         $this->expectExceptionMessage('severity');
 
         LayerViolationOptions::fromArray(['severity' => 42]);
+    }
+
+    #[Test]
+    public function itParsesUnreachableLayerSeverityFromASnakeCaseKey(): void
+    {
+        $options = LayerViolationOptions::fromArray(['unreachable_layer_severity' => 'error']);
+
+        self::assertSame(Severity::Error, $options->unreachableLayerSeverity);
+        // Sibling severities stay at their own defaults — knobs are independent.
+        self::assertSame(Severity::Info, $options->potentialShadowSeverity);
+        self::assertSame(Severity::Warning, $options->emptyTemplateSeverity);
+    }
+
+    #[Test]
+    public function itParsesUnreachableLayerSeverityFromACamelCaseKey(): void
+    {
+        $options = LayerViolationOptions::fromArray(['unreachableLayerSeverity' => 'error']);
+
+        self::assertSame(Severity::Error, $options->unreachableLayerSeverity);
+    }
+
+    #[Test]
+    public function itRejectsAnUnknownUnreachableLayerSeverity(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('unreachable_layer_severity');
+
+        LayerViolationOptions::fromArray(['unreachable_layer_severity' => 'bogus']);
+    }
+
+    #[Test]
+    public function itParsesPotentialShadowSeverityFromASnakeCaseKey(): void
+    {
+        $options = LayerViolationOptions::fromArray(['potential_shadow_severity' => 'error']);
+
+        self::assertSame(Severity::Error, $options->potentialShadowSeverity);
+    }
+
+    #[Test]
+    public function itRejectsAnUnknownPotentialShadowSeverity(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('potential_shadow_severity');
+
+        LayerViolationOptions::fromArray(['potential_shadow_severity' => 'bogus']);
+    }
+
+    #[Test]
+    public function itParsesEmptyTemplateSeverityFromASnakeCaseKey(): void
+    {
+        $options = LayerViolationOptions::fromArray(['empty_template_severity' => 'info']);
+
+        self::assertSame(Severity::Info, $options->emptyTemplateSeverity);
+    }
+
+    #[Test]
+    public function itRejectsAnUnknownEmptyTemplateSeverity(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('empty_template_severity');
+
+        LayerViolationOptions::fromArray(['empty_template_severity' => 'bogus']);
     }
 
     #[Test]

@@ -424,6 +424,100 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
+    public function itDoesNotReportUnreachableForALayerMatchedOnlyAsADependencyTarget(): void
+    {
+        // Regression: a layer that matches only as the TARGET of a dependency
+        // edge — never as a class in the analysed set, e.g. a vendor
+        // namespace outside `paths:` such as `ClickHouseDB\**` — must still
+        // count as "reached". Before the fix, hit counting only walked
+        // `metrics->all(Class_)`, so a vendor-only layer always landed at
+        // zero hits and fired `unreachable-layer` in the very same run that
+        // `layer-violation` reported an edge INTO it — a self-contradictory
+        // pair of diagnostics.
+        $rule = $this->buildRule(new LayerViolationOptions());
+
+        $arch = $this->buildArchitecture(
+            layers: [
+                'infrastructure' => ['App\\Infrastructure\\**'],
+                'vendor-clickhouse' => ['ClickHouseDB\\**'],
+                'typo-layer' => ['App\\DoesNotExist\\**'],
+            ],
+            allow: ['infrastructure' => []],
+        );
+
+        $repo = new InMemoryMetricRepository();
+        $this->registerClass($repo, 'App\\Infrastructure\\Health', 'ClickHouseCheck');
+        // ClickHouseDB\Client is intentionally NOT registered — it lives
+        // outside the analysed path set and is only observable via the
+        // dependency edge target, exactly like real vendor code.
+
+        $graph = $this->buildGraph([
+            $this->buildDependency(
+                'App\\Infrastructure\\Health',
+                'ClickHouseCheck',
+                'ClickHouseDB',
+                'Client',
+                DependencyType::TypeHint,
+            ),
+        ]);
+
+        $violations = $rule->analyze($this->buildContext($graph, $arch, $repo));
+
+        $layerViolations = $this->filterByRule($violations, LayerViolationRule::NAME);
+        self::assertCount(1, $layerViolations, 'layer-violation must still fire for the disallowed edge.');
+        self::assertStringContainsString(
+            'Layer "infrastructure" must not depend on layer "vendor-clickhouse"',
+            $layerViolations[0]->message,
+        );
+
+        $unreachableLayerNames = array_map(
+            static fn(\Qualimetrix\Core\Violation\Violation $v): string => self::extractLayerName($v->message),
+            $this->filterByRule($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME),
+        );
+
+        self::assertNotContains(
+            'vendor-clickhouse',
+            $unreachableLayerNames,
+            'vendor-clickhouse matched as a dependency target and must not be reported unreachable.',
+        );
+        // Sanity: a layer that matches nothing at all — neither a class nor
+        // a dependency edge end — must still be reported (typo detection
+        // must keep working).
+        self::assertContains('typo-layer', $unreachableLayerNames);
+    }
+
+    private static function extractLayerName(string $message): string
+    {
+        preg_match('/Layer "([^"]+)"/', $message, $matches);
+
+        return $matches[1] ?? '';
+    }
+
+    #[Test]
+    public function itAllowsConfiguringUnreachableLayerSeverity(): void
+    {
+        // A typo in `patterns:` (e.g. `App\Controler\**`) silently disables a
+        // layer with no CLI-visible signal beyond the default Info severity.
+        // Raising unreachableLayerSeverity to Error is exactly the escape
+        // hatch this option exists for.
+        $rule = $this->buildRule(new LayerViolationOptions(unreachableLayerSeverity: Severity::Error));
+
+        $arch = $this->buildArchitecture(
+            layers: ['controller' => ['App\\Controller\\**']],
+            allow: [],
+        );
+
+        $repo = new InMemoryMetricRepository();
+        $this->registerClass($repo, 'App\\Service', 'UserService');
+
+        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+
+        $unreachable = $this->filterByRule($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
+        self::assertCount(1, $unreachable);
+        self::assertSame(Severity::Error, $unreachable[0]->severity);
+    }
+
+    #[Test]
     public function unreachableLayer_doesNotFireForDtoOnlyLayer(): void
     {
         // The DTO layer's classes exist but have NO outgoing dependencies.
@@ -478,6 +572,29 @@ final class LayerViolationRuleTest extends TestCase
         self::assertStringContainsString('"any-foo"', $shadow[0]->message);
         self::assertStringContainsString('"service"', $shadow[0]->message);
         self::assertStringContainsString('App\\Service\\Foo', $shadow[0]->message);
+    }
+
+    #[Test]
+    public function itAllowsConfiguringPotentialShadowSeverity(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions(potentialShadowSeverity: Severity::Error));
+
+        $arch = $this->buildArchitecture(
+            layers: [
+                'any-foo' => ['App\\**\\Foo'],
+                'service' => ['App\\Service\\**'],
+            ],
+            allow: [],
+        );
+
+        $repo = new InMemoryMetricRepository();
+        $this->registerClass($repo, 'App\\Service', 'Foo');
+
+        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+
+        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
+        self::assertCount(1, $shadow);
+        self::assertSame(Severity::Error, $shadow[0]->severity);
     }
 
     #[Test]
@@ -658,6 +775,39 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // architecture.empty-template diagnostic
+    // -------------------------------------------------------------------------
+
+    #[Test]
+    public function itDefaultsEmptyTemplateSeverityToWarning(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions());
+
+        $arch = $this->buildArchitectureWithEmptyTemplates(['domain-{module}']);
+
+        $violations = $rule->analyze($this->buildContext(null, $arch));
+
+        $emptyTemplate = $this->filterByRule($violations, LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        self::assertCount(1, $emptyTemplate);
+        self::assertSame(Severity::Warning, $emptyTemplate[0]->severity);
+        self::assertStringContainsString('domain-{module}', $emptyTemplate[0]->message);
+    }
+
+    #[Test]
+    public function itAllowsConfiguringEmptyTemplateSeverity(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions(emptyTemplateSeverity: Severity::Error));
+
+        $arch = $this->buildArchitectureWithEmptyTemplates(['domain-{module}']);
+
+        $violations = $rule->analyze($this->buildContext(null, $arch));
+
+        $emptyTemplate = $this->filterByRule($violations, LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
+        self::assertCount(1, $emptyTemplate);
+        self::assertSame(Severity::Error, $emptyTemplate[0]->severity);
+    }
+
+    // -------------------------------------------------------------------------
     // Statelessness regression — CLAUDE.md mandates stateless rules.
     // -------------------------------------------------------------------------
 
@@ -709,6 +859,30 @@ final class LayerViolationRuleTest extends TestCase
             new LayerRegistry($definitions),
             AllowListBuilder::policyFromExactMap($allow),
             CoverageMode::Ignore,
+        );
+    }
+
+    /**
+     * Builds an {@see ArchitectureConfiguration} carrying one unrelated
+     * static layer (so {@see ArchitectureConfiguration::isEmpty()} stays
+     * false and `analyze()` does not short-circuit before reaching the
+     * empty-template diagnostic builder) plus the given empty-template
+     * names, mirroring what
+     * {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage} would
+     * populate for templates that expanded to zero concrete layers. Used to
+     * unit-test {@code architecture.empty-template} without going through
+     * the full expansion pipeline (that path is covered by
+     * `LayerTemplateExpansionIntegrationTest`).
+     *
+     * @param list<string> $emptyTemplateNames
+     */
+    private function buildArchitectureWithEmptyTemplates(array $emptyTemplateNames): ArchitectureConfiguration
+    {
+        return new ArchitectureConfiguration(
+            new LayerRegistry([new LayerDefinition('unrelated', new MembershipSpec(['App\\Unrelated\\**']))]),
+            AllowListBuilder::policyFromExactMap([]),
+            CoverageMode::Ignore,
+            emptyTemplateNames: $emptyTemplateNames,
         );
     }
 

@@ -161,11 +161,28 @@ The slice's user-facing consumers.
   constructor-injected `ArchitectureProcessorInterface` (ADR 0008), reads its
   registry already bound to the run's dependency graph, then walks all
   dependency edges. Emits four violation kinds: `architecture.layer-violation`,
-  `architecture.coverage` (when `coverage != ignore`),
-  `architecture.unreachable-layer` (info), `architecture.potential-shadow`
-  (info), and `architecture.empty-template` (warning).
-- `LayerViolationOptions` — the rule's Options DTO (severity, max-violations
-  reporting controls). All layer/policy configuration lives in
+  `architecture.coverage` (when `coverage != ignore`; severity is `warning`
+  for `coverage: warn` and `error` for `coverage: error` — the mode name and
+  the emitted severity now match exactly),
+  `architecture.unreachable-layer` (default severity `info` — fires only when
+  a layer matched zero classes AND zero dependency-edge ends, so a layer that
+  exists purely to classify out-of-tree code, e.g. a vendor namespace like
+  `ClickHouseDB\**`, still counts as reached once an edge targets it),
+  `architecture.potential-shadow` (default severity `info`), and
+  `architecture.empty-template` (default severity `warning`). The three
+  sub-diagnostic severities are configurable per-project (see
+  `LayerViolationOptions` below) — e.g. raising `unreachable-layer` to `error`
+  makes a `patterns:` typo that silently swallows a layer visible to CI
+  without also raising every other info-level diagnostic via `fail_on: info`.
+- `LayerViolationOptions` — the rule's Options DTO: `enabled`, `severity`
+  (for `architecture.layer-violation`), and three independent severity knobs
+  for the sub-diagnostics — `unreachableLayerSeverity`, `potentialShadowSeverity`,
+  `emptyTemplateSeverity` (YAML keys: `unreachable_layer_severity`,
+  `potential_shadow_severity`, `empty_template_severity`, matching the
+  snake_case convention used by every other multi-word rule option in
+  `rules:`, e.g. `max_cycle_size` on `CircularDependencyOptions`). Defaults
+  reproduce the rule's historical hardcoded severities, so existing configs
+  are unaffected. All layer/policy configuration lives in
   `ArchitectureConfiguration`, not in this Options.
 - `CircularDependencyRule` — detects directed cycles in the class-level
   dependency graph using Johnson's algorithm.

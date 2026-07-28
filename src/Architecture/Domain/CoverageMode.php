@@ -11,7 +11,7 @@ use InvalidArgumentException;
  * not belong to any declared architecture layer.
  *
  * - {@see CoverageMode::Ignore} (default): out-of-layer edges are silently skipped.
- * - {@see CoverageMode::Warn}: produce an informational diagnostic per analysis run.
+ * - {@see CoverageMode::Warn}: produce a warning-severity diagnostic per analysis run.
  * - {@see CoverageMode::Error}: produce an error-severity diagnostic per analysis run.
  *
  * The enum carries the user-facing string representation as its case value so that

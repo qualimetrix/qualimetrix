@@ -111,7 +111,7 @@ final class LayerViolationIntegrationTest extends TestCase
         self::assertCount(1, $diagnostics, 'Exactly one coverage diagnostic expected in warn mode.');
 
         $diagnostic = $diagnostics[0];
-        self::assertSame(Severity::Info, $diagnostic->severity);
+        self::assertSame(Severity::Warning, $diagnostic->severity);
         self::assertStringContainsString('Architecture coverage:', $diagnostic->message);
     }
 

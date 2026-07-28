@@ -68,7 +68,7 @@ final class CoverageDiagnosticsTest extends TestCase
     }
 
     #[Test]
-    public function warnModeEmitsSingleDiagnosticWithInfoSeverity(): void
+    public function warnModeEmitsSingleDiagnosticWithWarningSeverity(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -95,7 +95,7 @@ final class CoverageDiagnosticsTest extends TestCase
         $diagnostic = $diagnostics[0];
         self::assertSame('architecture.coverage', $diagnostic->ruleName);
         self::assertSame('architecture.coverage', $diagnostic->violationCode);
-        self::assertSame(Severity::Info, $diagnostic->severity);
+        self::assertSame(Severity::Warning, $diagnostic->severity);
         self::assertStringContainsString('Architecture coverage:', $diagnostic->message);
         self::assertStringContainsString('2 edge(s) with unmatched source layer', $diagnostic->message);
         self::assertStringContainsString('2 edge(s) with unmatched target layer', $diagnostic->message);
