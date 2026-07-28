@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
 use Qualimetrix\Baseline\ViolationHasher;
@@ -543,6 +544,40 @@ final class ViolationFilterPipelineTest extends TestCase
         self::assertSame(0, $result->namespaceExclusionFiltered);
     }
 
+    #[Test]
+    public function itKeepsArchitectureRuleViolationsInExcludedNamespaces(): void
+    {
+        $architectureViolation = $this->makeViolation(
+            'src/Foo/Service.php',
+            'App\\Foo',
+            'Service',
+            LayerViolationRule::NAME,
+        );
+        $ordinaryViolation = $this->makeViolation(
+            'src/Foo/Other.php',
+            'App\\Foo',
+            'Other',
+            'complexity.cyclomatic',
+        );
+
+        $pipeline = $this->createPipelineWithExcludedNamespaces(['App\\Foo']);
+
+        $options = new ViolationFilterOptions(
+            baselinePath: null,
+            ignoreStaleBaseline: false,
+            disableSuppression: true,
+            excludePaths: [],
+            excludeNamespaces: [],
+            gitScope: null,
+        );
+
+        $result = $pipeline->filter([$architectureViolation, $ordinaryViolation], $options);
+
+        self::assertCount(1, $result->violations);
+        self::assertSame(LayerViolationRule::NAME, $result->violations[0]->ruleName);
+        self::assertSame(1, $result->namespaceExclusionFiltered);
+    }
+
     // -- Git scope filter (step 5) --
 
     #[Test]
@@ -569,13 +604,17 @@ final class ViolationFilterPipelineTest extends TestCase
 
     // -- Helper methods --
 
-    private function makeViolation(string $file, string $namespace = 'App', string $class = 'TestClass'): Violation
-    {
+    private function makeViolation(
+        string $file,
+        string $namespace = 'App',
+        string $class = 'TestClass',
+        string $ruleName = 'complexity.cyclomatic',
+    ): Violation {
         return new Violation(
             location: new Location(RelativePath::fromString($file), 10),
             symbolPath: SymbolPath::forClass($namespace, $class),
-            ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            ruleName: $ruleName,
+            violationCode: $ruleName . '.method',
             message: 'CCN too high',
             severity: Severity::Error,
         );
@@ -586,6 +625,23 @@ final class ViolationFilterPipelineTest extends TestCase
         $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')
             ->willReturn(new AnalysisConfiguration());
+
+        return new ViolationFilterPipeline(
+            new BaselineLoader(),
+            new ViolationHasher(),
+            new SuppressionFilter(),
+            $configProvider,
+        );
+    }
+
+    /**
+     * @param list<string> $excludeNamespaces
+     */
+    private function createPipelineWithExcludedNamespaces(array $excludeNamespaces): ViolationFilterPipeline
+    {
+        $config = new AnalysisConfiguration(excludeNamespaces: $excludeNamespaces);
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
+        $configProvider->method('getConfiguration')->willReturn($config);
 
         return new ViolationFilterPipeline(
             new BaselineLoader(),

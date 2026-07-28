@@ -7,6 +7,8 @@ namespace Qualimetrix\Tests\Unit\Core\Violation\Filter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Rules\CircularDependencyRule;
+use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Util\PathMatcher;
@@ -26,6 +28,59 @@ final class PathExclusionFilterTest extends TestCase
         $violation = $this->createViolation('src/Entity/User.php');
 
         self::assertFalse($filter->shouldInclude($violation), 'Violation matching exclusion prefix should be suppressed');
+    }
+
+    #[Test]
+    public function itKeepsLayerViolationRuleInExcludedPath(): void
+    {
+        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']));
+
+        $violation = $this->createViolation('src/Entity/User.php', LayerViolationRule::NAME);
+
+        self::assertTrue($filter->shouldInclude($violation), 'architecture.* rules must not be silenced by exclude_paths');
+    }
+
+    #[Test]
+    public function itKeepsCircularDependencyRuleInExcludedPath(): void
+    {
+        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']));
+
+        $violation = $this->createViolation('src/Entity/User.php', CircularDependencyRule::NAME);
+
+        self::assertTrue($filter->shouldInclude($violation), 'architecture.* rules must not be silenced by exclude_paths');
+    }
+
+    #[Test]
+    public function itKeepsArchitectureProjectWideDiagnosticsRegardlessOfPathMatcher(): void
+    {
+        // architecture.unreachable-layer / .potential-shadow / .coverage / .empty-template
+        // are project-level diagnostics with no file (Location::none()) — already passed
+        // through by the `$file === null` branch. Verify the new architecture-exemption
+        // check does not change that behavior.
+        $filter = new PathExclusionFilter(new PathMatcher(['src']));
+
+        foreach (
+            [
+                LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
+                LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+                LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME,
+                LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+            ] as $ruleName
+        ) {
+            $violation = new Violation(
+                location: Location::none(),
+                symbolPath: SymbolPath::forNamespace(''),
+                ruleName: $ruleName,
+                violationCode: $ruleName,
+                message: 'Test',
+                severity: Severity::Warning,
+            );
+
+            self::assertTrue(
+                $filter->shouldInclude($violation),
+                \sprintf('%s must remain a no-op for file-less architecture diagnostics', $ruleName),
+            );
+        }
     }
 
     #[Test]
@@ -75,13 +130,13 @@ final class PathExclusionFilterTest extends TestCase
         self::assertTrue($filter->shouldInclude($violation), 'Empty PathMatcher should not filter any violations');
     }
 
-    private function createViolation(string $file): Violation
+    private function createViolation(string $file, string $ruleName = 'test.rule'): Violation
     {
         return new Violation(
             location: new Location(RelativePath::fromString($file), 10),
             symbolPath: SymbolPath::forClass('App\\Entity', 'User'),
-            ruleName: 'test.rule',
-            violationCode: 'test.rule',
+            ruleName: $ruleName,
+            violationCode: $ruleName,
             message: 'Test',
             severity: Severity::Warning,
             metricValue: 5,

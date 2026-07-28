@@ -12,6 +12,7 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 use Qualimetrix\Core\Util\PathMatcher;
+use Qualimetrix\Core\Violation\Filter\NamespaceExclusionFilter;
 use Qualimetrix\Core\Violation\Filter\PathExclusionFilter;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\Git\GitScopeFilter;
@@ -120,17 +121,19 @@ final readonly class ViolationFilterPipeline
             $pathExclusionFiltered = $beforeCount - \count($violations);
         }
 
-        // 4. Namespace exclusion filter
+        // 4. Namespace exclusion filter (architecture.* rules are exempt — see NamespaceExclusionFilter)
         $namespaceExclusionFiltered = 0;
         $configNamespaces = $this->configurationProvider->getConfiguration()->excludeNamespaces;
         $allNamespaces = array_values(array_unique([...$configNamespaces, ...$options->excludeNamespaces]));
         $namespaceMatcher = new NamespaceMatcher($allNamespaces);
 
         if (!$namespaceMatcher->isEmpty()) {
+            $filter = new NamespaceExclusionFilter($namespaceMatcher);
+
             $beforeCount = \count($violations);
             $violations = array_values(array_filter(
                 $violations,
-                static fn(Violation $v): bool => !$namespaceMatcher->matches($v->symbolPath->namespace ?? ''),
+                fn(Violation $v) => $filter->shouldInclude($v),
             ));
             $namespaceExclusionFiltered = $beforeCount - \count($violations);
         }
