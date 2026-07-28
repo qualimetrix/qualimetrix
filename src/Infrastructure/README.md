@@ -97,11 +97,11 @@ Infrastructure/
     ├── CliOptionsParser.php
     ├── OutputHelper.php               # Helper for large text output (line-by-line flush)
     ├── ViolationFilterPipeline.php    # Violation filtering orchestration
-    ├── ViolationFilterOrchestrator.php # Orchestrates violation filtering, baseline checks, and CLI output
+    ├── ViolationFilterOrchestrator.php # Orchestrates violation filtering, baseline checks, and CLI output — also reports per-rule exclude_namespaces/exclude_paths suppression (via injected RuleExecutorInterface, Analysis\RuleExecution\RuleExclusionStats) for -v / --show-suppressed
     ├── ViolationFilterOptions.php     # Filter options VO
     ├── ViolationFilterResult.php      # Filter result VO
     ├── GitScopeFilterConfig.php       # Git scope filter config VO
-    ├── RuntimeConfigurator.php        # Runtime DI configuration
+    ├── RuntimeConfigurator.php        # Runtime DI configuration; also sets Core\Violation\RuleExclusionCaptureHolder from --show-suppressed
     ├── ResultPresenter.php            # Output presentation
     ├── BaselinePresenter.php          # Baseline file generation presentation
     ├── ExitCodeResolver.php           # Determines CLI exit code from violations

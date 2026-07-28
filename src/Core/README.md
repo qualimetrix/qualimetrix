@@ -42,6 +42,7 @@ Core/
 │   ├── ThresholdAwareOptionsInterface.php # Options that support @qmx-threshold overrides
 │   ├── RuleLevel.php                      # Rule level enum
 │   ├── RuleOptionKey.php                  # Common option key constants (enabled, warning, error, threshold)
+│   ├── ShorthandOptionKeysInterface.php   # Options that accept a bare-value shorthand (e.g. `threshold: 10`)
 │   ├── RuleMatcher.php                    # Prefix matching utility
 │   ├── RuleNameReader.php                 # Reads the NAME constant (reflection, no instantiation)
 │   ├── CliAliasReader.php                 # Reads #[CliAlias] attributes (reflection, no instantiation)
@@ -71,9 +72,11 @@ Core/
 │   ├── Violation.php
 │   ├── Severity.php
 │   ├── Location.php
+│   ├── RuleExclusionCaptureHolder.php     # Static holder: whether RuleExecutor retains suppressed Violation objects
 │   └── Filter/
 │       ├── ViolationFilterInterface.php
-│       └── PathExclusionFilter.php        # Filters by file path patterns
+│       ├── PathExclusionFilter.php        # Filters by file path patterns; exempts architecture.* rules
+│       └── NamespaceExclusionFilter.php   # Filters by namespace patterns; exempts architecture.* rules
 ├── Progress/
 │   ├── ProgressReporter.php               # Progress reporting interface
 │   └── NullProgressReporter.php           # No-op implementation
@@ -459,6 +462,11 @@ Utility for prefix matching of rule names and violation codes.
 | `Architecture`    | Circular Dependencies                  |
 | `CodeSmell`       | Boolean Arguments, Debug Code, etc.    |
 
+**Methods:**
+- `matches(string $ruleName): bool` — whether a rule's `NAME` slug (`group.rule-name`) belongs to this
+  category. Single point of truth used by both `PathExclusionFilter` and `NamespaceExclusionFilter` to
+  exempt `architecture.*` violations from global exclusion patterns.
+
 ---
 
 ## Violation Value Objects
@@ -543,9 +551,24 @@ Foundation for baseline and suppression.
 
 ### PathExclusionFilter
 
-Suppresses violations whose file path matches configured exclusion patterns. Violations without a file (e.g., namespace-level or architectural) are never filtered.
+Suppresses violations whose file path matches configured exclusion patterns (the global `exclude_paths` / `--exclude-path` mechanism). Violations without a file (e.g., namespace-level or project-wide architectural diagnostics) are never filtered. `architecture.*` rule violations are always exempt for the same reason as `NamespaceExclusionFilter` below — the exemption is name-based (`RuleCategory::Architecture->matches()`), not a hardcoded string.
 
 **Constructor:** `__construct(PathMatcher $pathMatcher)`
+
+### NamespaceExclusionFilter
+
+Suppresses violations whose symbol namespace matches configured exclusion patterns (the global `exclude_namespaces` / `--exclude-namespace` mechanism). `architecture.*` rule violations (e.g., `architecture.layer-violation`, `architecture.circular-dependency`) are always exempt — a layer-policy violation is not a metric, so a namespace exclusion aimed at quieting noisy metrics must not double as a silent way to disable architecture enforcement. The exemption is name-based (`RuleCategory::Architecture` prefix on `Violation::$ruleName`), not a hardcoded string.
+
+**Constructor:** `__construct(NamespaceMatcher $namespaceMatcher)`
+
+### RuleExclusionCaptureHolder
+
+Static holder (same pattern as `ProfilerHolder`) controlling whether `Analysis\RuleExecution\RuleExecutor` retains the individual `Violation` objects it suppresses via per-rule `exclude_namespaces` / `exclude_paths`, as opposed to just counting them. Defaults to `false`; `Infrastructure\Console\RuntimeConfigurator` enables it from `--show-suppressed` before the analysis pipeline runs. Exists so `RuleExecutor` (Analysis layer) never has to know about the CLI flag directly, keeping the `Infrastructure -> Analysis -> ... -> Core` dependency graph flowing downward only.
+
+**Methods:**
+- `set(bool $enabled): void`
+- `isEnabled(): bool`
+- `reset(): void` — restores the default (disabled)
 
 ---
 

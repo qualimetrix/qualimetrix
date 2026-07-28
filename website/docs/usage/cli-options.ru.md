@@ -64,6 +64,13 @@ include_generated: true
 bin/qmx check src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
 ```
 
+Объединяется с `exclude_paths` из `qmx.yaml` — оба источника суммируются.
+
+!!! warning "Не действует на правила `architecture.*`"
+    Нарушения `architecture.layer-violation` и `architecture.circular-dependency` эта опция
+    никогда не подавляет — почему и какие есть альтернативы, см.
+    [Исключение путей из отчёта](../getting-started/configuration.ru.md#исключение-путей-из-отчёта-exclude_paths).
+
 ### `--exclude-namespace`
 
 Подавить нарушения для классов в пространствах имён, соответствующих префиксу или glob-паттерну. Классы по-прежнему анализируются (их метрики учитываются в агрегированных расчётах), но нарушения не выводятся. Можно указывать несколько раз:
@@ -73,6 +80,11 @@ bin/qmx check src/ --exclude-namespace="App\Entity" --exclude-namespace="App\DTO
 ```
 
 Объединяется с `exclude_namespaces` из `qmx.yaml` — оба источника суммируются.
+
+!!! warning "Не действует на правила `architecture.*`"
+    Нарушения `architecture.layer-violation` и `architecture.circular-dependency` эта опция
+    никогда не подавляет — почему и какие есть альтернативы, см.
+    [Исключение неймспейсов](../getting-started/configuration.ru.md#исключение-неймспейсов-exclude_namespaces).
 
 ---
 
@@ -317,11 +329,18 @@ bin/qmx check src/ --baseline=baseline.json --baseline-ignore-stale
 
 ### `--show-suppressed`
 
-Показать нарушения, подавленные тегами `@qmx-ignore`:
+Показать нарушения, подавленные тегами `@qmx-ignore`, а также нарушения, подавленные записью
+`exclude_namespaces` / `exclude_paths` на уровне правила в `qmx.yaml` (см.
+[«Правила»](../getting-started/configuration.ru.md#правила-rules)):
 
 ```bash
 bin/qmx check src/ --show-suppressed
 ```
+
+Независимо от `--show-suppressed`, запуск с `-v` печатает разбивку по правилам — сколько
+нарушений подавлено таким образом: отдельно для `exclude_namespaces` и `exclude_paths`, с
+разбивкой по имени правила. В отличие от `@qmx-ignore`, в остальном это подавление проходит
+незаметно — ничто в стандартном выводе не сигнализирует о том, что оно произошло.
 
 ### `--no-suppression`
 

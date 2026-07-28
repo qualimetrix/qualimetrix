@@ -64,6 +64,13 @@ Suppress violations for files matching a glob pattern. The files are still analy
 bin/qmx check src/ --exclude-path="src/Entity/*" --exclude-path="src/DTO/*"
 ```
 
+Merged with `exclude_paths` from `qmx.yaml` — both sources are combined.
+
+!!! warning "Does not apply to `architecture.*` rules"
+    `architecture.layer-violation` and `architecture.circular-dependency` violations are never
+    suppressed by this option — see [Exclude Paths](../getting-started/configuration.md#exclude-paths)
+    for why and for the alternatives.
+
 ### `--exclude-namespace`
 
 Suppress violations for classes in namespaces matching a prefix or glob pattern. The classes are still analyzed (their metrics contribute to aggregated calculations), but violations are not reported. Can be repeated:
@@ -73,6 +80,11 @@ bin/qmx check src/ --exclude-namespace="App\Entity" --exclude-namespace="App\DTO
 ```
 
 Merged with `exclude_namespaces` from `qmx.yaml` — both sources are combined.
+
+!!! warning "Does not apply to `architecture.*` rules"
+    `architecture.layer-violation` and `architecture.circular-dependency` violations are never
+    suppressed by this option — see [Exclude Namespaces](../getting-started/configuration.md#exclude-namespaces)
+    for why and for the alternatives.
 
 ---
 
@@ -320,11 +332,18 @@ bin/qmx check src/ --baseline=baseline.json --baseline-ignore-stale
 
 ### `--show-suppressed`
 
-Show violations that were suppressed by `@qmx-ignore` tags:
+Show violations that were suppressed by `@qmx-ignore` tags, and violations suppressed by a
+per-rule `exclude_namespaces` / `exclude_paths` entry in `qmx.yaml` (see
+[Rules](../getting-started/configuration.md#rules)):
 
 ```bash
 bin/qmx check src/ --show-suppressed
 ```
+
+Independently of `--show-suppressed`, running with `-v` prints a per-rule count of how many
+violations were suppressed this way — split into `exclude_namespaces` and `exclude_paths`, each
+broken down by rule name. Unlike `@qmx-ignore`, this suppression is otherwise silent: nothing in
+the default output indicates it happened.
 
 ### `--no-suppression`
 

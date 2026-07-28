@@ -27,6 +27,7 @@ use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Violation\RuleExclusionCaptureHolder;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
@@ -56,6 +57,11 @@ final class RuntimeConfiguratorTest extends TestCase
 
         $this->configProvider = self::createStub(ConfigurationProviderInterface::class);
         $this->configurator = $this->buildConfigurator($this->configProvider);
+    }
+
+    protected function tearDown(): void
+    {
+        RuleExclusionCaptureHolder::reset();
     }
 
     /**
@@ -375,6 +381,72 @@ final class RuntimeConfiguratorTest extends TestCase
         $input->method('hasOption')->willReturn(true);
 
         return $input;
+    }
+
+    #[Test]
+    public function itDisablesRuleExclusionCaptureByDefault(): void
+    {
+        RuleExclusionCaptureHolder::set(true); // simulate a leftover from a previous run
+
+        $resolved = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
+        );
+
+        $this->configurator->configure($resolved, $this->createCliInput([]), $this->createOutput());
+
+        self::assertFalse(RuleExclusionCaptureHolder::isEnabled());
+    }
+
+    #[Test]
+    public function itEnablesRuleExclusionCaptureFromShowSuppressedOption(): void
+    {
+        $resolved = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
+        );
+
+        $input = self::createStub(InputInterface::class);
+        $input->method('hasOption')->willReturn(true);
+        $input->method('getOption')->willReturnCallback(
+            static fn(string $name): mixed => match ($name) {
+                'show-suppressed' => true,
+                'no-progress' => false,
+                'profile' => false,
+                default => null,
+            },
+        );
+
+        $this->configurator->configure($resolved, $input, $this->createOutput());
+
+        self::assertTrue(RuleExclusionCaptureHolder::isEnabled());
+    }
+
+    #[Test]
+    public function itDisablesRuleExclusionCaptureWhenCommandDoesNotExposeTheOption(): void
+    {
+        RuleExclusionCaptureHolder::set(true); // simulate a leftover from a previous run
+
+        $resolved = new ResolvedConfiguration(
+            paths: PathsConfiguration::defaults(),
+            analysis: new AnalysisConfiguration(),
+            ruleOptions: [],
+            architecture: ArchitectureConfiguration::empty(),
+        );
+
+        // Mirrors commands like `debug:layer-assignment` that reuse this
+        // configurator but don't expose `--show-suppressed`.
+        $input = self::createStub(InputInterface::class);
+        $input->method('hasOption')->willReturn(false);
+        $input->method('getOption')->willReturn(null);
+
+        $this->configurator->configure($resolved, $input, $this->createOutput());
+
+        self::assertFalse(RuleExclusionCaptureHolder::isEnabled());
     }
 
     #[Test]

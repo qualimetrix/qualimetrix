@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
@@ -253,6 +254,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(ViolationFilterOrchestrator::class)
             ->setArguments([
                 new Reference(ViolationFilterPipeline::class),
+                new Reference(RuleExecutorInterface::class),
             ]);
 
         // CheckCommand with all dependencies injected

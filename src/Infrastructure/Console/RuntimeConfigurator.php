@@ -18,6 +18,7 @@ use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Progress\NullProgressReporter;
+use Qualimetrix\Core\Violation\RuleExclusionCaptureHolder;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
@@ -77,6 +78,7 @@ final class RuntimeConfigurator
         $this->configureMemoryLimit($resolved->analysis, $output);
         $this->configureProgressReporter($input, $output);
         $this->configureProfiler($input);
+        $this->configureRuleExclusionCapture($input);
 
         // Create RuleOptionsParser for CLI rule options
         $ruleOptionsParserFactory = new RuleOptionsParserFactory();
@@ -267,6 +269,23 @@ final class RuntimeConfigurator
 
         // Enable profiler if --profile or --profile=file was provided
         $this->profilerHolder->set(new Profiler()); // @phpstan-ignore staticMethod.dynamicCall
+    }
+
+    /**
+     * Configures {@see RuleExclusionCaptureHolder} from `--show-suppressed`.
+     *
+     * Must run before {@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline::analyze()}
+     * calls {@see \Qualimetrix\Analysis\RuleExecution\RuleExecutor::execute()} — that is
+     * the only point deciding whether to retain excluded `Violation` objects for this
+     * run. Defensive about option presence like {@see self::configureProfiler()}:
+     * commands other than `check` that reuse this configurator don't expose
+     * `--show-suppressed`, and should keep the safe (disabled) default.
+     */
+    private function configureRuleExclusionCapture(InputInterface $input): void
+    {
+        $capture = $input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true;
+
+        RuleExclusionCaptureHolder::set($capture);
     }
 
     /**

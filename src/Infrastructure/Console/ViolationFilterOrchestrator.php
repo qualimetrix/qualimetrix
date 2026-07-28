@@ -6,6 +6,8 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\RuleExecution\RuleExclusionStats;
+use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -24,6 +26,7 @@ final readonly class ViolationFilterOrchestrator
 {
     public function __construct(
         private ViolationFilterPipeline $violationFilterPipeline,
+        private RuleExecutorInterface $ruleExecutor,
     ) {}
 
     /**
@@ -120,7 +123,77 @@ final readonly class ViolationFilterOrchestrator
             ));
         }
 
+        $this->reportRuleExclusions($input, $output);
+
         return $filterResult;
+    }
+
+    /**
+     * Reports violations suppressed by per-rule `exclude_namespaces` / `exclude_paths`
+     * (any rule, set via `rules: {<rule-name>: {...}}` in `qmx.yaml` —
+     * {@see RuleExclusionStats}). Unlike the global exclusion filters above, this
+     * mechanism runs inside {@see RuleExecutorInterface::execute()}, before the
+     * violations even reach {@see ViolationFilterPipeline}, so it needs its own
+     * reporting path.
+     */
+    private function reportRuleExclusions(InputInterface $input, OutputInterface $output): void
+    {
+        $stats = $this->ruleExecutor->getRuleExclusionStats();
+
+        if ($input->getOption('show-suppressed') === true && $stats->excludedViolations !== []) {
+            $output->writeln('');
+            $output->writeln(\sprintf(
+                '<info>%d violation(s) suppressed by per-rule exclude_namespaces/exclude_paths:</info>',
+                \count($stats->excludedViolations),
+            ));
+
+            $byFile = [];
+            foreach ($stats->excludedViolations as $v) {
+                $file = $v->location->isNone() ? '(no file)' : $v->location->pathString();
+                $byFile[$file][] = $v;
+            }
+
+            foreach ($byFile as $file => $violations) {
+                $output->writeln(\sprintf('  <comment>%s</comment>', $file));
+                foreach ($violations as $v) {
+                    $output->writeln(\sprintf(
+                        '    line %s — %s [%s]',
+                        $v->location->line ?? '?',
+                        $v->getDisplayMessage(),
+                        $v->ruleName,
+                    ));
+                }
+            }
+        }
+
+        if ($stats->totalPathExclusions() > 0 && $output->isVerbose()) {
+            $output->writeln(\sprintf(
+                '<info>%d violation(s) suppressed by per-rule exclude_paths (%s)</info>',
+                $stats->totalPathExclusions(),
+                $this->formatRuleBreakdown($stats->pathExclusionsByRule),
+            ));
+        }
+
+        if ($stats->totalNamespaceExclusions() > 0 && $output->isVerbose()) {
+            $output->writeln(\sprintf(
+                '<info>%d violation(s) suppressed by per-rule exclude_namespaces (%s)</info>',
+                $stats->totalNamespaceExclusions(),
+                $this->formatRuleBreakdown($stats->namespaceExclusionsByRule),
+            ));
+        }
+    }
+
+    /**
+     * @param array<string, int> $countsByRule
+     */
+    private function formatRuleBreakdown(array $countsByRule): string
+    {
+        $parts = [];
+        foreach ($countsByRule as $ruleName => $count) {
+            $parts[] = \sprintf('%s: %d', $ruleName, $count);
+        }
+
+        return implode(', ', $parts);
     }
 
     private function handleStaleBaselineOutput(

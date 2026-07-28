@@ -20,12 +20,28 @@ use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\RuleExclusionCaptureHolder;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 
 #[CoversClass(RuleExecutor::class)]
 final class RuleExecutorTest extends TestCase
 {
+    /**
+     * Every existing test in this class predates the capture toggle and
+     * asserts on `$stats->excludedViolations` directly, so it is enabled by
+     * default here; the dedicated toggle tests below explicitly disable it.
+     */
+    protected function setUp(): void
+    {
+        RuleExclusionCaptureHolder::set(true);
+    }
+
+    protected function tearDown(): void
+    {
+        RuleExclusionCaptureHolder::reset();
+    }
+
     #[Test]
     public function itExecutesWithNoRules(): void
     {
@@ -37,6 +53,137 @@ final class RuleExecutorTest extends TestCase
         self::assertSame([], $executor->execute($context));
         self::assertSame([], $executor->getActiveRules());
         self::assertSame(0, $executor->getTotalRulesCount());
+    }
+
+    #[Test]
+    public function itExclusionStatsAreEmptyBeforeFirstExecute(): void
+    {
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([], $provider);
+
+        $stats = $executor->getRuleExclusionStats();
+
+        self::assertTrue($stats->isEmpty());
+        self::assertSame(0, $stats->totalNamespaceExclusions());
+        self::assertSame(0, $stats->totalPathExclusions());
+        self::assertSame([], $stats->excludedViolations);
+    }
+
+    #[Test]
+    public function itExclusionStatsAreZeroWhenNoExclusionsConfigured(): void
+    {
+        $violation = $this->createViolationWithNamespace('rule1', 'App\\Core');
+        $rule = $this->createRule('rule1', [$violation]);
+
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule], $provider);
+
+        $violations = $executor->execute($this->createMinimalContext());
+        $stats = $executor->getRuleExclusionStats();
+
+        self::assertCount(1, $violations);
+        self::assertTrue($stats->isEmpty());
+        self::assertSame([], $stats->excludedViolations);
+    }
+
+    #[Test]
+    public function itNamespaceExclusionIncrementsStatsPerRule(): void
+    {
+        $excludedViolation = $this->createViolationWithNamespace('rule1', 'App\\Tests');
+        $includedViolation = $this->createViolationWithNamespace('rule1', 'App\\Core');
+
+        $rule = $this->createRule('rule1', [$excludedViolation, $includedViolation]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule], $provider, $registry);
+
+        $violations = $executor->execute($this->createMinimalContext());
+        $stats = $executor->getRuleExclusionStats();
+
+        self::assertCount(1, $violations);
+        self::assertFalse($stats->isEmpty());
+        self::assertSame(['rule1' => 1], $stats->namespaceExclusionsByRule);
+        self::assertSame([], $stats->pathExclusionsByRule);
+        self::assertSame(1, $stats->totalNamespaceExclusions());
+        self::assertSame(0, $stats->totalPathExclusions());
+        self::assertSame([$excludedViolation], $stats->excludedViolations);
+    }
+
+    #[Test]
+    public function itPathExclusionIncrementsStatsPerRule(): void
+    {
+        $excludedViolation = $this->createViolationWithFile('rule1', 'src/Generated/Model.php');
+        $includedViolation = $this->createViolationWithFile('rule1', 'src/Core/Service.php');
+
+        $rule = $this->createRule('rule1', [$excludedViolation, $includedViolation]);
+
+        $pathExclusionProvider = new RulePathExclusionProvider();
+        $pathExclusionProvider->setExclusions('rule1', ['src/Generated']);
+
+        $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule], $provider, $registry);
+
+        $violations = $executor->execute($this->createMinimalContext());
+        $stats = $executor->getRuleExclusionStats();
+
+        self::assertCount(1, $violations);
+        self::assertSame(['rule1' => 1], $stats->pathExclusionsByRule);
+        self::assertSame([], $stats->namespaceExclusionsByRule);
+        self::assertSame(1, $stats->totalPathExclusions());
+        self::assertSame([$excludedViolation], $stats->excludedViolations);
+    }
+
+    #[Test]
+    public function itExclusionStatsBreakDownByRuleNameSeparately(): void
+    {
+        $v1 = $this->createViolationWithNamespace('rule1', 'App\\Tests');
+        $v2 = $this->createViolationWithNamespace('rule2', 'App\\Tests');
+
+        $rule1 = $this->createRule('rule1', [$v1]);
+        $rule2 = $this->createRule('rule2', [$v2]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+        $exclusionProvider->setExclusions('rule2', ['App\\Tests']);
+
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule1, $rule2], $provider, $registry);
+
+        $executor->execute($this->createMinimalContext());
+        $stats = $executor->getRuleExclusionStats();
+
+        self::assertSame(['rule1' => 1, 'rule2' => 1], $stats->namespaceExclusionsByRule);
+        self::assertSame(2, $stats->totalNamespaceExclusions());
+    }
+
+    #[Test]
+    public function itExclusionStatsAreResetOnEachExecuteCall(): void
+    {
+        $excludedViolation = $this->createViolationWithNamespace('rule1', 'App\\Tests');
+        $rule = $this->createRule('rule1', [$excludedViolation]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule], $provider, $registry);
+
+        // Two consecutive execute() calls on the same executor: if the running
+        // executor accumulated counts instead of resetting them, the second
+        // call would report 2 instead of 1.
+        $executor->execute($this->createMinimalContext());
+        self::assertSame(1, $executor->getRuleExclusionStats()->totalNamespaceExclusions());
+
+        $executor->execute($this->createMinimalContext());
+        self::assertSame(1, $executor->getRuleExclusionStats()->totalNamespaceExclusions());
+        self::assertCount(1, $executor->getRuleExclusionStats()->excludedViolations);
     }
 
     #[Test]
@@ -426,6 +573,77 @@ final class RuleExecutorTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame($v2, $violations[0]);
+    }
+
+    // --- RuleExclusionCaptureHolder toggle tests ---
+
+    #[Test]
+    public function itDoesNotCaptureExcludedViolationsWhenCaptureHolderIsDisabled(): void
+    {
+        RuleExclusionCaptureHolder::set(false);
+
+        $excludedViolation = $this->createViolationWithNamespace('rule1', 'App\\Tests');
+        $rule = $this->createRule('rule1', [$excludedViolation]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule], $provider, $registry);
+
+        $executor->execute($this->createMinimalContext());
+        $stats = $executor->getRuleExclusionStats();
+
+        // Counts are collected regardless of the capture toggle.
+        self::assertSame(['rule1' => 1], $stats->namespaceExclusionsByRule);
+        self::assertSame(1, $stats->totalNamespaceExclusions());
+        // But the heavy Violation objects are not retained when disabled.
+        self::assertSame([], $stats->excludedViolations);
+    }
+
+    #[Test]
+    public function itDoesNotCaptureExcludedPathViolationsWhenCaptureHolderIsDisabled(): void
+    {
+        RuleExclusionCaptureHolder::set(false);
+
+        $excludedViolation = $this->createViolationWithFile('rule1', 'src/Generated/Model.php');
+        $rule = $this->createRule('rule1', [$excludedViolation]);
+
+        $pathExclusionProvider = new RulePathExclusionProvider();
+        $pathExclusionProvider->setExclusions('rule1', ['src/Generated']);
+
+        $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule], $provider, $registry);
+
+        $executor->execute($this->createMinimalContext());
+        $stats = $executor->getRuleExclusionStats();
+
+        self::assertSame(['rule1' => 1], $stats->pathExclusionsByRule);
+        self::assertSame(1, $stats->totalPathExclusions());
+        self::assertSame([], $stats->excludedViolations);
+    }
+
+    #[Test]
+    public function itCapturesExcludedViolationsWhenCaptureHolderIsEnabled(): void
+    {
+        RuleExclusionCaptureHolder::set(true);
+
+        $excludedViolation = $this->createViolationWithNamespace('rule1', 'App\\Tests');
+        $rule = $this->createRule('rule1', [$excludedViolation]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
+        $provider = $this->createConfiguredProvider();
+        $executor = new RuleExecutor([$rule], $provider, $registry);
+
+        $executor->execute($this->createMinimalContext());
+        $stats = $executor->getRuleExclusionStats();
+
+        self::assertSame([$excludedViolation], $stats->excludedViolations);
     }
 
     private function createConfiguredProvider(?AnalysisConfiguration $config = null): ConfigurationHolder

@@ -42,4 +42,12 @@ interface RuleExecutorInterface
      * Returns count of all registered rules (before filtering).
      */
     public function getTotalRulesCount(): int;
+
+    /**
+     * Returns per-rule `exclude_namespaces` / `exclude_paths` suppression stats
+     * from the most recent {@see execute()} call.
+     *
+     * Empty stats before the first call.
+     */
+    public function getRuleExclusionStats(): RuleExclusionStats;
 }
