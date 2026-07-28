@@ -64,7 +64,7 @@ Analysis/
 │   │   │   ├── StaticAccessHandler.php
 │   │   │   ├── CatchInstanceofHandler.php
 │   │   │   ├── PropertyHandler.php
-│   │   │   └── MethodHandler.php
+│   │   │   └── FunctionLikeHandler.php
 │   │   └── Export/                      # Graph export
 │   │       ├── GraphExporterInterface.php
 │   │       ├── DotExporter.php          # DOT format export
@@ -93,7 +93,8 @@ Analysis/
 │
 ├── RuleExecution/
 │   ├── RuleExecutorInterface.php        # Rule executor contract
-│   └── RuleExecutor.php
+│   ├── RuleExecutor.php
+│   └── RuleExclusionStats.php           # VO: per-rule exclude_namespaces/exclude_paths suppression counts + optionally-captured violations (see RuleExclusionCaptureHolder)
 │
 ├── Repository/
 │   └── InMemoryMetricRepository.php
@@ -157,6 +158,21 @@ Finding PHP files via `FileDiscoveryInterface`.
 - Creating `AnalysisContext` with repository, dependency graph, circular dependency results, duplicate blocks, and rule options
 - Executing all rules via `RuleExecutor`
 - Applying filters (Baseline, Suppression)
+
+`RuleExecutor` also applies **per-rule** `exclude_namespaces` / `exclude_paths` — extracted for
+any rule name by `RuleOptionsFactory` (`Qualimetrix\Configuration`), regardless of whether that
+rule's Options class declares such a field. This is distinct from the global
+`exclude_namespaces` / `exclude_paths` filters applied later in
+`ViolationFilterPipeline` (`Qualimetrix\Infrastructure\Console`): it runs immediately after each
+rule's `analyze()` call and is *not* exempted for `architecture.*` rules the way the global
+filter is. Suppressed counts and the suppressed violations themselves are exposed via
+`RuleExecutor::getRuleExclusionStats(): RuleExclusionStats`, consumed by
+`ViolationFilterOrchestrator` for `-v` / `--show-suppressed` output — without this, the
+suppression left no trace in the CLI output. The per-rule counts are always collected, but the
+individual `Violation` objects are retained only when
+`Core\Violation\RuleExclusionCaptureHolder` is enabled (set from `--show-suppressed` by
+`RuntimeConfigurator`) — holding onto every suppressed violation regardless of whether
+`--show-suppressed` was passed would waste memory on codebases with wide per-rule exclusions.
 
 **Phase 5: Result**
 Building and returning `AnalysisResult`.
@@ -341,7 +357,7 @@ Collects dependencies from AST. Integrated into `CompositeCollector` for unified
 - `ClassLikeHandler` — `use` statements, `extends`, `implements`
 - `TraitUseHandler` — trait usage
 - `PropertyHandler` — property type dependencies
-- `MethodHandler` — parameter/return types
+- `FunctionLikeHandler` — parameter/return types and parameter attributes for any function-like signature (class methods, closures, arrow functions)
 - `InstantiationHandler` — `new ClassName()`
 - `StaticAccessHandler` — `ClassName::method()`
 - `CatchInstanceofHandler` — catch blocks, instanceof checks

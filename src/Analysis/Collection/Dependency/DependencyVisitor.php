@@ -16,8 +16,8 @@ use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\CatchInstanceofHandler;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\ClassLikeHandler;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\DependencyContext;
+use Qualimetrix\Analysis\Collection\Dependency\Handler\FunctionLikeHandler;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\InstantiationHandler;
-use Qualimetrix\Analysis\Collection\Dependency\Handler\MethodHandler;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\NodeDependencyHandlerInterface;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\PropertyHandler;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\StaticAccessHandler;
@@ -31,11 +31,17 @@ use Qualimetrix\Core\Path\RelativePath;
  * Detects all 14 dependency types:
  * - Extends, Implements, TraitUse
  * - New, StaticCall, StaticPropertyFetch, ClassConstFetch
- * - TypeHint (params, returns, properties)
+ * - TypeHint (params, returns, properties — including closure and arrow
+ *   function signatures, not just class methods)
  * - Catch, Instanceof
- * - Attribute
+ * - Attribute (including attributes on closure/arrow function parameters)
  * - PropertyType
  * - IntersectionType, UnionType
+ *
+ * Note: closures/arrow functions declared outside any enclosing class (e.g.
+ * at file top level, backing a "global function") have no owning symbol —
+ * their dependencies are not tracked, matching how top-level `function`
+ * declarations are handled. See `FunctionLikeHandler` for signature extraction.
  */
 final class DependencyVisitor extends NodeVisitorAbstract
 {
@@ -195,7 +201,7 @@ final class DependencyVisitor extends NodeVisitorAbstract
             new StaticAccessHandler(),
             new CatchInstanceofHandler(),
             new PropertyHandler(),
-            new MethodHandler(),
+            new FunctionLikeHandler(),
         ];
 
         $table = [];

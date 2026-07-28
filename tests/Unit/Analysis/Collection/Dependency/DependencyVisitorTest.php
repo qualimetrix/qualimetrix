@@ -525,6 +525,160 @@ PHP;
         self::assertCount(0, $deps);
     }
 
+    #[Test]
+    public function itDetectsTypeHintOnClosureParameter(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+use Vendor\TargetA;
+
+class MyClass {
+    public function test() {
+        $fn = function (TargetA $a): void {};
+    }
+}
+PHP;
+        $deps = $this->analyze($code);
+
+        self::assertCount(1, $deps);
+        self::assertSame('Vendor\\TargetA', $deps[0]->target->toString());
+        self::assertSame(DependencyType::TypeHint, $deps[0]->type);
+    }
+
+    #[Test]
+    public function itDetectsTypeHintOnClosureReturnType(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+use Vendor\TargetB;
+
+class MyClass {
+    public function test() {
+        $fn = function (): TargetB {};
+    }
+}
+PHP;
+        $deps = $this->analyze($code);
+
+        self::assertCount(1, $deps);
+        self::assertSame('Vendor\\TargetB', $deps[0]->target->toString());
+        self::assertSame(DependencyType::TypeHint, $deps[0]->type);
+    }
+
+    #[Test]
+    public function itDetectsTypeHintOnArrowFunctionParameter(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+use Vendor\TargetC;
+
+class MyClass {
+    public function test() {
+        $fn = fn(TargetC $c): int => 1;
+    }
+}
+PHP;
+        $deps = $this->analyze($code);
+
+        self::assertCount(1, $deps);
+        self::assertSame('Vendor\\TargetC', $deps[0]->target->toString());
+        self::assertSame(DependencyType::TypeHint, $deps[0]->type);
+    }
+
+    #[Test]
+    public function itDetectsTypeHintOnArrowFunctionReturnType(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+use Vendor\TargetD;
+
+class MyClass {
+    public function test() {
+        $fn = fn(): TargetD => null;
+    }
+}
+PHP;
+        $deps = $this->analyze($code);
+
+        self::assertCount(1, $deps);
+        self::assertSame('Vendor\\TargetD', $deps[0]->target->toString());
+        self::assertSame(DependencyType::TypeHint, $deps[0]->type);
+    }
+
+    #[Test]
+    public function itDetectsAttributesOnClosureParameters(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+use Vendor\TargetAttr;
+
+class MyClass {
+    public function test() {
+        $fn = function (#[TargetAttr] $a) {};
+    }
+}
+PHP;
+        $deps = $this->analyze($code);
+
+        self::assertCount(1, $deps);
+        self::assertSame('Vendor\\TargetAttr', $deps[0]->target->toString());
+        self::assertSame(DependencyType::Attribute, $deps[0]->type);
+    }
+
+    #[Test]
+    public function itStillDetectsInstantiationInsideClosureBody(): void
+    {
+        // Regression guard: closure bodies were already traversed correctly
+        // before this fix — only param/return signatures were missed.
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+use Vendor\TargetC;
+
+class MyClass {
+    public function test() {
+        $fn = function (): void { new TargetC(); };
+    }
+}
+PHP;
+        $deps = $this->analyze($code);
+
+        self::assertCount(1, $deps);
+        self::assertSame('Vendor\\TargetC', $deps[0]->target->toString());
+        self::assertSame(DependencyType::New_, $deps[0]->type);
+    }
+
+    #[Test]
+    public function itIgnoresClosureSignatureOutsideAnyEnclosingClass(): void
+    {
+        // Documents current behavior for closures at file top level (no
+        // enclosing class): out of scope per task — global-function-style
+        // ownerless dependencies are a separate design problem. This test
+        // pins the existing (no crash, no orphan dependency) behavior.
+        $code = <<<'PHP'
+<?php
+namespace App;
+
+use Vendor\Foo;
+
+$fn = function (Foo $f): void {};
+PHP;
+        $deps = $this->analyze($code);
+
+        self::assertCount(0, $deps);
+    }
+
     /**
      * @return array<\Qualimetrix\Core\Dependency\Dependency>
      */
