@@ -36,21 +36,25 @@ These projects serve as a reference corpus for:
 | --- | ------ | ------------------ |
 | qmx | `src/` | Qualimetrix itself |
 
-### Proprietary (local only, not in repo)
+### Private codebases (optional, machine-local)
 
-| ID              | Size        | Description            |
-| --------------- | ----------- | ---------------------- |
-| private-codebase           | ~3100 files | Private codebase  |
-| private-codebase    | ~2200 files | Private codebase            |
-| private-codebase   | ~1800 files | Private codebase |
-| private-codebase  | ~1000 files | Private codebase      |
-| private-codebase | ~N files | Private codebase |
-| private-codebase | ~N files | Private codebase |
-| private-codebase        | ~600 files  | Private codebase            |
-| private-codebase | ~250 files  | Private codebase        |
-| private-codebase | ~N files | Private codebase |
-| private-codebase | ~N files | Private codebase |
-| private-codebase   | ~40 files   | Private codebase          |
+Calibrating health scores against closed-source applications is useful, but the
+codebases themselves — and even their names — must never reach this repository.
+They are therefore configured locally and opted into per machine:
+
+```bash
+cp benchmarks/local-projects.json.example benchmarks/local-projects.json
+# edit local-projects.json to point at your own checkouts
+```
+
+`benchmarks/local-projects.json` is git-ignored. When present,
+`scripts/collect-benchmark-data.php` appends its entries with `type: private`;
+when absent, only the open-source projects above are collected. The same applies
+to `benchmarks/local.env` (`QMX_BENCH_MEDIUM` / `QMX_BENCH_LARGE`), which
+`scripts/benchmark-comparison.sh` reads for its medium/large timing targets.
+
+Do not record private project names, sizes, or filesystem paths in tracked files
+— `scripts/check-private-leaks.sh` fails the build if they appear.
 
 ## Usage
 

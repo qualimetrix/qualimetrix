@@ -1,0 +1,20 @@
+{
+  "_comment": [
+    "Copy to benchmarks/local-projects.json to include private codebases in",
+    "benchmark data collection. That file is git-ignored on purpose: private",
+    "project names, sizes and filesystem paths must never enter this repository.",
+    "Absent file = only the open-source projects listed in benchmarks/README.md."
+  ],
+  "projects": [
+    {
+      "id": "private-app-1",
+      "path": "/absolute/path/to/your/app/src",
+      "description": "Large private application"
+    },
+    {
+      "id": "private-app-2",
+      "path": "/absolute/path/to/another/app/src",
+      "description": "Private service"
+    }
+  ]
+}

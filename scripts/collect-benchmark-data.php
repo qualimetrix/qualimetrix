@@ -10,12 +10,17 @@ declare(strict_types=1);
  * Projects are sourced from:
  * - benchmarks/vendor/ — open-source projects (installed via benchmarks/composer.json)
  * - vendor/ — projects already available as Qualimetrix dependencies
- * - ~/PhpstormProjects/ — proprietary projects (local only)
+ * - benchmarks/local-projects.json — private codebases, if configured (never committed)
+ *
+ * Private codebases are opt-in and machine-local. Copy
+ * benchmarks/local-projects.json.example to benchmarks/local-projects.json and
+ * point it at your own checkouts; the file is git-ignored so that no private
+ * project name or filesystem path can reach the public repository.
  */
 
 $qmxBin = __DIR__ . '/../bin/qmx';
-$phpstormDir = dirname(__DIR__, 2);
 $benchmarkVendor = __DIR__ . '/../benchmarks/vendor';
+$localProjectsFile = __DIR__ . '/../benchmarks/local-projects.json';
 
 // Define benchmark projects
 $projects = [
@@ -38,30 +43,36 @@ $projects = [
     // Qualimetrix itself
     ['id' => 'qmx', 'path' => __DIR__ . '/../src', 'type' => 'open-source', 'description' => 'Qualimetrix'],
 
-    // Proprietary — large
-    ['id' => 'private-codebase', 'path' => "/path/to/private/src", 'type' => 'private', 'description' => 'Private codebase'],
-    ['id' => 'private-codebase', 'path' => "/path/to/private/src", 'type' => 'private', 'description' => 'Private codebase'],
-    ['id' => 'private-codebase', 'path' => "/path/to/private/src", 'type' => 'private', 'description' => 'Private codebase'],
-
-    // Proprietary — medium
-    ['id' => 'private-codebase', 'path' => "/path/to/private/src", 'type' => 'private', 'description' => 'Private codebase'],
-    ['id' => 'private-codebase', 'path' => "/path/to/private/src", 'type' => 'private', 'description' => 'Private codebase'],
-    ['id' => 'private-codebase', 'path' => "/path/to/private/src", 'type' => 'private', 'description' => 'Private codebase'],
-    ['id' => 'private-codebase', 'path' => "/path/to/private/src", 'type' => 'private', 'description' => 'Private codebase'],
-
-    // Proprietary — small
-    ['id' => 'private-codebase', 'path' => "/path/to/private/src", 'type' => 'private', 'description' => 'Private codebase'],
-    ['id' => 'private-codebase', 'path' => "/path/to/private/src", 'type' => 'private', 'description' => 'Private codebase'],
-    ['id' => 'private-codebase', 'path' => "/path/to/private/src", 'type' => 'private', 'description' => 'Private codebase'],
-    ['id' => 'private-codebase', 'path' => "/path/to/private/src", 'type' => 'private', 'description' => 'Private codebase'],
 ];
 
+// Private codebases, if the developer configured any. Machine-local and git-ignored.
+if (is_file($localProjectsFile)) {
+    $local = json_decode((string) file_get_contents($localProjectsFile), true, 512, JSON_THROW_ON_ERROR);
+
+    foreach ($local['projects'] ?? [] as $project) {
+        if (!isset($project['id'], $project['path'])) {
+            fwrite(STDERR, "Skipping malformed entry in local-projects.json (needs 'id' and 'path')\n");
+            continue;
+        }
+
+        $projects[] = [
+            'id' => $project['id'],
+            'path' => $project['path'],
+            'type' => 'private',
+            'description' => $project['description'] ?? $project['id'],
+        ];
+    }
+}
+
 $outputFile = $argv[1] ?? __DIR__ . '/../docs/internal/benchmark-data.json';
+
+$qmxVersionOutput = shell_exec("$qmxBin --version 2>/dev/null");
+$qmxVersion = is_string($qmxVersionOutput) ? trim($qmxVersionOutput) : '';
 
 $results = [
     'version' => '1.0',
     'collected_at' => date('c'),
-    'qmx_version' => trim(shell_exec("$qmxBin --version 2>/dev/null") ?: 'unknown'),
+    'qmx_version' => $qmxVersion !== '' ? $qmxVersion : 'unknown',
     'projects' => [],
 ];
 
@@ -86,13 +97,13 @@ foreach ($projects as $project) {
     $json = shell_exec($cmd);
     $elapsed = round(microtime(true) - $start, 1);
 
-    if (!$json) {
+    if ($json === null || $json === false || trim($json) === '') {
         fprintf(STDERR, "FAILED (no output)\n");
         continue;
     }
 
     $data = json_decode($json, true);
-    if (!$data || !isset($data['symbols'])) {
+    if (!is_array($data) || !isset($data['symbols'])) {
         fprintf(STDERR, "FAILED (invalid JSON)\n");
         continue;
     }
@@ -211,7 +222,11 @@ fprintf(
 );
 fprintf(STDERR, "%s\n", str_repeat('-', 85));
 foreach ($results['projects'] as $p) {
-    $hc = $p['distributions']['health.coupling'];
+    $hc = $p['distributions']['health.coupling'] ?? null;
+
+    if ($hc === null) {
+        continue;
+    }
     fprintf(
         STDERR,
         "%-25s %4d %4d  %4.0f %4.0f %4.0f %4.0f %4.0f  %5d\n",

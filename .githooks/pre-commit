@@ -7,6 +7,16 @@ set -e
 
 echo "🔍 Running pre-commit checks..."
 
+# Private disclosure guard: developer home paths and private project names.
+# Cheapest check, so it runs first — a leak must never reach even a local commit.
+echo ""
+echo "🔒 Checking for private paths and terms..."
+if ! bash scripts/check-private-leaks.sh --staged; then
+    echo ""
+    echo "❌ Refusing to commit: private path or term detected"
+    exit 1
+fi
+
 # Format markdown tables in staged .md files
 # Only auto-fix files that are fully staged (no unstaged changes),
 # to avoid pulling unrelated working-tree changes into the commit.

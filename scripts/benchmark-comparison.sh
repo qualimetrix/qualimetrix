@@ -10,10 +10,18 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 RESULTS_DIR="$PROJECT_ROOT/benchmark-results"
 COMPOSER_BIN="$HOME/.composer/vendor/bin"
 
-# Codebase paths
+# Codebase paths.
+#
+# Medium/large targets are machine-local: copy benchmarks/local.env.example to
+# benchmarks/local.env and point the variables at your own checkouts. The file is
+# git-ignored so private project names and filesystem paths never reach the repo.
+LOCAL_ENV="$PROJECT_ROOT/benchmarks/local.env"
+# shellcheck source=/dev/null
+[ -f "$LOCAL_ENV" ] && . "$LOCAL_ENV"
+
 SMALL_CODEBASE="$PROJECT_ROOT/src"
-MEDIUM_CODEBASE="$HOME/.composer/vendor/laravel/framework/src"
-LARGE_CODEBASE="/path/to/private-backend"
+MEDIUM_CODEBASE="${QMX_BENCH_MEDIUM:-$COMPOSER_BIN/../laravel/framework/src}"
+LARGE_CODEBASE="${QMX_BENCH_LARGE:-}"
 
 # Colors
 RED='\033[0;31m'
@@ -192,6 +200,16 @@ main() {
         fi
     fi
 
+    # The large target is a machine-local codebase; skip it when unconfigured
+    # rather than failing, so the script stays usable on a fresh clone.
+    run_large() {
+        if [[ -z "$LARGE_CODEBASE" || ! -d "$LARGE_CODEBASE" ]]; then
+            warn "Large benchmark skipped: set QMX_BENCH_LARGE in benchmarks/local.env"
+            return 0
+        fi
+        benchmark_codebase "large" "$LARGE_CODEBASE" 2
+    }
+
     case "$target" in
         "small")
             benchmark_codebase "small" "$SMALL_CODEBASE" 3
@@ -200,12 +218,12 @@ main() {
             benchmark_codebase "medium" "$MEDIUM_CODEBASE" 3
             ;;
         "large")
-            benchmark_codebase "large" "$LARGE_CODEBASE" 2
+            run_large
             ;;
         "all")
             benchmark_codebase "small" "$SMALL_CODEBASE" 3
             benchmark_codebase "medium" "$MEDIUM_CODEBASE" 3
-            benchmark_codebase "large" "$LARGE_CODEBASE" 2
+            run_large
             ;;
         *)
             error "Unknown target: $target"

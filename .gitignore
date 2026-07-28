@@ -70,3 +70,15 @@ node_modules/
 # Benchmarks (vendor is downloaded; composer.lock is tracked so health-score
 # calibration stays reproducible against fixed Laravel/Symfony/Doctrine versions)
 /benchmarks/vendor/
+
+# Agent tooling scratch (Serena) — local only, must not reach the public repo
+.serena/
+
+# Machine-local benchmark configuration: private project names, sizes and
+# filesystem paths must never be committed. See benchmarks/*.example.
+/benchmarks/local.env
+/benchmarks/local-projects.json
+/scripts/private-terms.local.txt
+
+# Claude Code scheduler lock (runtime artifact)
+.claude/scheduled_tasks.lock

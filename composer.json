@@ -79,7 +79,9 @@
         "benchmark:check": "php scripts/benchmark-regression.php",
         "benchmark:update": "php scripts/benchmark-regression.php --update-baselines",
         "selfcheck": "php bin/qmx check src/ --memory-limit=512M",
+        "check-leaks": "bash scripts/check-private-leaks.sh",
         "check": [
+            "@check-leaks",
             "@cs-check",
             "@test",
             "@phpstan",
@@ -94,6 +96,7 @@
         "test:js": "Run JS tests for HTML report (vitest)",
         "build:js": "Rebuild HTML report JS bundle (vite)",
         "cs-check": "Check code style without fixing",
+        "check-leaks": "Fail if tracked files contain developer home paths or private project names",
         "cs-fix": "Fix code style with PHP-CS-Fixer",
         "benchmark:check": "Run benchmark regression check for health score formulas",
         "benchmark:update": "Update benchmark baselines with current scores (±10 margin)",

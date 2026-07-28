@@ -26,11 +26,11 @@ One bug fixed: DIT was calculated per-file only, missing cross-file inheritance 
 
 ### 1.1 Test Environments
 
-| Codebase   | Files  | Description                           |
-| ---------- | -----: | ------------------------------------- |
-| **Small**  | 320    | Qualimetrix (src/)                    |
-| **Medium** | 10,308 | Symfony Framework (src/)              |
-| **Large**  | 9,953  | Production backend (private-backend) |
+| Codebase   | Files  | Description                                |
+| ---------- | -----: | ------------------------------------------ |
+| **Small**  | 320    | Qualimetrix (src/)                         |
+| **Medium** | 10,308 | Symfony Framework (src/)                   |
+| **Large**  | 9,953  | Private production backend (closed source) |
 
 All benchmarks: cold cache, PHP 8.4, macOS, Apple Silicon (14 cores).
 
@@ -38,7 +38,7 @@ All benchmarks: cold cache, PHP 8.4, macOS, Apple Silicon (14 cores).
 
 ### 1.2 Results (Large Codebase, ~10k files)
 
-Detailed benchmarks on `/path/to/private-backend` (9,953 files). Qualimetrix numbers are medians of 3 runs.
+Detailed benchmarks on a private production backend (9,953 files), configured locally via `QMX_BENCH_LARGE` (see `benchmarks/README.md`). Qualimetrix numbers are medians of 3 runs.
 
 | Tool                                   | Wall time | CPU time | CPU% | Notes                   |
 | -------------------------------------- | --------: | -------: | ---: | ----------------------- |
