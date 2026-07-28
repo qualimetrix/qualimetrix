@@ -89,3 +89,55 @@ Options that apply to any rule, not tied to a specific one:
 ```
 
 These use the rule's full NAME (`complexity.cyclomatic`, `design.lcom`) or group prefix (`complexity`, `design`).
+
+### Rule option key casing: canon vs. accepted input
+
+Rule option keys reach the tool through three channels — `qmx.yaml`, presets,
+and `--rule-opt=RULE:OPTION=VALUE` (including the short `#[CliAlias(...)]`
+flags above) — and all three land in the same internal representation before
+an Options class ever sees them. This section documents what the code
+actually does today, not an aspirational convention.
+
+**Canonical spelling per channel:**
+
+| Channel                            | Canonical casing | Example                                                                |
+| ---------------------------------- | ---------------- | ---------------------------------------------------------------------- |
+| `qmx.yaml` / preset YAML           | `snake_case`     | `exclude_namespaces: [...]`, `max_distance_warning: 0.5`               |
+| `--rule-opt` / `#[CliAlias]` flags | `kebab-case`     | `--rule-opt=coupling.cbo:min-class-count=5`, `--cyclomatic-warning=15` |
+
+The repository's own root `qmx.yaml` follows this and is snake_case
+throughout (`exclude_namespaces`, `max_distance_warning`, `min_afferent`,
+`max_warning`, …) — treat it as the reference example, not the kebab-case
+form implied by `--rule-opt` alone.
+
+**All three spellings are always accepted, everywhere.** Internally, every
+option key is normalized to camelCase (the PHP constructor parameter name)
+before it reaches an Options class:
+
+- `RuleOptionsFactory::normalizeKeys()` normalizes `qmx.yaml`/preset keys
+  (snake_case, kebab-case, or already-camelCase) to camelCase.
+- `RuleOptionsParser::normalizeOptionName()` does the same for `--rule-opt`
+  and `#[CliAlias]` option names.
+
+So `exclude_namespaces`, `exclude-namespaces`, and `excludeNamespaces` are
+all equivalent in `qmx.yaml`; `min-class-count`, `min_class_count`, and
+`minClassCount` are all equivalent on `--rule-opt`. There is no channel where
+only one casing works — the canonical spellings above are the *documented,
+idiomatic* choice per channel, not the *only accepted* one.
+
+**Reporting:** when the tool needs to show option names back to the user
+(the "Unknown option ... Available options: ..." warning from
+`RuleOptionsFactory::warnAboutUnknownKeys()`), it converts the internal
+camelCase name to kebab-case via `toCanonicalDisplayName()` — e.g. a
+`maxDistanceWarning` constructor parameter is reported as
+`max-distance-warning`, regardless of which casing the user actually typed.
+Kebab-case is therefore the spelling users see in tool output, even though
+`qmx.yaml` itself is conventionally snake_case.
+
+> **Known gap:** `warnAboutUnknownKeys()` only recognizes constructor
+> parameter names (reflected off the Options class). Shorthand keys consumed
+> by `ThresholdParser` but not also a constructor parameter — the bare
+> `threshold` key, or rule-specific ones like `param_threshold` on
+> `design.type-coverage` — are invisible to this check and can trigger a
+> false "Unknown option" warning even though `ThresholdParser` accepts them
+> correctly. See `RuleOptionsFactory::warnAboutUnknownKeys()` docblock.

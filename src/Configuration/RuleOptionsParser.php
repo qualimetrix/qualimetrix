@@ -62,6 +62,16 @@ final readonly class RuleOptionsParser
     /**
      * Parses a short alias option.
      *
+     * The option name declared on `#[CliAlias(...)]` is normalized the same
+     * way as `--rule-opt` option names ({@see normalizeOptionName()}), so both
+     * channels converge on the same internal (camelCase) key before reaching
+     * {@see \Qualimetrix\Configuration\RuleOptionsFactory}. Without this, a
+     * rule author who wrote a kebab-case/snake_case second argument (matching
+     * the option's `ThresholdParser` key rather than its camelCase property
+     * name) would produce a key that `RuleOptionsFactory::warnAboutUnknownKeys()`
+     * cannot recognize as known, triggering a false "Unknown option" warning
+     * even though the threshold was applied correctly.
+     *
      * @return array{rule: string, option: string, value: mixed}|null
      */
     public function parseShortAlias(string $alias, mixed $value): ?array
@@ -73,7 +83,7 @@ final readonly class RuleOptionsParser
 
         return [
             'rule' => $mapping['rule'],
-            'option' => $mapping['option'],
+            'option' => $this->normalizeOptionName($mapping['option']),
             'value' => $value,
         ];
     }

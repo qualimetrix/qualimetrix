@@ -11,10 +11,19 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
 use Qualimetrix\Configuration\RuleOptionsFactory;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Rules\CodeSmell\LongParameterListOptions;
+use Qualimetrix\Rules\Complexity\ComplexityOptions;
+use Qualimetrix\Rules\Coupling\CboOptions;
+use Qualimetrix\Rules\Coupling\DistanceOptions;
+use Qualimetrix\Rules\Coupling\InstabilityOptions;
+use Qualimetrix\Rules\Design\TypeCoverageOptions;
+use Qualimetrix\Rules\Size\MethodCountOptions;
 use Qualimetrix\Tests\Fixture\TestRuleOptions;
 use Qualimetrix\Tests\Fixture\TestRuleOptionsNoConstructor;
 use Qualimetrix\Tests\Fixture\TestRuleOptionsWithRequiredParams;
 use Qualimetrix\Tests\Fixture\TestRuleOptionsWithUnionType;
+use Qualimetrix\Tests\Support\Logger\RecordingLogger;
 use RuntimeException;
 use stdClass;
 
@@ -1044,5 +1053,548 @@ final class RuleOptionsFactoryTest extends TestCase
 
         $registry->reset();
         self::assertSame([], $provider->getExclusions('test.rule'));
+    }
+
+    // --- regression: a rule configured with ONLY framework-level keys
+    // (exclude_namespaces / exclude_paths) must stay enabled ---
+    //
+    // Bug: an earlier version of create() decided "$userConfig === [] ->
+    // fall back to $defaults" BEFORE extractExcludeNamespaces()/
+    // extractExcludePaths() stripped the framework-level keys out of
+    // $userConfig. So a rule configured with ONLY `exclude_namespaces`
+    // looked "non-empty" at check time, $merged became $userConfig, THEN
+    // extraction emptied it out to `[]`, and Options::fromArray([]) special-
+    // cases an empty array as "disabled" for ~21 rule classes (including
+    // LongParameterListOptions, used below) — silently disabling the rule
+    // even though the user never touched `enabled`. These tests use a real
+    // production Options class (not the TestRuleOptions fixture, which
+    // doesn't have the "$config === [] -> disabled" sentinel and so
+    // couldn't reproduce this) end-to-end through the factory.
+
+    #[Test]
+    public function itKeepsTheRuleEnabledWhenOnlyExcludeNamespacesIsConfiguredInTheFile(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'code-smell.long-parameter-list' => [
+                'exclude_namespaces' => ['App\\Tests'],
+            ],
+        ]);
+
+        /** @var LongParameterListOptions $options */
+        $options = $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
+
+        self::assertTrue($options->isEnabled(), 'A rule configured with only exclude_namespaces must stay enabled');
+        self::assertSame(4, $options->warning);
+        self::assertSame(6, $options->error);
+        self::assertSame(
+            ['App\\Tests'],
+            $this->registry->getExclusionProvider()->getExclusions('code-smell.long-parameter-list'),
+        );
+    }
+
+    #[Test]
+    public function itKeepsTheRuleEnabledWhenOnlyExcludePathsIsConfiguredInTheFile(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'code-smell.long-parameter-list' => [
+                'exclude_paths' => ['src/Legacy/**'],
+            ],
+        ]);
+
+        /** @var LongParameterListOptions $options */
+        $options = $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
+
+        self::assertTrue($options->isEnabled(), 'A rule configured with only exclude_paths must stay enabled');
+        self::assertSame(4, $options->warning);
+        self::assertSame(6, $options->error);
+        self::assertTrue(
+            $this->registry->getPathExclusionProvider()->isExcluded(
+                'code-smell.long-parameter-list',
+                RelativePath::fromString('src/Legacy/Foo.php'),
+            ),
+        );
+    }
+
+    #[Test]
+    public function itKeepsTheRuleEnabledWhenExcludeNamespacesIsConfiguredAlongsideARealOption(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'code-smell.long-parameter-list' => [
+                'exclude_namespaces' => ['App\\Tests'],
+                'error' => 8,
+            ],
+        ]);
+
+        /** @var LongParameterListOptions $options */
+        $options = $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
+
+        self::assertTrue($options->isEnabled());
+        self::assertSame(8, $options->error);
+        self::assertSame(4, $options->warning, 'Untouched sibling key keeps its own default');
+        self::assertSame(
+            ['App\\Tests'],
+            $this->registry->getExclusionProvider()->getExclusions('code-smell.long-parameter-list'),
+        );
+    }
+
+    #[Test]
+    public function itKeepsTheRuleEnabledWhenOnlyExcludeNamespacesIsConfiguredViaCli(): void
+    {
+        // No config file entry at all for this rule — exclude_namespaces
+        // arrives purely through --rule-opt / addCliOption().
+        $this->registry->addCliOption('code-smell.long-parameter-list', 'excludeNamespaces', ['App\\Tests']);
+
+        /** @var LongParameterListOptions $options */
+        $options = $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
+
+        self::assertTrue($options->isEnabled(), 'A rule configured with only a CLI exclude_namespaces must stay enabled');
+        self::assertSame(4, $options->warning);
+        self::assertSame(6, $options->error);
+        self::assertSame(
+            ['App\\Tests'],
+            $this->registry->getExclusionProvider()->getExclusions('code-smell.long-parameter-list'),
+        );
+    }
+
+    // --- flat `threshold:` shorthand through the full factory path ---
+    //
+    // Regression coverage for a bug where RuleOptionsFactory::create()
+    // unconditionally seeded ALL constructor defaults (including `warning`/
+    // `error`) into the array handed to Options::fromArray(), even when the
+    // user never set those keys. ThresholdParser::parse() then saw the
+    // defaulted `warning`/`error` as "explicitly set" and rejected the flat
+    // `threshold:` shorthand as "mixed with warning/error" — even though the
+    // user only ever wrote `threshold`. This is exactly the shorthand
+    // documented in website/docs/getting-started/configuration.md.
+    //
+    // These tests go through RuleOptionsFactory::create() end-to-end (not
+    // Options::fromArray() directly) because the bug lives entirely in how
+    // the factory assembles the array passed to fromArray() — a direct
+    // fromArray() call cannot reproduce it.
+
+    #[Test]
+    public function itAppliesFlatThresholdShorthandThroughTheFactory(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'size.method-count' => [
+                'threshold' => 25,
+            ],
+        ]);
+
+        /** @var MethodCountOptions $options */
+        $options = $this->factory->create('size.method-count', MethodCountOptions::class);
+
+        self::assertTrue($options->isEnabled());
+        self::assertSame(25, $options->warning);
+        self::assertSame(25, $options->error);
+    }
+
+    #[Test]
+    public function itAppliesNestedThresholdShorthandThroughTheFactory(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'complexity.cyclomatic' => [
+                'method' => ['threshold' => 15],
+            ],
+        ]);
+
+        /** @var ComplexityOptions $options */
+        $options = $this->factory->create('complexity.cyclomatic', ComplexityOptions::class);
+
+        self::assertSame(15, $options->method->warning);
+        self::assertSame(15, $options->method->error);
+        // Untouched sibling level keeps its own defaults.
+        self::assertSame(30, $options->class->maxWarning);
+        self::assertSame(50, $options->class->maxError);
+    }
+
+    #[Test]
+    public function itThrowsWhenUserExplicitlyMixesThresholdAndWarningThroughTheFactory(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'size.method-count' => [
+                'threshold' => 25,
+                'warning' => 10,
+            ],
+        ]);
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
+
+        $this->factory->create('size.method-count', MethodCountOptions::class);
+    }
+
+    #[Test]
+    public function itStillAppliesConstructorDefaultsWhenRuleIsEntirelyUnconfigured(): void
+    {
+        // No config file / CLI entry at all for this rule — the "enabled by
+        // default" contract must be preserved (this is the common case for
+        // the vast majority of rules).
+        /** @var MethodCountOptions $options */
+        $options = $this->factory->create('size.method-count', MethodCountOptions::class);
+
+        self::assertTrue($options->isEnabled());
+        self::assertSame(20, $options->warning);
+        self::assertSame(30, $options->error);
+    }
+
+    // --- warnAboutUnknownKeys() honors ShorthandOptionKeysInterface ---------
+    //
+    // Regression coverage for a bug where warnAboutUnknownKeys() only knew
+    // about constructor parameter names (via reflection), so a documented
+    // ThresholdParser shorthand key — the bare `threshold`, or a rule-specific
+    // one like `vo-threshold` / `param_threshold` — was reported as "Unknown
+    // option" even though it applied correctly. ShorthandOptionKeysInterface
+    // lets an Options class declare which shorthand keys its fromArray()
+    // actually accepts; only classes implementing it are exempted, so rules
+    // whose fromArray() genuinely has no such branch (CboOptions,
+    // InstabilityOptions — the top-level `class`/`namespace` wrapper never
+    // routes a bare `threshold` anywhere) keep warning as before.
+
+    #[Test]
+    public function itDoesNotWarnAboutTheDocumentedThresholdShorthandOnASupportingRule(): void
+    {
+        $logger = new RecordingLogger();
+        $factory = new RuleOptionsFactory($this->registry, $logger);
+
+        $this->registry->setConfigFileOptions([
+            'size.method-count' => ['threshold' => 25],
+        ]);
+
+        /** @var MethodCountOptions $options */
+        $options = $factory->create('size.method-count', MethodCountOptions::class);
+
+        self::assertSame(25, $options->warning);
+        self::assertSame(25, $options->error);
+        self::assertSame([], $logger->records, 'The documented `threshold` shorthand must not trigger a false Unknown option warning');
+    }
+
+    #[Test]
+    public function itDoesNotWarnAboutTheVoThresholdShorthandOnLongParameterList(): void
+    {
+        $logger = new RecordingLogger();
+        $factory = new RuleOptionsFactory($this->registry, $logger);
+
+        $this->registry->setConfigFileOptions([
+            'code-smell.long-parameter-list' => ['vo-threshold' => 9],
+        ]);
+
+        /** @var LongParameterListOptions $options */
+        $options = $factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
+
+        self::assertSame(9, $options->voWarning);
+        self::assertSame(9, $options->voError);
+        self::assertSame([], $logger->records, 'The documented `vo-threshold` shorthand must not trigger a false Unknown option warning');
+    }
+
+    #[Test]
+    public function itDoesNotWarnAboutTheParamThresholdShorthandOnTypeCoverage(): void
+    {
+        $logger = new RecordingLogger();
+        $factory = new RuleOptionsFactory($this->registry, $logger);
+
+        $this->registry->setConfigFileOptions([
+            'design.type-coverage' => ['param_threshold' => 70.0],
+        ]);
+
+        /** @var TypeCoverageOptions $options */
+        $options = $factory->create('design.type-coverage', TypeCoverageOptions::class);
+
+        self::assertSame(70.0, $options->paramWarning);
+        self::assertSame(70.0, $options->paramError);
+        self::assertSame([], $logger->records, 'The documented `param_threshold` shorthand must not trigger a false Unknown option warning');
+    }
+
+    #[Test]
+    public function itStillWarnsWhenThresholdIsUsedOnCboWhichHasNoFlatShorthandBranch(): void
+    {
+        $logger = new RecordingLogger();
+        $factory = new RuleOptionsFactory($this->registry, $logger);
+
+        $this->registry->setConfigFileOptions([
+            'coupling.cbo' => ['threshold' => 30],
+        ]);
+
+        /** @var CboOptions $options */
+        $options = $factory->create('coupling.cbo', CboOptions::class);
+
+        // CboOptions::fromArray() has no top-level `threshold` branch — only
+        // nested `class: {...}` / `namespace: {...}` configs are read — so
+        // the value is silently ignored and defaults apply.
+        self::assertSame(14, $options->class->warning);
+        self::assertSame(20, $options->class->error);
+        self::assertCount(1, $logger->records);
+        self::assertStringContainsString('Unknown option "threshold" for rule "coupling.cbo"', $logger->records[0]['message']);
+    }
+
+    #[Test]
+    public function itStillWarnsWhenThresholdIsUsedOnInstabilityWhichHasNoFlatShorthandBranch(): void
+    {
+        $logger = new RecordingLogger();
+        $factory = new RuleOptionsFactory($this->registry, $logger);
+
+        $this->registry->setConfigFileOptions([
+            'coupling.instability' => ['threshold' => 0.9],
+        ]);
+
+        /** @var InstabilityOptions $options */
+        $options = $factory->create('coupling.instability', InstabilityOptions::class);
+
+        self::assertSame(0.8, $options->class->maxWarning);
+        self::assertSame(0.95, $options->class->maxError);
+        self::assertCount(1, $logger->records);
+        self::assertStringContainsString('Unknown option "threshold" for rule "coupling.instability"', $logger->records[0]['message']);
+    }
+
+    #[Test]
+    public function itStillWarnsAboutAGenuinelyUnknownKeyOnARuleThatSupportsShorthand(): void
+    {
+        $logger = new RecordingLogger();
+        $factory = new RuleOptionsFactory($this->registry, $logger);
+
+        $this->registry->setConfigFileOptions([
+            'size.method-count' => ['nonsense' => 1],
+        ]);
+
+        $factory->create('size.method-count', MethodCountOptions::class);
+
+        self::assertCount(1, $logger->records);
+        self::assertStringContainsString('Unknown option "nonsense" for rule "size.method-count"', $logger->records[0]['message']);
+        self::assertStringContainsString(
+            'Available options: enabled, warning, error, threshold',
+            $logger->records[0]['message'],
+            'The declared shorthand key must be listed alongside the constructor-derived options',
+        );
+    }
+
+    // --- `threshold` vs `warning`/`error` mode conflicts across the
+    // config-file -> CLI merge boundary ------------------------------------
+    //
+    // Regression coverage for the HIGH review finding: a naive deep-merge
+    // let a higher-priority layer's `threshold` and a lower-priority
+    // layer's `warning`/`error` survive into the same array handed to
+    // Options::fromArray(), which ThresholdParser::parse() then rejected as
+    // "cannot mix" — even though the CLI (or a preset, which arrives here
+    // pre-merged into "config file options" the same way) clearly meant to
+    // switch modes, not combine them. Reproduces both CLI repros from the
+    // review: `--rule-opt=size.method-count:threshold=25` on top of a
+    // preset/config-file `warning`/`error` pair.
+
+    #[Test]
+    public function cliThresholdOverridesConfigFileWarningAndError(): void
+    {
+        // Reproduces: qmx.yaml sets `warning`/`error`,
+        // `--rule-opt=size.method-count:threshold=25` on top.
+        $this->registry->setConfigFileOptions([
+            'size.method-count' => ['warning' => 10, 'error' => 20],
+        ]);
+        $this->registry->setCliOptions('size.method-count', ['threshold' => 25]);
+
+        /** @var MethodCountOptions $options */
+        $options = $this->factory->create('size.method-count', MethodCountOptions::class);
+
+        self::assertTrue($options->isEnabled());
+        self::assertSame(25, $options->warning);
+        self::assertSame(25, $options->error);
+    }
+
+    #[Test]
+    public function cliThresholdOverridesPresetSuppliedWarningAndError(): void
+    {
+        // Reproduces: --preset=strict sets `warning`/`error` for this rule
+        // (arrives here as "config file options", since presets are merged
+        // in before RuleOptionsFactory ever runs), and
+        // `--rule-opt=size.method-count:threshold=25` on top.
+        $this->registry->setConfigFileOptions([
+            'size.method-count' => ['warning' => 5, 'error' => 8],
+        ]);
+        $this->registry->setCliOptions('size.method-count', ['threshold' => 25]);
+
+        /** @var MethodCountOptions $options */
+        $options = $this->factory->create('size.method-count', MethodCountOptions::class);
+
+        self::assertSame(25, $options->warning);
+        self::assertSame(25, $options->error);
+    }
+
+    #[Test]
+    public function cliWarningAndErrorOverrideConfigFileThreshold(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'size.method-count' => ['threshold' => 25],
+        ]);
+        $this->registry->setCliOptions('size.method-count', ['warning' => 10, 'error' => 20]);
+
+        /** @var MethodCountOptions $options */
+        $options = $this->factory->create('size.method-count', MethodCountOptions::class);
+
+        self::assertSame(10, $options->warning);
+        self::assertSame(20, $options->error);
+    }
+
+    #[Test]
+    public function cliThresholdOverridesConfigFileWarningAndErrorAtNestedLevel(): void
+    {
+        // Hierarchical rule (complexity.cyclomatic): eviction must be
+        // scoped to the `method:` nesting level, not the rule's top level.
+        $this->registry->setConfigFileOptions([
+            'complexity.cyclomatic' => [
+                'method' => ['warning' => 10, 'error' => 20],
+                'class' => ['max_warning' => 30, 'max_error' => 50],
+            ],
+        ]);
+        $this->registry->addCliOption('complexity.cyclomatic', 'method.threshold', 15);
+
+        /** @var ComplexityOptions $options */
+        $options = $this->factory->create('complexity.cyclomatic', ComplexityOptions::class);
+
+        self::assertSame(15, $options->method->warning);
+        self::assertSame(15, $options->method->error);
+        // Untouched sibling level keeps its own config-file values.
+        self::assertSame(30, $options->class->maxWarning);
+        self::assertSame(50, $options->class->maxError);
+    }
+
+    #[Test]
+    public function sameLayerCliThresholdAndWarningStillThrows(): void
+    {
+        // Both keys set by the SAME source (CLI) must still be reported as
+        // a genuine configuration error — only the *other* side of a merge
+        // is ever evicted.
+        $this->registry->setCliOptions('size.method-count', ['threshold' => 25, 'warning' => 10]);
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Cannot mix "threshold" with "warning"/"error"');
+
+        $this->factory->create('size.method-count', MethodCountOptions::class);
+    }
+
+    #[Test]
+    public function unrelatedVoGroupIsNotEvictedByAnUnrelatedCliThresholdOverride(): void
+    {
+        // code-smell.long-parameter-list has two independent dimensions:
+        // bare warning/error/threshold, and the vo-prefixed variant.
+        // A CLI override of one must not evict the other.
+        $this->registry->setConfigFileOptions([
+            'code-smell.long-parameter-list' => ['warning' => 4, 'error' => 6, 'voWarning' => 8, 'voError' => 12],
+        ]);
+        $this->registry->setCliOptions('code-smell.long-parameter-list', ['threshold' => 5]);
+
+        /** @var LongParameterListOptions $options */
+        $options = $this->factory->create('code-smell.long-parameter-list', LongParameterListOptions::class);
+
+        self::assertSame(5, $options->warning);
+        self::assertSame(5, $options->error);
+        // vo-* dimension untouched by the unrelated bare `threshold` override.
+        self::assertSame(8, $options->voWarning);
+        self::assertSame(12, $options->voError);
+    }
+
+    // --- Prefixed graduated keys (max_distance_warning/max_distance_error
+    // vs. a bare `threshold`) — coordinator-reported gap in the heuristic
+    // fallback, now closed via RuleThresholdKeyGroupRegistry ----------------
+    //
+    // Reproduces: qmx.yaml sets `max_distance_warning`/`max_distance_error`
+    // for coupling.distance, `--rule-opt=coupling.distance:threshold=0.5` on
+    // top. Before the registry, the heuristic required the threshold key's
+    // prefix to match the graduated keys' prefix ('' vs 'maxDistance') and
+    // never evicted — this is exactly the same "cannot mix" failure as the
+    // HIGH finding, just for a rule whose graduated keys aren't the bare
+    // `warning`/`error` spelling.
+
+    #[Test]
+    public function cliThresholdOverridesConfigFilePrefixedGraduatedKeys(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'coupling.distance' => ['max_distance_warning' => 0.4, 'max_distance_error' => 0.6],
+        ]);
+        $this->registry->setCliOptions('coupling.distance', ['threshold' => 0.5]);
+
+        /** @var DistanceOptions $options */
+        $options = $this->factory->create('coupling.distance', DistanceOptions::class);
+
+        self::assertSame(0.5, $options->maxDistanceWarning);
+        self::assertSame(0.5, $options->maxDistanceError);
+    }
+
+    #[Test]
+    public function cliPrefixedGraduatedKeysOverrideConfigFileThreshold(): void
+    {
+        // Symmetric direction: config file sets the bare `threshold`
+        // shorthand, CLI switches to the prefixed graduated pair.
+        $this->registry->setConfigFileOptions([
+            'coupling.distance' => ['threshold' => 0.5],
+        ]);
+        $this->registry->setCliOptions('coupling.distance', [
+            'maxDistanceWarning' => 0.4,
+            'maxDistanceError' => 0.6,
+        ]);
+
+        /** @var DistanceOptions $options */
+        $options = $this->factory->create('coupling.distance', DistanceOptions::class);
+
+        self::assertSame(0.4, $options->maxDistanceWarning);
+        self::assertSame(0.6, $options->maxDistanceError);
+    }
+
+    #[Test]
+    public function sameLayerCliThresholdAndPrefixedGraduatedKeysStillThrows(): void
+    {
+        // Both keys set by the SAME source (CLI) for a prefixed group must
+        // still be a genuine configuration error.
+        $this->registry->setCliOptions('coupling.distance', [
+            'threshold' => 0.5,
+            'maxDistanceWarning' => 0.4,
+        ]);
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('Cannot mix "threshold" with "max_distance_warning"/"max_distance_error"');
+
+        $this->factory->create('coupling.distance', DistanceOptions::class);
+    }
+
+    #[Test]
+    public function cliThresholdOverridesConfigFilePrefixedGraduatedKeysAtNestedLevel(): void
+    {
+        // Hierarchical rule with a prefix-mismatched nested level:
+        // coupling.instability's `class:` dimension uses max_warning/
+        // max_error paired with a bare `threshold` — eviction must be
+        // scoped to the `class:` level.
+        $this->registry->setConfigFileOptions([
+            'coupling.instability' => [
+                'class' => ['max_warning' => 0.8, 'max_error' => 0.95],
+                'namespace' => ['max_warning' => 0.7, 'max_error' => 0.9],
+            ],
+        ]);
+        $this->registry->addCliOption('coupling.instability', 'class.threshold', 0.85);
+
+        /** @var InstabilityOptions $options */
+        $options = $this->factory->create('coupling.instability', InstabilityOptions::class);
+
+        self::assertSame(0.85, $options->class->maxWarning);
+        self::assertSame(0.85, $options->class->maxError);
+        // Untouched sibling level keeps its own config-file values.
+        self::assertSame(0.7, $options->namespace->maxWarning);
+        self::assertSame(0.9, $options->namespace->maxError);
+    }
+
+    #[Test]
+    public function cliThresholdOverridesLegacyWarningThresholdAliasAtTopLevel(): void
+    {
+        // complexity.cyclomatic's top-level legacy-flat shorthand accepts
+        // `warningThreshold`/`errorThreshold` as legacy aliases for
+        // warning/error — a naive suffix heuristic would misclassify those
+        // as threshold markers (they end in "Threshold"). The registry
+        // entry corrects this: a CLI `threshold` must still evict them.
+        $this->registry->setConfigFileOptions([
+            'complexity.cyclomatic' => ['warningThreshold' => 10, 'errorThreshold' => 20],
+        ]);
+        $this->registry->setCliOptions('complexity.cyclomatic', ['threshold' => 15]);
+
+        /** @var ComplexityOptions $options */
+        $options = $this->factory->create('complexity.cyclomatic', ComplexityOptions::class);
+
+        self::assertSame(15, $options->method->warning);
+        self::assertSame(15, $options->method->error);
     }
 }

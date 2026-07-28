@@ -36,7 +36,7 @@ final readonly class ClassComplexityOptions implements LevelOptionsInterface, Th
             return new self();
         }
 
-        $thresholds = ThresholdParser::parse($config, 'max_warning', 'max_error', 30, 50, legacyWarningKeys: ['maxWarning'], legacyErrorKeys: ['maxError']);
+        $thresholds = ThresholdParser::parse($config, 'max_warning', 'max_error', 30, 50, legacyKeys: ['warning' => ['maxWarning'], 'error' => ['maxError']]);
 
         return new self(
             enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),

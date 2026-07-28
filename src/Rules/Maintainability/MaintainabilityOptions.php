@@ -8,6 +8,7 @@ use Qualimetrix\Core\Rule\Override\InvertedOverrideValidator;
 use Qualimetrix\Core\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
@@ -22,7 +23,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  *
  * Note: Lower MI is worse, so thresholds work in reverse.
  */
-final readonly class MaintainabilityOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
+final readonly class MaintainabilityOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -50,6 +51,14 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface, Thr
             excludeTests: (bool) ($config['exclude_tests'] ?? $config['excludeTests'] ?? true),
             minLoc: (int) ($config['min_loc'] ?? $config['minLoc'] ?? 10),
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getShorthandOptionKeys(): array
+    {
+        return ['threshold'];
     }
 
     public function isEnabled(): bool

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Configuration\Pipeline;
 
 use Qualimetrix\Configuration\ConfigSchema;
+use Qualimetrix\Configuration\RuleOptionThresholdModeResolver;
 
 /**
  * Centralizes configuration merge logic for layered configuration resolution.
@@ -77,7 +78,7 @@ final class ConfigurationMerger
                 }
 
                 if ($key === ConfigSchema::RULES) {
-                    $base[$key] = self::deepMergeAssociative($base[$key], $value);
+                    $base[$key] = self::deepMergeAllRuleOptions($base[$key], $value);
                     continue;
                 }
 
@@ -111,6 +112,70 @@ final class ConfigurationMerger
                 && !array_is_list($value)
             ) {
                 $base[$key] = self::deepMergeAssociative($base[$key], $value);
+            } else {
+                $base[$key] = $value;
+            }
+        }
+
+        return $base;
+    }
+
+    /**
+     * Deep-merges the `rules:` section (all rule names) — the top-level
+     * keys here are rule slugs (`size.method-count`, `complexity.cyclomatic`,
+     * ...), so this dispatches each rule to {@see deepMergeRuleOptions()}
+     * with its name and an empty nesting path, then that function recurses
+     * per-rule.
+     *
+     * @param array<array-key, mixed> $base
+     * @param array<array-key, mixed> $overlay
+     *
+     * @return array<array-key, mixed>
+     */
+    private static function deepMergeAllRuleOptions(array $base, array $overlay): array
+    {
+        foreach ($overlay as $ruleName => $value) {
+            if (\is_array($value) && isset($base[$ruleName]) && \is_array($base[$ruleName])
+                && !array_is_list($value)
+            ) {
+                $base[$ruleName] = self::deepMergeRuleOptions((string) $ruleName, '', $base[$ruleName], $value);
+            } else {
+                $base[$ruleName] = $value;
+            }
+        }
+
+        return $base;
+    }
+
+    /**
+     * Deep-merges a single rule's option array, evicting `threshold` vs
+     * `warning`/`error` mode conflicts across the merge boundary before
+     * falling back to the same semantics as {@see deepMergeAssociative()}
+     * (list-valued options replaced wholesale, associative sub-arrays
+     * merged recursively). See {@see RuleOptionThresholdModeResolver} for
+     * why this can't just be a plain deep-merge.
+     *
+     * Recurses so hierarchical rule levels (e.g. `complexity.cyclomatic`'s
+     * `method:`/`class:`) get eviction scoped to the level the conflicting
+     * keys actually live at, not the rule's top level — `$path` tracks the
+     * dot-joined nesting (`''`, `'method'`, `'class'`, ...) consulted by
+     * {@see RuleThresholdKeyGroupRegistry}.
+     *
+     * @param array<array-key, mixed> $base
+     * @param array<array-key, mixed> $overlay
+     *
+     * @return array<array-key, mixed>
+     */
+    private static function deepMergeRuleOptions(string $ruleName, string $path, array $base, array $overlay): array
+    {
+        $base = RuleOptionThresholdModeResolver::evictOverriddenMode($base, $overlay, $ruleName, $path);
+
+        foreach ($overlay as $key => $value) {
+            if (\is_array($value) && isset($base[$key]) && \is_array($base[$key])
+                && !array_is_list($value)
+            ) {
+                $childPath = $path === '' ? (string) $key : $path . '.' . $key;
+                $base[$key] = self::deepMergeRuleOptions($ruleName, $childPath, $base[$key], $value);
             } else {
                 $base[$key] = $value;
             }

@@ -7,6 +7,7 @@ namespace Qualimetrix\Rules\Coupling;
 use Qualimetrix\Core\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
@@ -25,7 +26,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  * - Use `exclude_namespaces` (universal per-rule option) to exclude specific namespaces
  * - External dependencies (not matching project namespaces) are always excluded
  */
-final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
+final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -63,7 +64,7 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
             $includeNamespaces = array_values($includeKey);
         }
 
-        $thresholds = ThresholdParser::parse($config, 'max_distance_warning', 'max_distance_error', 0.3, 0.5, legacyWarningKeys: ['maxDistanceWarning'], legacyErrorKeys: ['maxDistanceError']);
+        $thresholds = ThresholdParser::parse($config, 'max_distance_warning', 'max_distance_error', 0.3, 0.5, legacyKeys: ['warning' => ['maxDistanceWarning'], 'error' => ['maxDistanceError']]);
 
         return new self(
             enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
@@ -72,6 +73,14 @@ final readonly class DistanceOptions implements RuleOptionsInterface, ThresholdA
             includeNamespaces: $includeNamespaces,
             minClassCount: (int) ($config['min_class_count'] ?? $config['minClassCount'] ?? 3),
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getShorthandOptionKeys(): array
+    {
+        return ['threshold'];
     }
 
     public function isEnabled(): bool

@@ -7,6 +7,7 @@ namespace Qualimetrix\Rules\Size;
 use Qualimetrix\Core\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
@@ -14,7 +15,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
 /**
  * Options for the property count rule.
  */
-final readonly class PropertyCountOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
+final readonly class PropertyCountOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -44,6 +45,14 @@ final readonly class PropertyCountOptions implements RuleOptionsInterface, Thres
             excludeReadonly: (bool) ($config['exclude_readonly'] ?? $config['excludeReadonly'] ?? true),
             excludePromotedOnly: (bool) ($config['exclude_promoted_only'] ?? $config['excludePromotedOnly'] ?? true),
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getShorthandOptionKeys(): array
+    {
+        return ['threshold'];
     }
 
     public function isEnabled(): bool

@@ -7,6 +7,7 @@ namespace Qualimetrix\Rules\Structure;
 use Qualimetrix\Core\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
@@ -24,7 +25,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  * - Warning: 10 (many direct children, changes affect many classes)
  * - Error: 15 (too many children, consider using interfaces or composition)
  */
-final readonly class NocOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
+final readonly class NocOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -50,6 +51,14 @@ final readonly class NocOptions implements RuleOptionsInterface, ThresholdAwareO
             warning: (int) $thresholds['warning'],
             error: (int) $thresholds['error'],
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getShorthandOptionKeys(): array
+    {
+        return ['threshold'];
     }
 
     public function isEnabled(): bool

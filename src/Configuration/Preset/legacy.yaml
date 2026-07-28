@@ -8,15 +8,15 @@ rules:
       warning: 20
       error: 40
     class:
-      maxWarning: 60
-      maxError: 100
+      max_warning: 60
+      max_error: 100
   complexity.cognitive:
     method:
       warning: 30
       error: 60
     class:
-      maxWarning: 60
-      maxError: 100
+      max_warning: 60
+      max_error: 100
   complexity.npath:
     method:
       warning: 500
@@ -54,14 +54,14 @@ rules:
       error: 30
   coupling.instability:
     class:
-      maxWarning: 0.95
-      maxError: 1.0
+      max_warning: 0.95
+      max_error: 1.0
     namespace:
-      maxWarning: 0.95
-      maxError: 1.0
+      max_warning: 0.95
+      max_error: 1.0
   coupling.distance:
-    maxDistanceWarning: 0.5
-    maxDistanceError: 0.7
+    max_distance_warning: 0.5
+    max_distance_error: 0.7
   code-smell.constructor-overinjection:
     warning: 12
     error: 18
@@ -71,12 +71,12 @@ rules:
     vo-warning: 12
     vo-error: 18
   design.type-coverage:
-    paramWarning: 30
-    paramError: 10
-    returnWarning: 30
-    returnError: 10
-    propertyWarning: 30
-    propertyError: 10
+    param_warning: 30
+    param_error: 10
+    return_warning: 30
+    return_error: 10
+    property_warning: 30
+    property_error: 10
 
 disabledRules:
   - code-smell.boolean-argument

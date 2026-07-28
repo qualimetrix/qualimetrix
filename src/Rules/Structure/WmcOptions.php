@@ -7,6 +7,7 @@ namespace Qualimetrix\Rules\Structure;
 use Qualimetrix\Core\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
@@ -22,7 +23,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  *
  * @see https://pdepend.org/documentation/software-metrics/weighted-method-count.html
  */
-final readonly class WmcOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
+final readonly class WmcOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -50,6 +51,14 @@ final readonly class WmcOptions implements RuleOptionsInterface, ThresholdAwareO
             error: (int) $thresholds['error'],
             excludeDataClasses: (bool) ($config['exclude_data_classes'] ?? $config['excludeDataClasses'] ?? false),
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getShorthandOptionKeys(): array
+    {
+        return ['threshold'];
     }
 
     public function isEnabled(): bool

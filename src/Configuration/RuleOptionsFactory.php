@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
@@ -54,25 +55,71 @@ final class RuleOptionsFactory
         // 1. Get defaults from constructor parameters
         $defaults = $this->extractDefaults($reflection);
 
-        // 2. Merge with config file options (normalize scalars to arrays)
+        // 2. Merge config file options with CLI options (highest priority),
+        // WITHOUT seeding constructor defaults yet. Keeping this merge
+        // strictly user-supplied lets Options::fromArray() (and, in turn,
+        // ThresholdParser::parse()) tell "the user explicitly set this key"
+        // apart from "this is just the constructor default" — see the
+        // "userConfig vs defaults" note on $merged below for why that
+        // distinction matters.
         $configFileOptions = $this->registry->getConfigFileOptions();
         $fileOptions = $this->normalizeScalarConfig($configFileOptions[$ruleName] ?? []);
-        $merged = $this->deepMerge($defaults, $this->normalizeKeys($fileOptions));
+        $normalizedFileOptions = $this->normalizeKeys($fileOptions);
 
-        // 3. Merge with CLI options (highest priority)
         // Expand dot notation (e.g., 'method.warning' => ['method' => ['warning' => ...]])
         $cliOptions = $this->registry->getCliOptions();
         $cliRuleOptions = $this->expandDotNotation($cliOptions[$ruleName] ?? []);
-        $merged = $this->deepMerge($merged, $cliRuleOptions);
 
-        // 4. Extract and store exclude_namespaces at framework level
-        $this->extractExcludeNamespaces($ruleName, $merged);
+        $userConfig = $this->deepMerge($normalizedFileOptions, $cliRuleOptions, $ruleName);
 
-        // 4b. Extract and store exclude_paths at framework level
-        $this->extractExcludePaths($ruleName, $merged);
+        // 3. Extract and store framework-level keys (exclude_namespaces,
+        // exclude_paths) BEFORE deciding whether $userConfig counts as
+        // "empty" below. These keys are consumed by the framework — they
+        // never reach Options::fromArray() — so a rule configured with
+        // ONLY these keys (e.g. `{ exclude_namespaces: [App\Tests] }` and
+        // nothing else) must still be treated as "unconfigured" for the
+        // fromArray() input, not as "configured with an empty rest-of-
+        // config". Stripping them first and THEN checking for emptiness is
+        // what makes that distinction correctly; checking emptiness first
+        // (as an earlier version of this method did) let a
+        // framework-only config slip through as "non-empty", so the
+        // extraction below emptied it out AFTER the check already decided
+        // not to fall back to defaults — the rule then received `[]` in
+        // fromArray() and several Options classes special-case that as
+        // "disabled" (see the note on $merged below), silently turning the
+        // rule off. This was a real regression, caught by external review.
+        $this->extractExcludeNamespaces($ruleName, $userConfig);
+        $this->extractExcludePaths($ruleName, $userConfig);
+
+        // 4. $merged is what Options::fromArray() actually receives.
+        //
+        // When the user configured nothing at all for this rule (after the
+        // framework-level extraction above), fall back to the full
+        // constructor-defaults array so fromArray() still sees a non-empty
+        // config — several Options classes special-case an empty array as
+        // "definitely no config given" (used by direct fromArray([])
+        // callers outside the factory, e.g. AnalysisPipeline's threshold-
+        // override-support probe) and would otherwise report as disabled.
+        //
+        // When the user configured *something* else, pass that through
+        // as-is instead of pre-merging it over $defaults. Every
+        // Options::fromArray() already applies its own per-field
+        // defaulting (constructor defaults, `?? default`, or
+        // ThresholdParser's $defaultWarning/$defaultError arguments) for
+        // keys the user didn't set, so nothing is lost.
+        //
+        // This is not just a cosmetic simplification: pre-seeding ALL
+        // defaults used to make e.g. `warning`/`error` appear "explicitly
+        // set" to ThresholdParser even when only their constructor default
+        // was injected, so a bare `threshold: N` shorthand (which never
+        // touches warning/error) was flagged as "mixed with warning/error"
+        // — a false positive, since the user only ever wrote `threshold`.
+        // Passing through only what the user actually wrote restores the
+        // ability to tell "explicitly set" from "defaulted".
+        $merged = $userConfig === [] ? $defaults : $userConfig;
 
         // 5. Warn about unknown option keys
-        $this->warnAboutUnknownKeys($merged, $defaults, $ruleName);
+        $this->warnAboutUnknownKeys($merged, $defaults, $ruleName, $optionsClass);
 
         // 6. Validate numeric fields before instantiation
         $this->validateNumericFields($merged, $ruleName);
@@ -274,17 +321,36 @@ final class RuleOptionsFactory
     /**
      * Warns about unknown option keys in rule configuration.
      *
-     * Compares merged config keys against known constructor parameters.
-     * Framework-level keys (excludeNamespaces, excludePaths) are excluded
-     * since they are extracted before fromArray().
+     * Compares merged config keys against known constructor parameters, plus
+     * any extra shorthand keys the Options class declares via
+     * {@see ShorthandOptionKeysInterface}. Framework-level keys
+     * (excludeNamespaces, excludePaths) are excluded since they are
+     * extracted before fromArray().
+     *
+     * > **Note:** reflection only sees constructor parameter names. Any
+     * > {@see \Qualimetrix\Rules\Support\ThresholdParser} shorthand key that
+     * > isn't also a constructor parameter — e.g. the bare `threshold` key,
+     * > or rule-specific ones like `param-threshold` on `design.type-coverage`
+     * > or `vo-threshold` on `code-smell.long-parameter-list` — is invisible
+     * > to reflection. `ShorthandOptionKeysInterface` closes that gap: an
+     * > Options class implements it to declare the extra keys its
+     * > `fromArray()` actually accepts, and this method merges them into the
+     * > known-keys set. Options classes that don't implement it (e.g.
+     * > `CboOptions`, `InstabilityOptions` — hierarchical options whose
+     * > top-level `fromArray()` has no flat-shorthand branch at all) keep the
+     * > old constructor-only behavior, so `threshold` on `coupling.cbo`
+     * > correctly still warns.
      *
      * @param array<string, mixed> $merged
      * @param array<string, mixed> $defaults
+     * @param class-string<RuleOptionsInterface> $optionsClass
      */
-    private function warnAboutUnknownKeys(array $merged, array $defaults, string $ruleName): void
+    private function warnAboutUnknownKeys(array $merged, array $defaults, string $ruleName, string $optionsClass): void
     {
         // Framework-level keys that are valid but not in the options constructor
         static $frameworkKeys = ['excludeNamespaces', 'exclude_namespaces', 'excludePaths', 'exclude_paths'];
+
+        $shorthandKeys = $this->shorthandOptionKeysFor($optionsClass);
 
         // Build known keys in both snake_case and camelCase forms
         $knownKeys = [...$frameworkKeys];
@@ -297,18 +363,70 @@ final class RuleOptionsFactory
             }
         }
 
+        foreach ($shorthandKeys as $shorthandKey) {
+            // Declared keys are canonical kebab-case; $merged keys are always
+            // camelCase by the time they reach here (normalizeKeys()/
+            // RuleOptionsParser::normalizeOptionName() already ran), so both
+            // spellings must be accepted.
+            $knownKeys[] = $shorthandKey;
+            $camelShorthandKey = lcfirst(str_replace(['_', '-'], '', ucwords($shorthandKey, '_-')));
+            if ($camelShorthandKey !== $shorthandKey) {
+                $knownKeys[] = $camelShorthandKey;
+            }
+        }
+
         foreach (array_keys($merged) as $key) {
             if (\in_array($key, $knownKeys, true)) {
                 continue;
             }
 
+            $availableOptions = [
+                ...array_map($this->toCanonicalDisplayName(...), array_keys($defaults)),
+                ...$shorthandKeys,
+            ];
+
             $this->logger->warning(\sprintf(
                 'Unknown option "%s" for rule "%s". Available options: %s',
-                $key,
+                $this->toCanonicalDisplayName((string) $key),
                 $ruleName,
-                implode(', ', array_keys($defaults)),
+                implode(', ', $availableOptions),
             ));
         }
+    }
+
+    /**
+     * Returns the extra shorthand keys declared by an Options class via
+     * {@see ShorthandOptionKeysInterface}, or an empty list if it doesn't
+     * implement that interface (i.e. it accepts no shorthand beyond its
+     * constructor parameters).
+     *
+     * @param class-string<RuleOptionsInterface> $optionsClass
+     *
+     * @return list<string>
+     */
+    private function shorthandOptionKeysFor(string $optionsClass): array
+    {
+        if (!is_a($optionsClass, ShorthandOptionKeysInterface::class, true)) {
+            return [];
+        }
+
+        return $optionsClass::getShorthandOptionKeys();
+    }
+
+    /**
+     * Converts a constructor parameter name (always camelCase in PHP) to the
+     * kebab-case spelling users actually type in `qmx.yaml`, presets, and
+     * `--rule-opt` — the canonical, user-facing spelling for composite
+     * (multi-word) option names (see CLAUDE.md rule-option naming policy).
+     *
+     * Both camelCase and kebab/snake_case input are always accepted (see
+     * {@see normalizeKeys()} and `RuleOptionsParser::normalizeOptionName()`),
+     * but the "Available options" hint must show a single, typeable spelling
+     * rather than the internal PHP property name.
+     */
+    private function toCanonicalDisplayName(string $camelCaseKey): string
+    {
+        return strtolower((string) preg_replace('/(?<!^)[A-Z]/', '-$0', $camelCaseKey));
     }
 
     /**
@@ -365,18 +483,34 @@ final class RuleOptionsFactory
     /**
      * Deep merges arrays recursively.
      *
+     * Before merging, evicts `threshold` vs `warning`/`error` mode
+     * conflicts across the merge boundary — see
+     * {@see RuleOptionThresholdModeResolver} for why a later layer's
+     * `threshold` must displace an earlier layer's `warning`/`error` (and
+     * vice versa) instead of letting both survive into the array
+     * {@see \Qualimetrix\Core\Rule\RuleOptionsInterface::fromArray()}
+     * receives. Applied recursively, so hierarchical rule levels (e.g.
+     * `method:`/`class:`) get eviction scoped to the level the conflicting
+     * keys actually live at — `$path` tracks the dot-joined nesting (`''`,
+     * `'method'`, `'class'`, ...) consulted by
+     * {@see RuleThresholdKeyGroupRegistry}. A conflict where $override
+     * itself sets both keys (same source) is left untouched, since only
+     * $base is ever modified, and still surfaces as a genuine configuration
+     * error.
+     *
      * @param array<string, mixed> $base
      * @param array<string, mixed> $override
      *
      * @return array<string, mixed>
      */
-    private function deepMerge(array $base, array $override): array
+    private function deepMerge(array $base, array $override, string $ruleName, string $path = ''): array
     {
-        $result = $base;
+        $result = RuleOptionThresholdModeResolver::evictOverriddenMode($base, $override, $ruleName, $path);
 
         foreach ($override as $key => $value) {
             if (\is_array($value) && isset($result[$key]) && \is_array($result[$key])) {
-                $result[$key] = $this->deepMerge($result[$key], $value);
+                $childPath = $path === '' ? (string) $key : $path . '.' . $key;
+                $result[$key] = $this->deepMerge($result[$key], $value, $ruleName, $childPath);
             } else {
                 $result[$key] = $value;
             }

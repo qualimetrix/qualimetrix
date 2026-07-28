@@ -7,6 +7,7 @@ namespace Qualimetrix\Rules\Structure;
 use Qualimetrix\Core\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
@@ -21,7 +22,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  *
  * Industry standard: LCOM4 >= 5 indicates serious cohesion problems.
  */
-final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
+final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -68,6 +69,14 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
             minMethods: (int) ($config['min_methods'] ?? $config['minMethods'] ?? 3),
             excludeMethods: $excludeMethods,
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getShorthandOptionKeys(): array
+    {
+        return ['threshold'];
     }
 
     public function isEnabled(): bool

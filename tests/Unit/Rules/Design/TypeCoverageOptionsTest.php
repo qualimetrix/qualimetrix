@@ -133,6 +133,32 @@ final class TypeCoverageOptionsTest extends TestCase
         self::assertSame(70.0, $options->propertyError);
     }
 
+    /**
+     * Regression: `RuleOptionsFactory` (config-file keys) and
+     * `RuleOptionsParser` (`--rule-opt` keys) both normalize kebab-case and
+     * snake_case option names to camelCase before they reach fromArray(). The
+     * `param_threshold`/`return_threshold`/`property_threshold` unified
+     * shorthand keys must therefore also be recognized in their camelCase
+     * form, not just the snake_case primary spelling covered by
+     * {@see fromArray_perDimensionThresholdSetsBothValues()}.
+     */
+    #[Test]
+    public function itAcceptsCamelCaseThresholdShorthand(): void
+    {
+        $options = TypeCoverageOptions::fromArray([
+            'paramThreshold' => 90.0,
+            'returnThreshold' => 85.0,
+            'propertyThreshold' => 70.0,
+        ]);
+
+        self::assertSame(90.0, $options->paramWarning);
+        self::assertSame(90.0, $options->paramError);
+        self::assertSame(85.0, $options->returnWarning);
+        self::assertSame(85.0, $options->returnError);
+        self::assertSame(70.0, $options->propertyWarning);
+        self::assertSame(70.0, $options->propertyError);
+    }
+
     #[Test]
     public function fromArray_thresholdMixedWithWarningThrows(): void
     {

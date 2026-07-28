@@ -60,6 +60,18 @@ exclude_paths:
   - src/Metrics/*Visitor.php  # glob: matches visitor files only
 ```
 
+Also available as a CLI option: `--exclude-path` (merged with YAML config).
+
+!!! warning "Does not apply to `architecture.*` rules"
+    `exclude_paths` (and `--exclude-path`) never suppress `architecture.layer-violation` or
+    `architecture.circular-dependency` violations, for the same reason as `exclude_namespaces`
+    below: a layer-policy violation is not a metric, so a path exclusion aimed at quieting noisy
+    metrics must not double as an undocumented way to disable architecture enforcement. To
+    suppress a specific architecture finding, use `@qmx-ignore`, a baseline entry, or the
+    `exclude:` block inside the architecture layer configuration itself. As with
+    `exclude_namespaces`, this exemption is **global-only** — the per-rule `exclude_paths`
+    described below still works for `architecture.*` rules.
+
 ### Exclude Namespaces
 
 Suppress violations for classes in specific namespaces (prefix matching). Like `exclude_paths`, files are still analyzed and metrics are collected, but violations are not reported. This applies to all rules globally:
@@ -73,6 +85,22 @@ exclude_namespaces:
 This is useful when entire namespace subtrees should never produce violations. For per-rule exclusions, use `exclude_namespaces` inside a rule configuration instead (see below).
 
 Also available as a CLI option: `--exclude-namespace` (merged with YAML config).
+
+!!! warning "Does not apply to `architecture.*` rules"
+    `exclude_namespaces` (and `--exclude-namespace`) never suppress `architecture.layer-violation`
+    or `architecture.circular-dependency` violations. A layer-policy violation is not a metric —
+    silently dropping it would let a noisy-metric exclusion double as an undocumented way to
+    disable architecture enforcement. To suppress a specific architecture finding, use
+    `@qmx-ignore`, a baseline entry, or the `exclude:` block inside the architecture layer
+    configuration itself.
+
+    This exemption is **global-only**. The per-rule `exclude_namespaces` / `exclude_paths`
+    described below (`rules: {architecture.layer-violation: {exclude_namespaces: [...]}}`) still
+    works for `architecture.*` rules, same as for any other rule — see
+    [Exclude namespaces from a rule](#rules) below and the architecture rule's
+    [Suppression section](../rules/architecture.md#suppression) for why that asymmetry is
+    intentional: naming the rule explicitly is an unambiguous, auditable choice, while a
+    project-wide `exclude_namespaces` entry is not.
 
 ### Rules
 
@@ -114,7 +142,24 @@ rules:
     threshold: 25      # same as warning: 25, error: 25
 ```
 
-This is useful in CI where you want a simple pass/fail cutoff without graduated warnings. You cannot mix `threshold` with explicit `warning`/`error` keys in the same rule level.
+This is useful in CI where you want a simple pass/fail cutoff without graduated warnings. You cannot mix `threshold` with explicit `warning`/`error` keys **from the same configuration layer** (the same preset, the same `qmx.yaml`, or the same CLI invocation) for the same rule level — that raises a configuration error.
+
+**Overriding the mode across layers:** a higher-priority layer (config file over a preset, CLI over the config file) may freely switch mode for a rule level — e.g. a `strict` preset sets `warning`/`error`, and `--rule-opt=size.method-count:threshold=25` on the command line switches that rule to a single cutoff. The CLI's `threshold` overrides the preset's `warning`/`error` instead of conflicting with them:
+
+```yaml
+# qmx.yaml (or a preset)
+rules:
+  size.method-count:
+    warning: 10
+    error: 20
+```
+
+```bash
+# CLI switches this rule to simple pass/fail mode — no "cannot mix" error
+bin/qmx check src/ --rule-opt=size.method-count:threshold=25
+```
+
+The same applies in the other direction (a lower layer's `threshold` overridden by a higher layer's `warning`/`error`), and to hierarchical rules at the level the keys are set (e.g. `complexity.cyclomatic`'s `method:`/`class:`).
 
 For type coverage, dedicated shorthand keys are available:
 
@@ -149,6 +194,16 @@ rules:
 
 This is useful when certain namespaces (e.g., tests, generated code, legacy modules) should not trigger violations for a specific rule, while still being analyzed for metrics.
 
+!!! info "Works for every rule, including `architecture.*`"
+    `exclude_namespaces` and `exclude_paths` are extracted and applied at the framework level for
+    **any** rule name, regardless of whether that rule's Options class declares such a field —
+    this is deliberately not opt-in per rule. That includes `architecture.layer-violation` and
+    `architecture.circular-dependency`, which are exempt from the *global* `exclude_namespaces`
+    and `exclude_paths` above but not from this per-rule form: naming the rule explicitly makes
+    the suppression an unambiguous, auditable choice rather than an incidental side effect of a
+    project-wide exclusion. See the architecture rule's
+    [Suppression section](../rules/architecture.md#suppression) for the reasoning.
+
 **Exclude paths from a rule:**
 
 Any rule can exclude specific file paths using prefix or glob matching. Violations from matching files are suppressed:
@@ -162,6 +217,12 @@ rules:
 ```
 
 This works alongside `exclude_namespaces` -- both filters are applied. Unlike the global `exclude_paths`, per-rule `exclude_paths` only affects the specific rule, not all rules.
+
+**Visibility:** unlike `@qmx-ignore`, this suppression happens silently by default — nothing in
+the default output hints that violations were dropped. Run with `-v` to see a per-rule breakdown
+of how many violations were suppressed this way (split by `exclude_namespaces` vs. `exclude_paths`),
+and add `--show-suppressed` to also list each suppressed violation, alongside `@qmx-ignore`
+suppressions.
 
 <!-- llms:skip-begin -->
 **Per-symbol threshold overrides with `@qmx-threshold`:**

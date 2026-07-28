@@ -9,15 +9,15 @@ rules:
       warning: 7
       error: 15
     class:
-      maxWarning: 20
-      maxError: 35
+      max_warning: 20
+      max_error: 35
   complexity.cognitive:
     method:
       warning: 10
       error: 20
     class:
-      maxWarning: 20
-      maxError: 35
+      max_warning: 20
+      max_error: 35
   complexity.npath:
     method:
       warning: 100
@@ -55,14 +55,14 @@ rules:
       error: 16
   coupling.instability:
     class:
-      maxWarning: 0.7
-      maxError: 0.9
+      max_warning: 0.7
+      max_error: 0.9
     namespace:
-      maxWarning: 0.7
-      maxError: 0.9
+      max_warning: 0.7
+      max_error: 0.9
   coupling.distance:
-    maxDistanceWarning: 0.2
-    maxDistanceError: 0.4
+    max_distance_warning: 0.2
+    max_distance_error: 0.4
   code-smell.constructor-overinjection:
     warning: 6
     error: 10
@@ -72,9 +72,9 @@ rules:
     vo-warning: 6
     vo-error: 10
   design.type-coverage:
-    paramWarning: 90
-    paramError: 70
-    returnWarning: 90
-    returnError: 70
-    propertyWarning: 90
-    propertyError: 70
+    param_warning: 90
+    param_error: 70
+    return_warning: 90
+    return_error: 70
+    property_warning: 90
+    property_error: 70

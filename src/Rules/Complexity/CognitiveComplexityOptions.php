@@ -9,6 +9,7 @@ use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Rule\RuleOptionKey;
+use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
@@ -17,7 +18,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  *
  * Supports method and class levels with separate thresholds.
  */
-final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptionsInterface
+final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptionsInterface, ShorthandOptionKeysInterface
 {
     public function __construct(
         public MethodCognitiveComplexityOptions $method = new MethodCognitiveComplexityOptions(),
@@ -40,7 +41,7 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
         // Handle legacy flat format: {enabled, warningThreshold, errorThreshold}
         // Also supports threshold shorthand at top level
         if (\array_key_exists('warningThreshold', $config) || \array_key_exists('errorThreshold', $config) || \array_key_exists('threshold', $config)) {
-            $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 15, 30, legacyWarningKeys: ['warningThreshold'], legacyErrorKeys: ['errorThreshold']);
+            $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 15, 30, legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold']]);
 
             return new self(
                 method: new MethodCognitiveComplexityOptions(
@@ -64,6 +65,14 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
             method: MethodCognitiveComplexityOptions::fromArray($methodConfig),
             class: ClassCognitiveComplexityOptions::fromArray($classConfig),
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getShorthandOptionKeys(): array
+    {
+        return ['threshold'];
     }
 
     public function isEnabled(): bool

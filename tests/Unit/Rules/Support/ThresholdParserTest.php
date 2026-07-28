@@ -93,7 +93,7 @@ final class ThresholdParserTest extends TestCase
             'error',
             10,
             20,
-            legacyWarningKeys: ['warningThreshold'],
+            legacyKeys: ['warning' => ['warningThreshold']],
         );
     }
 
@@ -108,7 +108,7 @@ final class ThresholdParserTest extends TestCase
             'error',
             10,
             20,
-            legacyErrorKeys: ['errorThreshold'],
+            legacyKeys: ['error' => ['errorThreshold']],
         );
     }
 
@@ -121,8 +121,7 @@ final class ThresholdParserTest extends TestCase
             'error',
             10,
             20,
-            legacyWarningKeys: ['warningThreshold'],
-            legacyErrorKeys: ['errorThreshold'],
+            legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold']],
         );
 
         self::assertSame(5, $result['warning']);
@@ -138,8 +137,7 @@ final class ThresholdParserTest extends TestCase
             'error',
             10,
             20,
-            legacyWarningKeys: ['warningThreshold'],
-            legacyErrorKeys: ['errorThreshold'],
+            legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold']],
         );
 
         self::assertSame(7, $result['warning']);
@@ -171,8 +169,7 @@ final class ThresholdParserTest extends TestCase
             'max_error',
             30,
             50,
-            legacyWarningKeys: ['maxWarning'],
-            legacyErrorKeys: ['maxError'],
+            legacyKeys: ['warning' => ['maxWarning'], 'error' => ['maxError']],
         );
 
         self::assertSame(25, $result['warning']);
@@ -186,5 +183,58 @@ final class ThresholdParserTest extends TestCase
 
         self::assertSame(0.5, $result['warning']);
         self::assertSame(0.5, $result['error']);
+    }
+
+    #[Test]
+    public function itAcceptsACamelCaseLegacyKeyForACustomThresholdKey(): void
+    {
+        // Simulates the key RuleOptionsFactory/RuleOptionsParser produce once
+        // they normalize a composite `$thresholdKey` (e.g. 'vo-threshold',
+        // 'param_threshold') to camelCase before fromArray() runs.
+        $result = ThresholdParser::parse(
+            ['voThreshold' => 10],
+            'vo-warning',
+            'vo-error',
+            8,
+            12,
+            'vo-threshold',
+            legacyKeys: ['threshold' => ['voThreshold']],
+        );
+
+        self::assertSame(10, $result['warning']);
+        self::assertSame(10, $result['error']);
+    }
+
+    #[Test]
+    public function itGivesThePrimaryThresholdKeyPrecedenceOverTheLegacyThresholdKey(): void
+    {
+        $result = ThresholdParser::parse(
+            ['vo-threshold' => 12, 'voThreshold' => 5],
+            'vo-warning',
+            'vo-error',
+            8,
+            12,
+            'vo-threshold',
+            legacyKeys: ['threshold' => ['voThreshold']],
+        );
+
+        self::assertSame(12, $result['warning']);
+        self::assertSame(12, $result['error']);
+    }
+
+    #[Test]
+    public function itThrowsWhenTheLegacyThresholdKeyConflictsWithTheWarningKey(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+
+        ThresholdParser::parse(
+            ['voThreshold' => 10, 'vo-warning' => 8],
+            'vo-warning',
+            'vo-error',
+            8,
+            12,
+            'vo-threshold',
+            legacyKeys: ['threshold' => ['voThreshold']],
+        );
     }
 }

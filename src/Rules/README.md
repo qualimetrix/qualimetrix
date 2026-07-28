@@ -485,10 +485,10 @@ rules:
 
 **Coverage diagnostic:** When `architecture.coverage` is `warn` or `error`, the rule emits **one** additional violation under `ruleName: architecture.coverage` summarising unmatched edges and listing up to 10 example unclassified classes. Severity is `Warning` for `warn`, `Error` for `error`.
 
-**Misorder safety nets:**
-- `architecture.unreachable-layer` (info) — one info violation per declared layer (or template instance) that matched zero classes during the run. Catches a broader layer earlier in the order silently swallowing everything.
-- `architecture.potential-shadow` (info) — one info violation per (assigned, shadowed) layer pair observed in practice. Evidence-based: walks every class, records all matching layers, groups by (first-match, later-match). Catches prefix overlap, suffix-theft, and arbitrary intersection without re-introducing specificity scoring.
-- `architecture.empty-template` (warning) — one warning per template layer that expanded to zero concrete instances. Higher severity than the other safety nets because an empty template silently disables the policy attached to it.
+**Misorder safety nets:** each of the three diagnostics below has an independently configurable severity (`unreachable_layer_severity`, `potential_shadow_severity`, `empty_template_severity` respectively; see `LayerViolationOptions`).
+- `architecture.unreachable-layer` (info by default) — one violation per declared layer (or template instance) that matched zero classes **and** zero dependency-edge ends during the run. Catches a broader layer earlier in the order silently swallowing everything. Counting edge ends as well as classes matters for layers that exist only to classify out-of-tree code — e.g. a vendor namespace like `ClickHouseDB\**` is never itself analysed, so it only ever shows up as a dependency target; without that second count it would always read as unreachable even while `architecture.layer-violation` reports a real edge into it.
+- `architecture.potential-shadow` (info by default) — one violation per (assigned, shadowed) layer pair observed in practice. Evidence-based: walks every class, records all matching layers, groups by (first-match, later-match). Catches prefix overlap, suffix-theft, and arbitrary intersection without re-introducing specificity scoring.
+- `architecture.empty-template` (warning by default) — one violation per template layer that expanded to zero concrete instances. Higher default severity than the other safety nets because an empty template silently disables the policy attached to it.
 
 **Files:** the rule, options, layer/allow primitives, configuration factory, validators, and runtime
 template expansion all live inside the Architecture vertical slice — see
@@ -887,6 +887,16 @@ Violations are triggered when a metric value meets or exceeds the threshold (`>=
 3. Implement `analyze(AnalysisContext): array` — validation logic
 4. Create a `{Name}Options implements RuleOptionsInterface` class
    - If options have warning/error thresholds, also implement `ThresholdAwareOptionsInterface` with `withOverride()` method
+   - If `fromArray()` accepts a `ThresholdParser` shorthand key beyond its constructor
+     parameter names (the bare `threshold`, or a rule-specific one like `vo-threshold`),
+     also implement `Core\Rule\ShorthandOptionKeysInterface` with a static
+     `getShorthandOptionKeys()` returning those keys in canonical kebab-case. Without
+     this, `RuleOptionsFactory::warnAboutUnknownKeys()` — which only sees constructor
+     parameter names via reflection — falsely reports the shorthand as an "Unknown
+     option", even though `fromArray()` accepts it correctly. Options classes whose
+     `fromArray()` has no such branch (e.g. hierarchical wrappers like `CboOptions`
+     that only understand `class`/`namespace` sub-configs) must NOT implement it, so
+     an unsupported top-level `threshold` still warns.
 5. In `analyze()`, use `$this->getEffectiveSeverity()` instead of `$options->getSeverity()` to support `@qmx-threshold` overrides
 6. Write unit tests
 7. Add value hints to `src/Reporting/Template/src/hints.js` — range-based interpretations for the HTML report

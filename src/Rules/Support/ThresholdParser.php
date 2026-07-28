@@ -21,14 +21,20 @@ final class ThresholdParser
     /**
      * Parses threshold configuration and returns [warning, error] values.
      *
+     * `$legacyKeys` lists additional fallback keys per primary key, e.g. the
+     * camelCase form of a composite `$warningKey`/`$errorKey`/`$thresholdKey`
+     * (`'maxWarning'`, `'voThreshold'`, ...) — needed because
+     * {@see \Qualimetrix\Configuration\RuleOptionsFactory} and
+     * `RuleOptionsParser` normalize config-file/CLI keys to camelCase before
+     * `fromArray()` runs.
+     *
      * @param array<string, mixed> $config Raw configuration array
      * @param string $warningKey Config key for warning threshold (e.g. 'warning', 'max_distance_warning')
      * @param string $errorKey Config key for error threshold (e.g. 'error', 'max_distance_error')
      * @param int|float $defaultWarning Default warning value if not configured
      * @param int|float $defaultError Default error value if not configured
      * @param string $thresholdKey Config key for unified threshold (default: 'threshold')
-     * @param list<string> $legacyWarningKeys Additional legacy keys to check for warning (e.g. 'warningThreshold')
-     * @param list<string> $legacyErrorKeys Additional legacy keys to check for error (e.g. 'errorThreshold')
+     * @param array{warning?: list<string>, error?: list<string>, threshold?: list<string>} $legacyKeys Fallback keys, keyed by which primary key they alias
      *
      * @throws InvalidArgumentException If threshold is mixed with warning/error keys
      *
@@ -41,10 +47,25 @@ final class ThresholdParser
         int|float $defaultWarning,
         int|float $defaultError,
         string $thresholdKey = RuleOptionKey::THRESHOLD,
-        array $legacyWarningKeys = [],
-        array $legacyErrorKeys = [],
+        array $legacyKeys = [],
     ): array {
+        $legacyWarningKeys = $legacyKeys['warning'] ?? [];
+        $legacyErrorKeys = $legacyKeys['error'] ?? [];
+        $legacyThresholdKeys = $legacyKeys['threshold'] ?? [];
+
         $hasThreshold = \array_key_exists($thresholdKey, $config);
+        $thresholdSourceKey = $thresholdKey;
+
+        if (!$hasThreshold) {
+            foreach ($legacyThresholdKeys as $legacyKey) {
+                if (\array_key_exists($legacyKey, $config)) {
+                    $hasThreshold = true;
+                    $thresholdSourceKey = $legacyKey;
+                    break;
+                }
+            }
+        }
+
         $hasWarning = \array_key_exists($warningKey, $config);
         $hasError = \array_key_exists($errorKey, $config);
 
@@ -79,7 +100,7 @@ final class ThresholdParser
         }
 
         if ($hasThreshold) {
-            $value = $config[$thresholdKey];
+            $value = $config[$thresholdSourceKey];
 
             // Treat null as "not set" — fall back to defaults
             if ($value === null) {

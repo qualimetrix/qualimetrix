@@ -7,6 +7,7 @@ namespace Qualimetrix\Rules\CodeSmell;
 use Qualimetrix\Core\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
@@ -23,8 +24,18 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  * Readonly Value Object constructors (all promoted properties, empty body) use
  * separate, higher thresholds since many parameters are valid design for typed
  * data containers.
+ *
+ * > **Note:** The canonical spelling for the `vo-*` options is kebab-case
+ * > (`vo-warning`, `vo-error`, `vo-threshold`) — that's what users type in
+ * > `qmx.yaml`, presets, and `--rule-opt`. `Qualimetrix\Configuration\RuleOptionsFactory`
+ * > (config-file keys) and `Qualimetrix\Configuration\RuleOptionsParser`
+ * > (`--rule-opt` keys) normalize any kebab-case/snake_case key to camelCase
+ * > before it reaches {@see fromArray()}, so `fromArray()` must also accept the
+ * > camelCase forms (`voWarning`, `voError`, `voThreshold`) — that's the form
+ * > actually arriving through those two channels. Both spellings are kept
+ * > working via `ThresholdParser::parse()`'s `legacyKeys` argument below.
  */
-final readonly class LongParameterListOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
+final readonly class LongParameterListOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -46,7 +57,15 @@ final readonly class LongParameterListOptions implements RuleOptionsInterface, T
         }
 
         $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 4, 6);
-        $voThresholds = ThresholdParser::parse($config, 'vo-warning', 'vo-error', 8, 12, 'vo-threshold');
+        $voThresholds = ThresholdParser::parse(
+            $config,
+            'vo-warning',
+            'vo-error',
+            8,
+            12,
+            'vo-threshold',
+            legacyKeys: ['warning' => ['voWarning'], 'error' => ['voError'], 'threshold' => ['voThreshold']],
+        );
 
         return new self(
             enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
@@ -55,6 +74,14 @@ final readonly class LongParameterListOptions implements RuleOptionsInterface, T
             voWarning: (int) $voThresholds['warning'],
             voError: (int) $voThresholds['error'],
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getShorthandOptionKeys(): array
+    {
+        return ['threshold', 'vo-threshold'];
     }
 
     public function isEnabled(): bool

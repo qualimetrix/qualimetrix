@@ -341,18 +341,269 @@ final class ConfigurationMergerTest extends TestCase
         $overlay = [
             'rules' => [
                 'complexity.cyclomatic' => [
-                    'method' => ['error' => 25, 'threshold' => 15],
+                    'method' => ['error' => 25],
                 ],
             ],
         ];
 
         $result = ConfigurationMerger::merge($base, $overlay);
 
-        // Deeply nested: warning preserved, error overridden, threshold added
+        // Deeply nested: warning preserved, error overridden
         self::assertSame(10, $result['rules']['complexity.cyclomatic']['method']['warning']);
         self::assertSame(25, $result['rules']['complexity.cyclomatic']['method']['error']);
-        self::assertSame(15, $result['rules']['complexity.cyclomatic']['method']['threshold']);
         // Untouched nested key preserved
         self::assertSame(['max_warning' => 30], $result['rules']['complexity.cyclomatic']['class']);
+    }
+
+    // -- `threshold` vs `warning`/`error` mode conflicts across layers -------
+    //
+    // Regression coverage for a bug where a naive deep-merge let a
+    // higher-priority layer's `threshold` shorthand and a lower-priority
+    // layer's `warning`/`error` pair survive into the same merged array,
+    // which ThresholdParser::parse() then rejected as "cannot mix" —
+    // even though the higher-priority layer clearly meant to switch modes,
+    // not combine them. Reproduces the review finding for the
+    // preset -> config-file merge boundary (RuleOptionsFactory's own
+    // config-file -> CLI merge is covered separately in
+    // RuleOptionsFactoryTest).
+
+    #[Test]
+    public function overlayThresholdEvictsBaseWarningAndError(): void
+    {
+        $base = [
+            'rules' => [
+                'size.method-count' => ['warning' => 10, 'error' => 20],
+            ],
+        ];
+        $overlay = [
+            'rules' => [
+                'size.method-count' => ['threshold' => 25],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(
+            ['threshold' => 25],
+            $result['rules']['size.method-count'],
+            'A later layer switching to `threshold` must evict the earlier layer\'s `warning`/`error`, not merge alongside them',
+        );
+    }
+
+    #[Test]
+    public function overlayWarningAndErrorEvictBaseThreshold(): void
+    {
+        $base = [
+            'rules' => [
+                'size.method-count' => ['threshold' => 25],
+            ],
+        ];
+        $overlay = [
+            'rules' => [
+                'size.method-count' => ['warning' => 10, 'error' => 20],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(
+            ['warning' => 10, 'error' => 20],
+            $result['rules']['size.method-count'],
+            'A later layer switching to `warning`/`error` must evict the earlier layer\'s `threshold`',
+        );
+    }
+
+    #[Test]
+    public function overlayThresholdEvictsBaseWarningAtNestedRuleLevel(): void
+    {
+        // Hierarchical rule (complexity.cyclomatic): eviction must be scoped
+        // to the `method:` nesting level, not the rule's top level.
+        $base = [
+            'rules' => [
+                'complexity.cyclomatic' => [
+                    'method' => ['warning' => 10, 'error' => 20],
+                    'class' => ['warning' => 30, 'error' => 50],
+                ],
+            ],
+        ];
+        $overlay = [
+            'rules' => [
+                'complexity.cyclomatic' => [
+                    'method' => ['threshold' => 15],
+                ],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(['threshold' => 15], $result['rules']['complexity.cyclomatic']['method']);
+        // Untouched sibling level keeps its own warning/error pair.
+        self::assertSame(['warning' => 30, 'error' => 50], $result['rules']['complexity.cyclomatic']['class']);
+    }
+
+    #[Test]
+    public function multiplePresetsMergeThresholdOverrideAcrossLayers(): void
+    {
+        // PresetStage merges multiple presets left-to-right via the same
+        // ConfigurationMerger::merge() call used for preset -> config-file.
+        $basePreset = [
+            'rules' => [
+                'size.method-count' => ['warning' => 10, 'error' => 20],
+            ],
+        ];
+        $overridingPreset = [
+            'rules' => [
+                'size.method-count' => ['threshold' => 25],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($basePreset, $overridingPreset);
+
+        self::assertSame(['threshold' => 25], $result['rules']['size.method-count']);
+    }
+
+    #[Test]
+    public function unrelatedPrefixedGroupIsNotEvictedByAnUnrelatedThresholdOverride(): void
+    {
+        // code-smell.long-parameter-list has two independent dimensions on
+        // the same flat level: bare warning/error/threshold, and the
+        // vo-prefixed variant. Overriding one must not evict the other.
+        $base = [
+            'rules' => [
+                'code-smell.long-parameter-list' => [
+                    'warning' => 4,
+                    'error' => 6,
+                    'vo-warning' => 8,
+                    'vo-error' => 12,
+                ],
+            ],
+        ];
+        $overlay = [
+            'rules' => [
+                'code-smell.long-parameter-list' => [
+                    'threshold' => 5,
+                ],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(
+            ['vo-warning' => 8, 'vo-error' => 12, 'threshold' => 5],
+            $result['rules']['code-smell.long-parameter-list'],
+            'Bare `threshold` must only evict the bare warning/error pair, not the unrelated vo-* group',
+        );
+    }
+
+    // -- Prefixed graduated keys (max_distance_warning/max_distance_error vs.
+    // a bare `threshold`) — coordinator-reported gap in the suffix/prefix
+    // heuristic, now closed via RuleThresholdKeyGroupRegistry. Reproduces the
+    // preset -> config-file merge boundary for coupling.distance.
+
+    #[Test]
+    public function overlayThresholdEvictsBasePrefixedGraduatedKeys(): void
+    {
+        $base = [
+            'rules' => [
+                'coupling.distance' => ['max_distance_warning' => 0.4, 'max_distance_error' => 0.6],
+            ],
+        ];
+        $overlay = [
+            'rules' => [
+                'coupling.distance' => ['threshold' => 0.5],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(
+            ['threshold' => 0.5],
+            $result['rules']['coupling.distance'],
+            'A later layer switching to `threshold` must evict the earlier layer\'s prefixed max_distance_warning/max_distance_error',
+        );
+    }
+
+    #[Test]
+    public function overlayPrefixedGraduatedKeysEvictBaseThreshold(): void
+    {
+        $base = [
+            'rules' => [
+                'coupling.distance' => ['threshold' => 0.5],
+            ],
+        ];
+        $overlay = [
+            'rules' => [
+                'coupling.distance' => ['max_distance_warning' => 0.4, 'max_distance_error' => 0.6],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(['max_distance_warning' => 0.4, 'max_distance_error' => 0.6], $result['rules']['coupling.distance']);
+    }
+
+    #[Test]
+    public function overlayThresholdEvictsBasePrefixedGraduatedKeysAtNestedRuleLevel(): void
+    {
+        // coupling.instability's `class:` dimension uses max_warning/
+        // max_error paired with a bare `threshold` — eviction must be
+        // scoped to the `class:` nesting level.
+        $base = [
+            'rules' => [
+                'coupling.instability' => [
+                    'class' => ['max_warning' => 0.8, 'max_error' => 0.95],
+                    'namespace' => ['max_warning' => 0.7, 'max_error' => 0.9],
+                ],
+            ],
+        ];
+        $overlay = [
+            'rules' => [
+                'coupling.instability' => [
+                    'class' => ['threshold' => 0.85],
+                ],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(['threshold' => 0.85], $result['rules']['coupling.instability']['class']);
+        self::assertSame(['max_warning' => 0.7, 'max_error' => 0.9], $result['rules']['coupling.instability']['namespace']);
+    }
+
+    #[Test]
+    public function sameLayerThresholdAndPrefixedGraduatedKeysConflictSurvivesTheMerge(): void
+    {
+        // Both keys set by the SAME source for a prefixed group must still
+        // be a genuine configuration error downstream.
+        $base = [];
+        $overlay = [
+            'rules' => [
+                'coupling.distance' => ['threshold' => 0.5, 'max_distance_warning' => 0.4],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(['threshold' => 0.5, 'max_distance_warning' => 0.4], $result['rules']['coupling.distance']);
+    }
+
+    #[Test]
+    public function sameLayerThresholdAndWarningConflictSurvivesTheMerge(): void
+    {
+        // A single source that itself mixes `threshold` with `warning` is a
+        // genuine configuration error. The merger must not silently resolve
+        // it — only the *other* side of a merge is ever evicted — so both
+        // keys must still reach ThresholdParser and trip its "cannot mix"
+        // guard downstream.
+        $base = [];
+        $overlay = [
+            'rules' => [
+                'size.method-count' => ['threshold' => 25, 'warning' => 10],
+            ],
+        ];
+
+        $result = ConfigurationMerger::merge($base, $overlay);
+
+        self::assertSame(['threshold' => 25, 'warning' => 10], $result['rules']['size.method-count']);
     }
 }

@@ -8,6 +8,7 @@ use Qualimetrix\Core\Rule\Override\InvertedOverrideValidator;
 use Qualimetrix\Core\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
@@ -24,8 +25,16 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  *
  * `@qmx-threshold design.type-coverage W E` overrides all three dimensions
  * (param/return/property) uniformly with the same (warning, error) pair.
+ *
+ * > **Note:** The canonical spelling for these options in `qmx.yaml` and
+ * > `--rule-opt` is snake_case (`param_warning`, `param_error`,
+ * > `param_threshold`, and the `return_*`/`property_*` equivalents).
+ * > `RuleOptionsFactory`/`RuleOptionsParser` normalize kebab-case/snake_case
+ * > keys to camelCase before {@see fromArray()} runs, so the camelCase forms
+ * > (`paramWarning`, `paramThreshold`, ...) must stay accepted too — see the
+ * > `legacyKeys` argument below.
  */
-final readonly class TypeCoverageOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
+final readonly class TypeCoverageOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
 {
     public function __construct(
         public bool $enabled = true,
@@ -46,9 +55,9 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface, Thresh
             return new self(enabled: false);
         }
 
-        $paramThresholds = ThresholdParser::parse($config, 'param_warning', 'param_error', 80.0, 50.0, thresholdKey: 'param_threshold', legacyWarningKeys: ['paramWarning'], legacyErrorKeys: ['paramError']);
-        $returnThresholds = ThresholdParser::parse($config, 'return_warning', 'return_error', 80.0, 50.0, thresholdKey: 'return_threshold', legacyWarningKeys: ['returnWarning'], legacyErrorKeys: ['returnError']);
-        $propertyThresholds = ThresholdParser::parse($config, 'property_warning', 'property_error', 80.0, 50.0, thresholdKey: 'property_threshold', legacyWarningKeys: ['propertyWarning'], legacyErrorKeys: ['propertyError']);
+        $paramThresholds = ThresholdParser::parse($config, 'param_warning', 'param_error', 80.0, 50.0, thresholdKey: 'param_threshold', legacyKeys: ['warning' => ['paramWarning'], 'error' => ['paramError'], 'threshold' => ['paramThreshold']]);
+        $returnThresholds = ThresholdParser::parse($config, 'return_warning', 'return_error', 80.0, 50.0, thresholdKey: 'return_threshold', legacyKeys: ['warning' => ['returnWarning'], 'error' => ['returnError'], 'threshold' => ['returnThreshold']]);
+        $propertyThresholds = ThresholdParser::parse($config, 'property_warning', 'property_error', 80.0, 50.0, thresholdKey: 'property_threshold', legacyKeys: ['warning' => ['propertyWarning'], 'error' => ['propertyError'], 'threshold' => ['propertyThreshold']]);
 
         return new self(
             enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
@@ -59,6 +68,14 @@ final readonly class TypeCoverageOptions implements RuleOptionsInterface, Thresh
             propertyWarning: (float) $propertyThresholds['warning'],
             propertyError: (float) $propertyThresholds['error'],
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getShorthandOptionKeys(): array
+    {
+        return ['param-threshold', 'return-threshold', 'property-threshold'];
     }
 
     public function isEnabled(): bool

@@ -7,6 +7,7 @@ namespace Qualimetrix\Rules\Coupling;
 use Qualimetrix\Core\Rule\Override\StandardOverrideValidatorTrait;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
@@ -21,7 +22,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  * - Warning: 0.02 (class has notably high importance in the graph)
  * - Error: 0.05 (class is a critical hub, high change impact)
  */
-final readonly class ClassRankOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface
+final readonly class ClassRankOptions implements RuleOptionsInterface, ThresholdAwareOptionsInterface, ShorthandOptionKeysInterface
 {
     use StandardOverrideValidatorTrait;
 
@@ -47,6 +48,14 @@ final readonly class ClassRankOptions implements RuleOptionsInterface, Threshold
             warning: (float) $thresholds['warning'],
             error: (float) $thresholds['error'],
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getShorthandOptionKeys(): array
+    {
+        return ['threshold'];
     }
 
     public function isEnabled(): bool

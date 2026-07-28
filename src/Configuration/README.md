@@ -28,6 +28,7 @@ Configuration/
 ├── PathsConfiguration.php         # VO for paths and excludes
 ├── ConfigurationHolder.php        # Runtime configuration holder
 ├── RuleOptionsFactory.php         # Factory for creating rule options
+├── RuleOptionThresholdModeResolver.php  # Evicts threshold vs warning/error mode conflicts across a merge boundary
 ├── RuleOptionsRegistry.php        # Mutable storage for rule options (config file, CLI)
 ├── RuleNamespaceExclusionProvider.php  # Per-rule namespace exclusion storage
 ├── RuleOptionsParser.php          # CLI options parser for rules
@@ -278,11 +279,65 @@ Creates rule options with priority handling.
 - `getExclusionProvider(): RuleNamespaceExclusionProvider`
 
 **Algorithm of create():**
-1. Getting defaults from constructor via Reflection
-2. Merge with config file options
-3. Merge with CLI options
-4. Extract `exclude_namespaces` → `RuleNamespaceExclusionProvider` (framework-level filtering)
-5. Creating instance via named arguments
+1. Get defaults from constructor via Reflection
+2. Deep-merge config file options with CLI options (CLI wins), *without* seeding
+   constructor defaults into the result. A `threshold`/`warning`/`error` mode
+   conflict introduced across this merge boundary (e.g. a preset sets
+   `warning`/`error`, a `--rule-opt=...:threshold=N` CLI flag overrides them)
+   is resolved by evicting the lower-priority layer's opposite-mode keys — see
+   `RuleOptionThresholdModeResolver` — rather than passing both through and
+   letting `ThresholdParser::parse()` reject them as mixed. A conflict where a
+   *single* layer sets both is left alone and still raises that error.
+3. If the user configured nothing at all for the rule, fall back to the full
+   constructor-defaults array; otherwise pass through only the keys the user
+   actually set
+4. Extract `exclude_namespaces`/`exclude_paths` → `RuleNamespaceExclusionProvider`/`RulePathExclusionProvider` (framework-level filtering)
+5. Warn about unknown option keys
+6. Validate numeric fields
+7. Create the instance via `$optionsClass::fromArray($merged)`
+
+> **Contract note for custom `RuleOptionsInterface` implementations:**
+> `fromArray()` does **not** receive a fully defaults-seeded array. It
+> receives either (a) only the keys the user explicitly configured across
+> config file + CLI (deep-merged, mode-conflict-resolved as above), or (b)
+> the full constructor-defaults array when the user configured nothing for
+> that rule at all. A custom Options class must apply its own per-field
+> defaulting for keys absent from case (a) — the same pattern every built-in
+> Options class already follows (constructor defaults, `?? default`, or
+> `ThresholdParser`'s `$defaultWarning`/`$defaultError` arguments). This is a
+> deliberate change from an earlier version of `create()` that pre-seeded
+> every constructor default before calling `fromArray()`: doing so made
+> `ThresholdParser` see a defaulted `warning`/`error` as "explicitly set",
+> which rejected the bare `threshold:` shorthand as "mixed with
+> warning/error" even when the user only ever wrote `threshold`.
+
+### RuleOptionThresholdModeResolver
+
+Resolves `threshold` vs `warning`/`error` "mode" conflicts that arise when two
+configuration layers are merged (preset ↔ config file in `ConfigurationMerger`,
+config file ↔ CLI in `RuleOptionsFactory`). A higher-priority layer switching
+mode (e.g. a CLI `--rule-opt=...:threshold=25` on top of a preset's
+`warning`/`error`) evicts the lower-priority layer's opposite-mode keys instead
+of letting both survive into the array `Options::fromArray()` receives, which
+`ThresholdParser::parse()` would otherwise reject as "cannot mix". Only the
+lower-priority side is ever modified, so a conflict originating within a
+single layer still reaches `ThresholdParser` and is reported as a genuine
+configuration error.
+
+**Methods:**
+- `evictOverriddenMode(array $base, array $overlay): array` — static; removes
+  `$base` keys whose threshold-mode group is overridden by `$overlay`, at the
+  array's current nesting level (callers recurse for hierarchical rule levels
+  like `method:`/`class:`)
+
+> **Grouping:** a key is a threshold-mode marker when it ends in `threshold`,
+> `warning`, or `error` (case-insensitively, ignoring `_`/`-`); the prefix
+> before that marker groups related keys (`vo-warning`/`vo-threshold` only
+> conflict with each other, not with an unrelated bare `threshold`). A known
+> gap: a few legacy Options classes pair a *prefixed* graduated key
+> (`max_warning`/`max_error`) with a *bare* `threshold` shorthand — since
+> their prefixes don't match, eviction does not fire for them across a merge
+> boundary. See the class docblock for the full list and rationale.
 
 ### RuleNamespaceExclusionProvider
 

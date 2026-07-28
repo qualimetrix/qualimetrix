@@ -622,4 +622,41 @@ final class LongParameterListRuleTest extends TestCase
             'vo-warning' => 8,
         ]);
     }
+
+    /**
+     * Regression: `RuleOptionsFactory` (config-file keys) and
+     * `RuleOptionsParser` (`--rule-opt` keys) both normalize kebab-case
+     * option names to camelCase before they reach fromArray(). The
+     * `vo-warning`/`vo-error`/`vo-threshold` options must therefore also be
+     * recognized in their camelCase form, not just the kebab-case primary
+     * spelling already covered by {@see itOptionsFromArrayVoThresholds()} and
+     * {@see itVoThresholdShorthand()}.
+     */
+    #[Test]
+    public function itAcceptsCamelCaseVoWarningAndVoError(): void
+    {
+        $options = LongParameterListOptions::fromArray([
+            'warning' => 4,
+            'error' => 6,
+            'voWarning' => 10,
+            'voError' => 15,
+        ]);
+
+        self::assertSame(10, $options->voWarning);
+        self::assertSame(15, $options->voError);
+    }
+
+    #[Test]
+    public function itAcceptsCamelCaseVoThresholdShorthand(): void
+    {
+        $options = LongParameterListOptions::fromArray([
+            'threshold' => 5,
+            'voThreshold' => 10,
+        ]);
+
+        self::assertSame(5, $options->warning);
+        self::assertSame(5, $options->error);
+        self::assertSame(10, $options->voWarning);
+        self::assertSame(10, $options->voError);
+    }
 }

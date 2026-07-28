@@ -39,7 +39,7 @@ final readonly class ClassInstabilityOptions implements LevelOptionsInterface, T
             return new self();
         }
 
-        $thresholds = ThresholdParser::parse($config, 'max_warning', 'max_error', 0.8, 0.95, legacyWarningKeys: ['maxWarning'], legacyErrorKeys: ['maxError']);
+        $thresholds = ThresholdParser::parse($config, 'max_warning', 'max_error', 0.8, 0.95, legacyKeys: ['warning' => ['maxWarning'], 'error' => ['maxError']]);
 
         return new self(
             enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
