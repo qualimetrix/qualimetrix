@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-07-28
+
 ### Fixed
 - `qmx rules` crashed with a fatal `ArgumentCountError` instead of listing the rules. The command built rule objects itself, which breaks for rules that take constructor dependencies besides their options (`architecture.layer-violation`). Rule instances now always come from the DI container; `qmx check` was never affected.
 
@@ -377,7 +379,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.20.1...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.21.0...HEAD
+[0.21.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.20.1...v0.21.0
 [0.20.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.20.0...v0.20.1
 [0.20.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.19.0...v0.20.0
 [0.19.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.18.0...v0.19.0
