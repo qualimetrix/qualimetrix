@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Rule options set through the config file or `--rule-opt` were silently ignored when the option name had more than one word (`vo-warning`, `param_threshold`, …), while the dedicated CLI flag for the same option worked but printed a bogus `Unknown option` warning. All three channels now agree, and `--preset=strict` applies its `vo-error` value instead of dropping it. Values were dropped for `code-smell.long-parameter-list` and `design.type-coverage`; `coupling.distance` only ever suffered the false warning.
+- The documented `threshold:` shorthand crashed the whole run with `Cannot mix "threshold" with "warning"/"error"` (exit code 3) whenever it was written at the top level of a rule, which is exactly how `website/docs/getting-started/configuration.md` shows it. 15 rules were affected; the nested `method: {threshold: …}` form was never broken.
+- The `threshold`, `vo-threshold` and `*_threshold` shorthands no longer produce a false `Unknown option` warning on rules that support them. `coupling.cbo` and `coupling.instability` still warn, because they genuinely do not accept a top-level `threshold`.
+- `code-smell.long-parameter-list` never applied its `vo-warning` / `vo-error` thresholds: value-object constructors were reported against the ordinary thresholds instead. The VO detection flag never reached the rule.
+- `architecture.unreachable-layer` no longer fires for layers that only ever match as the *target* of a dependency — such as vendor boundary layers (`ClickHouseDB\**`). Such a layer was reported unreachable in the same run where `architecture.layer-violation` flagged a real edge into it.
+- Parameter and return types of closures and arrow functions are now collected into the dependency graph. Previously only their bodies were, so a layer violation that entered exclusively through a closure signature was invisible to `architecture.layer-violation`, coupling metrics and `graph:export`.
+- Global `exclude_namespaces` (and `--exclude-namespace`) no longer suppress `architecture.*` violations. Silencing a noisy metric in a namespace used to switch off layer-policy enforcement there as a side effect. Per-rule exclusions still work — see below.
+
+### Changed
+- Severities of `architecture.unreachable-layer`, `architecture.potential-shadow` and `architecture.empty-template` are configurable via `unreachable_layer_severity`, `potential_shadow_severity` and `empty_template_severity` on the `architecture.layer-violation` rule. Defaults are unchanged, so a typo in `patterns:` can now fail the build instead of only whispering at info level.
+- Violations dropped by per-rule `exclude_namespaces` / `exclude_paths` are now reported: `-v` prints how many were suppressed and by which rules, and `--show-suppressed` lists them in a block of their own, separate from `@qmx-ignore`. They used to disappear without a trace — on this repository's own configuration that hid 387 violations.
+
+### Breaking
+- `architecture.coverage` with `coverage: warn` now reports `Warning` severity instead of `Info`, matching the mode's name. If you relied on it staying silent under `fail_on: warning`, switch to `coverage: ignore` or raise `fail_on` to `error`.
+- Dependency graph gained edges: parameter and return types of closures and arrow functions, plus attributes on their parameters. Coupling metrics that read the graph — CBO, ClassRank, instability, distance and the derived health scores — shift accordingly, and `architecture.circular-dependency` may report cycles that were previously invisible. Thresholds tuned against the old graph may need revisiting; a baseline generated before this release stays valid only for violations whose identity did not change.
+- `ThresholdParser::parse()` replaced the `legacyWarningKeys` / `legacyErrorKeys` parameters with a single `legacyKeys` array keyed by `warning` / `error` / `threshold`. Named-argument calls fail with `Unknown named parameter`; the old positional form silently loses its legacy keys. Only affects third-party rule packages calling the parser directly.
+- `RuleExecutorInterface` gained `getRuleExclusionStats()`. Third-party implementations of the interface must add it.
+- `ViolationFilterOrchestrator::__construct()` takes an additional required `RuleExecutorInterface` argument. Only affects code constructing it directly; the container wires it automatically.
+
 ## [0.21.0] - 2026-07-28
 
 ### Fixed
