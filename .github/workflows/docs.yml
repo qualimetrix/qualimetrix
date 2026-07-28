@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - 'v*'
+  # Manual redeploy: the site otherwise only rebuilds on a version tag, which
+  # leaves no way to republish after a Pages outage or a docs-only fix.
+  workflow_dispatch:
 
 permissions:
   contents: read
