@@ -600,6 +600,120 @@ PHP;
         self::assertNull($metrics->get('parameterCount:App\Outer::inner'));
     }
 
+    // -- getMethodsWithMetrics() per-symbol propagation ----------------------
+    //
+    // Regression coverage: FileProcessor builds per-symbol metrics exclusively
+    // from MethodWithMetrics (see getMethodsWithMetrics()), not from the
+    // file-level MetricBag produced by collect(). isVoConstructor must be
+    // present on the per-method MetricBag returned here, or LongParameterListRule
+    // never sees it and falls back to the non-VO thresholds at analysis time.
+
+    #[Test]
+    public function itIncludesVoConstructorFlagInPerMethodMetricsForVoConstructor(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Dto;
+
+final readonly class UserDto
+{
+    public function __construct(
+        public string $name,
+        public string $email,
+        public int $age,
+    ) {}
+}
+PHP;
+
+        $methodsWithMetrics = $this->collectMethodsWithMetrics($code);
+        $construct = $this->findMethodWithMetrics($methodsWithMetrics, 'UserDto', '__construct');
+
+        self::assertSame(3, $construct->metrics->get('parameterCount'));
+        self::assertSame(1, $construct->metrics->get('isVoConstructor'));
+    }
+
+    #[Test]
+    public function itOmitsVoConstructorFlagInPerMethodMetricsForNonVoConstructor(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Service;
+
+class UserService
+{
+    public function __construct(
+        private readonly string $name,
+        private readonly int $age,
+    ) {}
+}
+PHP;
+
+        $methodsWithMetrics = $this->collectMethodsWithMetrics($code);
+        $construct = $this->findMethodWithMetrics($methodsWithMetrics, 'UserService', '__construct');
+
+        self::assertSame(2, $construct->metrics->get('parameterCount'));
+        self::assertNull($construct->metrics->get('isVoConstructor'));
+    }
+
+    #[Test]
+    public function itOmitsVoConstructorFlagInPerMethodMetricsForRegularMethod(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Dto;
+
+final readonly class UserDto
+{
+    public function __construct(
+        public string $name,
+    ) {}
+
+    public function withName(string $name): self
+    {
+        return new self($name);
+    }
+}
+PHP;
+
+        $methodsWithMetrics = $this->collectMethodsWithMetrics($code);
+        $withName = $this->findMethodWithMetrics($methodsWithMetrics, 'UserDto', 'withName');
+
+        self::assertSame(1, $withName->metrics->get('parameterCount'));
+        self::assertNull($withName->metrics->get('isVoConstructor'));
+    }
+
+    /**
+     * @return list<\Qualimetrix\Core\Metric\MethodWithMetrics>
+     */
+    private function collectMethodsWithMetrics(string $code): array
+    {
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($this->collector->getVisitor());
+        $traverser->traverse($ast);
+
+        return $this->collector->getMethodsWithMetrics();
+    }
+
+    /**
+     * @param list<\Qualimetrix\Core\Metric\MethodWithMetrics> $methodsWithMetrics
+     */
+    private function findMethodWithMetrics(array $methodsWithMetrics, string $class, string $method): \Qualimetrix\Core\Metric\MethodWithMetrics
+    {
+        foreach ($methodsWithMetrics as $methodWithMetrics) {
+            if ($methodWithMetrics->class === $class && $methodWithMetrics->method === $method) {
+                return $methodWithMetrics;
+            }
+        }
+
+        self::fail(\sprintf('No MethodWithMetrics found for %s::%s', $class, $method));
+    }
+
     private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

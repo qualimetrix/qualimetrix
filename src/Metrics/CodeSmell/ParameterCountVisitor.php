@@ -10,6 +10,7 @@ use PhpParser\Node\Stmt\Function_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Core\Metric\MethodWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
 use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
@@ -98,7 +99,11 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
         $result = [];
 
         foreach ($this->methodInfos as $fqn => $info) {
-            $metrics = (new MetricBag())->with('parameterCount', $this->parameterCounts[$fqn] ?? 0);
+            $metrics = (new MetricBag())->with(MetricName::CODE_SMELL_PARAMETER_COUNT, $this->parameterCounts[$fqn] ?? 0);
+
+            if (isset($this->voConstructors[$fqn])) {
+                $metrics = $metrics->with(MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR, 1);
+            }
 
             $result[] = new MethodWithMetrics(
                 namespace: $info['namespace'],
