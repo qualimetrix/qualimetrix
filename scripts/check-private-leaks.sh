@@ -168,7 +168,9 @@ fi
 if [ -n "$TERMS" ]; then
     while IFS= read -r term; do
         [ -z "$term" ] && continue
-        found=$(grep -HInF -- "$term" "${TARGETS[@]}" 2>/dev/null | locations_only || true)
+        # Case-insensitive, matching the commit-message check: a name written
+        # in a different case is the same disclosure.
+        found=$(grep -HIniF -- "$term" "${TARGETS[@]}" 2>/dev/null | locations_only || true)
         if [ -n "$found" ]; then
             echo "✖ A private term from the denylist appears at (file:line):"
             echo "$found" | sed 's/^/    /'
