@@ -15,7 +15,7 @@ use Qualimetrix\Rules\Size\ClassCountRule;
 final class KnownRuleNamesAdapterTest extends TestCase
 {
     #[Test]
-    public function extractsNamesFromRuleClasses(): void
+    public function itExtractsNamesFromRuleClasses(): void
     {
         $adapter = new KnownRuleNamesAdapter([
             ComplexityRule::class,
@@ -30,7 +30,7 @@ final class KnownRuleNamesAdapterTest extends TestCase
     }
 
     #[Test]
-    public function returnsEmptyArrayForNoRules(): void
+    public function itReturnsAnEmptyArrayWhenThereAreNoRules(): void
     {
         $adapter = new KnownRuleNamesAdapter([]);
 

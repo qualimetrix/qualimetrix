@@ -19,7 +19,7 @@ final class RuleRegistryTest extends TestCase
     // build them. Instance wiring is covered by RulesCommandWiringTest.
 
     #[Test]
-    public function getClassesReturnsClassNames(): void
+    public function itReturnsRegisteredRuleClassNames(): void
     {
         $registry = new RuleRegistry([
             ComplexityRule::class,
@@ -33,7 +33,7 @@ final class RuleRegistryTest extends TestCase
     }
 
     #[Test]
-    public function getAllCliAliasesCollectsAliasesFromAllRulesUsingReflection(): void
+    public function itCollectsCliAliasesFromAllRulesUsingReflection(): void
     {
         $registry = new RuleRegistry([
             ComplexityRule::class,
@@ -56,7 +56,7 @@ final class RuleRegistryTest extends TestCase
     }
 
     #[Test]
-    public function getAllCliAliasesThrowsOnConflict(): void
+    public function itThrowsWhenTwoRulesShareACliAlias(): void
     {
         // Use two instances of the same rule class to create conflict
         $registry = new RuleRegistry([
@@ -71,7 +71,7 @@ final class RuleRegistryTest extends TestCase
     }
 
     #[Test]
-    public function emptyRegistryReturnsEmptyResults(): void
+    public function itReturnsEmptyResultsForAnEmptyRegistry(): void
     {
         $registry = new RuleRegistry([]);
 
@@ -80,7 +80,7 @@ final class RuleRegistryTest extends TestCase
     }
 
     #[Test]
-    public function getAllCliAliasesUsesNameConstantWithoutInstantiation(): void
+    public function itReadsTheNameConstantWithoutInstantiatingRules(): void
     {
         // This test verifies that getAllCliAliases uses reflection to get NAME constant
         // Both rules have NAME constant, so no instances should be created for metadata

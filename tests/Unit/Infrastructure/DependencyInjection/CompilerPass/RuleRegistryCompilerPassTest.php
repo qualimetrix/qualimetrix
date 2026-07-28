@@ -22,7 +22,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 final class RuleRegistryCompilerPassTest extends TestCase
 {
     #[Test]
-    public function collectsRuleClassesIntoRegistry(): void
+    public function itCollectsRuleClassesIntoRegistry(): void
     {
         $container = new ContainerBuilder();
         $container->register(RuleRegistry::class);
@@ -45,7 +45,7 @@ final class RuleRegistryCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function doesNothingWhenRegistryNotRegistered(): void
+    public function itDoesNothingWhenRegistryNotRegistered(): void
     {
         $container = new ContainerBuilder();
         $container->register(ComplexityRule::class)
@@ -59,7 +59,7 @@ final class RuleRegistryCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function throwsOnDuplicateNameConstants(): void
+    public function itThrowsOnDuplicateNameConstants(): void
     {
         $container = new ContainerBuilder();
         $container->register(RuleRegistry::class);
@@ -98,7 +98,7 @@ final class RuleRegistryCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function skipsServicesWithNullClass(): void
+    public function itSkipsServicesWithNullClass(): void
     {
         $container = new ContainerBuilder();
         $container->register(RuleRegistry::class);

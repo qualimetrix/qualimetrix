@@ -18,7 +18,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 final class RulesCommandTest extends TestCase
 {
     #[Test]
-    public function configuresSetsNameAndDescription(): void
+    public function itSetsTheCommandNameAndDescription(): void
     {
         $command = new RulesCommand([]);
 
@@ -27,7 +27,7 @@ final class RulesCommandTest extends TestCase
     }
 
     #[Test]
-    public function configuresGroupOption(): void
+    public function itConfiguresTheGroupOption(): void
     {
         $command = new RulesCommand([]);
         $definition = $command->getDefinition();
@@ -40,7 +40,7 @@ final class RulesCommandTest extends TestCase
     }
 
     #[Test]
-    public function displaysNoRulesMessageWhenRegistryEmpty(): void
+    public function itDisplaysNoRulesMessageWhenNoRulesAreRegistered(): void
     {
         $tester = new CommandTester(new RulesCommand([]));
         $tester->execute([]);
@@ -50,7 +50,7 @@ final class RulesCommandTest extends TestCase
     }
 
     #[Test]
-    public function displaysNoRulesMessageForUnknownGroup(): void
+    public function itDisplaysNoRulesMessageForAnUnknownGroup(): void
     {
         $rule = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
 
@@ -62,7 +62,7 @@ final class RulesCommandTest extends TestCase
     }
 
     #[Test]
-    public function listsRulesWithGroupHeaders(): void
+    public function itListsRulesUnderGroupHeaders(): void
     {
         $ruleA = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
         $ruleB = $this->createRuleMock('size.class-count', RuleCategory::Size, 'Class count');
@@ -82,7 +82,7 @@ final class RulesCommandTest extends TestCase
     }
 
     #[Test]
-    public function filtersRulesByGroup(): void
+    public function itFiltersRulesByGroup(): void
     {
         $ruleA = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
         $ruleB = $this->createRuleMock('size.class-count', RuleCategory::Size, 'Class count');
@@ -99,7 +99,7 @@ final class RulesCommandTest extends TestCase
     }
 
     #[Test]
-    public function displaysCliAliases(): void
+    public function itDisplaysCliAliases(): void
     {
         $rule = $this->createCyclomaticRuleWithAlias();
 
@@ -113,7 +113,7 @@ final class RulesCommandTest extends TestCase
     }
 
     #[Test]
-    public function displaysUsageHints(): void
+    public function itDisplaysUsageHints(): void
     {
         $rule = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
 

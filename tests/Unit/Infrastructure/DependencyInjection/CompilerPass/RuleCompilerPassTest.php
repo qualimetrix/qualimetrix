@@ -19,7 +19,7 @@ use Symfony\Component\DependencyInjection\Reference;
 final class RuleCompilerPassTest extends TestCase
 {
     #[Test]
-    public function collectsTaggedRulesIntoRuleExecutor(): void
+    public function itCollectsTaggedRulesIntoRuleExecutor(): void
     {
         $container = new ContainerBuilder();
         $container->register(RuleExecutor::class);
@@ -89,7 +89,7 @@ final class RuleCompilerPassTest extends TestCase
     }
 
     #[Test]
-    public function setsEmptyArrayWhenNoTaggedServices(): void
+    public function itSetsAnEmptyArrayWhenNoRulesAreTagged(): void
     {
         $container = new ContainerBuilder();
         $container->register(RuleExecutor::class);
