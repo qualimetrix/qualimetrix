@@ -118,7 +118,7 @@ the command into the Architecture slice would force the slice to depend on
 - **Cohesion**: TCC/LCC (Tight/Loose Class Cohesion), LCOM4, WMC (Weighted Methods per Class)
 - **Size**: LOC, Class Count, Namespace Size, Property Count, Method Count
 - **Design**: DIT (Depth of Inheritance Tree), NOC (Number of Children), Type Coverage
-- **Architecture**: Circular Dependency Detection, Dependency Graph Export (DOT)
+- **Architecture**: Layer Policy Enforcement (multi-criterion membership, template layers, `exclude:`, `relations:` whitelist — deptrac replacement), Circular Dependency Detection, Dependency Graph Export (DOT)
 - **Code Smell**: Boolean Argument, Debug Code, Empty Catch, eval, exit/die, goto, Superglobals, Error Suppression, Count in Loop, Long Parameter List, Unreachable Code, Identical Sub-expression
 - **Security**: Hardcoded Credentials, SQL Injection, XSS, Command Injection, Sensitive Parameter Detection
 - **Computed Metrics**: 6 built-in health scores (complexity, cohesion, coupling, design, maintainability, overall), user-definable metrics via Symfony Expression Language formulas, per-level formulas, threshold-based violations

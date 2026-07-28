@@ -1,8 +1,13 @@
 # Qualimetrix Product Roadmap
 
-**Updated:** 2026-05-15
+**Updated:** 2026-07-28
 **Based on:** [Competitive analysis](COMPETITOR_COMPARISON.md), cross-ecosystem research (SonarQube, ESLint, Semgrep,
 NDepend, CodeScene, RuboCop, Ruff, ArchUnit), triple expert evaluation (Gemini + Codex, 2026-03-25)
+
+**Scope:** this document tracks *what is not built yet*. Shipped functionality is deliberately not duplicated here —
+see [CHANGELOG.md](../../CHANGELOG.md) for the release timeline, [README.md](../../README.md) and
+[the website](https://qualimetrix.dev/) for the user-facing feature list, and the "Key Features" section of
+[CLAUDE.md](../../CLAUDE.md) for the agent-facing inventory. When an item below ships, delete it from here.
 
 ---
 
@@ -38,24 +43,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 
 ### Tier 1 — Strategic (high value, higher effort)
 
-#### 1. Architecture Rules (deptrac replacement) — Phase 1 + Phase 2 ✅ Shipped in v0.18 + dogfooded since v0.20-dev
-
-- **Status:** Shipped in v0.18. The project itself retired `deptrac/deptrac` from its dev-dependencies on 2026-05-17
-  (ADR 0014); `composer check` enforces architecture exclusively through `bin/qmx check src/`. Phase 1:
-  namespace-pattern layer membership, allow-list policy, coverage modes (`ignore`/`warn`/`error`), vendor as
-  first-class layers, baseline-friendly edge identity, `@qmx-ignore architecture.layer-violation` suppression,
-  declaration-order matching (per ADR 0006). Phase 2: multi-criterion membership (`patterns` + `suffix` + `attributes`
-  + `implements` + `extends` with `match: any | all`), template layers with capture-variable expansion + same-instance
-  allow-list binding (per ADR 0007), `exclude:` block, `relations:` whitelist on long-form allow targets with
-  reflective alias map, `architecture.empty-template` diagnostic.
-- **Marketing claim (now honest — we dogfood it):** "Drop deptrac from your CI — Qualimetrix covers the textbook DDD
-  case AND the long-tail (custom membership, bounded-context partitioning, edge-kind whitelisting), 40x faster, no
-  second tool. We removed deptrac from our own `composer.lock` to prove it."
-- **Reference:** deptrac (PHP), ArchUnit (Java), ArchUnitNET (.NET — actively maintained ArchUnit port), Dependency Cruiser (JS); design records in
-  [ADR 0005](../adr/0005-architecture-rules.md) (Phase 1), [ADR 0006](../adr/0006-architecture-rules-declaration-order.md)
-  (declaration-order pivot), [ADR 0007](../adr/0007-architecture-rules-phase-2-design.md) (Phase 2 flexibility surface).
-
-#### 2. Trend Analysis & Quality Gates
+#### 1. Trend Analysis & Quality Gates
 
 - **Why it matters:** This is SonarQube's killer feature — and no PHP CLI tool has it. Today Qualimetrix answers "how healthy
   is your code now?" but can't answer "is it getting better or worse?" Quality gates that fail CI when metrics regress
@@ -75,7 +63,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 
 ### Tier 2 — Depth & Breadth (valuable, can wait)
 
-#### 3. Complexity Distribution (Box Plots)
+#### 2. Complexity Distribution (Box Plots)
 
 - **Why it matters:** Summary statistics (avg, p95) hide distribution shape. Two classes with avg CCN=10 look identical,
   but one might have 200 trivial methods + 3 monsters while the other is uniformly moderate. Box plots per
@@ -86,7 +74,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Value:** High for experienced teams, medium for general audience
 - **Marketing angle:** Visually impressive, appeals to data-oriented developers
 
-#### 4. Custom Rules API
+#### 3. Custom Rules API
 
 - **Why it matters:** Enterprise teams have domain-specific quality rules ("no direct DB queries outside Repository", "
   all DTOs must be readonly"). Without a plugin API, they either fork Qualimetrix or use a separate tool. A PHP plugin
@@ -103,7 +91,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Value:** High — critical for enterprise adoption, attracts community contributions
 - **Marketing angle:** "Platform maturity" signal. Less wow, more trust
 
-#### 5. Unused Variables Detection
+#### 4. Unused Variables Detection
 
 - **Why it matters:** Universally expected code quality check. Every linter in every language has it. Its absence is
   noticed. However, doing it well in PHP is hard due to `extract()`, variable variables (`$$x`), `compact()`, `list()`
@@ -119,7 +107,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Value:** High for adoption (expected feature), but overlap with PHPStan reduces unique value
 - **Marketing angle:** Checkbox feature — expected, not differentiating
 
-#### 6. Tech Debt Breakdown
+#### 5. Tech Debt Breakdown
 
 - **Why it matters:** Qualimetrix reports total tech debt as a single number ("4.2 hours"). But a tech lead planning a sprint
   needs to know: "2.5 hours is complexity, 1 hour is coupling, 0.7 hours is code smells". Category breakdown makes debt
@@ -136,7 +124,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 
 ### Tier 3 — Nice to Have (low priority or high risk)
 
-#### 7. Feature Envy Detection
+#### 6. Feature Envy Detection
 
 - **Rule:** `code-smell.feature-envy`
 - **Logic:** Method uses more symbols from another class than from its own. Classic Fowler smell
@@ -147,7 +135,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Effort:** Medium-High (analysis + FP tuning)
 - **Value:** Medium — recognized smell, but risky in PHP
 
-#### 8. CRAP Index
+#### 7. CRAP Index
 
 - **Metric:** `crap` = CCN² × (1 − coverage)². Without coverage data: CRAP = CCN²
 - **Input:** Optional Clover XML coverage file (`--coverage=clover.xml`)
@@ -159,7 +147,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Effort:** Medium
 - **Value:** Low without coverage, Medium-High with coverage — conditional feature
 
-#### 9. Interactive Dependency Graph
+#### 8. Interactive Dependency Graph
 
 - **Visualization:** Force-directed graph (D3 force simulation). Nodes = classes/namespaces, edges = dependencies.
   Color = health, size = ClassRank
@@ -172,7 +160,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Value:** High for demos, Medium for daily use
 - **Marketing angle:** Best possible screenshot, but risk of overpromise
 
-#### 10. Health Radar Chart
+#### 9. Health Radar Chart
 
 - **Data:** 5 sub-health scores (complexity, cohesion, coupling, typing, maintainability)
 - **Visualization:** Spider/radar chart per class or namespace. Overlay two namespaces for comparison
@@ -181,7 +169,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Effort:** Low
 - **Value:** Low — visual garnish
 
-#### 11. Cyclomatic Density
+#### 10. Cyclomatic Density
 
 - **Metric:** `cyclomaticDensity` = CCN / LLOC
 - **Rule:** `complexity.cyclomatic-density`
@@ -192,7 +180,7 @@ Items ordered by combined usefulness × marketing impact × effort efficiency.
 - **Effort:** Low
 - **Value:** Low — better as internal signal than user-facing rule
 
-#### 12. Type Coverage Heatmap
+#### 11. Type Coverage Heatmap
 
 - **Data:** `typeCoverage.param`, `.return`, `.property` per class
 - **Visualization:** Heatmap grid. Rows = classes (grouped by namespace), columns = param/return/property. Color =
@@ -210,7 +198,7 @@ Items surfaced during expert evaluation that don't fit existing phases but deser
 
 | Gap                       | Description                                                                                                                                                      | Potential Value | Notes                                                                                                                                                                  |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Diff-based regression** | "Did this PR make things worse?" without SQLite history — compare violations in changed files against baseline or previous commit                                | High            | Lighter alternative to full Trend Analysis (2). Partially covered by `--analyze=git:staged` + `--report=git:main..HEAD`, but lacks explicit "new violations only" mode |
+| **Diff-based regression** | "Did this PR make things worse?" without SQLite history — compare violations in changed files against baseline or previous commit                                | High            | Lighter alternative to full Trend Analysis (1). Partially covered by `--analyze=git:staged` + `--report=git:main..HEAD`, but lacks explicit "new violations only" mode |
 | **Explainability depth**  | Per-violation "what to do" recommendations beyond current `humanMessage` — e.g., "extract method X to reduce CCN", "introduce interface to break coupling cycle" | Medium          | Partially exists; evaluate coverage and quality of current recommendations before investing                                                                            |
 
 ---
@@ -230,19 +218,12 @@ Items surfaced during expert evaluation that don't fit existing phases but deser
 
 ## Success Metrics
 
-After Tiers 1–2, Qualimetrix replaces: **phpmd + phpmetrics + phpcpd + deptrac** and offers capabilities no PHP tool has (
-architecture rules, quality gates).
+Goal: Qualimetrix replaces **phpmd + phpmetrics + phpcpd + deptrac** and offers capabilities no PHP tool has.
 
-**Already delivered:** Effort-aware prioritization, cognitive complexity breakdown, analysis presets, Martin diagram, architecture layer rules (Phase 1 + Phase 2 — multi-criterion membership, template layers, capture-binding allow, `exclude:`, `relations:` whitelist).
+**Where we stand:** the deptrac leg of that claim is settled — architecture layer rules shipped in v0.18 and the project
+removed `deptrac/deptrac` from its own dev-dependencies on 2026-05-17 ([ADR 0014](../adr/0014-deptrac-retirement.md);
+design in [ADR 0005](../adr/0005-architecture-rules.md) / [0006](../adr/0006-architecture-rules-declaration-order.md) /
+[0007](../adr/0007-architecture-rules-phase-2-design.md)). The remaining differentiator on this list is quality gates
+(Tier 1 #1); everything else is depth, not positioning.
 
 **Target value proposition:** "One tool. 40x faster. Deeper metrics. Quality gates. Replaces five tools."
-
----
-
-## Technical Debt
-
-Items that improve developer experience and code health but are not user-facing:
-
-| Item                        | Priority | Effort | Description                                         |
-| --------------------------- | -------- | ------ | --------------------------------------------------- |
-| Global function aggregation | Low      | Small  | Aggregate function-level metrics to namespace level |
