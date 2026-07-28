@@ -364,6 +364,30 @@ final class HealthScoreTest extends TestCase
 - New tests must follow this convention. Do not introduce `testXxx` methods.
 - Data providers and helper methods keep their normal names (e.g., `provideFooCases`, `setUp`) — only test cases use `itXxx`.
 
+### 10. No Private Identifiers or Absolute Home Paths in Tracked Files
+
+This is a **public** repository. Nothing tracked may name a private codebase or
+reveal a developer's local filesystem layout — not in code, not in docs, not in
+comments, not in benchmark tooling.
+
+```php
+// Wrong: names a private project and hardcodes a local path
+['id' => 'acme-billing', 'path' => "/Users/<you>/projects/acme-billing/src"],
+
+// Correct: private targets come from git-ignored local config
+// benchmarks/local-projects.json (see benchmarks/local-projects.json.example)
+```
+
+- Private benchmark targets live in `benchmarks/local-projects.json` and
+  `benchmarks/local.env` — both git-ignored, both with committed `.example` files.
+- In docs, write "a private production backend", never the real name.
+- `scripts/check-private-leaks.sh` enforces this: it runs inside `composer check`
+  (so CI enforces it) and in the pre-commit hook. It rejects absolute
+  `/Users|/home` paths, and any term listed in `scripts/private-terms.local.txt`.
+- That denylist is git-ignored by design — committing the names would be the very
+  leak it prevents. It is therefore **absent on a fresh clone**, where only the
+  path half of the check is active. Recreate it when setting up a new machine.
+
 ---
 
 ## Technology Stack
