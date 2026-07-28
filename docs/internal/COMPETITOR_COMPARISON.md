@@ -191,7 +191,7 @@ Impact: DIT divergence dropped from **26.8% → 14.5%** (remaining = standard PH
 | System Complexity                | ❌          | ❌       | ✅         | ❌    |
 
 \* Qualimetrix CCN = CCN2 + null coalescing `??` counting (stricter than standard)
-\** Qualimetrix MI previously used physical LOC; fixed to use LLOC in commit 1048c9f
+\** Qualimetrix MI previously used physical LOC; fixed to use LLOC in commit 6feea89
 
 ### 3.2 Unique Qualimetrix Metrics (not available in any PHP competitor)
 

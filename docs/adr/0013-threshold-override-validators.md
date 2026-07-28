@@ -31,7 +31,7 @@ It silently broke for every other shape of rule:
   threshold; the error half is silently discarded by `withOverride()`.
   Users supplying `error=N` had no feedback that the value was ignored.
 
-A retroactive standard review on commit `2351dbf` (shipped in v0.18.0)
+A retroactive standard review on commit `eecd1c3` (shipped in v0.18.0)
 surfaced all four cases together with one structural cause: a global
 parser-level invariant cannot encode rule-specific semantics.
 
