@@ -254,12 +254,14 @@ final class CodeDuplicationRuleTest extends TestCase
             'enabled' => false,
             'min_lines' => 10,
             'min_tokens' => 100,
+            'include_constant_arrays' => true,
             'warning' => 8,
             'error' => 40,
         ]);
         self::assertFalse($options->isEnabled());
         self::assertSame(10, $options->min_lines);
         self::assertSame(100, $options->min_tokens);
+        self::assertTrue($options->include_constant_arrays);
         self::assertSame(8, $options->warning);
         self::assertSame(40, $options->error);
 
@@ -267,9 +269,33 @@ final class CodeDuplicationRuleTest extends TestCase
         $options = CodeDuplicationOptions::fromArray([
             'minLines' => 15,
             'minTokens' => 120,
+            'includeConstantArrays' => true,
         ]);
         self::assertSame(15, $options->min_lines);
         self::assertSame(120, $options->min_tokens);
+        self::assertTrue($options->include_constant_arrays);
+    }
+
+    #[Test]
+    public function itDefaultsIncludeConstantArraysToFalse(): void
+    {
+        $options = new CodeDuplicationOptions();
+
+        self::assertFalse($options->include_constant_arrays);
+
+        $options = CodeDuplicationOptions::fromArray([]);
+
+        self::assertFalse($options->include_constant_arrays);
+    }
+
+    #[Test]
+    public function itPreservesIncludeConstantArraysThroughOverride(): void
+    {
+        $options = new CodeDuplicationOptions(include_constant_arrays: true);
+
+        $overridden = $options->withOverride(10, 60);
+
+        self::assertTrue($overridden->include_constant_arrays);
     }
 
     #[Test]

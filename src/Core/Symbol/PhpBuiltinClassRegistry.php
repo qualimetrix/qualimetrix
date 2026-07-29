@@ -13,8 +13,6 @@ namespace Qualimetrix\Core\Symbol;
  *
  * This static list ensures deterministic results across environments.
  * Update when adding support for new PHP versions.
- *
- * @qmx-ignore duplication.code-duplication Repetitive data structure, not logic duplication.
  */
 final class PhpBuiltinClassRegistry
 {

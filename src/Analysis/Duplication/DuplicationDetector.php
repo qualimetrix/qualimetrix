@@ -6,48 +6,52 @@ namespace Qualimetrix\Analysis\Duplication;
 
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Duplication\DuplicateBlock;
-use Qualimetrix\Core\Duplication\DuplicateLocation;
-use Qualimetrix\Core\Path\PathFactory;
-use Qualimetrix\Core\Path\RelativePath;
 use SplFileInfo;
 
 /**
  * Detects code duplication across PHP files using token-stream hashing (Rabin-Karp).
  *
- * Algorithm (memory-optimized two-pass):
- * 1. Stream files one-by-one: tokenize, compute rolling hashes, discard tokens immediately
- * 2. Prune hash index — remove hashes with only one occurrence (typically ~75%)
- * 3. Re-tokenize only files that participate in hash matches
- * 4. Verify token matches, extend blocks, compute line ranges
- * 5. Filter out blocks shorter than minLines, deduplicate overlapping blocks
+ * Algorithm (memory-optimized two-pass), one phase per collaborator:
+ * 1. {@see HashIndexBuilder} streams files one-by-one: tokenize, compute
+ *    rolling hashes, discard tokens immediately, then prune hashes with a
+ *    single occurrence (typically ~75%)
+ * 2. {@see retokenizeNeeded()} re-tokenizes only the files that participate
+ *    in a hash match
+ * 3. {@see DuplicateBlockFinder} verifies token matches, extends blocks,
+ *    computes line ranges, and applies the data-table / self-duplication
+ *    filters
+ * 4. {@see filterAndDeduplicate()} drops blocks shorter than minLines and
+ *    removes nested/overlapping blocks
  *
  * Memory optimizations:
  * - Two-pass avoids holding all tokens + full hash index simultaneously
- * - Positions packed as single int (fileIdx << 20 | offset) instead of 2-element arrays
+ * - Positions packed as single int (see {@see PackedPosition}) instead of 2-element arrays
  * - Hash index pruned before re-tokenization pass
  * - Only files with matches are re-tokenized
+ *
+ * Data-table suppression: matches entirely contained within a `const`
+ * declaration or a property's array-literal initializer are skipped by
+ * default (see {@see DataDeclarationTagger}) — repeated key/value shape
+ * across the rows of a constant lookup table is the normal form of that
+ * table, not code duplication needing extraction. Set the
+ * `include_constant_arrays` rule option to restore the previous behavior.
  */
 final class DuplicationDetector implements DuplicationDetectorInterface
 {
-    private const HASH_BASE = 33;
-    private const HASH_MOD = 1_000_000_007;
-
-    /**
-     * Bit shift for packing fileIdx and offset into a single int.
-     * Supports up to 1,048,575 tokens per file (20 bits) and ~8.7M files.
-     */
-    private const OFFSET_BITS = 20;
-    private const OFFSET_MASK = (1 << self::OFFSET_BITS) - 1; // 0xFFFFF
-
+    private HashIndexBuilder $hashIndexBuilder;
     private TokenNormalizer $normalizer;
+    private DuplicateBlockFinder $blockFinder;
 
     private int $minTokens;
     private int $minLines;
+    private bool $includeConstantArrays;
 
     public function __construct(
         private readonly ConfigurationProviderInterface $configurationProvider,
     ) {
+        $this->hashIndexBuilder = new HashIndexBuilder();
         $this->normalizer = new TokenNormalizer();
+        $this->blockFinder = new DuplicateBlockFinder();
     }
 
     /**
@@ -61,73 +65,54 @@ final class DuplicationDetector implements DuplicationDetectorInterface
      */
     public function detect(array $files): array
     {
+        $this->loadOptions();
+
+        $projectRoot = $this->configurationProvider->getConfiguration()->projectRoot;
+
+        $indexResult = $this->hashIndexBuilder->build($files, $projectRoot, $this->minTokens);
+        if ($indexResult->isEmpty()) {
+            return [];
+        }
+
+        $retokenized = $this->retokenizeNeeded($indexResult->ioPaths, $indexResult->neededFileIndices());
+
+        $rawBlocks = $this->blockFinder->find(new DuplicateSearchRequest(
+            hashIndex: $indexResult->hashIndex,
+            retokenized: $retokenized,
+            filePaths: $indexResult->filePaths,
+            minTokens: $this->minTokens,
+            minLines: $this->minLines,
+            includeConstantArrays: $this->includeConstantArrays,
+        ));
+
+        // Free large structures before dedup sort
+        unset($indexResult, $retokenized);
+
+        return $this->filterAndDeduplicate($rawBlocks);
+    }
+
+    private function loadOptions(): void
+    {
         $ruleOptions = $this->configurationProvider->getRuleOptions();
         $dupOptions = $ruleOptions['duplication.code-duplication'] ?? [];
         $this->minTokens = (int) ($dupOptions['min_tokens'] ?? $dupOptions['minTokens'] ?? 70);
         $this->minLines = (int) ($dupOptions['min_lines'] ?? $dupOptions['minLines'] ?? 5);
+        $this->includeConstantArrays = (bool) ($dupOptions['include_constant_arrays'] ?? $dupOptions['includeConstantArrays'] ?? false);
+    }
 
-        $projectRoot = $this->configurationProvider->getConfiguration()->projectRoot;
-
-        // Pass 1: Build hash index streaming (tokenize → hash → discard tokens)
-        // Positions are packed as (fileIdx << 20 | offset) to avoid array-per-position overhead
-        /** @var list<string> $filePaths maps fileIdx → project-relative path (identifier surface for DuplicateLocation) */
-        $filePaths = [];
-        /** @var list<string> $ioPaths maps fileIdx → path as supplied by the file source (absolute when Finder normalizes, relative when user passes relative args); used only for re-read I/O in pass 2 */
-        $ioPaths = [];
-        /** @var array<int, list<int>> $hashIndex maps hash → list of packed positions */
-        $hashIndex = [];
-
-        foreach ($files as $file) {
-            $ioPath = $file->getPathname();
-            $relativePath = PathFactory::bestEffortRelative($ioPath, $projectRoot)->value();
-
-            $source = @file_get_contents($ioPath);
-            if ($source === false) {
-                continue;
-            }
-
-            $tokens = $this->normalizer->normalize($source);
-            if (\count($tokens) < $this->minTokens) {
-                continue;
-            }
-
-            $fileIdx = \count($filePaths);
-            $filePaths[] = $relativePath;
-            $ioPaths[] = $ioPath;
-
-            // Compute rolling hashes and add to index, then discard tokens
-            $this->addFileHashesToIndex($tokens, $fileIdx, $hashIndex);
-            // $tokens freed here — not stored
-        }
-
-        if ($hashIndex === []) {
-            return [];
-        }
-
-        // Prune unique hashes — typically removes ~75% of entries
-        foreach ($hashIndex as $hash => $positions) {
-            if (\count($positions) < 2) {
-                unset($hashIndex[$hash]);
-            }
-        }
-
-        if ($hashIndex === []) {
-            return [];
-        }
-
-        // Determine which files need re-tokenization
-        $neededFileIndices = [];
-        foreach ($hashIndex as $positions) {
-            foreach ($positions as $packed) {
-                $neededFileIndices[$packed >> self::OFFSET_BITS] = true;
-            }
-        }
-
-        // Pass 2: Re-tokenize only files with matching hashes
+    /**
+     * Pass 2: re-tokenizes only the files that participate in a hash match.
+     *
+     * @param list<string> $ioPaths fileIdx → path as supplied by the file source
+     * @param array<int, true> $neededFileIndices fileIdx → true
+     */
+    private function retokenizeNeeded(array $ioPaths, array $neededFileIndices): RetokenizedFiles
+    {
         /** @var array<int, list<NormalizedToken>> $fileTokens fileIdx → tokens */
         $fileTokens = [];
         /** @var array<int, string> $fileSources fileIdx → source content (for hint extraction) */
         $fileSources = [];
+
         foreach ($neededFileIndices as $fileIdx => $_) {
             $source = @file_get_contents($ioPaths[$fileIdx]);
             if ($source === false) {
@@ -137,197 +122,7 @@ final class DuplicationDetector implements DuplicationDetectorInterface
             $fileSources[$fileIdx] = $source;
         }
 
-        // Find and extend duplicate blocks
-        $rawBlocks = $this->findDuplicateBlocks($hashIndex, $fileTokens, $filePaths, $fileSources);
-
-        // Free large structures before dedup sort
-        unset($hashIndex, $fileTokens, $fileSources);
-
-        // Filter and deduplicate
-        return $this->filterAndDeduplicate($rawBlocks);
-    }
-
-    /**
-     * Computes rolling hashes for a single file's tokens and adds them to the index.
-     *
-     * @param list<NormalizedToken> $tokens
-     * @param array<int, list<int>> $index modified by reference
-     */
-    private function addFileHashesToIndex(array $tokens, int $fileIdx, array &$index): void
-    {
-        $tokenCount = \count($tokens);
-        if ($tokenCount < $this->minTokens) {
-            return;
-        }
-
-        $packedBase = $fileIdx << self::OFFSET_BITS;
-
-        // Compute initial hash for the first window
-        $hash = 0;
-        $highPow = 1;
-
-        for ($i = 0; $i < $this->minTokens; $i++) {
-            $hash = ($hash * self::HASH_BASE + $this->tokenHash($tokens[$i])) % self::HASH_MOD;
-            if ($i < $this->minTokens - 1) {
-                $highPow = ($highPow * self::HASH_BASE) % self::HASH_MOD;
-            }
-        }
-
-        $index[$hash][] = $packedBase; // offset 0
-
-        // Roll the hash forward
-        for ($i = 1; $i <= $tokenCount - $this->minTokens; $i++) {
-            $outToken = $this->tokenHash($tokens[$i - 1]);
-            $inToken = $this->tokenHash($tokens[$i + $this->minTokens - 1]);
-
-            $hash = (($hash - (($outToken * $highPow) % self::HASH_MOD) + self::HASH_MOD) * self::HASH_BASE + $inToken) % self::HASH_MOD;
-
-            $index[$hash][] = $packedBase | $i;
-        }
-    }
-
-    /**
-     * Finds duplicate blocks by verifying hash matches and extending them.
-     *
-     * @param array<int, list<int>> $hashIndex hash → list of packed positions
-     * @param array<int, list<NormalizedToken>> $fileTokens fileIdx → tokens
-     * @param list<string> $filePaths fileIdx → realPath
-     * @param array<int, string> $fileSources fileIdx → source content (for hint extraction)
-     *
-     * @return list<DuplicateBlock>
-     */
-    private function findDuplicateBlocks(array $hashIndex, array $fileTokens, array $filePaths, array $fileSources): array
-    {
-        $hintExtractor = new ContentHintExtractor();
-        $blocks = [];
-        /** @var array<string, true> $seen Track processed pairs to avoid duplicates */
-        $seen = [];
-
-        foreach ($hashIndex as $positions) {
-            // Compare all pairs in this hash bucket
-            $count = \count($positions);
-            for ($i = 0; $i < $count - 1; $i++) {
-                $fileIdxA = $positions[$i] >> self::OFFSET_BITS;
-                $offsetA = $positions[$i] & self::OFFSET_MASK;
-
-                for ($j = $i + 1; $j < $count; $j++) {
-                    $fileIdxB = $positions[$j] >> self::OFFSET_BITS;
-                    $offsetB = $positions[$j] & self::OFFSET_MASK;
-
-                    // Skip same-file same-offset (trivial self-match)
-                    if ($fileIdxA === $fileIdxB && $offsetA === $offsetB) {
-                        continue;
-                    }
-
-                    // Canonical pair key using compact integer indices
-                    $pairKey = $this->pairKey($fileIdxA, $offsetA, $fileIdxB, $offsetB);
-                    if (isset($seen[$pairKey])) {
-                        continue;
-                    }
-                    $seen[$pairKey] = true;
-
-                    // Verify the tokens actually match (hash collision protection)
-                    if (!isset($fileTokens[$fileIdxA], $fileTokens[$fileIdxB])) {
-                        continue;
-                    }
-
-                    $tokensA = $fileTokens[$fileIdxA];
-                    $tokensB = $fileTokens[$fileIdxB];
-
-                    if (!$this->tokensMatch($tokensA, $offsetA, $tokensB, $offsetB, $this->minTokens)) {
-                        continue;
-                    }
-
-                    // Extend the match forward
-                    $matchLength = $this->extendMatch($tokensA, $offsetA, $tokensB, $offsetB);
-
-                    // Compute line range
-                    $startLineA = $tokensA[$offsetA]->line;
-                    $endLineA = $tokensA[$offsetA + $matchLength - 1]->line;
-                    $startLineB = $tokensB[$offsetB]->line;
-                    $endLineB = $tokensB[$offsetB + $matchLength - 1]->line;
-
-                    // Skip self-duplication: same file, overlapping or adjacent line ranges.
-                    // Repetitive structures (large constant arrays) produce many matching token
-                    // windows at different offsets that map to overlapping or touching line ranges.
-                    if ($fileIdxA === $fileIdxB) {
-                        $totalSize = ($endLineA - $startLineA + 1) + ($endLineB - $startLineB + 1);
-                        $unionSpan = max($endLineA, $endLineB) - min($startLineA, $startLineB) + 1;
-
-                        // totalSize >= unionSpan means ranges overlap or touch (gap <= 0).
-                        // This catches self-duplication from repetitive data structures where
-                        // matching token windows in different parts of the same structure produce
-                        // overlapping or immediately adjacent line ranges.
-                        // Truly separated blocks (like two identical functions with a blank line
-                        // gap between them) have totalSize < unionSpan and are not filtered.
-                        if ($totalSize >= $unionSpan) {
-                            continue;
-                        }
-                    }
-
-                    $lineCount = max($endLineA - $startLineA + 1, $endLineB - $startLineB + 1);
-
-                    if ($lineCount < $this->minLines) {
-                        continue;
-                    }
-
-                    // Extract content hint from the first location's source
-                    $hint = isset($fileSources[$fileIdxA])
-                        ? $hintExtractor->extract($fileSources[$fileIdxA], $startLineA, $endLineA)
-                        : null;
-
-                    $blocks[] = new DuplicateBlock(
-                        locations: [
-                            new DuplicateLocation(RelativePath::fromString($filePaths[$fileIdxA]), $startLineA, $endLineA),
-                            new DuplicateLocation(RelativePath::fromString($filePaths[$fileIdxB]), $startLineB, $endLineB),
-                        ],
-                        lines: $lineCount,
-                        tokens: $matchLength,
-                        hint: $hint,
-                    );
-                }
-            }
-        }
-
-        return $blocks;
-    }
-
-    /**
-     * Extends a match forward past the initial window.
-     *
-     * @param list<NormalizedToken> $tokensA
-     * @param list<NormalizedToken> $tokensB
-     */
-    private function extendMatch(array $tokensA, int $offsetA, array $tokensB, int $offsetB): int
-    {
-        $maxLen = min(\count($tokensA) - $offsetA, \count($tokensB) - $offsetB);
-        $length = $this->minTokens;
-
-        while ($length < $maxLen) {
-            if ($tokensA[$offsetA + $length]->value !== $tokensB[$offsetB + $length]->value) {
-                break;
-            }
-            $length++;
-        }
-
-        return $length;
-    }
-
-    /**
-     * Verifies that tokens at the given positions actually match.
-     *
-     * @param list<NormalizedToken> $tokensA
-     * @param list<NormalizedToken> $tokensB
-     */
-    private function tokensMatch(array $tokensA, int $offsetA, array $tokensB, int $offsetB, int $length): bool
-    {
-        for ($i = 0; $i < $length; $i++) {
-            if ($tokensA[$offsetA + $i]->value !== $tokensB[$offsetB + $i]->value) {
-                return false;
-            }
-        }
-
-        return true;
+        return new RetokenizedFiles($fileTokens, $fileSources);
     }
 
     /**
@@ -389,29 +184,5 @@ final class DuplicationDetector implements DuplicationDetectorInterface
         }
 
         return false;
-    }
-
-    private function tokenHash(NormalizedToken $token): int
-    {
-        // Use a simple hash of the token value
-        $hash = 0;
-        $value = $token->value;
-        $len = min(\strlen($value), 16);
-
-        for ($i = 0; $i < $len; $i++) {
-            $hash = ($hash * 31 + \ord($value[$i])) % self::HASH_MOD;
-        }
-
-        return $hash;
-    }
-
-    private function pairKey(int $fileIdxA, int $offsetA, int $fileIdxB, int $offsetB): string
-    {
-        // Canonical order for the pair
-        if ($fileIdxA > $fileIdxB || ($fileIdxA === $fileIdxB && $offsetA > $offsetB)) {
-            return "{$fileIdxB}:{$offsetB}-{$fileIdxA}:{$offsetA}";
-        }
-
-        return "{$fileIdxA}:{$offsetA}-{$fileIdxB}:{$offsetB}";
     }
 }

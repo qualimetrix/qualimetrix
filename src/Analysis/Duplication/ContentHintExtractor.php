@@ -39,9 +39,37 @@ final class ContentHintExtractor
         $endLine = min($endLine, $totalLines);
         $scanEnd = min($startLine - 1 + self::MAX_LINES_TO_SCAN, $endLine);
 
+        $meaningfulLines = $this->collectMeaningfulLines($allLines, $startLine - 1, $scanEnd);
+
+        if ($meaningfulLines === []) {
+            return null;
+        }
+
+        // Join lines with space separator, collapse multiple whitespace
+        $hint = implode(' ', $meaningfulLines);
+        $hint = (string) preg_replace('/\s+/', ' ', $hint);
+        $hint = trim($hint);
+
+        if ($hint === '') {
+            return null;
+        }
+
+        return $this->truncateHint($hint);
+    }
+
+    /**
+     * Scans lines `[$fromIndex, $toIndex)`, skipping blank/brace-only/too-short
+     * lines, and returns up to the first 3 meaningful ones (trimmed).
+     *
+     * @param list<string> $allLines
+     *
+     * @return list<string>
+     */
+    private function collectMeaningfulLines(array $allLines, int $fromIndex, int $toIndex): array
+    {
         $meaningfulLines = [];
 
-        for ($i = $startLine - 1; $i < $scanEnd; $i++) {
+        for ($i = $fromIndex; $i < $toIndex; $i++) {
             $line = trim($allLines[$i]);
 
             // Skip empty lines and brace-only lines
@@ -61,32 +89,27 @@ final class ContentHintExtractor
             }
         }
 
-        if ($meaningfulLines === []) {
-            return null;
+        return $meaningfulLines;
+    }
+
+    /**
+     * Truncates a hint to {@see MAX_HINT_LENGTH}, preferring a word boundary
+     * cut, and appends an ellipsis when truncated.
+     */
+    private function truncateHint(string $hint): string
+    {
+        if (\strlen($hint) <= self::MAX_HINT_LENGTH) {
+            return $hint;
         }
 
-        // Join lines with space separator, collapse multiple whitespace
-        $hint = implode(' ', $meaningfulLines);
-        $hint = (string) preg_replace('/\s+/', ' ', $hint);
-        $hint = trim($hint);
+        // Try to cut at a word boundary
+        $truncated = substr($hint, 0, self::MAX_HINT_LENGTH - 3);
+        $lastSpace = strrpos($truncated, ' ');
 
-        if ($hint === '') {
-            return null;
+        if ($lastSpace !== false && $lastSpace > self::MAX_HINT_LENGTH * 0.5) {
+            $truncated = substr($truncated, 0, $lastSpace);
         }
 
-        // Truncate to max length
-        if (\strlen($hint) > self::MAX_HINT_LENGTH) {
-            // Try to cut at a word boundary
-            $truncated = substr($hint, 0, self::MAX_HINT_LENGTH - 3);
-            $lastSpace = strrpos($truncated, ' ');
-
-            if ($lastSpace !== false && $lastSpace > self::MAX_HINT_LENGTH * 0.5) {
-                $truncated = substr($truncated, 0, $lastSpace);
-            }
-
-            $hint = $truncated . '...';
-        }
-
-        return $hint;
+        return $truncated . '...';
     }
 }

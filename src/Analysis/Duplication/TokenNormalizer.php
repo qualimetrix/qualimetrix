@@ -10,9 +10,24 @@ namespace Qualimetrix\Analysis\Duplication;
  * Strips whitespace and comments, replaces variable names, string literals,
  * and numbers with placeholders so that structurally identical code with
  * different identifiers is detected as duplicate.
+ *
+ * After normalization, {@see DataDeclarationTagger} runs a second pass over
+ * the resulting token list to flag tokens that lie inside a constant
+ * declaration or a property's array-literal initializer (see its docblock
+ * for the exact patterns matched). This is a separate concern from
+ * normalization proper, kept in its own class for cohesion, but composed
+ * here so every {@see normalize()} caller gets tagged tokens without having
+ * to know the tagger exists.
  */
 final class TokenNormalizer
 {
+    private DataDeclarationTagger $dataDeclarationTagger;
+
+    public function __construct()
+    {
+        $this->dataDeclarationTagger = new DataDeclarationTagger();
+    }
+
     /**
      * Token types to skip entirely (whitespace, comments).
      */
@@ -70,6 +85,6 @@ final class TokenNormalizer
             $result[] = new NormalizedToken($type, $value, $line);
         }
 
-        return $result;
+        return $this->dataDeclarationTagger->tag($result);
     }
 }

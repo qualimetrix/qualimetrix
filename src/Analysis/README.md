@@ -86,10 +86,19 @@ Analysis/
 │   ├── GlobalCollectorRunner.php        # Runs global (cross-file) collectors
 │   └── GlobalCollectorSorter.php        # Topological sort of global collectors
 │
-├── Duplication/
-│   ├── NormalizedToken.php              # VO: normalized token for comparison
+├── Duplication/                         # Rabin-Karp duplicate detection, split by phase (see DuplicationDetector docblock)
+│   ├── NormalizedToken.php              # VO: normalized token for comparison (carries an isData flag)
 │   ├── TokenNormalizer.php              # Normalizes PHP tokens for duplicate detection
-│   └── DuplicationDetector.php          # Detects duplicate code blocks (config via DI)
+│   ├── DataDeclarationTagger.php        # Flags tokens inside const/property-array data declarations
+│   ├── ContentHintExtractor.php         # Extracts a short content preview for a duplicate block
+│   ├── PackedPosition.php               # Bit-packing helper for (fileIdx, tokenOffset) positions
+│   ├── HashIndexBuilder.php             # Pass 1: streams files, builds + prunes the rolling-hash index
+│   ├── HashIndexBuildResult.php         # VO: pass 1 output (pruned hash index + file paths)
+│   ├── RetokenizedFiles.php             # VO: pass 2 output (tokens/sources of files with hash matches)
+│   ├── DuplicateSearchRequest.php       # VO: bundles pass-2 inputs for DuplicateBlockFinder::find()
+│   ├── DuplicateBlockFinder.php         # Verifies matches, extends blocks, applies data/self-dup filters
+│   ├── DuplicationDetectorInterface.php # Contract for duplicate block detection
+│   └── DuplicationDetector.php          # Thin orchestrator composing the phases above (config via DI)
 │
 ├── RuleExecution/
 │   ├── RuleExecutorInterface.php        # Rule executor contract

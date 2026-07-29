@@ -228,8 +228,15 @@ PHP;
 
         $file = $this->createFile('repetitive_array.php', $code);
 
-        $detector = $this->createDetector(minTokens: 30, minLines: 5);
+        // This test targets the same-file overlap guard in findDuplicateBlocks(),
+        // which is a different mechanism from the const-array data suppression
+        // added later. Opt back into the pre-suppression behavior so the
+        // repetitive const array still produces candidate blocks to exercise
+        // that guard against.
+        $detector = $this->createDetector(minTokens: 30, minLines: 5, includeConstantArrays: true);
         $blocks = $detector->detect([$file]);
+
+        self::assertNotEmpty($blocks, 'The repetitive array should still produce candidate blocks with include_constant_arrays enabled');
 
         // No block should have two identical locations (same file + same line range)
         foreach ($blocks as $block) {
@@ -245,6 +252,137 @@ PHP;
                 );
             }
         }
+    }
+
+    #[Test]
+    public function itDoesNotReportDuplicationEntirelyInsideConstArrays(): void
+    {
+        // Same shape, different literal content, two rows of the same const
+        // array in one file — mirrors the real bug: MetricHintProvider's
+        // METRICS/RANGES tables have many rows sharing this shape, so pairs
+        // of rows normalize to identical token sequences and used to match
+        // each other. A single-file, multi-row fixture keeps the matched
+        // window comfortably inside the array on both sides (unlike a
+        // cross-file, single-row fixture, where the window's start/end can
+        // land on the file's own boilerplate instead).
+        $file = $this->createFile('const_rows.php', $this->constArrayFixture('MetricHints', 'METRICS'));
+
+        // 17 tokens is the exact size of one row; a match must span at
+        // least that much to be found by the rolling hash at all.
+        $detector = $this->createDetector(minTokens: 17, minLines: 3);
+        $blocks = $detector->detect([$file]);
+
+        self::assertEmpty($blocks, 'A duplicate block entirely inside a const array declaration must not be reported by default');
+    }
+
+    #[Test]
+    public function itReportsConstArrayDuplicationWhenOptionEnabled(): void
+    {
+        $file = $this->createFile('const_rows.php', $this->constArrayFixture('MetricHints', 'METRICS'));
+
+        $detector = $this->createDetector(minTokens: 17, minLines: 3, includeConstantArrays: true);
+        $blocks = $detector->detect([$file]);
+
+        self::assertNotEmpty($blocks, 'include_constant_arrays=true must restore detection inside const arrays');
+    }
+
+    #[Test]
+    public function itDoesNotReportDuplicationEntirelyInsidePropertyArrayInitializers(): void
+    {
+        $file = $this->createFile('prop_rows.php', $this->propertyArrayFixture('Defaults'));
+
+        $detector = $this->createDetector(minTokens: 17, minLines: 3);
+        $blocks = $detector->detect([$file]);
+
+        self::assertEmpty($blocks, 'A duplicate block entirely inside a static property array initializer must not be reported by default');
+    }
+
+    #[Test]
+    public function itReportsDuplicationInMethodBodyArrayLiterals(): void
+    {
+        // Same array-literal shape as the const-array fixtures above, but
+        // built inside a method body — must still be detected, proving the
+        // suppression is scoped to const/property declarations only.
+        $code = static fn(string $label, string $direction, string $goodValue): string => <<<PHP
+<?php
+
+final class Builder
+{
+    public function build(): array
+    {
+        return [
+            'ccn' => [
+                'label' => '{$label}',
+                'direction' => '{$direction}',
+                'goodValue' => '{$goodValue}',
+            ],
+            'wmc' => [
+                'label' => '{$label}2',
+                'direction' => '{$direction}',
+                'goodValue' => '{$goodValue}2',
+            ],
+        ];
+    }
+}
+PHP;
+
+        $fileA = $this->createFile('method_array_a.php', $code('Cyclomatic', 'lower', 'below four'));
+        $fileB = $this->createFile('method_array_b.php', $code('Complexity', 'down', 'under five'));
+
+        $detector = $this->createDetector(minTokens: 30, minLines: 5);
+        $blocks = $detector->detect([$fileA, $fileB]);
+
+        self::assertNotEmpty($blocks, 'Array literals built in a method body are executable code and must still be detected');
+    }
+
+    #[Test]
+    public function itReportsDuplicationCrossingTheDataCodeBoundary(): void
+    {
+        // Const array followed immediately by an identical method: the
+        // rolling hash match window naturally extends from inside the
+        // `const` declaration across its terminating `;` into the method
+        // body. Only one side of that window is data, so it must NOT be
+        // suppressed.
+        $code = <<<'PHP'
+<?php
+
+final class BoundaryCase
+{
+    private const array MAP = [
+        'ccn' => [
+            'label' => 'Cyclomatic',
+            'direction' => 'lower',
+            'goodValue' => 'below four',
+        ],
+        'wmc' => [
+            'label' => 'Weighted',
+            'direction' => 'lower',
+            'goodValue' => 'below ten',
+        ],
+    ];
+
+    public function identicalHelper(): int
+    {
+        $value = 1;
+        $value += 2;
+        $value += 3;
+        $value += 4;
+
+        return $value;
+    }
+}
+PHP;
+
+        // Only the class name differs, so the match cannot start there —
+        // the hash search finds the next window where everything (from
+        // `private const ...` onward) is byte-for-byte identical.
+        $fileA = $this->createFile('boundary_a.php', str_replace('BoundaryCase', 'BoundaryCaseA', $code));
+        $fileB = $this->createFile('boundary_b.php', str_replace('BoundaryCase', 'BoundaryCaseB', $code));
+
+        $detector = $this->createDetector(minTokens: 30, minLines: 5);
+        $blocks = $detector->detect([$fileA, $fileB]);
+
+        self::assertNotEmpty($blocks, 'A block spanning both a const array and executable code must still be reported');
     }
 
     #[Test]
@@ -284,13 +422,14 @@ PHP;
         self::assertSame('src/Foo.php:10-25', $loc->toString());
     }
 
-    private function createDetector(int $minTokens = 70, int $minLines = 5): DuplicationDetector
+    private function createDetector(int $minTokens = 70, int $minLines = 5, bool $includeConstantArrays = false): DuplicationDetector
     {
         $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getRuleOptions')->willReturn([
             'duplication.code-duplication' => [
                 'min_tokens' => $minTokens,
                 'min_lines' => $minLines,
+                'include_constant_arrays' => $includeConstantArrays,
             ],
         ]);
         $configProvider->method('getConfiguration')->willReturn(
@@ -298,6 +437,83 @@ PHP;
         );
 
         return new DuplicationDetector($configProvider);
+    }
+
+    /**
+     * Builds a source file whose body is a `const array` with three rows
+     * sharing one shape but different literal content — mirrors the real
+     * bug: MetricHintProvider's METRICS/RANGES tables have many rows of
+     * this shape, and pairs of rows normalize to identical token sequences
+     * (string/number literals become placeholders), so they used to match
+     * each other as duplicates.
+     *
+     * Deliberately single-file/multi-row rather than one row duplicated
+     * across two files: a matched window here starts and ends between two
+     * rows of the *same* array, so both its neighbors are also
+     * const-declaration tokens. A cross-file, single-row variant risks the
+     * window's start or end landing on file/class boilerplate (e.g. the
+     * class's own opening `{`) that trivially agrees between any two
+     * fixtures regardless of their data content — a fixture-construction
+     * pitfall, not a property of the suppression logic itself.
+     */
+    private function constArrayFixture(string $className, string $constName): string
+    {
+        return <<<PHP
+<?php
+
+final class {$className}
+{
+    private const array {$constName} = [
+        'ccn' => [
+            'label' => 'Cyclomatic',
+            'direction' => 'lower',
+            'goodValue' => 'below four',
+        ],
+        'wmc' => [
+            'label' => 'Weighted',
+            'direction' => 'lower',
+            'goodValue' => 'below ten',
+        ],
+        'lcom' => [
+            'label' => 'Cohesion',
+            'direction' => 'higher',
+            'goodValue' => 'above one',
+        ],
+    ];
+}
+PHP;
+    }
+
+    /**
+     * Same shape as {@see constArrayFixture()}, but as a static property's
+     * array-literal initializer instead of a class constant.
+     */
+    private function propertyArrayFixture(string $className): string
+    {
+        return <<<PHP
+<?php
+
+final class {$className}
+{
+    private static array \$defaults = [
+        'ccn' => [
+            'label' => 'Cyclomatic',
+            'direction' => 'lower',
+            'goodValue' => 'below four',
+        ],
+        'wmc' => [
+            'label' => 'Weighted',
+            'direction' => 'lower',
+            'goodValue' => 'below ten',
+        ],
+        'lcom' => [
+            'label' => 'Cohesion',
+            'direction' => 'higher',
+            'goodValue' => 'above one',
+        ],
+    ];
+}
+PHP;
     }
 
     private function createFile(string $name, string $content): SplFileInfo
