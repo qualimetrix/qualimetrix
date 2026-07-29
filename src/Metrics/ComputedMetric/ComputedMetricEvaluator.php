@@ -20,11 +20,13 @@ use Throwable;
 final class ComputedMetricEvaluator
 {
     private readonly ExpressionLanguage $expressionLanguage;
+    private readonly ComputedMetricDependencyGraphCalculator $dependencyGraphCalculator;
 
     public function __construct(
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
         $this->expressionLanguage = new ExpressionLanguage();
+        $this->dependencyGraphCalculator = new ComputedMetricDependencyGraphCalculator();
         $this->registerMathFunctions();
     }
 
@@ -131,12 +133,7 @@ final class ComputedMetricEvaluator
         array $symbols,
     ): void {
         // Collect union of all known metric keys across all symbols at this level
-        $allKnownKeys = [];
-        foreach ($symbols as [$symbolPath]) {
-            foreach ($repo->get($symbolPath)->all() as $key => $value) {
-                $allKnownKeys[str_replace('.', '__', $key)] = true;
-            }
-        }
+        $allKnownKeys = $this->collectKnownMetricKeys($repo, $symbols);
 
         // Skip validation when no metrics exist at this level — there is no data to validate against.
         // In production, aggregation populates metrics before evaluation; in unit tests, data may be sparse.
@@ -146,7 +143,48 @@ final class ComputedMetricEvaluator
 
         // Extract required variables (excluding null-coalescing-protected ones)
         $requiredVars = $this->extractRequiredFormulaVariables($formula);
+        $unknownVars = $this->findUnknownVariables($requiredVars, $allKnownKeys);
 
+        if ($unknownVars !== []) {
+            throw new RuntimeException(\sprintf(
+                'Computed metric "%s" at level "%s" references unknown metrics: %s. Check the formula: %s',
+                $definition->name,
+                $this->levelKeyFor($level),
+                implode(', ', $unknownVars),
+                $formula,
+            ));
+        }
+    }
+
+    /**
+     * Collects the union of all known metric keys across all symbols at a level.
+     *
+     * @param list<array{SymbolPath, ?RelativePath, ?int}> $symbols
+     *
+     * @return array<string, true>
+     */
+    private function collectKnownMetricKeys(MetricRepositoryInterface $repo, array $symbols): array
+    {
+        $allKnownKeys = [];
+        foreach ($symbols as [$symbolPath]) {
+            foreach ($repo->get($symbolPath)->all() as $key => $value) {
+                $allKnownKeys[str_replace('.', '__', $key)] = true;
+            }
+        }
+
+        return $allKnownKeys;
+    }
+
+    /**
+     * Finds formula variables that are neither known metrics nor computed-metric references.
+     *
+     * @param list<string> $requiredVars
+     * @param array<string, true> $allKnownKeys
+     *
+     * @return list<string>
+     */
+    private function findUnknownVariables(array $requiredVars, array $allKnownKeys): array
+    {
         $unknownVars = [];
         foreach ($requiredVars as $var) {
             // Skip computed metric references — validated by ComputedMetricFormulaValidator
@@ -159,22 +197,17 @@ final class ComputedMetricEvaluator
             }
         }
 
-        if ($unknownVars !== []) {
-            $levelKey = match ($level) {
-                SymbolType::Class_ => 'class',
-                SymbolType::Namespace_ => 'namespace',
-                SymbolType::Project => 'project',
-                default => $level->value,
-            };
+        return $unknownVars;
+    }
 
-            throw new RuntimeException(\sprintf(
-                'Computed metric "%s" at level "%s" references unknown metrics: %s. Check the formula: %s',
-                $definition->name,
-                $levelKey,
-                implode(', ', $unknownVars),
-                $formula,
-            ));
-        }
+    private function levelKeyFor(SymbolType $level): string
+    {
+        return match ($level) {
+            SymbolType::Class_ => 'class',
+            SymbolType::Namespace_ => 'namespace',
+            SymbolType::Project => 'project',
+            default => $level->value,
+        };
     }
 
     /**
@@ -300,58 +333,9 @@ final class ComputedMetricEvaluator
      */
     private function topologicalSort(array $definitions): array
     {
-        $byName = [];
-        foreach ($definitions as $def) {
-            $byName[$def->name] = $def;
-        }
+        $sorted = $this->dependencyGraphCalculator->sort($definitions);
 
-        // Build adjacency: deps[A] = [B, C] means A depends on B and C
-        $deps = [];
-        foreach ($definitions as $def) {
-            $deps[$def->name] = [];
-            foreach ($def->formulas as $formula) {
-                foreach ($this->extractComputedMetricDeps($formula) as $depName) {
-                    if (isset($byName[$depName]) && $depName !== $def->name) {
-                        $deps[$def->name][] = $depName;
-                    }
-                }
-            }
-            $deps[$def->name] = array_unique($deps[$def->name]);
-        }
-
-        // Reverse edges: reverseDeps[B] = [A] means "A depends on B, so after B is done, A can proceed"
-        $reverseDeps = array_fill_keys(array_keys($byName), []);
-        $inDegree = array_fill_keys(array_keys($byName), 0);
-
-        foreach ($deps as $node => $nodeDeps) {
-            $inDegree[$node] = \count($nodeDeps);
-            foreach ($nodeDeps as $dep) {
-                if (isset($reverseDeps[$dep])) {
-                    $reverseDeps[$dep][] = $node;
-                }
-            }
-        }
-
-        $queue = [];
-        foreach ($inDegree as $node => $degree) {
-            if ($degree === 0) {
-                $queue[] = $node;
-            }
-        }
-
-        $sorted = [];
-        while ($queue !== []) {
-            $node = array_shift($queue);
-            $sorted[] = $byName[$node];
-            foreach ($reverseDeps[$node] as $dependent) {
-                $inDegree[$dependent]--;
-                if ($inDegree[$dependent] === 0) {
-                    $queue[] = $dependent;
-                }
-            }
-        }
-
-        if (\count($sorted) !== \count($definitions)) {
+        if ($sorted === null) {
             // Circular dependency — return original order and let config validation catch it
             $this->logger->warning('Circular dependency detected among computed metrics');
 
@@ -359,26 +343,6 @@ final class ComputedMetricEvaluator
         }
 
         return $sorted;
-    }
-
-    /**
-     * Extract computed metric dependencies from a formula.
-     * Variables matching health__* or computed__* are inter-metric references.
-     *
-     * @return list<string>
-     */
-    private function extractComputedMetricDeps(string $formula): array
-    {
-        $deps = [];
-        if (preg_match_all('/\b(health__[a-zA-Z0-9_]+|computed__[a-zA-Z0-9_]+)\b/', $formula, $matches) !== 0) {
-            foreach ($matches[1] as $var) {
-                // Convert back: health__complexity → health.complexity
-                $name = str_replace('__', '.', $var);
-                $deps[] = $name;
-            }
-        }
-
-        return array_values(array_unique($deps));
     }
 
     private function registerMathFunctions(): void

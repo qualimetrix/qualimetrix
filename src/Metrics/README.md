@@ -73,7 +73,7 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 - **[Coupling/](Coupling/README.md)** — Ca/Ce/Instability, Abstractness, Distance, ClassRank
 - **[CodeSmell/](CodeSmell/README.md)** — Code pattern detectors (goto, eval, debug code, parameter count, unreachable code, identical sub-expressions, etc.)
 - **[Design/](Design/)** — Type coverage metrics, type coverage percentage (derived)
-- **[ComputedMetric/](ComputedMetric/)** — Computed metric evaluator (health scores via Expression Language)
+- **[ComputedMetric/](ComputedMetric/)** — Computed metric evaluator (health scores via Expression Language); `ComputedMetricDependencyGraphCalculator` sorts definitions into dependency order (Kahn's algorithm, phase-separated: graph construction, in-degree counting, queue traversal, cycle detection)
 - **[Security/](Security/)** — Hardcoded credentials, security pattern detection (SQL injection, XSS, command injection), sensitive parameter detection. Pattern detectors: `CommandInjectionDetector`, `SqlInjectionDetector`, `XssDetector`, `SuperglobalAnalyzer` (extracted from SecurityPatternVisitor)
 
 ---
