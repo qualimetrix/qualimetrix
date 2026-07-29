@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Design;
 
+use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -74,118 +76,101 @@ final class GodClassRule extends AbstractRule
         $violations = [];
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
-            $metrics = $context->metrics->get($classInfo->symbolPath);
-
-            // Apply @qmx-threshold overrides for this class
-            $effectiveOptions = $this->getEffectiveOptions(
-                $context,
-                $this->options,
-                $classInfo->file,
-                $classInfo->line ?? 1,
-            );
-            \assert($effectiveOptions instanceof GodClassOptions);
-
-            // Skip readonly classes if configured
-            if ($effectiveOptions->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
-                continue;
+            $violation = $this->evaluateClass($context, $classInfo);
+            if ($violation !== null) {
+                $violations[] = $violation;
             }
-
-            // Skip classes with too few methods
-            $methodCount = (int) ($metrics->get(MetricName::STRUCTURE_METHOD_COUNT) ?? 0);
-            if ($methodCount < $effectiveOptions->minMethods) {
-                continue;
-            }
-
-            // Evaluate up to 4 criteria
-            $evaluableCount = 0;
-            $matchedCount = 0;
-            $matchedCriteria = [];
-
-            // 1. WMC >= wmcThreshold
-            $wmc = $metrics->get(MetricName::STRUCTURE_WMC);
-            if ($wmc !== null) {
-                $wmcValue = (int) $wmc;
-                $evaluableCount++;
-                if ($wmcValue >= $effectiveOptions->wmcThreshold) {
-                    $matchedCount++;
-                    $matchedCriteria[] = \sprintf('high WMC (%d >= %d)', $wmcValue, $effectiveOptions->wmcThreshold);
-                }
-            }
-
-            // 2. LCOM >= lcomThreshold (vetoed if TCC >= 0.5 — high cohesion overrides LCOM)
-            $lcom = $metrics->get(MetricName::STRUCTURE_LCOM);
-            $tcc = $metrics->get(MetricName::COHESION_TCC);
-            $tccValue = $tcc !== null ? (float) $tcc : null;
-
-            if ($lcom !== null) {
-                $lcomValue = (int) $lcom;
-                $lcomVetoed = $tccValue !== null && $tccValue >= 0.5;
-                if ($lcomVetoed) {
-                    // TCC >= 0.5 means the class IS cohesive — don't count LCOM at all
-                } else {
-                    $evaluableCount++;
-                    if ($lcomValue >= $effectiveOptions->lcomThreshold) {
-                        $matchedCount++;
-                        $matchedCriteria[] = \sprintf('high LCOM (%d >= %d)', $lcomValue, $effectiveOptions->lcomThreshold);
-                    }
-                }
-            }
-
-            // 3. TCC < tccThreshold (inverted — low TCC is bad)
-            if ($tccValue !== null) {
-                $evaluableCount++;
-                if ($tccValue < $effectiveOptions->tccThreshold) {
-                    $matchedCount++;
-                    $matchedCriteria[] = \sprintf('low TCC (%.2f < %.2f)', $tccValue, $effectiveOptions->tccThreshold);
-                }
-            }
-
-            // 4. classLoc >= classLocThreshold
-            $classLoc = $metrics->get(MetricName::SIZE_CLASS_LOC);
-            if ($classLoc !== null) {
-                $classLocValue = (int) $classLoc;
-                $evaluableCount++;
-                if ($classLocValue >= $effectiveOptions->classLocThreshold) {
-                    $matchedCount++;
-                    $matchedCriteria[] = \sprintf('large size (%d >= %d LOC)', $classLocValue, $effectiveOptions->classLocThreshold);
-                }
-            }
-
-            // Not enough evaluable criteria
-            if ($evaluableCount < $effectiveOptions->minCriteria) {
-                continue;
-            }
-
-            // Determine severity
-            $severity = null;
-            if ($matchedCount === $evaluableCount) {
-                $severity = Severity::Error;
-            } elseif ($matchedCount >= $effectiveOptions->minCriteria) {
-                $severity = Severity::Warning;
-            }
-
-            if ($severity === null) {
-                continue;
-            }
-
-            $violations[] = new Violation(
-                location: new Location($classInfo->file, $classInfo->line),
-                symbolPath: $classInfo->symbolPath,
-                ruleName: $this->getName(),
-                violationCode: self::NAME,
-                message: \sprintf(
-                    'God Class detected (%d/%d criteria): %s',
-                    $matchedCount,
-                    $evaluableCount,
-                    implode(', ', $matchedCriteria),
-                ),
-                severity: $severity,
-                metricValue: $matchedCount,
-                recommendation: 'Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.',
-            );
         }
 
         return $violations;
+    }
+
+    private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo): ?Violation
+    {
+        $metrics = $context->metrics->get($classInfo->symbolPath);
+
+        // Apply @qmx-threshold overrides for this class
+        $effectiveOptions = $this->getEffectiveOptions(
+            $context,
+            $this->options,
+            $classInfo->file,
+            $classInfo->line ?? 1,
+        );
+        \assert($effectiveOptions instanceof GodClassOptions);
+
+        if ($this->isExcluded($effectiveOptions, $metrics)) {
+            return null;
+        }
+
+        $results = GodClassCriteriaEvaluator::evaluate($metrics, $effectiveOptions);
+        $evaluableCount = \count($results);
+
+        // Not enough evaluable criteria
+        if ($evaluableCount < $effectiveOptions->minCriteria) {
+            return null;
+        }
+
+        $matched = array_values(array_filter(
+            $results,
+            static fn(GodClassCriterionResult $result): bool => $result->matched,
+        ));
+        $matchedCount = \count($matched);
+
+        $severity = $this->determineSeverity($matchedCount, $evaluableCount, $effectiveOptions);
+        if ($severity === null) {
+            return null;
+        }
+
+        return new Violation(
+            location: new Location($classInfo->file, $classInfo->line),
+            symbolPath: $classInfo->symbolPath,
+            ruleName: $this->getName(),
+            violationCode: self::NAME,
+            message: \sprintf(
+                'God Class detected (%d/%d criteria): %s',
+                $matchedCount,
+                $evaluableCount,
+                implode(', ', array_map(
+                    static fn(GodClassCriterionResult $result): string => $result->message,
+                    $matched,
+                )),
+            ),
+            severity: $severity,
+            metricValue: $matchedCount,
+            recommendation: 'Apply the Single Responsibility Principle. Extract cohesive method groups into separate classes.',
+        );
+    }
+
+    /**
+     * Skips readonly classes (if configured) and classes with too few methods
+     * to be meaningfully assessed for God Class criteria.
+     */
+    private function isExcluded(GodClassOptions $options, MetricBag $metrics): bool
+    {
+        if ($options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
+            return true;
+        }
+
+        $methodCount = (int) ($metrics->get(MetricName::STRUCTURE_METHOD_COUNT) ?? 0);
+
+        return $methodCount < $options->minMethods;
+    }
+
+    /**
+     * Error when every evaluable criterion matched, Warning when at least
+     * minCriteria matched, null (no violation) otherwise.
+     */
+    private function determineSeverity(int $matchedCount, int $evaluableCount, GodClassOptions $options): ?Severity
+    {
+        if ($matchedCount === $evaluableCount) {
+            return Severity::Error;
+        }
+
+        if ($matchedCount >= $options->minCriteria) {
+            return Severity::Warning;
+        }
+
+        return null;
     }
 
     /**
