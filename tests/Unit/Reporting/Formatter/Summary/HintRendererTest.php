@@ -149,6 +149,44 @@ final class HintRendererTest extends TestCase
     }
 
     #[Test]
+    public function itShowsClassDrillDownHintInNamespaceScope(): void
+    {
+        $worstClass = new WorstOffender(
+            symbolPath: SymbolPath::forClass('App\\Service', 'PaymentService'),
+            file: null,
+            healthOverall: 35.0,
+            label: 'Poor',
+            reason: 'Low cohesion',
+            violationCount: 4,
+            classCount: 0,
+        );
+
+        $report = new Report(
+            violations: [],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+            healthScores: [
+                'overall' => new HealthScore('overall', 60.0, 'Needs work', 60.0, 30.0),
+            ],
+            worstClasses: [$worstClass],
+        );
+
+        // Namespace-level context — drill-down hint should suggest --class, not --namespace
+        $context = new FormatterContext(namespace: 'App\\Service');
+        $lines = [];
+
+        $this->renderer->render($report, $context, $this->color, $lines);
+
+        $output = implode("\n", $lines);
+        self::assertStringContainsString("--class='App\\Service\\PaymentService'", $output);
+        self::assertStringContainsString('to drill deeper', $output);
+        self::assertStringNotContainsString('--namespace=', $output);
+    }
+
+    #[Test]
     public function itAlwaysShowsHtmlFormatHint(): void
     {
         $report = $this->createNonEmptyReport();

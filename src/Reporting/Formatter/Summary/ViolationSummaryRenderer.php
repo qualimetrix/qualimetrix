@@ -31,32 +31,71 @@ final class ViolationSummaryRenderer
         $violations = $this->violationFilter->filterViolations($report->violations, $context);
 
         if ($violations === []) {
-            if ($report->isEmpty()) {
-                $lines[] = $color->boldGreen('No violations found.');
-            } elseif ($context->namespace !== null || $context->class !== null) {
-                $lines[] = $color->boldGreen('No violations in this scope.');
-            }
-            $lines[] = '';
+            $this->renderEmptyState($report, $context, $color, $lines);
 
             return;
         }
 
-        $total = \count($violations);
-        $errors = 0;
-        $warnings = 0;
-        $info = 0;
-        foreach ($violations as $v) {
-            match ($v->severity) {
-                Severity::Error => $errors++,
-                Severity::Warning => $warnings++,
-                Severity::Info => $info++,
-            };
+        $counts = $this->countSeverities($violations);
+
+        $parts = [$this->buildCountsPart(\count($violations), $counts)];
+
+        $debtPart = $this->buildDebtPart($report, $context, $violations);
+        if ($debtPart !== null) {
+            $parts[] = $debtPart;
         }
 
-        $parts = [];
-        $parts[] = \sprintf('%d violation%s', $total, $total === 1 ? '' : 's');
+        $summary = implode(' | ', $parts);
+
+        $lines[] = $this->colorizeSummary($summary, $counts, $color);
+        $lines[] = '';
+    }
+
+    /**
+     * @param list<string> $lines
+     */
+    private function renderEmptyState(Report $report, FormatterContext $context, AnsiColor $color, array &$lines): void
+    {
+        if ($report->isEmpty()) {
+            $lines[] = $color->boldGreen('No violations found.');
+        } elseif ($context->namespace !== null || $context->class !== null) {
+            $lines[] = $color->boldGreen('No violations in this scope.');
+        }
+        $lines[] = '';
+    }
+
+    /**
+     * @param list<Violation> $violations
+     *
+     * @return array<string, int>
+     */
+    private function countSeverities(array $violations): array
+    {
+        $counts = [
+            Severity::Error->value => 0,
+            Severity::Warning->value => 0,
+            Severity::Info->value => 0,
+        ];
+
+        foreach ($violations as $v) {
+            ++$counts[$v->severity->value];
+        }
+
+        return $counts;
+    }
+
+    /**
+     * @param array<string, int> $counts
+     */
+    private function buildCountsPart(int $total, array $counts): string
+    {
+        $part = \sprintf('%d violation%s', $total, $total === 1 ? '' : 's');
 
         $details = [];
+        $errors = $counts[Severity::Error->value];
+        $warnings = $counts[Severity::Warning->value];
+        $info = $counts[Severity::Info->value];
+
         if ($errors > 0) {
             $details[] = \sprintf('%d error%s', $errors, $errors === 1 ? '' : 's');
         }
@@ -66,38 +105,69 @@ final class ViolationSummaryRenderer
         if ($info > 0) {
             $details[] = \sprintf('%d info', $info);
         }
+
         if ($details !== []) {
-            $parts[0] .= ' (' . implode(', ', $details) . ')';
+            $part .= ' (' . implode(', ', $details) . ')';
         }
 
+        return $part;
+    }
+
+    /**
+     * @param list<Violation> $violations
+     */
+    private function buildDebtPart(Report $report, FormatterContext $context, array $violations): ?string
+    {
         if ($context->namespace === null && $context->class === null) {
-            if ($report->techDebtMinutes > 0) {
-                $debtStr = DebtSummary::formatMinutes($report->techDebtMinutes);
-                if ($report->debtPer1kLoc !== null) {
-                    $debtStr .= \sprintf(' (%.1f min/kLOC to fix)', $report->debtPer1kLoc);
-                }
-                $parts[] = \sprintf('Tech debt: %s', $debtStr);
-            }
-        } else {
-            $scopedDebtMinutes = $this->calculateScopedDebt($violations);
-            if ($scopedDebtMinutes > 0) {
-                $parts[] = \sprintf('Tech debt: %s', DebtSummary::formatMinutes($scopedDebtMinutes));
-            }
+            return $this->buildGlobalDebtPart($report);
         }
 
-        $summary = implode(' | ', $parts);
+        return $this->buildScopedDebtPart($violations);
+    }
 
-        if ($errors > 0) {
-            $lines[] = $color->boldRed($summary);
-        } elseif ($warnings > 0) {
-            $lines[] = $color->boldYellow($summary);
-        } elseif ($info > 0) {
-            $lines[] = $color->boldCyan($summary);
-        } else {
-            $lines[] = $color->boldGreen($summary);
+    private function buildGlobalDebtPart(Report $report): ?string
+    {
+        if ($report->techDebtMinutes <= 0) {
+            return null;
         }
 
-        $lines[] = '';
+        $debtStr = DebtSummary::formatMinutes($report->techDebtMinutes);
+        if ($report->debtPer1kLoc !== null) {
+            $debtStr .= \sprintf(' (%.1f min/kLOC to fix)', $report->debtPer1kLoc);
+        }
+
+        return \sprintf('Tech debt: %s', $debtStr);
+    }
+
+    /**
+     * @param list<Violation> $violations
+     */
+    private function buildScopedDebtPart(array $violations): ?string
+    {
+        $scopedDebtMinutes = $this->calculateScopedDebt($violations);
+        if ($scopedDebtMinutes <= 0) {
+            return null;
+        }
+
+        return \sprintf('Tech debt: %s', DebtSummary::formatMinutes($scopedDebtMinutes));
+    }
+
+    /**
+     * @param array<string, int> $counts
+     */
+    private function colorizeSummary(string $summary, array $counts, AnsiColor $color): string
+    {
+        if ($counts[Severity::Error->value] > 0) {
+            return $color->boldRed($summary);
+        }
+        if ($counts[Severity::Warning->value] > 0) {
+            return $color->boldYellow($summary);
+        }
+        if ($counts[Severity::Info->value] > 0) {
+            return $color->boldCyan($summary);
+        }
+
+        return $color->boldGreen($summary);
     }
 
     /**

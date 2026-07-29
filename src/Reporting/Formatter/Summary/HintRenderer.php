@@ -24,34 +24,80 @@ final class HintRenderer
     {
         $hints = [];
 
-        if (!$report->isEmpty() && !$context->isDetailEnabled()) {
-            $hints[] = '--detail to see violations (top 200)';
+        $detailHint = $this->buildDetailHint($report, $context);
+        if ($detailHint !== null) {
+            $hints[] = $detailHint;
         }
 
-        if ($context->scopedReporting) {
-            $hints[] = 'scoped analysis — violations filtered to changed files only';
+        $scopeHint = $this->buildScopeHint($context);
+        if ($scopeHint !== null) {
+            $hints[] = $scopeHint;
         }
 
-        if ($report->healthScores !== [] && $context->class === null) {
-            if ($context->namespace !== null) {
-                $worstClasses = $this->offenderListRenderer->resolveWorstClasses($report, $context);
-                $worstCls = $worstClasses[0] ?? null;
-                if ($worstCls !== null) {
-                    $clsName = $this->escapeForShell($worstCls->symbolPath->toString());
-                    $hints[] = \sprintf('--class=%s to drill deeper', $clsName);
-                }
-            } else {
-                $worstNs = $report->worstNamespaces[0] ?? null;
-                if ($worstNs !== null) {
-                    $nsName = $this->escapeForShell($worstNs->symbolPath->toString());
-                    $hints[] = \sprintf('--namespace=%s to drill down', $nsName);
-                }
-            }
+        $drillDownHint = $this->buildDrillDownHint($report, $context);
+        if ($drillDownHint !== null) {
+            $hints[] = $drillDownHint;
         }
 
         $hints[] = '--format=html -o report.html for full report';
 
         $lines[] = $color->dim('Hints: ' . implode(' | ', $hints));
+    }
+
+    private function buildDetailHint(Report $report, FormatterContext $context): ?string
+    {
+        if ($report->isEmpty() || $context->isDetailEnabled()) {
+            return null;
+        }
+
+        return '--detail to see violations (top 200)';
+    }
+
+    private function buildScopeHint(FormatterContext $context): ?string
+    {
+        if (!$context->scopedReporting) {
+            return null;
+        }
+
+        return 'scoped analysis — violations filtered to changed files only';
+    }
+
+    private function buildDrillDownHint(Report $report, FormatterContext $context): ?string
+    {
+        if ($report->healthScores === [] || $context->class !== null) {
+            return null;
+        }
+
+        if ($context->namespace !== null) {
+            return $this->buildClassDrillDownHint($report, $context);
+        }
+
+        return $this->buildNamespaceDrillDownHint($report);
+    }
+
+    private function buildClassDrillDownHint(Report $report, FormatterContext $context): ?string
+    {
+        $worstClasses = $this->offenderListRenderer->resolveWorstClasses($report, $context);
+        $worstCls = $worstClasses[0] ?? null;
+        if ($worstCls === null) {
+            return null;
+        }
+
+        $clsName = $this->escapeForShell($worstCls->symbolPath->toString());
+
+        return \sprintf('--class=%s to drill deeper', $clsName);
+    }
+
+    private function buildNamespaceDrillDownHint(Report $report): ?string
+    {
+        $worstNs = $report->worstNamespaces[0] ?? null;
+        if ($worstNs === null) {
+            return null;
+        }
+
+        $nsName = $this->escapeForShell($worstNs->symbolPath->toString());
+
+        return \sprintf('--namespace=%s to drill down', $nsName);
     }
 
     private function escapeForShell(string $value): string

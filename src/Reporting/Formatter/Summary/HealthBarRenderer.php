@@ -54,89 +54,182 @@ final class HealthBarRenderer
             static fn(HealthScore $hs): bool => $hs->name !== 'overall',
         );
 
-        $headerSuffix = '';
-        if ($context->namespace !== null) {
-            $headerSuffix = ' ' . $color->dim(\sprintf('[namespace: %s]', $context->namespace));
-        } elseif ($context->class !== null) {
-            $headerSuffix = ' ' . $color->dim(\sprintf('[class: %s]', $context->class));
-        }
-
-        if ($overall !== null && $overall->score !== null) {
-            $healthLine = $color->bold('Health') . $headerSuffix . ' '
-                . $this->renderHealthBar($overall->score, $overall->warningThreshold, $overall->errorThreshold, $terminalWidth, $ascii, $color)
-                . ' ' . $this->formatScore($overall->score, $color, $overall->warningThreshold, $overall->errorThreshold)
-                . ' ' . $color->dim($overall->label);
-
-            // C2: Show flat (direct) score when namespace drill-down uses recursive aggregation
-            if ($context->namespace !== null && $report->metrics !== null) {
-                $nsPath = SymbolPath::forNamespace($context->namespace);
-                $flatOverall = $report->metrics->get($nsPath)->get(HealthDimension::Overall->value);
-                if ($flatOverall !== null) {
-                    $flatScore = (float) $flatOverall;
-                    $delta = abs($overall->score - $flatScore);
-                    if ($delta > 10.0) {
-                        // Large difference: explain why scores differ
-                        $healthLine .= $color->dim(\sprintf(
-                            ' (direct classes: %.1f%% — sub-namespaces raise the score)',
-                            $flatScore,
-                        ));
-                    } elseif ($delta > 5.0) {
-                        $healthLine .= $color->dim(\sprintf(' (direct: %.1f%%)', $flatScore));
-                    }
-                }
-            }
-
-            $lines[] = $healthLine;
+        $overallLine = $this->renderOverallLine($report, $context, $overall, $terminalWidth, $ascii, $color);
+        if ($overallLine !== null) {
+            $lines[] = $overallLine;
             $lines[] = '';
         }
 
+        $this->renderDimensionLines($dimensions, $terminalWidth, $ascii, $color, $lines);
+
+        // H8: Explain that dimensions have independent scales when labels might seem contradictory
+        $scaleNote = $this->buildScaleNote($dimensions, $color);
+        if ($scaleNote !== null) {
+            $lines[] = $scaleNote;
+        }
+
+        $lines[] = '';
+    }
+
+    /**
+     * Renders the overall "Health" line (bar, score, label, flat-score note), or null when
+     * there is no overall score to show.
+     */
+    private function renderOverallLine(
+        Report $report,
+        FormatterContext $context,
+        ?HealthScore $overall,
+        int $terminalWidth,
+        bool $ascii,
+        AnsiColor $color,
+    ): ?string {
+        if ($overall === null || $overall->score === null) {
+            return null;
+        }
+
+        $headerSuffix = $this->buildHeaderSuffix($context, $color);
+
+        $healthLine = $color->bold('Health') . $headerSuffix . ' '
+            . $this->renderHealthBar($overall->score, $overall->warningThreshold, $overall->errorThreshold, $terminalWidth, $ascii, $color)
+            . ' ' . $this->formatScore($overall->score, $color, $overall->warningThreshold, $overall->errorThreshold)
+            . ' ' . $color->dim($overall->label);
+
+        // C2: Show flat (direct) score when namespace drill-down uses recursive aggregation
+        $flatScoreNote = $this->buildFlatScoreNote($report, $context, $overall->score, $color);
+        if ($flatScoreNote !== null) {
+            $healthLine .= $flatScoreNote;
+        }
+
+        return $healthLine;
+    }
+
+    private function buildHeaderSuffix(FormatterContext $context, AnsiColor $color): string
+    {
+        if ($context->namespace !== null) {
+            return ' ' . $color->dim(\sprintf('[namespace: %s]', $context->namespace));
+        }
+
+        if ($context->class !== null) {
+            return ' ' . $color->dim(\sprintf('[class: %s]', $context->class));
+        }
+
+        return '';
+    }
+
+    private function buildFlatScoreNote(Report $report, FormatterContext $context, float $overallScore, AnsiColor $color): ?string
+    {
+        if ($context->namespace === null || $report->metrics === null) {
+            return null;
+        }
+
+        $nsPath = SymbolPath::forNamespace($context->namespace);
+        $flatOverall = $report->metrics->get($nsPath)->get(HealthDimension::Overall->value);
+        if ($flatOverall === null) {
+            return null;
+        }
+
+        $flatScore = (float) $flatOverall;
+        $delta = abs($overallScore - $flatScore);
+
+        if ($delta > 10.0) {
+            // Large difference: explain why scores differ
+            return $color->dim(\sprintf(
+                ' (direct classes: %.1f%% — sub-namespaces raise the score)',
+                $flatScore,
+            ));
+        }
+
+        if ($delta > 5.0) {
+            return $color->dim(\sprintf(' (direct: %.1f%%)', $flatScore));
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, HealthScore> $dimensions
+     * @param list<string> $lines
+     */
+    private function renderDimensionLines(array $dimensions, int $terminalWidth, bool $ascii, AnsiColor $color, array &$lines): void
+    {
         // Dynamic padding based on longest dimension name
+        $padWidth = $this->calculatePadWidth($dimensions);
+        $decompositionIndent = str_repeat(' ', $padWidth + 4); // 2 indent + padWidth + 2 space
+
+        foreach ($dimensions as $hs) {
+            $this->renderDimensionLine($hs, $padWidth, $terminalWidth, $ascii, $color, $decompositionIndent, $lines);
+        }
+    }
+
+    /**
+     * @param array<string, HealthScore> $dimensions
+     */
+    private function calculatePadWidth(array $dimensions): int
+    {
         $padWidth = 0;
         foreach ($dimensions as $hs) {
             $padWidth = max($padWidth, \strlen(ucfirst($hs->name)));
         }
-        $padWidth = max($padWidth, 10); // minimum padding
-        $decompositionIndent = str_repeat(' ', $padWidth + 4); // 2 indent + padWidth + 2 space
 
-        foreach ($dimensions as $hs) {
-            $label = str_pad(ucfirst($hs->name), $padWidth);
+        return max($padWidth, 10); // minimum padding
+    }
 
-            if ($hs->score === null) {
-                // N/A dimension (e.g., typing with no classes)
-                $lines[] = \sprintf('  %s %s %s', $label, $color->dim('N/A'), $color->dim($hs->label));
+    /**
+     * @param list<string> $lines
+     */
+    private function renderDimensionLine(
+        HealthScore $hs,
+        int $padWidth,
+        int $terminalWidth,
+        bool $ascii,
+        AnsiColor $color,
+        string $decompositionIndent,
+        array &$lines,
+    ): void {
+        $label = str_pad(ucfirst($hs->name), $padWidth);
 
-                continue;
-            }
+        if ($hs->score === null) {
+            // N/A dimension (e.g., typing with no classes)
+            $lines[] = \sprintf('  %s %s %s', $label, $color->dim('N/A'), $color->dim($hs->label));
 
-            $scoreStr = $this->formatScore($hs->score, $color, $hs->warningThreshold, $hs->errorThreshold);
-
-            if ($terminalWidth < self::DEFAULT_TERMINAL_WIDTH) {
-                // Narrow terminal: no bars
-                $lines[] = \sprintf('  %s %s %s', $label, $scoreStr, $color->dim($hs->label));
-            } else {
-                $bar = $this->renderHealthBar($hs->score, $hs->warningThreshold, $hs->errorThreshold, $terminalWidth, $ascii, $color);
-                $lines[] = \sprintf('  %s %s %s %s', $label, $bar, $scoreStr, $color->dim($hs->label));
-            }
-
-            // Decomposition for dimensions needing attention
-            foreach ($hs->decomposition as $item) {
-                $lines[] = $this->renderDecompositionItem($item, $color, $decompositionIndent);
-            }
+            return;
         }
 
-        // H8: Explain that dimensions have independent scales when labels might seem contradictory
-        if (\count($dimensions) > 1) {
-            $thresholds = array_unique(array_map(
-                static fn(HealthScore $hs): float => $hs->warningThreshold,
-                array_values($dimensions),
-            ));
+        $scoreStr = $this->formatScore($hs->score, $color, $hs->warningThreshold, $hs->errorThreshold);
 
-            if (\count($thresholds) > 1) {
-                $lines[] = $color->dim('  * Labels reflect per-dimension scales (e.g., Typing requires >80% for Acceptable)');
-            }
+        if ($terminalWidth < self::DEFAULT_TERMINAL_WIDTH) {
+            // Narrow terminal: no bars
+            $lines[] = \sprintf('  %s %s %s', $label, $scoreStr, $color->dim($hs->label));
+        } else {
+            $bar = $this->renderHealthBar($hs->score, $hs->warningThreshold, $hs->errorThreshold, $terminalWidth, $ascii, $color);
+            $lines[] = \sprintf('  %s %s %s %s', $label, $bar, $scoreStr, $color->dim($hs->label));
         }
 
-        $lines[] = '';
+        // Decomposition for dimensions needing attention
+        foreach ($hs->decomposition as $item) {
+            $lines[] = $this->renderDecompositionItem($item, $color, $decompositionIndent);
+        }
+    }
+
+    /**
+     * @param array<string, HealthScore> $dimensions
+     */
+    private function buildScaleNote(array $dimensions, AnsiColor $color): ?string
+    {
+        if (\count($dimensions) <= 1) {
+            return null;
+        }
+
+        $thresholds = array_unique(array_map(
+            static fn(HealthScore $hs): float => $hs->warningThreshold,
+            array_values($dimensions),
+        ));
+
+        if (\count($thresholds) <= 1) {
+            return null;
+        }
+
+        return $color->dim('  * Labels reflect per-dimension scales (e.g., Typing requires >80% for Acceptable)');
     }
 
     private function renderHealthBar(

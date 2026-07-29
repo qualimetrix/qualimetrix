@@ -170,6 +170,29 @@ final class ViolationSummaryRendererTest extends TestCase
     }
 
     #[Test]
+    public function itFormatsSingleInfo(): void
+    {
+        $violation = $this->createViolation(Severity::Info);
+
+        $report = new Report(
+            violations: [$violation],
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+        );
+
+        $lines = [];
+        $this->renderer->render($report, new FormatterContext(), $this->color, $lines);
+
+        $output = implode("\n", $lines);
+        self::assertStringContainsString('1 violation', $output);
+        self::assertStringContainsString('1 info', $output);
+        self::assertStringNotContainsString('1 infos', $output);
+    }
+
+    #[Test]
     public function itFormatsMixedErrorsAndWarnings(): void
     {
         $violations = [
@@ -345,6 +368,29 @@ final class ViolationSummaryRendererTest extends TestCase
         $output = implode("\n", $lines);
         // Bold yellow for warnings only
         self::assertStringContainsString("\e[1;33m", $output);
+    }
+
+    #[Test]
+    public function itColorsSummaryBoldForInfoOnly(): void
+    {
+        $ansiColor = new AnsiColor(true);
+        $violations = [$this->createViolation(Severity::Info)];
+
+        $report = new Report(
+            violations: $violations,
+            filesAnalyzed: 10,
+            filesSkipped: 0,
+            duration: 1.0,
+            errorCount: 0,
+            warningCount: 0,
+        );
+
+        $lines = [];
+        $this->renderer->render($report, new FormatterContext(), $ansiColor, $lines);
+
+        $output = implode("\n", $lines);
+        // Bold cyan for info only
+        self::assertStringContainsString("\e[1;36m", $output);
     }
 
     private function createViolation(
