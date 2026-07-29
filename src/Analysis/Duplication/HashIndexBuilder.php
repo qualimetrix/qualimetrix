@@ -32,7 +32,11 @@ final class HashIndexBuilder
 
     public function __construct()
     {
-        $this->normalizer = new TokenNormalizer();
+        // Data-declaration tagging is switched off here on purpose: this pass hashes
+        // token values and throws the tokens away, and `isData` is only ever read in
+        // pass 2 ({@see DuplicateBlockFinder}). Tagging would rebuild the token array
+        // for every file containing a constant or property array and buy nothing.
+        $this->normalizer = new TokenNormalizer(tagDataDeclarations: false);
     }
 
     /**

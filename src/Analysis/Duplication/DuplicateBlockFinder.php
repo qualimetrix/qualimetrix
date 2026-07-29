@@ -51,19 +51,26 @@ final class DuplicateBlockFinder
         $this->hintExtractor = new ContentHintExtractor();
         $this->seen = [];
 
-        $blocks = [];
+        try {
+            $blocks = [];
 
-        foreach ($request->hashIndex as $positions) {
-            foreach ($this->evaluateBucket($positions) as $block) {
-                $blocks[] = $block;
+            foreach ($request->hashIndex as $positions) {
+                foreach ($this->evaluateBucket($positions) as $block) {
+                    $blocks[] = $block;
+                }
             }
+
+            return $blocks;
+        } finally {
+            // Release scratch state — see class docblock for why this
+            // matters. Must run even if evaluateBucket() throws: otherwise
+            // the full hash index and every re-tokenized file's tokens
+            // stay reachable via this long-lived instance for the rest of
+            // the process (see the "Measured impact" note in the class
+            // docblock).
+            unset($this->request, $this->hintExtractor);
+            $this->seen = [];
         }
-
-        // Release scratch state — see class docblock for why this matters.
-        unset($this->request, $this->hintExtractor);
-        $this->seen = [];
-
-        return $blocks;
     }
 
     /**

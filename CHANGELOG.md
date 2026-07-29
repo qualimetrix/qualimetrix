@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `code-smell.boolean-argument` no longer flags promoted constructor properties (`public bool $x`) by default — a promoted parameter declares a field, not a behavior switch, so the rule's "split into two methods" advice never applied to it. Set `flag_promoted_properties: true` to restore the previous behavior.
-- `duplication.code-duplication` no longer flags entries of a `const` array or a static/instance property's array-literal initializer by default — repeated key/value shape across the rows of a data table is normal, and "extract a shared method" was never actionable advice for it. Set `include_constant_arrays: true` to restore the previous behavior.
+- `duplication.code-duplication` no longer flags a duplicate block that lies *entirely* inside a `const` array or a static/instance property's array-literal initializer — repeated key/value shape across the rows of a data table is normal, and "extract a shared method" was never actionable advice for it. A block that extends past the declaration into surrounding code is still reported, so two otherwise identical classes wrapping the same table remain a finding. Set `include_constant_arrays: true` to restore the previous behavior.
 
 ## [0.22.0] - 2026-07-28
 

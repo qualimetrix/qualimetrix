@@ -18,12 +18,24 @@ namespace Qualimetrix\Analysis\Duplication;
  * normalization proper, kept in its own class for cohesion, but composed
  * here so every {@see normalize()} caller gets tagged tokens without having
  * to know the tagger exists.
+ *
+ * Tagging is opt-out because the detector's two passes need different things.
+ * Pass 1 hashes token *values* only and discards the tokens immediately, so
+ * tagging there is pure waste — measured at ~28% of normalization time, with a
+ * full token-array rebuild for the ~35% of files that contain a constant or
+ * property array. Pass 2 re-tokenizes only the candidate files and is the
+ * single place `isData` is read, so it keeps tagging enabled.
  */
 final class TokenNormalizer
 {
     private DataDeclarationTagger $dataDeclarationTagger;
 
-    public function __construct()
+    /**
+     * @param bool $tagDataDeclarations Whether to flag tokens inside constant/property
+     *                                  array declarations. Disable when the caller only
+     *                                  consumes token values and never reads `isData`.
+     */
+    public function __construct(private readonly bool $tagDataDeclarations = true)
     {
         $this->dataDeclarationTagger = new DataDeclarationTagger();
     }
@@ -83,6 +95,10 @@ final class TokenNormalizer
             }
 
             $result[] = new NormalizedToken($type, $value, $line);
+        }
+
+        if (!$this->tagDataDeclarations) {
+            return $result;
         }
 
         return $this->dataDeclarationTagger->tag($result);

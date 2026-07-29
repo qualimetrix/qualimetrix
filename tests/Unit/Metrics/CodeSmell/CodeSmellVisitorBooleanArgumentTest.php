@@ -206,6 +206,36 @@ PHP;
     }
 
     #[Test]
+    public function itMarksPromotedNullableUnionConstructorPropertyAsPromoted(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Foo {
+    public function __construct(public bool|null $u) {}
+}
+PHP;
+        $locations = $this->traverse($code);
+
+        self::assertCount(1, $locations);
+        self::assertTrue($locations[0]->promoted);
+    }
+
+    #[Test]
+    public function itMarksPromotedNullableConstructorPropertyAsPromoted(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Foo {
+    public function __construct(protected ?bool $q) {}
+}
+PHP;
+        $locations = $this->traverse($code);
+
+        self::assertCount(1, $locations);
+        self::assertTrue($locations[0]->promoted);
+    }
+
+    #[Test]
     public function itMarksNonPromotedConstructorParameterAsNotPromoted(): void
     {
         $code = <<<'PHP'

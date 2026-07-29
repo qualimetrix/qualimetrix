@@ -23,9 +23,9 @@ final readonly class CodeDuplicationOptions implements RuleOptionsInterface, Thr
         public bool $enabled = true,
         public int $min_lines = 5,
         public int $min_tokens = 70,
-        public bool $include_constant_arrays = false,
         public int $warning = 5,
         public int $error = 50,
+        public bool $include_constant_arrays = false,
     ) {}
 
     public static function fromArray(array $config): self

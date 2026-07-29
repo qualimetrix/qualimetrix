@@ -41,8 +41,10 @@ namespace Qualimetrix\Analysis\Duplication;
  * modifier keywords immediately preceding the trigger token.
  *
  * Multi-property statements sharing one type/modifier prefix
- * (`private array $a = [1], $b = [2];`) are matched only up to the first
- * comma — a known, accepted gap (false negative, not a false positive).
+ * (`private array $a = [1], $b = [2];`) are not matched at all: the token
+ * right after the first array literal's closing bracket is `,`, not `;`,
+ * so {@see matchPropertyArrayDeclaration()} rejects the whole statement —
+ * a known, accepted gap (false negative, not a false positive).
  */
 final class DataDeclarationTagger
 {
@@ -125,7 +127,15 @@ final class DataDeclarationTagger
             if ($token->type === \T_CONST) {
                 $end = $this->findStatementEnd($tokens, $i);
                 if ($end !== null) {
-                    $isData = $this->markRange($isData, $i, $end);
+                    // Walk back over modifiers too (`private const ...`),
+                    // matching the property branch below — a `const`
+                    // declaration can carry the same visibility/final
+                    // prefix, and both branches should treat it the same
+                    // way (see the class docblock's cross-file note: this
+                    // does not, and is not meant to, change the
+                    // extendMatch()-driven cross-file table match).
+                    $start = $this->modifierRunStart($tokens, $i);
+                    $this->markRange($isData, $start, $end);
                     $i = $end + 1;
 
                     continue;
@@ -134,7 +144,7 @@ final class DataDeclarationTagger
                 $declEnd = $this->matchPropertyArrayDeclaration($tokens, $i);
                 if ($declEnd !== null) {
                     $start = $this->modifierRunStart($tokens, $i);
-                    $isData = $this->markRange($isData, $start, $declEnd);
+                    $this->markRange($isData, $start, $declEnd);
                     $i = $declEnd + 1;
 
                     continue;
@@ -148,13 +158,20 @@ final class DataDeclarationTagger
     }
 
     /**
-     * @param array<int, bool> $isData
+     * Marks tokens in-place, by reference, rather than copying the full
+     * `$isData` array per call. With one array_replace()+array_fill() copy
+     * per declaration, tagging is quadratic in the number of declarations
+     * in a file (measured: 250 constants ~0.006s, 2000 constants ~0.100s —
+     * an 8x input growth costing ~17x the time). Marking in place makes the
+     * whole scan linear in file size.
      *
-     * @return array<int, bool>
+     * @param array<int, bool> $isData
      */
-    private function markRange(array $isData, int $start, int $end): array
+    private function markRange(array &$isData, int $start, int $end): void
     {
-        return array_replace($isData, array_fill($start, $end - $start + 1, true));
+        for ($k = $start; $k <= $end; $k++) {
+            $isData[$k] = true;
+        }
     }
 
     /**
@@ -273,6 +290,19 @@ final class DataDeclarationTagger
      * Used for `const` declarations, where $startIdx is the `const`
      * keyword itself (not an opening bracket).
      *
+     * Also bails out (returns null) the moment a `$variable` token is seen,
+     * at any depth: a `const` expression can never legally contain a
+     * variable (RHS must be a compile-time constant expression), so seeing
+     * one means the scan has run past the statement's real end — most
+     * commonly across a `?>`/`<?php` boundary, since {@see TokenNormalizer}
+     * strips `T_CLOSE_TAG`/`T_OPEN_TAG`/`T_INLINE_HTML` entirely, leaving
+     * nothing in the stream to mark that boundary. Without this guard, a
+     * `const` statement terminated by `?>` (rather than `;`) would have
+     * the scan continue into the next PHP block and mis-tag unrelated
+     * executable code as data — a false negative for real duplication in
+     * that code (the worse failure direction, silently missed
+     * copy-paste), rather than a false positive.
+     *
      * @param list<NormalizedToken> $tokens
      */
     private function findStatementEnd(array $tokens, int $startIdx): ?int
@@ -287,6 +317,8 @@ final class DataDeclarationTagger
                 $depth++;
             } elseif ($this->isCloseToken($t)) {
                 $depth = max(0, $depth - 1);
+            } elseif ($t->type === \T_VARIABLE) {
+                return null;
             } elseif ($t->value === ';' && $depth === 0) {
                 return $k;
             }
