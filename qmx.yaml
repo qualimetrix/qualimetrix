@@ -242,6 +242,18 @@ architecture:
   coverage: ignore
 
 rules:
+  # --- Architecture ---
+
+  # The three layer diagnostics default to info/warning so that adopting the
+  # rule never breaks an existing build. For our own topology the opposite is
+  # right: a layer that captures nothing, a layer shadowed by an earlier one,
+  # or a template that expands to nothing is always a typo in `patterns:` —
+  # exactly the failure the diagnostics exist to catch. Fail the build on it.
+  architecture.layer-violation:
+    unreachable_layer_severity: error
+    potential_shadow_severity: error
+    empty_template_severity: error
+
   # --- Coupling ---
 
   # Core value objects are coupling magnets by design — every domain depends on them.
@@ -253,11 +265,16 @@ rules:
       - Qualimetrix\Core\Rule
       - Qualimetrix\Core\Path
       - Qualimetrix\Rules\Support
-      - Qualimetrix\Rules
+      # `Qualimetrix\Rules` used to be listed here. Being a prefix match, it silenced
+      # all 85 classes of the domain to hide exactly one violation — AbstractRule
+      # (CBO 39), whose coupling really is structural (it aggregates the deps of every
+      # subclass). Replaced by the precise path entry below; the highest CBO among the
+      # other 84 classes is 19, well under the threshold, so nothing else surfaced.
     exclude_paths:
-      # AST visitors depend on many php-parser node types (not actionable coupling)
+      # AST visitors depend on many php-parser node types (not actionable coupling).
+      # `src/Metrics/*Trait.php` was listed here too and matched no violation — removed.
       - src/Metrics/*Visitor.php
-      - src/Metrics/*Trait.php
+      - src/Rules/AbstractRule.php
       # DI configurators wire all services (coupling is their job)
       - src/Infrastructure/DependencyInjection
       # Infrastructure console commands and pipeline orchestrators need many deps
@@ -284,17 +301,19 @@ rules:
   # are maximally concrete with few abstractions — that is the point of a
   # domain-VO sub-namespace. The Architecture/Domain/* tree is the vertical
   # slice's equivalent of the Core leaf VO namespaces (ADR 0010).
+  #
+  # Note on scope: `exclude_namespaces` matches by prefix, so the two entries
+  # below are blankets, not leaf selections — `Qualimetrix\Core` covers the whole
+  # Core tree (including the umbrella namespace itself, D=0.71) and
+  # `Architecture\Domain` covers Allow/Layer. Seven child entries used to be listed
+  # here as well; they were removed after measuring zero delta — they read as
+  # precision the config does not actually have. Replacing the blankets with true
+  # leaf-only exclusions is not expressible today: there is no "this namespace
+  # only, not its children" form in the config language.
   coupling.distance:
     exclude_namespaces:
       - Qualimetrix\Core
-      - Qualimetrix\Core\Util
-      - Qualimetrix\Core\ComputedMetric
-      - Qualimetrix\Core\Suppression
-      - Qualimetrix\Core\Violation
-      - Qualimetrix\Core\Profiler
       - Qualimetrix\Architecture\Domain
-      - Qualimetrix\Architecture\Domain\Allow
-      - Qualimetrix\Architecture\Domain\Layer
       - Qualimetrix\Reporting\Debt
       - Qualimetrix\Infrastructure\Serializer
       - Qualimetrix\Reporting\Formatter\Support
@@ -304,15 +323,18 @@ rules:
 
   coupling.instability:
     exclude_paths:
-      # Visitors/configurators are inherently unstable (many outgoing, few incoming deps)
-      - src/Metrics/*Visitor.php
+      # Note: visitors and DI configurators are NOT listed here. They are indeed
+      # inherently unstable, but `min_afferent: 2` below already filters them out
+      # (they have Ca=1), so path entries for them were pure no-ops — measured, then
+      # removed. The entries that remain each suppress a real violation.
       - src/Metrics/*Trait.php
-      - src/Infrastructure/DependencyInjection
-      # Console commands/orchestrators
+      # Console commands/orchestrators sit at the top of the stack: I→1 is correct there
       - src/Infrastructure/Console
       - src/Analysis/Pipeline
-      - src/Baseline
-      # Abstract base classes aggregate deps from all subclasses — instability is structural
+      # Abstract base classes aggregate deps from all subclasses — instability is structural.
+      # Fragile by construction: these path entries suppress NAMESPACE-level violations
+      # (Qualimetrix\Metrics I=0.98, Qualimetrix\Rules I=0.92) through a representative
+      # file, so renaming or deleting either file silently brings the violation back.
       - src/Metrics/AbstractCollector.php
       - src/Rules/AbstractRule.php
     class:
@@ -326,67 +348,60 @@ rules:
 
   # AST visitors inherently have high NPath/CCN/WMC due to many node type branches.
   # This is structural complexity from matching PHP AST node types, not a design flaw.
+  #
+  # Scope note: these four rules used to exclude whole trees (`src/Metrics`,
+  # `src/Reporting/Health`, `src/Analysis/Pipeline`, `src/Baseline`, ...) while the
+  # justification above only ever covered visitors. Of the 43 files hiding under them,
+  # 16 were real visitors and 27 were not — the exclusions were burying ~79 genuine
+  # violations, 21 of them error-level. Those files were refactored instead (see
+  # ThresholdParser, LcomClassData, GodClassRule, DataClassRule, the Summary renderers,
+  # DuplicationDetector, ComputedMetricEvaluator), and the lists below are now narrowed
+  # to what the justification actually says. Two methods that genuinely measure table
+  # size rather than decision depth carry a per-symbol `@qmx-threshold` instead
+  # (SarifRuleCollector::getRuleDescription, MetricEnricher::enrich).
+  # `*Trait.php` is kept alongside `*Visitor.php`: three traits in src/Metrics/Structure
+  # do the same AST node-type dispatch without carrying the Visitor suffix.
   complexity.npath:
     exclude_paths:
-      - src/Metrics
-      - src/Rules/Design/*Rule.php
-      - src/Reporting/Formatter/Summary/*Renderer.php
-      - src/Rules/Support/ThresholdParser.php
-      - src/Analysis/Duplication
+      - src/Metrics/*Visitor.php
+      - src/Metrics/*Trait.php
 
-  # Code duplication: Options classes share fromArray/threshold patterns by convention;
-  # MetricHintProvider has intentionally similar hint blocks.
+  # Code duplication: Options classes share fromArray/threshold patterns by convention.
   # Raised min_tokens from 70→100 to reduce structural similarity false positives.
+  # The MetricHintProvider entry was removed once the rule stopped reporting duplicates
+  # that lie entirely inside constant data tables — its 22 hits were all inside
+  # `const array METRICS`/`RANGES`, so the exclusion is now a no-op (verified: zero delta).
   duplication.code-duplication:
     min_tokens: 100
     exclude_paths:
-      - src/Reporting/Health/MetricHintProvider.php
       - src/Rules/**/*Options.php
       - src/Metrics/Complexity/CognitiveComplexityVisitor.php
 
   complexity.cyclomatic:
     exclude_paths:
-      - src/Metrics
-      - src/Rules/Support/ThresholdParser.php
-      - src/Rules/Design/*Rule.php
-      - src/Reporting/Formatter/Sarif
-      - src/Reporting/Health
-      - src/Reporting/Formatter/Summary
-      - src/Analysis/Pipeline
-      - src/Baseline
+      - src/Metrics/*Visitor.php
+      - src/Metrics/*Trait.php
 
   complexity.wmc:
     exclude_paths:
-      - src/Metrics
-      - src/Reporting/Health
+      - src/Metrics/*Visitor.php
+      - src/Metrics/*Trait.php
 
   complexity.cognitive:
     exclude_paths:
-      - src/Metrics
-      - src/Analysis/Duplication
-      - src/Reporting/Health
-      - src/Reporting/Formatter/Summary
-      - src/Reporting/Impact
-      - src/Rules/Design/*Rule.php
-      - src/Rules/Support/ThresholdParser.php
+      - src/Metrics/*Visitor.php
+      - src/Metrics/*Trait.php
 
   # --- Code Smells ---
 
-  # Boolean params in Options/config DTOs are by design. Keep the rule active
-  # to catch future poorly-named booleans, but exclude structural categories.
+  # No exclusions needed: the rule itself no longer flags promoted constructor
+  # properties (a promoted param is a field declaration, not a behavior switch),
+  # so the whole-tree exclusions this block used to carry — src/Core, src/Reporting,
+  # src/Infrastructure/Console, src/Architecture/Domain, the *Options.php globs —
+  # became pure compensation for a rule-level false positive and were removed.
+  # They were also hiding ~23 genuine boolean arguments, which are now visible.
   code-smell.boolean-argument:
     allowed_prefixes: [is, has, can, should, will, did, was]
-    exclude_paths:
-      - src/Rules/*Options.php
-      - src/Analysis/*Options.php
-      - src/Infrastructure/Console
-      - src/Reporting
-      - src/Core
-      # Architecture vertical slice mirrors the Core/Rules categories that
-      # were excluded above (ADR 0010 moved these from src/Core/Architecture/
-      # and src/Rules/Architecture/ to src/Architecture/...).
-      - src/Architecture/Domain
-      - src/Architecture/Rules/*Options.php
 
   code-smell.error-suppression:
     allowed_functions:
@@ -469,9 +484,13 @@ rules:
 
   # --- Health scores ---
   # Suppress health violations for namespaces with known structural reasons.
+  # `Qualimetrix\Rules\Support` used to head this list — it was the worst namespace in
+  # the project (health 42.2, one class: ThresholdParser). After that class was
+  # refactored its health is 89.6, so the entry became a no-op and was removed
+  # (verified: zero delta). That is the outcome the dogfooding policy asks for —
+  # the exclusion disappears because the code improved, not because the rule was muted.
   computed.health:
     exclude_namespaces:
-      - Qualimetrix\Rules\Support
       - Qualimetrix\Metrics\Halstead
       - Qualimetrix\Core\Violation
       - Qualimetrix\Metrics\Coupling

@@ -72,8 +72,18 @@ final class MetricEnricher
     /**
      * Enriches the metric repository with aggregated, global, and computed metrics.
      *
+     * The CCN here counts enrichment phases, not nesting: the method is a linear
+     * sequence of optional steps (aggregate, global collectors, duplication,
+     * computed metrics), each guarded by its own independent feature check.
+     * Cognitive complexity is 7 against a CCN of 22 — the branches sit side by
+     * side rather than inside one another. Extracting each guard into its own
+     * method would hide the pipeline order, which is the one thing a reader of
+     * this method needs to see.
+     *
      * @param list<SplFileInfo> $files Files for duplication detection
      * @param int $filesAnalyzed Number of files successfully analyzed
+     *
+     * @qmx-threshold complexity.cyclomatic method.warning=25 method.error=35
      */
     public function enrich(
         MetricRepositoryInterface $repository,

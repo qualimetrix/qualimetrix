@@ -95,6 +95,15 @@ final class SarifRuleCollector
 
     /**
      * Returns human-readable description for a rule.
+     *
+     * The CCN here is a flat `match` lookup table mapping rule codes to SARIF
+     * description strings: one arm per rule, no nesting, cognitive complexity 1.
+     * Splitting it would spread one table across several methods and make it
+     * harder to see that every rule has a description — the metric is measuring
+     * table size, not decision depth. Raised rather than ignored so genuine
+     * growth in branching still trips the rule.
+     *
+     * @qmx-threshold complexity.cyclomatic method.warning=30 method.error=40
      */
     public function getRuleDescription(string $ruleName): string
     {
