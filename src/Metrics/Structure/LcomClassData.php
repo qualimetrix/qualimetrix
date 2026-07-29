@@ -142,8 +142,6 @@ final class LcomClassData
         return array_keys($this->propertyAccesses[$methodName] ?? []);
     }
 
-    private const VIRTUAL_STATELESS_NODE = '__stateless__';
-
     /**
      * Calculate LCOM4 (Lack of Cohesion of Methods).
      *
@@ -154,10 +152,13 @@ final class LcomClassData
      * - Stateless constant methods are merged into a single virtual node to reduce
      *   false positives from interface-mandated metadata methods (e.g., getName())
      *
-     * @return int Number of connected components (1 = perfectly cohesive)
-     */
-    /**
+     * Delegates the graph-construction and component-counting phases to
+     * {@see LcomGraphCalculator}; this method owns only method filtering and the
+     * stateful/stateless classification phase.
+     *
      * @param list<string> $excludeMethods Method names to exclude from the LCOM graph
+     *
+     * @return int Number of connected components (1 = perfectly cohesive)
      */
     public function calculateLcom(array $excludeMethods = []): int
     {
@@ -181,6 +182,27 @@ final class LcomClassData
         // AND no instance method calls are merged into a virtual node.
         // Note: only methods already marked by the visitor AND confirmed to have no
         // property access / method calls in the collected data are treated as stateless.
+        [$statefulMethods, $statelessInGraph] = $this->partitionByStatelessness($methods);
+
+        $graph = new LcomGraphCalculator($this->propertyAccesses, $this->methodCalls);
+
+        // If no stateless methods, proceed with standard algorithm
+        if ($statelessInGraph === []) {
+            return $graph->countComponents($methods);
+        }
+
+        return $graph->countComponentsWithStatelessMerge($statefulMethods, $statelessInGraph);
+    }
+
+    /**
+     * Split filtered methods into the stateful ones and the set merged as stateless.
+     *
+     * @param list<string> $methods
+     *
+     * @return array{0: list<string>, 1: array<string, true>}
+     */
+    private function partitionByStatelessness(array $methods): array
+    {
         $statelessInGraph = [];
         $statefulMethods = [];
 
@@ -192,71 +214,7 @@ final class LcomClassData
             }
         }
 
-        // If no stateless methods, proceed with standard algorithm
-        if ($statelessInGraph === []) {
-            return $this->calculateComponents($methods);
-        }
-
-        // Build the merged vertex set: replace all stateless methods with one virtual node
-        $mergedMethods = $statefulMethods;
-        $mergedMethods[] = self::VIRTUAL_STATELESS_NODE;
-
-        if (\count($mergedMethods) === 1) {
-            return 1;
-        }
-
-        $mergedMethodSet = array_flip($mergedMethods);
-
-        // Build adjacency list on merged graph
-        $adjacency = [];
-        foreach ($mergedMethods as $method) {
-            $adjacency[$method] = [];
-        }
-
-        // Add shared-property edges (only between stateful methods, since stateless have no properties)
-        $statefulCount = \count($statefulMethods);
-        for ($i = 0; $i < $statefulCount - 1; ++$i) {
-            for ($j = $i + 1; $j < $statefulCount; ++$j) {
-                $m1 = $statefulMethods[$i];
-                $m2 = $statefulMethods[$j];
-
-                if ($this->shareProperty($m1, $m2)) {
-                    $adjacency[$m1][] = $m2;
-                    $adjacency[$m2][] = $m1;
-                }
-            }
-        }
-
-        // Add method-call edges, redirecting stateless methods to the virtual node
-        foreach ($this->methodCalls as $caller => $callees) {
-            $resolvedCaller = isset($statelessInGraph[$caller]) ? self::VIRTUAL_STATELESS_NODE : $caller;
-            if (!isset($mergedMethodSet[$resolvedCaller])) {
-                continue;
-            }
-            foreach ($callees as $callee => $_) {
-                $resolvedCallee = isset($statelessInGraph[$callee]) ? self::VIRTUAL_STATELESS_NODE : $callee;
-                if (!isset($mergedMethodSet[$resolvedCallee]) || $resolvedCaller === $resolvedCallee) {
-                    continue;
-                }
-                $adjacency[$resolvedCaller][] = $resolvedCallee;
-                $adjacency[$resolvedCallee][] = $resolvedCaller;
-            }
-        }
-
-        // Count connected components using BFS
-        $visited = [];
-        $components = 0;
-
-        foreach ($mergedMethods as $method) {
-            if (isset($visited[$method])) {
-                continue;
-            }
-
-            ++$components;
-            $this->bfs($method, $adjacency, $visited);
-        }
-
-        return $components;
+        return [$statefulMethods, $statelessInGraph];
     }
 
     /**
@@ -283,102 +241,5 @@ final class LcomClassData
         }
 
         return true;
-    }
-
-    /**
-     * Standard LCOM4 calculation without stateless grouping.
-     *
-     * @param list<string> $methods
-     */
-    private function calculateComponents(array $methods): int
-    {
-        $count = \count($methods);
-        $methodSet = array_flip($methods);
-
-        // Build adjacency list
-        $adjacency = [];
-        foreach ($methods as $method) {
-            $adjacency[$method] = [];
-        }
-
-        // Add edges: two methods are connected if they share a property
-        for ($i = 0; $i < $count - 1; ++$i) {
-            for ($j = $i + 1; $j < $count; ++$j) {
-                $m1 = $methods[$i];
-                $m2 = $methods[$j];
-
-                if ($this->shareProperty($m1, $m2)) {
-                    $adjacency[$m1][] = $m2;
-                    $adjacency[$m2][] = $m1;
-                }
-            }
-        }
-
-        // Add edges for method calls ($this->method())
-        foreach ($this->methodCalls as $caller => $callees) {
-            if (!isset($methodSet[$caller])) {
-                continue;
-            }
-            foreach ($callees as $callee => $_) {
-                if (isset($methodSet[$callee]) && $caller !== $callee) {
-                    $adjacency[$caller][] = $callee;
-                    $adjacency[$callee][] = $caller;
-                }
-            }
-        }
-
-        // Count connected components using BFS
-        $visited = [];
-        $components = 0;
-
-        foreach ($methods as $method) {
-            if (isset($visited[$method])) {
-                continue;
-            }
-
-            ++$components;
-            $this->bfs($method, $adjacency, $visited);
-        }
-
-        return $components;
-    }
-
-    /**
-     * Check if two methods share at least one property.
-     */
-    private function shareProperty(string $m1, string $m2): bool
-    {
-        $props1 = $this->propertyAccesses[$m1] ?? [];
-        $props2 = $this->propertyAccesses[$m2] ?? [];
-
-        foreach ($props1 as $prop => $_) {
-            if (isset($props2[$prop])) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * BFS to mark all nodes in a connected component.
-     *
-     * @param array<string, list<string>> $adjacency
-     * @param array<string, true> $visited
-     */
-    private function bfs(string $start, array $adjacency, array &$visited): void
-    {
-        $queue = [$start];
-        $visited[$start] = true;
-
-        while ($queue !== []) {
-            $current = array_shift($queue);
-            foreach ($adjacency[$current] as $neighbor) {
-                if (!isset($visited[$neighbor])) {
-                    $visited[$neighbor] = true;
-                    $queue[] = $neighbor;
-                }
-            }
-        }
     }
 }

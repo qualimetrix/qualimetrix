@@ -221,35 +221,51 @@ final class TccLccClassData
      */
     private function countConnectedPairsBfs(array $graph, array $methods): int
     {
-        $n = \count($methods);
         $methodIndex = array_flip($methods);
         $connectedPairs = 0;
 
         // For each method, find all reachable methods via BFS
         foreach ($methods as $i => $startMethod) {
-            /** @var array<string, true> $visited */
-            $visited = [$startMethod => true];
-            $queue = new SplQueue();
-            $queue->enqueue($startMethod);
+            $connectedPairs += $this->countReachablePairsFrom($graph, $startMethod, $i, $methodIndex);
+        }
 
-            while (!$queue->isEmpty()) {
-                $current = $queue->dequeue();
+        return $connectedPairs;
+    }
 
-                foreach ($graph[$current] ?? [] as $neighbor) {
-                    if (!isset($visited[$neighbor])) {
-                        $visited[$neighbor] = true;
-                        $queue->enqueue($neighbor);
+    /**
+     * BFS from a single start method, counting reachable methods that sort after it.
+     *
+     * Counting only neighbors whose index is greater than the start method's index
+     * ensures each connected pair is counted exactly once across all BFS runs.
+     *
+     * @param array<string, list<string>> $graph
+     * @param array<string, int> $methodIndex
+     */
+    private function countReachablePairsFrom(array $graph, string $startMethod, int $startIndex, array $methodIndex): int
+    {
+        /** @var array<string, true> $visited */
+        $visited = [$startMethod => true];
+        $queue = new SplQueue();
+        $queue->enqueue($startMethod);
+        $reachablePairs = 0;
 
-                        // Count pair only if neighbor > startMethod (avoid counting twice)
-                        $neighborIndex = $methodIndex[$neighbor];
-                        if ($neighborIndex > $i) {
-                            ++$connectedPairs;
-                        }
-                    }
+        while (!$queue->isEmpty()) {
+            $current = $queue->dequeue();
+
+            foreach ($graph[$current] ?? [] as $neighbor) {
+                if (isset($visited[$neighbor])) {
+                    continue;
+                }
+
+                $visited[$neighbor] = true;
+                $queue->enqueue($neighbor);
+
+                if ($methodIndex[$neighbor] > $startIndex) {
+                    ++$reachablePairs;
                 }
             }
         }
 
-        return $connectedPairs;
+        return $reachablePairs;
     }
 }
