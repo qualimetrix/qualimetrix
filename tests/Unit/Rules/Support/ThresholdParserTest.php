@@ -237,4 +237,289 @@ final class ThresholdParserTest extends TestCase
             legacyKeys: ['threshold' => ['voThreshold']],
         );
     }
+
+    // ---------------------------------------------------------------------
+    // Characterization tests.
+    //
+    // These pin the exact edge-case semantics of parse() — key *presence* vs.
+    // key *value*, first-match-wins ordering, null handling — so that any
+    // restructuring of the parser can be proven behavior-preserving. They are
+    // deliberately written against observed behavior, quirks included.
+    // ---------------------------------------------------------------------
+
+    #[Test]
+    public function itReturnsTheResultKeyedByWarningThenError(): void
+    {
+        self::assertSame(
+            ['warning' => 10, 'error' => 20],
+            ThresholdParser::parse([], 'warning', 'error', 10, 20),
+        );
+    }
+
+    #[Test]
+    public function itDetectsTheConflictByKeyPresenceSoANullThresholdStillClashesWithWarning(): void
+    {
+        // The mixing check uses array_key_exists(), not the value: an explicit
+        // `threshold: ~` next to `warning:` is still a configuration error.
+        self::expectException(InvalidArgumentException::class);
+
+        ThresholdParser::parse(['threshold' => null, 'warning' => 5], 'warning', 'error', 10, 20);
+    }
+
+    #[Test]
+    public function itDetectsTheConflictWhenTheWarningKeyIsPresentButNull(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+
+        ThresholdParser::parse(['threshold' => 15, 'warning' => null], 'warning', 'error', 10, 20);
+    }
+
+    #[Test]
+    public function itDetectsTheConflictWhenALegacyErrorKeyIsPresentButNull(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+
+        ThresholdParser::parse(
+            ['threshold' => 15, 'errorThreshold' => null],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['error' => ['errorThreshold']],
+        );
+    }
+
+    #[Test]
+    public function itNamesThePrimaryKeysInTheConflictMessageEvenWhenALegacyKeyTriggeredIt(): void
+    {
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage(
+            'Cannot mix "vo-threshold" with "vo-warning"/"vo-error". Use either "vo-threshold" alone'
+            . ' (simple mode) or "vo-warning"/"vo-error" (graduated mode).',
+        );
+
+        ThresholdParser::parse(
+            ['voThreshold' => 10, 'voWarning' => 8],
+            'vo-warning',
+            'vo-error',
+            8,
+            12,
+            'vo-threshold',
+            legacyKeys: ['threshold' => ['voThreshold'], 'warning' => ['voWarning']],
+        );
+    }
+
+    #[Test]
+    public function itFallsBackToDefaultsWhenTheOnlyLegacyThresholdKeyIsNull(): void
+    {
+        $result = ThresholdParser::parse(
+            ['voThreshold' => null],
+            'vo-warning',
+            'vo-error',
+            8,
+            12,
+            'vo-threshold',
+            legacyKeys: ['threshold' => ['voThreshold']],
+        );
+
+        self::assertSame(['warning' => 8, 'error' => 12], $result);
+    }
+
+    #[Test]
+    public function itResolvesTheThresholdKeyByPresenceSoTheFirstListedLegacyKeyWinsEvenWhenNull(): void
+    {
+        // Quirk, pinned deliberately: threshold-key resolution is presence-based
+        // and stops at the first match, so a null first legacy key shadows a
+        // populated second one and the defaults are used.
+        $result = ThresholdParser::parse(
+            ['firstLegacy' => null, 'secondLegacy' => 7],
+            'warning',
+            'error',
+            10,
+            20,
+            'threshold',
+            legacyKeys: ['threshold' => ['firstLegacy', 'secondLegacy']],
+        );
+
+        self::assertSame(['warning' => 10, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itPrefersThePrimaryThresholdKeyEvenWhenItIsNullAndALegacyKeyHasAValue(): void
+    {
+        $result = ThresholdParser::parse(
+            ['threshold' => null, 'legacyThreshold' => 7],
+            'warning',
+            'error',
+            10,
+            20,
+            'threshold',
+            legacyKeys: ['threshold' => ['legacyThreshold']],
+        );
+
+        self::assertSame(['warning' => 10, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itFallsBackToTheLegacyWarningKeyWhenThePrimaryWarningIsExplicitlyNull(): void
+    {
+        // Unlike threshold resolution, warning/error resolution is value-based:
+        // a null primary value is skipped in favor of a non-null legacy value.
+        $result = ThresholdParser::parse(
+            ['warning' => null, 'warningThreshold' => 5],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['warningThreshold']],
+        );
+
+        self::assertSame(['warning' => 5, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itSkipsNullLegacyWarningValuesAndUsesTheNextNonNullLegacyKey(): void
+    {
+        $result = ThresholdParser::parse(
+            ['firstLegacy' => null, 'secondLegacy' => 5],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['firstLegacy', 'secondLegacy']],
+        );
+
+        self::assertSame(['warning' => 5, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itFallsBackToDefaultsWhenEveryWarningAndErrorCandidateIsNull(): void
+    {
+        $result = ThresholdParser::parse(
+            ['warning' => null, 'error' => null, 'warningThreshold' => null, 'errorThreshold' => null],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold']],
+        );
+
+        self::assertSame(['warning' => 10, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itKeepsAZeroWarningInsteadOfFallingBackToTheDefault(): void
+    {
+        $result = ThresholdParser::parse(['warning' => 0], 'warning', 'error', 10, 20);
+
+        self::assertSame(['warning' => 0, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itKeepsAZeroLegacyWarningInsteadOfFallingBackToTheDefault(): void
+    {
+        $result = ThresholdParser::parse(
+            ['warningThreshold' => 0],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['warningThreshold']],
+        );
+
+        self::assertSame(['warning' => 0, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itUsesTheDefaultWarningWhenOnlyTheErrorKeyIsConfigured(): void
+    {
+        $result = ThresholdParser::parse(['error' => 15], 'warning', 'error', 10, 20);
+
+        self::assertSame(['warning' => 10, 'error' => 15], $result);
+    }
+
+    #[Test]
+    public function itIgnoresConfigKeysThatAreNeitherPrimaryNorDeclaredAsLegacy(): void
+    {
+        $result = ThresholdParser::parse(
+            ['warningThreshold' => 5, 'errorThreshold' => 15],
+            'warning',
+            'error',
+            10,
+            20,
+        );
+
+        self::assertSame(['warning' => 10, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itIgnoresLegacyWarningKeysWhenTheThresholdKeyIsAbsentAndNoCandidateMatches(): void
+    {
+        $result = ThresholdParser::parse(
+            ['unrelated' => 1],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold'], 'threshold' => ['thresholdAlias']],
+        );
+
+        self::assertSame(['warning' => 10, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itAppliesTheLegacyErrorFallbackIndependentlyOfTheWarningResolution(): void
+    {
+        $result = ThresholdParser::parse(
+            ['warning' => 5, 'errorThreshold' => 15],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold']],
+        );
+
+        self::assertSame(['warning' => 5, 'error' => 15], $result);
+    }
+
+    #[Test]
+    public function itDoesNotTreatALegacyWarningKeyAsAThresholdKey(): void
+    {
+        // legacyKeys are scoped per primary key; a key listed under 'warning'
+        // never satisfies the threshold lookup.
+        $result = ThresholdParser::parse(
+            ['warningThreshold' => 5],
+            'warning',
+            'error',
+            10,
+            20,
+            legacyKeys: ['warning' => ['warningThreshold'], 'threshold' => ['thresholdAlias']],
+        );
+
+        self::assertSame(['warning' => 5, 'error' => 20], $result);
+    }
+
+    #[Test]
+    public function itMixesIntegerAndFloatDefaultsWithoutCoercion(): void
+    {
+        $result = ThresholdParser::parse(['warning' => 5], 'warning', 'error', 10.5, 20.5);
+
+        self::assertSame(['warning' => 5, 'error' => 20.5], $result);
+    }
+
+    #[Test]
+    public function itPropagatesTheLegacyThresholdValueToBothWarningAndError(): void
+    {
+        $result = ThresholdParser::parse(
+            ['maxThreshold' => 0.25],
+            'max_warning',
+            'max_error',
+            0.8,
+            0.95,
+            'max_threshold',
+            legacyKeys: ['threshold' => ['maxThreshold'], 'warning' => ['maxWarning'], 'error' => ['maxError']],
+        );
+
+        self::assertSame(['warning' => 0.25, 'error' => 0.25], $result);
+    }
 }

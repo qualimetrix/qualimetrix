@@ -49,91 +49,115 @@ final class ThresholdParser
         string $thresholdKey = RuleOptionKey::THRESHOLD,
         array $legacyKeys = [],
     ): array {
-        $legacyWarningKeys = $legacyKeys['warning'] ?? [];
-        $legacyErrorKeys = $legacyKeys['error'] ?? [];
-        $legacyThresholdKeys = $legacyKeys['threshold'] ?? [];
+        $candidates = self::candidateKeys($warningKey, $errorKey, $thresholdKey, $legacyKeys);
 
-        $hasThreshold = \array_key_exists($thresholdKey, $config);
-        $thresholdSourceKey = $thresholdKey;
+        // Threshold resolution is *presence*-based: the first candidate key
+        // present in the config wins, even when its value is null.
+        $thresholdSourceKey = self::firstPresentKey($config, $candidates['threshold']);
 
-        if (!$hasThreshold) {
-            foreach ($legacyThresholdKeys as $legacyKey) {
-                if (\array_key_exists($legacyKey, $config)) {
-                    $hasThreshold = true;
-                    $thresholdSourceKey = $legacyKey;
-                    break;
-                }
-            }
+        if ($thresholdSourceKey === null) {
+            // Graduated mode. Unlike the threshold lookup, warning/error
+            // resolution is *value*-based: null candidates are skipped.
+            return [
+                'warning' => self::firstNonNullValue($config, $candidates['warning']) ?? $defaultWarning,
+                'error' => self::firstNonNullValue($config, $candidates['error']) ?? $defaultError,
+            ];
         }
 
-        $hasWarning = \array_key_exists($warningKey, $config);
-        $hasError = \array_key_exists($errorKey, $config);
-
-        // Check legacy keys for conflict detection
-        $hasLegacyWarning = false;
-        foreach ($legacyWarningKeys as $legacyKey) {
-            if (\array_key_exists($legacyKey, $config)) {
-                $hasLegacyWarning = true;
-                break;
-            }
-        }
-        $hasLegacyError = false;
-        foreach ($legacyErrorKeys as $legacyKey) {
-            if (\array_key_exists($legacyKey, $config)) {
-                $hasLegacyError = true;
-                break;
-            }
-        }
-
-        if ($hasThreshold && ($hasWarning || $hasError || $hasLegacyWarning || $hasLegacyError)) {
+        if (self::hasAnyKey($config, $candidates['warning']) || self::hasAnyKey($config, $candidates['error'])) {
             throw new InvalidArgumentException(
-                \sprintf(
-                    'Cannot mix "%s" with "%s"/"%s". Use either "%s" alone (simple mode) or "%s"/"%s" (graduated mode).',
-                    $thresholdKey,
-                    $warningKey,
-                    $errorKey,
-                    $thresholdKey,
-                    $warningKey,
-                    $errorKey,
-                ),
+                self::mixedModesMessage($warningKey, $errorKey, $thresholdKey),
             );
         }
 
-        if ($hasThreshold) {
-            $value = $config[$thresholdSourceKey];
+        $value = $config[$thresholdSourceKey];
 
-            // Treat null as "not set" — fall back to defaults
-            if ($value === null) {
-                return ['warning' => $defaultWarning, 'error' => $defaultError];
-            }
+        // Treat null as "not set" — fall back to defaults
+        return $value === null
+            ? ['warning' => $defaultWarning, 'error' => $defaultError]
+            : ['warning' => $value, 'error' => $value];
+    }
 
-            return ['warning' => $value, 'error' => $value];
-        }
-
-        // Check legacy keys if standard keys are not present
-        $warningValue = $config[$warningKey] ?? null;
-        if ($warningValue === null) {
-            foreach ($legacyWarningKeys as $legacyKey) {
-                if (\array_key_exists($legacyKey, $config) && $config[$legacyKey] !== null) {
-                    $warningValue = $config[$legacyKey];
-                    break;
-                }
-            }
-        }
-
-        $errorValue = $config[$errorKey] ?? null;
-        if ($errorValue === null) {
-            foreach ($legacyErrorKeys as $legacyKey) {
-                if (\array_key_exists($legacyKey, $config) && $config[$legacyKey] !== null) {
-                    $errorValue = $config[$legacyKey];
-                    break;
-                }
-            }
-        }
-
+    /**
+     * Builds the ordered lookup list for each threshold slot: the primary key
+     * first, then its legacy aliases in declaration order.
+     *
+     * @param array{warning?: list<string>, error?: list<string>, threshold?: list<string>} $legacyKeys
+     *
+     * @return array{warning: list<string>, error: list<string>, threshold: list<string>}
+     */
+    private static function candidateKeys(
+        string $warningKey,
+        string $errorKey,
+        string $thresholdKey,
+        array $legacyKeys,
+    ): array {
         return [
-            'warning' => $warningValue ?? $defaultWarning,
-            'error' => $errorValue ?? $defaultError,
+            'warning' => [$warningKey, ...($legacyKeys['warning'] ?? [])],
+            'error' => [$errorKey, ...($legacyKeys['error'] ?? [])],
+            'threshold' => [$thresholdKey, ...($legacyKeys['threshold'] ?? [])],
         ];
+    }
+
+    /**
+     * Returns the first candidate key present in the config, or null if none is.
+     *
+     * Presence is decided by `array_key_exists()`, so an explicitly null value
+     * still counts as "the user set this key".
+     *
+     * @param array<string, mixed> $config
+     * @param list<string> $candidateKeys
+     */
+    private static function firstPresentKey(array $config, array $candidateKeys): ?string
+    {
+        foreach ($candidateKeys as $key) {
+            if (\array_key_exists($key, $config)) {
+                return $key;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     * @param list<string> $candidateKeys
+     */
+    private static function hasAnyKey(array $config, array $candidateKeys): bool
+    {
+        return self::firstPresentKey($config, $candidateKeys) !== null;
+    }
+
+    /**
+     * Returns the value of the first candidate key configured with a non-null
+     * value, or null when every candidate is absent or explicitly null.
+     *
+     * @param array<string, mixed> $config
+     * @param list<string> $candidateKeys
+     */
+    private static function firstNonNullValue(array $config, array $candidateKeys): mixed
+    {
+        foreach ($candidateKeys as $key) {
+            $value = $config[$key] ?? null;
+
+            if ($value !== null) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    private static function mixedModesMessage(string $warningKey, string $errorKey, string $thresholdKey): string
+    {
+        return \sprintf(
+            'Cannot mix "%s" with "%s"/"%s". Use either "%s" alone (simple mode) or "%s"/"%s" (graduated mode).',
+            $thresholdKey,
+            $warningKey,
+            $errorKey,
+            $thresholdKey,
+            $warningKey,
+            $errorKey,
+        );
     }
 }
