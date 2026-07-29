@@ -31,11 +31,10 @@ Think of it like comparing recipes: if two recipes have the exact same steps in 
 
 Minimum block size (configurable):
 
-| Option                    | Default | Meaning                                                                        |
-| ------------------------- | ------- | ------------------------------------------------------------------------------ |
-| `min_lines`               | 5       | Minimum number of lines for a block to be checked                              |
-| `min_tokens`              | 70      | Minimum number of tokens for a block to be flagged                             |
-| `include_constant_arrays` | `false` | Also detect duplication inside `const` and property array-literal initializers |
+| Option       | Default | Meaning                                            |
+| ------------ | ------- | -------------------------------------------------- |
+| `min_lines`  | 5       | Minimum number of lines for a block to be checked  |
+| `min_tokens` | 70      | Minimum number of tokens for a block to be flagged |
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -118,8 +117,8 @@ Qualimetrix uses the **Rabin-Karp rolling hash** algorithm for efficient detecti
 
 Because function/method/class names are preserved during normalization, the detector will **not** flag two methods that call completely different APIs, even if their control flow structure is identical.
 
-!!! info "Constant and property arrays are excluded by default"
-    A duplicate block that lies **entirely** inside a `const` declaration or a static/instance property's array-literal initializer is not reported by default. Rows of a lookup table (e.g. `'key' => ['a' => ..., 'b' => ...]` repeated with different values) normalize to identical token sequences, but "extract a shared method" is not actionable advice for a data table — repeating the same field shape across rows is the normal, correct form of that table. A block spanning both a data declaration and executable code (or lying entirely in a method body) is still reported. Set `include_constant_arrays: true` to restore the previous behavior.
+!!! info "Constant and property arrays are always excluded"
+    A duplicate block that lies **entirely** inside a `const` declaration or a static/instance property's array-literal initializer is never reported. Rows of a lookup table (e.g. `'key' => ['a' => ..., 'b' => ...]` repeated with different values) normalize to identical token sequences, but "extract a shared method" is not actionable advice for a data table — repeating the same field shape across rows is the normal, correct form of that table. A block spanning both a data declaration and executable code (or lying entirely in a method body) is still reported. This suppression is unconditional and cannot be turned off.
 
 !!! tip "IDE integration"
     When using SARIF output (`--format=sarif`), duplicate copies are linked via `relatedLocations`. This means duplicate pairs appear as **clickable cross-references** in VS Code (SARIF Viewer extension) and JetBrains IDEs, making it easy to navigate between all copies of a duplicated block.
@@ -147,7 +146,6 @@ rules:
     enabled: true
     min_lines: 5
     min_tokens: 70
-    include_constant_arrays: false
 ```
 
 ```bash
@@ -156,9 +154,6 @@ bin/qmx check src/ --rule-opt="duplication.code-duplication:min_tokens=100"
 
 # Increase minimum line count
 bin/qmx check src/ --rule-opt="duplication.code-duplication:min_lines=10"
-
-# Restore detection inside const/property array declarations
-bin/qmx check src/ --rule-opt="duplication.code-duplication:include_constant_arrays=true"
 ```
 
 You can also disable the rule entirely:

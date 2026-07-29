@@ -9,7 +9,7 @@ namespace Qualimetrix\Analysis\Duplication;
  * detection run: the pruned hash index, the re-tokenized files it points
  * into, and the rule's thresholds.
  *
- * A single find() call needs all six values throughout, so bundling them
+ * A single find() call needs all five values throughout, so bundling them
  * here (rather than threading them through every private helper
  * individually) is a pure signature simplification — it does not change
  * what is held in memory at once.
@@ -26,6 +26,5 @@ final readonly class DuplicateSearchRequest
         public array $filePaths,
         public int $minTokens,
         public int $minLines,
-        public bool $includeConstantArrays,
     ) {}
 }

@@ -30,11 +30,10 @@ use SplFileInfo;
  * - Only files with matches are re-tokenized
  *
  * Data-table suppression: matches entirely contained within a `const`
- * declaration or a property's array-literal initializer are skipped by
- * default (see {@see DataDeclarationTagger}) — repeated key/value shape
- * across the rows of a constant lookup table is the normal form of that
- * table, not code duplication needing extraction. Set the
- * `include_constant_arrays` rule option to restore the previous behavior.
+ * declaration or a property's array-literal initializer are skipped
+ * unconditionally (see {@see DataDeclarationTagger}) — repeated key/value
+ * shape across the rows of a constant lookup table is the normal form of
+ * that table, not code duplication needing extraction.
  */
 final class DuplicationDetector implements DuplicationDetectorInterface
 {
@@ -44,7 +43,6 @@ final class DuplicationDetector implements DuplicationDetectorInterface
 
     private int $minTokens;
     private int $minLines;
-    private bool $includeConstantArrays;
 
     public function __construct(
         private readonly ConfigurationProviderInterface $configurationProvider,
@@ -82,7 +80,6 @@ final class DuplicationDetector implements DuplicationDetectorInterface
             filePaths: $indexResult->filePaths,
             minTokens: $this->minTokens,
             minLines: $this->minLines,
-            includeConstantArrays: $this->includeConstantArrays,
         ));
 
         // Free large structures before dedup sort
@@ -97,7 +94,6 @@ final class DuplicationDetector implements DuplicationDetectorInterface
         $dupOptions = $ruleOptions['duplication.code-duplication'] ?? [];
         $this->minTokens = (int) ($dupOptions['min_tokens'] ?? $dupOptions['minTokens'] ?? 70);
         $this->minLines = (int) ($dupOptions['min_lines'] ?? $dupOptions['minLines'] ?? 5);
-        $this->includeConstantArrays = (bool) ($dupOptions['include_constant_arrays'] ?? $dupOptions['includeConstantArrays'] ?? false);
     }
 
     /**

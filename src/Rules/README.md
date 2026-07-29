@@ -743,13 +743,13 @@ rules:
 
 Detects duplicate code blocks across analyzed files using token-based comparison. Violations include `relatedLocations` pointing to all other occurrences of the same block.
 
-**Default:** min_lines: 5, min_tokens: 70, include_constant_arrays: false, severity: Warning (Error for large blocks)
+**Default:** min_lines: 5, min_tokens: 70, severity: Warning (Error for large blocks)
 
-`include_constant_arrays` controls whether blocks entirely tagged as data by
-`DataDeclarationTagger` (`const` declarations and property array-literal
-initializers — see `src/Analysis/Duplication/DataDeclarationTagger.php`) are
-still reported. Off by default, since duplicated data tables rarely benefit
-from "extract a shared method" advice; set to `true` to also flag those.
+Blocks entirely tagged as data by `DataDeclarationTagger` (`const`
+declarations and property array-literal initializers — see
+`src/Analysis/Duplication/DataDeclarationTagger.php`) are unconditionally
+suppressed, since duplicated data tables rarely benefit from "extract a
+shared method" advice. There is no option to disable this suppression.
 
 **Configuration:**
 ```yaml
@@ -757,7 +757,6 @@ rules:
   duplication.code-duplication:
     min_lines: 5
     min_tokens: 70
-    include_constant_arrays: false
 ```
 
 **CLI:** `--duplication-min-lines=5 --duplication-min-tokens=70`

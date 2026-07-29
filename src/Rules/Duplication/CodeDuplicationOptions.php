@@ -25,7 +25,6 @@ final readonly class CodeDuplicationOptions implements RuleOptionsInterface, Thr
         public int $min_tokens = 70,
         public int $warning = 5,
         public int $error = 50,
-        public bool $include_constant_arrays = false,
     ) {}
 
     public static function fromArray(array $config): self
@@ -36,7 +35,6 @@ final readonly class CodeDuplicationOptions implements RuleOptionsInterface, Thr
             enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             min_lines: (int) ($config['min_lines'] ?? $config['minLines'] ?? 5),
             min_tokens: (int) ($config['min_tokens'] ?? $config['minTokens'] ?? 70),
-            include_constant_arrays: (bool) ($config['include_constant_arrays'] ?? $config['includeConstantArrays'] ?? false),
             warning: (int) $thresholds['warning'],
             error: (int) $thresholds['error'],
         );
@@ -74,7 +72,6 @@ final readonly class CodeDuplicationOptions implements RuleOptionsInterface, Thr
             enabled: $this->enabled,
             min_lines: $this->min_lines,
             min_tokens: $this->min_tokens,
-            include_constant_arrays: $this->include_constant_arrays,
             warning: $warning !== null ? (int) $warning : $this->warning,
             error: $error !== null ? (int) $error : $this->error,
         );

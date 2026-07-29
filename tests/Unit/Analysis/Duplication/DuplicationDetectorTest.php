@@ -218,25 +218,24 @@ PHP;
     #[Test]
     public function itDoesNotReportSameFileSelfDuplication(): void
     {
-        // Create a file with a large repetitive array constant where different
-        // token windows can hash-match but extend to the same line range
-        $code = "<?php\nclass Foo {\n    private const LIST = [\n";
+        // Create a file with a large repetitive array where different
+        // token windows can hash-match but extend to the same line range.
+        // Built as a local variable (not a const/property declaration) so
+        // the const-array data suppression never applies here — this test
+        // targets the same-file overlap guard in findDuplicateBlocks(),
+        // a different mechanism entirely.
+        $code = "<?php\nfunction buildList() {\n    \$list = [\n";
         for ($i = 0; $i < 50; $i++) {
             $code .= "        'Class{$i}' => true,\n";
         }
-        $code .= "    ];\n}\n";
+        $code .= "    ];\n\n    return \$list;\n}\n";
 
         $file = $this->createFile('repetitive_array.php', $code);
 
-        // This test targets the same-file overlap guard in findDuplicateBlocks(),
-        // which is a different mechanism from the const-array data suppression
-        // added later. Opt back into the pre-suppression behavior so the
-        // repetitive const array still produces candidate blocks to exercise
-        // that guard against.
-        $detector = $this->createDetector(minTokens: 30, minLines: 5, includeConstantArrays: true);
+        $detector = $this->createDetector(minTokens: 30, minLines: 5);
         $blocks = $detector->detect([$file]);
 
-        self::assertNotEmpty($blocks, 'The repetitive array should still produce candidate blocks with include_constant_arrays enabled');
+        self::assertNotEmpty($blocks, 'The repetitive array should still produce candidate blocks');
 
         // No block should have two identical locations (same file + same line range)
         foreach ($blocks as $block) {
@@ -273,17 +272,6 @@ PHP;
         $blocks = $detector->detect([$file]);
 
         self::assertEmpty($blocks, 'A duplicate block entirely inside a const array declaration must not be reported by default');
-    }
-
-    #[Test]
-    public function itReportsConstArrayDuplicationWhenOptionEnabled(): void
-    {
-        $file = $this->createFile('const_rows.php', $this->constArrayFixture('MetricHints', 'METRICS'));
-
-        $detector = $this->createDetector(minTokens: 17, minLines: 3, includeConstantArrays: true);
-        $blocks = $detector->detect([$file]);
-
-        self::assertNotEmpty($blocks, 'include_constant_arrays=true must restore detection inside const arrays');
     }
 
     #[Test]
@@ -422,14 +410,13 @@ PHP;
         self::assertSame('src/Foo.php:10-25', $loc->toString());
     }
 
-    private function createDetector(int $minTokens = 70, int $minLines = 5, bool $includeConstantArrays = false): DuplicationDetector
+    private function createDetector(int $minTokens = 70, int $minLines = 5): DuplicationDetector
     {
         $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getRuleOptions')->willReturn([
             'duplication.code-duplication' => [
                 'min_tokens' => $minTokens,
                 'min_lines' => $minLines,
-                'include_constant_arrays' => $includeConstantArrays,
             ],
         ]);
         $configProvider->method('getConfiguration')->willReturn(

@@ -20,7 +20,7 @@ use Qualimetrix\Core\Path\RelativePath;
  *
  * {@see find()} holds the current request/scratch state as instance
  * properties for the duration of one call so the nested-loop helpers below
- * don't have to thread six unchanging values through every signature — the
+ * don't have to thread five unchanging values through every signature — the
  * same pattern {@see DuplicationDetector} itself uses for its rule options.
  * This class is not reentrant; a single find() call must complete before
  * another begins (true for all current callers).
@@ -201,17 +201,14 @@ final class DuplicateBlockFinder
      * array declaration (see {@see DataDeclarationTagger}) on both sides is
      * the normal shape of that table, not duplication needing extraction.
      * A match that is data on one side but executable code on the other is
-     * still a real duplication signal, hence checking both sides.
+     * still a real duplication signal, hence checking both sides. This
+     * suppression is unconditional — there is no option to disable it.
      *
      * @param list<NormalizedToken> $tokensA
      * @param list<NormalizedToken> $tokensB
      */
     private function isSuppressedAsData(array $tokensA, int $offsetA, array $tokensB, int $offsetB, int $matchLength): bool
     {
-        if ($this->request->includeConstantArrays) {
-            return false;
-        }
-
         return $this->isEntirelyData($tokensA, $offsetA, $matchLength)
             && $this->isEntirelyData($tokensB, $offsetB, $matchLength);
     }
