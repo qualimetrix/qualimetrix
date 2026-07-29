@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-07-29
+
 ### Fixed
 - `code-smell.boolean-argument` no longer flags promoted constructor properties (`public bool $x`) by default — a promoted parameter declares a field, not a behavior switch, so the rule's "split into two methods" advice never applied to it. Set `flag_promoted_properties: true` to restore the previous behavior.
 - `duplication.code-duplication` no longer flags a duplicate block that lies *entirely* inside a `const` array or a static/instance property's array-literal initializer — repeated key/value shape across the rows of a data table is normal, and "extract a shared method" was never actionable advice for it. A block that extends past the declaration into surrounding code is still reported, so two otherwise identical classes wrapping the same table remain a finding.
@@ -406,7 +408,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.22.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.23.0...HEAD
+[0.23.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.20.1...v0.21.0
 [0.20.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.20.0...v0.20.1
