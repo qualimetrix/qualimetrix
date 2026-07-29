@@ -262,4 +262,98 @@ final class BooleanArgumentRuleTest extends TestCase
 
         self::assertCount(1, $violations);
     }
+
+    #[Test]
+    public function itExcludesPromotedConstructorPropertyByDefault(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Service.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['line' => 10, 'extra' => 'shortLabels', 'promoted' => true]);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertSame([], $violations);
+    }
+
+    #[Test]
+    public function itIncludesNonPromotedConstructorParameterByDefault(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Service.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['line' => 10, 'extra' => 'expanded', 'promoted' => false]);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+    }
+
+    #[Test]
+    public function itFlagsPromotedConstructorPropertyWhenOptionEnabled(): void
+    {
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions(flagPromotedProperties: true));
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Service.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['line' => 10, 'extra' => 'shortLabels', 'promoted' => true]);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+    }
+
+    #[Test]
+    public function itExcludesPromotedPropertyEvenWhenAllowedPrefixMatches(): void
+    {
+        // A promoted `$isActive`-style property should still be excluded via the
+        // promoted check, independent of the allowed-prefix filtering path.
+        $rule = new BooleanArgumentRule(new BooleanArgumentOptions());
+
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Service.php'));
+        $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service.php'), null);
+
+        $metricBag = (new MetricBag())
+            ->withEntry('codeSmell.boolean_argument', ['line' => 10, 'extra' => 'overwrite', 'promoted' => true]);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::File ? [$fileInfo] : []);
+        $repository->method('get')
+            ->willReturn($metricBag);
+
+        $context = new AnalysisContext($repository);
+        $violations = $rule->analyze($context);
+
+        self::assertSame([], $violations);
+    }
 }

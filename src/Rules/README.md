@@ -524,18 +524,18 @@ Code smell rules detect common anti-patterns and bad practices. All code smell r
 
 **Severity:** Most code smell rules produce **Warning** severity violations. Exceptions: `DebugCodeRule`, `EmptyCatchRule`, `EvalRule`, and `GotoRule` produce **Error** severity.
 
-| Rule                                   | Description                     | What it detects                                                                            |
-| -------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------ |
-| **code-smell.boolean-argument**        | Boolean arguments in signatures | `function save(bool $overwrite)` — suggests splitting methods or using enums               |
-| **code-smell.count-in-loop**           | count() calls in loops          | `for ($i = 0; $i < count($arr); $i++)` — should be extracted to a variable                 |
-| **code-smell.debug-code**              | Debug code                      | `var_dump()`, `print_r()`, `dd()`, `dump()`, etc.                                          |
-| **code-smell.empty-catch**             | Empty catch blocks              | `catch (Exception $e) {}` — should at least log the error                                  |
-| **code-smell.error-suppression**       | Error suppression operator      | `@fopen()` — hides errors, use proper error handling                                       |
-| **code-smell.eval**                    | eval() usage                    | `eval($code)` — security risk, usually avoidable                                           |
-| **code-smell.exit**                    | exit/die usage                  | `exit(1)`, `die()` — should not be used in library/application code                        |
-| **code-smell.goto**                    | goto statements                 | `goto label;` — makes control flow hard to follow                                          |
-| **code-smell.superglobals**            | Direct superglobal access       | `$_GET`, `$_POST`, `$_SERVER` — use request abstraction                                    |
-| **code-smell.identical-subexpression** | Identical sub-expressions       | Identical operands, duplicate conditions, identical ternary branches, duplicate match arms |
+| Rule                                   | Description                     | What it detects                                                                                                                                                                                 |
+| -------------------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **code-smell.boolean-argument**        | Boolean arguments in signatures | `function save(bool $overwrite)` — suggests splitting methods or using enums (promoted constructor properties, e.g. `public bool $x`, are excluded by default — see `flag_promoted_properties`) |
+| **code-smell.count-in-loop**           | count() calls in loops          | `for ($i = 0; $i < count($arr); $i++)` — should be extracted to a variable                                                                                                                      |
+| **code-smell.debug-code**              | Debug code                      | `var_dump()`, `print_r()`, `dd()`, `dump()`, etc.                                                                                                                                               |
+| **code-smell.empty-catch**             | Empty catch blocks              | `catch (Exception $e) {}` — should at least log the error                                                                                                                                       |
+| **code-smell.error-suppression**       | Error suppression operator      | `@fopen()` — hides errors, use proper error handling                                                                                                                                            |
+| **code-smell.eval**                    | eval() usage                    | `eval($code)` — security risk, usually avoidable                                                                                                                                                |
+| **code-smell.exit**                    | exit/die usage                  | `exit(1)`, `die()` — should not be used in library/application code                                                                                                                             |
+| **code-smell.goto**                    | goto statements                 | `goto label;` — makes control flow hard to follow                                                                                                                                               |
+| **code-smell.superglobals**            | Direct superglobal access       | `$_GET`, `$_POST`, `$_SERVER` — use request abstraction                                                                                                                                         |
+| **code-smell.identical-subexpression** | Identical sub-expressions       | Identical operands, duplicate conditions, identical ternary branches, duplicate match arms                                                                                                      |
 
 **Configuration:**
 ```yaml
@@ -976,7 +976,8 @@ final class ExampleRule extends AbstractRule {
    - `protected const ?string RECOMMENDATION` — actionable hint shown to users (optional)
 3. Use `CodeSmellOptions` as the options class (default). Override `getOptionsClass()` only when a rule needs a richer options class
 4. For per-occurrence whitelisting, make the options class implement `EntryFilteringOptionsInterface::isExtraAllowed()` — `AbstractCodeSmellRule::shouldIncludeEntry()` will route through it automatically
-5. Write unit tests
+5. For filtering on data beyond the `extra` string (e.g. a boolean discriminator), add a field to `CodeSmellLocation`/the collector's entry array and override `shouldIncludeEntry()` in the rule, calling `parent::shouldIncludeEntry()` first — see `BooleanArgumentRule`'s `promoted` field (distinguishes promoted constructor properties from plain arguments) for the pattern
+6. Write unit tests
 
 **Automatic registration:**
 - Rules are registered automatically via Symfony DI (autoconfiguration)

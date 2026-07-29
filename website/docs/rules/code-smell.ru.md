@@ -16,6 +16,8 @@
 
 Обнаруживает методы, принимающие параметры типа `bool`. Булевый аргумент обычно означает, что метод делает две разные вещи в зависимости от флага, что нарушает принцип единственной ответственности.
 
+Промотированные свойства конструктора (`public function __construct(public bool $x)`) по умолчанию не помечаются: промотированный параметр объявляет поле, а не переключатель поведения, поэтому рекомендация «разделить на два метода» к нему неприменима. Установите `flag_promoted_properties: true`, чтобы помечать и их тоже.
+
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -66,12 +68,16 @@ public function save(bool $sendNotification): void
 rules:
   code-smell.boolean-argument:
     allowed_prefixes: [is, has, can, should, will, did, was]  # по умолчанию
+    flag_promoted_properties: false                          # по умолчанию
 ```
 
 Булевые параметры, имена которых начинаются с одного из этих префиксов, считаются самодокументируемыми и не помечаются. Например, `$isActive`, `$hasPermission` или `$is_active` (snake_case) будут пропущены с настройками по умолчанию. Установите `[]`, чтобы помечать все булевые параметры.
 
+`flag_promoted_properties` определяет, помечаются ли промотированные свойства конструктора (`public bool $x`) как обычные булевые аргументы. По умолчанию `false`, так как промотированный параметр — это объявление поля, а не переключатель поведения.
+
 ```bash
 bin/qmx check src/ --rule-opt="code-smell.boolean-argument:allowed_prefixes=is,has,can"
+bin/qmx check src/ --rule-opt="code-smell.boolean-argument:flag_promoted_properties=true"
 ```
 
 ---
@@ -919,6 +925,7 @@ rules:
   code-smell.boolean-argument:
     enabled: true
     allowed_prefixes: [is, has, can, should, will, did, was]
+    flag_promoted_properties: false
   code-smell.debug-code:
     enabled: true
   code-smell.empty-catch:

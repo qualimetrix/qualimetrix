@@ -6,23 +6,30 @@ The CodeSmell collector detects common anti-patterns and code smells in a single
 
 ## Detected Patterns
 
-| Type                | Description                 | Example                                |
-| ------------------- | --------------------------- | -------------------------------------- |
-| `goto`              | Usage of `goto`             | `goto label;`                          |
-| `eval`              | Usage of `eval()`           | `eval($code);`                         |
-| `exit`              | Usage of `exit()`/`die()`   | `exit(1);`                             |
-| `empty_catch`       | Empty catch blocks          | `catch (Exception $e) {}`              |
-| `debug_code`        | Debug code                  | `var_dump($x);`                        |
-| `error_suppression` | The `@` operator            | `@file_get_contents()`                 |
-| `count_in_loop`     | `count()` in loop condition | `for ($i = 0; $i < count($arr); $i++)` |
-| `superglobals`      | Direct superglobal access   | `$_GET['id']`                          |
+| Type                | Description                                             | Example                                |
+| ------------------- | ------------------------------------------------------- | -------------------------------------- |
+| `goto`              | Usage of `goto`                                         | `goto label;`                          |
+| `eval`              | Usage of `eval()`                                       | `eval($code);`                         |
+| `exit`              | Usage of `exit()`/`die()`                               | `exit(1);`                             |
+| `empty_catch`       | Empty catch blocks                                      | `catch (Exception $e) {}`              |
+| `debug_code`        | Debug code                                              | `var_dump($x);`                        |
+| `error_suppression` | The `@` operator                                        | `@file_get_contents()`                 |
+| `count_in_loop`     | `count()` in loop condition                             | `for ($i = 0; $i < count($arr); $i++)` |
+| `superglobals`      | Direct superglobal access                               | `$_GET['id']`                          |
+| `boolean_argument`  | `bool` parameter in a method/function/closure signature | `function save(bool $overwrite)`       |
 
 ## Metrics
 
-For each type, two metrics are collected:
+Each type is collected as a `codeSmell.{type}` entry list (`MetricBag::entries()`), one
+entry per occurrence, with `line` and an optional `extra` (type-specific auxiliary data,
+e.g. the parameter name for `boolean_argument`).
 
-- `codeSmell.{type}.count` — number of occurrences in the file
-- `codeSmell.{type}.locations` — JSON with positions `[{line, column, extra}]`
+`boolean_argument` entries additionally carry a `promoted` boolean: whether the flagged
+parameter is a promoted constructor property (`public bool $x`, has parser visibility/
+readonly flags) rather than a plain method/function argument. `BooleanArgumentRule`
+excludes promoted entries by default (`flag_promoted_properties: false`) since a promoted
+parameter declares a field, not a behavior switch — see
+[`src/Rules/CodeSmell/BooleanArgumentRule.php`](../../Rules/CodeSmell/BooleanArgumentRule.php).
 
 ## Debug Functions
 

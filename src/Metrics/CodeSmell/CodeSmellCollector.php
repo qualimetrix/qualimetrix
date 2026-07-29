@@ -16,6 +16,9 @@ use SplFileInfo;
  *
  * Entries (codeSmell.{type}):
  * - line: int — line number of the occurrence
+ * - extra: string|null — auxiliary data (e.g. parameter/function name), type-specific
+ * - promoted: bool|null — for `boolean_argument` only: whether the parameter is a
+ *   promoted constructor property rather than a plain argument
  *
  * Types: goto, eval, exit, empty_catch, debug_code, error_suppression, count_in_loop, superglobals, boolean_argument
  */
@@ -76,6 +79,10 @@ final class CodeSmellCollector extends AbstractCollector
 
                 if ($location->extra !== null) {
                     $entry['extra'] = $location->extra;
+                }
+
+                if ($location->promoted !== null) {
+                    $entry['promoted'] = $location->promoted;
                 }
 
                 $bag = $bag->withEntry("codeSmell.{$type}", $entry);

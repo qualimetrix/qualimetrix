@@ -121,4 +121,40 @@ final class BooleanArgumentOptionsTest extends TestCase
         self::assertFalse($options->isAllowedPrefix('$isActive'));
         self::assertFalse($options->isAllowedPrefix('$anything'));
     }
+
+    #[Test]
+    public function itDefaultsToNotFlaggingPromotedProperties(): void
+    {
+        $options = new BooleanArgumentOptions();
+
+        self::assertFalse($options->flagPromotedProperties);
+    }
+
+    #[Test]
+    public function itFromArrayWithSnakeCaseFlagPromotedProperties(): void
+    {
+        $options = BooleanArgumentOptions::fromArray([
+            'flag_promoted_properties' => true,
+        ]);
+
+        self::assertTrue($options->flagPromotedProperties);
+    }
+
+    #[Test]
+    public function itFromArrayWithCamelCaseFlagPromotedProperties(): void
+    {
+        $options = BooleanArgumentOptions::fromArray([
+            'flagPromotedProperties' => true,
+        ]);
+
+        self::assertTrue($options->flagPromotedProperties);
+    }
+
+    #[Test]
+    public function itFromArrayEmptyDefaultsFlagPromotedPropertiesToFalse(): void
+    {
+        $options = BooleanArgumentOptions::fromArray([]);
+
+        self::assertFalse($options->flagPromotedProperties);
+    }
 }

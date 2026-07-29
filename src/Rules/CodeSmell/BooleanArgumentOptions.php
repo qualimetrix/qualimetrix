@@ -13,6 +13,12 @@ use Qualimetrix\Core\Violation\Severity;
  *
  * Allows whitelisting boolean parameters with self-documenting prefixes
  * (e.g., $isActive, $hasPermission, $canEdit).
+ *
+ * By default, promoted constructor properties (`public bool $x`) are not
+ * flagged: a promoted parameter is a field declaration, not a behavior
+ * switch, so the rule's "split into two methods / use an enum"
+ * recommendation doesn't apply to it. Set `flag_promoted_properties: true`
+ * to restore the old behavior and flag them too.
  */
 final readonly class BooleanArgumentOptions implements RuleOptionsInterface, EntryFilteringOptionsInterface
 {
@@ -24,6 +30,7 @@ final readonly class BooleanArgumentOptions implements RuleOptionsInterface, Ent
     public function __construct(
         public bool $enabled = true,
         public array $allowedPrefixes = self::DEFAULT_PREFIXES,
+        public bool $flagPromotedProperties = false,
     ) {}
 
     /**
@@ -40,9 +47,12 @@ final readonly class BooleanArgumentOptions implements RuleOptionsInterface, Ent
             $prefixes = array_values(array_filter($raw, 'is_string'));
         }
 
+        $flagPromotedProperties = $config['flagPromotedProperties'] ?? $config['flag_promoted_properties'] ?? false;
+
         return new self(
             enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             allowedPrefixes: $prefixes,
+            flagPromotedProperties: (bool) $flagPromotedProperties,
         );
     }
 

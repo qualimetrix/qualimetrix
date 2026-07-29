@@ -36,4 +36,26 @@ final class BooleanArgumentRule extends AbstractCodeSmellRule
     {
         return BooleanArgumentOptions::class;
     }
+
+    /**
+     * Excludes promoted constructor properties unless `flag_promoted_properties` is enabled.
+     *
+     * @param array<string, mixed> $entry
+     */
+    protected function shouldIncludeEntry(array $entry): bool
+    {
+        if (!parent::shouldIncludeEntry($entry)) {
+            return false;
+        }
+
+        $options = $this->options;
+        if ($options instanceof BooleanArgumentOptions
+            && !$options->flagPromotedProperties
+            && ($entry['promoted'] ?? false) === true
+        ) {
+            return false;
+        }
+
+        return true;
+    }
 }

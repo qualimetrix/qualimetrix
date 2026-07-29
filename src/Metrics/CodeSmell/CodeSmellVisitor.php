@@ -173,13 +173,14 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
         return \count($this->getLocationsByType($type));
     }
 
-    private function addLocation(string $type, Node $node, ?string $extra = null): void
+    private function addLocation(string $type, Node $node, ?string $extra = null, ?bool $promoted = null): void
     {
         $this->locations[] = new CodeSmellLocation(
             type: $type,
             line: $node->getStartLine(),
             column: $node->getStartTokenPos(),
             extra: $extra,
+            promoted: $promoted,
         );
     }
 
@@ -394,7 +395,14 @@ final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVi
                 $paramName = $param->var instanceof Variable && \is_string($param->var->name)
                     ? $param->var->name
                     : '?';
-                $this->addLocation('boolean_argument', $param, $paramName);
+
+                // Promoted constructor properties (public/protected/private/readonly flags
+                // set on the parameter) are field declarations, not behavior-controlling
+                // arguments — the rule's "split into two methods" recommendation doesn't
+                // apply to them. Plain (non-promoted) bool params are always real arguments.
+                $promoted = $param->flags !== 0;
+
+                $this->addLocation('boolean_argument', $param, $paramName, $promoted);
             }
         }
     }

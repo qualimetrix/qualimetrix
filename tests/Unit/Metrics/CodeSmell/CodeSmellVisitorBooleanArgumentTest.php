@@ -174,4 +174,97 @@ PHP,
             'description' => 'All three bool variants should be detected',
         ];
     }
+
+    #[Test]
+    public function itMarksPromotedConstructorPropertyAsPromoted(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Foo {
+    public function __construct(public bool $shortLabels = true) {}
+}
+PHP;
+        $locations = $this->traverse($code);
+
+        self::assertCount(1, $locations);
+        self::assertTrue($locations[0]->promoted);
+    }
+
+    #[Test]
+    public function itMarksPromotedReadonlyConstructorPropertyAsPromoted(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Foo {
+    public function __construct(public readonly bool $shortLabels = true) {}
+}
+PHP;
+        $locations = $this->traverse($code);
+
+        self::assertCount(1, $locations);
+        self::assertTrue($locations[0]->promoted);
+    }
+
+    #[Test]
+    public function itMarksNonPromotedConstructorParameterAsNotPromoted(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Foo {
+    public function __construct(bool $expanded) {}
+}
+PHP;
+        $locations = $this->traverse($code);
+
+        self::assertCount(1, $locations);
+        self::assertFalse($locations[0]->promoted);
+    }
+
+    #[Test]
+    public function itMarksRegularMethodBoolArgumentAsNotPromoted(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Foo {
+    public function save(bool $overwrite): void {}
+}
+PHP;
+        $locations = $this->traverse($code);
+
+        self::assertCount(1, $locations);
+        self::assertFalse($locations[0]->promoted);
+    }
+
+    #[Test]
+    public function itMarksStaticFactoryMethodBoolArgumentAsNotPromoted(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Foo {
+    public static function create(bool $strict): self {
+        return new self();
+    }
+}
+PHP;
+        $locations = $this->traverse($code);
+
+        self::assertCount(1, $locations);
+        self::assertFalse($locations[0]->promoted);
+    }
+
+    /**
+     * @return list<CodeSmellLocation>
+     */
+    private function traverse(string $code): array
+    {
+        $visitor = new CodeSmellVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        return $visitor->getLocationsByType('boolean_argument');
+    }
 }

@@ -16,6 +16,8 @@ All code smell rules can be individually enabled or disabled.
 
 Detects methods that accept `bool` parameters. A boolean argument usually means the method does two different things depending on the flag, which violates the Single Responsibility Principle.
 
+Promoted constructor properties (`public function __construct(public bool $x)`) are not flagged by default: a promoted parameter declares a field, not a behavior switch, so "split into two methods" doesn't apply to it. Set `flag_promoted_properties: true` to flag them too.
+
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
@@ -66,12 +68,16 @@ public function save(bool $sendNotification): void
 rules:
   code-smell.boolean-argument:
     allowed_prefixes: [is, has, can, should, will, did, was]  # defaults
+    flag_promoted_properties: false                          # default
 ```
 
 Boolean parameters whose names start with one of these prefixes are considered self-documenting and are not flagged. For example, `$isActive`, `$hasPermission`, or `$is_active` (snake_case) would all be allowed with the default prefixes. Set to `[]` to flag all boolean parameters.
 
+`flag_promoted_properties` controls whether promoted constructor properties (`public bool $x`) are flagged like regular boolean arguments. Defaults to `false`, since a promoted parameter is a field declaration, not a behavior switch.
+
 ```bash
 bin/qmx check src/ --rule-opt="code-smell.boolean-argument:allowed_prefixes=is,has,can"
+bin/qmx check src/ --rule-opt="code-smell.boolean-argument:flag_promoted_properties=true"
 ```
 
 ---
@@ -918,6 +924,7 @@ rules:
   code-smell.boolean-argument:
     enabled: true
     allowed_prefixes: [is, has, can, should, will, did, was]
+    flag_promoted_properties: false
   code-smell.debug-code:
     enabled: true
   code-smell.empty-catch:
