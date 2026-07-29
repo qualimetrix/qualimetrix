@@ -19,6 +19,20 @@ namespace Qualimetrix\Analysis\Duplication;
  * here so every {@see normalize()} caller gets tagged tokens without having
  * to know the tagger exists.
  *
+ * `T_CLOSE_TAG` (`?>`) is skipped like the other {@see SKIP_TOKENS} for
+ * every caller that does not want tagging, but when tagging is enabled it
+ * is instead preserved as a {@see DataDeclarationTagger::PHP_CLOSE_TAG_BARRIER}
+ * sentinel token before being handed to the tagger, then stripped back out
+ * of the result. The tagger's forward scans (looking for the `;` that ends
+ * a `const`/property declaration) need *some* in-stream marker for where a
+ * PHP block ends, or they run straight through into the next block's code
+ * and mis-tag it as data — see {@see DataDeclarationTagger::findStatementEnd()}.
+ * Because the barrier is added and removed within the same {@see normalize()}
+ * call, callers never observe it: the returned token stream for a file
+ * without `?>` is unaffected, and for a file with `?>` it has exactly the
+ * same tokens as before this barrier existed — only the tagger's internal
+ * scans see the extra marker.
+ *
  * Tagging is opt-out because the detector's two passes need different things.
  * Pass 1 hashes token *values* only and discards the tokens immediately, so
  * tagging there is pure waste — measured at ~28% of normalization time, with a
@@ -86,6 +100,16 @@ final class TokenNormalizer
             [$type, $value, $line] = $token;
             $currentLine = $line;
 
+            if ($type === \T_CLOSE_TAG && $this->tagDataDeclarations) {
+                // Preserve the PHP-block boundary as a barrier token instead
+                // of discarding it like the other SKIP_TOKENS — see the
+                // class docblock. Stripped back out below, after tagging,
+                // so it never reaches a normalize() caller.
+                $result[] = new NormalizedToken(DataDeclarationTagger::PHP_CLOSE_TAG_BARRIER, '', $line);
+
+                continue;
+            }
+
             if (\in_array($type, self::SKIP_TOKENS, true)) {
                 continue;
             }
@@ -101,6 +125,11 @@ final class TokenNormalizer
             return $result;
         }
 
-        return $this->dataDeclarationTagger->tag($result);
+        $tagged = $this->dataDeclarationTagger->tag($result);
+
+        return array_values(array_filter(
+            $tagged,
+            static fn(NormalizedToken $t): bool => $t->type !== DataDeclarationTagger::PHP_CLOSE_TAG_BARRIER,
+        ));
     }
 }

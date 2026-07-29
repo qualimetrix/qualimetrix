@@ -166,12 +166,12 @@ PHP;
     #[Test]
     public function itDoesNotTagExecutableCodeAfterACloseTagTerminatedConstDeclaration(): void
     {
-        // TokenNormalizer strips T_CLOSE_TAG/T_OPEN_TAG/T_INLINE_HTML
-        // entirely, so a `const` statement terminated by a PHP closing
-        // tag (rather than `;`) leaves no in-stream marker for where the
-        // declaration ends. findStatementEnd() must bail out (tag nothing)
-        // instead of scanning across the tag boundary into the next PHP
-        // block and mis-tagging unrelated executable code as data.
+        // TokenNormalizer preserves the PHP closing-tag boundary as a
+        // PHP_CLOSE_TAG_BARRIER token (see its class docblock) specifically
+        // so findStatementEnd() can recognize a `const` statement
+        // terminated by a closing tag (rather than `;`) as properly ended
+        // right there, instead of scanning across the boundary into the
+        // next PHP block and mis-tagging unrelated executable code as data.
         //
         // NB: the closing tag is written literally in the heredoc below —
         // do not put a literal "?" followed by ">" in a // comment in this
@@ -185,11 +185,146 @@ PHP;
 
         $tokens = $this->normalizer->normalize($code);
 
+        $constIdx = $this->indexOfType($tokens, \T_CONST);
         $computeIdx = $this->indexOfValue($tokens, 'compute');
+
+        self::assertTrue($tokens[$constIdx]->isData, 'The const declaration itself must still be tagged as data');
+
         $semicolonIdx = $this->indexOfFirstValueAfter($tokens, $computeIdx, ';');
 
         for ($i = $computeIdx; $i <= $semicolonIdx; $i++) {
             self::assertFalse($tokens[$i]->isData, "Token at {$i} ('{$tokens[$i]->value}') is executable code and must not be tagged as data");
+        }
+    }
+
+    #[Test]
+    public function itDoesNotTagExecutableCodeAfterACloseTagTerminatedConstDeclarationWhenTheFollowingBlockHasNoVariables(): void
+    {
+        // Regression for the residual defect a third reviewer found: the
+        // previous fix only bailed out findStatementEnd() when it hit a
+        // T_VARIABLE token past the PHP closing-tag boundary. That is not
+        // enough — if the executable code in the next PHP block has no
+        // variables at all, the forward scan for `;` still ran straight
+        // through the boundary and tagged the entire following statement
+        // (however long) as data, silently hiding real duplication there.
+        //
+        // TokenNormalizer's PHP_CLOSE_TAG_BARRIER closes this gap
+        // unconditionally, regardless of what the next block contains.
+        //
+        // NB: the closing tag is written literally in the heredoc below —
+        // do not put a literal "?" followed by ">" in a // comment in this
+        // file, it prematurely ends the comment and exits PHP mode.
+        $code = <<<'PHP'
+        <?php const X = [1] ?>
+        <?php if (ready()) { boot(); } done();
+        PHP;
+
+        $tokens = $this->normalizer->normalize($code);
+
+        $constIdx = $this->indexOfType($tokens, \T_CONST);
+        $ifIdx = $this->indexOfValue($tokens, 'if');
+
+        self::assertTrue($tokens[$constIdx]->isData, 'The const declaration itself must still be tagged as data');
+
+        for ($i = $ifIdx; $i < \count($tokens); $i++) {
+            self::assertFalse($tokens[$i]->isData, "Token at {$i} ('{$tokens[$i]->value}') is executable code in the next PHP block and must not be tagged as data");
+        }
+    }
+
+    #[Test]
+    public function itTagsAPropertyArrayInitializerTerminatedByACloseTagAsData(): void
+    {
+        // Mirrors the const case above for the property-array-declaration
+        // pattern: matchPropertyArrayDeclaration() must accept the
+        // PHP_CLOSE_TAG_BARRIER as a valid terminator too, since a PHP
+        // closing tag is a legal implicit statement terminator (verified
+        // with `php -l`).
+        //
+        // NB: the closing tag is written literally in the heredoc below —
+        // do not put a literal "?" followed by ">" in a // comment in this
+        // file, it prematurely ends the comment and exits PHP mode.
+        $code = <<<'PHP'
+        <?php
+        class Config
+        {
+            private array $x = [1, 2] ?>
+        <?php
+            public function y(): void { z(); }
+        }
+        PHP;
+
+        $tokens = $this->normalizer->normalize($code);
+
+        $privateIdx = $this->indexOfType($tokens, \T_PRIVATE);
+        $xIdx = $this->indexOfValue($tokens, '$_');
+        $closeBracketIdx = $this->indexOfFirstValueAfter($tokens, $xIdx, ']');
+
+        for ($i = $privateIdx; $i <= $closeBracketIdx; $i++) {
+            self::assertTrue($tokens[$i]->isData, "Token at {$i} ('{$tokens[$i]->value}') should be tagged as data");
+        }
+
+        $zIdx = $this->indexOfValue($tokens, 'z');
+        for ($i = $zIdx; $i < \count($tokens); $i++) {
+            self::assertFalse($tokens[$i]->isData, "Token at {$i} ('{$tokens[$i]->value}') is executable code and must not be tagged as data");
+        }
+    }
+
+    #[Test]
+    public function itTagsALegacyVarPropertyArrayInitializerAsData(): void
+    {
+        // PHP's legacy `var` visibility keyword (pre-PHP 5 syntax, still
+        // legal) was already in MODIFIER_TYPES for the backward
+        // modifier-walk, but was never wired up as a scan entry point —
+        // a property declared with `var` instead of `public`/`private`
+        // never got a chance to be matched at all. T_VAR is now also a
+        // trigger, since `var` is unambiguous — it cannot legally appear
+        // anywhere except a property declaration.
+        $code = <<<'PHP'
+        <?php
+
+        final class LegacyConfig
+        {
+            var array $defaults = [
+                'x' => 1,
+            ];
+        }
+        PHP;
+
+        $tokens = $this->normalizer->normalize($code);
+
+        $varIdx = $this->indexOfType($tokens, \T_VAR);
+        $semicolonIdx = $this->indexOfFirstValueAfter($tokens, $varIdx, ';');
+
+        for ($i = $varIdx; $i <= $semicolonIdx; $i++) {
+            self::assertTrue($tokens[$i]->isData, "Token at {$i} ('{$tokens[$i]->value}') should be tagged as data");
+        }
+    }
+
+    #[Test]
+    public function itTagsAPhp84AsymmetricVisibilityPropertyArrayInitializerAsData(): void
+    {
+        // PHP 8.4 asymmetric visibility (`public(set)`, ...) tokenizes as
+        // a single T_PUBLIC_SET/T_PROTECTED_SET/T_PRIVATE_SET token
+        // (verified via token_get_all()), entirely distinct from plain
+        // T_PUBLIC/T_PROTECTED/T_PRIVATE — so without adding these to
+        // PROPERTY_DECLARATION_TRIGGER_TYPES the scan would never even
+        // start for such a property.
+        $code = <<<'PHP'
+        <?php
+
+        final class Config
+        {
+            public(set) array $x = [1, 2];
+        }
+        PHP;
+
+        $tokens = $this->normalizer->normalize($code);
+
+        $triggerIdx = $this->indexOfType($tokens, \T_PUBLIC_SET);
+        $semicolonIdx = $this->indexOfFirstValueAfter($tokens, $triggerIdx, ';');
+
+        for ($i = $triggerIdx; $i <= $semicolonIdx; $i++) {
+            self::assertTrue($tokens[$i]->isData, "Token at {$i} ('{$tokens[$i]->value}') should be tagged as data");
         }
     }
 
