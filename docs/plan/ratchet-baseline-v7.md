@@ -1,12 +1,13 @@
 # Ratchet Baseline v7 Plan
 
-**Status:** Proposed — revision 7.4 (supersedes `ratchet-baseline-v6.md`)
+**Status:** Proposed — revision 7.5 (supersedes `ratchet-baseline-v6.md`)
 **Date:** 2026-08-04
 **Target release:** TBD
-**Review status:** Three rounds complete. All CRITICAL and HIGH findings are
-folded in. §5.1 was restructured in 7.4 from an open rule-plus-carve-outs form
-into a closed, machine-checked enumeration of rule shapes; a confirmation pass
-over §5.1, §5.9, and §7.1 is the remaining step before P0 freeze.
+**Review status:** Four rounds complete. All CRITICAL and HIGH findings are
+folded in. §5.1 has been rewritten twice — first from an open rule-plus-carve-outs
+form into a closed enumeration of rule shapes, then, when review showed that
+enumeration to be neither total nor disjoint, into orthogonal per-channel traits
+that are total by construction (§0.6).
 
 ## How To Execute This Plan From A Clean Session
 
@@ -176,7 +177,7 @@ the build instead of waiting for a reviewer.
 | `DataClassRule` fires on a conjunction (`WOC >= t` **and** `WMC <= t`), so WOC worsening while WMC crosses its bound silences the rule — the governing invariant fails for a *fixed* compound, not only a dynamic one. Round 2 had correctly established that DataClass is not dynamically evaluable, and 7.2 wrongly inferred that §5.9 did not apply to it. | §5.9 now covers every compound predicate, conjunctive or count-based. The lesson — a true correction can license a false inference — is recorded here rather than in a commit message.         |
 | The onset was glossed as "the warning tier". `ComputedMetricRule` tests `errorThreshold` first and nothing validates tier ordering, so `warning: 20, error: 10` starts violating at 10.                                                                                                                                                                       | §5.1: the onset is the most permissive *configured* boundary computed across tiers, and the gloss is removed.                                                                                  |
 | The onset can depend on the symbol, not just on (rule, code): `LongParameterListRule` selects VO or ordinary thresholds from the symbol's own metric under one violation code. A registry keyed by (rule, code) cannot supply it.                                                                                                                             | §5.1: rules expose an **onset provider** queried with the symbol's metrics. Metrics exist for every symbol regardless of violations, so this also gives `resolutionReason` its missing source. |
-| §7.1 claimed that in the widened-onset regime only `regressed` and `resolved` are reachable. Fourteen Options classes compare with `>=`, so the boundary value both violates and sits inside the allowance — `matched` is reachable there.                                                                                                                    | §7.1: reachability restated per regime, inclusive-aware.                                                                                                                                       |
+| §7.1 claimed that in the widened-onset regime only `regressed` and `resolved` are reachable. Most Options classes compare with `>=`, so the boundary value both violates and sits inside the allowance — `matched` is reachable there.                                                                                                                        | §7.1: reachability restated per regime and per declared comparison.                                                                                                                            |
 | A compound entry's `resolutionReason` could not be computed — S5 has no per-axis onset — yet `cleanup` acts on it, risking deletion of a still-indebted entry.                                                                                                                                                                                                | §5.9: compound entries resolve as `policy` and are never auto-removed.                                                                                                                         |
 | The S6 cutoff carve-out promised resolution on "positive evidence" without saying what evidence, while §5.6 forbade mutating silenced entries.                                                                                                                                                                                                                | §7.4: S6 resolves on symbol-inventory evidence, which does not depend on the rule.                                                                                                             |
 | `update`'s debt-neutral re-pointing was literally unsatisfiable — a `new` finding has no captured axes — and ignored occurrence count, so a rename from one occurrence to five could be re-accepted.                                                                                                                                                          | §8: the comparison is old-captured against new-current, count included, ambiguity refused.                                                                                                     |
@@ -186,6 +187,51 @@ the build instead of waiting for a reviewer.
 The v5 migration protocol was reviewed in depth for the first time and found
 sound as written, given that unmatched entries have only the two dispositions
 recorded in §14.6.
+
+### 0.6 What round 4 changed (7.5)
+
+Round 4 tested 7.4's central claim — that nine enumerated rule shapes covered
+every rule exactly once — with two independent reviewers. The claim failed, and
+the failure was structural rather than a matter of missing entries.
+
+**Why the enumeration could not work.** A channel's behaviour is a combination
+of independent properties: where the onset comes from, whether comparison is
+inclusive, which direction is worse, what predicate fires, whether a band hides
+large findings, what magnitude is carried, what identity is tracked. The space
+is a **product**, so any partition of it meets members that straddle two
+classes. Concretely: `ClassRankRule` and `CodeDuplicationRule` mapped to no
+shape; `CircularDependencyRule` is a graph identity *and* a banded magnitude;
+`UnusedPrivateRule` is a presence *and* an occurrence; one shape had no members
+at all. 7.5 replaces the taxonomy with per-channel trait declarations, total by
+construction because there is nothing to fail to map onto.
+
+**The deeper unit error.** The registry, the coverage key, and the shape
+declarations were all keyed by rule *class*. `LayerViolationRule` emits five
+channels, four under rule *names* no class declares — `architecture.coverage`,
+`architecture.unreachable-layer`, `architecture.potential-shadow`,
+`architecture.empty-template`. Under 7.4's precedence their entries would be
+permanently `orphaned` while the same run re-emitted the findings as `new`, an
+oscillation repeating forever. The unit is now the channel throughout.
+
+| Finding                                                                                                                                                                                     | Correction                                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Enumeration neither total nor disjoint; one empty shape.                                                                                                                                    | §5.1: orthogonal traits per channel.                                                                                                 |
+| Violations emitted under rule names no class owns.                                                                                                                                          | §5.1, §5.5, §7.4: channel is the unit of declaration, coverage, and the `orphaned` test.                                             |
+| `ClassRankRule` scales thresholds by project class count, so the onset depends on the run, not on configuration or the symbol.                                                              | §5.1: the onset provider takes run-level context; run-conditioned is a declared value.                                               |
+| §5.1 forbade resolving a compound channel by absence while §5.9 required resolving it as `policy` — a direct contradiction inside one section.                                              | §5.1: reconciled to §5.9's rule, since under §5.7 the configured policy decides what counts as debt.                                 |
+| The cutoff channel's "inventory evidence" could not see the normal repair: deleting one dependency edge fixes a cycle while leaving every class in place, so the entry could never resolve. | §7.4: resolution uses pre-cutoff evidence — `AnalysisContext::$cycles` is populated before the cutoff is applied in `getSeverity()`. |
+| 7.4's `rebase-contracts` exit wrote an entry with no axes, which §6.2 forbids and P3's loader would reject.                                                                                 | §8: such an entry is removed and reported, not rewritten.                                                                            |
+| Re-pointing could absorb a genuinely new finding elsewhere as a rename, and ignored the occurrence key.                                                                                     | §8: the occurrence key must match and the original symbol must be absent from the inventory.                                         |
+| `ComputedMetricRule` compares strictly, contradicting the claim that the common shapes fire at `>=`; the count of inclusive Options classes was also wrong.                                 | §5.1, §7.1: comparison is a declared trait, asserted by test rather than counted in prose.                                           |
+
+Smaller items folded in without separate discussion: the onset provider must
+reproduce `LongParameterListRule`'s asymmetry, where the VO branch bypasses
+`getEffectiveOptions()` so inline overrides reach ordinary methods only;
+`CodeDuplicationRule`'s effective floor is its detector's `min_lines` rather
+than a configured tier, and its identity is a token hash, so magnitude
+ratcheting is vacuous for that channel and it declares magnitude accordingly;
+and the built-in `health.*` dimensions travel the same path as user-defined
+metrics, so nothing may special-case "user-defined".
 
 ## 1. Executive Summary
 
@@ -288,72 +334,91 @@ allowance(axis) = more-permissive-of(captured(axis), onsetBoundary(axis))
 ```
 
 `onsetBoundary` is the **violation-onset boundary**: the most permissive
-boundary at which the rule emits a violation at all, for this symbol, under the
-configuration in force now.
+boundary at which a violation is emitted at all, for this symbol, under the
+configuration and run in force now.
 
-#### The onset is queried, never assumed
+#### The unit of declaration is a channel, not a rule class
 
-Three sources are explicitly forbidden, each because a revision of this plan
-already got it wrong:
+A **channel** is a `(ruleName, violationCode)` pair that can appear on an
+emitted violation. Channels are not in bijection with rule classes, and every
+previous revision of this section broke on that assumption:
 
-- **Not `Violation::threshold`.** It is the boundary of the tier the measurement
-  landed in, so the allowance would widen exactly as the code got worse (§2.4).
-- **Not "the `warning` field".** `ComputedMetricRule::determineSeverity()` tests
-  `errorThreshold` first and nothing validates that `warning` is the more
-  permissive of the two, so a configuration of `warning: 20, error: 10` starts
-  violating at 10. The onset is the most permissive *configured* boundary in the
-  worse-direction, computed across tiers — a fact, not a field name.
-- **Not a value stored per (rule, code).** `LongParameterListRule` picks
-  `voWarning`/`voError` or the ordinary thresholds according to the symbol's own
-  `IS_VO_CONSTRUCTOR` metric, under one violation code. The onset depends on the
+- `LayerViolationRule` emits five channels, four of them under rule *names* no
+  class declares — `architecture.coverage`, `architecture.unreachable-layer`,
+  `architecture.potential-shadow`, `architecture.empty-template`. A registry
+  keyed by rule class cannot see them; §7.1's precedence would mark their
+  entries permanently `orphaned` while the same run re-emits the findings as
+  `new`, every run, forever.
+- `ComputedMetricRule` emits one channel per metric definition, built-in
+  `health.*` and user-defined `computed.*` alike, each with its own thresholds
+  and inversion.
+- `LongParameterListRule` emits one channel whose thresholds depend on the
   symbol.
 
-Therefore each rule exposes an **onset provider**: given a symbol and its
-metrics, it returns the current onset and worse-direction per axis, or reports
-that it has none. Metrics are computed for every symbol regardless of whether a
-violation was raised, so the comparator can query the onset even for an entry
-with no current observation — which is what §7.1 needs to tell a fixed finding
-from a widened policy.
+So the registry (§5.7), the coverage key (§5.5), and the trait declarations
+below are all keyed by channel. Rules enumerate the channels they can emit; a
+violation whose channel is not declared is a hard error, not a warning.
 
-#### Rule shapes are a closed set
+#### Traits are orthogonal, not a taxonomy
 
-Earlier revisions stated one onset rule and appended a carve-out each time a
-reviewer found a rule that did not fit. Three rounds produced four such
-carve-outs and there was no reason to think the fourth was the last. The
-enumeration below replaces that open deduction, and **totality is machine-checked
-rather than asserted**: every rule declares its shape, and P1b's registry-driven
-test fails when any rule maps to none. A newly discovered shape then surfaces as
-a red test rather than as a review finding.
+Revision 7.4 enumerated nine rule "shapes" and required each rule to map to
+exactly one. Review found the set neither total (`ClassRankRule`,
+`CodeDuplicationRule` fit nothing) nor disjoint (`CircularDependencyRule` is a
+graph identity *and* a banded magnitude; `UnusedPrivateRule` is a presence *and*
+an occurrence). The failure has a cause worth stating, because it is the reason
+this section has now been rewritten twice: a channel's behaviour is a
+**combination of independent properties**, so the space is a product, not a
+partition, and any taxonomy of it will keep meeting members that straddle two
+classes.
 
-| #   | Shape                                                                                                          | Onset                                                    | Axes    | Resolution             |
-| --- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------- | ---------------------- |
-| S1  | Tiered scalar, inclusive (`value >= warning`) — the common case                                                | most permissive configured tier                          | one     | ordinary               |
-| S2  | Tiered scalar, inverted (`value < warning`)                                                                    | mirror of S1; "more permissive" means a *lower* boundary | one     | ordinary               |
-| S3  | Symbol-conditioned scalar — thresholds chosen by a metric of the symbol, under one code                        | queried per symbol via the onset provider                | one     | ordinary               |
-| S4  | Multi-contract scalar — one rule, one code per user-defined metric, each with its own thresholds and inversion | per (rule, code), from configuration                     | one     | ordinary               |
-| S5  | Compound predicate — conjunctive or count-based over several axes                                              | none per axis; the predicate *is* the onset              | several | restricted, see §5.9   |
-| S6  | Banded — reports only inside a magnitude band, so growth past the cutoff hides the finding                     | band, both ends                                          | one     | never on absence alone |
-| S7  | Presence — binary detector, no numeric boundary                                                                | none                                                     | none    | identity absence       |
-| S8  | Occurrence — per-site findings counted                                                                         | onset of the underlying scalar, if any                   | count   | count reaching zero    |
-| S9  | Graph identity — cycles, layer edges                                                                           | none                                                     | none    | identity absence       |
+Each channel therefore declares a value on each axis below. Totality holds by
+construction — there is nothing to fail to map onto — and the registry test
+asserts that every declared channel answers every dimension.
 
-Comparison is **inclusive-aware**: a rule firing at `value >= onset` violates at
-the boundary itself, so `current == allowance` is `matched`, not `regressed`.
-Fourteen Options classes use `>=` for the warning tier, so this is the norm, not
-an edge case; a shape that compares exclusively declares so.
+| Dimension        | Values                                                          | Notes                                                                                  |
+| ---------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Onset source     | none / configured tiers / symbol-conditioned / run-conditioned  | `ClassRankRule` is run-conditioned: its thresholds scale by project class count        |
+| Comparison       | inclusive / exclusive                                           | most Options compare `>=`; Maintainability, TypeCoverage and ComputedMetric are strict |
+| Direction        | higher-is-worse / lower-is-worse                                | per axis                                                                               |
+| Firing predicate | single threshold / conjunction / criteria count / unconditional | `DataClassRule` conjunctive, `GodClassRule` criteria count                             |
+| Band             | unbounded / cutoff                                              | a cutoff hides the finding as debt grows (`maxCycleSize`)                              |
+| Magnitude        | none / scalar / vector / count                                  | `CodeDuplicationRule` carries a scalar *and* an occurrence identity                    |
+| Identity         | symbol / occurrence / graph                                     | independent of magnitude                                                               |
 
-S6 exists because `CircularDependencyOptions::getSeverity()` returns `null`
-above `maxCycleSize` and the rule then drops the cycle entirely — debt growing
-past the cutoff makes the finding vanish. Absence therefore proves nothing for
-S6, and §7.4 gives it the only evidence path that does work: the identity is
-resolved when the symbol inventory shows it gone, not when the rule stops
-reporting it.
+The **onset provider** is the query behind the first dimension: given a channel,
+a symbol, its metrics, and run-level context, it returns the current onset and
+direction per axis, or reports that the channel has none. Run-level context is
+required, not optional — without it `ClassRankRule` is unrepresentable. The
+provider must reproduce the rule's *actual* behaviour rather than a symmetric
+idealisation of it: `LongParameterListRule`'s VO branch bypasses
+`getEffectiveOptions()`, so an inline `@qmx-threshold` applies to ordinary
+methods only, and the provider must say so.
 
-Because `allowance` is never stricter than the onset, **a ratchet regression is
-also a current violation for shapes S1–S4 and S8**. S5 and S6 are the stated
-exceptions: their predicates can stop firing while an axis worsens, which is why
-neither may resolve on absence. S7 and S9 carry no magnitude at all. §13
-requires the invariant to be tested per shape rather than in general.
+Three onset sources are forbidden, each because a revision of this plan used it
+and was wrong: `Violation::threshold` (it is the tier the measurement landed in,
+so the allowance widens as the code worsens, §2.4); the field literally named
+`warning` (`ComputedMetricRule` tests `errorThreshold` first and nothing
+validates tier ordering, so `warning: 20, error: 10` starts violating at 10);
+and any value keyed by channel alone (the onset can depend on the symbol or on
+the run).
+
+#### The invariant, stated per trait rather than per shape
+
+`allowance` is never stricter than the onset, so **a regression is also a
+current violation** for every channel whose firing predicate is a single
+threshold and whose band is unbounded. Two trait values break it, and both are
+handled differently, and not in the same way as each other:
+
+- **conjunction / criteria count** — the predicate can stop firing while an axis
+  worsens. Such a channel still resolves when it stops firing, because under
+  §5.7 the configured policy decides what counts as debt, but always with reason
+  `policy` and never `fixed`, so `cleanup` leaves the captured axes in place
+  (§5.9).
+- **cutoff** — growth past the band hides the finding entirely, so silence
+  proves nothing and resolution requires pre-cutoff evidence (§7.4).
+
+§13 requires the invariant to be tested per trait combination present in the
+codebase, not asserted in general.
 
 ### 5.2 Observations accompany violations
 
@@ -432,9 +497,10 @@ a per-symbol map. Confirmed cases: `GodClassRule` skips classes by its own
 applicability check; `ComplexityRule` can disable an individual level;
 aggregate and graph rules must state whether their input was complete.
 
-The coverage key is `ruleName` **plus** `violationCode`: one rule class can emit
-several codes (`LayerViolationRule` emits its main code and a coverage
-diagnostic), and indexing by rule name alone loses that granularity.
+The coverage key is the **channel** — `ruleName` plus `violationCode` (§5.1).
+One rule class can emit several, and `LayerViolationRule` emits five, four of
+them under rule names no class declares as its own. Indexing by rule name alone
+loses that granularity; indexing by rule class cannot see those four at all.
 
 ### 5.6 Three suppression categories, matched to the code
 
@@ -502,7 +568,8 @@ compensate.
 
 ### 5.9 Compound rules ratchet on their firing identity
 
-Shape S5 covers every rule whose violation is a predicate over several axes,
+This section covers every channel whose firing predicate is a conjunction or a
+count of matched criteria — that is, a predicate over several axes,
 whether the predicate is a **conjunction** or a **count of matched criteria**.
 Both members are in the codebase:
 
@@ -536,7 +603,7 @@ once it stops, the finding is resolved by the configured policy, consistent with
 WMC semantics are inverted relative to `complexity.wmc`. Recorded in §14.1.
 
 **Resolution of a compound entry never carries reason `fixed`.** The reason test
-(§7.1) compares current onset against captured onset, and S5 has no per-axis
+(§7.1) compares current onset against captured onset, and such a channel has no per-axis
 onset to compare — worse, `GodClassOptions::withOverride()` maps an inline
 `@qmx-threshold` onto `minCriteria`, so a policy change alone can stop the rule
 firing. A compound entry that stops firing is therefore resolved with reason
@@ -706,16 +773,17 @@ branches that can never execute. Writing `A` for the allowance:
   still violating → `improved`; no longer violating → `resolved`.
 - **Onset more permissive than captured** (`A` = onset — the team raised the
   threshold above the recorded debt). A violation requires reaching the onset,
-  which is also the allowance. For the common inclusive shapes (S1–S4 fire at
-  `value >= onset`) the boundary value itself both violates and sits inside the
-  allowance, so `matched` is reachable **exactly at the boundary**, and within
-  epsilon around it. `improved` is not reachable, since any observable value is
+  which is also the allowance. For a channel declaring inclusive comparison the
+  boundary value itself both violates and sits inside the allowance, so
+  `matched` is reachable **exactly at the boundary**, and within epsilon around
+  it. For a channel declaring exclusive comparison it is not. `improved` is not reachable, since any observable value is
   at or beyond `A`. Everything above the boundary is `regressed`; everything
   below stops violating and becomes `resolved`.
 
   A prior revision claimed only `regressed` and `resolved` were reachable here.
-  That is true only for a rule comparing exclusively, and fourteen Options
-  classes compare with `>=`.
+  That holds only for channels declaring exclusive comparison; inclusive is the
+  majority, and the registry test asserts each channel's declared comparison
+  against its behaviour rather than the plan asserting a count.
 
 A prior revision carried a `withinWidenedPolicy` attribute for the "growth
 accepted by a widened policy" case. It has been **removed**, but not for the
@@ -761,12 +829,21 @@ Absent from complete discovery → may be `resolved`. Absent because the scope w
 not evaluated (§5.6, first category) → `unobserved`. Aggregate and graph entries
 require complete aggregate or graph coverage.
 
-**Shape S6 resolves only on inventory evidence.** A banded rule stops reporting
-when debt grows past its cutoff, so its silence carries no information. Such an
-entry resolves when the discovered symbol inventory shows its identity gone —
-the class deleted, the cycle's members no longer present — and never because the
-rule went quiet. This is the evidence path §5.1 requires: it does not depend on
-the rule, so the rule's cutoff cannot defeat it.
+**A channel with a cutoff resolves only on pre-cutoff evidence.** A banded
+channel stops reporting when debt grows past its band, so its silence carries no
+information. Resolution needs evidence produced *before* the cutoff is applied.
+For circular dependencies that evidence exists and an earlier revision missed
+it: `AnalysisContext::$cycles` is populated by the detector, while the cutoff
+lives in `CircularDependencyOptions::getSeverity()`, so "this identity is absent
+from the full cycle set" cleanly separates a fixed cycle from one that grew past
+the band.
+
+Symbol inventory cannot do this job, and a revision that used it left the normal
+repair unhandled: a cycle is usually fixed by deleting one dependency edge,
+which leaves every member class in place, so an inventory check would never
+resolve the entry and no other command would touch it. Where a banded channel
+has no pre-cutoff artefact, its entries are reported as requiring manual review
+rather than resolved by inference.
 
 `unobserved` and `orphaned` are distinguished by **why the rule is missing**,
 and the line is drawn at the build, not the configuration:
@@ -774,10 +851,16 @@ and the line is drawn at the build, not the configuration:
 - the rule exists in this build but this run did not apply it — `disabled_rules`,
   `only_rules`, `rules.<name>.enabled: false` — → `unobserved`. Re-enabling the
   rule restores the entry, so it must survive untouched.
-- the rule does not exist in this build at all — removed, renamed, or from a
-  version that no longer ships it — → `orphaned`. No configuration change will
-  ever restore it, so it is the one class of entry `cleanup` may prune, behind
-  an explicit flag.
+- the entry's **channel** is not declared by any rule in this build — removed,
+  renamed, or from a version that no longer ships it — → `orphaned`. No
+  configuration change will ever restore it, so it is the one class of entry
+  `cleanup` may prune, behind an explicit flag.
+
+The test is against **declared channels**, never against rule class names
+(§5.1). Four `architecture.*` diagnostics are emitted under rule names no class
+declares as its own; a class-name test would mark their entries permanently
+`orphaned` while the same run re-emits the findings as `new` — an oscillation
+that repeats every run and never converges.
 
 Both forbid mutation by ordinary commands; they differ in reporting and in
 whether `cleanup --prune-orphaned` may remove them. An earlier revision
@@ -858,9 +941,14 @@ prominently rather than in a summary tail. Recorded in §14.6.
   than the entry's **captured** axes on every axis, and its occurrence count no
   greater. A `new` finding has no captured axes of its own — the comparison is
   old-captured against new-current, and the count is part of it, so a rename
-  taking one occurrence to five is refused rather than re-accepted. Where the
-  match is ambiguous — several candidates satisfy it — `update` re-points
-  nothing and reports the ambiguity. This is the only remedy for a mass rename
+  taking one occurrence to five is refused rather than re-accepted. The occurrence key must match too, or
+  distinct occurrences would be conflated. And re-pointing requires evidence
+  that a move actually happened: the entry's **original symbol must be absent
+  from the discovered inventory**. Without that precondition a genuinely new
+  finding elsewhere, sharing a contract and carrying a smaller magnitude, would
+  be silently absorbed as a rename — which is new debt accepted without anyone
+  deciding to. Where the match is ambiguous — several candidates satisfy it —
+  `update` re-points nothing and reports the ambiguity. This is the only remedy for a mass rename
   (§14.3).
 - **cleanup** — **modifies the existing `BaselineCleanupCommand`**, it is not a
   new command. Today it takes only a baseline path, runs no analysis, and
@@ -879,11 +967,12 @@ prominently rather than in a summary tail. Recorded in §14.6.
   the status, so without this the only escape would be `generate --force`, which
   re-accepts every unrelated debt in the project and contradicts this command
   being the single contract-change path. For such an entry there are no current
-  raw axes to rebase onto, so `rebase-contracts` rewrites the contract reference
-  and **drops the entry's axes**, marking it as carrying no magnitude until the
-  finding reappears. That is a real loss of ratchet precision and is reported as
-  such, but it is bounded, explicit, and confined to the entries named on the
-  command line.
+  raw axes to rebase onto. It is therefore **removed**, not rewritten: §6.2
+  requires every entry to carry axes matching its contract's manifest, so an
+  axis-less entry is a file the tool's own loader would reject. Removal is
+  reported per entry. This loses the captured magnitude, which is the honest
+  outcome — the contract that gave those numbers meaning no longer exists, and
+  the finding will be recaptured with current values if it reappears.
 - `--generate-baseline` on `check` is removed, with no alias.
 
 There is no `baseline:accept`. Accepting more debt is a threshold change in
@@ -1172,11 +1261,14 @@ reference in `ARCHITECTURE.md` (removed by ADR 0014) is corrected.
   inline override moves `minCriteria` and must not widen any axis allowance; a
   **magnitude cutoff**, where a cycle grown past `maxCycleSize` must not resolve
   its entry; the invariant that a regression always implies a current violation.
-- **Rule shapes** — a registry-driven test asserting every rule declares one of
-  S1–S9 and that the mapping is total, so a newly introduced shape fails the
-  build instead of surfacing in review; per-shape assertion of the invariant
-  that a regression implies a current violation, holding for S1–S4 and S8 and
-  explicitly not claimed for S5 and S6; the onset provider queried for a
+- **Channels and traits** — a registry-driven test enumerating every channel a
+  rule can emit, including the four `architecture.*` diagnostic names that no
+  class declares as its own, and asserting each answers every trait dimension;
+  an emitted violation whose channel is undeclared fails the build; the
+  invariant that a regression implies a current violation asserted per trait
+  combination present in the codebase, and explicitly not claimed for
+  conjunction, criteria-count, or cutoff channels; the onset provider queried
+  for a
   symbol-conditioned rule (`LongParameterListRule` VO versus ordinary
   constructor) returning different onsets under one violation code; a computed
   metric configured `warning: 20, error: 10`, asserting the onset is 10.
