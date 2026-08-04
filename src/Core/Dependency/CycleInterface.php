@@ -47,7 +47,13 @@ interface CycleInterface
     public function toString(): string;
 
     /**
-     * Returns short representation with only class names (without namespaces).
+     * Returns a short, human-readable representation of the path.
+     *
+     * Members are rendered without their namespace, except where that would be
+     * ambiguous: members of the cycle sharing a short class name are rendered
+     * with the shortest trailing namespace suffix that tells them apart. The
+     * result is for reading — machine consumers must use
+     * {@see self::toStructuredData()}.
      */
     public function toShortString(): string;
 
@@ -55,6 +61,7 @@ interface CycleInterface
      * Returns a truncated short string showing at most $maxEntries classes.
      *
      * For cycles larger than $maxEntries, shows the first classes plus "... (N more)".
+     * Members are labelled exactly as in {@see self::toShortString()}.
      */
     public function toTruncatedShortString(int $maxEntries = 5): string;
 
@@ -67,6 +74,8 @@ interface CycleInterface
 
     /**
      * Returns the cycle as structured data for JSON consumers.
+     *
+     * Cycle members are fully qualified class names.
      *
      * @return array{cycle: list<string>, length: int, category: string}
      */

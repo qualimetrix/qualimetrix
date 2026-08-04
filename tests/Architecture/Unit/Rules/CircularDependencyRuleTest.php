@@ -339,6 +339,48 @@ final class CircularDependencyRuleTest extends TestCase
     }
 
     #[Test]
+    public function itIdentifiesEveryMemberOfACycleWhoseClassNamesCollide(): void
+    {
+        $classes = ['App\\Billing\\Service', 'App\\Orders\\Service'];
+        $cycles = [
+            new Cycle(
+                $this->paths($classes),
+                $this->paths(['App\\Billing\\Service', 'App\\Orders\\Service', 'App\\Billing\\Service']),
+            ),
+        ];
+
+        $rule = new CircularDependencyRule(new CircularDependencyOptions());
+
+        $context = new AnalysisContext(
+            metrics: new InMemoryMetricRepository(),
+            cycles: $cycles,
+        );
+
+        $violations = $rule->analyze($context);
+
+        self::assertCount(1, $violations);
+
+        // The message used to read "Service → Service → Service".
+        self::assertSame(
+            'Circular dependency (2 classes): Billing\\Service → Orders\\Service → Billing\\Service',
+            $violations[0]->message,
+        );
+
+        $recommendation = $violations[0]->recommendation;
+        self::assertNotNull($recommendation);
+
+        $jsonStart = strpos($recommendation, 'Cycle data: ');
+        self::assertIsInt($jsonStart);
+        $decoded = json_decode(substr($recommendation, $jsonStart + \strlen('Cycle data: ')), true);
+
+        self::assertIsArray($decoded);
+        self::assertSame(
+            ['App\\Billing\\Service', 'App\\Orders\\Service', 'App\\Billing\\Service'],
+            $decoded['cycle'],
+        );
+    }
+
+    #[Test]
     public function itLabelsCategoryAsLargeForBigCycles(): void
     {
         // 30 classes → large category (>20)

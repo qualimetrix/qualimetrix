@@ -69,6 +69,115 @@ final class CycleTest extends TestCase
     }
 
     #[Test]
+    public function itDisambiguatesMembersSharingAClassName(): void
+    {
+        $cycle = new Cycle(
+            classes: $this->paths(['App\\Billing\\Service', 'App\\Orders\\Service']),
+            path: $this->paths(['App\\Billing\\Service', 'App\\Orders\\Service', 'App\\Billing\\Service']),
+        );
+
+        self::assertSame(
+            'Billing\\Service → Orders\\Service → Billing\\Service',
+            $cycle->toShortString(),
+        );
+    }
+
+    #[Test]
+    public function itKeepsUniqueShortNamesBareWhileDisambiguatingTheRest(): void
+    {
+        $cycle = new Cycle(
+            classes: $this->paths(['App\\Billing\\Service', 'App\\Orders\\Service', 'App\\Reporting\\Exporter']),
+            path: $this->paths([
+                'App\\Billing\\Service',
+                'App\\Reporting\\Exporter',
+                'App\\Orders\\Service',
+                'App\\Billing\\Service',
+            ]),
+        );
+
+        self::assertSame(
+            'Billing\\Service → Exporter → Orders\\Service → Billing\\Service',
+            $cycle->toShortString(),
+        );
+    }
+
+    #[Test]
+    public function itGrowsLabelsUntilTheySeparateWhenTheFirstSuffixStillCollides(): void
+    {
+        $cycle = new Cycle(
+            classes: $this->paths(['App\\Api\\Http\\Client', 'App\\Cdn\\Http\\Client']),
+            path: $this->paths(['App\\Api\\Http\\Client', 'App\\Cdn\\Http\\Client', 'App\\Api\\Http\\Client']),
+        );
+
+        // "Client" collides, and so does "Http\Client" — one more segment separates them.
+        self::assertSame(
+            'Api\\Http\\Client → Cdn\\Http\\Client → Api\\Http\\Client',
+            $cycle->toShortString(),
+        );
+    }
+
+    #[Test]
+    public function itAnchorsAMemberThatHasRunOutOfSegments(): void
+    {
+        $cycle = new Cycle(
+            classes: $this->paths(['App\\Service', 'Service']),
+            path: $this->paths(['App\\Service', 'Service', 'App\\Service']),
+        );
+
+        // The global class cannot grow, and leaving it bare would read as a
+        // short name for the other member.
+        self::assertSame(
+            'App\\Service → \\Service → App\\Service',
+            $cycle->toShortString(),
+        );
+    }
+
+    #[Test]
+    public function itDisambiguatesAgainstAMemberTheDisplayedPathSkips(): void
+    {
+        // getPath() is the shortest loop through the representative, so a member
+        // of the cycle can be missing from it — and still make a short name
+        // ambiguous for whoever reads the message.
+        $cycle = new Cycle(
+            classes: $this->paths(['App\\Billing\\Service', 'App\\Orders\\Service', 'App\\Reporting\\Exporter']),
+            path: $this->paths(['App\\Billing\\Service', 'App\\Reporting\\Exporter', 'App\\Billing\\Service']),
+        );
+
+        self::assertSame(
+            'Billing\\Service → Exporter → Billing\\Service',
+            $cycle->toShortString(),
+        );
+    }
+
+    #[Test]
+    public function itLabelsTruncatedPathConsistentlyWithTheFullPath(): void
+    {
+        $classes = ['App\\Billing\\Service', 'App\\Orders\\Service'];
+        $path = ['App\\Billing\\Service', 'App\\Orders\\Service'];
+        for ($i = 0; $i < 4; $i++) {
+            $classes[] = 'App\\Filler\\C' . $i;
+            $path[] = 'App\\Filler\\C' . $i;
+        }
+        $path[] = 'App\\Billing\\Service';
+
+        $cycle = new Cycle(
+            classes: $this->paths($classes),
+            path: $this->paths($path),
+        );
+
+        // Disambiguation is computed over the whole cycle, so a member shown in
+        // the truncated rendering carries the same label as in the full one.
+        self::assertSame(
+            'Billing\\Service → Orders\\Service → C0 → ... (3 more)',
+            $cycle->toTruncatedShortString(3),
+        );
+        self::assertStringStartsWith(
+            'Billing\\Service → Orders\\Service → C0',
+            $cycle->toShortString(),
+        );
+    }
+
+    #[Test]
     public function itRepresentsDirectCycle(): void
     {
         $cycle = new Cycle(
@@ -225,9 +334,25 @@ final class CycleTest extends TestCase
 
         $data = $cycle->toStructuredData();
 
-        self::assertSame(['A', 'B', 'C', 'A'], $data['cycle']);
+        self::assertSame(['App\\A', 'App\\B', 'App\\C', 'App\\A'], $data['cycle']);
         self::assertSame(3, $data['length']);
         self::assertSame('small', $data['category']);
+    }
+
+    #[Test]
+    public function itKeepsStructuredDataUnambiguousWhenMembersShareAClassName(): void
+    {
+        $cycle = new Cycle(
+            classes: $this->paths(['App\\Billing\\Service', 'App\\Orders\\Service']),
+            path: $this->paths(['App\\Billing\\Service', 'App\\Orders\\Service', 'App\\Billing\\Service']),
+        );
+
+        // Structured data is for processing, so members are never shortened —
+        // not even to the disambiguated label used for display.
+        self::assertSame(
+            ['App\\Billing\\Service', 'App\\Orders\\Service', 'App\\Billing\\Service'],
+            $cycle->toStructuredData()['cycle'],
+        );
     }
 
     #[Test]
