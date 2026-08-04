@@ -77,8 +77,31 @@ Each domain has its own `README.md` with detailed structure, classes, and contra
 
 ### Decision framework for new features
 
-When introducing a substantial new feature, decide between vertical slice and
-layered organization using ADR 0010 / ADR 0012 criteria:
+**The underlying rule is subject cohesion ([ADR 0016](docs/adr/0016-subject-cohesion.md)):
+a directory is a subject, not a role.** Its name must answer "what is this
+about?" without naming a technical role, base class, or interface. Three tests:
+
+1. **Naming** — if "this directory is about ___" can only be completed with "the
+   classes implementing X", it is a role bucket.
+2. **Co-change** — a change to one subject should touch one directory plus its
+   adapters. Checkable against git history.
+3. **Duplication** — if the tree were fully decomposed by subject, which
+   directories would have to be *copied into every subject*? Those are the
+   legitimate cross-cutting ones (`Core/`, `Reporting/`, `Infrastructure/`,
+   `Analysis/`). Anything that would instead move wholesale into one subject is
+   a role bucket.
+
+Two corollaries that settle recurring arguments:
+
+- A contract shared by many subjects goes to `Core/` — justified by subject
+  ("cross-cutting primitive"), not by constraint ("nothing else may be depended
+  upon"). When constraint and subject disagree, the layout is wrong, not the
+  constraint.
+- "This feature has many adapters" is **not** an argument for a vertical slice:
+  adapters live in `Infrastructure/` either way.
+
+The table below is the fast path for rule-bearing features (ADR 0010 / ADR
+0012). Where it disagrees with the tests above, the tests win:
 
 | Indicator                                                                                                                                                           | → Layout       |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
@@ -135,6 +158,34 @@ the command into the Architecture slice would force the slice to depend on
 - **Technical Debt**: Remediation time estimation, debt summary in reports
 - **Analysis Presets**: Built-in presets (`--preset=strict|legacy|ci`), composable, custom presets via YAML files
 - **Git Hooks**: Automatic pre-commit checks
+
+---
+
+## Backward Compatibility Policy
+
+**Architecture and correctness outweigh backward compatibility.** The project has
+no meaningful external user base yet; consumer projects are updated by hand.
+Therefore:
+
+- Do **not** design around preserving an existing public contract when a cleaner
+  contract is available. Breaking `RuleInterface`, the config schema, the
+  baseline file format, or the CLI surface is an acceptable cost, not a last
+  resort.
+- Do **not** add compatibility shims, deprecation layers, or CLI aliases "just in
+  case". Fewer surfaces is the goal — a removed option beats an alias.
+- Do **not** cite "this would break extension authors" as an argument against a
+  design. There are none. Cite real architectural cost instead.
+
+**The one hard requirement is history.** Every breaking change must be traceable
+to *what* changed and *why*, so consumer projects can be updated mechanically:
+
+- `CHANGELOG.md` gets a `Breaking` entry naming the old and the new surface.
+- Non-obvious rationale goes into an ADR under `docs/adr/`.
+- Migration steps are written from the consumer's perspective, not the
+  implementer's.
+
+This policy governs *outward* contracts. It is not a licence to break internal
+invariants without tests, nor to skip review.
 
 ---
 
