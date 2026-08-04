@@ -1,11 +1,11 @@
 # Ratchet Baseline v7 Plan
 
-**Status:** Proposed — revision 7.2 (supersedes `ratchet-baseline-v6.md`)
+**Status:** Proposed — revision 7.3 (supersedes `ratchet-baseline-v6.md`)
 **Date:** 2026-08-04
 **Target release:** TBD
-**Review status:** Rounds 1 and 2 complete. All CRITICAL and HIGH findings from
-both are folded in. A short third pass over §5.1, §7.1, and §8 is recommended
-before P0 freeze, because those sections changed substantially in 7.2.
+**Review status:** Rounds 1 and 2 complete; round 3 is narrow (§5.1, §7.1, §8)
+and its external pass is outstanding. All CRITICAL and HIGH findings so far are
+folded in. P0 is not frozen.
 
 ## How To Execute This Plan From A Clean Session
 
@@ -139,6 +139,19 @@ present, so the fallback is dead code — the defect is the feature-detection
 pattern, fixed by pinning the algorithm in §6.1, and its severity is low), and
 that resolution should be provable without coverage.
 
+### 0.4 What round 3 changed (7.3)
+
+Round 3 was deliberately narrow — only §5.1, §7.1, and §8 — and aimed at this
+plan's recurring defect: a state that reads as correct but cannot occur. The
+findings below were derived and verified during the round; the external
+reviewer's pass over the same sections is still outstanding.
+
+| Finding                                                                                                                                                                                                                                                                                                                                                                                                   | Correction                                                                                                                                                                                              |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `withinWidenedPolicy` was unreachable. It required an observation for a symbol that does *not* violate current policy, and §5.2 keeps no such observation. Whenever the allowance is widened past the captured value the finding simply stops violating, so "growth accepted by a widened policy" cannot be reported at all.                                                                              | §7.1: attribute removed; the reachability of each status is now stated explicitly as a function of where the onset sits relative to the captured value; §14.4 records the invisibility as a limitation. |
+| One rule can carry many contracts. `ComputedMetricRule` declares a single rule name but sets `violationCode` to the user-defined metric's name, and each `ComputedMetricDefinition` has its own thresholds and its own `inverted` flag. Onset and direction are properties of the (rule, violation code) pair.                                                                                            | §5.1: stated explicitly, matching the granularity §5.5 already requires for coverage.                                                                                                                   |
+| The contract registry was to be populated "from the rule set at boot". Computed-metric contracts are not static rule metadata — they arrive from user YAML via `ComputedMetricDefinitionHolder`, so a registry built by reflection over rule classes would be blind to every user-defined metric, and a forgotten version bump on one would produce the silent `resolved` the registry exists to prevent. | §5.7: population happens after the configuration pipeline runs.                                                                                                                                         |
+
 ## 1. Executive Summary
 
 Baseline v5 is an identity-only suppression snapshot: once a violation is
@@ -249,6 +262,15 @@ ratchet would loosen precisely as the code got worse.
 
 The onset boundary reflects configuration, presets, and per-level options
 applicable to that symbol; it does not depend on the measured value.
+
+**A rule may carry many onsets, one per violation code.**
+`ComputedMetricRule` declares a single rule name but sets `violationCode` to the
+user-defined metric's name, and each `ComputedMetricDefinition` carries its own
+`warningThreshold`, `errorThreshold`, and `inverted` flag. Onset and
+worse-direction are therefore properties of the **(rule, violation code)** pair,
+never of the rule alone — which is the same granularity §5.5 requires for
+coverage, and for the same reason. A definition with both thresholds null emits
+no violation at all and so has no onset; it can never appear in a baseline.
 
 Rules with no numeric boundary — fixed-severity rules such as layer violations,
 and binary detectors such as hardcoded credentials — have no onset boundary.
@@ -398,11 +420,19 @@ coverage gate; P4 owns the pipeline order.
 
 ### 5.7 Comparison uses the current rule contract
 
-An independent contract registry is populated from the rule set at boot,
-carrying each rule's current contract id, version, kind, axis names, directions,
-and epsilon. It is populated from the rules themselves and does **not** depend
-on a violation being emitted; without it, a forgotten version bump on a
-now-passing symbol would read as `resolved` instead of `incompatible`.
+An independent contract registry carries, for each **(rule, violation code)**
+pair, its current contract id, version, kind, axis names, directions, and
+epsilon. It is populated from the rules and their configuration, and does
+**not** depend on a violation being emitted; without it, a forgotten version
+bump on a now-passing symbol would read as `resolved` instead of
+`incompatible`.
+
+"At boot" is too early to state as the population point: computed-metric
+contracts are not static rule metadata. Their names, formulas, levels,
+thresholds, and `inverted` flags come from user YAML and reach the rule through
+`ComputedMetricDefinitionHolder`, so the registry must be populated **after the
+configuration pipeline has run**, and a registry built from static rule
+reflection alone would be blind to every user-defined metric.
 
 The file's contract manifest (§6.1) is compared against this registry. A
 mismatch produces `incompatible` and never falls back to suppression.
@@ -556,12 +586,8 @@ visible; the mode is never selected implicitly at runtime.
 | `orphaned`     | The entry's rule does not exist in this build         |
 | `incompatible` | Contracts cannot be compared                          |
 
-Two attributes qualify a status rather than multiplying the list:
+One attribute qualifies a status rather than multiplying the list:
 
-- `withinWidenedPolicy` — set on `matched` when the current value is worse than
-  captured but still inside an allowance that the current policy widened. This
-  is the "accepted growth" case: it is not a regression, and calling it plain
-  `matched` would hide that debt grew by permission.
 - `resolutionReason` — `fixed` or `policy`, decided by **comparing boundaries,
   not values**. When a finding resolves there is no current observation (no
   violation, so nothing was emitted), so the current value is unavailable and
@@ -582,6 +608,28 @@ Two attributes qualify a status rather than multiplying the list:
   its captured value crossed its captured onset — so `fixed` was unreachable and
   `cleanup` could never remove anything, including genuinely fixed code. Noted
   here because it is the kind of error that reads as correct.
+
+**Which statuses are reachable depends on where the onset sits relative to the
+captured value**, and an implementer who does not work this out will write
+branches that can never execute. Writing `A` for the allowance:
+
+- **Onset no more permissive than captured** (`A` = captured). A violation
+  exists whenever the current value crosses the onset, so the full range is
+  reachable: worse than captured → `regressed`; equal → `matched`; better but
+  still violating → `improved`; no longer violating → `resolved`.
+- **Onset more permissive than captured** (`A` = onset — the team raised the
+  threshold above the recorded debt). A violation now requires crossing the
+  onset, which is also the allowance, so *every observable* value exceeds `A`.
+  Only `regressed` and `resolved` are reachable here; `matched` and `improved`
+  are not.
+
+A prior revision carried a `withinWidenedPolicy` attribute for the "growth
+accepted by a widened policy" case. It has been **removed as unreachable**:
+that case requires an observation for a symbol that does not violate current
+policy, and no such observation exists (§5.2). Growth inside a widened policy is
+invisible by construction — which is precisely what raising the threshold to 50
+means, and §14.4 records it as a limitation rather than pretending the tool
+reports it.
 
 `regressed` findings are reported as violations of their rule's severity and
 carry a stable `baseline-regression` reason code in machine output.
@@ -759,7 +807,7 @@ schema errors keep the existing configuration error class.
 
 - **Thresholds** — changing the onset boundary changes the allowance by design.
   Tightening may surface findings as `new`; relaxing widens allowances, marks
-  affected entries `withinWidenedPolicy` or resolves them with reason `policy`,
+  affected entries as resolved with reason `policy`,
   and is visible in the `qmx.yaml` diff.
 - **Git scopes** — presentation only (§7.4).
 - **Contract versioning** — bumped when an observation's *meaning* changes
@@ -993,8 +1041,10 @@ reference in `ARCHITECTURE.md` (removed by ADR 0014) is corrected.
   aggregate and graph scope; the three categories of §5.6 producing their
   documented statuses; deleted versus unobserved versus orphaned.
 - **Comparison** — every status and attribute for every kind, including
-  `withinWidenedPolicy` and both `resolutionReason` values, with `fixed`
-  asserted **reachable** on an ordinary improved scalar; manifest mismatch at an
+  both `resolutionReason` values, with `fixed` asserted **reachable** on an
+  ordinary improved scalar; the reachability split of §7.1 asserted directly —
+  `matched` and `improved` reachable when the onset is no more permissive than
+  captured, and unreachable when it is; manifest mismatch at an
   equal declared version; a forgotten version bump on a rule that emits **no**
   violation at all, asserted to yield `incompatible` rather than `resolved` —
   this is the sole scenario justifying the contract registry (§5.7), and
@@ -1043,8 +1093,11 @@ behaviour, so that it cannot be silently "fixed" into a different behaviour.
    with a change still appears as resolved plus new.
 4. **Relaxing a threshold widens every allowance under it** in one move. This is
    the accepted cost of making policy the source of truth; it is visible in the
-   `qmx.yaml` diff, marked `withinWidenedPolicy`, and `cleanup` will not delete
-   the affected captured values.
+   `qmx.yaml` diff, and `cleanup` will not delete the affected captured values,
+   which are retained as `resolved`/`policy` so that re-tightening restores
+   them. Growth *inside* the widened range is not reported at all: the finding
+   stops violating, so nothing is measured. That is what widening the policy
+   means, and an attribute claiming to report it was removed as unreachable.
 5. Ratchet is not historical trend analysis.
 6. **Unmatched v5 entries are lost, not migrated** (§8). A v5 entry carries only
    a rule name and an opaque hash, so one with no current finding to match
