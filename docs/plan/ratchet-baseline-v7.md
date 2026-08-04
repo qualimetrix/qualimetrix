@@ -1,10 +1,11 @@
 # Ratchet Baseline v7 Plan
 
-**Status:** Proposed — revision 7.1 (supersedes `ratchet-baseline-v6.md`)
+**Status:** Proposed — revision 7.2 (supersedes `ratchet-baseline-v6.md`)
 **Date:** 2026-08-04
 **Target release:** TBD
-**Review status:** Round 1 complete (three independent reviewers). All CRITICAL
-and HIGH findings folded in below; round 2 required before P0 freeze.
+**Review status:** Rounds 1 and 2 complete. All CRITICAL and HIGH findings from
+both are folded in. A short third pass over §5.1, §7.1, and §8 is recommended
+before P0 freeze, because those sections changed substantially in 7.2.
 
 ## How To Execute This Plan From A Clean Session
 
@@ -41,13 +42,17 @@ commands (§8), exit behaviour (§9.3), layered layout (§16). Open: nothing tha
 blocks P1a. The one judgement call deliberately left to implementation is the
 naming of the migration disposition-plan schema fields, which P3 specifies.
 
-**Review state.** Round 1 is complete — three independent reviewers examined
-revision 7.0 against the code; every CRITICAL and HIGH finding is folded into
-7.1 and summarised in §0.2 with the correction it forced. **Round 2 has not run.
-P0 is not frozen and implementation must not start until it does.** Round 2
-should concentrate on what round 1 did not reach: the v5 migration path in
-depth, `mode: suppress`, and any defect introduced by the 7.1 corrections
-themselves.
+**Review state.** Two rounds are complete and both are summarised in §0.2 and
+§0.3 with the correction each finding forced. Round 1 examined 7.0 with three
+reviewers; round 2 examined 7.1 with two (the third was unavailable, and its
+slice — migration, suppress mode, status-model completeness — was covered by the
+other two).
+
+**P0 is not frozen.** §5.1, §7.1, and §8 changed substantially in 7.2, and this
+plan's own history shows that each revision has introduced defects of its own
+while fixing the previous round's. A focused third pass over those three
+sections is the last step before freezing; it does not need to re-cover
+ownership, reporting, or the test plan, which round 2 settled.
 
 **This document is temporary.** Once the feature has landed, delete
 `docs/plan/` — both this revision and the superseded `ratchet-baseline-v6.md`.
@@ -55,11 +60,14 @@ The rationale that must outlive it belongs in the ADR produced by P6; anything
 still only in this file when P6 is written has not been recorded properly yet.
 
 **A note on this plan's own history.** Revision 7.0 fixed v6's architectural
-problems and introduced three new blockers of its own, all caught by round 1.
-That is the expected failure mode here: the design is a chain of consequences
-from one premise (§5.1), and it is easy to take one step further than the
-premise licenses. When changing anything in §5, re-derive the consequences
-rather than patching locally.
+problems and introduced three blockers of its own; 7.1 fixed those and left a
+tautological `resolutionReason` that made `cleanup` a no-op for the feature's
+main use case. That is the expected failure mode here: the design is a chain of
+consequences from one premise (§5.1), and it is easy to take one step further
+than the premise licenses. When changing anything in §5, re-derive the
+consequences rather than patching locally — and prefer a test that asserts a
+state is *reachable* over one that asserts it behaves correctly, since the
+errors of this kind have all been unreachable states that read as correct.
 
 ## 0. Revision History And Governing Decision
 
@@ -106,6 +114,30 @@ dynamic compound rule (its criteria are fixed), so §5.9 applies to `GodClassRul
 alone; and there is no changed-files-only *analysis* mode — `--report=git:*` is
 a presentation filter, so 7.0's partial-scope branch described a mode that does
 not exist.
+
+### 0.3 What round 2 changed (7.2)
+
+Two reviewers examined 7.1 against the code. Every finding below was verified
+directly before being accepted.
+
+| Finding                                                                                                                                                                                                                                                                                                                                              | Correction                                                                                                                                                      |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `resolutionReason: fixed` compared the *captured* value against the *captured* onset — tautologically false, since an entry exists only because that comparison held. `fixed` was unreachable and `cleanup` could never remove anything, including genuinely fixed code.                                                                             | §7.1: the test compares **boundaries**, not values — the current onset against the captured one. Decidable without a current observation.                       |
+| `CircularDependencyOptions::getSeverity()` returns `null` above `maxCycleSize`, so a cycle growing past the cutoff stops being reported. Debt growing made the finding vanish, resolving the entry *because* it got worse — a counterexample to §5.1's invariant from a rule shape nobody had considered: an upper cutoff rather than a lower onset. | §5.1: magnitude cutoffs are classified as configuration-silencing; such entries never resolve on absence alone. §14.7.                                          |
+| `GodClassOptions::withOverride()` maps an inline `@qmx-threshold` onto `minCriteria`, not onto an axis, so "the onset reflects inline overrides" was undefined for compound rules.                                                                                                                                                                   | §5.1: compound rules have no per-axis onset; their axes carry `null` and an override changes only when the rule fires.                                          |
+| §5.6's mechanism list was missing six suppression paths, including `@qmx-ignore-next-line`, `rules.<name>.enabled: false`, and rule applicability filters.                                                                                                                                                                                           | §5.6: list extended and declared **normative** — an unclassifiable mechanism is a finding against this plan, and P2 must enumerate exhaustively.                |
+| `disabled_rules` mapped to `unobserved` in §5.6 and to `orphaned` in §7.1/§7.4. Two packages would have implemented two behaviours and each passed its own tests.                                                                                                                                                                                    | §7.4: the line is drawn at the build — disabled by config is `unobserved`, absent from the build is `orphaned`.                                                 |
+| The `suppressed` outcome had no status and no counter, so per-status counts could not sum to the number of entries.                                                                                                                                                                                                                                  | §5.6, §9.1: `suppressed` is a bucket, with a summing invariant asserted in §13.                                                                                 |
+| An unmatched v5 entry has no v7 representation — a v5 record is a rule name plus an opaque hash, and the hash algorithm is not even stored. §8 implied a disposition existed.                                                                                                                                                                        | §8: the only dispositions are drop or abort, chosen explicitly; §14.6.                                                                                          |
+| `src/Configuration/**` was unowned while §9.3 promised a configuration key; `AbstractRule.php` had two owners; the worker serialisation path, which the new collector output shape crosses, was unowned; several tests certain to break belonged to nobody.                                                                                          | §11: ownership corrected, P4 split into P4a/P4b/P4c, each package now owns the tests its changes break.                                                         |
+| P1b and P1c were declared parallel, but the occurrence-key carrier they exchange was undefined — both sides would pass their own DoD while the seam was broken, and the failure would surface as the already-accepted limitation §14.2.                                                                                                              | §11: the carrier is defined in P1a; P1c's DoD asserts a rule reading a collector-produced key, plus identity equality between `--workers=0` and a parallel run. |
+| §10 described a metric cache that does not exist; only an AST cache does. A DoD was set against it.                                                                                                                                                                                                                                                  | §10: corrected to the actual cache, with the missing version component noted as a separate, non-blocking improvement.                                           |
+
+Two reviewer claims were **rejected** after verification: that `ViolationHasher`'s
+`xxh3`/`sha256` fallback is a portability risk (on PHP `^8.4` `xxh3` is always
+present, so the fallback is dead code — the defect is the feature-detection
+pattern, fixed by pinning the algorithm in §6.1, and its severity is low), and
+that resolution should be provable without coverage.
 
 ## 1. Executive Summary
 
@@ -215,19 +247,41 @@ is explicitly forbidden (§2.4): with `warning=10, error=20` and a captured 15, 
 tier-derived boundary would make a growth to 20 read as `matched`, and the
 ratchet would loosen precisely as the code got worse.
 
-The onset boundary reflects configuration, presets, per-level options, and
-inline `@qmx-threshold` overrides applicable to that symbol; it does not depend
-on the measured value.
+The onset boundary reflects configuration, presets, and per-level options
+applicable to that symbol; it does not depend on the measured value.
 
 Rules with no numeric boundary — fixed-severity rules such as layer violations,
 and binary detectors such as hardcoded credentials — have no onset boundary.
 Their kinds are Presence or Graph and the allowance degenerates to identity
 presence, which is the v6 behaviour.
 
+**Compound rules have no per-axis onset.** `GodClassOptions::withOverride()`
+maps an inline `@qmx-threshold` onto `minCriteria` — the arity of the compound
+predicate — not onto any axis boundary, so "the onset reflects inline
+overrides" is undefined for them. For a compound rule the onset is the predicate
+itself: its axes carry `onsetBoundary: null`, their allowance is the captured
+value alone, and an inline override changes when the rule fires but never
+widens an axis allowance. This is stricter than the scalar case and
+deliberately so — a compound rule's axes are already only observable while it
+fires (§5.9).
+
+**Rules with an upper cutoff break the invariant and are handled separately.**
+`CircularDependencyOptions::getSeverity()` returns `null` when the cycle exceeds
+`maxCycleSize`, and the rule then skips the cycle entirely. Such a rule is
+non-monotonic: debt growing past the cutoff makes the finding *disappear*, which
+under a naive reading would resolve the entry precisely because it got worse.
+A magnitude cutoff is therefore classified as configuration-silencing (§5.6,
+second category), not as absence: an entry whose rule declares a cutoff is never
+`resolved` on absence alone — it requires positive evidence that the symbol or
+identity is gone. Rules declaring a cutoff must expose it so the comparator can
+apply this rule rather than inferring it.
+
 Because `allowance` is never stricter than the onset boundary, **a ratchet
-regression is always also a current violation.** This invariant is what makes
-observations-on-violations sufficient; §13 requires it to be tested directly,
-including the warning→error transition.
+regression is always also a current violation** — for every rule shape except
+the cutoff case above, which is excluded from resolution rather than from
+comparison. This invariant is what makes observations-on-violations sufficient;
+§13 requires it to be tested directly, including the warning→error transition
+and the cutoff case.
 
 ### 5.2 Observations accompany violations
 
@@ -315,11 +369,21 @@ diagnostic), and indexing by rule name alone loses that granularity.
 7.0's two-way split contradicted the implementation (§2.5). The corrected
 taxonomy:
 
-| Category                       | Mechanisms                                                                                                               | Comparison             | Report                  | May mutate entry |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ---------------------- | ----------------------- | ---------------- |
-| **Not evaluated**              | discovery `exclude`, `@generated` stripping, `disabled_rules`, `only_rules`, parse failure, worker failure, interruption | impossible             | `unobserved` diagnostic | no               |
-| **Area silenced by config**    | `exclude_paths`, `exclude_namespaces`, per-rule exclusions                                                               | possible — data exists | suppressed              | no               |
-| **Finding silenced by author** | `@qmx-ignore`, `@qmx-ignore-file`                                                                                        | possible               | suppressed              | no               |
+| Category                       | Mechanisms                                                                                                                                                                                                                                                                    | Comparison             | Report       | May mutate entry |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------------ | ---------------- |
+| **Not evaluated**              | discovery `exclude`, `@generated` stripping, `disabled_rules`, `only_rules`, `rules.<name>.enabled: false`, rule applicability filters (`GodClassRule`'s `minMethods`/`excludeReadonly`, LCOM and Maintainability preconditions), parse failure, worker failure, interruption | impossible             | `unobserved` | no               |
+| **Area silenced by config**    | `exclude_paths`, `exclude_namespaces`, per-rule exclusions, architecture `exclude:` blocks, occurrence whitelist filters, magnitude cutoffs such as `maxCycleSize` (§5.1)                                                                                                     | possible — data exists | `suppressed` | no               |
+| **Finding silenced by author** | `@qmx-ignore`, `@qmx-ignore-file`, `@qmx-ignore-next-line`                                                                                                                                                                                                                    | possible               | `suppressed` | no               |
+
+This list of mechanisms is **normative, not illustrative**. P2 must enumerate
+every suppression and skip path in the codebase and assign each to a category;
+a mechanism fitting none of the three is a finding against this plan, not a
+judgement call for the implementer. Round 2 found six missing from the first
+draft, so the enumeration should be treated as the harder half of that package.
+
+`suppressed` is a reported outcome and therefore a bucket in the summary line
+(§9.1), not a silent state — otherwise the per-status counts cannot sum to the
+number of baseline entries.
 
 The second category is the correction: those symbols *were* measured, so
 claiming `unobserved` would be false. They are nonetheless never mutated —
@@ -489,7 +553,7 @@ visible; the mode is never selected implicitly at runtime.
 | `regressed`    | At least one axis or the count exceeded its allowance |
 | `resolved`     | No current violation, under proven coverage           |
 | `unobserved`   | Coverage cannot prove the finding was evaluated       |
-| `orphaned`     | The entry's rule is unknown or disabled               |
+| `orphaned`     | The entry's rule does not exist in this build         |
 | `incompatible` | Contracts cannot be compared                          |
 
 Two attributes qualify a status rather than multiplying the list:
@@ -498,12 +562,26 @@ Two attributes qualify a status rather than multiplying the list:
   captured but still inside an allowance that the current policy widened. This
   is the "accepted growth" case: it is not a regression, and calling it plain
   `matched` would hide that debt grew by permission.
-- `resolutionReason` — `fixed` when the captured value would no longer violate
-  under its **captured** onset boundary, `policy` when it still would and only
-  the boundary moved. `cleanup` removes `fixed` entries only; `policy` entries
-  are reported and retained, so that re-tightening the threshold restores the
-  original captured debt rather than re-admitting it as `new` at today's worse
-  values.
+- `resolutionReason` — `fixed` or `policy`, decided by **comparing boundaries,
+  not values**. When a finding resolves there is no current observation (no
+  violation, so nothing was emitted), so the current value is unavailable and
+  cannot be part of the test. What is available is the captured onset stored in
+  the entry and the onset in force now:
+  - current onset **not more permissive** than captured → the absence of a
+    violation by itself proves the measurement improved past the same line →
+    `fixed`;
+  - current onset **more permissive** than captured → absence proves nothing
+    about the code, only that the line moved → `policy`.
+
+  `cleanup` removes `fixed` entries only; `policy` entries are reported and
+  retained, so re-tightening the threshold restores the original captured debt
+  rather than re-admitting it as `new` at today's worse values.
+
+  An earlier revision defined `fixed` by comparing the *captured* value against
+  the *captured* onset. That test is tautological — an entry exists only because
+  its captured value crossed its captured onset — so `fixed` was unreachable and
+  `cleanup` could never remove anything, including genuinely fixed code. Noted
+  here because it is the kind of error that reads as correct.
 
 `regressed` findings are reported as violations of their rule's severity and
 carry a stable `baseline-regression` reason code in machine output.
@@ -528,9 +606,24 @@ carry a stable `baseline-regression` reason code in machine output.
 ### 7.4 Missing symbols and scope
 
 Absent from complete discovery → may be `resolved`. Absent because the scope was
-not evaluated (§5.6, first category) → `unobserved`. Absent because its rule is
-gone or disabled → `orphaned`. Aggregate and graph entries require complete
-aggregate or graph coverage.
+not evaluated (§5.6, first category) → `unobserved`. Aggregate and graph entries
+require complete aggregate or graph coverage.
+
+`unobserved` and `orphaned` are distinguished by **why the rule is missing**,
+and the line is drawn at the build, not the configuration:
+
+- the rule exists in this build but this run did not apply it — `disabled_rules`,
+  `only_rules`, `rules.<name>.enabled: false` — → `unobserved`. Re-enabling the
+  rule restores the entry, so it must survive untouched.
+- the rule does not exist in this build at all — removed, renamed, or from a
+  version that no longer ships it — → `orphaned`. No configuration change will
+  ever restore it, so it is the one class of entry `cleanup` may prune, behind
+  an explicit flag.
+
+Both forbid mutation by ordinary commands; they differ in reporting and in
+whether `cleanup --prune-orphaned` may remove them. An earlier revision
+classified `disabled_rules` as both, which would have let two packages
+implement two different behaviours and pass their own tests independently.
 
 Because analysis is always full (§2.6), `--report=git:*` narrows *presentation*
 only. A regression outside the reported scope still counts toward the exit code
@@ -572,6 +665,19 @@ analysis-run service; the orchestration must not be copied out of
   changed. Multiplicity is never invented: a v5 hash matching several
   indistinguishable occurrences captures `1`, and the rest surface as
   regressions. Unmatched current violations are never added.
+
+**An unmatched v5 entry cannot be carried into v7 at all**, and the plan must
+say so rather than implying a disposition exists. A v5 entry is a rule name plus
+an opaque 16-character hash — no symbol, no axes, no contract, no kind, and not
+even a record of which algorithm produced the hash, since `ViolationHasher`
+picks `xxh3` or `sha256` at runtime. v7 identity is structural, so an entry with
+no current finding to match against has nothing from which to reconstruct one.
+The only honest dispositions are therefore **drop** or **abort the migration**,
+both chosen explicitly by the user in the plan file; there is no "carry
+forward". The disposition plan must present unmatched entries with whatever
+context is available (rule name, hash, and any near-miss candidates) so the
+choice is informed, and `migrate-apply` must report the dropped count
+prominently rather than in a summary tail. Recorded in §14.6.
 - **update** — monotonic: tightens allowances, reduces counts, never adds an
   identity, never increases accepted debt, never changes contract or kind. It
   additionally performs **debt-neutral identity re-pointing**: when a
@@ -602,10 +708,19 @@ There is no `baseline:accept`. Accepting more debt is a threshold change in
 Output is read by humans and by agents, so the signal must survive 500 entries.
 
 1. A **summary line first**: `regressed N / new N / matched N / improved N /
-   resolved N / unobserved N / orphaned N / incompatible N`.
-2. **Expanded by name**: `regressed` and `new` only.
+   suppressed N / resolved N / unobserved N / orphaned N / incompatible N`. The
+   counts must satisfy a checkable invariant — every baseline entry falls into
+   exactly one bucket, and `new` accounts for the rest of the current findings.
+   §13 requires that invariant to be asserted, because a bucket introduced
+   without a counter is exactly how the first draft lost `suppressed`.
+2. **Expanded by name**: `regressed` and `new` only. `regressed` prints as its
+   own first block and is exempt from `TextFormatter`'s existing detail limit —
+   otherwise a summary can honestly report ten regressions whose lines were all
+   truncated away behind hundreds of `new` findings, leaving an agent with a
+   count and no address.
 3. **Collapsed to one line each**: every other status, with `--explain=<status>`
-   to expand one on demand.
+   to expand one on demand. A `regressed` finding is printed once, in the
+   ratchet block, not additionally in the ordinary violation list.
 
 A regression line carries rule and symbol, captured and current value or count,
 delta and direction, the applicable allowance, whether the allowance was widened
@@ -655,39 +770,87 @@ schema errors keep the existing configuration error class.
 - **Computed metrics** — need a deterministic contract id derived from the
   normalised formula, level, axis semantics, and observation version. Display
   rounding is never used for comparison.
-- **Metric cache** — P1 changes collector output shape (occurrence
-  discriminators). The cache key must invalidate accordingly; a warm cache from
-  a previous version must not serve entries without occurrence keys.
+- **AST cache** — there is no metric cache: the only cache is `CachedFileParser`
+  storing parsed AST nodes, keyed by `CacheKeyGenerator` on realpath, mtime,
+  size, and the PHP and parser versions. Collector *output* is not cached, so a
+  new collector output shape cannot be served stale. What the key does lack is
+  any Qualimetrix version component, so an upgrade that changes parsing
+  assumptions reuses old nodes; adding that component is a small, separate
+  improvement and is **not** a prerequisite of this plan. An earlier revision
+  asserted a metric cache that does not exist and set a DoD against it.
 
 ## 11. Work Packages
 
 Every tracked path has exactly one owning package. Parallel packages use
-separate worktrees. A package may add test files only inside its listed test
-directories. No package stashes, restores, or cleans a shared worktree.
+separate worktrees. No package stashes, restores, or cleans a shared worktree.
+
+Two ownership rules that round 2 showed were missing, and whose absence is the
+most likely source of silent defects:
+
+- **A package owns every test its production changes break**, not only the tests
+  it adds. Otherwise an agent finishes with a red `composer check` and no right
+  to fix it. Each package below therefore names the existing tests its changes
+  are expected to break.
+- **A package may add test files only inside its listed test directories.**
+
+Cross-package data contracts are owned by P1a and by nobody else. Where a
+package produces data another package consumes, the *shape* is defined in Core
+first; a DoD that only asserts "my side works" is insufficient, because both
+sides pass independently while the seam is broken.
 
 ### P0 — Contract freeze
 Files: this document. Dependencies: none.
+Files: this document, `docs/internal/CLI_CONVENTIONS.md`.
 DoD: round 2 review passes with no unresolved CRITICAL or HIGH finding; the
-layered-versus-vertical-slice decision (§16) is recorded; CLI names checked
-against `docs/internal/CLI_CONVENTIONS.md`.
+layout decision (§16) is recorded; every command name in §8 is final, and where
+`CLI_CONVENTIONS.md` neither permits nor forbids a hyphenated verb phrase
+(`migrate-plan`, `rebase-contracts`) the rule is added there rather than left
+for the implementer to guess.
 
 ### P1a — Core contracts and topology
-Files: `src/Core/Observation/**`, `src/Core/Violation/Violation.php`,
-`src/Rules/AbstractRule.php`, `qmx.yaml`,
-`tests/Unit/Core/Observation/**`, the dogfooding topology test.
+Files: `src/Core/Observation/**`, `src/Core/Violation/Violation.php`, `qmx.yaml`,
+`tests/Unit/Core/Observation/**`,
+`tests/Integration/Architecture/DogfoodingTopologyTest.php`,
+`tests/Unit/Core/Violation/ViolationTest.php`.
 Dependencies: P0.
 Small and deliberately first: it unblocks P2 and P3 simultaneously. `qmx.yaml`
-and its pinning test are owned here and by no one else.
-DoD: observation, axis, kind, contract-reference, coverage-contract, and status
-types exist in Core; Core remains dependency-free; the topology admits
-`Analysis\Coverage` and keeps `baseline: [core]` satisfiable; PHPStan passes.
+and its pinning test are owned here and by no one else — note the topology test
+hardcodes layer names, so any layer addition touches both.
+
+**Also owns the occurrence-key carrier.** P1c produces occurrence
+discriminators in collectors and P1b consumes them in rules; the type, field
+name, and null semantics of that carrier are defined here, next to
+`DebtObservation`, before either consumer starts. `DebtObservation.occurrenceKey`
+is the sink, not the source, and naming the sink alone lets both sides pass
+their own DoD while the seam is broken.
+
+DoD: observation, axis, kind, contract-reference, coverage-contract, status
+enum, and occurrence-key carrier types exist in Core; Core remains
+dependency-free; the topology admits `Analysis\Coverage` **and** names the full
+set of inbound edges its consumers will need (`analysis-pipeline`,
+`analysis-collection`, `analysis-ruleexecution`, and the Infrastructure layers),
+so that no later package inherits a red `composer check` it cannot fix;
+`baseline: [core]` stays satisfiable; a consumer stub exercises the coverage
+contract from the P3 side before it is frozen; PHPStan passes.
 
 ### P1b — Rule observations
-Files: `src/Rules/**`, `src/Architecture/Rules/**`, `tests/Unit/Rules/**`,
-`tests/Architecture/Unit/Rules/**`, `src/Rules/README.md`,
-`src/Architecture/README.md`.
+Files: `src/Rules/**` (including `src/Rules/AbstractRule.php`),
+`src/Architecture/Rules/**`, `tests/Unit/Rules/**`,
+`tests/Architecture/Unit/Rules/**`, `tests/Integration/Rules/**`,
+`src/Rules/README.md`, `src/Architecture/README.md`.
 Dependencies: P1a. Splittable by rule category across agents with disjoint
 directories.
+
+`AbstractRule.php` belongs here, not to P1a: the onset-boundary helper that
+every rule needs sits naturally beside the existing `optionsForSymbol()`
+`@qmx-threshold` handling, and splitting the file between two packages is the
+most likely merge conflict in the plan.
+
+Coordinate with the external `CircularDependencyRule` cycle-identity fix
+(§2.7): it edits `src/Architecture/Rules/`, which this package owns. Either land
+it before P1b starts or fold it in; the completion predicate is a test pinning
+canonical cycle representative selection independent of graph traversal order.
+
 DoD: a registry-driven test asserts every rule in `RuleRegistry` emits an
 observation of a declared kind — no hand-maintained list; the onset boundary is
 never derived from the tier-matched threshold; `GodClassRule` emits fixed raw
@@ -696,14 +859,22 @@ never raw values or identities.
 
 ### P1c — Occurrence identity in collectors
 Files: `src/Metrics/**`, `src/Analysis/Duplication/**`,
-`src/Core/Duplication/**`, `tests/Unit/Metrics/**`,
+`src/Core/Duplication/**`, `src/Infrastructure/Parallel/**`,
+`src/Infrastructure/Serializer/**`, `tests/Unit/Metrics/**`,
 `tests/Unit/Analysis/Duplication/**`, `src/Metrics/README.md`.
 Dependencies: P1a. Parallel with P1b.
+
 `src/Analysis/Duplication/**` is included because the normalised token hash is
-produced there, not in `Core/Duplication` — 7.0's boundary could not reach it.
+produced there, not in `Core/Duplication`. The parallel and serializer paths are
+included because collectors run inside workers: a new output shape crosses
+worker serialisation, and unit tests run single-process, so a defect there is
+invisible until an end-to-end run in the default parallel mode.
+
 DoD: stable occurrence keys for code-smell, security, and duplication findings,
-reproducible across runs and across file-order changes; the metric cache key
-invalidates on the new shape.
+reproducible across runs and across file-order changes; **identities are
+byte-identical between `--workers=0` and a parallel run** on the same input; a
+cross-package assertion shows a rule reading a key that a collector produced,
+rather than each side asserting only its own half.
 
 ### P2 — Coverage
 Files: `src/Analysis/Coverage/**`, `src/Analysis/Collection/**`,
@@ -724,22 +895,49 @@ migration plan schema is specified and versioned; malformed files fail closed;
 writes are atomic with a real CAS guard; no-op operations preserve bytes; v5 is
 rejected outside migration.
 
-### P4 — CLI, DI, reporting
-Files: `src/Infrastructure/Console/**` (including `ViolationFilterPipeline`),
-`src/Infrastructure/DependencyInjection/**`, `src/Reporting/**`, matching tests,
-`src/Infrastructure/README.md`, `src/Reporting/README.md`.
-Dependencies: P2 and P3.
-DoD: one shared analysis-run service backs all lifecycle commands; the filter
-pipeline runs comparison after evaluation-exclusion and before
-presentation-suppression; the summary line precedes details and only
-`regressed`/`new` expand; SARIF uses `properties`; Checkstyle and GitLab stay
-schema-valid; `regressed` fails the build with `fail_on: error` and a
-warning-severity finding; `--generate-baseline` fails with an actionable
-message.
+### P4 — Configuration, CLI, DI, reporting
+Split into three sub-packages with disjoint directories, because as one unit it
+is a serialised bottleneck after P2 and P3:
+
+- **P4a — configuration and pipeline order.** `src/Configuration/**`,
+  `src/Infrastructure/Console/ViolationFilterPipeline.php` and its siblings,
+  `src/Infrastructure/DependencyInjection/**`, `src/Configuration/README.md`.
+- **P4b — commands.** `src/Infrastructure/Console/Command/**`,
+  `src/Infrastructure/Console/CheckCommandDefinition.php`,
+  `src/Infrastructure/README.md`,
+  `tests/Functional/Console/Command/CheckCommandTest.php`,
+  `tests/Integration/Documentation/DocumentationConsistencyTest.php`.
+- **P4c — reporting.** `src/Reporting/**`, `src/Reporting/README.md`.
+
+`src/Configuration/**` is named explicitly because §9.3 promises an opt-out
+configuration key, and adding one is not a one-line change: per `AGENTS.md` it
+requires a `ConfigSchema` constant and `ENTRIES` row, a
+`SectionNormalizationPolicy` entry (a missing policy is a fail-fast
+`LogicException`, not a silent default), handling in `DefaultsStage`/`CliStage`,
+and a consumer in `AnalysisConfiguration`. 7.0 left this path unowned, so the
+key would have shipped as a hardcoded constant or not at all.
+
+Dependencies: P2 and P3. P4c may run parallel to P4a; P4b depends on P4a.
+
+DoD: the ratchet failure key exists as a real configuration option with all four
+`ConfigSchema` steps present; one shared analysis-run service backs all
+lifecycle commands rather than five copies of `CheckCommand`'s orchestration;
+the filter pipeline runs comparison after evaluation-exclusion and before
+presentation-suppression; `generate` captures the list at that same point, and a
+test shows an `exclude_paths` finding is absent from a freshly generated
+baseline; the summary line precedes details, `regressed` is printed as its own
+first block and is **exempt from `TextFormatter`'s existing detail limit** so a
+regression cannot be truncated away behind hundreds of `new` findings; SARIF
+uses `properties`; Checkstyle and GitLab stay schema-valid; HTML, Health, and
+Summary formatters either render the status or are documented as unchanged,
+with `composer test:js` and `composer build:js` run if
+`src/Reporting/Template/` is touched; `regressed` fails the build with
+`fail_on: error` and a warning-severity finding, and passes with the key
+disabled; `--generate-baseline` fails with an actionable message.
 
 ### P5 — Seam tests
 Files: `tests/Integration/BaselineRatchet/**`,
-`tests/Functional/.../BaselineLifecycleTest.php`, `tests/Fixtures/BaselineV7/**`.
+`tests/Functional/Console/Command/BaselineLifecycleTest.php`, `tests/Fixtures/BaselineV7/**`.
 Dependencies: P4.
 DoD: every kind exercised end to end; the warning→error transition is a
 regression, not a `matched`; relaxing a threshold widens the allowance without
@@ -750,7 +948,7 @@ cannot be silently "fixed"; memory measured against the 2G ceiling on the
 largest benchmark project.
 
 ### P6 — ADR and documentation
-Files: `docs/adr/001x-ratchet-baseline-v7.md`, `docs/adr/README.md`,
+Files: `docs/adr/0017-ratchet-baseline.md`, `docs/adr/README.md`,
 `docs/ARCHITECTURE.md`, `website/docs/usage/baseline{,.ru}.md`,
 `website/docs/usage/cli-options{,.ru}.md`, `website/docs/ci-cd/*{,.ru}.md`,
 `CHANGELOG.md`.
@@ -782,8 +980,10 @@ reference in `ARCHITECTURE.md` (removed by ADR 0014) is corrected.
 - **The allowance rule** — captured tighter than onset; onset tighter than
   captured; both directions; **the warning→error transition, asserted to be
   `regressed` and not `matched`**; inline `@qmx-threshold` changing the onset for
-  one symbol only; rules with no numeric boundary; the invariant that a
-  regression always implies a current violation.
+  one symbol only; rules with no numeric boundary; compound rules, where an
+  inline override moves `minCriteria` and must not widen any axis allowance; a
+  **magnitude cutoff**, where a cycle grown past `maxCycleSize` must not resolve
+  its entry; the invariant that a regression always implies a current violation.
 - **Rule observations** — a registry-driven test over every rule; raw versus
   display-rounded values; inverted directions; `GodClassRule` axis stability
   when TCC is missing and when the LCOM veto engages; stable computed-metric
@@ -793,16 +993,29 @@ reference in `ARCHITECTURE.md` (removed by ADR 0014) is corrected.
   aggregate and graph scope; the three categories of §5.6 producing their
   documented statuses; deleted versus unobserved versus orphaned.
 - **Comparison** — every status and attribute for every kind, including
-  `withinWidenedPolicy` and both `resolutionReason` values; manifest mismatch at
-  an equal declared version; ratchet versus suppress.
+  `withinWidenedPolicy` and both `resolutionReason` values, with `fixed`
+  asserted **reachable** on an ordinary improved scalar; manifest mismatch at an
+  equal declared version; a forgotten version bump on a rule that emits **no**
+  violation at all, asserted to yield `incompatible` rather than `resolved` —
+  this is the sole scenario justifying the contract registry (§5.7), and
+  comparing against contracts harvested from emitted observations would pass
+  every other test; `unobserved` versus `orphaned` for a config-disabled rule
+  versus a rule absent from the build; ratchet versus suppress.
 - **Serialisation** — round trip including `occurrence_key` and stored onsets;
   byte stability; fixed-clock generation; no-op preservation; path portability;
   malformed values; NaN and infinity rejection; atomic write and failed-rename
   cleanup; concurrent writers under the CAS guard.
 - **Lifecycle** — plan/apply fingerprint guards; ambiguous entries surfacing in
-  the plan rather than aborting; per-entry guard leaving unproven entries
-  untouched while writing the rest; `update` debt-neutral re-pointing; `cleanup`
-  refusing `policy`-resolved entries.
+  the plan rather than aborting; unmatched v5 entries offered only drop-or-abort
+  and the dropped count reported; per-entry guard leaving unproven entries
+  untouched while writing the rest, and never writing a partially trusted file
+  when a parse failure means the run could not see part of the tree; `update`
+  debt-neutral re-pointing **and its monotonicity** — an attempt to widen an
+  allowance must be refused, not merely absent from the happy path; `cleanup`
+  refusing `policy`-resolved entries and pruning `orphaned` ones only behind its
+  flag; `generate` capturing after evaluation-exclusion and before
+  presentation-suppression, asserted by an `exclude_paths` finding being absent
+  from a freshly generated baseline.
 - **Reporting and exit** — summary-line-first ordering; expansion rules;
   `--explain`; SARIF properties; schema-valid Checkstyle and GitLab; a
   warning-severity regression failing the build under `fail_on: error`, and
@@ -816,9 +1029,13 @@ reference in `ARCHITECTURE.md` (removed by ADR 0014) is corrected.
 
 ## 14. Residual Limitations
 
+Each limitation below must be pinned by a test (§13) that asserts the documented
+behaviour, so that it cannot be silently "fixed" into a different behaviour.
+
 1. **Compound rules** — per-axis worsening is invisible once `GodClassRule`
-   stops firing (§5.9). Coverage by single-metric rules is partial: WMC and LCOM
-   have their own rules; TCC, class LOC, and WOC do not.
+   stops firing (§5.9), and its axes carry no onset so an inline
+   `@qmx-threshold` cannot widen them (§5.1). Coverage by single-metric rules is
+   partial: WMC and LCOM have their own rules; TCC, class LOC, and WOC do not.
 2. **Count fallback** — without a stable occurrence key, one removed plus one new
    occurrence at equal count is indistinguishable.
 3. **Renames** — mitigated but not solved by `update`'s debt-neutral
@@ -829,6 +1046,16 @@ reference in `ARCHITECTURE.md` (removed by ADR 0014) is corrected.
    `qmx.yaml` diff, marked `withinWidenedPolicy`, and `cleanup` will not delete
    the affected captured values.
 5. Ratchet is not historical trend analysis.
+6. **Unmatched v5 entries are lost, not migrated** (§8). A v5 entry carries only
+   a rule name and an opaque hash, so one with no current finding to match
+   cannot be reconstructed into v7's structural identity. The user chooses
+   between dropping it and aborting the migration; there is no third option, and
+   no amount of tooling creates one.
+7. **A rule with a magnitude cutoff cannot prove resolution by absence** (§5.1).
+   Entries for such rules — today only `architecture.circular-dependency` via
+   `maxCycleSize` — resolve only on positive evidence that the identity is gone,
+   so a cycle that grew past the cutoff stays in the baseline rather than
+   silently resolving.
 
 ## 15. Rejected Alternatives
 
