@@ -1,11 +1,12 @@
 # Ratchet Baseline v7 Plan
 
-**Status:** Proposed — revision 7.3 (supersedes `ratchet-baseline-v6.md`)
+**Status:** Proposed — revision 7.4 (supersedes `ratchet-baseline-v6.md`)
 **Date:** 2026-08-04
 **Target release:** TBD
-**Review status:** Rounds 1 and 2 complete; round 3 is narrow (§5.1, §7.1, §8)
-and its external pass is outstanding. All CRITICAL and HIGH findings so far are
-folded in. P0 is not frozen.
+**Review status:** Three rounds complete. All CRITICAL and HIGH findings are
+folded in. §5.1 was restructured in 7.4 from an open rule-plus-carve-outs form
+into a closed, machine-checked enumeration of rule shapes; a confirmation pass
+over §5.1, §5.9, and §7.1 is the remaining step before P0 freeze.
 
 ## How To Execute This Plan From A Clean Session
 
@@ -152,6 +153,40 @@ reviewer's pass over the same sections is still outstanding.
 | One rule can carry many contracts. `ComputedMetricRule` declares a single rule name but sets `violationCode` to the user-defined metric's name, and each `ComputedMetricDefinition` has its own thresholds and its own `inverted` flag. Onset and direction are properties of the (rule, violation code) pair.                                                                                            | §5.1: stated explicitly, matching the granularity §5.5 already requires for coverage.                                                                                                                   |
 | The contract registry was to be populated "from the rule set at boot". Computed-metric contracts are not static rule metadata — they arrive from user YAML via `ComputedMetricDefinitionHolder`, so a registry built by reflection over rule classes would be blind to every user-defined metric, and a forgotten version bump on one would produce the silent `resolved` the registry exists to prevent. | §5.7: population happens after the configuration pipeline runs.                                                                                                                                         |
 
+### 0.5 What round 3 changed (7.4)
+
+Round 3 was a narrow reachability audit of §5.1, §7.1, and §8. It produced one
+CRITICAL and seven HIGH findings, more than round 2 — but every one landed in
+the same place, and that pattern mattered more than any individual finding.
+
+**The structural change.** §5.1 had been stating a single onset rule and adding
+a carve-out whenever a reviewer found a rule that did not fit. Three rounds
+produced four carve-outs, with no reason to believe the fourth was the last: the
+rule set is genuinely heterogeneous — inclusive and exclusive comparisons,
+inverted axes, conjunctive and count-based compounds, magnitude bands,
+per-symbol thresholds under one violation code, and one rule carrying a contract
+per user-defined metric. 7.4 replaces the open deduction with a **closed
+enumeration of nine shapes**, each specifying how the onset is obtained, what
+the axes are, and what resolution requires. Totality is enforced by a
+registry-driven test rather than asserted, so the next undiscovered shape fails
+the build instead of waiting for a reviewer.
+
+| Finding                                                                                                                                                                                                                                                                                                                                                       | Correction                                                                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DataClassRule` fires on a conjunction (`WOC >= t` **and** `WMC <= t`), so WOC worsening while WMC crosses its bound silences the rule — the governing invariant fails for a *fixed* compound, not only a dynamic one. Round 2 had correctly established that DataClass is not dynamically evaluable, and 7.2 wrongly inferred that §5.9 did not apply to it. | §5.9 now covers every compound predicate, conjunctive or count-based. The lesson — a true correction can license a false inference — is recorded here rather than in a commit message.         |
+| The onset was glossed as "the warning tier". `ComputedMetricRule` tests `errorThreshold` first and nothing validates tier ordering, so `warning: 20, error: 10` starts violating at 10.                                                                                                                                                                       | §5.1: the onset is the most permissive *configured* boundary computed across tiers, and the gloss is removed.                                                                                  |
+| The onset can depend on the symbol, not just on (rule, code): `LongParameterListRule` selects VO or ordinary thresholds from the symbol's own metric under one violation code. A registry keyed by (rule, code) cannot supply it.                                                                                                                             | §5.1: rules expose an **onset provider** queried with the symbol's metrics. Metrics exist for every symbol regardless of violations, so this also gives `resolutionReason` its missing source. |
+| §7.1 claimed that in the widened-onset regime only `regressed` and `resolved` are reachable. Fourteen Options classes compare with `>=`, so the boundary value both violates and sits inside the allowance — `matched` is reachable there.                                                                                                                    | §7.1: reachability restated per regime, inclusive-aware.                                                                                                                                       |
+| A compound entry's `resolutionReason` could not be computed — S5 has no per-axis onset — yet `cleanup` acts on it, risking deletion of a still-indebted entry.                                                                                                                                                                                                | §5.9: compound entries resolve as `policy` and are never auto-removed.                                                                                                                         |
+| The S6 cutoff carve-out promised resolution on "positive evidence" without saying what evidence, while §5.6 forbade mutating silenced entries.                                                                                                                                                                                                                | §7.4: S6 resolves on symbol-inventory evidence, which does not depend on the rule.                                                                                                             |
+| `update`'s debt-neutral re-pointing was literally unsatisfiable — a `new` finding has no captured axes — and ignored occurrence count, so a rename from one occurrence to five could be re-accepted.                                                                                                                                                          | §8: the comparison is old-captured against new-current, count included, ambiguity refused.                                                                                                     |
+| An `incompatible` entry whose rule emits no violation had no targeted exit; only `generate --force` would clear it, re-accepting all unrelated debt.                                                                                                                                                                                                          | §8: `rebase-contracts` handles it, rewriting the contract and dropping the axes with an explicit report of the precision lost.                                                                 |
+| Statuses were not mutually exclusive — an entry can be excluded, contract-changed, and rule-removed at once.                                                                                                                                                                                                                                                  | §7.1: a stated precedence order, exercised by a test.                                                                                                                                          |
+
+The v5 migration protocol was reviewed in depth for the first time and found
+sound as written, given that unmatched entries have only the two dispositions
+recorded in §14.6.
+
 ## 1. Executive Summary
 
 Baseline v5 is an identity-only suppression snapshot: once a violation is
@@ -253,57 +288,72 @@ allowance(axis) = more-permissive-of(captured(axis), onsetBoundary(axis))
 ```
 
 `onsetBoundary` is the **violation-onset boundary**: the most permissive
-configured boundary at which the rule emits a violation at all — in a
-warning/error rule, the warning tier. It is *never* the boundary of the tier the
-current measurement happened to land in. Deriving it from `Violation::threshold`
-is explicitly forbidden (§2.4): with `warning=10, error=20` and a captured 15, a
-tier-derived boundary would make a growth to 20 read as `matched`, and the
-ratchet would loosen precisely as the code got worse.
+boundary at which the rule emits a violation at all, for this symbol, under the
+configuration in force now.
 
-The onset boundary reflects configuration, presets, and per-level options
-applicable to that symbol; it does not depend on the measured value.
+#### The onset is queried, never assumed
 
-**A rule may carry many onsets, one per violation code.**
-`ComputedMetricRule` declares a single rule name but sets `violationCode` to the
-user-defined metric's name, and each `ComputedMetricDefinition` carries its own
-`warningThreshold`, `errorThreshold`, and `inverted` flag. Onset and
-worse-direction are therefore properties of the **(rule, violation code)** pair,
-never of the rule alone — which is the same granularity §5.5 requires for
-coverage, and for the same reason. A definition with both thresholds null emits
-no violation at all and so has no onset; it can never appear in a baseline.
+Three sources are explicitly forbidden, each because a revision of this plan
+already got it wrong:
 
-Rules with no numeric boundary — fixed-severity rules such as layer violations,
-and binary detectors such as hardcoded credentials — have no onset boundary.
-Their kinds are Presence or Graph and the allowance degenerates to identity
-presence, which is the v6 behaviour.
+- **Not `Violation::threshold`.** It is the boundary of the tier the measurement
+  landed in, so the allowance would widen exactly as the code got worse (§2.4).
+- **Not "the `warning` field".** `ComputedMetricRule::determineSeverity()` tests
+  `errorThreshold` first and nothing validates that `warning` is the more
+  permissive of the two, so a configuration of `warning: 20, error: 10` starts
+  violating at 10. The onset is the most permissive *configured* boundary in the
+  worse-direction, computed across tiers — a fact, not a field name.
+- **Not a value stored per (rule, code).** `LongParameterListRule` picks
+  `voWarning`/`voError` or the ordinary thresholds according to the symbol's own
+  `IS_VO_CONSTRUCTOR` metric, under one violation code. The onset depends on the
+  symbol.
 
-**Compound rules have no per-axis onset.** `GodClassOptions::withOverride()`
-maps an inline `@qmx-threshold` onto `minCriteria` — the arity of the compound
-predicate — not onto any axis boundary, so "the onset reflects inline
-overrides" is undefined for them. For a compound rule the onset is the predicate
-itself: its axes carry `onsetBoundary: null`, their allowance is the captured
-value alone, and an inline override changes when the rule fires but never
-widens an axis allowance. This is stricter than the scalar case and
-deliberately so — a compound rule's axes are already only observable while it
-fires (§5.9).
+Therefore each rule exposes an **onset provider**: given a symbol and its
+metrics, it returns the current onset and worse-direction per axis, or reports
+that it has none. Metrics are computed for every symbol regardless of whether a
+violation was raised, so the comparator can query the onset even for an entry
+with no current observation — which is what §7.1 needs to tell a fixed finding
+from a widened policy.
 
-**Rules with an upper cutoff break the invariant and are handled separately.**
-`CircularDependencyOptions::getSeverity()` returns `null` when the cycle exceeds
-`maxCycleSize`, and the rule then skips the cycle entirely. Such a rule is
-non-monotonic: debt growing past the cutoff makes the finding *disappear*, which
-under a naive reading would resolve the entry precisely because it got worse.
-A magnitude cutoff is therefore classified as configuration-silencing (§5.6,
-second category), not as absence: an entry whose rule declares a cutoff is never
-`resolved` on absence alone — it requires positive evidence that the symbol or
-identity is gone. Rules declaring a cutoff must expose it so the comparator can
-apply this rule rather than inferring it.
+#### Rule shapes are a closed set
 
-Because `allowance` is never stricter than the onset boundary, **a ratchet
-regression is always also a current violation** — for every rule shape except
-the cutoff case above, which is excluded from resolution rather than from
-comparison. This invariant is what makes observations-on-violations sufficient;
-§13 requires it to be tested directly, including the warning→error transition
-and the cutoff case.
+Earlier revisions stated one onset rule and appended a carve-out each time a
+reviewer found a rule that did not fit. Three rounds produced four such
+carve-outs and there was no reason to think the fourth was the last. The
+enumeration below replaces that open deduction, and **totality is machine-checked
+rather than asserted**: every rule declares its shape, and P1b's registry-driven
+test fails when any rule maps to none. A newly discovered shape then surfaces as
+a red test rather than as a review finding.
+
+| #   | Shape                                                                                                          | Onset                                                    | Axes    | Resolution             |
+| --- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------- | ---------------------- |
+| S1  | Tiered scalar, inclusive (`value >= warning`) — the common case                                                | most permissive configured tier                          | one     | ordinary               |
+| S2  | Tiered scalar, inverted (`value < warning`)                                                                    | mirror of S1; "more permissive" means a *lower* boundary | one     | ordinary               |
+| S3  | Symbol-conditioned scalar — thresholds chosen by a metric of the symbol, under one code                        | queried per symbol via the onset provider                | one     | ordinary               |
+| S4  | Multi-contract scalar — one rule, one code per user-defined metric, each with its own thresholds and inversion | per (rule, code), from configuration                     | one     | ordinary               |
+| S5  | Compound predicate — conjunctive or count-based over several axes                                              | none per axis; the predicate *is* the onset              | several | restricted, see §5.9   |
+| S6  | Banded — reports only inside a magnitude band, so growth past the cutoff hides the finding                     | band, both ends                                          | one     | never on absence alone |
+| S7  | Presence — binary detector, no numeric boundary                                                                | none                                                     | none    | identity absence       |
+| S8  | Occurrence — per-site findings counted                                                                         | onset of the underlying scalar, if any                   | count   | count reaching zero    |
+| S9  | Graph identity — cycles, layer edges                                                                           | none                                                     | none    | identity absence       |
+
+Comparison is **inclusive-aware**: a rule firing at `value >= onset` violates at
+the boundary itself, so `current == allowance` is `matched`, not `regressed`.
+Fourteen Options classes use `>=` for the warning tier, so this is the norm, not
+an edge case; a shape that compares exclusively declares so.
+
+S6 exists because `CircularDependencyOptions::getSeverity()` returns `null`
+above `maxCycleSize` and the rule then drops the cycle entirely — debt growing
+past the cutoff makes the finding vanish. Absence therefore proves nothing for
+S6, and §7.4 gives it the only evidence path that does work: the identity is
+resolved when the symbol inventory shows it gone, not when the rule stops
+reporting it.
+
+Because `allowance` is never stricter than the onset, **a ratchet regression is
+also a current violation for shapes S1–S4 and S8**. S5 and S6 are the stated
+exceptions: their predicates can stop firing while an axis worsens, which is why
+neither may resolve on absence. S7 and S9 carry no magnitude at all. §13
+requires the invariant to be tested per shape rather than in general.
 
 ### 5.2 Observations accompany violations
 
@@ -452,29 +502,47 @@ compensate.
 
 ### 5.9 Compound rules ratchet on their firing identity
 
-`GodClassRule` fires on `matchedCount >= minCriteria` and its evaluable set is
-value-dependent: the LCOM criterion is vetoed when TCC ≥ 0.5. Two distinct
-consequences, which 7.0 ran together:
+Shape S5 covers every rule whose violation is a predicate over several axes,
+whether the predicate is a **conjunction** or a **count of matched criteria**.
+Both members are in the codebase:
+
+- `DataClassRule` fires only when `WOC >= threshold` **and** `WMC <= threshold`.
+- `GodClassRule` fires when at least `minCriteria` of four criteria match, and
+  its evaluable set is value-dependent: the LCOM criterion is vetoed when
+  TCC ≥ 0.5.
+
+A previous revision restricted this section to `GodClassRule` because a reviewer
+correctly pointed out that `DataClassRule`'s criteria are fixed. The inference
+was wrong: what matters is not whether the criterion set is dynamic but whether
+the predicate can **stop firing while one axis worsens**, and a fixed
+conjunction does exactly that — WOC rising from 80 to 90 while WMC crosses its
+own bound silences the rule, and the WOC regression disappears with it.
+
+Two consequences, which must not be run together:
 
 1. **Axis set drift.** If observation axes tracked criterion evaluability, a
    legitimate cohesion improvement would change the axis set and report
-   `incompatible`. Therefore compound-rule axes are the **raw underlying
-   metrics**, fixed by the contract, independent of which criteria were
-   evaluable. Unavailable metrics are null axes (§5.3).
-2. **The predicate stops firing.** A class that stops satisfying the compound
-   predicate emits no observation and resolves, even if one axis worsened.
-   Detecting that would require observations for non-violating classes, which
-   reinstates the memory cost the design removed.
+   `incompatible`. Compound axes are therefore the **raw underlying metrics**,
+   fixed by the contract, independent of which criteria were evaluable.
+   Unavailable metrics are null axes (§5.3).
+2. **The predicate stops firing.** The finding then emits no observation.
+   Detecting the hidden worsening would require observations for non-violating
+   symbols, which reinstates the memory cost the design removed.
 
 v7 accepts (2) deliberately: while the rule fires, axis worsening is caught;
-once it stops firing, the finding is resolved by the configured policy, which is
-consistent with §5.1. Coverage by single-metric rules is **partial**:
-`complexity.wmc` and `design.lcom` exist; TCC and class LOC have no dedicated
-rules, and `DataClassRule`'s WOC has none either — note its WMC semantics are
-inverted relative to `complexity.wmc`. Recorded in §14.1.
+once it stops, the finding is resolved by the configured policy, consistent with
+§5.1. Coverage by single-metric rules is **partial** — `complexity.wmc` and
+`design.lcom` exist; TCC, class LOC, and WOC have none, and `DataClassRule`'s
+WMC semantics are inverted relative to `complexity.wmc`. Recorded in §14.1.
 
-`DataClassRule` is **not** affected: its criteria are fixed, so only
-`GodClassRule` needs the raw-axis rule above.
+**Resolution of a compound entry never carries reason `fixed`.** The reason test
+(§7.1) compares current onset against captured onset, and S5 has no per-axis
+onset to compare — worse, `GodClassOptions::withOverride()` maps an inline
+`@qmx-threshold` onto `minCriteria`, so a policy change alone can stop the rule
+firing. A compound entry that stops firing is therefore resolved with reason
+`policy`, which `cleanup` will not remove. This is deliberately conservative: it
+keeps the captured axes for the case where the predicate is later tightened
+again, at the cost of compound entries needing manual removal.
 
 ### 5.10 Writes are atomic and guarded per entry
 
@@ -586,6 +654,25 @@ visible; the mode is never selected implicitly at runtime.
 | `orphaned`     | The entry's rule does not exist in this build         |
 | `incompatible` | Contracts cannot be compared                          |
 
+The statuses are **ordered**, and exactly one applies to an entry. Without a
+stated precedence an implementer can pick either of two defensible answers when
+conditions overlap — an entry can simultaneously sit in an excluded path, belong
+to a removed rule, and reference a changed contract. Evaluate in this order and
+stop at the first match:
+
+1. `orphaned` — the rule is absent from the build, so nothing else can be
+   computed about the entry.
+2. `unobserved` — the scope was not evaluated, so no comparison is possible.
+3. `incompatible` — the scope was evaluated but the contracts cannot be
+   compared.
+4. `suppressed` — comparison succeeded and the result is deliberately silenced.
+5. the outcome statuses: `regressed`, then `resolved`, then `improved`, then
+   `matched`.
+
+Within step 5, `matched` means "inside the allowance and not better than
+captured" — `improved` is tested first, so the two do not overlap. `new` is not
+in the ordering: it applies to current findings with no entry at all.
+
 One attribute qualifies a status rather than multiplying the list:
 
 - `resolutionReason` — `fixed` or `policy`, decided by **comparing boundaries,
@@ -618,10 +705,17 @@ branches that can never execute. Writing `A` for the allowance:
   reachable: worse than captured → `regressed`; equal → `matched`; better but
   still violating → `improved`; no longer violating → `resolved`.
 - **Onset more permissive than captured** (`A` = onset — the team raised the
-  threshold above the recorded debt). A violation now requires crossing the
-  onset, which is also the allowance, so *every observable* value exceeds `A`.
-  Only `regressed` and `resolved` are reachable here; `matched` and `improved`
-  are not.
+  threshold above the recorded debt). A violation requires reaching the onset,
+  which is also the allowance. For the common inclusive shapes (S1–S4 fire at
+  `value >= onset`) the boundary value itself both violates and sits inside the
+  allowance, so `matched` is reachable **exactly at the boundary**, and within
+  epsilon around it. `improved` is not reachable, since any observable value is
+  at or beyond `A`. Everything above the boundary is `regressed`; everything
+  below stops violating and becomes `resolved`.
+
+  A prior revision claimed only `regressed` and `resolved` were reachable here.
+  That is true only for a rule comparing exclusively, and fourteen Options
+  classes compare with `>=`.
 
 A prior revision carried a `withinWidenedPolicy` attribute for the "growth
 accepted by a widened policy" case. It has been **removed as unreachable**:
@@ -656,6 +750,13 @@ carry a stable `baseline-regression` reason code in machine output.
 Absent from complete discovery → may be `resolved`. Absent because the scope was
 not evaluated (§5.6, first category) → `unobserved`. Aggregate and graph entries
 require complete aggregate or graph coverage.
+
+**Shape S6 resolves only on inventory evidence.** A banded rule stops reporting
+when debt grows past its cutoff, so its silence carries no information. Such an
+entry resolves when the discovered symbol inventory shows its identity gone —
+the class deleted, the cycle's members no longer present — and never because the
+rule went quiet. This is the evidence path §5.1 requires: it does not depend on
+the rule, so the rule's cutoff cannot defeat it.
 
 `unobserved` and `orphaned` are distinguished by **why the rule is missing**,
 and the line is drawn at the build, not the configuration:
@@ -728,10 +829,17 @@ choice is informed, and `migrate-apply` must report the dropped count
 prominently rather than in a summary tail. Recorded in §14.6.
 - **update** — monotonic: tightens allowances, reduces counts, never adds an
   identity, never increases accepted debt, never changes contract or kind. It
-  additionally performs **debt-neutral identity re-pointing**: when a
-  `resolved` and a `new` finding share a contract and identical captured axes,
-  the entry follows the moved symbol. This accepts no new debt and is the only
-  remedy for a mass rename (§14.3).
+  additionally performs **debt-neutral identity re-pointing**: when a `resolved`
+  entry and a `new` finding share a contract, the entry may follow the moved
+  symbol. "Debt-neutral" is defined precisely, because a loose reading lets a
+  rename smuggle in growth: the new finding's **current** axes must be no worse
+  than the entry's **captured** axes on every axis, and its occurrence count no
+  greater. A `new` finding has no captured axes of its own — the comparison is
+  old-captured against new-current, and the count is part of it, so a rename
+  taking one occurrence to five is refused rather than re-accepted. Where the
+  match is ambiguous — several candidates satisfy it — `update` re-points
+  nothing and reports the ambiguity. This is the only remedy for a mass rename
+  (§14.3).
 - **cleanup** — **modifies the existing `BaselineCleanupCommand`**, it is not a
   new command. Today it takes only a baseline path, runs no analysis, and
   removes entries whose *file no longer exists on disk*. v7 subsumes that
@@ -743,7 +851,17 @@ prominently rather than in a summary tail. Recorded in §14.6.
   entries. The added argument is a breaking CLI change and needs a `Breaking`
   changelog entry.
 - **rebase-contracts** — the only path for a known contract change; explicit
-  contract ids plus `--force`; prints old and new data before writing.
+  contract ids plus `--force`; prints old and new data before writing. It must
+  also be the exit for an `incompatible` entry **whose rule currently emits no
+  violation**: `update` refuses contract changes and `cleanup` does not remove
+  the status, so without this the only escape would be `generate --force`, which
+  re-accepts every unrelated debt in the project and contradicts this command
+  being the single contract-change path. For such an entry there are no current
+  raw axes to rebase onto, so `rebase-contracts` rewrites the contract reference
+  and **drops the entry's axes**, marking it as carrying no magnitude until the
+  finding reappears. That is a real loss of ratchet precision and is reported as
+  such, but it is bounded, explicit, and confined to the entries named on the
+  command line.
 - `--generate-baseline` on `check` is removed, with no alias.
 
 There is no `baseline:accept`. Accepting more debt is a threshold change in
@@ -1032,8 +1150,15 @@ reference in `ARCHITECTURE.md` (removed by ADR 0014) is corrected.
   inline override moves `minCriteria` and must not widen any axis allowance; a
   **magnitude cutoff**, where a cycle grown past `maxCycleSize` must not resolve
   its entry; the invariant that a regression always implies a current violation.
-- **Rule observations** — a registry-driven test over every rule; raw versus
-  display-rounded values; inverted directions; `GodClassRule` axis stability
+- **Rule shapes** — a registry-driven test asserting every rule declares one of
+  S1–S9 and that the mapping is total, so a newly introduced shape fails the
+  build instead of surfacing in review; per-shape assertion of the invariant
+  that a regression implies a current violation, holding for S1–S4 and S8 and
+  explicitly not claimed for S5 and S6; the onset provider queried for a
+  symbol-conditioned rule (`LongParameterListRule` VO versus ordinary
+  constructor) returning different onsets under one violation code; a computed
+  metric configured `warning: 20, error: 10`, asserting the onset is 10.
+- **Rule observations** — raw versus display-rounded values; inverted directions; `GodClassRule` axis stability
   when TCC is missing and when the LCOM veto engages; stable computed-metric
   contract ids; stable cycle and duplication identity; occurrence multiplicity.
 - **Coverage** — complete, disabled, `only_rules`, discovery `exclude`,
@@ -1042,9 +1167,11 @@ reference in `ARCHITECTURE.md` (removed by ADR 0014) is corrected.
   documented statuses; deleted versus unobserved versus orphaned.
 - **Comparison** — every status and attribute for every kind, including
   both `resolutionReason` values, with `fixed` asserted **reachable** on an
-  ordinary improved scalar; the reachability split of §7.1 asserted directly —
-  `matched` and `improved` reachable when the onset is no more permissive than
-  captured, and unreachable when it is; manifest mismatch at an
+  ordinary improved scalar and never produced for a compound entry; the
+  reachability split of §7.1 asserted directly, including `matched` **at the
+  boundary** of an inclusive rule in the widened-onset regime and `improved`
+  unreachable there; the status precedence exercised by an entry that is
+  simultaneously excluded, contract-changed, and rule-removed; manifest mismatch at an
   equal declared version; a forgotten version bump on a rule that emits **no**
   violation at all, asserted to yield `incompatible` rather than `resolved` —
   this is the sole scenario justifying the contract registry (§5.7), and
