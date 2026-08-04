@@ -16,8 +16,9 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final readonly class Cycle implements CycleInterface
 {
     /**
-     * @param list<SymbolPath> $classes All classes involved in the cycle
-     * @param list<SymbolPath> $path The actual path forming the cycle (includes start class at both ends)
+     * @param list<SymbolPath> $classes All classes involved in the cycle, sorted by canonical key;
+     *                                  the first entry is the cycle representative
+     * @param list<SymbolPath> $path The actual path forming the cycle (includes the representative at both ends)
      */
     public function __construct(
         private array $classes,

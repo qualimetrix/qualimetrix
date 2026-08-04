@@ -15,14 +15,22 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 interface CycleInterface
 {
     /**
-     * Returns all classes involved in the cycle.
+     * Returns all classes involved in the cycle, ordered by canonical symbol key.
      *
-     * @return list<SymbolPath> Class-level SymbolPaths
+     * The first element is therefore the cycle *representative*: a stable
+     * identity that does not depend on the order in which the dependency graph
+     * was built. Consumers deriving an identity for the cycle (violation symbol
+     * path, baseline hash) must use it.
+     *
+     * @return list<SymbolPath> Class-level SymbolPaths, sorted ascending
      */
     public function getClasses(): array;
 
     /**
      * Returns the path forming the cycle.
+     *
+     * Starts and ends at the cycle representative (the first entry of
+     * {@see self::getClasses()}).
      *
      * @return list<SymbolPath> Path with start class at both ends (e.g., [A, B, C, A])
      */

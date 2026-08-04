@@ -8,9 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- `architecture.circular-dependency` now identifies a cycle by its smallest member instead of by whichever member the graph traversal happened to reach first. The reported symbol, the displayed cycle path and the order of reported cycles used to depend on file discovery order, so adding an unrelated file could re-key an existing cycle: its baseline entry looked resolved and the same cycle reappeared as a new violation.
 - `@qmx-threshold` parsing now validates the entire value expression instead of accepting `warning=` or `error=` substrings hidden inside unsupported syntax. The documentation now also reflects the actual scope rule: a class override applies to evaluations inside the class, including its methods, while the smallest matching source span wins.
 
 ### Breaking
+- Baseline entries for `architecture.circular-dependency` must be regenerated. Cycles are now keyed by the canonically smallest class of the cycle, so any recorded entry whose key was a different member no longer matches and the cycle is reported as new. Run `bin/qmx check <path> --generate-baseline=<file>` again; entries for other rules are unaffected.
 - `@qmx-threshold` accepts only a non-negative numeric shorthand or the generic `warning=N` / `error=N` keys (one or both, in either order). Arbitrary YAML / `--rule-opt` option names and trailing prose that were accidentally accepted by substring matching are now rejected; put an optional non-empty reason after `--` or an em dash (`—`). Prefix and wildcard rule patterns remain supported but skip per-rule validator checks, so exact rule names are recommended.
 
 ## [0.23.0] - 2026-07-29

@@ -76,9 +76,14 @@ final class CircularDependencyRule extends AbstractRule
             // so the class list is guaranteed non-empty by construction. The
             // assert documents the invariant for static analysis and surfaces
             // any future regression in debug builds.
+            //
+            // The classes are sorted by canonical key, so the first one is the
+            // cycle representative — a stable identity that does not shift when
+            // unrelated files change the graph traversal order. Using anything
+            // else here would make baseline hashes order-dependent.
             $classes = $cycle->getClasses();
             \assert($classes !== [], 'CircularDependencyRule invariant: cycle has at least one class');
-            $firstClass = $classes[0];
+            $representative = $classes[0];
 
             $category = $cycle->getSizeCategory();
             $size = $cycle->getSize();
@@ -98,7 +103,7 @@ final class CircularDependencyRule extends AbstractRule
 
             $violations[] = new Violation(
                 location: Location::none(),
-                symbolPath: $firstClass,
+                symbolPath: $representative,
                 ruleName: $this->getName(),
                 violationCode: self::NAME,
                 message: $message,

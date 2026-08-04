@@ -394,9 +394,18 @@ Detects circular dependencies using **Tarjan's SCC algorithm**.
 
 **Complexity:** O(V + E) — for a project with 1000 classes and 5000 dependencies this is ~10ms.
 
+**Canonical ordering.** The SCC partition is unique, but member order inside an SCC
+falls out of the traversal order, which follows file discovery order. Since the first
+member becomes the violation's symbol path (and thus its baseline hash), the detector
+normalises it: members are sorted by canonical symbol key, `findPath()` starts from
+that first member and expands neighbours in canonical order, and the returned cycles
+are sorted by representative. The output is a function of the graph structure alone —
+an unrelated file cannot change the identity of an existing cycle.
+
 ### Cycle
 
-Dependency cycle value object.
+Dependency cycle value object. `getClasses()` is sorted by canonical key; its first
+entry is the cycle representative, and `getPath()` starts and ends there.
 
 **Methods:**
 - `getSize(): int`

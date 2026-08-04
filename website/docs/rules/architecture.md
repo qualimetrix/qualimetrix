@@ -52,6 +52,14 @@ Circular dependencies cause real problems:
     Direct cycles (A depends on B, B depends on A) are reported as **Error** by default because they represent the tightest coupling. Transitive cycles are reported as **Warning** because they are often easier to break.
 <!-- llms:skip-end -->
 
+### How a cycle is identified
+
+A cycle has no natural starting point, so one member is picked as its representative: the first fully qualified class name of the cycle in byte order (`Beta` before `alpha`, since uppercase sorts first). The violation is reported against that class, the displayed path starts and ends there, and the baseline entry is keyed by it.
+
+The choice is deliberate rather than incidental. It depends only on the names of the classes in the cycle, so adding or removing unrelated files never re-keys an existing cycle and never silently invalidates its baseline entry. A change to the cycle's own membership can still re-key it -- that is unavoidable under any choice of representative.
+
+The representative is not "the cause" of the cycle: every class in a cycle participates equally. Note also that the displayed path is the **shortest** loop through the representative, not a tour of every member -- a class that only lies on a longer route back does not appear in it. The `(N classes)` counter in the message is the authoritative size of the cycle.
+
 ### Options
 
 | Option          | Default | Description                                         |
