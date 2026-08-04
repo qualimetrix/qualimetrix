@@ -1,6 +1,6 @@
 # Ratchet Baseline v7 Plan
 
-**Status:** **Frozen** — revision 7.7 (supersedes `ratchet-baseline-v6.md`)
+**Status:** **Frozen** — revision 7.8 (supersedes `ratchet-baseline-v6.md`)
 **Date:** 2026-08-04
 **Target release:** TBD
 **Review status:** Four rounds complete, all CRITICAL and HIGH findings folded
@@ -259,6 +259,48 @@ and five diagnostic channels while the code emits five; several CodeSmell
 `Options` classes implement a `getSeverity()` their rule never calls; and
 `HardcodedCredentialsOptions`/`SensitiveParameterOptions` carry a `> 0` guard
 that is unreachable-false at its only call site. None of them changes this plan.
+
+### 0.8 What the P1a implementation review changed (7.8)
+
+P1a was the first package to produce code, and three independent reviewers
+examined it. The findings split cleanly in two, and the split is the useful
+part: nine were defects **in the code**, fixed inside P1a; three were gaps **in
+this plan**, which the code could only expose.
+
+The code defects are recorded in the commit history, not here. Two are worth
+carrying because they are instances of failure modes this plan keeps producing:
+
+- A `permitsEntryMutation()` helper implemented the rule "false for every status
+  that proves nothing about the code" while §5.6 says silenced entries are never
+  mutated *even though the data exists*. The same class already encoded §5.6
+  correctly in its precedence ordering — two rules in one type, and the frozen
+  one lost. Worse, a unit test pinned the wrong value, so whoever fixed it later
+  would have inherited a red test they did not own.
+- A commutativity assertion over a data provider containing no mixed-type pair:
+  the check passed both before and after the defect it existed to catch. This is
+  the same shape as the tautological `resolutionReason` test of round 2.
+
+The three plan gaps are open and are listed in §11 under P1a's follow-ups. All
+three have the same character: a contract that later packages need, that §11's
+own rule assigns to P1a ("cross-package data contracts are owned by P1a and by
+nobody else"), and that P1a's Definition of Done did not enumerate — so it was
+delivered complete against its DoD and still left a seam.
+
+| Gap                                                                              | Why it cannot wait for its consumer                                                                                                                                                                                                                                                                                                                    |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| No Core contract for the **declared-channel / current-contract registry** (§5.7) | P1b declares channels, P3 queries them, and `baseline: [core]` means the query contract must be in Core. The consumer stub substitutes a raw array, which is the proof it is missing. Without it, the one scenario the registry exists for — a forgotten version bump on a rule emitting no violation — reads as `resolved` instead of `incompatible`. |
+| No carrier for **"evaluated but silenced by configuration"** (§5.6 category 2)   | §7.1's precedence step 4 requires deciding `suppressed`. Such scopes are truthfully `Evaluated`, so the coverage contract answers correctly and still cannot express silencing; the exclusion configuration reaches no `[core]`-only layer.                                                                                                            |
+| Coverage addresses channel and symbol, never an **occurrence**                   | §7.4 resolves a banded channel only on pre-cutoff evidence. Without occurrence-level addressing there is nowhere to put it, and the natural implementation draws exactly the inference §7.4 forbids: evaluated plus absent equals fixed.                                                                                                               |
+
+**A placement rule, settled here rather than per package.** Vocabulary types
+(`ComparisonStatus`, `ResolutionReason`, `WorseDirection`) belong in Core: three
+independent subjects name them — Baseline computes, Reporting renders under
+`reporting: [core]`, and §9.3's exit policy consults. Lifecycle *policy* — may an
+ordinary command mutate this entry, may `cleanup` remove it — does not: it would
+move wholesale into Baseline, so by ADR 0016's duplication test it is not a
+cross-cutting primitive. **P3 owns that policy, and its Definition of Done must
+assert it against §5.6's table**, since removing it from Core also removed the
+only place it was pinned.
 
 ## 1. Executive Summary
 
@@ -744,16 +786,17 @@ visible; the mode is never selected implicitly at runtime.
 
 ### 7.1 Statuses and reasons
 
-| Status         | Meaning                                               |
-| -------------- | ----------------------------------------------------- |
-| `new`          | Current violation has no baseline entry               |
-| `matched`      | Within allowance                                      |
-| `improved`     | Within allowance and better than captured             |
-| `regressed`    | At least one axis or the count exceeded its allowance |
-| `resolved`     | No current violation, under proven coverage           |
-| `unobserved`   | Coverage cannot prove the finding was evaluated       |
-| `orphaned`     | The entry's rule does not exist in this build         |
-| `incompatible` | Contracts cannot be compared                          |
+| Status         | Meaning                                                  |
+| -------------- | -------------------------------------------------------- |
+| `new`          | Current violation has no baseline entry                  |
+| `matched`      | Within allowance                                         |
+| `improved`     | Within allowance and better than captured                |
+| `regressed`    | At least one axis or the count exceeded its allowance    |
+| `resolved`     | No current violation, under proven coverage              |
+| `suppressed`   | Comparison succeeded and is deliberately silenced (§5.6) |
+| `unobserved`   | Coverage cannot prove the finding was evaluated          |
+| `orphaned`     | The entry's rule does not exist in this build            |
+| `incompatible` | Contracts cannot be compared                             |
 
 The statuses are **ordered**, and exactly one applies to an entry. Without a
 stated precedence an implementer can pick either of two defensible answers when
@@ -1152,6 +1195,32 @@ set of inbound edges its consumers will need (`analysis-pipeline`,
 so that no later package inherits a red `composer check` it cannot fix;
 `baseline: [core]` stays satisfiable; a consumer stub exercises the coverage
 contract from the P3 side before it is frozen; PHPStan passes.
+
+**P1a status: implemented and reviewed; three follow-ups open.** Ownership was
+extended during implementation beyond §11's literal list, to
+`src/Core/Coverage/**`, `src/Core/Comparison/**`,
+`src/Core/Violation/ViolationChannel.php` and their tests: §5.3 requires the
+coverage contract and the status enum to live in Core without saying where, and
+ADR 0016's naming test makes them separate subjects rather than one directory
+named for the feature. Recorded here so the extension is deliberate rather than
+discovered later as a package writing outside its list.
+
+The three follow-ups from §0.8 must be closed **before P1b, P1c and P3 start**,
+because each is a seam those packages would otherwise cross blind:
+
+1. **Declared-channel / current-contract registry contract** in Core — owner:
+   P1a. Shape only; population is P1b's (rules declare) and configuration's
+   (computed metrics, §5.7).
+2. **Config-driven silencing carrier** — owner: P2, whose evaluation gate
+   already holds the exclusion configuration; the *contract* still lands in Core
+   under P1a's rule. Alternatively §7.1 step 4 is decided outside Baseline, in
+   which case this plan must say by whom — today neither reading is recorded.
+3. **Occurrence-level coverage addressing** for §7.4's pre-cutoff evidence —
+   owner: P2, contract in Core.
+
+Until these land, the consumer stub in P1a's tests overstates what the coverage
+contract can answer: it decides `resolved` from channel-wide evidence alone,
+which §7.4 permits only for unbanded channels.
 
 ### P1b — Rule observations
 Files: `src/Rules/**` (including `src/Rules/AbstractRule.php`),
