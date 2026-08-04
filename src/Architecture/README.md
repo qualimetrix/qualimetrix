@@ -54,9 +54,10 @@ src/Architecture/
 Per ADR 0010 the slice has a single explicit boundary:
 
 - **Depends on:** `Core` (cross-cutting primitives — `SymbolPath`, `Violation`,
-  `Severity`, `Dependency*`, `NamespaceMatcher`), `Rules` (only `RuleInterface`
-  registration contract), `Configuration` (`YamlConfigLoader`, `ConfigSchema`),
-  Symfony DI.
+  `Severity`, `Dependency*`, `NamespaceMatcher`), `Rules` (only the
+  `AbstractRule` / `RuleInterface` registration contract), `Configuration`
+  (`ConfigLoadException`, `ResolvedConfiguration`), `Analysis.Lifecycle`
+  (`AnalysisLifecycleHookInterface`, implemented by `ArchitectureLifecycleHook`).
 - **Depended on by:** `Analysis.Pipeline` (calls
   `ArchitectureProcessor::prepare()` between Collection and Enrichment),
   `Configuration` (consumes `ArchitectureConfigurationFactory` in
@@ -64,10 +65,11 @@ Per ADR 0010 the slice has a single explicit boundary:
   `Infrastructure.Console` (`LayerAssignmentCommand`, `RuntimeConfigurator`),
   `Infrastructure.DI` (`ArchitectureConfigurator`).
 
-Deptrac enforces this surface. **Internal sub-namespaces (`Domain`,
-`Configuration`, `Processing`, `Rules`) may depend on each other freely** —
-internal organization is a refactoring concern, not an architectural constraint
-(ADR 0010 Part 5).
+Symfony is a framework dependency, not a layer: it is declared under
+`coupling.framework-namespaces` and never appears in an allow-list.
+
+The project's own `qmx.yaml` enforces this surface (deptrac was retired in
+[ADR 0014](../../docs/adr/0014-deptrac-retirement.md)).
 
 Adapters live in Infrastructure:
 
@@ -77,6 +79,38 @@ Adapters live in Infrastructure:
   Infrastructure honours the adapter-exclusion principle (ADR 0010 Part 2 /
   ADR 0012 rule 4): symfony/console is an infrastructure concern, not a
   domain one.
+
+## Internal boundaries
+
+The four sub-namespaces are **separate enforced layers**, not one flat
+`architecture` layer. [ADR 0010](../../docs/adr/0010-architecture-vertical-slice.md)
+Part 5 granted the slice internal freedom for the duration of the pilot
+migration; [ADR 0016](../../docs/adr/0016-subject-cohesion.md) expired that
+grant once the migration landed and supersedes Part 5 on this point —
+boundaries are controlled machine-side at every level.
+
+The allowed internal edges form a DAG:
+
+| Sub-namespace    | May depend on          |
+| ---------------- | ---------------------- |
+| `Domain/`        | — (nothing in-slice)   |
+| `Configuration/` | `Domain`               |
+| `Processing/`    | `Domain`               |
+| `Rules/`         | `Domain`, `Processing` |
+
+`qmx.yaml` declares the layers as `architecture-domain`,
+`architecture-configuration`, `architecture-processing` and `architecture-rules`.
+Each of the four additionally carries the *same* external allow-list —
+`[core, rules, configuration, analysis-lifecycle]` — so the slice reaches
+outward exactly as far as it did as one flat layer; ADR 0010 Part 4 fixes that
+boundary and the split deliberately left it alone. Narrowing it per sub-layer
+(only `Processing` actually uses `analysis-lifecycle`, only `Rules` uses `rules`)
+is a separate decision, not a consequence of this one.
+
+`tests/Integration/Architecture/DogfoodingTopologyTest.php` pins the shape: all
+twelve ordered pairs of sub-layers are asserted against the table above, and a
+guard rejects classes placed directly in `src/Architecture/`, which would match
+no sub-layer pattern and so escape enforcement entirely.
 
 ## Sub-namespaces
 

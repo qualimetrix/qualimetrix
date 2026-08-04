@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Integration\Architecture;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
@@ -55,7 +56,10 @@ final class DogfoodingTopologyTest extends TestCase
         return [
             'core',
             'configuration',
-            'architecture',
+            'architecture-domain',
+            'architecture-configuration',
+            'architecture-processing',
+            'architecture-rules',
             'metrics-{Category}',
             'rules',
             'reporting',
@@ -106,10 +110,88 @@ final class DogfoodingTopologyTest extends TestCase
         $declared = array_map(self::entryName(...), $arch->entries());
 
         // A flat 'analysis' / 'infrastructure' / 'metrics' layer would silently
-        // mask every cross-sublayer edge that the current split catches.
+        // mask every cross-sublayer edge that the current split catches. The
+        // same holds for 'architecture' since ADR 0016 expired the internal
+        // freedom ADR 0010 Part 5 granted for the pilot migration.
         self::assertNotContains('analysis', $declared);
         self::assertNotContains('infrastructure', $declared);
         self::assertNotContains('metrics', $declared);
+        self::assertNotContains('architecture', $declared);
+    }
+
+    /**
+     * The Architecture slice's internal DAG, as a complete decision table over
+     * every ordered pair of its four sub-layers. Exhaustive on purpose: pinning
+     * only the interesting pairs leaves the rest free to drift back toward the
+     * mutually-reachable blob ADR 0010 Part 5 used to permit.
+     *
+     * @return iterable<string, array{string, string, bool}>
+     */
+    public static function provideArchitectureInternalEdges(): iterable
+    {
+        $allowed = [
+            'architecture-domain' => [],
+            'architecture-configuration' => ['architecture-domain'],
+            'architecture-processing' => ['architecture-domain'],
+            'architecture-rules' => ['architecture-domain', 'architecture-processing'],
+        ];
+
+        foreach (array_keys($allowed) as $source) {
+            foreach (array_keys($allowed) as $target) {
+                if ($source === $target) {
+                    continue;
+                }
+                yield "{$source} → {$target}" => [
+                    $source,
+                    $target,
+                    \in_array($target, $allowed[$source], true),
+                ];
+            }
+        }
+    }
+
+    #[Test]
+    #[DataProvider('provideArchitectureInternalEdges')]
+    public function itPinsEveryInternalEdgeOfTheArchitectureSlice(
+        string $source,
+        string $target,
+        bool $expected,
+    ): void {
+        $policy = $this->loadProjectArchitecture()->policy();
+
+        // ADR 0016 supersedes ADR 0010 Part 5: the slice's internals are a DAG
+        // rooted at Domain (Domain → nothing, Configuration/Processing → Domain,
+        // Rules → Domain + Processing) and every edge is enforced, not assumed.
+        self::assertSame(
+            $expected,
+            $policy->isAllowed($source, $target),
+            $expected
+                ? "qmx.yaml must keep the {$source} → {$target} edge — it is part of the "
+                    . 'documented internal DAG of the Architecture slice.'
+                : "qmx.yaml must forbid {$source} → {$target} — the internal freedom of "
+                    . 'ADR 0010 Part 5 expired with the pilot migration (ADR 0016).',
+        );
+    }
+
+    #[Test]
+    public function itKeepsEveryArchitectureClassInsideASubLayer(): void
+    {
+        // The sub-layer patterns are `Qualimetrix\Architecture\{Sub}\**`, so a
+        // class placed directly in `src/Architecture/` would belong to no layer
+        // at all and — with `coverage: ignore` — be silently exempt from every
+        // edge check. The flat `Qualimetrix\Architecture\**` pattern used to
+        // catch it; nothing does now except this guard.
+        $repoRoot = realpath(__DIR__ . '/../../..');
+        self::assertIsString($repoRoot, 'Could not resolve repository root.');
+
+        $strays = glob($repoRoot . '/src/Architecture/*.php');
+        self::assertSame(
+            [],
+            $strays === false ? [] : $strays,
+            'Classes directly under src/Architecture/ match no sub-layer pattern. '
+            . 'Move the class into Domain/, Configuration/, Processing/ or Rules/, '
+            . 'or declare a new sub-layer in qmx.yaml.',
+        );
     }
 
     #[Test]

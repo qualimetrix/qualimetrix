@@ -48,8 +48,19 @@ architecture:
       patterns: ['Qualimetrix\Configuration\**']
 
     # ── Architecture vertical slice (ADR 0010 pilot, ADR 0012) ─────
-    - name: architecture
-      patterns: ['Qualimetrix\Architecture\**']
+    # Expanded into enforced sub-layers per ADR 0016: the internal
+    # freedom granted by ADR 0010 Part 5 was a temporary grant for the
+    # duration of the pilot migration, and that migration has landed.
+    # The edges pin the DAG the code already forms — they do not force
+    # a refactor.
+    - name: architecture-domain
+      patterns: ['Qualimetrix\Architecture\Domain\**']
+    - name: architecture-configuration
+      patterns: ['Qualimetrix\Architecture\Configuration\**']
+    - name: architecture-processing
+      patterns: ['Qualimetrix\Architecture\Processing\**']
+    - name: architecture-rules
+      patterns: ['Qualimetrix\Architecture\Rules\**']
 
     # ── Metrics — per-category template layer (Phase 2 direction 2)
     # Each metric category (Complexity, Coupling, CodeSmell, ...) is
@@ -116,12 +127,53 @@ architecture:
     # ── Configuration: Core + Architecture (ConfigurationPipeline
     # consumes ArchitectureConfigurationFactory; ResolvedConfiguration
     # exposes ArchitectureConfiguration VO) ────────────────────────
-    configuration: [core, architecture]
+    # The four sub-layers are listed by name rather than matched with an
+    # 'architecture-*' glob: a glob target is skipped by MutualAllowDetector
+    # (it projects exact→exact edges only), which would silently drop the
+    # configuration ↔ architecture mutual-allow warning this config has always
+    # emitted. Enumerating also keeps a future architecture-* layer from
+    # auto-enrolling into every consumer's allow-list.
+    configuration:
+      - core
+      - architecture-domain
+      - architecture-configuration
+      - architecture-processing
+      - architecture-rules
 
-    # ── Architecture vertical slice ────────────────────────────────
-    # External boundary (per ADR 0010): Core, Rules (RuleInterface),
-    # Configuration (YamlConfigLoader/ConfigSchema), Analysis.Lifecycle.
-    architecture: [core, rules, configuration, analysis-lifecycle]
+    # ── Architecture vertical slice sub-layers ─────────────────────
+    # External boundary (ADR 0010 Part 4, deliberately unchanged by the
+    # sub-layer split): core, rules (AbstractRule/RuleInterface),
+    # configuration, analysis-lifecycle. Every sub-layer carries the
+    # same external allow-list, so the slice reaches outward exactly as
+    # far as it did as one flat layer — what the split adds is control
+    # over the *internal* edges. Narrowing the external list per
+    # sub-layer would be a separate decision against ADR 0010 Part 4.
+    #
+    # Internal DAG (ADR 0016; verified against the code, not assumed):
+    #   Domain        → nothing
+    #   Configuration → Domain
+    #   Processing    → Domain
+    #   Rules         → Domain, Processing
+    architecture-domain: [core, rules, configuration, analysis-lifecycle]
+    architecture-configuration:
+      - core
+      - rules
+      - configuration
+      - analysis-lifecycle
+      - architecture-domain
+    architecture-processing:
+      - core
+      - rules
+      - configuration
+      - analysis-lifecycle
+      - architecture-domain
+    architecture-rules:
+      - core
+      - rules
+      - configuration
+      - analysis-lifecycle
+      - architecture-domain
+      - architecture-processing
 
     # ── Domain leaves: each metric category and Rules/Reporting/
     # Baseline depend on Core only (parity with former deptrac) ────
@@ -147,7 +199,10 @@ architecture:
       - configuration
       - baseline
       - reporting
-      - architecture
+      - architecture-domain
+      - architecture-configuration
+      - architecture-processing
+      - architecture-rules
       - rules
       - 'metrics-*'
       - analysis-exception
@@ -188,7 +243,10 @@ architecture:
       - configuration
       - baseline
       - reporting
-      - architecture
+      - architecture-domain
+      - architecture-configuration
+      - architecture-processing
+      - architecture-rules
       - analysis-pipeline
       - analysis-collection
       - analysis-discovery
@@ -213,7 +271,10 @@ architecture:
       - configuration
       - baseline
       - reporting
-      - architecture
+      - architecture-domain
+      - architecture-configuration
+      - architecture-processing
+      - architecture-rules
       - rules
       - analysis-exception
       - analysis-discovery
