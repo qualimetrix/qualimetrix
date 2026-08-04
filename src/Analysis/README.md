@@ -54,6 +54,7 @@ Analysis/
 │   │   ├── DependencyResolver.php       # Resolves class dependencies
 │   │   ├── CircularDependencyDetector.php # Tarjan's algorithm
 │   │   ├── Cycle.php
+│   │   ├── CycleMemberLabels.php        # Short display labels for cycle members
 │   │   ├── Handler/                     # Decomposed dependency handlers
 │   │   │   ├── NodeDependencyHandlerInterface.php
 │   │   │   ├── DependencyContext.php
@@ -410,7 +411,11 @@ entry is the cycle representative, and `getPath()` starts and ends there.
 **Methods:**
 - `getSize(): int`
 - `toString(): string` — "App\A -> App\B -> App\A"
-- `toShortString(): string` — "A -> B -> A"
+- `toShortString(): string` — "A -> B -> A", each member disambiguated within the cycle (see below)
+- `toTruncatedShortString(int $maxEntries = 5): string` — first `$maxEntries` members plus "... (N more)" for large cycles
+- `toStructuredData(): array{cycle: list<string>, length: int, category: string}` — fully qualified members, for machine consumers (e.g. the `Cycle data:` JSON trailer in `CircularDependencyRule`)
+
+**Label rendering:** `CycleMemberLabels` — builds the short display label for each member of a cycle. A member keeps its bare class name when no other member ends with it; otherwise it grows by whole namespace segments until it does tell them apart, and is anchored at the root (`\Writer`) when even its full name is a suffix of another member's. Built once per `Cycle` over its whole membership — `getClasses()`, not just the displayed path — so the two renderings agree and a namesake outside the displayed loop still counts.
 
 ---
 

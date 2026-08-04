@@ -60,6 +60,33 @@ The choice is deliberate rather than incidental. It depends only on the names of
 
 The representative is not "the cause" of the cycle: every class in a cycle participates equally. Note also that the displayed path is the **shortest** loop through the representative, not a tour of every member -- a class that only lies on a longer route back does not appear in it. The `(N classes)` counter in the message is the authoritative size of the cycle.
 
+### How the cycle is reported
+
+The violation message and the `Cycle path:` line in the recommendation render the path with a short label per class: `Circular dependency (N classes): A → B → A`. A member keeps its bare class name when no other member of the cycle ends with that name. Otherwise it grows by whole namespace segments until it does tell them apart, and when even its fully qualified name is a suffix of another member's -- `App\Log\Writer` against `Acme\App\Log\Writer`, or a class in the global namespace against a namespaced namesake -- it is anchored at the root instead: `\App\Log\Writer`, the way PHP itself writes it.
+
+For example, a cycle between `App\Billing\Service` and `App\Orders\Service` renders as:
+
+```
+Billing\Service → Orders\Service → Billing\Service
+```
+
+rather than the useless `Service → Service → Service`. Disambiguation is computed over the cycle's whole membership, not just the displayed loop, so a namesake that the displayed path skips still counts and a member is labelled the same way in every rendering.
+
+For cycles in the `large` category (21+ classes), the message truncates the displayed path to the first 5 members plus `... (N more)`, and the recommendation truncates further, to 3, when pointing at entry-point classes to focus on. A loop short enough to fit is printed whole -- the displayed loop can be much shorter than the cycle it belongs to.
+
+!!! info
+    The recommendation also carries a `Cycle data:` JSON trailer meant for AI agent consumption rather than reading. Its `cycle` array uses fully qualified class names -- the short labels used elsewhere are ambiguous across namespaces and would defeat automated processing. `length` is the number of distinct classes; `category` is `small` (2-5), `medium` (6-20), or `large` (21+).
+
+    ```json
+    {
+      "cycle": ["App\\Billing\\Service", "App\\Orders\\Service", "App\\Billing\\Service"],
+      "length": 2,
+      "category": "small"
+    }
+    ```
+
+Cycle *identity* -- the violation's symbol path and the baseline key -- is unaffected by any of this: it still comes from the representative class described above.
+
 ### Options
 
 | Option          | Default | Description                                         |
