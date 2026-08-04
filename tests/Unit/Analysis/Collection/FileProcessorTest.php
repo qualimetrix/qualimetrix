@@ -259,6 +259,49 @@ final class FileProcessorTest extends TestCase
         self::assertCount(1, $nextLineSuppressions);
     }
 
+    #[Test]
+    public function itCollectsClassAndNestedMethodThresholdOverrides(): void
+    {
+        $file = new SplFileInfo('/tmp/test.php');
+
+        $method = new Node\Stmt\ClassMethod('run', attributes: ['startLine' => 10, 'endLine' => 15]);
+        $method->setDocComment(new Doc(
+            '/** @qmx-threshold complexity.cyclomatic warning=40 error=50 */',
+            startLine: 9,
+            endLine: 9,
+        ));
+
+        $class = new Node\Stmt\Class_('MyClass', ['stmts' => [$method]], ['startLine' => 5, 'endLine' => 20]);
+        $class->setDocComment(new Doc(
+            '/** @qmx-threshold complexity.cyclomatic warning=20 error=30 */',
+            startLine: 4,
+            endLine: 4,
+        ));
+
+        $this->parser->method('parse')->willReturn([$class]);
+
+        $processor = $this->makeProcessor(new CompositeCollector([]));
+        $result = $processor->process($file);
+
+        self::assertTrue($result->success);
+        self::assertSame([], $result->thresholdDiagnostics);
+        self::assertCount(2, $result->thresholdOverrides);
+
+        $classOverride = $result->thresholdOverrides[0];
+        self::assertSame('complexity.cyclomatic', $classOverride->rulePattern);
+        self::assertSame(20, $classOverride->warning);
+        self::assertSame(30, $classOverride->error);
+        self::assertSame(4, $classOverride->line);
+        self::assertSame(20, $classOverride->endLine);
+
+        $methodOverride = $result->thresholdOverrides[1];
+        self::assertSame('complexity.cyclomatic', $methodOverride->rulePattern);
+        self::assertSame(40, $methodOverride->warning);
+        self::assertSame(50, $methodOverride->error);
+        self::assertSame(9, $methodOverride->line);
+        self::assertSame(15, $methodOverride->endLine);
+    }
+
     /**
      * @param list<MethodWithMetrics> $methods
      */

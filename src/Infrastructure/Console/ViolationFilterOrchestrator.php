@@ -18,8 +18,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Combines ViolationFilterPipeline execution with CLI output for
  * stale baselines, resolved violations, suppression stats, and git scope notes.
  *
- * @qmx-threshold complexity.npath method.error=3000
- * @qmx-threshold complexity.cyclomatic method.error=25
+ * @qmx-threshold complexity.npath error=3000 — Coordinates independent filter stages and their CLI output.
+ * @qmx-threshold complexity.cyclomatic error=25 — Coordinates independent filter stages and their CLI output.
  * Orchestrator method handles many filter stages with output — complexity is structural.
  */
 final readonly class ViolationFilterOrchestrator

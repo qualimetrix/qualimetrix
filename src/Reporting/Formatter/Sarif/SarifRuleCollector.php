@@ -103,7 +103,7 @@ final class SarifRuleCollector
      * table size, not decision depth. Raised rather than ignored so genuine
      * growth in branching still trips the rule.
      *
-     * @qmx-threshold complexity.cyclomatic method.warning=30 method.error=40
+     * @qmx-threshold complexity.cyclomatic warning=30 error=40 — Flat SARIF rule-description table must remain exhaustive.
      */
     public function getRuleDescription(string $ruleName): string
     {

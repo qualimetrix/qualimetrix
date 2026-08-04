@@ -232,16 +232,15 @@ final class ThresholdAnnotationParserPathTest extends TestCase
     }
 
     #[Test]
-    public function wildcardPatternSkipsValidatorLevelChecks(): void
+    public function wildcardPatternParsesValidValueSyntax(): void
     {
-        // Wildcards intentionally skip per-rule validation in v0.19. The
-        // existing post-analysis `annotation.unsupported-threshold` check
-        // surfaces problems instead. Document the behaviour with a test so
-        // a future change is deliberate.
+        // Wildcards intentionally skip per-rule validator checks. This only
+        // covers the valid parser form, not an invalid W > E pair that would
+        // be rejected for a concrete standard rule.
         $result = $this->extract(
             ruleName: MethodCountRule::NAME,
             validator: StandardOverrideValidator::instance(),
-            docblock: '/** @qmx-threshold * warning=25 error=15 */',
+            docblock: '/** @qmx-threshold * warning=15 error=25 */',
         );
 
         self::assertCount(0, $result->diagnostics);

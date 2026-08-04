@@ -33,11 +33,11 @@ use Qualimetrix\Core\Suppression\ThresholdOverride;
 final readonly class ThresholdOverrideExtractor
 {
     /**
-     * Pattern matches: `@qmx-threshold <rule-pattern> <rest-of-line>`
+     * Pattern matches: `@qmx-threshold <rule-pattern> [<rest-of-line>]`
      * Capture group 1: rule pattern (alphanumeric, dots, asterisks, hyphens)
      * Capture group 2: threshold values (rest of line)
      */
-    private const PATTERN = '/@qmx-threshold\s+([\w.*-]+)\s+([^\n\r]+)/';
+    private const PATTERN = '/@qmx-threshold\s+([\w.*-]+)(?:[ \t]+([^\n\r]*))?/';
 
     /**
      * @param array<string, OverrideValidatorInterface> $validators rule name => validator strategy
@@ -81,7 +81,7 @@ final readonly class ThresholdOverrideExtractor
         if (preg_match_all(self::PATTERN, $text, $matches, \PREG_SET_ORDER) !== 0) {
             foreach ($matches as $match) {
                 $rulePattern = $match[1];
-                $valueString = self::cleanTrailingDocblock($match[2]);
+                $valueString = self::cleanTrailingDocblock($match[2] ?? '');
                 $line = $docComment->getStartLine();
 
                 $parsed = self::parseValues($valueString);
@@ -151,6 +151,10 @@ final readonly class ThresholdOverrideExtractor
     /**
      * Parses the value portion of a `@qmx-threshold` annotation.
      *
+     * A human-readable reason is accepted only after `--` or `—`. The
+     * value portion itself must be entirely one shorthand number or one or
+     * two distinct explicit `warning=N` / `error=N` tokens.
+     *
      * Returns [warning, error, errorWasExplicit] or null if unparseable.
      * `errorWasExplicit` distinguishes the shorthand form
      * (`@qmx-threshold X N`, parsed as W=N, E=N, errorWasExplicit=false)
@@ -162,39 +166,99 @@ final readonly class ThresholdOverrideExtractor
      */
     private static function parseValues(string $valueString): ?array
     {
+        $values = self::extractValuesBeforeReason($valueString);
+        if ($values === null) {
+            return null;
+        }
+
+        return self::parseShorthand($values) ?? self::parseExplicitValues($values);
+    }
+
+    /**
+     * Returns the value portion after validating an optional reason separator.
+     */
+    private static function extractValuesBeforeReason(string $valueString): ?string
+    {
         $valueString = trim($valueString);
 
         if ($valueString === '') {
             return null;
         }
 
-        // Try shorthand: just a number (sets both warning and error)
-        if (preg_match('/^(\d+(?:\.\d+)?)$/', $valueString, $match) === 1) {
+        $parts = preg_split('/\s+(?:--|—)\s*/u', $valueString, 2);
+        if ($parts === false) {
+            return null;
+        }
+
+        $values = trim($parts[0]);
+        if ($values === '' || (isset($parts[1]) && trim($parts[1]) === '')) {
+            return null;
+        }
+
+        return $values;
+    }
+
+    /**
+     * Parses a shorthand number, which applies to both thresholds.
+     *
+     * @return array{int|float, int|float, false}|null
+     */
+    private static function parseShorthand(string $values): ?array
+    {
+        if (preg_match('/^(\d+(?:\.\d+)?)$/', $values, $match) === 1) {
             $value = self::parseNumber($match[1]);
 
             return [$value, $value, false];
         }
 
-        // Try explicit: warning=W and/or error=E
-        $warning = null;
-        $error = null;
-        $errorWasExplicit = false;
+        return null;
+    }
 
-        if (preg_match('/warning=(\d+(?:\.\d+)?)/', $valueString, $match) === 1) {
-            $warning = self::parseNumber($match[1]);
-        }
-
-        if (preg_match('/error=(\d+(?:\.\d+)?)/', $valueString, $match) === 1) {
-            $error = self::parseNumber($match[1]);
-            $errorWasExplicit = true;
-        }
-
-        // If neither was found, syntax is invalid
-        if ($warning === null && $error === null) {
+    /**
+     * Parses one or two distinct explicit warning=N / error=N tokens.
+     *
+     * @return array{int|float|null, int|float|null, bool}|null
+     */
+    private static function parseExplicitValues(string $values): ?array
+    {
+        $tokens = preg_split('/\s+/', $values);
+        if ($tokens === false || \count($tokens) < 1 || \count($tokens) > 2) {
             return null;
         }
 
-        return [$warning, $error, $errorWasExplicit];
+        /** @var array<'warning'|'error', int|float> $thresholds */
+        $thresholds = [];
+        foreach ($tokens as $token) {
+            $parsedToken = self::parseExplicitToken($token);
+            if ($parsedToken === null) {
+                return null;
+            }
+
+            [$name, $value] = $parsedToken;
+            if (isset($thresholds[$name])) {
+                return null;
+            }
+
+            $thresholds[$name] = $value;
+        }
+
+        return [
+            $thresholds['warning'] ?? null,
+            $thresholds['error'] ?? null,
+            isset($thresholds['error']),
+        ];
+    }
+
+    /**
+     * @return array{'warning'|'error', int|float}|null
+     */
+    private static function parseExplicitToken(string $token): ?array
+    {
+        if (preg_match('/^(warning|error)=(\d+(?:\.\d+)?)$/', $token, $match) !== 1) {
+            return null;
+        }
+
+        return [$match[1], self::parseNumber($match[2])];
     }
 
     /**
@@ -210,11 +274,11 @@ final readonly class ThresholdOverrideExtractor
     }
 
     /**
-     * Strips trailing docblock closing characters and whitespace.
+     * Strips a terminal docblock marker and its surrounding whitespace.
      */
     private static function cleanTrailingDocblock(string $raw): string
     {
-        return rtrim($raw, " \t*/");
+        return preg_replace('/\s*\*\/\s*$/', '', $raw) ?? $raw;
     }
 
     /**

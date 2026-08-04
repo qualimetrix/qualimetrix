@@ -239,13 +239,15 @@ In addition to project-wide thresholds in YAML, you can override thresholds for 
 
 ```php
 /**
- * @qmx-threshold complexity.cyclomatic method.warning=20 method.error=40
+ * @qmx-threshold complexity.cyclomatic warning=20 error=40
  */
 class ComplexStateMachine
 {
     // Methods in this class use higher complexity thresholds
 }
 ```
+
+The class-level override also applies to method evaluations inside the class; a narrower method-level override takes precedence.
 
 See [Baseline > @qmx-threshold](../usage/baseline.md#per-symbol-threshold-overrides-with-qmx-threshold) for full syntax and examples.
 <!-- llms:skip-end -->

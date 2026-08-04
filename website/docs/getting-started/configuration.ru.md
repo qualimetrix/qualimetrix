@@ -238,13 +238,15 @@ rules:
 
 ```php
 /**
- * @qmx-threshold complexity.cyclomatic method.warning=20 method.error=40
+ * @qmx-threshold complexity.cyclomatic warning=20 error=40
  */
 class ComplexStateMachine
 {
     // Методы этого класса используют повышенные пороги сложности
 }
 ```
+
+Переопределение на классе также применяется к проверкам методов внутри него; более узкое переопределение на методе имеет приоритет.
 
 Полный синтаксис и примеры смотрите в разделе [Baseline > @qmx-threshold](../usage/baseline.ru.md#переопределение-порогов-для-символа-с-qmx-threshold).
 <!-- llms:skip-end -->

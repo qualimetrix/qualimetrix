@@ -215,7 +215,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itSkipsNegativeValues(): void
+    public function itRejectsNegativeValuesAsWholeAnnotation(): void
     {
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
@@ -227,19 +227,11 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $result = $this->extractor->extractWithDiagnostics($node);
 
-        // Negative values in the regex won't match (no minus sign in pattern)
-        // So nothing is extracted for warning, resulting in null warning
-        // BUT error=10 would match, giving [null, 10]
-        // However the regex for negative values: the pattern \d+ doesn't match -5
-        // So only error=10 matches
-        // Since $warning is null and $error is 10, it's valid
-        // Let's verify - actually the spec says negative values should be rejected
-        // The regex only matches positive numbers so -5 won't match
-        self::assertCount(1, $overrides);
-        self::assertNull($overrides[0]->warning);
-        self::assertSame(10, $overrides[0]->error);
+        self::assertCount(0, $result->overrides);
+        self::assertCount(1, $result->diagnostics);
+        self::assertStringContainsString('invalid syntax', $result->diagnostics[0]->message);
     }
 
     #[Test]
@@ -364,6 +356,96 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertStringContainsString('invalid syntax', $result->diagnostics[0]->message);
         self::assertStringContainsString('complexity.cyclomatic', $result->diagnostics[0]->message);
         self::assertStringContainsString('not-a-number', $result->diagnostics[0]->message);
+    }
+
+    #[Test]
+    public function itRejectsDottedOptionKeysAsWholeAnnotation(): void
+    {
+        $node = $this->createClassNodeWithDoc(
+            <<<'DOC'
+            /**
+             * @qmx-threshold complexity.cyclomatic method.warning=15 method.error=25
+             */
+            DOC,
+            10,
+            50,
+        );
+
+        $result = $this->extractor->extractWithDiagnostics($node);
+
+        self::assertCount(0, $result->overrides);
+        self::assertCount(1, $result->diagnostics);
+        self::assertStringContainsString('invalid syntax', $result->diagnostics[0]->message);
+    }
+
+    #[Test]
+    public function itRejectsMalformedValuePortionsAsWholeAnnotations(): void
+    {
+        foreach ([
+            '',
+            'unknown=10',
+            'warning=10 warning=20',
+            'warning=10 ***',
+            'warning=10 ///',
+            'warning=10 error=20 trailing-text',
+            'warning=10 error=20 --',
+            'warning=10 error=20 —',
+            'warning=1e3',
+            'error=NaN',
+        ] as $valueString) {
+            $node = $this->createClassNodeWithDoc(
+                "/** @qmx-threshold complexity.cyclomatic {$valueString} */",
+                10,
+                50,
+            );
+
+            $result = $this->extractor->extractWithDiagnostics($node);
+
+            self::assertCount(0, $result->overrides, $valueString);
+            self::assertCount(1, $result->diagnostics, $valueString);
+        }
+    }
+
+    #[Test]
+    public function itAcceptsNonemptyReasonAfterExplicitSeparator(): void
+    {
+        $node = $this->createClassNodeWithDoc(
+            <<<'DOC'
+            /**
+             * @qmx-threshold complexity.cyclomatic error=25 warning=15 — legacy adapter boundary
+             */
+            DOC,
+            10,
+            50,
+        );
+
+        $result = $this->extractor->extractWithDiagnostics($node);
+
+        self::assertCount(1, $result->overrides);
+        self::assertCount(0, $result->diagnostics);
+        self::assertSame(15, $result->overrides[0]->warning);
+        self::assertSame(25, $result->overrides[0]->error);
+    }
+
+    #[Test]
+    public function itAcceptsNonemptyReasonAfterAsciiSeparator(): void
+    {
+        $node = $this->createClassNodeWithDoc(
+            <<<'DOC'
+            /**
+             * @qmx-threshold complexity.cyclomatic 15 -- legacy adapter boundary
+             */
+            DOC,
+            10,
+            50,
+        );
+
+        $result = $this->extractor->extractWithDiagnostics($node);
+
+        self::assertCount(1, $result->overrides);
+        self::assertCount(0, $result->diagnostics);
+        self::assertSame(15, $result->overrides[0]->warning);
+        self::assertSame(15, $result->overrides[0]->error);
     }
 
     #[Test]

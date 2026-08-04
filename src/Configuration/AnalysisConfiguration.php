@@ -15,8 +15,8 @@ use RuntimeException;
 /**
  * Value object containing general analysis configuration (not rule-specific).
  *
- * @qmx-threshold code-smell.constructor-overinjection error=20
- * @qmx-threshold code-smell.long-parameter-list error=20
+ * @qmx-threshold code-smell.constructor-overinjection error=20 — Flat immutable configuration preserves named analysis options.
+ * @qmx-threshold code-smell.long-parameter-list error=20 — Flat immutable configuration preserves named analysis options.
  * Flat readonly VO with named arguments — not a service with too many
  * dependencies. Splitting into sub-objects would add indirection without
  * improving cohesion. Threshold raised to accommodate config growth.

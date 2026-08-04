@@ -72,7 +72,7 @@ use Qualimetrix\Rules\AbstractRule;
  * them as fields would leak counts across `analyze()` calls because the rule
  * executor reuses rule instances.
  *
- * @qmx-threshold complexity.wmc warning=70 error=80
+ * @qmx-threshold complexity.wmc warning=70 error=80 — One rule coordinates cohesive layer-policy diagnostics.
  *                The rule orchestrates four cohesive diagnostic channels
  *                (layer-violation, coverage, unreachable-layer, potential-shadow)
  *                that all share the same registry walk and per-class evidence

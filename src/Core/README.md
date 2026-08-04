@@ -759,6 +759,15 @@ Value Object representing a `@qmx-threshold` annotation from a docblock. Allows 
 - Shorthand: `@qmx-threshold complexity.cyclomatic 15` (sets both warning and error)
 - Explicit: `@qmx-threshold complexity.cyclomatic warning=15 error=25`
 - Partial: `@qmx-threshold complexity.cyclomatic warning=15` (override warning only)
+- Explicit keys may appear in either order; only the generic `warning` and `error` keys are accepted
+- Values are non-negative integers or decimals
+- An optional non-empty reason must follow `--` or an em dash (`—`)
+
+Exact rule names, prefix patterns, and `*` are supported. Prefix and wildcard annotations skip
+per-rule validator checks because no single rule-specific threshold contract can be selected;
+prefer exact rule names. A class annotation applies to evaluations inside the class, including
+its methods. When annotations overlap, the smallest source span wins; the first extracted
+annotation wins when spans are equal.
 
 **Fields:**
 - `rulePattern: string` — rule name or prefix (supports `RuleMatcher`)

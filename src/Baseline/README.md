@@ -103,15 +103,25 @@ Allows per-class or per-method threshold overrides without fully suppressing the
 
 ```php
 /**
- * @qmx-threshold coupling.cbo 30                         // Shorthand: both warning and error = 30
- * @qmx-threshold complexity.cyclomatic warning=15 error=25 // Explicit
- * @qmx-threshold complexity.cyclomatic warning=15          // Partial: override warning only
- * @qmx-threshold coupling.instability 0.8                  // Float thresholds supported
- * @qmx-threshold complexity 20                             // Prefix: matches all complexity.* rules
- * @qmx-threshold * 30                                      // Wildcard: all rules
+ * @qmx-threshold coupling.cbo 30
+ * @qmx-threshold complexity.cyclomatic warning=15 error=25
+ * @qmx-threshold complexity.cognitive error=30 warning=15
+ * @qmx-threshold complexity.cyclomatic warning=15
+ * @qmx-threshold coupling.instability 0.8
+ * @qmx-threshold complexity.cyclomatic 20 -- Legacy state machine
  */
 class ContainerFactory { ... }
 ```
+
+The value portion has two accepted forms:
+
+- a single non-negative integer or decimal, which sets both thresholds;
+- `warning=N`, `error=N`, or both keys in either order.
+
+These are generic override keys, not arbitrary YAML or `--rule-opt` option names. An optional
+non-empty reason may follow only after `--` or an em dash (`—`). Prefix patterns such as
+`complexity` and the `*` wildcard are supported, but they cannot be validated against one
+specific rule's threshold semantics during extraction. Prefer exact rule names whenever possible.
 
 ### How Threshold Overrides Are Wired
 
@@ -123,9 +133,10 @@ class ContainerFactory { ... }
 
 ### Scope
 
-- `@qmx-threshold` on a **class** docblock: applies to all methods within that class
+- `@qmx-threshold` on a **class** docblock: applies to rule evaluations inside that class, including its methods
 - `@qmx-threshold` on a **method** docblock: applies to that specific method only
-- Method-level override takes precedence over class-level (first match wins)
+- When scopes overlap, the smallest source span wins, so a method override takes precedence over its class override
+- If matching scopes have the same span, the first extracted override wins
 
 ## Escaping in Documentation
 

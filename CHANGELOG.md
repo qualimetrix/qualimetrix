@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `@qmx-threshold` parsing now validates the entire value expression instead of accepting `warning=` or `error=` substrings hidden inside unsupported syntax. The documentation now also reflects the actual scope rule: a class override applies to evaluations inside the class, including its methods, while the smallest matching source span wins.
+
+### Breaking
+- `@qmx-threshold` accepts only a non-negative numeric shorthand or the generic `warning=N` / `error=N` keys (one or both, in either order). Arbitrary YAML / `--rule-opt` option names and trailing prose that were accidentally accepted by substring matching are now rejected; put an optional non-empty reason after `--` or an em dash (`—`). Prefix and wildcard rule patterns remain supported but skip per-rule validator checks, so exact rule names are recommended.
+
 ## [0.23.0] - 2026-07-29
 
 ### Fixed

@@ -21,7 +21,7 @@ use Qualimetrix\Infrastructure\Git\GitScopeFilter;
  * Pipeline that applies all violation filters in order:
  * baseline -> suppression -> path exclusion -> namespace exclusion -> git scope.
  *
- * @qmx-threshold complexity.cognitive method.error=35
+ * @qmx-threshold complexity.cognitive error=35 — Preserves the ordered multi-stage violation filtering flow.
  * Multi-stage filter pipeline — cognitive complexity is structural.
  */
 final readonly class ViolationFilterPipeline

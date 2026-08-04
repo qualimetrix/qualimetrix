@@ -83,7 +83,7 @@ final class MetricEnricher
      * @param list<SplFileInfo> $files Files for duplication detection
      * @param int $filesAnalyzed Number of files successfully analyzed
      *
-     * @qmx-threshold complexity.cyclomatic method.warning=25 method.error=35
+     * @qmx-threshold complexity.cyclomatic warning=25 error=35 — Linear enrichment pipeline keeps independent feature checks visible.
      */
     public function enrich(
         MetricRepositoryInterface $repository,

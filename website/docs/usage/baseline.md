@@ -212,7 +212,7 @@ Sometimes a class or method legitimately needs different thresholds than the pro
 
 ```php
 /**
- * @qmx-threshold complexity.cyclomatic method.warning=20 method.error=40
+ * @qmx-threshold complexity.cyclomatic warning=20 error=40
  */
 class ComplexStateMachine
 {
@@ -226,7 +226,7 @@ class ComplexStateMachine
 class OrderProcessor
 {
     /**
-     * @qmx-threshold complexity.cyclomatic warning=25 error=50
+     * @qmx-threshold complexity.cyclomatic warning=25 error=50 -- Legacy state machine
      * @qmx-threshold complexity.npath warning=500 error=2000
      */
     public function processLegacyOrder(array $data): Order
@@ -239,13 +239,18 @@ class OrderProcessor
 ### Syntax
 
 ```
-@qmx-threshold <rule> <option>=<value> [<option>=<value> ...]
+@qmx-threshold <rule> <number> [-- <reason>]
+@qmx-threshold <rule> warning=<number> [error=<number>] [-- <reason>]
+@qmx-threshold <rule> error=<number> [warning=<number>] [-- <reason>]
 ```
 
-- The rule name supports the same dotted format as configuration (`complexity.cyclomatic`, `coupling.cbo`, etc.)
-- Options use the same keys as YAML configuration and `--rule-opt` CLI flag
+- Numbers must be non-negative integers or decimals. The shorthand number sets both warning and error
+- The explicit form accepts only the generic `warning` and `error` keys, one or both, in either order. Arbitrary YAML or `--rule-opt` option names are not accepted
+- An optional non-empty reason must follow `--` or an em dash (`—`); trailing text without a delimiter is invalid
+- Exact rule names are recommended. Prefix patterns such as `complexity` and the `*` wildcard are supported, but skip per-rule validator checks because they may match rules with different threshold semantics
 - Multiple `@qmx-threshold` tags can be used on the same symbol for different rules
-- Threshold overrides are scoped to the annotated symbol only -- they do not propagate to child symbols
+- A class override applies to rule evaluations inside that class, including its methods
+- A method override applies only to that method. When scopes overlap, the smallest source span wins; if spans are equal, the first extracted override wins
 
 !!! tip
     Use `@qmx-threshold` when a violation is expected but you still want Qualimetrix to enforce _some_ limit. Use `@qmx-ignore` when you want to suppress the violation entirely.
