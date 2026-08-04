@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [main, master, develop]
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   # Commit messages are not covered by the file-content guard that runs inside
   # `composer check`, and scrubbing one after the fact needs a history rewrite.
@@ -71,7 +68,7 @@ jobs:
 
       - name: Upload results (if failed)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: qmx-action-results-${{ matrix.php-version }}
           path: |
@@ -105,10 +102,10 @@ jobs:
 
       - name: Get composer cache directory
         id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
       - name: Cache composer dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ matrix.php-version }}-${{ hashFiles('composer.lock') }}
@@ -127,7 +124,7 @@ jobs:
 
       - name: Upload qmx results (if failed)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: qmx-direct-results-${{ matrix.php-version }}
           path: |
