@@ -1,11 +1,11 @@
 # Ratchet Baseline v7 Plan
 
-**Status:** Proposed — revision 7.6 (supersedes `ratchet-baseline-v6.md`)
+**Status:** **Frozen** — revision 7.7 (supersedes `ratchet-baseline-v6.md`)
 **Date:** 2026-08-04
 **Target release:** TBD
 **Review status:** Four rounds complete, all CRITICAL and HIGH findings folded
 in, and the trait model since validated against a full inventory of the rule set
-(§0.7). Ready for P0 freeze.
+(§0.7). P0 closed at 7.7 — see §11 P0.
 
 ## How To Execute This Plan From A Clean Session
 
@@ -42,17 +42,18 @@ commands (§8), exit behaviour (§9.3), layered layout (§16). Open: nothing tha
 blocks P1a. The one judgement call deliberately left to implementation is the
 naming of the migration disposition-plan schema fields, which P3 specifies.
 
-**Review state.** Two rounds are complete and both are summarised in §0.2 and
-§0.3 with the correction each finding forced. Round 1 examined 7.0 with three
-reviewers; round 2 examined 7.1 with two (the third was unavailable, and its
-slice — migration, suppress mode, status-model completeness — was covered by the
-other two).
+**Review state.** Four rounds are complete and each is summarised in §0.2–§0.6
+with the correction every finding forced. Round 1 examined 7.0 with three
+reviewers; round 2 examined 7.1 with two; rounds 3 and 4 were deliberately
+narrow, covering only §5.1, §7.1, and §8 — the sections that had changed
+substantially and that this plan's history showed to be its defect sink. §0.7
+then replaced the plan's universal claims about the rule set with an actual
+enumeration of it.
 
-**P0 is not frozen.** §5.1, §7.1, and §8 changed substantially in 7.2, and this
-plan's own history shows that each revision has introduced defects of its own
-while fixing the previous round's. A focused third pass over those three
-sections is the last step before freezing; it does not need to re-cover
-ownership, reporting, or the test plan, which round 2 settled.
+**P0 is frozen at 7.7.** The remaining open item was the CLI naming question
+§8 deferred to P0; it is now settled in `docs/internal/CLI_CONVENTIONS.md` and
+every command name in §8 is final. No section of this plan may change without a
+new revision number and an entry in §0.
 
 **This document is temporary.** Once the feature has landed, delete
 `docs/plan/` — both this revision and the superseded `ratchet-baseline-v6.md`.
@@ -919,8 +920,13 @@ bin/qmx check <paths...> --baseline=<baseline>
 
 Command names follow `noun:verb` per `docs/internal/CLI_CONVENTIONS.md`; the
 two migration phases are separate verbs rather than one command with `--plan`
-and `--apply` modes. `rebase-contracts` must be renamed to a conforming verb
-during P0 if the conventions document disallows the object suffix.
+and `--apply` modes. **These names are final.** The conventions document had no
+rule on multi-word verbs, so P0 added one rather than leaving the reading to the
+implementer: a kebab-case qualifier is permitted when the bare verb would be
+ambiguous or would overstate the command's scope, and it names a phase
+(`migrate-plan`, `migrate-apply`) or the sub-object actually affected
+(`rebase-contracts` rewrites the contract manifest, not the whole file), never
+the namespace noun. All six names above conform as written; none is renamed.
 
 All five lifecycle commands need to run an analysis. They share one
 analysis-run service; the orchestration must not be copied out of
@@ -1108,14 +1114,18 @@ package produces data another package consumes, the *shape* is defined in Core
 first; a DoD that only asserts "my side works" is insufficient, because both
 sides pass independently while the seam is broken.
 
-### P0 — Contract freeze
-Files: this document. Dependencies: none.
-Files: this document, `docs/internal/CLI_CONVENTIONS.md`.
-DoD: round 2 review passes with no unresolved CRITICAL or HIGH finding; the
+### P0 — Contract freeze ✅ closed at 7.7
+Files: this document, `docs/internal/CLI_CONVENTIONS.md`. Dependencies: none.
+DoD: review passes with no unresolved CRITICAL or HIGH finding; the
 layout decision (§16) is recorded; every command name in §8 is final, and where
 `CLI_CONVENTIONS.md` neither permits nor forbids a hyphenated verb phrase
 (`migrate-plan`, `rebase-contracts`) the rule is added there rather than left
 for the implementer to guess.
+
+Closed: four review rounds (§0.2–§0.6) plus the inventory validation (§0.7) left
+no unresolved CRITICAL or HIGH finding; §16 records the layout decision;
+`CLI_CONVENTIONS.md` gained a *verb segment* rule and all six §8 command names
+conform under it without renaming.
 
 ### P1a — Core contracts and topology
 Files: `src/Core/Observation/**`, `src/Core/Violation/Violation.php`, `qmx.yaml`,
@@ -1270,7 +1280,7 @@ reference in `ARCHITECTURE.md` (removed by ADR 0014) is corrected.
 
 ## 12. Execution Sequence
 
-1. Round 2 review, then approve P0.
+1. ~~Review, then approve P0.~~ Done — P0 closed at 7.7.
 2. P1a; standard review; freeze as the common base.
 3. P1b and P1c in parallel worktrees; verify each diff against its DoD.
 4. P2 and P3 in parallel; integrate one at a time.

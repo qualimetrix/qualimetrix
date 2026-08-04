@@ -33,6 +33,31 @@ bin/qmx hook:uninstall
 **Rule of thumb:** If the command operates on source code and produces analysis output → top-level.
 If it manages a tool subsystem or resource → namespaced.
 
+### The verb segment
+
+The verb is kebab-case. It is normally a single word (`export`, `install`,
+`cleanup`, `update`), and a **qualifier is permitted** when the bare verb would
+be ambiguous or would overstate what the command touches:
+
+```
+bin/qmx baseline:migrate-plan       # phase qualifier: produce the disposition plan
+bin/qmx baseline:migrate-apply      # phase qualifier: apply a reviewed plan
+bin/qmx baseline:rebase-contracts   # sub-object qualifier: rewrites contract metadata only
+```
+
+Two rules govern the qualifier:
+
+1. **It names a phase or the sub-object actually affected.** `migrate-plan` and
+   `migrate-apply` are the two phases of one migration; `rebase-contracts`
+   rewrites the contract manifest, not the whole file, and the bare
+   `baseline:rebase` would read as "rebase the baseline".
+2. **It never restates the namespace noun.** The noun segment already scopes the
+   command: ~~`baseline:cleanup-baseline`~~, ~~`hook:install-hook`~~.
+
+Prefer separate verbs over one command with mode options. Two phases that must
+be reviewed between each other are two commands, not `--plan` / `--apply` flags
+on one — the mode flag hides the review step that makes the split worth having.
+
 ---
 
 ## Options
