@@ -9,11 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Dependency\CircularDependencyDetector;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
-use Qualimetrix\Core\Dependency\Dependency;
-use Qualimetrix\Core\Dependency\DependencyType;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
 
 #[CoversClass(CircularDependencyDetector::class)]
 final class CircularDependencyDetectorTest extends TestCase
@@ -178,45 +175,6 @@ final class CircularDependencyDetectorTest extends TestCase
      */
     private function buildGraph(array $adjacencyList): DependencyGraph
     {
-        $dependencies = [];
-        $bySource = [];
-        $byTarget = [];
-        /** @var array<string, SymbolPath> $classMap */
-        $classMap = [];
-
-        foreach ($adjacencyList as $source => $targets) {
-            $sourcePath = SymbolPath::fromClassFqn($source);
-            $sourceKey = $sourcePath->toCanonical();
-            $classMap[$sourceKey] = $sourcePath;
-
-            foreach ($targets as $target) {
-                $targetPath = SymbolPath::fromClassFqn($target);
-                $targetKey = $targetPath->toCanonical();
-                $classMap[$targetKey] = $targetPath;
-
-                $dep = new Dependency(
-                    source: $sourcePath,
-                    target: $targetPath,
-                    type: DependencyType::TypeHint,
-                    location: new Location(RelativePath::fromString('test.php'), 1),
-                );
-
-                $dependencies[] = $dep;
-                $bySource[$sourceKey][] = $dep;
-                $byTarget[$targetKey][] = $dep;
-            }
-        }
-
-        return new DependencyGraph(
-            dependencies: $dependencies,
-            bySource: $bySource,
-            byTarget: $byTarget,
-            classes: array_values($classMap),
-            namespaces: [],
-            namespaceCe: [],
-            namespaceCa: [],
-            classCe: [],
-            classCa: [],
-        );
+        return AdjacencyGraphBuilder::build($adjacencyList);
     }
 }
