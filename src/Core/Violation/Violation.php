@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Violation;
 
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Observation\DebtObservation;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -17,6 +18,12 @@ final readonly class Violation
      * @param list<Location> $relatedLocations Additional locations (e.g., other copies of duplicated code)
      * @param ?SymbolPath $dependencyTarget Target symbol of the offending dependency edge (for dependency-based rules)
      * @param ?DependencyType $dependencyType Type of the offending dependency edge (for dependency-based rules)
+     * @param ?DebtObservation $observation Structured measurement behind this finding. One bundled
+     *                                      value object rather than several scalars, because the
+     *                                      axes, their boundaries, the contract, and the occurrence
+     *                                      discriminator are only meaningful together. Null means
+     *                                      the emitting rule has not been migrated to report a
+     *                                      structured observation yet.
      */
     public function __construct(
         public Location $location,
@@ -32,7 +39,19 @@ final readonly class Violation
         public int|float|null $threshold = null,
         public ?SymbolPath $dependencyTarget = null,
         public ?DependencyType $dependencyType = null,
+        public ?DebtObservation $observation = null,
     ) {}
+
+    /**
+     * Returns the channel this violation was emitted on.
+     *
+     * The `(ruleName, violationCode)` pair, not the rule class — see
+     * {@see ViolationChannel} for why the distinction is load-bearing.
+     */
+    public function channel(): ViolationChannel
+    {
+        return new ViolationChannel($this->ruleName, $this->violationCode);
+    }
 
     /**
      * Returns unique identifier for baseline.
