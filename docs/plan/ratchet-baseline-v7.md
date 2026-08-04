@@ -147,11 +147,11 @@ plan's recurring defect: a state that reads as correct but cannot occur. The
 findings below were derived and verified during the round; the external
 reviewer's pass over the same sections is still outstanding.
 
-| Finding                                                                                                                                                                                                                                                                                                                                                                                                   | Correction                                                                                                                                                                                              |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `withinWidenedPolicy` was unreachable. It required an observation for a symbol that does *not* violate current policy, and §5.2 keeps no such observation. Whenever the allowance is widened past the captured value the finding simply stops violating, so "growth accepted by a widened policy" cannot be reported at all.                                                                              | §7.1: attribute removed; the reachability of each status is now stated explicitly as a function of where the onset sits relative to the captured value; §14.4 records the invisibility as a limitation. |
-| One rule can carry many contracts. `ComputedMetricRule` declares a single rule name but sets `violationCode` to the user-defined metric's name, and each `ComputedMetricDefinition` has its own thresholds and its own `inverted` flag. Onset and direction are properties of the (rule, violation code) pair.                                                                                            | §5.1: stated explicitly, matching the granularity §5.5 already requires for coverage.                                                                                                                   |
-| The contract registry was to be populated "from the rule set at boot". Computed-metric contracts are not static rule metadata — they arrive from user YAML via `ComputedMetricDefinitionHolder`, so a registry built by reflection over rule classes would be blind to every user-defined metric, and a forgotten version bump on one would produce the silent `resolved` the registry exists to prevent. | §5.7: population happens after the configuration pipeline runs.                                                                                                                                         |
+| Finding                                                                                                                                                                                                                                                                                                                                                                                                   | Correction                                                                                                                                                                                                                                        |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `withinWidenedPolicy` reports "growth accepted by a widened policy", but such growth stops violating and produces no observation, so the attribute is silent for its own use case. 7.3 removed it as strictly unreachable; round 3 disproved that with an inclusive-comparison counterexample at the boundary — it fires in the band `[onset, onset+epsilon]` and nowhere else.                           | §7.1: attribute removed, with the corrected reasoning — it fires only on a boundary artefact, never for the case it was designed to report; the reachability of each status is stated per regime; §14.4 records the invisibility as a limitation. |
+| One rule can carry many contracts. `ComputedMetricRule` declares a single rule name but sets `violationCode` to the user-defined metric's name, and each `ComputedMetricDefinition` has its own thresholds and its own `inverted` flag. Onset and direction are properties of the (rule, violation code) pair.                                                                                            | §5.1: stated explicitly, matching the granularity §5.5 already requires for coverage.                                                                                                                                                             |
+| The contract registry was to be populated "from the rule set at boot". Computed-metric contracts are not static rule metadata — they arrive from user YAML via `ComputedMetricDefinitionHolder`, so a registry built by reflection over rule classes would be blind to every user-defined metric, and a forgotten version bump on one would produce the silent `resolved` the registry exists to prevent. | §5.7: population happens after the configuration pipeline runs.                                                                                                                                                                                   |
 
 ### 0.5 What round 3 changed (7.4)
 
@@ -718,12 +718,22 @@ branches that can never execute. Writing `A` for the allowance:
   classes compare with `>=`.
 
 A prior revision carried a `withinWidenedPolicy` attribute for the "growth
-accepted by a widened policy" case. It has been **removed as unreachable**:
-that case requires an observation for a symbol that does not violate current
-policy, and no such observation exists (§5.2). Growth inside a widened policy is
-invisible by construction — which is precisely what raising the threshold to 50
-means, and §14.4 records it as a limitation rather than pretending the tool
-reports it.
+accepted by a widened policy" case. It has been **removed**, but not for the
+reason 7.3 gave. That revision called it unreachable, arguing that it needs an
+observation for a symbol not violating current policy. The argument assumed
+strict comparison and is wrong for the inclusive shapes: with captured 10,
+captured onset 8, and the onset raised to 12, a current value of exactly 12
+violates (12 >= 12), is worse than captured, and sits inside the allowance — so
+the attribute would fire.
+
+It is removed because that is the *only* place it fires. The band is
+`[onset, onset + epsilon]`: an artefact of where the boundary happens to be, not
+the situation the attribute was introduced to report. The case a user cares
+about — debt growing substantially inside a widened policy — stays invisible,
+because such a value stops violating and yields no observation at all. An
+attribute that stays silent for the case it was designed for and fires on a
+boundary coincidence misinforms more than its absence does. §14.4 records the
+invisibility as a limitation instead.
 
 `regressed` findings are reported as violations of their rule's severity and
 carry a stable `baseline-regression` reason code in machine output.
@@ -814,6 +824,18 @@ analysis-run service; the orchestration must not be copied out of
   changed. Multiplicity is never invented: a v5 hash matching several
   indistinguishable occurrences captures `1`, and the rest surface as
   regressions. Unmatched current violations are never added.
+
+**A v5 entry matching several *distinguishable* current identities expands to
+all of them.** v5 deduplicated by canonical symbol plus hash, while v7 identity
+additionally carries the contract and an occurrence key, so one v5 record can
+correspond to several distinct v7 identities — different violation codes, or
+different occurrence keys under one symbol. This is not the multiplicity case
+below: those identities are individually distinguishable, and every one of them
+was suppressed by that single v5 record. Migration therefore creates one v7
+entry per matched identity, each capturing its own current axes, which is
+faithful rather than debt-accepting — the disposition plan lists the expansion so
+the user can drop any of them before applying. Only *indistinguishable*
+occurrences of one identity fall back to capturing `1`.
 
 **An unmatched v5 entry cannot be carried into v7 at all**, and the plan must
 say so rather than implying a disposition exists. A v5 entry is a rule name plus
