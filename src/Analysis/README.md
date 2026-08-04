@@ -120,7 +120,10 @@ Analysis/
 
 ---
 
-## Internal Dependency Layers (deptrac)
+## Internal Dependency Layers
+
+Enforced by the project's own `qmx.yaml` as `analysis-*` sub-layers
+(see [ADR 0014](../../docs/adr/0014-deptrac-retirement.md)).
 
 Analysis sub-packages follow layered dependency rules:
 

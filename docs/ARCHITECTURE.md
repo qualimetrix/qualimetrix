@@ -28,7 +28,15 @@ Infrastructure -> Analysis -> Metrics/Rules/Reporting/Configuration -> Core
 - **Analysis** — orchestration (depends on domains)
 - **Infrastructure** — entry point (depends on everything)
 
-**Rule:** dependencies flow DOWNWARD only. Violations are checked via `deptrac`.
+**Rule:** dependencies flow DOWNWARD only. Violations are checked by the tool
+itself: `qmx.yaml` declares the full layer topology and the
+`architecture.layer-violation` rule enforces it during `composer check`
+(deptrac was retired in [ADR 0014](adr/0014-deptrac-retirement.md)).
+
+The topology is finer-grained than the five names above: `Analysis`,
+`Infrastructure` and the `Architecture` slice are each split into per-sub-namespace
+layers with explicit allow-lists, so cross-sublayer coupling is caught instead
+of hidden inside a flat parent layer.
 
 ### 2. Five-Phase Pipeline
 
@@ -105,7 +113,7 @@ For full details (CompilerPasses, exclude patterns, autowiring constraints for r
 ### Verification
 
 ```bash
-composer deptrac   # architecture layers
+composer check     # cs-check + tests + phpstan + selfcheck (architecture layers)
 composer phpstan   # type safety, level 8
 composer test      # unit/integration tests
 ```

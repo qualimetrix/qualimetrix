@@ -91,7 +91,7 @@ Quick reference for key concepts:
 - **Testing:** PHPUnit ^12.0
 - **Static Analysis:** PHPStan ^2.0 (level 8)
 - **Code Style:** PHP-CS-Fixer ^3.0 (PER-CS 2.0)
-- **Architecture:** Deptrac ^2.0
+- **Architecture:** enforced by Qualimetrix itself (`architecture.layer-violation` + `qmx.yaml`) — deptrac was dropped in [ADR 0014](adr/0014-deptrac-retirement.md)
 
 ---
 
@@ -107,11 +107,11 @@ composer test:coverage        # With coverage report
 
 # Static analysis
 composer phpstan              # Run PHPStan level 8
-composer deptrac              # Check architecture layers
+composer selfcheck            # Analyze this codebase with itself (enforces qmx.yaml layers)
 composer cs-fix               # Fix code style
 
 # Full validation
-composer check                # tests + phpstan + deptrac + cs-fix
+composer check                # cs-check + tests + phpstan + selfcheck
 
 # Analyze your code
 bin/qmx check src/         # Run analysis

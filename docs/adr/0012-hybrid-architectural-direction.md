@@ -1,7 +1,7 @@
 # 0012. Project Architectural Direction: Hybrid Vertical-Slice / Layered Model
 
 **Date:** 2026-05-15
-**Status:** Accepted
+**Status:** Superseded by [ADR 0016](0016-subject-cohesion.md) on internal sub-namespace freedom (see rule 1). The hybrid direction itself remains in force.
 **Related:** [0010 — Architecture as Vertical Slice (Pilot)](0010-architecture-vertical-slice.md)
 
 ## Context
@@ -35,6 +35,8 @@ src/{Feature}/
 ```
 
 Internal sub-namespace dependencies are free; external dependencies cross a single domain boundary. Deptrac enforces only that boundary.
+
+> **Two corrections to the sentence above.** The enforcement tool changed: deptrac was retired in [ADR 0014](0014-deptrac-retirement.md) and the boundary is now enforced by the project's own `architecture.layer-violation` rule reading `qmx.yaml`. And the internal freedom is superseded by [ADR 0016](0016-subject-cohesion.md), which requires boundaries to be controlled machine-side at *every* level: a slice's internals become enforced sub-layers of their own once its shape settles. A new slice may still start with free internals while the shape is moving — but that is a grant with a named expiry condition, not a standing property of the layout. See [ADR 0010](0010-architecture-vertical-slice.md) Part 5 for how the pilot's grant was closed.
 
 A feature may qualify by **analogous complexity** even without the literal two-criteria rule: it has multi-stage processing (config-load → analysis-time preparation → rule consumption) AND a configuration loader complex enough to live separately from `src/Configuration/`. This is case-by-case, not auto-qualifying.
 

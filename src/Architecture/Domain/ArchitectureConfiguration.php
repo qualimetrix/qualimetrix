@@ -192,9 +192,10 @@ final readonly class ArchitectureConfiguration
      * {@code $emptyTemplateNames}. Preserves the original policy, coverage,
      * entries, and ceiling.
      *
-     * Accepts primitive arrays rather than the Analysis-layer
-     * {@code LayerExpansionResult} VO to keep the Core domain free of
-     * Analysis-layer dependencies (Deptrac contract).
+     * Accepts primitive arrays rather than the {@code LayerExpansionResult} VO
+     * so that Domain stays free of dependencies on the slice's Processing
+     * sub-namespace — an inversion the {@code architecture-domain} layer in
+     * qmx.yaml now rejects outright (ADR 0016).
      *
      * The new registry borrows the original registry's {@see \Qualimetrix\Architecture\Domain\Layer\ClassContextFactory}
      * so the rule's {@code bindGraph()} invocation reaches the same factory

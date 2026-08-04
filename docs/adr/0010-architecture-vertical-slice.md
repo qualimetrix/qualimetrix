@@ -1,7 +1,7 @@
 # 0010. Architecture as Vertical Slice — Pilot
 
 **Date:** 2026-05-15
-**Status:** Accepted
+**Status:** Superseded by [ADR 0016](0016-subject-cohesion.md) on Part 5 (internal freedom). Other parts remain in force.
 **Builds on:** [0008 — `ArchitectureProcessor` Service](0008-architecture-processor-service.md)
 **Related:** [0012 — Project Architectural Direction](0012-hybrid-architectural-direction.md) (Architecture is the pilot for the hybrid direction)
 
@@ -85,9 +85,11 @@ The slice's external dependency surface is explicit:
 
 Architecture itself depends only outward on Core / Configuration loader / `RuleInterface`.
 
-### Part 5: Internal freedom
+### Part 5: Internal freedom — superseded by [ADR 0016](0016-subject-cohesion.md)
 
 Inside `src/Architecture/`, sub-namespaces (`Domain`, `Configuration`, `Processing`, `Rules`) may depend on each other freely. Deptrac enforces only the **external** boundary of the slice — what enters and leaves it. Internal organization is a refactoring decision, not an architectural constraint.
+
+> **Superseded by [ADR 0016](0016-subject-cohesion.md).** It reframed the paragraph above as a *time-limited grant* rather than a standing rule: boundaries are controlled machine-side at every level, and internal freedom is a concession for the period when a slice's shape is still moving, valid only while its named expiry condition holds. Here that condition was the pilot migration, which landed; the four sub-namespaces are now enforced sub-layers (`architecture-domain`, `architecture-configuration`, `architecture-processing`, `architecture-rules`) in the project's own `qmx.yaml`. Their edges pinned the DAG the code already formed, so nothing had to be refactored. Part 4's **external** boundary is unaffected and still governs.
 
 ### Alternatives considered
 

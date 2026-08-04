@@ -15,7 +15,9 @@ Infrastructure contains external adapters and entry points:
 
 ## Internal Dependency Layers
 
-Infrastructure sub-packages follow internal deptrac rules to prevent circular dependencies:
+Infrastructure sub-packages are declared as `infra-*` sub-layers in the project's
+own `qmx.yaml` to prevent circular dependencies (see
+[ADR 0014](../../docs/adr/0014-deptrac-retirement.md)):
 
 - **Leaf** (no Infrastructure siblings): Serializer, Logging, Profiler, Rule, Git
 - **Mid** (depends on specific siblings): Cache -> Serializer, Ast -> Cache, Parallel -> Ast + Cache + Serializer
