@@ -1,13 +1,11 @@
 # Ratchet Baseline v7 Plan
 
-**Status:** Proposed — revision 7.5 (supersedes `ratchet-baseline-v6.md`)
+**Status:** Proposed — revision 7.6 (supersedes `ratchet-baseline-v6.md`)
 **Date:** 2026-08-04
 **Target release:** TBD
-**Review status:** Four rounds complete. All CRITICAL and HIGH findings are
-folded in. §5.1 has been rewritten twice — first from an open rule-plus-carve-outs
-form into a closed enumeration of rule shapes, then, when review showed that
-enumeration to be neither total nor disjoint, into orthogonal per-channel traits
-that are total by construction (§0.6).
+**Review status:** Four rounds complete, all CRITICAL and HIGH findings folded
+in, and the trait model since validated against a full inventory of the rule set
+(§0.7). Ready for P0 freeze.
 
 ## How To Execute This Plan From A Clean Session
 
@@ -233,6 +231,34 @@ ratcheting is vacuous for that channel and it declares magnitude accordingly;
 and the built-in `health.*` dimensions travel the same path as user-defined
 metrics, so nothing may special-case "user-defined".
 
+### 0.7 Validation against the rule inventory (7.6)
+
+Four review rounds shared one root cause: this plan made universal claims about
+the rule set without enumerating it, so each round discovered one more rule that
+did not fit and the fix-and-review cycle could not converge. The enumeration was
+finally done — [`channel-trait-inventory.md`](channel-trait-inventory.md), 41
+concrete rule classes, 52 channels, every trait cell filled from source.
+
+**The trait model survives.** No eighth dimension was needed and no channel
+failed to map. Three corrections came out of it:
+
+| Inventory finding                                                                                                                                                          | Correction                                                                                                                                    |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CircularDependencyOptions::getSeverity()` mixes strict `>` for its cutoff with inclusive `<=` for its error tier, so comparison inclusivity is not one value per channel. | §5.1: comparison is declared **per boundary**.                                                                                                |
+| `design.data-class` also has a cutoff — its `WMC <= threshold` conjunct silences the finding as WMC rises. The band dimension has two members, not one.                    | §5.1: recorded. This also refutes the idea that fixing `maxCycleSize` alone would let the dimension be dropped.                               |
+| `vector` magnitude has zero members today: `Violation::metricValue` is `int\|float\|null`, so no channel emits several axes.                                               | §5.1: kept, with an explicit note that it is the value compound channels take once P1b adds their raw axes — it must not be pruned as unused. |
+
+Two dimension values have exactly one member each — `symbol-conditioned`
+(`code-smell.long-parameter-list`) and `run-conditioned` (`coupling.class-rank`).
+Both are real and neither can be folded away.
+
+The inventory also surfaced defects that are **out of scope here** and are
+tracked separately: `LayerViolationRule`'s docblocks variously claim three, four,
+and five diagnostic channels while the code emits five; several CodeSmell
+`Options` classes implement a `getSeverity()` their rule never calls; and
+`HardcodedCredentialsOptions`/`SensitiveParameterOptions` carry a `> 0` guard
+that is unreachable-false at its only call site. None of them changes this plan.
+
 ## 1. Executive Summary
 
 Baseline v5 is an identity-only suppression snapshot: once a violation is
@@ -374,6 +400,13 @@ classes.
 Each channel therefore declares a value on each axis below. Totality holds by
 construction — there is nothing to fail to map onto — and the registry test
 asserts that every declared channel answers every dimension.
+
+The dimensions and their values are **not** proposed from examples: they were
+validated against a full inventory of the rule set, recorded in
+[`channel-trait-inventory.md`](channel-trait-inventory.md) — 41 concrete rule
+classes, 52 channels, every cell filled. That inventory is the artefact this
+plan should have started from; P1b's first task is to keep it in sync as code,
+not prose.
 
 | Dimension        | Values                                                          | Notes                                                                                  |
 | ---------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
