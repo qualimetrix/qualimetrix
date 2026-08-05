@@ -1,6 +1,6 @@
 # Ratchet Baseline v7 Plan
 
-**Status:** revision 8.0 — the §17 inversion is applied throughout
+**Status:** revision 8.1 — the §17 inversion applied, and review round 8 folded in
 **Date:** 2026-08-05
 
 > **8.0 replaces inference with measurement.** Up to 7.9 a repair was inferred
@@ -8,11 +8,12 @@
 > could also explain that absence. 8.0 re-reads the axes an entry captured,
 > ahead of thresholds, gates, cutoffs and filters, and decides from the value.
 > §17 records the decision and is kept as its rationale; §0.10 records what the
-> rewrite changed. **This revision has not been reviewed** — §17.6 item 4
-> requires a review round before any code is written against it.
+> rewrite changed and §0.11 what reviewing it changed. Round 8 found one
+> CRITICAL and thirteen HIGH in the rewrite; all are folded in.
 **Target release:** TBD
-**Review status:** Seven rounds complete against 7.9; the 8.0 rewrite is
-unreviewed. The channel inventory (§0.7) still grounds the trait model, and
+**Review status:** Eight rounds complete. Round 8 examined the 8.0 rewrite and
+its corrections are 8.1 (§0.11); round 9 is narrow and is the next action
+(§12 step 4). The channel inventory (§0.7) still grounds the trait model, and
 P0 closed at 7.7 — see §11 P0.
 
 ## How To Execute This Plan From A Clean Session
@@ -53,9 +54,11 @@ disposition-plan schema fields (P3 specifies), and the per-channel projection of
 the configuration fingerprint (§5.7, opt-in, revisit once real usage exists).
 
 **Where execution stands.** P0, P1a and the two external prerequisites have
-landed. The next package is **P1a′** (§11), re-cut at 8.0 around the reader.
-P1b, P1c and P3 are blocked on it. Nothing has been implemented against the
-inverted design yet, which is why §17.3 calls this the cheapest moment to switch.
+landed. The next package is **P1a′** (§11), re-cut at 8.0 around the reader and
+carrying five Core contracts after round 8. P1b, P1c and P3 are blocked on it.
+Nothing has been implemented against the inverted design yet, which is why
+§17.3 calls this the cheapest moment to switch — and why round 8's CRITICAL cost
+nothing but a paragraph.
 
 **Review state.** Seven rounds examined the document up to 7.9; each of the last
 three found HIGH findings in its predecessor's corrections, and all three are
@@ -508,6 +511,84 @@ checked:
 | `incompatible` moves ahead of `unobserved` in the precedence, because the contract is validated before any read is attempted                                                                         | §7.1       |
 | 45 channels read the metric repository, one reads a recorded snapshot, six declare no reader — an arithmetic claim over the inventory, not an estimate                                               | §5.2       |
 
+### 0.11 What review round 8 changed (8.1)
+
+Three reviewers examined 8.0 before any code was written against it, on disjoint
+slices: the core derivation, the mechanisms and the on-disk contract, and the
+packages with their Definitions of Done. Thirty findings, about twenty distinct
+after semantic dedup — **1 CRITICAL, 13 HIGH** — every one of them inside a
+section 8.0 had rewritten.
+
+Two findings were reached independently by two reviewers from different slices,
+which is the strongest confirmation signal available here and the reason §17.1's
+own decision was trusted:
+
+| Found twice, independently                                                         | Reached via                                                                                                     |
+| ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| §7.1's outcome table is stated over axes, so an axis-less entry resolves vacuously | the reachability paragraph contradicting the table; and §6.2's axis-count sentence omitting occurrence entirely |
+| The allow-list carve-out names a mechanism instead of a behaviour                  | `BooleanArgumentRule::shouldIncludeEntry()`; and this repository's own `qmx.yaml`                               |
+
+**The CRITICAL, because it is the shape this plan keeps producing.** The outcome
+table's `regressed` row read "any axis, **or the occurrence count**, is past its
+allowance" while its other three rows named only axes. So "no axis is still
+debt" was *vacuously true* for the twenty magnitude-free channels — every
+unconditional code-smell and security channel — and every such entry read
+`resolved`/`fixed` on its first run, with `cleanup` deleting the whole
+code-smell and security half of a baseline while the debt stood. The author knew
+the count was a separate dimension, since one row says so; the symmetric fix was
+not carried across. Round 2 shipped a `fixed` test that was always false and
+round 3 an attribute that was always false; this was the same defect inverted,
+always true, and no refusal-only test suite detects either.
+
+The correction is §7.1's **measured dimensions**: every predicate is stated over
+axes, occurrence counts and identity presence alike, and §6.2 requires an entry
+to carry at least one.
+
+**Two corrections were regressions against 7.9, not new mistakes**, and both
+came from the rewrite dropping a hard-won generalisation:
+
+- The allow-list carve-out. 7.9 had already been corrected to say *any path by
+  which a rule discards a measured entry*, precisely because
+  `BooleanArgumentRule` filters twice and only one filter goes through the
+  obvious interface. 8.0 reverted to naming the mechanism, which would have
+  aborted every run on ordinary PHP 8 code.
+- The fingerprint. 7.9 constrained the digest to measurement inputs; 8.0 dropped
+  the constraint as unnecessary once thresholds became harmless, and with it the
+  projection — leaving "the resolved configuration", which in this codebase
+  carries absolute host paths, CLI flags and log records. A baseline generated
+  locally would never verify in CI, `fixed` would be unreachable by
+  construction, and users would be pushed to `generate --force`.
+
+**What else changed**, in one line each:
+
+| Finding                                                                                                                                                                                    | Correction                                                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Compound axes were declared onset-less, which made `resolved` unreachable for both compound channels — and the claim is false in the code                                                  | §5.9, §14.1: they carry per-axis onsets; the residue is `design.god-class` alone, and `design.data-class`'s two axes have **opposite** directions                |
+| A reading below the captured onset while the rule still fires produced `resolved` beside a live violation, with no rule saying which wins                                                  | §7.1: an entry is still debt if any dimension is **or a finding fired**, so `resolved` implies no current finding                                                |
+| Two of `unobserved`'s four causes were unguarded by the absence of a finding, so one parse failure downgraded real regressions to diagnostics                                              | §7.1: the measurement is established *before* the trust gate runs                                                                                                |
+| `incompatible` moving ahead of `unobserved` sent a removed `computed_metrics` definition to a status `rebase-contracts` deletes                                                            | §7.1: a registry with nothing to say is not a disagreement                                                                                                       |
+| The reader/observation self-check had no defined pairing for bucket-counted entries — aborting every run, or vacuous for twenty channels                                                   | §5.2: the compared quantity is stated per dimension; the hard error fires only where it is defined                                                               |
+| The fingerprint covered configuration but not the analyser build, and §10 permits algorithm changes without a contract bump                                                                | §5.7, §14.9: the digest covers measurement *provenance*, build included; every upgrade suspends `fixed` until regeneration                                       |
+| §5.5's deviation list still reported the eligibility gates §5.6 tells the reader to read past — and `excludeReadonly` defaults to `true`                                                   | §5.5, §5.6: a deviation is only what makes the measurement untrustworthy; applicability filters leave the table                                                  |
+| An empty metric list and a repaired smell are the same observable                                                                                                                          | §5.2: a reader may answer zero only when the owning symbol is in this run's repository                                                                           |
+| A `resolved` entry with an unread axis had no admissible reason                                                                                                                            | §7.1: `resolved` requires every dimension read                                                                                                                   |
+| Inline `@qmx-threshold` overrides die with `AnalysisContext` and no package carried them                                                                                                   | §11: they join the run-facts carrier; P2 owns them                                                                                                               |
+| §7.3 decided three kinds by identity absence while the headline claim said absence is never proof                                                                                          | §7.4: absence from an enumeration the run produced is a measurement; absence from discovery is not; a composite identity naming an absent symbol is `unobserved` |
+| A `regressed` entry with no finding had no severity, and three formatters need one                                                                                                         | §7.1: the tier the current reading falls into                                                                                                                    |
+| The fingerprint had no owner — P3's DoD required a value only P4a produces, two packages later                                                                                             | §11: a fifth Core contract in P1a′; the corollary is stated as a rule                                                                                            |
+| One global fingerprint field cannot express the per-channel opt-in §17.5 E offers                                                                                                          | §6.1: the field is a map                                                                                                                                         |
+| The CLI grammar block marked "final" omitted four flags its own prose requires                                                                                                             | §8: the block is the complete signature                                                                                                                          |
+| No command could clear a repaired entry on a reader-less channel while its symbol existed                                                                                                  | §8: `cleanup --prune-unprovable`, restricted to channels with no reader                                                                                          |
+| `withinWidenedPolicy` qualifying `resolved` asserts something false                                                                                                                        | §7.1: it qualifies the three non-resolved outcomes                                                                                                               |
+| §14 claimed four closures and struck three; §11's preamble still assigned cross-package contracts to P1a; §13 promised a rename test no bullet delivered; the JSON example omitted `scope` | §14, §11, §13, §6 respectively                                                                                                                                   |
+
+**The lesson, stated as a rule rather than a tally.** Every regression above was
+introduced by *rewriting a section rather than editing it*: the generalisation
+that a previous round had paid for was in the sentence being replaced, and the
+replacement was derived from the design rather than from the sentence. When a
+section carries a correction from an earlier round — and §0.2–§0.9 say which do
+— the rewrite must carry the counterexample forward, not just the conclusion.
+
 ## 1. Executive Summary
 
 Baseline v5 is an identity-only suppression snapshot: once a violation is
@@ -718,15 +799,15 @@ direction, all three feeding the allowance — plus the reader declaration of
 §5.2, which is not one of these dimensions at all. Firing predicate, band,
 magnitude and identity stay in the inventory as facts and are stored nowhere.
 
-| Dimension        | Values                                                          | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| ---------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Onset source     | none / configured tiers / symbol-conditioned / run-conditioned  | `ClassRankRule` is run-conditioned: its thresholds scale by project class count                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Comparison       | inclusive / exclusive, **declared per boundary**                | Follows direction by an existing, documented convention: higher-is-worse compares inclusively (the threshold is the first *bad* value), lower-is-worse strictly (it is the first *acceptable* one — see the rationale comment in `MaintainabilityOptions::getSeverity()`). Declaring it is mechanical, not a judgement call. One exception: `CircularDependencyOptions::getSeverity()` mixes strict `>` for its cutoff with inclusive `<=` for its error tier, which is why the value is per boundary rather than per channel |
-| Direction        | higher-is-worse / lower-is-worse                                | per axis                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Firing predicate | single threshold / conjunction / criteria count / unconditional | `DataClassRule` conjunctive, `GodClassRule` criteria count                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Band             | unbounded / cutoff                                              | a cutoff hides the finding as debt grows (`maxCycleSize`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| Magnitude        | none / scalar / vector / count                                  | `CodeDuplicationRule` carries a scalar *and* an occurrence identity                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Identity         | symbol / occurrence / graph                                     | independent of magnitude                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Dimension        | Values                                                          | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Onset source     | none / configured tiers / symbol-conditioned / run-conditioned  | `ClassRankRule` is run-conditioned: its thresholds scale by project class count                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Comparison       | inclusive / exclusive, **declared per axis**                    | Follows direction by an existing, documented convention: higher-is-worse compares inclusively (the threshold is the first *bad* value), lower-is-worse strictly (it is the first *acceptable* one — see the rationale comment in `MaintainabilityOptions::getSeverity()`). Declaring it is mechanical, not a judgement call. 7.9 said *per boundary*, citing `CircularDependencyOptions::getSeverity()` for mixing operators; §0.9 had already established that neither of its operators is an onset comparison, and 8.0's manifest stores exactly one `compare` per axis (§6.1) |
+| Direction        | higher-is-worse / lower-is-worse                                | per axis                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Firing predicate | single threshold / conjunction / criteria count / unconditional | `DataClassRule` conjunctive, `GodClassRule` criteria count                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Band             | unbounded / cutoff                                              | a cutoff hides the finding as debt grows (`maxCycleSize`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Magnitude        | none / scalar / vector / count                                  | `CodeDuplicationRule` carries a scalar *and* an occurrence identity                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Identity         | symbol / occurrence / graph                                     | independent of magnitude                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 The **onset provider** is the query behind the first dimension: given a channel,
 a symbol, its metrics, and run-level context, it returns the current onset and
@@ -793,9 +874,11 @@ channel, its identity — symbol, and occurrence key where the channel has one �
 and the run's own facts, and it returns a value per axis, or reports that it
 cannot answer. It reads **ahead of** thresholds, severity tiers, eligibility
 gates, band cutoffs and exclusion filters: the mechanisms that can make a
-finding vanish while the debt stands. It does *not* read ahead of a rule's own
-allow-list, which decides what exists rather than what is reported — §5.6 states
-that boundary and why generalising past it breaks the design.
+finding vanish while the debt stands. It does *not* read ahead of **any path by
+which a rule discards a candidate occurrence before constructing a violation for
+it** — those decide what exists rather than what is reported. §5.6 states that
+boundary, names why it must be phrased as a behaviour rather than as an
+interface, and explains why generalising past it breaks the design.
 
 For 45 of the 52 channels a reader is a metric lookup, because that is what the
 rule itself does (§2.8) — the reader reads the same entries minus the rule's
@@ -806,6 +889,18 @@ policy. Three answers exhaust the question:
 | the values, per axis | the metrics for this identity exist in this run                                                     | §7.1 decides the outcome from them                   |
 | `not answerable`     | the symbol, the metric or the recorded evidence is absent, or coverage for this scope is incomplete | `unobserved` — never a resolution                    |
 | `no reader`          | the channel declared none                                                                           | `unobserved` when no finding fired; §7.4 reports why |
+
+**An empty list is not a reading of zero.** `MetricBag::entries()` returns an
+empty list for a key that was never measured and for a smell that was genuinely
+removed — the same value for the two opposite facts, on the nineteen occurrence
+channels where the reader's whole job is to tell them apart. So the reader may
+answer zero **only when the owning symbol is present in this run's repository**
+(`MetricRepositoryInterface::has()`), and must answer `not answerable`
+otherwise. Without that sentence an implementer picks one of two readings:
+"empty means repaired" resolves an entry whenever the file stopped being
+analysed, and "empty means unknown" makes `resolved` unreachable for nineteen of
+the forty-five readable channels. The same rule covers the scalar channels for
+free.
 
 `not answerable` covers the case that matters most and is easiest to get wrong:
 **a symbol absent from a complete discovery is not proof of repair** (§17.4). A
@@ -874,6 +969,26 @@ channel (§5.1). A warning in this position is a warning nobody reads, and what
 it is failing to report is two implementations of one measurement drifting apart
 — the failure mode that ends in deleted debt. The error names the channel, the
 identity and both values.
+
+**The unit of comparison is stated per kind, or the check is a trap.** Round 8
+found the pairing undefined for the largest group it applies to. For a
+bucket-counted occurrence entry the rule emits one `Violation` per occurrence,
+each carrying an observation with no axes and no key, while the entry's
+measurement is a *count* of them; nothing pairs one observation with one count.
+An implementation comparing per finding aborts every run that contains a
+code-smell finding, and one comparing axes only is vacuously green for the
+twenty magnitude-free channels — which is precisely the population the check
+exists to protect. So:
+
+| Entry's dimension | Compared quantity                                                                               |
+| ----------------- | ----------------------------------------------------------------------------------------------- |
+| axis              | the observation's value for that axis against the reading                                       |
+| occurrence count  | the count of findings for that identity in this run, aggregated on both sides at the same point |
+| identity presence | whether the identity appears among this run's findings                                          |
+
+The hard error fires only where the pairing above is defined. P1b's Definition
+of Done requires it to be proven on a seeded disagreement **for a bucket-counted
+channel**, not only for a scalar one.
 
 **The check is blind exactly where the risk is** (§17.7 G). It validates readers
 against findings that still fire; the verdict that destroys data is the opposite
@@ -987,17 +1102,42 @@ incomplete scope makes the reader `not answerable`, and the entry is
 not at 7.9, where "evaluated" plus "absent" equalled "fixed" and a coverage bug
 deleted entries. A coverage bug now costs a retained entry.
 
+**The deviation list must be re-derived against the reader, and round 8 found
+that it had not been.** 7.9's confirmed cases included `GodClassRule` skipping
+classes by its own applicability check — but at 8.0 that is an *eligibility
+gate*, and §5.6 requires the reader to read past gates, with a P1b Definition of
+Done item pinning that switching on `excludeReadonly` must not change a reading.
+Both cannot hold: if the skip reaches coverage, §7.1 step 4 makes the entry
+`unobserved` and the DoD item is unobservable through the comparator; and since
+`excludeReadonly` defaults to `true`, every affected entry would freeze as
+`unobserved` for ever — never resolvable, and never build-failing either, so
+growth on those symbols stops being reported.
+
+The line, stated once: **a deviation belongs here only when it makes the
+measurement untrustworthy, never when a rule merely declined to judge a symbol
+whose metrics are intact.** Parse failure, worker failure, an incomplete
+aggregate or graph input, and a disabled level are deviations. An applicability
+filter is not: `GodClassRule::isExcluded()` reads `STRUCTURE_IS_READONLY` and
+`STRUCTURE_METHOD_COUNT` out of the metric bag, so the metrics survive the gate
+— which is exactly why the reader can read past it.
+
 ### 5.6 Three suppression categories, and what each decides now
 
 7.0's two-way split contradicted the implementation (§2.5). The corrected
 taxonomy survives the inversion unchanged **as a description of the code**;
 what changes is what hangs off it.
 
-| Category                       | Mechanisms                                                                                                                                                                                                                                                                    | Can the reader measure it? | Outcome                     | Counts toward exit | May mutate entry       |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | --------------------------- | ------------------ | ---------------------- |
-| **Not evaluated**              | discovery `exclude`, `@generated` stripping, `disabled_rules`, `only_rules`, `rules.<name>.enabled: false`, rule applicability filters (`GodClassRule`'s `minMethods`/`excludeReadonly`, LCOM and Maintainability preconditions), parse failure, worker failure, interruption | no — nothing was computed  | `unobserved`                | no                 | no                     |
-| **Area silenced by config**    | `exclude_paths`, `exclude_namespaces`, per-rule exclusions, architecture `exclude:` / `allow:` / `relations:` blocks                                                                                                                                                          | yes — the metrics exist    | the ordinary outcome status | **no**             | only on positive proof |
-| **Finding silenced by author** | `@qmx-ignore`, `@qmx-ignore-file`, `@qmx-ignore-next-line`                                                                                                                                                                                                                    | yes                        | the ordinary outcome status | **no**             | only on positive proof |
+| Category                       | Mechanisms                                                                                                                                              | Can the reader measure it? | Outcome                     | Counts toward exit | May mutate entry       |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- | --------------------------- | ------------------ | ---------------------- |
+| **Not evaluated**              | discovery `exclude`, `@generated` stripping, `disabled_rules`, `only_rules`, `rules.<name>.enabled: false`, parse failure, worker failure, interruption | no — nothing was computed  | `unobserved`                | no                 | no                     |
+| **Area silenced by config**    | `exclude_paths`, `exclude_namespaces`, per-rule exclusions, architecture `exclude:` / `allow:` / `relations:` blocks                                    | yes — the metrics exist    | the ordinary outcome status | **no**             | only on positive proof |
+| **Finding silenced by author** | `@qmx-ignore`, `@qmx-ignore-file`, `@qmx-ignore-next-line`                                                                                              | yes                        | the ordinary outcome status | **no**             | only on positive proof |
+
+**Rule applicability filters left this table at 8.0** — `GodClassRule`'s
+`minMethods` / `excludeReadonly`, the LCOM and Maintainability preconditions.
+They are eligibility gates, they read metrics that survive them, and the reader
+reads past them (§5.5). A gate-excluded symbol is measured; only the rule
+declined to judge it, and at 8.0 that silences nothing.
 
 Two mechanisms 7.9 listed here have left the table, and both departures are
 consequences of the inversion rather than corrections:
@@ -1046,19 +1186,37 @@ Two consequences worth stating rather than leaving to be derived:
 #### The one thing the reader must *not* read ahead of
 
 §17.2 lists what the reader reads ahead of: thresholds, eligibility gates, band
-cutoffs and exclusion filters. A rule's own **allow-list** is deliberately not
-on that list, and an implementer generalising the sentence will break the
-design in a way that surfaces as noise on every run.
+cutoffs and exclusion filters. **Every path by which a rule discards a candidate
+occurrence before constructing a violation for it** is deliberately not on that
+list, and an implementer generalising the sentence will break the design in a
+way that surfaces as noise on every run.
 
-`AbstractCodeSmellRule` skips allowed metric entries before constructing a
-violation, so an allow-list decides which occurrences *exist*, not which of the
-existing ones are reported. A reader ignoring it would count occurrences the
-rule never captured, disagree with the observation on every firing finding —
-tripping §5.2's self-check as a hard error — and report a permanent phantom
-regression for every bucket-counted entry. So the reader applies the same
-allow-list the rule applies, and the risk that a *change* to that list looks
-like a repair is carried where every other measurement-input change is carried:
-by the configuration fingerprint (§5.7).
+Such a path decides which occurrences *exist*, not which of the existing ones
+are reported. A reader ignoring one would count occurrences the rule never
+captured, disagree with the observation on every firing finding — tripping
+§5.2's self-check as a hard error — and report a permanent phantom regression
+for every bucket-counted entry. So the reader applies the same filtering the
+rule applies, and the risk that a *change* to that filtering looks like a repair
+is carried where every other measurement-input change is carried: by the
+configuration fingerprint (§5.7).
+
+**Phrased as a behaviour, not as an interface — and 8.0 had to learn this
+twice.** The obvious shorthand is "the rule's allow-list", meaning
+`AbstractCodeSmellRule` skipping entries through `EntryFilteringOptionsInterface`.
+That names one of two paths in a single rule: `BooleanArgumentRule` overrides
+`shouldIncludeEntry()` a second time and drops promoted-property occurrences
+unless `flag_promoted_properties` is set, independently of that interface, in
+the same method, before any violation is built. Both defaults are live —
+`allowedPrefixes` is non-empty and `flagPromotedProperties` is `false` — so an
+ordinary PHP 8 class with a promoted boolean constructor parameter beside a
+plain boolean argument makes a rule that fires for one occurrence and a
+DoD-satisfying reader that counts two. Under §9.3 that is not a miscount but an
+aborted run.
+
+Revision 7.9 had already been corrected on exactly this point and phrased the
+rule as *any path by which a rule discards a measured entry*; the 8.0 rewrite
+lost the generalisation and reverted to naming the mechanism. It is restored
+here, and P1b's Definition of Done tests both paths in one fixture.
 
 The general rule, stated once so it can be applied to the next mechanism nobody
 has met yet: **the reader ignores what decides whether a finding is reported,
@@ -1072,8 +1230,19 @@ against the gate being switched on.
 Reduced to its central half. The configuration knows the paths, the namespaces,
 the per-rule exclusion blocks and the architecture blocks, and the run knows the
 class facts the architecture blocks are decided against — which is why the query
-is run-scoped rather than configuration-scoped. That is enough to annotate every
-entry in the second category.
+is run-scoped rather than configuration-scoped.
+
+**It annotates every entry in the second category except one family, and the
+exception is stated rather than discovered.** `LayerPolicy::isAllowed()` needs
+the source layer, the target layer and the dependency type of a *specific edge*.
+That triple lives on the current run's `Violation`, never on the persisted
+entry, and `architecture.layer-violation` is one of the six channels with no
+reader — so once the edge stops firing there is nothing left to feed the query,
+and "silenced by a new `allow:` entry" is indistinguishable from "the edge is
+gone". Those entries are `unobserved` either way, which is the correct outcome;
+what is unobtainable is the *explanation*. The report says so instead of
+guessing. Extending the deferred snapshot of §14.10 to carry edge identity would
+close it, and is listed there rather than here.
 
 Two subtleties survive from 7.9 because they are facts about the code rather
 than about the design:
@@ -1251,28 +1420,75 @@ the counterexamples are not exotic:
   renormalises the weights of `health.overall`, so the score rises on its own.
 - A rule's own allow-list decides which occurrences exist (§5.6).
 
-So: **the file records one fingerprint of the resolved configuration, and while
-it differs from the current one, no entry may be reported `fixed`.** Everything
+So: **the file records a fingerprint of the provenance its measurements were
+taken under, and while it differs from the one this run computes, no entry it
+covers may be reported `fixed`.** Everything
 else proceeds — the allowance comparison, `regressed`, `improved`, `matched` —
 because withholding those would flood a routine edit with diagnostics and teach
 users to ignore them (§14.9). What is withheld is exactly the outcome that
 deletes data.
 
-Three constraints, each closing a way to make the fingerprint useless:
+**It is a fingerprint of the measurement's provenance, not of "the
+configuration".** Round 8 established that the loose phrasing is unimplementable
+here: the object this codebase calls a resolved configuration
+(`ResolvedConfiguration`) carries `appliedSources` and `deferredWarnings` — pure
+provenance of the configuration itself, affecting no metric — and its
+`AnalysisConfiguration` carries `format`, `workers`, `memoryLimit`,
+`cacheEnabled`, plus absolute `projectRoot` and `cacheDir` seeded from the
+working directory. A baseline generated in a developer's checkout and checked in
+CI would differ on every run, `fixed` would be unreachable by construction, and
+the pressure would go straight to `generate --force` — the outcome the
+fingerprint exists to avoid.
 
-- **It is taken from the resolved configuration**, after defaults, presets and
-  CLI overrides, with canonically ordered keys — so two spellings of the same
-  effective configuration digest identically. Taken from raw YAML instead, a
-  baseline captured locally and a CI run under `--preset=ci` would differ on
-  every run, and `fixed` would be permanently unreachable.
+So the digest is taken over an **explicit, named projection**, and the plan
+states its boundary rather than its members, because the member list will grow:
+
+- **in** — everything that can change what a collector or a rule *measures*:
+  rule options including thresholds, `coupling.framework_namespaces`,
+  `exclude_health` and computed-metric definitions, duplication's `min_lines` /
+  `min_tokens`, discovery `exclude`, the namespace strategy and aggregation
+  prefixes, and every rule-side filtering list of §5.6;
+- **out** — everything that cannot: configuration provenance
+  (`appliedSources`, `deferredWarnings`), presentation and runtime settings
+  (`format`, `workers`, `memoryLimit`, `cacheEnabled`, `failOn`), and every
+  absolute path derived from the working directory;
+- **plus the analyser build.** §10 explicitly permits changing how a metric is
+  computed without bumping any contract, so an upgrade can move every reading
+  with the configuration untouched — and this repository has exactly such a
+  change queued for the project-level coupling formula. Without this component
+  the next release deletes the debt it moved. The cost is stated plainly: an
+  upgrade suspends automatic `fixed` until the baseline is regenerated, which is
+  the honest consequence of numbers that may have moved.
+
+Thresholds stay **in** even though 8.0 makes them provably unable to produce a
+false `fixed` (§7.1 decides repair against the stored onset). Keeping them is
+§17.5 E's decision, taken deliberately with its cost; they are the obvious first
+candidate should the projection ever be narrowed.
+
+Two mechanical constraints:
+
+- **It is taken after defaults, presets and CLI overrides, with canonically
+  ordered keys**, so two spellings of the same effective configuration digest
+  identically.
 - **Its algorithm is the file's pinned `hash_algorithm`** (§6.1). A
   feature-detected digest is the portability defect §6.1 already refuses
   elsewhere.
-- **It is one field, not one per entry.** 7.9 stored a per-channel digest of the
-  keys that fed each channel's measurement; §17.5 E collapses that into a single
-  global value. The per-channel version required an enumeration of "which keys
-  feed which channel" that nobody could complete, and the next such key would be
-  added by someone who has never read this plan.
+
+**The field is a map, not a scalar** (§6.1). A single string cannot express the
+per-channel projection offered below: under a scalar field one channel's changed
+inputs still move the one stored value and still block `fixed` project-wide, so
+the opt-in would change which inputs are hashed and nothing about reachability.
+The default writes one entry under a `global` key; the opt-in writes one entry
+per channel. Readers of the file compare only the entries that are present.
+
+**Who computes it, and when.** The projection is a function of the resolved
+configuration, so it belongs to P4a, which owns `src/Configuration/**` — but P3
+compares it and P3 lands *before* P4a. Round 8 caught the resulting gap: the
+consumer's Definition of Done required a value whose only producer arrives two
+packages later, with no contract between them, which is §0.8's failure repeated
+one package on. So the **contract** — the fingerprint value type and the
+interface that supplies it — is P1a′'s, alongside the other four; P4a implements
+it; P3 consumes the interface and is testable against a stub from day one.
 
 **The cost is real and is accepted with one reservation.** This repository tunes
 thresholds continuously, and under a global fingerprint every `qmx.yaml` edit
@@ -1288,9 +1504,8 @@ One observation for that revisit, recorded because it is cheap now and
 expensive to reconstruct: under 8.0 a **threshold-only** edit is provably unable
 to produce a false `fixed`, since repair is decided against the onset stored in
 the entry and never against the current one. Thresholds are therefore the
-obvious first thing a projection would exclude, and the safest possible version
-of the opt-in. This is an observation, not a decision — taking it would need the
-same enumeration that sank the per-channel digest.
+safest possible narrowing of the projection, and the first thing to try before
+reaching for per-channel granularity. This is an observation, not a decision.
 
 **The kind is stored, not derived.** Deriving it from (identity, magnitude)
 was checked against all 52 inventory rows and fails twice over: it has no
@@ -1429,6 +1644,24 @@ that was invisible at 7.9 — WOC rising from 80 to 90 while WMC crosses its own
 bound and silences the rule — is a plain `regressed` at 8.0. That case was the
 section's own worked example, and it is now the argument for deleting it.
 
+**"Like any other axes" is literal, and 8.0 initially got it wrong.** These axes
+carry their own onsets, taken from the rule's own options: `wmcThreshold: 47`,
+`lcomThreshold: 3`, `tccThreshold: 0.33`, `classLocThreshold: 300` for
+`design.god-class`, and `wocThreshold` / `wmcThreshold` for `design.data-class`,
+which an inline `@qmx-threshold` moves per axis. The plan had carried a 7.2-era
+claim that compound axes have no onset at all; combined with §7.1's rule that an
+onset-less axis is judged by presence, that would have made `resolved`
+unreachable for both channels for ever — reinstating exactly the behaviour
+§5.9's deletion is sold on.
+
+One consequence has no precedent elsewhere in the rule set and must be declared
+rather than assumed: **`design.data-class`'s two axes have opposite worse
+directions.** It fires on high WOC *and low* WMC, so for this channel WMC is
+lower-is-worse while WOC is higher-is-worse. The contract already carries
+direction per axis (§5.3), so nothing new is needed — but a reader or a
+comparator written on the assumption that a channel has one direction will
+invert half of it.
+
 Everything the section carried is subsumed:
 
 - its axis-set rule (compound axes are the **raw underlying metrics**, fixed by
@@ -1474,7 +1707,8 @@ requirement.
   "mode": "ratchet",
   "generated": "2026-08-04T12:00:00+03:00",
   "hash_algorithm": "xxh3",
-  "config_fingerprint": "9f2c...",
+  "scope": ["src"],
+  "config_fingerprint": { "global": "9f2c..." },
   "contracts": {
     "complexity.cyclomatic.method": {
       "version": 1,
@@ -1499,16 +1733,16 @@ requirement.
 
 ### 6.1 Top-level fields
 
-| Field                | Contract                                                                                                                                               |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `version`            | Exactly `7`                                                                                                                                            |
-| `mode`               | `ratchet` or `suppress`                                                                                                                                |
-| `generated`          | ISO 8601, from an injected clock                                                                                                                       |
-| `hash_algorithm`     | Explicit and pinned; names the algorithm used for occurrence keys, content hashing, and the configuration fingerprint. Never feature-detected.         |
-| `config_fingerprint` | Digest of the resolved configuration this file was captured under (§5.7, 8.0). While it differs from the current one, no entry may be reported `fixed` |
-| `scope`              | The analysed path set that produced this file, normalised (7.9). See below                                                                             |
-| `contracts`          | Manifest: contract id → version, kind, and per axis its direction, epsilon and comparison (7.9)                                                        |
-| `violations`         | Canonical symbol keys → deterministic entry lists                                                                                                      |
+| Field                | Contract                                                                                                                                                                                                                                                              |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `version`            | Exactly `7`                                                                                                                                                                                                                                                           |
+| `mode`               | `ratchet` or `suppress`                                                                                                                                                                                                                                               |
+| `generated`          | ISO 8601, from an injected clock                                                                                                                                                                                                                                      |
+| `hash_algorithm`     | Explicit and pinned; names the algorithm used for occurrence keys, content hashing, and the configuration fingerprint. Never feature-detected.                                                                                                                        |
+| `config_fingerprint` | Map of digests of the measurement provenance this file was captured under (§5.7, 8.0) — one `global` entry by default, one per channel under the opt-in. While an applicable entry differs from the one this run computes, no entry it covers may be reported `fixed` |
+| `scope`              | The analysed path set that produced this file, normalised (7.9). See below                                                                                                                                                                                            |
+| `contracts`          | Manifest: contract id → version, kind, and per axis its direction, epsilon and comparison (7.9)                                                                                                                                                                       |
+| `violations`         | Canonical symbol keys → deterministic entry lists                                                                                                                                                                                                                     |
 
 The manifest detects a forgotten version bump: if the registry's axes,
 direction, epsilon, or declared comparison differ from the manifest at the same
@@ -1577,8 +1811,16 @@ contracts. A no-op command preserves the existing timestamp and bytes.
   digest that 7.9 required here are both removed: the first had no consumer left
   and the second became the file-level `config_fingerprint` (§0.10).
 - The referenced contract must exist in the manifest.
+- **Every entry carries at least one measured dimension** — an axis, an
+  occurrence count, or an identity presence (§7.1). An entry carrying none is
+  rejected at load. This invariant is what makes §7.1's predicates total instead
+  of vacuous, and its absence was the CRITICAL finding of review round 8: with
+  the outcome table stated over axes alone, an axis-less entry satisfied "no axis
+  is still debt" trivially and `cleanup` deleted every code-smell and security
+  entry on the first run.
 - Scalar entries have exactly one axis; vector entries at least two; presence
-  and graph entries may have none.
+  and graph entries carry a presence dimension and may carry no axis; occurrence
+  entries carry a count, an occurrence key, or both.
 - Axis names are unique, deterministically sorted, and match the manifest; each
   manifest axis carries `worse`, `epsilon` and `compare`, the last possibly
   `not-applicable`.
@@ -1614,6 +1856,24 @@ visible; the mode is never selected implicitly at runtime.
 `suppressed` is **not** in this list at 8.0. Silencing no longer preempts an
 outcome; it qualifies one (§5.6).
 
+#### The measured dimensions of an entry
+
+Every predicate below is stated over an entry's **measured dimensions**, never
+over its axes. This distinction is what makes the procedure total, and getting
+it wrong was the CRITICAL finding of review round 8: a table written over axes
+reads "no axis is still debt" as *true* for an entry that has no axes, so every
+code-smell and security entry resolved on its first run and `cleanup` deleted it
+while the smell sat in the file.
+
+An entry's dimensions are:
+
+- each **axis** it declares;
+- its **occurrence count**, where it carries one;
+- its **identity presence**, where its kind is Presence or Graph.
+
+§6.2 requires at least one. An entry carrying none is rejected at load, not
+decided.
+
 #### Where the measurement comes from
 
 Exactly one of two sources, in this order:
@@ -1621,8 +1881,8 @@ Exactly one of two sources, in this order:
 1. **The finding, if the rule reported it this run.** Its observation is the
    measurement (§5.2). The rule is the authoritative party for the axes it
    computes.
-2. **The reader, otherwise.** It re-reads the same axes ahead of the rule's
-   policy, and answers with values or with `not answerable`.
+2. **The reader, otherwise.** It re-reads the same dimensions ahead of the
+   rule's policy, and answers with values or with `not answerable`.
 
 Nothing else may decide an outcome — in particular, not the absence of a
 finding, which is what every defect in §17.1 had in common.
@@ -1635,44 +1895,91 @@ in an unanalysed path. Evaluate in this order and stop at the first match:
 
 1. `orphaned` — the channel is declared by no rule in this build, so nothing
    else can be computed about the entry.
-2. `incompatible` — the manifest and the registry disagree at an equal declared
-   version. This is decided from the two declarations alone, before any reading
-   is attempted: asking a reader for axes that no longer mean what they meant is
-   not a question with a right answer. (7.9 ordered this *after* `unobserved`;
-   the swap is recorded in §0.10 as a derived change.)
-3. `unobserved` — no trustworthy reading. Four disjoint causes, and the reported
-   reason names which: the channel is declared but inactive in this run (§5.7);
-   the channel declares no reader and no finding fired (§5.2); the reader
-   answered `not answerable`; or coverage for the scope is incomplete (§5.5).
-4. The outcome, computed from the measurement, in the order below.
+2. `incompatible` — the manifest and the registry **both** carry a contract for
+   this channel and they disagree at an equal declared version. Decided from the
+   two declarations alone, before any reading is attempted: asking a reader for
+   axes that no longer mean what they meant is not a question with a right
+   answer.
+
+   **A registry with nothing to say is not a disagreement.** An open-ended
+   declaration whose configuration is gone — a deleted `computed_metrics` entry,
+   `--exclude-health=<dim>` — leaves a declaration standing and no contract
+   under it. That is the activity gate's case at step 4, not this one. Round 8
+   found the opposite reading reachable and destructive: the entry would land on
+   `incompatible`, never reach the gate, and `rebase-contracts` **removes** an
+   `incompatible` entry whose rule emits nothing (§8), so restoring the YAML
+   line would no longer restore the captured debt. (7.9 ordered `incompatible`
+   after `unobserved`, which hid this; the swap is §0.10's derived change 5, and
+   this paragraph is the part of it that was missing.)
+3. **Establish the measurement** per the two sources above.
+4. `unobserved` — no measurement was established. Four disjoint causes, and the
+   reported reason names which: the channel is declared but inactive in this run
+   (§5.7); the channel declares no reader (§5.2); the reader answered `not
+   answerable`; or the input the measurement itself depends on was incomplete
+   (§5.5).
+5. The outcome.
+
+**Step 3 sits ahead of step 4 deliberately**, and round 8 found the cost of the
+7.9 ordering it replaces. Only one of step 4's causes used to be guarded by the
+absence of a finding, so an entry whose rule had just reported a worsened
+finding could be classified `unobserved` because *some other* scope in an
+aggregate channel was incomplete — and §9.3 makes `unobserved` a diagnostic, so
+a real regression stopped failing the build. A trust gate may only run when
+there is nothing authoritative to trust.
 
 #### The outcome
 
-Two predicates decide everything, evaluated per axis:
+Two predicates, evaluated per dimension:
 
-- **past the allowance** — worse than `allowance(axis)` by more than epsilon,
-  in the axis's worse direction (§5.1, §7.2).
-- **still debt** — the reading is past the **captured** onset stored in the
-  entry, under the manifest's declared comparison. For an axis with no numeric
-  onset the question is presence, not magnitude: a reading of zero, or an
-  identity absent from the recorded set, is not debt; anything else is.
+- **past the allowance** — worse than `allowance(dimension)` by more than
+  epsilon, in its worse direction (§5.1, §7.2). Presence has no ordering and is
+  therefore never past its allowance; a new identity is `new`, not a regression.
+- **still debt** — per dimension:
 
-| Condition                                                   | Status      |
-| ----------------------------------------------------------- | ----------- |
-| any axis, or the occurrence count, is past its allowance    | `regressed` |
-| no axis is still debt                                       | `resolved`  |
-| some axis better than captured and none worse than captured | `improved`  |
-| otherwise                                                   | `matched`   |
+| Dimension                          | Still debt when                                                    |
+| ---------------------------------- | ------------------------------------------------------------------ |
+| axis with a numeric captured onset | the reading is past that onset, under the manifest's `compare`     |
+| axis with no numeric onset         | the reading is non-zero (`architecture.coverage`'s unmatched ends) |
+| occurrence count                   | the count is above zero                                            |
+| identity presence                  | the identity is in the reader's enumeration                        |
+
+An entry is **still debt** when any of its dimensions is, **or when a finding
+fired for it this run**.
+
+| Condition                                                        | Status      |
+| ---------------------------------------------------------------- | ----------- |
+| any dimension past its allowance                                 | `regressed` |
+| the entry is not still debt, and every dimension was read        | `resolved`  |
+| some dimension better than captured and none worse than captured | `improved`  |
+| otherwise                                                        | `matched`   |
 
 `new` is not in this table or in the precedence: it applies to a current finding
 with no baseline entry at all, which is the one case where there is nothing to
 compare against.
 
-The order matters and the first two cannot collide: an entry exists only because
-its captured value was past its captured onset, and the allowance is never
-stricter than the captured value, so *past the allowance* implies *still debt*.
-For a vector, one axis past its allowance outranks another axis clearing — any
-worsened axis is a regression and improvements never compensate (§5.8).
+Three parts of this deserve their reason stated, because each closes a round-8
+finding and each reads as redundant until it is removed:
+
+- **The firing-finding disjunct.** Repair is decided against the captured onset,
+  so when the *current* onset is tighter than the captured one a reading can sit
+  below the captured onset while the rule is still reporting the finding —
+  reachable by tightening a threshold, by deleting an inline `@qmx-threshold`,
+  by `LongParameterListRule`'s VO branch, or by `ClassRankRule`'s run-scaled
+  boundary. Without the disjunct the entry reads `resolved` while a live
+  violation of the same identity is reported in the same run, and nothing says
+  which of the two wins. With it, **`resolved` implies no current finding**,
+  which is what §8 and §9 assume throughout.
+- **"every dimension was read".** A partially readable entry cannot prove
+  repair. It falls through to `improved` or `matched` and is retained; §5.8 said
+  so and §7.1 did not, which left a `resolved` entry with no admissible
+  `resolutionReason` (below, `fixed` requires every dimension read and
+  `unproven` has one unrelated producer).
+- **The order of the first two rows.** They cannot collide: an entry exists only
+  because its captured value was past its captured onset, and the allowance is
+  never stricter than the captured value, so *past the allowance* implies *still
+  debt*. For a vector, one dimension past its allowance outranks another
+  dimension clearing — any worsened dimension is a regression and improvements
+  never compensate (§5.8).
 
 **Repair is decided against the captured onset, never the current one.** This is
 the whole inversion in one line, and the place an implementer will be tempted to
@@ -1688,14 +1995,13 @@ One reason and two attributes qualify a status rather than multiplying the list.
 
 **`resolutionReason`** — `fixed` or `unproven`, on `resolved` only:
 
-- `fixed` — every axis of the entry was read, none is still debt, and the file's
-  `config_fingerprint` matches the current resolved configuration. `cleanup`
+- `fixed` — every dimension was read, none is still debt, no finding fired, and
+  the file's `config_fingerprint` matches the one this run computes. `cleanup`
   removes these and only these.
-- `unproven` — the reading says the debt is gone, but the configuration that
-  produced the measurement is not the configuration it was captured under, so
-  the drop is not attributable to repair (§5.7, §17.7 H). Reported, retained,
-  never cleaned. Regenerating the baseline, or restoring the configuration,
-  is what clears it.
+- `unproven` — the reading says the debt is gone, but the measurement's
+  provenance is not the provenance it was captured under (§5.7), so the drop is
+  not attributable to repair. Reported, retained, never cleaned. Regenerating
+  the baseline, or restoring the configuration, is what clears it.
 
 `unproven` replaces 7.9's `policy`, and the rename is deliberate rather than
 cosmetic: `policy` meant "the boundary moved", a case that no longer produces
@@ -1703,11 +2009,16 @@ cosmetic: `policy` meant "the boundary moved", a case that no longer produces
 for a boundary comparison that is not there.
 
 **`withinWidenedPolicy`** — set when the status came from a reading with no
-current finding (§17.5 B). It qualifies `matched`, `improved`, `regressed` and
-`resolved` alike, and it is the single attribute that tells a reader why the
-ratchet is talking about something `qmx check` is silent on. Revision 7.3
-removed this attribute as unreachable; under measurement it is reachable and
-means what it was introduced to mean.
+current finding (§17.5 B). It qualifies `matched`, `improved` and `regressed`,
+and is the single attribute that tells a reader why the ratchet is talking about
+something `qmx check` is silent on. Revision 7.3 removed this attribute as
+unreachable; under measurement it is reachable and means what it was introduced
+to mean.
+
+It does **not** qualify `resolved`: "no rule reports this and the debt is still
+there" is false of an entry whose reading proves the debt gone, and a `resolved`
+entry never has a current finding anyway, so the attribute would be constant and
+misleading there.
 
 The name is slightly wider than its literal reading, which is deliberate: the
 policy in force for that symbol may have widened by a raised threshold, by a
@@ -1724,8 +2035,14 @@ and with both numbers.
 **`silenced`** — `config` or `author-tag`, from §5.6. It suppresses the exit
 failure and annotates the report. It never changes the status.
 
-`regressed` findings are reported as violations of their rule's severity and
-carry a stable `baseline-regression` reason code in machine output.
+`regressed` findings are reported as violations of their rule's severity, and
+carry a stable `baseline-regression` reason code in machine output. **Where no
+finding fired, the severity is the tier the current reading falls into**,
+computed from the onset provider, which already knows the tiers; for a channel
+with no tiers it is that channel's declared fixed severity. The file stores no
+severity (§5.4 excludes it from identity deliberately) and three machine formats
+in §9.2 require a level, so leaving this to the implementer would produce three
+different answers.
 
 #### Reachability
 
@@ -1742,15 +2059,15 @@ leaving them to be derived:
   and that is the guarantee's declared partiality (§17.4), not a defect. Six
   channels are in this position, enumerated in §5.2.
 - `improved` requires a reading strictly better than captured while still past
-  the captured onset, so it is unreachable for any **entry whose reading is a
-  presence** — there is nothing between "present" and "gone", and `resolved`
-  follows directly from `matched`. This is a property of the entry, not of the
-  channel: the inventory records twenty channels carrying no magnitude, but an
-  entry of such a channel reads as a presence only when it has a stable
-  occurrence key. Without one it carries a bucket count (§5.4), and a count of
-  five falling to three is an ordinary `improved`. An implementer who writes the
-  `resolved` branch only for magnitude readings has written the destructive kind
-  of gap.
+  the captured onset, so it is unreachable for any **entry whose only dimension
+  is a presence** — there is nothing between "present" and "gone", and
+  `resolved` follows directly from `matched`. This is a property of the entry,
+  not of the channel: an entry of a magnitude-free channel reads as a presence
+  only when it has a stable occurrence key. Without one it carries a bucket
+  count (§5.4), and a count of five falling to three is an ordinary `improved`.
+  An implementer who writes the `resolved` branch only for axes has written the
+  CRITICAL defect of round 8 back into the design.
+
 
 ### 7.2 Scalar and vector
 
@@ -1801,6 +2118,33 @@ its entries automatically on the next run. It cleans them on the next
 `baseline:update`, which is the command that exists to notice moves and
 deletions, and the trade is a rename that can never be silently accepted as a
 repair.
+
+#### Which absences are measurements, and which are not
+
+"Absence is never proof" is the headline, and taken literally it is false —
+§7.3 decides three of the five kinds by an identity not being there. Round 8
+was right to call the claim out, and the boundary is stated here rather than
+left implicit:
+
+- **Absence from an enumeration this run produced is a measurement.** The
+  occurrences of a smell in a file that was analysed, the cycle set the detector
+  built: the run looked and found nothing. That is a positive fact about the
+  code, and it is what lets a repaired `goto` resolve at all.
+- **Absence from discovery is not.** The symbol was not there to be enumerated,
+  so nothing was measured and nothing follows (§17.4).
+
+The two meet in a case that must not be decided by which sentence an implementer
+read last. An occurrence key or a cycle identity is **composite** — built from
+symbol names — so renaming any member changes the identity, and the entry's
+identity then goes missing from an enumeration that was otherwise complete. The
+rename argument transfers unchanged: rename a non-representative class of a
+baselined cycle and the entry's own `symbolPath` still resolves, the enumeration
+answers, the identity is absent, and the entry would read as repaired while the
+cycle is intact.
+
+So: **if any symbol named by a composite identity is absent from discovery, the
+entry is `unobserved`**, whatever the enumeration says. `update`'s re-pointing
+is the path, exactly as for a symbol-keyed entry.
 
 **Aggregate and graph entries need the evidence recorded while rules run.**
 `AnalysisContext` does not survive (§2.8), so a reader for such a channel is a
@@ -1857,10 +2201,19 @@ bin/qmx baseline:generate <baseline> <paths...> [--mode=ratchet|suppress] [--for
 bin/qmx baseline:migrate-plan  <baseline> <paths...> --out=<plan>
 bin/qmx baseline:migrate-apply <baseline> <plan> [--mode=ratchet|suppress]
 bin/qmx baseline:rebase-contracts <baseline> <paths...> --contract=<id>... --force
-bin/qmx baseline:update  <baseline> <paths...>
-bin/qmx baseline:cleanup <baseline> <paths...>
-bin/qmx check <paths...> --baseline=<baseline>
+bin/qmx baseline:update  <baseline> <paths...> [--force]
+bin/qmx baseline:cleanup <baseline> <paths...> [--force] [--prune-orphaned]
+                                              [--prune-missing] [--prune-unprovable]
+bin/qmx check <paths...> --baseline=<baseline> [--explain=<status>]
 ```
+
+**The block above is the complete signature, not a namespace sketch**, and every
+flag the prose of this section or §9.1 requires appears in it. Round 8 found four
+missing — `--force` on `update` and `cleanup`, `--prune-orphaned`,
+`--prune-missing` and `--explain` — in a block introduced with "these names are
+final", which an implementer would reasonably read as the command's `configure()`
+surface. A flag named in prose and absent here is a defect in this section, not
+a stylistic choice.
 
 Command names follow `noun:verb` per `docs/internal/CLI_CONVENTIONS.md`; the
 two migration phases are separate verbs rather than one command with `--plan`
@@ -1961,17 +2314,24 @@ prominently rather than in a summary tail. Recorded in §14.6.
   hazard; what survives is its test, which §13 keeps as a regression guard
   against re-introducing either half.
 
-  **A missing symbol needs an ergonomic exit, and it is explicit.** Deleting a
-  namespace now leaves its entries permanently `unobserved`: nothing proves them
-  repaired, and `update` re-points nothing because there is no candidate. Left
-  there, the file accumulates entries no command will ever touch, and the
-  pressure is again toward `generate --force`. So `cleanup` gains
-  `--prune-missing`, symmetrical with `--prune-orphaned`: it removes entries
-  whose symbol is absent from a complete run, on the **user's** assertion rather
-  than the tool's inference. Never a default, never implied by `--force`, and
-  reported per entry. This is an 8.0 addition and is recorded as derived in
-  §0.10 — the inversion closed a data-loss path and opened a housekeeping one,
-  and only the second is safe to close with a flag.
+  **An entry no proof can reach needs an ergonomic exit, and it is explicit.**
+  The inversion closed a data-loss path and opened a housekeeping one: two
+  populations of entry are now permanently `unobserved` and no ordinary command
+  will ever touch them. Left there, the file accumulates dead weight and the
+  pressure goes back to `generate --force`, which re-accepts everything. So
+  `cleanup` gains two flags, both acting on the **user's** assertion rather than
+  the tool's inference, neither a default, neither implied by `--force`, both
+  reported per entry:
+
+  - `--prune-missing` — entries whose symbol is absent from a complete run.
+    Symmetrical with `--prune-orphaned`.
+  - `--prune-unprovable` — entries on a channel that declares **no reader**
+    (§5.2), whose symbol is present and whose finding no longer fires. Round 8
+    found this population had no exit at all: `--prune-missing` does not apply
+    because the symbol is there, `update` never removes, and §14.10's only
+    answer was hand-editing the file. Restricted to reader-less channels by
+    construction — on any other channel a reading exists and must be used, so
+    the flag would be a way of ignoring evidence.
 
 - **rebase-contracts** — the only path for a known contract change; explicit
   contract ids plus `--force`; prints old and new data before writing. It must
@@ -2132,10 +2492,17 @@ most likely source of silent defects:
   are expected to break.
 - **A package may add test files only inside its listed test directories.**
 
-Cross-package data contracts are owned by P1a and by nobody else. Where a
-package produces data another package consumes, the *shape* is defined in Core
-first; a DoD that only asserts "my side works" is insufficient, because both
-sides pass independently while the seam is broken.
+Cross-package data contracts are owned by **P1a′** — P1a held that role until
+its own review found four such contracts missing from its Definition of Done
+(§0.8), and 8.0 adds a fifth. Where a package produces data another package
+consumes, the *shape* is defined in Core first; a DoD that only asserts "my side
+works" is insufficient, because both sides pass independently while the seam is
+broken.
+
+The rule has a corollary that round 8 had to apply twice: **a package's DoD may
+not require a value whose only producer lands later.** Both times the symptom
+was the same — a consumer testable only against a hand-supplied stub, with
+nothing in Core to make the stub and production agree.
 
 ### P0 — Contract freeze ✅ closed at 7.7
 Files: this document, `docs/internal/CLI_CONVENTIONS.md`. Dependencies: none.
@@ -2211,12 +2578,28 @@ and its run-facts carrier, both onset providers), `src/Core/Coverage/**`,
 `tests/Unit/Core/Suppression/**`, `tests/Unit/Core/Violation/**`, this document.
 Dependencies: P1a. **Blocks P1b, P1c and P3.**
 
-| Contract                  | Shape                                                                                      | Specified in |
-| ------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
-| Declared-channel registry | `ChannelContract`, `AxisContract`, `ChannelRegistryInterface`, `ChannelDeclaringInterface` | §5.7         |
-| **Channel reader**        | the reader interface, its three-valued answer, and the run-facts carrier it is given       | §5.2, §5.3   |
-| Config-driven silencing   | a two-valued run-scoped query, in `Core/Suppression/` — reporting and exit only            | §5.6         |
-| Onset in force now        | the rule-side and run-scoped onset providers, two-valued, feeding the allowance only       | §5.7         |
+| Contract                   | Shape                                                                                      | Specified in |
+| -------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
+| Declared-channel registry  | `ChannelContract`, `AxisContract`, `ChannelRegistryInterface`, `ChannelDeclaringInterface` | §5.7         |
+| **Channel reader**         | the reader interface, its three-valued answer, and the run-facts carrier it is given       | §5.2, §5.3   |
+| Config-driven silencing    | a two-valued run-scoped query, in `Core/Suppression/` — reporting and exit only            | §5.6         |
+| Onset in force now         | the rule-side and run-scoped onset providers, two-valued, feeding the allowance only       | §5.7         |
+| **Measurement provenance** | the fingerprint value type and the interface that supplies it (added at round 8)           | §5.7         |
+
+The fifth is here for the reason the other four are: P3 compares the fingerprint
+and P4a computes it, P4a lands two packages later, and without a Core contract P3
+is testable only against a value it invents. That is §0.8's failure exactly, and
+round 8 caught it before a line of code was written this time.
+
+**The run-facts carrier must include the threshold overrides.** §5.1 requires the
+onset provider to reproduce the rule's actual behaviour, inline
+`@qmx-threshold` included, and §13 tests it — but overrides live on
+`AnalysisContext`, which does not survive (§2.8), and 8.0 first specified the
+carrier as "the metric repository and the recorded snapshots". On this
+repository the population is non-empty — `AnalysisContext.php` carries an
+override in its own docblock — so every symbol with a widening override would
+have had its allowance computed from the global boundary, and growth the user
+explicitly licensed reported as `regressed`.
 
 Two of these are smaller than their 7.9 versions and one is new:
 
@@ -2347,10 +2730,16 @@ verify against the diff rather than the report:
 
 - **the reader/observation self-check runs on every analysis** (§17.5 F) and a
   disagreement is a hard error naming the channel, the identity and both values;
-- **a reader for a channel with an allow-list applies that allow-list** (§5.6),
-  proven by a test where an allowed occurrence is absent from both the
-  observation and the reading — the case that otherwise trips the self-check on
-  every run;
+- **a reader reproduces every path by which its rule discards a candidate
+  occurrence** (§5.6), proven on a fixture carrying **both** of
+  `BooleanArgumentRule`'s filters at once — one occurrence dropped by the
+  interface-level allow-list and one dropped by `shouldIncludeEntry()` under
+  `flag_promoted_properties` — since a reader written against the interface
+  alone satisfies the narrower wording and still aborts the run on ordinary
+  PHP 8 code;
+- **the self-check is proven to fire on a seeded disagreement for a
+  bucket-counted channel**, not only for a scalar one (§5.2) — that population
+  is where an axis-only comparison is vacuously green;
 - **a reader answers for a symbol its rule skipped by an eligibility gate**:
   turning on `excludeReadonly` or raising `minAfferent` must not change a
   reading. This is the half of "reads ahead of policy" that has no observation to
@@ -2395,11 +2784,15 @@ reader needs that lives on `AnalysisContext` must be recorded while rules run
 and carried forward, and today nothing is.
 
 DoD: partial, failed, and interrupted runs are distinguishable from complete
-ones; the deviation list is empty on a clean full run; the coverage key includes
-the violation code; the evaluation gate implements §5.6's first category before
-rules execute; **the run-facts carrier reaches a post-analysis consumer with the
-metric repository and the recorded snapshots on it**, proven by a reader
-answering from it after `RuleExecutor` has finished; the
+ones; the deviation list is empty on a clean full run **and contains no entry
+for a symbol a rule merely declined to judge** (§5.5 — an applicability filter
+is not a deviation, and `excludeReadonly` defaults to `true`, so getting this
+wrong freezes every affected entry as `unobserved` for ever); the coverage key
+includes the violation code; the evaluation gate implements §5.6's first
+category before rules execute; **the run-facts carrier reaches a post-analysis
+consumer with the metric repository, the recorded snapshots and the threshold
+overrides on it**, proven by a reader answering from it after `RuleExecutor` has
+finished and by an onset query returning a symbol's inline-overridden boundary; the
 `architecture.circular-dependency` snapshot is taken **during** rule execution,
 before the band cutoff, and survives onto the analysis result, since
 `AnalysisContext` does not (§2.8, §7.4); the silencing query is **two-valued**
@@ -2421,10 +2814,11 @@ status, reason and attribute; **the comparator reads the entry's captured onset
 for repair and the run's current onset for the allowance, and a test pins that
 swapping them changes the outcome** — the single mistake that re-creates either
 v6's absolute ratchet or 7.9's deleted debt; **the `config_fingerprint` is
-written on capture and checked on comparison**, with `fixed` becoming `unproven`
-when it differs and everything else unchanged; `--prune-missing` removes only
-entries whose symbol is absent from a complete run and is never implied by
-`--force`; the migration plan schema is specified and versioned; malformed files
+written on capture and checked on comparison through P1a′'s Core interface, not
+against a value this package invents**, with `fixed` becoming `unproven` when it
+differs and everything else unchanged; `--prune-missing` removes only entries
+whose symbol is absent from a complete run, `--prune-unprovable` only entries on
+a channel that declares no reader, and neither is implied by `--force`; the migration plan schema is specified and versioned; malformed files
 fail closed; writes are atomic with a real CAS guard; no-op operations preserve
 bytes; v5 is rejected outside migration.
 
@@ -2452,15 +2846,21 @@ key would have shipped as a hardcoded constant or not at all.
 
 **Two keys, not one, at 8.0.** The second is the fingerprint scope of §5.7 —
 global by default, per-channel projection as an explicit opt-in — and it needs
-the same four steps. It is also where the **resolved configuration is digested**,
-which belongs to P4a for the reason the key does: the resolved configuration is
-what `src/Configuration/` produces, and digesting raw YAML instead makes every
-CI run under a preset differ from the developer's baseline.
+the same four steps. It is also where the **provenance fingerprint is computed**,
+which belongs to P4a for the reason the key does: §5.7's projection is a
+function of what `src/Configuration/` produces, and digesting raw YAML instead
+makes every CI run under a preset differ from the developer's baseline. P1a′
+owns the contract it is supplied through, so P3 never waits on this package.
 
 Dependencies: P2 and P3. P4c may run parallel to P4a; P4b depends on P4a.
 
-DoD: the ratchet failure key exists as a real configuration option with all four
-`ConfigSchema` steps present; one shared analysis-run service backs all
+DoD: **both** new configuration keys exist as real options with all four
+`ConfigSchema` steps present — the ratchet failure key of §9.3 and the
+fingerprint-scope key of §5.7; **the fingerprint is computed over §5.7's named
+projection**, proven by a test that a baseline generated under one checkout path
+and one `--workers` value verifies unchanged under another, and by a test that
+changing `coupling.framework_namespaces` does move it; one shared analysis-run
+service backs all
 lifecycle commands rather than five copies of `CheckCommand`'s orchestration;
 the filter pipeline runs comparison after evaluation-exclusion and before
 presentation-suppression; `generate` captures the list at that same point, and a
@@ -2505,7 +2905,14 @@ debt is gone and no observation exists to disagree. So:
 - **the regression guard for the dissolved `cleanup` / `update` collision**
   (§8): a renamed class must reach `unobserved`, `cleanup` must leave it, and
   `update` must re-point it. The hazard is gone by construction, and the test
-  exists so that re-introducing either half fails loudly.
+  exists so that re-introducing either half fails loudly;
+- **§14.3's documented rename behaviour, asserted directly**: a rename combined
+  with a change — the case re-pointing refuses — produces `unobserved` plus
+  `new`, and `--prune-missing` is the only thing that clears the first. §13
+  promised this test and no bullet delivered it;
+- **the composite-identity rename** (§7.4): renaming a non-representative member
+  of a baselined cycle must reach `unobserved`, never `resolved`, even though
+  the entry's own symbol still resolves and the cycle enumeration answers.
 
 ### P6 — ADR and documentation
 Files: `docs/adr/0017-ratchet-baseline.md`, `docs/adr/README.md`,
@@ -2523,20 +2930,25 @@ reference in `ARCHITECTURE.md` (removed by ADR 0014) is corrected.
 1. ~~Review, then approve P0.~~ Done — P0 closed at 7.7.
 2. ~~P1a; standard review; freeze as the common base.~~ Done — landed and
    reviewed; the review found four contract seams its DoD had not enumerated.
-3. **Review revision 8.0 before writing any code against it** (§17.6 item 4).
-   Seven rounds preceded it and every one of the last three found HIGH findings
-   in its predecessor's corrections; 8.0 deletes a section, inverts two
-   decisions and derives six consequences nobody has checked (§0.10). Reviewing
-   the corrections is where the yield has been.
-4. P1a′; standard review. Only then is the base actually frozen.
-5. P1b and P1c in parallel worktrees; verify each diff against its DoD.
-6. P2 and P3 in parallel; integrate one at a time.
-7. P4, then P5 without touching earlier packages' files.
-8. Full validation and self-analysis, including lifecycle commands against this
+3. ~~Review revision 8.0 before writing any code against it~~ (§17.6 item 4).
+   Done — round 8, three reviewers on disjoint slices, 1 CRITICAL and 13 HIGH,
+   all folded in at 8.1 (§0.11).
+4. **Round 9, narrow and without slicing.** Every reviewer attacks the same
+   propositions: §0.11's corrections, §7.1's dimensions and precedence, and
+   §5.7's fingerprint projection. Round 8's slices bought breadth and no
+   redundancy, so a clean slice was indistinguishable from a weak reviewer —
+   yet the two findings that were reached twice, independently, are the two the
+   corrections lean on hardest. This is also the round that checks the
+   corrections themselves, which is where every previous round's yield was.
+5. P1a′; standard review. Only then is the base actually frozen.
+6. P1b and P1c in parallel worktrees; verify each diff against its DoD.
+7. P2 and P3 in parallel; integrate one at a time.
+8. P4, then P5 without touching earlier packages' files.
+9. Full validation and self-analysis, including lifecycle commands against this
    repository's own `qmx.yaml`.
-9. Extended review with three independent reviewers.
-10. Verify every finding, fix confirmed ones, re-validate.
-11. P6, final validation, website build, seam-focused second round if round 1
+10. Extended review with three independent reviewers.
+11. Verify every finding, fix confirmed ones, re-validate.
+12. P6, final validation, website build, seam-focused second round if round 1
     found contract or coverage issues.
 
 ## 13. Test Plan
@@ -2645,19 +3057,31 @@ reference in `ARCHITECTURE.md` (removed by ADR 0014) is corrected.
 Each limitation below must be pinned by a test (§13) that asserts the documented
 behaviour, so that it cannot be silently "fixed" into a different behaviour.
 
-Four of the nine closed at 8.0. They are kept, struck through in prose rather
-than deleted, because a limitation that disappears without explanation reads as
-an oversight, and because each one names a defect class this design must not
-re-acquire.
+**Three of the nine closed at 8.0** — items 1, 4 and 7 — with item 4's closure
+explicitly partial: it holds for the 46 channels that have a reader and stands
+unchanged for the six that do not. (Non-goal 8 was withdrawn in the same pass,
+which is what an earlier draft of this paragraph was counting as a fourth
+closure.) They are kept, struck through in prose rather than deleted, because a
+limitation that disappears without explanation reads as an oversight, and
+because each one names a defect class this design must not re-acquire.
 
 1. ~~**Compound rules**~~ — **closed at 8.0.** Per-axis worsening was invisible
    once `GodClassRule` stopped firing; the reader returns those axes whether the
    predicate fires or not, so the growth is an ordinary `regressed` (§5.9,
    deleted). The related worry — that single-metric coverage is partial, since
    WMC and LCOM have rules of their own while TCC, class LOC and WOC do not —
-   closes with it: the reader reads metrics, not rules. What remains is narrower
-   and belongs to §5.1: a compound channel's axes carry no onset of their own, so
-   an inline `@qmx-threshold` moving `minCriteria` widens no axis allowance.
+   closes with it: the reader reads metrics, not rules.
+
+   What remains is **one channel, not a class of them**, and round 8 corrected
+   the plan on the facts here. Both compound channels declare per-axis onsets and
+   the plan had claimed neither does: `GodClassOptions` carries `wmcThreshold`,
+   `lcomThreshold`, `tccThreshold` and `classLocThreshold`, each configurable,
+   and `DataClassOptions::withOverride()` maps an inline `@qmx-threshold` onto
+   `wocThreshold` *and* `wmcThreshold`. The residue is `design.god-class` alone,
+   where the inline override moves `minCriteria` — not an axis — so it widens no
+   axis allowance. Carrying 7.2's blanket wording into 8.0 was the proxy mistake
+   again, and under §7.1's still-debt rule it would have made `resolved`
+   unreachable for both channels for ever.
 2. **Count fallback** — without a stable occurrence key, one removed plus one new
    occurrence at equal count is indistinguishable.
 3. **Renames** — mitigated but not solved by `update`'s debt-neutral
@@ -2707,21 +3131,39 @@ re-acquire.
    The optional rule-side silencing report §5.6 defers would narrow this further,
    by letting a rule say precisely which scopes its own allow-list covered. It
    buys explanation, not correctness, which is why it is no longer in P1b.
-9. **Values measured under different configuration are still compared.** The
-   file records a fingerprint of the resolved configuration (§5.7), and a
-   difference withholds `fixed` — but the allowance comparison itself proceeds as
-   usual. Strictly, a value produced under different measurement inputs is about
-   as comparable as one produced under a different contract, and the rigorous
-   answer would be `incompatible`. That answer is not taken, because a routine
-   edit to `coupling.framework_namespaces` would then invalidate every coupling
-   entry in the file at once. The fingerprint is stored, so the decision can be
-   revisited without a file-format change.
+9. **Values measured under different provenance are still compared.** The file
+   records a fingerprint of the measurement's provenance — the configuration
+   projection *and the analyser build* (§5.7) — and a difference withholds
+   `fixed`, but the allowance comparison itself proceeds as usual. Strictly, a
+   value produced under different measurement inputs is about as comparable as
+   one produced under a different contract, and the rigorous answer would be
+   `incompatible`. That answer is not taken, because a routine edit to
+   `coupling.framework_namespaces` would then invalidate every coupling entry in
+   the file at once. The fingerprint is stored, so the decision can be revisited
+   without a file-format change.
+
+   The analyser-build component was added at round 8 and its cost is
+   user-visible: **every upgrade suspends automatic `fixed` until the baseline is
+   regenerated.** It is not optional. §10 permits changing how a metric is
+   computed without bumping any contract, this repository has exactly such a
+   change queued for the project-level coupling formula, and without the
+   component the release carrying it would delete every entry whose reading it
+   moved.
 10. **Six channels cannot prove repair, and the reason is scheduling rather than
     impossibility.** `duplication.code-duplication` and the five
     `LayerViolationRule` channels declare no reader (§5.2, §17.4), so their
     entries ratchet while their findings fire and go `unobserved` when they stop.
-    `cleanup` never removes them; a user clears one by editing the file or
-    regenerating.
+    No proof can reach them, so `cleanup` never removes them automatically; the
+    exit is `cleanup --prune-unprovable`, on the user's own assertion (§8), which
+    round 8 added after finding that hand-editing the file was the only answer
+    this section offered.
+
+    A second consequence, smaller and worth naming: for
+    `architecture.layer-violation` the *explanation* is unobtainable too. Once
+    the edge stops firing, nothing left in the run carries its
+    (from, to, type) triple, so the silencing query cannot say whether a new
+    `allow:` entry silenced it or the dependency is gone (§5.6). Extending the
+    snapshot below would close both at once.
 
     The mechanism that would close this exists and is already built for another
     channel: `architecture.circular-dependency` records its evidence during rule
