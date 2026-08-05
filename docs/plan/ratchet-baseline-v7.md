@@ -1,7 +1,15 @@
 # Ratchet Baseline v7 Plan
 
-**Status:** **Frozen** — revision 7.8 (supersedes `ratchet-baseline-v6.md`)
-**Date:** 2026-08-04
+**Status:** revision 7.9 — **superseded in principle; see §17 before implementing anything**
+**Date:** 2026-08-05
+
+> **Read §17 first.** A design round on 2026-08-05 established that the
+> `fixed` / `policy` decision in §7.1 rests on an inference that cannot be made
+> safe by enumeration, and the decision was taken to invert it. §17 records that
+> decision, what survives, and what the next session must rewrite. Everything in
+> §5.2, §5.9, §7.1 and §7.4 that derives a repair from the *absence* of a
+> finding is pending replacement — do not implement it. The rest of this
+> document, including the whole of P1a′ except its onset provider, stands.
 **Target release:** TBD
 **Review status:** Four rounds complete, all CRITICAL and HIGH findings folded
 in, and the trait model since validated against a full inventory of the rule set
@@ -37,12 +45,22 @@ planning and are tracked separately. Neither blocks P1a, P1b, P2, P3, or P4:
 
 **Decision state.** Settled: the allowance rule (§5.1), observations riding on
 violations (§5.2), contract placement in Core (§5.3), the three suppression
-categories (§5.6), the file schema (§6), the status model (§7.1), the lifecycle
-commands (§8), exit behaviour (§9.3), layered layout (§16). Open: nothing that
-blocks P1a. The one judgement call deliberately left to implementation is the
-naming of the migration disposition-plan schema fields, which P3 specifies.
+categories (§5.6) and who decides `suppressed` (§5.6, settled at 7.9), the file
+schema (§6), the status model (§7.1), the lifecycle commands (§8), exit
+behaviour (§9.3), layered layout (§16). Open: nothing that blocks P1a′. The one
+judgement call deliberately left to implementation is the naming of the
+migration disposition-plan schema fields, which P3 specifies.
 
-**Review state.** Four rounds are complete and each is summarised in §0.2–§0.6
+**Where execution stands.** P0, P1a and the two external prerequisites have
+landed. The next package is **P1a′** (§11) — four Core contracts that P1a's own
+Definition of Done did not enumerate. P1b, P1c and P3 are blocked on it.
+
+**Review state.** Seven rounds are complete. Rounds five, six and seven all
+examined 7.9 before a line of code was written: the fifth its contract
+specifications, the sixth the corrections the fifth forced, the seventh the new
+design elements the sixth introduced. Each of the three found HIGH findings in
+its predecessor's corrections, and all three are summarised at the end of §0.9.
+The first four are summarised in §0.2–§0.6
 with the correction every finding forced. Round 1 examined 7.0 with three
 reviewers; round 2 examined 7.1 with two; rounds 3 and 4 were deliberately
 narrow, covering only §5.1, §7.1, and §8 — the sections that had changed
@@ -280,10 +298,11 @@ carrying because they are instances of failure modes this plan keeps producing:
   the check passed both before and after the defect it existed to catch. This is
   the same shape as the tautological `resolutionReason` test of round 2.
 
-The three plan gaps are open and are listed in §11 under P1a's follow-ups. All
-three have the same character: a contract that later packages need, that §11's
-own rule assigns to P1a ("cross-package data contracts are owned by P1a and by
-nobody else"), and that P1a's Definition of Done did not enumerate — so it was
+The three plan gaps are specified at 7.9 (§0.9) and carved into package P1a′
+(§11), which also picks up a fourth found while specifying them. All four have
+the same character: a contract that later packages need, that §11's own rule
+assigns to P1a ("cross-package data contracts are owned by P1a and by nobody
+else"), and that P1a's Definition of Done did not enumerate — so it was
 delivered complete against its DoD and still left a seam.
 
 | Gap                                                                              | Why it cannot wait for its consumer                                                                                                                                                                                                                                                                                                                    |
@@ -301,6 +320,114 @@ move wholesale into Baseline, so by ADR 0016's duplication test it is not a
 cross-cutting primitive. **P3 owns that policy, and its Definition of Done must
 assert it against §5.6's table**, since removing it from Core also removed the
 only place it was pinned.
+
+### 0.9 What closing P1a's seams changed (7.9)
+
+7.9 specifies the three gaps §0.8 recorded, adds a fourth of the same shape,
+and carves all four into package P1a′ (§11). Two of the four changed shape once
+they were grounded in the code rather than in the plan's own prose, and both
+changes came from a mechanical enumeration done *before* review rather than from
+review finding them.
+
+| What was assumed at 7.8                                                                          | What the enumeration showed                                                                                                                                                                                                                                                                  | Correction                                                                                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| §7.4's pre-cutoff evidence "exists" in `AnalysisContext::$cycles`, so comparison can consult it. | It exists, but `AnalysisContext` is built for `RuleExecutor::execute()` and is not carried on `AnalysisResult`. Nothing after rule execution can read it. A comparator planning to look would find nothing.                                                                                  | §7.4: the evidence is a **snapshot recorded while rules run**, with a rule-side reporter and a run-side answer.                                                                                                    |
+| The silencing carrier answers yes or no.                                                         | Two of the six mechanisms are not decidable for an entry that produced no finding: an occurrence whitelist keys on the candidate finding's own text, and `@qmx-ignore` keys on a line an entry does not carry. A boolean would have to guess, and the cheap-looking guess deletes real debt. | §5.6: two-valued after the second review round below — the whitelist half is decidable from the metric entries the run keeps; only a line-addressed author tag stays conservative, and §14.8 records that residue. |
+| The registry stores all seven inventory dimensions per channel.                                  | Identity is not total — `architecture.coverage` emits one project-level aggregate per run and answers none of its three values. Magnitude describes today's `metricValue`, which §2.3 disqualifies, and already contradicts §5.9 for `design.god-class`.                                     | §5.7: the contract carries kind, axes, and four traits; magnitude and identity are deliberately not stored.                                                                                                        |
+| The kind could be derived from (identity, magnitude) rather than declared.                       | Checked against all 52 inventory rows: no branch covers `architecture.coverage`, and `duplication.code-duplication` — whose line count drives its severity — would map onto the same value as eighteen channels carrying no magnitude at all.                                                | §5.7: the kind is stored.                                                                                                                                                                                          |
+
+Also settled here, since 7.8 left it explicitly unrecorded: **§7.1's step 4 is
+decided inside comparison, by query**, not by a filter stage outside Baseline.
+A filter cannot classify an entry whose scope produced no finding, and per-rule
+exclusions drop violations before the filter pipeline ever sees them.
+
+The lesson P1a paid for is now a rule in §11: **a Definition of Done that lists
+types is not a Definition of Done.** P1a′'s is stated as the questions its
+consumers must be able to answer, each with the producer absent.
+
+#### What the review of this revision changed
+
+Two independent reviewers examined 7.9 before any code was written; a third
+could not be driven to completion and its absence is recorded rather than
+papered over. Every finding below was verified against the code or the inventory
+before being accepted. They cluster, and the cluster is the point: **the first
+draft of 7.9 wrote down refusals and forgot to check that the positive outcome
+was still reachable** — the same defect shape as the tautological `fixed` test
+of round 2 and the boundary-only `withinWidenedPolicy` of round 3, now
+committed a third time by the section that exists to prevent it.
+
+| Finding                                                                                                                                                                                                                                                                                                 | Correction                                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The silencing verdict was defined per **mechanism**, so every entry of every `AbstractCodeSmellRule` channel answers `undecidable`, and `suppressed` outranks `resolved`. The feature's main outcome was unreachable, and a real regression would have been swallowed at step 4 before reaching step 5. | §5.6: decidability is a property of the **entry**; with a finding in hand `undecidable` cannot arise; without one it requires the mechanism to be present.     |
+| `maxCycleSize` appeared in the silencing table as undecidable *and* in §7.4 as the case band evidence decides. A literal implementer returns `undecidable` first, and §7.4's `absent` branch — the entire pre-cutoff machinery — is dead on arrival.                                                    | §5.6: magnitude cutoffs are outside the silencing query, stated as a rule rather than implied by "handled separately".                                         |
+| "`onsetSource: none` means `resolutionReason` can never be `fixed`" is backwards, and buries `cleanup` for roughly twenty of the fifty-two channels — every unconditional code-smell and security channel. With no boundary at all, nothing could have widened, so absence *is* proof of a fix.         | §5.7: the trait says how to obtain the reason, never that a reason is impossible.                                                                              |
+| The band trait assumed a cutoff hides identities. `design.data-class` cuts off on the WMC axis it does not report, so it has no identity set; its entries would be permanently `unobserved`, contradicting §5.9. §14.7's "today only circular-dependency" was also false — the inventory counts two.    | §5.7, §7.4, §14.7: the band trait splits into cutoff-on-identity and cutoff-on-an-axis, and only the first asks for evidence.                                  |
+| The onset provider was two-valued, so a **deleted symbol** — the commonest way for a finding to disappear — had to be reported as `policy`, and `cleanup` would never remove the least ambiguous fix there is.                                                                                          | §5.7: three-valued — and four after the round below added the non-numeric-boundary case; absence from a complete run resolves as `fixed` on coverage evidence. |
+| The registry answered one question, but §7.4's `orphaned` line is drawn at the build while the registry is populated after configuration. Deleting a `computed_metrics` entry from `qmx.yaml` would make every one of its baseline entries prunable.                                                    | §5.7: two questions — declared by the build, and active in this run; `orphaned` reads only the first.                                                          |
+| The declared comparison lived in the registry but not in the manifest, and is not among `ContractReference`'s bump triggers. Moving an operator from inclusive to exclusive widens the boundary without changing the number, so an entry reads as `fixed` and `cleanup` deletes standing debt.          | §6.1: the comparison joins the manifest and the bump triggers; the four traits explicitly do not.                                                              |
+| The rule-side halves of three contracts belonged to no package. P1b would have passed its own DoD with an empty registry and no snapshot — §0.8's failure, one package later.                                                                                                                           | §11: P1b's DoD names all three, with checkable predicates, and owns the inventory.                                                                             |
+| The band evidence reused the coverage vocabulary's shape while inverting its meaning (`present` forbids what `Evaluated` licenses), and nothing required the snapshot key to equal the observation key — two canonicalisations of one cycle never match, and the entry resolves *because* it grew.      | §7.4: its own named type, and one canonicalisation point with a test across both paths.                                                                        |
+| `Core/Silencing/` was justified by the dependency edge — the argument ADR 0016 explicitly rejects — and split the subject `Core/Suppression/` already owns.                                                                                                                                             | §5.6: the contract joins `Core/Suppression/`, justified by subject.                                                                                            |
+| Every DoD item asserted a refusal; none asserted that a positive outcome was reachable, and none crossed two contracts — so the two unreachability defects above would each have passed.                                                                                                                | §11: items 5 and 6 walk one entry through the whole §7.1 queue to `resolved`/`fixed`, and pin that step 4 does not swallow step 5.                             |
+
+Smaller corrections folded in without discussion: the onset providers had no
+stated directory; the union of Baseline's own author-tag answer with the
+run-scoped one was undefined; §12 had two items numbered 4; and the
+`ViolationChannel` move was described as four production references when it is
+three.
+
+A second, narrow round then examined those corrections alone — and found that
+three of them had reproduced the very defect they were fixing. That result is
+the strongest argument in this document for reviewing a plan before writing
+code against it, and for reviewing the *corrections* rather than declaring
+victory once findings are addressed.
+
+| Finding                                                                                                                                                                                                                                                                                                                                                                          | Correction                                                                                                                                                                                                                               |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The narrowing rule narrowed by "is such a mechanism configured", but allow-lists are configured **per rule**, so the predicate is true for every entry of the channel or none. `BooleanArgumentOptions` even ships a non-empty default, and this project's own `qmx.yaml` configures two such channels — so `resolved` stayed unreachable for whole channels, exactly as before. | §5.6: the verdict is **two-valued**. The whitelist is decidable — it filters metric entries, which survive on `AnalysisResult` with their `line` and `extra`, and the rule that holds the allow-list reports what it silenced, sparsely. |
+| "A symbol absent from a complete run resolves as `fixed`" collided head-on with §5.9's "a compound entry never resolves as `fixed`". A deleted God class matched both, and `cleanup` acts only on `fixed`, so the two owning packages would have shipped opposite behaviours.                                                                                                    | §5.9: an explicit carve-out — the section's own reasoning (an axis can worsen while the predicate stops firing) cannot apply when the symbol is gone.                                                                                    |
+| Splitting the registry into "declared by the build" and "active in this run" is unanswerable for `ComputedMetricRule`, which can only name its channels from configuration. Either the two questions collapse, or every user-defined metric is `orphaned` and prunable.                                                                                                          | §5.7: a declaration is **enumerated or open-ended**; `orphaned` means matched by neither. A removed definition leaves the open-ended declaration standing.                                                                               |
+| `duplication.code-duplication` has an onset none of the four trait values described: `min_lines` / `min_tokens` are applied by the detector during Collection, so blocks below them are never found. Reading the tiers is forbidden by §5.1; reading the trigger as unconditional yields `fixed`, and raising `min_lines` would have erased every entry via `cleanup`.           | §5.7: a fifth onset source, `collection-gated`, with this channel's onset named explicitly and a test pinning `policy`.                                                                                                                  |
+| Every DoD item still asserted one direction. An implementation that simply skips the silencing query whenever a finding exists passes all nine — and then fails the build on a regression inside `exclude_paths`, which §5.6 requires to be `suppressed`.                                                                                                                        | §11: item 2 gains the symmetric half, and items 2 and 5 are declared to be satisfied together.                                                                                                                                           |
+
+A third round then examined the five design elements those corrections had
+introduced — and again found four HIGH. The pattern across the three rounds is
+now the finding that matters most, and it is recorded here as a rule rather than
+as a tally: **every one of these defects was a rule keyed on a proxy for the
+property it cared about.** §5.9 keyed on the inventory's trigger column instead
+of "a predicate over measured axes", and swallowed the architecture channels.
+The reason test keyed on the boundary instead of "everything the measurement
+depended on", and read a configuration change as a fix. The silencing report was
+scoped by the word "sparse" instead of by the observation's identity, and
+degenerated to file granularity. A proxy always agrees with its property on the
+examples that motivated it; the disagreements are elsewhere, and only
+enumeration finds them.
+
+| Finding                                                                                                                                                                                                                                                                                                                                      | Correction                                                                                                                  |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| §5.9 was keyed on the trigger column, which marks five channels conjunction or criteria-count. Three of them are predicates over *presence* with no axes at all, including `architecture.layer-violation` — whose normal repair is deleting one edge. Every such repair would have resolved as `policy` and stayed in the baseline for ever. | §5.9: keyed on "two or more measured axes", with all five channels enumerated and the three exclusions named.               |
+| A removed computed-metric definition had no producer for `unobserved`: central coverage sees enabled *rules*, not the violation codes a rule emits. The entry reached `resolved`, the onset provider answered "no onset", and `cleanup` deleted it. Three supported operations reach that state.                                             | §5.7: the registry answers activity as well as declaration, and §7.1 step 2 reads it.                                       |
+| The rule-side silencing report was called "sparse" and never scoped. The finest scope `AbstractCodeSmellRule` names without an occurrence key is the *file*, so one allowed parameter name would have silenced every entry of that channel in that file.                                                                                     | §5.6: the report is addressed by the observation's own identity, canonicalised in one place, asserted across both paths.    |
+| The reason test compares boundaries, but configuration can move the *measured value* instead: `coupling.framework_namespaces` changes what CBO counts, `exclude_health` renormalises the weights of `health.overall`. Boundary unchanged, finding gone, verdict `fixed`, debt erased.                                                        | §5.7, §6.2: entries store a digest of the configuration their measurement depended on; a difference forces `policy`. §14.9. |
+| `architecture.coverage` had no way to record its captured mode, so the new non-numeric answer degenerated to a constant `policy` and its entries would never be cleaned up. The same channel also has an undeclared magnitude — its unmatched-end count — so it was outside the ratchet entirely.                                            | §5.7, §6.2: the mode is stored as an opaque token and compared for permissiveness; the count is declared as an axis.        |
+| A renamed class satisfies both `cleanup`'s deletion predicate and `update`'s re-pointing predicate, and nothing ordered them. `cleanup` first destroys the captured axes and leaves `generate --force` as the only exit.                                                                                                                     | §8: `cleanup` does not remove a re-pointing candidate; §14.3 records that configuration can rename symbols too.             |
+
+Two further MEDIUM findings were folded in: the normative mechanism list was
+missing the architecture `allow:` / `relations:` filter and
+`BooleanArgumentRule`'s `flag_promoted_properties` gate, so the rule-side row is
+now phrased as *any path by which a rule discards a measured entry* rather than
+by naming an interface; and the registry's type row still described the
+"declared / active" split that the prose had already replaced.
+
+Three MEDIUM and five LOW findings from round two were folded in the same pass.
+Two deserve a line because they were wrong *facts* in support of right
+conclusions:
+`Violation` carries no `extra` field and `Location::none()` exists, so "the
+finding carries the text a whitelist would match" was false — the real reason a
+finding proves non-silencing is that these mechanisms run before the finding set
+is formed. And `CircularDependencyOptions::getSeverity()` does mix two
+operators, but neither is an onset comparison, so it was the wrong citation for
+putting the comparison in the manifest.
 
 ## 1. Executive Summary
 
@@ -604,6 +731,146 @@ claiming `unobserved` would be false. They are nonetheless never mutated —
 silently resolving entries in a silenced area means un-silencing later
 resurfaces everything as `new`.
 
+#### The carrier for the second category, and who decides `suppressed` (7.9)
+
+§7.1's precedence step 4 has to decide `suppressed` for an entry that produced
+**no current finding at all** — a symbol under `exclude_paths` emits a violation
+that is filtered away, and a symbol under a per-rule exclusion never reaches the
+filter pipeline at all, because `RuleExecutor` drops it the moment
+`$rule->analyze()` returns. A filter cannot classify what never flows through
+it. The decision is therefore a **query answered inside comparison**, not a
+pipeline stage that rewrites a status from outside. 7.8 left both readings
+open; this is the one recorded.
+
+The query is implemented by P2, which holds the exclusion configuration, the
+layer registry, and the file inventory. It is **run-scoped**, not
+configuration-scoped: the architecture `exclude:` blocks are decided against the
+run's own class facts, so a configuration-only oracle could not answer for them.
+
+Its contract joins the existing `Core/Suppression/` subject rather than opening
+a new directory beside it. The justification is the subject, not the dependency
+edge — "a finding being silenced" is exactly what that directory is already
+about, `suppressed` is already the status name in §7.1, and a second directory
+would split one subject across two synonyms. (`baseline: [core]` also requires
+Core, but ADR 0016 is explicit that when the constraint and the subject
+disagree the layout is wrong, not the constraint, so the constraint is not the
+argument.)
+
+That directory currently also holds `ThresholdOverride` and
+`ThresholdDiagnostic`, which are about `@qmx-threshold` — a different subject
+that happens to arrive through the same docblock scanner. Review flagged it and
+it is a real cohesion defect, but it is **not** this package's to fix:
+`ThresholdOverride` is referenced from `AnalysisContext`, from rules, and from
+configuration, so moving it would break P1a′'s own rule that no rule or Analysis
+file is touched. Recorded here as a follow-up rather than silently tolerated.
+
+**The verdict is two-valued: `silenced` or `not silenced`.** A draft of this
+subsection made it three-valued, on the premise that two mechanisms could not
+be evaluated for an entry that produced no finding. Review disproved the
+premise for the one that mattered, and the correction is worth the space
+because the three-valued version was not merely redundant — it was unusable.
+
+Enumerated against the code, with the source each answer is computed from:
+
+| Mechanism                                          | Address it keys on                                | Answered from                                                       |
+| -------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------- |
+| global `exclude_paths` / `exclude_namespaces`      | file path / namespace                             | configuration + the entry's own symbol                              |
+| per-rule `exclude_paths` / `exclude_namespaces`    | (**declaring rule's own name**, path / namespace) | configuration + the entry's own symbol + the registry's reverse map |
+| architecture `exclude:` blocks                     | layer membership                                  | the run's class facts, via the layer registry                       |
+| architecture `allow:` / `relations:` entries       | the (from-layer, to-layer, dependency type) edge  | the run's class facts, via the layer policy                         |
+| any path by which a rule discards a measured entry | whatever that path keys on                        | **the rule, as a sparse silencing report** — see below              |
+| magnitude cutoffs (`maxCycleSize`)                 | the finding's own magnitude                       | **outside this query** — §7.4's band evidence decides them          |
+
+The second row's emphasis is load-bearing and easy to lose. `RuleExecutor`
+applies per-rule exclusions under `$rule->getName()` — the executing class's own
+name — not under the `ruleName` of the violation it drops. For the four
+`architecture.*` diagnostics those differ, so
+`rules.architecture.layer-violation.exclude_namespaces` silences all five of
+that class's channels, while configuration written under a diagnostic's own name
+never fires. A silencing query keyed on the entry's channel — the natural
+reading of a channel-addressed contract — would answer "not silenced" for a
+scope `RuleExecutor` did silence, and the entry would resolve and be deleted:
+data loss inside a silenced area, which §5.6 exists to prevent. The query must
+therefore reproduce the executor's keying, which means resolving channel →
+declaring rule through the registry. That makes the registry an input to the
+silencing implementation, and P2's dependency list must say so.
+
+The fourth row is deliberately phrased as a *behaviour*, not as an interface.
+Naming `EntryFilteringOptionsInterface` would have been the natural shorthand
+and would have missed a second discard path in the same rule:
+`BooleanArgumentRule` also drops entries by `flag_promoted_properties`, through
+its own `shouldIncludeEntry()` override, without touching that interface. A
+normative list keyed on an interface would classify one of a rule's two
+silencing paths and silently omit the other.
+
+**Why the whitelist is decidable after all.** It does not filter findings; it
+filters *metric entries*, before a violation is ever constructed
+(`AbstractCodeSmellRule::analyze()` reads `codeSmell.{type}` entries and skips
+the allowed ones). Those entries stay in the metric repository, which is
+carried on `AnalysisResult`, and each carries its `line` and its `extra`. So
+"did this rule's allow-list silence anything in this scope" is exactly
+computable — and it is computable *by the rule*, which is the only party that
+holds both the entries and the allow-list.
+
+That gives the third instance of a shape this plan now uses three times: **a
+central answer plus a sparse rule-side report.** Coverage works that way
+(§5.5), band evidence works that way (§7.4), and silencing works that way too —
+a rule with its own allow-list reports the scopes it silenced, opt-in, sparse,
+never a per-symbol map. The parallel is not cosmetic: it means P1b implements
+one familiar pattern three times instead of three different ones, and it means
+no mechanism in the table above needs a "we cannot tell" answer.
+
+**A silencing report is addressed by the same identity as the observation** —
+the occurrence key where the channel has one, and (symbol, channel) where it
+does not. Saying only "sparse" is not enough, and the gap is not academic: the
+finest scope `AbstractCodeSmellRule` names without computing an occurrence key
+is the *file*, because it emits violations with the file's `SymbolPath` while
+filtering individual metric entries inside it. A file-grained report would mark
+every baseline entry of that channel in that file as silenced on the strength of
+one allowed parameter name — reproducing at "channel × file" exactly the scale
+error that the two-valued verdict was introduced to remove, and swallowing both
+`resolved` and a counted `regressed` at step 4.
+
+The identity must therefore be canonicalised in one place and asserted across
+both paths — the same requirement, for the same reason, that §7.4 already places
+on the pre-cutoff snapshot. Two independent ways of naming the same finding
+never match, and a report that never matches silences nothing while a report
+that matches too widely silences everything.
+
+A silencing report is emphatically **not** a coverage deviation. Those scopes
+were evaluated — the metric exists, the entry exists, the rule looked at it and
+chose not to report. Filing them under coverage would claim `unobserved` for a
+scope §5.6 classifies as measured, which is the distinction the whole
+three-category taxonomy exists to preserve.
+
+**The one mechanism that stays undecidable is not in this query.** A
+line-addressed `@qmx-ignore` cannot be evaluated for an entry that carries a
+symbol and no line. That is category three, it is answered inside Baseline
+(below), and it is Baseline's own conservative call — it never reaches this
+contract. §14.8 records the residue.
+
+**Magnitude cutoffs are outside this query entirely.** They are silencing in
+the §5.6 sense, but §7.4's band evidence decides them, and listing them here
+would make §7.4's `absent` branch dead on arrival: the query would answer
+`silenced` for `architecture.circular-dependency` at step 4, and step 5 would
+never be reached.
+
+One carve-out reverses the obvious reading and must not be re-derived by
+whoever implements this: `PathExclusionFilter` and `NamespaceExclusionFilter`
+both pass `architecture.*` violations through **unconditionally**, so for those
+channels the global exclusions silence nothing at all.
+
+The third category stays out of the run-scoped query. `@qmx-ignore` records are
+extracted during collection, reach `AnalysisResult::$suppressions`, and are
+already consumed by `src/Baseline/Suppression`, so Baseline answers that half
+itself and takes the silenced answer if either half gives one. Where the entry
+carries no line and the tag is line-addressed, Baseline answers conservatively —
+a matching tag anywhere in the entry's file silences the entry — because
+`suppressed` neither mutates nor resolves, so the conservative direction costs a
+retained entry while the other costs a deleted one. The report names which half
+decided; "silenced by configuration" and "silenced by an author tag in this
+file" are different things for the reader.
+
 Implementation note, and an explicit scope item rather than a description of
 today's behaviour: the comparison must run **after** evaluation-exclusion and
 **before** presentation-suppression. `ViolationFilterPipeline` currently applies
@@ -629,6 +896,329 @@ reflection alone would be blind to every user-defined metric.
 The file's contract manifest (§6.1) is compared against this registry. A
 mismatch produces `incompatible` and never falls back to suppression.
 
+#### The registry contract (7.9)
+
+Shape only; population stays P1b's (rules declare) and configuration's
+(computed metrics, above). Four types, each justified by a consumer that
+cannot be written without it:
+
+| Type                        | Carries                                                                                                                        | Consumer that needs it                                                                                                           |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `ChannelContract`           | the channel, its `ContractReference`, its declared `ObservationKind`, its axis declarations, and the four channel-level traits | P3 compares it against the file manifest (§6.1); a difference at equal version is `incompatible`                                 |
+| `AxisContract`              | axis name, worse direction, epsilon, and the declared onset comparison (inclusive / exclusive / not applicable)                | the manifest stores exactly `worse` and `epsilon`; the comparison is what §7.1's reachability argument turns on                  |
+| `ChannelRegistryInterface`  | which declaration covers this channel — an enumerated one, an open-ended one, or none — and whether it is active in this run   | §7.4's `orphaned` test (no declaration) and §7.1 step 2 (declared but inactive → `unobserved`); never keyed on rule class names  |
+| `ChannelDeclaringInterface` | the rule-side source: the channels a rule can emit, with their contracts                                                       | P1b. Opt-in interface rather than a method on `RuleInterface`, so the contract package lands green and the breakage stays in P1b |
+
+**A declaration is either enumerated or open-ended, and `orphaned` reads that
+distinction.** §7.4 draws the `orphaned` / `unobserved` line at the build rather
+than at the configuration, and `orphaned` is the single class of entry
+`cleanup --prune-orphaned` may delete — so getting it wrong deletes real debt.
+But this registry is populated *after* the configuration pipeline, precisely so
+that user-defined computed metrics are visible. A registry that only knew the
+channels present after configuration would mark every `computed.*` entry
+`orphaned` the moment its definition left `qmx.yaml`, and prune it — even though
+putting the line back would restore it exactly.
+
+Splitting this into "declared by the build" and "active in this run" was the
+first attempt and it does not survive contact with `ComputedMetricRule`, which
+cannot name its channels except from configuration. So the declaration itself
+carries the distinction:
+
+- an **enumerated** declaration names concrete channels — the ordinary case,
+  including the four `architecture.*` diagnostics whose rule names no class
+  declares as its own;
+- an **open-ended** declaration names a rule name whose violation codes come
+  from configuration, without enumerating them. `ComputedMetricRule` declares
+  `computed.health` this way.
+
+`orphaned` then means: the entry's channel matches no enumerated declaration
+**and** no open-ended one. A deleted or renamed rule class removes both, which
+is exactly the "no configuration change will ever restore it" case §7.4
+reserves for `orphaned`. The test remains against declared channels, never
+against rule class names.
+
+**A channel covered by an open-ended declaration but absent from this run is
+`unobserved`, and something must actually say so.** An earlier draft asserted
+that outcome without naming a producer for it, and the omission was fatal in a
+way that is easy to miss: central coverage knows which *rules* were enabled,
+not which violation codes a rule chose to emit, so it cannot see that
+`health.typing` disappeared while `computed.health` ran normally. The entry
+would then sail through steps 1–4 to `resolved`, and — with no definition left
+to supply a boundary — the onset provider would answer "no onset by contract",
+which §5.7 maps to `fixed`, and `cleanup` would delete it. Three supported
+operations reach that state: `--exclude-health=<dim>`, `enabled: false` on a
+computed metric, and simply removing its thresholds from YAML.
+
+So the registry answers activity as well as declaration, and §7.1 step 2 reads
+it: declared-but-inactive is `unobserved`, exactly like a disabled rule, and
+recoverable by putting the configuration back. This is the second consumer that
+makes the activity question real rather than decorative.
+
+**Activity has two producers, and they union.** The registry is not the only
+thing that can say a channel went unobserved: §5.5's sparse coverage deviations
+already carry the case of a rule disabling one of its own levels
+(`ComplexityRule` does this per level). The two are owned by different packages
+— the registry by P1b, coverage by P2 — which is precisely the shape §7.4 warns
+about, two packages implementing two behaviours and each passing its own tests.
+The rule is therefore stated rather than left to fall out: **any source saying
+"not observed in this run" wins**, and a channel is treated as observed only
+when neither says otherwise. An implementer who reads the activity question as
+covering only the open-ended case will send `complexity.cyclomatic.class`
+straight to `fixed` when its level is disabled.
+
+The four channel-level traits, and the branch each one feeds:
+
+| Trait            | Values                                                                            | Why comparison needs it                                                                                                |
+| ---------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Onset source     | none / configured tiers / symbol-conditioned / run-conditioned / collection-gated | it says **how** to obtain the reason, never that a reason is impossible — see immediately below                        |
+| Firing predicate | single threshold / conjunction / criteria count / unconditional                   | a predicate over **two or more measured axes** resolves as `policy` only (§5.9) — a conjunction over presence does not |
+| Band             | unbounded / cutoff on identity / cutoff on an axis                                | the two cutoffs resolve by different rules and must not be conflated — see below                                       |
+| Coverage scope   | symbol / channel                                                                  | `channel` means the entry's own symbol coverage is insufficient and the whole channel's input must be complete (§7.4)  |
+
+**`onsetSource: none` makes `fixed` the correct reason, not an impossible
+one.** An earlier draft of this subsection said the opposite, and it would have
+killed `cleanup` for roughly twenty of the fifty-two channels — every
+unconditional code-smell and security channel. The reason test (§7.1) asks
+whether the boundary in force now is more permissive than the captured one. A
+channel with no boundary at all has nothing that could have been widened, so
+absence of the finding under proven coverage, with silencing ruled out at step
+4, is exactly what `fixed` means: the `goto` was deleted. `policy` is for a
+boundary that exists and moved, and for compound predicates per §5.9.
+
+**`collection-gated` is a fifth onset source, and it exists because one channel
+has a boundary the rule never sees.** `duplication.code-duplication` emits a
+violation for every `DuplicateBlock` it is given — the inventory correctly
+records its trigger as unconditional, and its configured tiers only choose a
+severity. But blocks below `min_lines` / `min_tokens` are never *detected*:
+`DuplicationDetector` drops them during Collection, before any rule runs. Both
+of the other readings are wrong and wrong in opposite directions — reading the
+tiers takes the onset from the severity tier, which §5.1 forbids outright, and
+reading the trigger as unconditional yields "no onset" and therefore `fixed`,
+so raising `min_lines` from 5 to 20 would report every vanished block as fixed
+and `cleanup` would erase it, with not one duplicated line removed. The onset
+for this channel is `(min_lines, min_tokens)`, and the provider reads the same
+options the detector reads. P1b assigns this trait value per channel from the
+inventory rather than by analogy; duplication is the case known today, not
+asserted to be the only one.
+
+**Configuration can move the measurement instead of the boundary, and the
+reason test must not read that as a fix.** §7.1 compares boundaries because it
+assumes the only bloodless way for a finding to vanish is a widened boundary.
+That assumption is false in this codebase, and the counterexamples are not
+exotic:
+
+- `coupling.framework_namespaces` — under `scope: application`, `CboRule` reads
+  a metric the collector computed *while excluding* the configured framework
+  namespaces. Adding one namespace to that list drops CBO below the threshold
+  with the boundary untouched and not one dependency removed.
+- `exclude_health` and per-metric `enabled: false` — excluding a dimension
+  renormalises the weights of `health.overall`, so the score rises and the
+  finding disappears with `warning` and `error` exactly where they were.
+- The namespace strategy and aggregation prefixes rename symbols, which makes
+  an entry's symbol "absent" without a line of code changing — see §14.3.
+
+Comparing boundaries cannot see any of this, so the entry resolves as `fixed`
+and `cleanup` erases standing debt. The fix is to compare more than the
+boundary: an entry records a **digest of the configuration its measurement
+depended on**, and a difference in that digest forces reason `policy`. A digest
+is the right shape rather than an enumeration of keys, because the list above is
+what is known today and the next such key will be added by someone who has never
+read this section. What must be enumerated is which keys feed which channel's
+digest, and that is P1b's job alongside the trait columns.
+
+Three constraints on the digest, each closing a way to make `fixed` unreachable
+outright:
+
+- **It covers measurement inputs only, never boundaries or severities.** The
+  natural implementation — hash the rule's options block — sweeps the thresholds
+  in with them, so the first edit to any threshold in `qmx.yaml` would force
+  `policy` on every entry of that rule for ever, duplicating and overriding the
+  boundary comparison built for exactly that case.
+- **It is taken from the resolved configuration**, after defaults, presets and
+  CLI overrides, with canonically ordered keys — so two spellings of the same
+  effective configuration digest identically. Taken from raw YAML instead, a
+  baseline captured locally and a CI run under `--preset=ci` disagree on every
+  entry, and `policy` becomes a constant.
+- **Its algorithm is the file's pinned `hash_algorithm`** (§6.1), whose
+  description is widened to name this third use alongside occurrence keys and
+  content hashing. A feature-detected digest is the portability defect §6.1
+  already refuses elsewhere.
+
+This bounds the reason test only. Whether values measured under different
+inputs should be *compared* at all — arguably they are as incomparable as a
+changed contract — is deliberately left open in §14.9 rather than settled here,
+since the conservative answer would flood a routine configuration change with
+`incompatible`.
+
+**A band on an identity and a band on an axis are different traits, and the
+criterion is not "what the cutoff compares".** The test is: *does the cutoff
+hide an enumerable set of identities that something in the run still holds?* It
+is deliberately not "is the cutoff applied to an axis", because
+`architecture.circular-dependency` — the reference case for cutoff-on-identity —
+compares `cycleSize`, which is precisely the axis it reports. Classifying by the
+operand would file it under cutoff-on-an-axis, hand it to §5.9, and §5.9 does
+not cover it (its trigger is a single threshold), leaving the pre-cutoff
+machinery dead with nothing to replace it. What makes it identity-banded is that
+the full cycle set survives the cutoff and can be enumerated; what makes
+`design.data-class` axis-banded is that nothing survives — the predicate simply
+stops being true.
+
+§7.4's
+pre-cutoff evidence works by enumerating identities the rule saw before its
+cutoff, which presupposes that the cutoff hides *identities*
+(`architecture.circular-dependency`: cycles above `maxCycleSize`). The
+inventory records a second banded channel of a different shape:
+`design.data-class` has its cutoff on the **WMC axis**, and that axis is not
+even reported — the finding simply stops firing as WMC grows. There is no
+identity set to snapshot, so a producer would answer `unknown` forever and
+every `design.data-class` entry would be permanently `unobserved`, contradicting
+§5.9, which already governs that channel: a compound predicate that stops
+firing resolves with reason `policy` and is never auto-removed. So a
+cutoff-on-an-axis channel is decided by §5.9 and never asks for band evidence;
+only cutoff-on-identity channels do. §14.7's claim that only
+`architecture.circular-dependency` is banded is corrected accordingly.
+
+The coverage-scope trait has no column in the inventory yet, so it is the one
+trait whose value is not yet established for all fifty-two channels. P1b adds
+the column as its first task — the inventory is assigned to P1b in §11 — and
+the plan does not assert values it has not enumerated.
+
+**The inventory's first column is not this trait, despite matching names.**
+Inventory column 1 is *Threshold source* (`none` / `configured tiers` /
+`symbol-dependent` / `run-dependent`) and describes where a channel's
+**severity tiers** come from. The onset trait describes where its
+**violation-onset boundary** comes from, and §5.1 forbids deriving one from the
+other. The two disagree in the codebase, not just in principle: the inventory
+itself records that `getSeverity()` is dead code for the code-smell channels and
+unreachable-false for the security ones, and `duplication.code-duplication` is
+the case above. So P1b derives this trait from each rule's emission path, using
+the inventory as the *enumeration* of what must be classified — not as the
+source of the value.
+
+**Two of §5.1's seven inventory dimensions are deliberately not stored**, and
+the enumeration that settled it is worth recording, because both look like
+omissions:
+
+- **Magnitude** is not a property of the contract. The inventory's magnitude
+  column describes what each rule puts in `Violation::metricValue` *today* —
+  which §2.3 already disqualifies as a debt contract, and which v7 exists to
+  replace. Copying it into the registry would re-import the thing the design
+  removed. What the observation carries is its axes, and the axis declarations
+  above state that directly. The two disagree in the codebase and will keep
+  disagreeing: `design.god-class` records magnitude `count` because
+  `metricValue` is `matchedCount`, while §5.9 requires its observation to carry
+  the raw underlying metrics as a vector.
+- **Identity** is not total over the rule set, which is why it cannot be a
+  required declaration. `architecture.coverage` emits one aggregated
+  project-level violation per run and answers none of `symbol` / `occurrence` /
+  `graph`; the inventory records a literal `?` for it. What the consumers
+  actually need from that dimension is two separate things, and both are
+  already stated elsewhere: whether the finding is individually addressable
+  (the `ObservationKind` and the presence of an `OccurrenceKey`) and whether
+  its coverage question is per-symbol or channel-wide (the coverage-scope
+  trait above).
+
+**The kind is stored, not derived.** Deriving it from (identity, magnitude)
+was checked against all 52 inventory rows and fails twice over: it has no
+branch for `architecture.coverage`, and it maps `duplication.code-duplication`
+— whose line count genuinely drives its severity — onto the same value as the
+eighteen occurrence channels that carry no magnitude at all.
+
+**What is versioned and what is not**, because `ChannelContract` now carries
+both and the two behave oppositely:
+
+- The **comparable shape** — kind, axis names, directions, epsilon, and the
+  declared onset comparison — is the contract. A change to any of it requires a
+  version bump, and a difference at equal version is `incompatible`. The
+  comparison is added to §6.1's manifest for exactly the reason the other four
+  are already there: `resolutionReason` compares boundaries as numbers, so
+  moving an operator from inclusive to exclusive makes the boundary strictly
+  more permissive while leaving the number untouched — the entry would read as
+  `fixed` and `cleanup` would delete debt that never went away. Both operators
+  are in live use across the rule set — higher-is-worse channels compare
+  inclusively (`ComplexityOptions`), lower-is-worse ones strictly
+  (`MaintainabilityOptions`) — so a channel changing direction or convention
+  changes the operator without changing any number. (An earlier draft cited
+  `CircularDependencyOptions::getSeverity()` as mixing the two in one method. It
+  does, but neither of its operators is an onset comparison: the `>` is the band
+  cutoff and the `<=` picks a severity tier. The citation was wrong; the design
+  is not.)
+- The **four traits** are properties of the current run, not of the contract.
+  They never bump the version and never produce `incompatible`. A channel that
+  gains a cutoff, or whose coverage scope widens, is still comparable against
+  entries captured before the change; what changes is which branch decides
+  them. Stating this both ways round is deliberate: an implementer who guesses
+  the other way turns a purely behavioural change into a mass `incompatible`
+  across every entry of the channel.
+
+#### The onset provider contract (7.9)
+
+§0.8 listed three gaps; this is a fourth of exactly the same shape, found
+while specifying them. §7.1 decides `resolutionReason` by comparing the
+captured onset against **the onset in force now**, for a symbol that is not
+violating — so the value cannot come from an observation, and §5.1 puts it
+behind an onset provider. No Core type expresses that query today, and
+`baseline: [core]` means the query contract has to be there.
+
+Both halves live in `Core/Channel/` beside the registry: the onset is what a
+channel applies to a symbol, so it is the channel's subject, not a subject of
+its own. The split into two interfaces is forced by lifetime rather than by
+taste:
+
+- **Rule-side.** Given a channel, a symbol, and the analysis context, answer
+  with the current onset per axis. The context parameter is required —
+  `ClassRankRule` scales its thresholds by the project's class count, and
+  `LongParameterListRule` picks its boundary from the symbol's own metrics, so
+  neither is answerable from the channel alone.
+- **Run-scoped.** The same question without a context parameter, for
+  consumers that run after rule execution. `AnalysisContext` is built for
+  `RuleExecutor::execute()` and is not carried on `AnalysisResult`, so a
+  comparator running in the filter pipeline has no context to pass. The
+  run-scoped implementation is the one thing that holds it.
+
+**The answer has four values**, because a boundary can be absent, numeric, or
+neither, and because the symbol it applies to may be gone:
+
+| Answer                         | Meaning                                                                  | What §7.1 does with it                                     |
+| ------------------------------ | ------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| the onset, per axis            | the boundary in force now                                                | compare against the captured onset — `fixed` or `policy`   |
+| no onset, by contract          | the channel's onset source is `none`; there is no boundary and never was | `fixed` (nothing could have widened — see the trait above) |
+| a non-numeric onset            | the boundary exists but is a configured mode, not a number               | `policy` — a mode switch is a policy change, never a fix   |
+| not answerable for this symbol | the symbol is absent from this run, or its metrics are                   | see below                                                  |
+
+The third answer is not a placeholder: `architecture.coverage` fires according
+to a configured `mode` (`ignore` / `warn` / `error`). Without it an implementer
+must pick one of the other three, and the natural pick — "no onset, by
+contract" — turns switching that mode to `ignore` into a report of fixed code,
+with `cleanup` deleting the entries. Numeric comparison is not the only way a
+boundary can move.
+
+But a non-numeric onset must also be **recorded**, or the answer degenerates
+into a constant. If the entry stores no mode, comparison has nothing to compare
+against, every run answers `policy`, and the channel's entries survive `cleanup`
+for ever — including after the layer map is completed and the coverage gap
+genuinely closed. So the entry stores the captured mode as an opaque token, and
+the test is the same one every other axis uses: a boundary no more permissive
+than the captured one admits `fixed`; a widened one (`error` → `warn` →
+`ignore`) gives `policy`.
+
+The same channel also has a magnitude nobody declared: it fires on the count of
+unmatched ends, which is an ordinary higher-is-worse count. P1b declares it as
+an axis. Otherwise the channel sits outside the ratchet entirely and a project
+going from three unclassified classes to a hundred reports `matched`.
+
+The last value is not an edge case: `resolutionReason` is computed exactly
+when the finding is gone, and the commonest way for a finding to be gone is for
+the symbol to have been deleted. A symbol-conditioned channel then has no
+metrics to read. Collapsing that into "no onset" would report `policy` for
+deleted code — the least ambiguous `fixed` there is — and `cleanup` would never
+remove it. So: a symbol absent from a **complete** discovery resolves as
+`fixed`, on the coverage evidence of §7.4 rather than on a boundary comparison;
+a symbol absent from an incomplete one is `unobserved`, as it already is. This
+rule overrides §5.9's blanket refusal of `fixed` for compound channels, and
+§5.9 now carries the carve-out explicitly — the two were written to give
+opposite answers for a deleted God class.
+
 ### 5.8 Vector comparison is strict Pareto ratcheting
 
 A vector finding is not worse only when no axis exceeded its allowance beyond
@@ -644,10 +1234,35 @@ compensate.
 
 ### 5.9 Compound rules ratchet on their firing identity
 
-This section covers every channel whose firing predicate is a conjunction or a
-count of matched criteria — that is, a predicate over several axes,
-whether the predicate is a **conjunction** or a **count of matched criteria**.
-Both members are in the codebase:
+This section covers every channel whose firing predicate is a predicate over
+**two or more measured axes, any of which can worsen while the predicate stops
+firing**. That is the property the section's whole argument rests on, and 7.9
+had to state it this way after review found the earlier wording — "a
+conjunction or a count of matched criteria" — capturing channels it was never
+about.
+
+The inventory marks five channels conjunction or criteria-count, and they do
+not all belong here. Enumerated, because a rule about a set requires the set:
+
+| Channel                         | Predicate                                                                                                          | In scope? |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------- |
+| `design.data-class`             | WOC ≥ t **and** WMC ≤ t — two measured axes                                                                        | yes       |
+| `design.god-class`              | at least `minCriteria` of four measured tests                                                                      | yes       |
+| `architecture.layer-violation`  | both ends resolve to layers **and** the edge is not allowed — a predicate over *presence*, carrying no axis at all | **no**    |
+| `architecture.coverage`         | mode is not `ignore` **and** unmatched ends remain                                                                 | **no**    |
+| `architecture.potential-shadow` | a class matches more than one layer                                                                                | **no**    |
+
+The three excluded channels have no measured axis that could worsen unnoticed,
+so the reasoning below simply does not apply to them, and applying it anyway
+had a concrete cost: `architecture.layer-violation` is the flagship channel of
+the whole architecture feature, its normal repair is deleting one dependency
+edge, and under the trait-keyed wording every such repair would have resolved
+as `policy` and stayed in the baseline for ever. `cleanup` acts only on
+`fixed`.
+
+The lesson is the same one §5.1 learned twice: a rule keyed on a **proxy** for
+a property — here the inventory's trigger column — meets members where the
+proxy and the property diverge. The two genuine members are in the codebase:
 
 - `DataClassRule` fires only when `WOC >= threshold` **and** `WMC <= threshold`.
 - `GodClassRule` fires when at least `minCriteria` of four criteria match, and
@@ -678,7 +1293,18 @@ once it stops, the finding is resolved by the configured policy, consistent with
 `design.lcom` exist; TCC, class LOC, and WOC have none, and `DataClassRule`'s
 WMC semantics are inverted relative to `complexity.wmc`. Recorded in §14.1.
 
-**Resolution of a compound entry never carries reason `fixed`.** The reason test
+**Resolution of a compound entry never carries reason `fixed` — except when the
+symbol is gone** (added 7.9, after review found the two rules colliding). The
+carve-out is narrow and its reasoning is the whole justification for the rule it
+qualifies: this section forbids `fixed` because a compound predicate can stop
+firing while an axis worsens, so absence proves nothing about the code. A symbol
+absent from a *complete* discovery is the one case where that argument does not
+apply — there is no axis left to worsen and no predicate left to tighten. Absent
+this carve-out, §5.7's rule for deleted symbols and this paragraph give opposite
+answers for a deleted God class, `cleanup` acts only on `fixed`, and the two
+packages that own the halves would each have passed their own tests.
+
+The reason test
 (§7.1) compares current onset against captured onset, and such a channel has no per-axis
 onset to compare — worse, `GodClassOptions::withOverride()` maps an inline
 `@qmx-threshold` onto `minCriteria`, so a policy change alone can stop the rule
@@ -718,7 +1344,7 @@ requirement.
     "complexity.cyclomatic.method": {
       "version": 1,
       "kind": "scalar",
-      "axes": { "ccn": { "worse": "higher", "epsilon": 0 } }
+      "axes": { "ccn": { "worse": "higher", "epsilon": 0, "compare": "inclusive" } }
     }
   },
   "violations": {
@@ -738,18 +1364,59 @@ requirement.
 
 ### 6.1 Top-level fields
 
-| Field            | Contract                                                                                                       |
-| ---------------- | -------------------------------------------------------------------------------------------------------------- |
-| `version`        | Exactly `7`                                                                                                    |
-| `mode`           | `ratchet` or `suppress`                                                                                        |
-| `generated`      | ISO 8601, from an injected clock                                                                               |
-| `hash_algorithm` | Explicit and pinned; names the algorithm used for occurrence keys and content hashing. Never feature-detected. |
-| `contracts`      | Manifest: contract id → version, kind, axis directions and epsilon                                             |
-| `violations`     | Canonical symbol keys → deterministic entry lists                                                              |
+| Field            | Contract                                                                                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `version`        | Exactly `7`                                                                                                                                       |
+| `mode`           | `ratchet` or `suppress`                                                                                                                           |
+| `generated`      | ISO 8601, from an injected clock                                                                                                                  |
+| `hash_algorithm` | Explicit and pinned; names the algorithm used for occurrence keys, content hashing, and measurement-input digests (§5.7). Never feature-detected. |
+| `scope`          | The analysed path set that produced this file, normalised (7.9). See below — without it `cleanup` deletes                                         |
+| `contracts`      | Manifest: contract id → version, kind, and per axis its direction, epsilon and comparison (7.9)                                                   |
+| `violations`     | Canonical symbol keys → deterministic entry lists                                                                                                 |
 
 The manifest detects a forgotten version bump: if the registry's axes,
-direction, or epsilon differ from the manifest at the same declared version, the
-result is `incompatible`, not a silent miscomparison. Cost is O(contracts).
+direction, epsilon, or declared comparison differ from the manifest at the same
+declared version, the result is `incompatible`, not a silent miscomparison. Cost
+is O(contracts).
+
+**`scope` closes a data-destruction path that nothing else in this design
+guards.** Every lifecycle command takes a `<paths...>` argument, and §7.4 lets
+an entry absent from *complete* discovery resolve — where "complete" was
+reasoned from §2.6's "analysis is always full". That is full *with respect to
+the paths given*, not with respect to the project. So
+`bin/qmx baseline:cleanup baseline.json src/Foo` is a technically complete run
+in which every entry outside `src/Foo` is absent from discovery, resolves, finds
+its onset unmoved, is reported `fixed`, and is deleted. One mistyped argument
+empties the file.
+
+That is also a regression against today's behaviour, which is fail-safe:
+`BaselineCleanupCommand` takes no paths and keeps any entry whose file it cannot
+resolve. Replacing a conservative heuristic with an inference that destroys data
+on a typo inverts Goal 5 — "unevaluated scope is conservative: it never resolves
+or mutates an entry". `migrate-apply` already carries a fingerprint of its
+analysis inputs; `cleanup` and `update` carried nothing.
+
+So the file records the scope that produced it, and `cleanup` and `update`
+refuse to run when the current scope does not cover the recorded one, with an
+explicit `--force`. An entry whose symbol lies outside the analysed paths is
+`unobserved`, never `resolved` — which is what §5.6's first category says about
+any scope that was not evaluated, applied to the one input nobody had written
+down.
+
+`compare` is **required** on every manifest axis, and takes the literal value
+`not-applicable` for a channel that has no onset boundary to compare — the
+absence of a boundary is a fact worth writing down, and an optional field would
+make "no onset" and "someone forgot" identical on disk. A v7 file written before
+the field existed is not a compatibility case: v7 has not shipped, and §6.2
+already requires the file to fail closed rather than guess.
+
+The comparison joined that list at 7.9. It has to: the reason test compares
+boundaries as numbers, so switching an operator from inclusive to exclusive
+makes the boundary strictly more permissive without changing the number, and an
+entry would resolve as `fixed` while its debt sits exactly where it was. The
+four channel traits of §5.7 are deliberately **not** in the manifest — they
+describe the current run rather than the comparable shape, and never make an
+entry `incompatible`.
 
 Everything except `generated` is deterministic for the same analysis and
 contracts. A no-op command preserves the existing timestamp and bytes.
@@ -764,10 +1431,19 @@ contracts. A no-op command preserves the existing timestamp and bytes.
   distinguish "the code was fixed" from "the policy moved" (§7.1) — it is a
   single number per axis and is **not** used to decide comparison, which always
   uses the current onset boundary.
+- An entry whose channel has a **non-numeric onset** stores the captured mode
+  as an opaque token instead of a number, and an entry whose measurement
+  depends on configuration the rule does not see stores an `inputs` digest of
+  that configuration (§5.7). Both exist for the same reason as the stored
+  onset: without them a policy change is indistinguishable from a fix, and
+  `cleanup` deletes standing debt. Both are compared only in the reason test,
+  never in the allowance comparison.
 - The referenced contract must exist in the manifest.
 - Scalar entries have exactly one axis; vector entries at least two; presence
   and graph entries may have none.
-- Axis names are unique, deterministically sorted, and match the manifest.
+- Axis names are unique, deterministically sorted, and match the manifest; each
+  manifest axis carries `worse`, `epsilon` and `compare`, the last possibly
+  `not-applicable`.
 - Entries under one symbol key sort deterministically by
   (rule, code, occurrence_key, contract).
 - Numeric values are finite; `-0.0` is normalised.
@@ -922,6 +1598,79 @@ resolve the entry and no other command would touch it. Where a banded channel
 has no pre-cutoff artefact, its entries are reported as requiring manual review
 rather than resolved by inference.
 
+#### The evidence is a snapshot, not a query (7.9)
+
+The earlier text said the evidence "exists" in `AnalysisContext::$cycles`. It
+does — the detector populates the full set and the cutoff is applied afterwards,
+inside the rule — but the context **does not survive rule execution**. It is
+built for `RuleExecutor::execute()` and is not carried on `AnalysisResult`, so
+no post-analysis stage can read it. A comparator that plans to consult the
+context at comparison time will find nothing there. The evidence must therefore
+be *recorded while rules run* and carried forward, which makes this a producer
+obligation rather than a lazy lookup, and changes who owns it.
+
+This applies to a **cutoff on an identity** only. §5.7 splits the band trait in
+two, and the other half — a cutoff on an axis, as in `design.data-class`, where
+the finding stops firing once WMC grows past its bound — has no identity set to
+enumerate and is decided by §5.9 instead: the predicate stopped firing, so the
+entry resolves with reason `policy` and is never auto-removed. A producer must
+not be asked for evidence it cannot have, or every entry of that channel is
+permanently `unobserved`.
+
+Two contracts, mirroring the coverage pair that already exists:
+
+- **Rule-side, opt-in.** A channel whose band cuts off identities reports the
+  ones it saw **before** applying that cutoff. Only the rule knows how its
+  identity is canonicalised, and only a handful of channels have a band, so this
+  is the same opt-in shape and the same argument as
+  `CoverageDeviationReporterInterface` — not a method every rule must answer
+  emptily.
+- **Run-side.** The coverage contract gains an occurrence-addressed answer:
+  given a channel and an occurrence key, is that identity `present`, `absent`,
+  or `unknown` in the run's band-independent evidence.
+
+**The evidence answer gets its own named type; `ScopeCoverageStatus` must not
+be reused for it.** The two are isomorphic in shape — three values, first one
+positive — and *opposite* in meaning: `Evaluated` licenses reading absence as
+disappearance, while `present` means the identity is still there and the entry
+must not be touched. The types sit in the same directory, so the reuse is the
+obvious move and it inverts the branch without a single failing test.
+
+**The snapshot key and the observation key must be byte-identical.** The rule
+reports its pre-cutoff identities from one method and attaches occurrence keys
+to observations from another; two independent canonicalisations of the same
+cycle — a different member order, a different escaping, a different part list —
+never match, so `present` never fires, and an entry hidden by the band is read
+as `absent` and resolved. That is precisely "resolve an entry because its debt
+grew". There must be one canonicalisation point, and a test asserting the two
+paths agree for the same finding — the same cross-package assertion P1c already
+owes for the collector → rule seam.
+
+The three answers map onto §7.1 without inference:
+
+| Evidence  | With no current finding | Why                                                                                                       |
+| --------- | ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| `present` | `suppressed`            | the band hid it — which §5.6 already classifies as configuration-silencing, so the entry is never mutated |
+| `absent`  | resolution permitted    | the identity is gone from evidence taken before the cutoff, so silence carries information                |
+| `unknown` | `unobserved`            | the "requires manual review" case above, stated as a status rather than as prose — but see the note       |
+
+A producer with no snapshot for a channel answers `unknown`. It must never
+answer `absent` by falling back to the finding set: for a banded channel that is
+precisely the forbidden inference — evaluated plus absent equals fixed — and it
+would resolve an entry *because* its debt grew.
+
+**`unknown` widens `unobserved` rather than fitting inside it.** §7.1 defines
+that status as "coverage cannot prove the finding was evaluated", and its
+precedence step reads "the scope was not evaluated, so no comparison is
+possible". Neither is true here: the scope *was* evaluated, the rule ran, and
+only the band evidence is missing. Left as it stands, an implementer following
+the precedence procedure finds step 2's condition false, steps 3 and 4
+inapplicable, and step 5's `resolved` forbidden — with no step to land on. So
+§7.1's step 2 is restated to cover both readings: *no comparison can be trusted*
+— either because the scope was not evaluated, or because the evidence a banded
+channel needs was not recorded. The reported reason distinguishes them, since
+"we did not look" and "we looked but kept nothing" call for different fixes.
+
 `unobserved` and `orphaned` are distinguished by **why the rule is missing**,
 and the line is drawn at the build, not the configuration:
 
@@ -1042,6 +1791,36 @@ prominently rather than in a summary tail. Recorded in §14.6.
   flag. It never removes `unobserved`, silenced-area, or `policy`-resolved
   entries. The added argument is a breaking CLI change and needs a `Breaking`
   changelog entry.
+
+  **`cleanup` must not delete a re-pointing candidate.** `update`'s
+  debt-neutral re-pointing is predicated on the entry's original symbol being
+  absent from the inventory — which is exactly the predicate that now makes an
+  entry `fixed` (§5.7). So a renamed class satisfies both commands at once, and
+  nothing ordered them. Running `cleanup` first destroys the captured axes; the
+  finding then reappears under the new name as `new`, `update` will not adopt it
+  because it never adds an identity, and the only remaining exit is
+  `generate --force`, which re-accepts the project's entire debt.
+
+  **The re-pointing predicate is defined once, in `update`, and `cleanup` cites
+  it — it is never restated.** A first attempt restated it and dropped one of
+  its four conditions, which is enough to deadlock both commands: `fixed` is
+  reachable without the symbol disappearing at all, so any unrelated `new`
+  finding of the same contract would block `cleanup` while `update` declined the
+  entry for failing its own absent-symbol precondition. For a channel with no
+  stable occurrence key the block is total rather than incidental — "matching on
+  occurrence key" is `null == null`, and "no worse than the captured axes" is
+  vacuous for the twenty channels that carry no axes, so one stray
+  `code-smell.goto` finding anywhere would pin every resolved entry of that
+  contract for ever.
+
+  Two rules follow, and both are testable. A candidate must satisfy the **whole**
+  predicate, absent-symbol precondition included, and the predicate must be
+  non-vacuous: where the channel offers no occurrence key, a candidate must
+  additionally name a symbol. And the two commands may never both decline: if
+  `update` refuses — including the ambiguous case where several candidates match
+  and it re-points nothing — `cleanup` must either remove the entry or report a
+  cause the user can act on. "Both refuse, silently, for ever" is a state §13
+  pins as forbidden.
 - **rebase-contracts** — the only path for a known contract change; explicit
   contract ids plus `--force`; prints old and new data before writing. It must
   also be the exit for an `incompatible` entry **whose rule currently emits no
@@ -1122,8 +1901,13 @@ schema errors keep the existing configuration error class.
   and is visible in the `qmx.yaml` diff.
 - **Git scopes** — presentation only (§7.4).
 - **Contract versioning** — bumped when an observation's *meaning* changes
-  (axes, direction, epsilon, identity, occurrence semantics), not on every
-  algorithm edit. Bumps land only in major releases and are listed in
+  (axes, direction, epsilon, **the declared onset comparison**, identity,
+  occurrence semantics), not on every algorithm edit. The comparison joined this
+  list at 7.9, alongside the manifest field: an operator moved from inclusive to
+  exclusive shifts the boundary without changing a number, so neither the
+  manifest check nor this list would have caught it. The four channel traits are
+  deliberately **not** here — they describe the current run, not the comparable
+  shape. Bumps land only in major releases and are listed in
   `CHANGELOG.md` by contract id, because each turns consumer entries
   `incompatible` until rebased.
 - **Computed metrics** — need a deterministic contract id derived from the
@@ -1205,29 +1989,93 @@ ADR 0016's naming test makes them separate subjects rather than one directory
 named for the feature. Recorded here so the extension is deliberate rather than
 discovered later as a package writing outside its list.
 
-The three follow-ups from §0.8 must be closed **before P1b, P1c and P3 start**,
-because each is a seam those packages would otherwise cross blind:
+The follow-ups from §0.8 are carved out as their own package, P1a′ below, and
+must be closed **before P1b, P1c and P3 start**, because each is a seam those
+packages would otherwise cross blind.
 
-1. **Declared-channel / current-contract registry contract** in Core — owner:
-   P1a. Shape only; population is P1b's (rules declare) and configuration's
-   (computed metrics, §5.7).
-2. **Config-driven silencing carrier** — owner: P2, whose evaluation gate
-   already holds the exclusion configuration; the *contract* still lands in Core
-   under P1a's rule. Alternatively §7.1 step 4 is decided outside Baseline, in
-   which case this plan must say by whom — today neither reading is recorded.
-3. **Occurrence-level coverage addressing** for §7.4's pre-cutoff evidence —
-   owner: P2, contract in Core.
-
-Until these land, the consumer stub in P1a's tests overstates what the coverage
+Until they land, the consumer stub in P1a's tests overstates what the coverage
 contract can answer: it decides `resolved` from channel-wide evidence alone,
 which §7.4 permits only for unbanded channels.
+
+### P1a′ — the contracts P1a's Definition of Done did not enumerate
+Files: `src/Core/Channel/**` (registry, contracts, and both onset providers),
+`src/Core/Coverage/**`, `src/Core/Suppression/**`,
+`src/Core/Violation/Violation.php`, `src/Core/Violation/ViolationChannel.php`
+(moved out), `src/Core/README.md`, `tests/Unit/Core/Channel/**`,
+`tests/Unit/Core/Coverage/**`, `tests/Unit/Core/Suppression/**`,
+`tests/Unit/Core/Violation/**`, this document.
+Dependencies: P1a. **Blocks P1b, P1c and P3.**
+
+Four contracts, three of them from §0.8 and the fourth found while specifying
+them:
+
+| Gap                             | Closed by                                                                                  | Specified in |
+| ------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
+| Declared-channel registry       | `ChannelContract`, `AxisContract`, `ChannelRegistryInterface`, `ChannelDeclaringInterface` | §5.7         |
+| Config-driven silencing carrier | a two-valued run-scoped query plus a sparse rule-side report, in `Core/Suppression/`       | §5.6         |
+| Occurrence-level coverage       | an occurrence-addressed coverage answer, its own status type, and a rule-side reporter     | §7.4         |
+| Onset in force now (new)        | the rule-side and run-scoped onset providers, four-valued                                  | §5.7         |
+
+`ViolationChannel` moves from `src/Core/Violation/` to `src/Core/Channel/`,
+joining what a channel *declares* to the address it is declared under. The
+precedent is `SymbolPath`, which left `Violation/` for `Symbol/` for the same
+reason. Three production consumers, all inside Core; every test that references
+it already sits in a directory this package owns.
+
+**Definition of Done — stated as seams, not as types.** P1a was delivered
+complete against a DoD that enumerated types and still left four seams open;
+listing types is what produced that outcome, so this package is measured by the
+questions its consumers can answer:
+
+1. a stub comparator decides `incompatible` for a channel whose rule emitted
+   **no violation in this run**, from the registry alone — the one scenario the
+   registry exists for;
+2. a stub decides `suppressed` for an entry whose scope produced **no finding**,
+   from the silencing query alone, and — the symmetric half, without which an
+   implementation can simply skip the query whenever a finding exists — a second
+   entry that **does** have a current finding worse than its allowance, inside
+   an excluded path, also reaches `suppressed` rather than `regressed`, and is
+   left unmutated. §5.6 requires both directions; item 5 below requires the
+   opposite one, and an implementation must satisfy them together;
+3. a stub refuses to resolve a banded entry whose evidence is `unknown`, and
+   resolves the same entry when the evidence is `absent` — the two branches
+   §7.4 forbids collapsing;
+4. a stub computes `resolutionReason` with **no observation in hand**, from the
+   run-scoped onset query, and distinguishes all four of its answers: a moved
+   numeric boundary gives `policy`, a channel with no boundary at all gives
+   `fixed`, a non-numeric mode gives `policy`, and a symbol absent from a
+   complete run gives `fixed` — including for a channel with a compound
+   predicate, which §5.9 otherwise refuses `fixed`;
+5. **a positive outcome is proven reachable end to end.** One entry traverses
+   the whole §7.1 queue — declared in the registry, coverage proven, silencing
+   answered, band evidence `absent` — and arrives at `resolved` / `fixed`. Each
+   of items 1–4 asserts a refusal, and this plan has twice shipped a refusal
+   that could never be lifted; a suite made only of refusals cannot catch the
+   third time. A second entry, on a channel whose allow-list silenced *other*
+   scopes but not this one, reaches `regressed` — pinning that a rule-reported
+   silencing is scoped, not channel-wide, and that step 4 does not swallow
+   step 5;
+6. a stub decides `orphaned` for a channel matched by neither an enumerated nor
+   an open-ended declaration, and **not** for a `computed.*` channel whose
+   definition was removed from configuration while its open-ended declaration
+   stands;
+7. the consumer stub written under P1a is brought in line or retired: it decides
+   `resolved` from channel-wide evidence and substitutes a raw array for the
+   registry, which §0.8 itself names as the proof the contract was missing.
+   Leaving it is leaving a wrong decision pinned by a green test in the frozen
+   base;
+8. Core stays dependency-free; PHPStan level 8 clean; `composer check` green;
+   `src/Core/README.md`'s structure block lists every new file;
+9. no rule, collector, or Analysis file is touched — a contract package that
+   needs a production change to prove itself has not defined a contract.
 
 ### P1b — Rule observations
 Files: `src/Rules/**` (including `src/Rules/AbstractRule.php`),
 `src/Architecture/Rules/**`, `tests/Unit/Rules/**`,
 `tests/Architecture/Unit/Rules/**`, `tests/Integration/Rules/**`,
-`src/Rules/README.md`, `src/Architecture/README.md`.
-Dependencies: P1a. Splittable by rule category across agents with disjoint
+`src/Rules/README.md`, `src/Architecture/README.md`,
+`docs/plan/channel-trait-inventory.md`.
+Dependencies: P1a′. Splittable by rule category across agents with disjoint
 directories.
 
 `AbstractRule.php` belongs here, not to P1a: the onset-boundary helper that
@@ -1240,18 +2088,48 @@ Coordinate with the external `CircularDependencyRule` cycle-identity fix
 it before P1b starts or fold it in; the completion predicate is a test pinning
 canonical cycle representative selection independent of graph traversal order.
 
+**P1b owns the rule-side half of four P1a′ contracts.** P1a′ defines their
+shape and P2 implements the run-scoped halves; without this paragraph the
+producer side belongs to nobody, every rule passes its own DoD, and the registry
+stays empty while the run-scoped answers return `unknown` and `orphaned` forever
+— the P1a failure repeated one package later. The four are the channel
+declarations, the onset provider, the pre-cutoff identity reporter, and the
+silencing report for rules that carry their own allow-list. All four follow the
+same shape the codebase already uses for coverage deviations: opt-in, sparse,
+never a per-symbol map.
+
 DoD: a registry-driven test asserts every rule in `RuleRegistry` emits an
 observation of a declared kind — no hand-maintained list; the onset boundary is
 never derived from the tier-matched threshold; `GodClassRule` emits fixed raw
 axes with nulls for unavailable metrics; threshold changes alter boundaries but
-never raw values or identities.
+never raw values or identities; **every channel in the inventory is reachable
+through the registry**, and the inventory gains its coverage-scope column so no
+channel's trait value is invented at implementation time; **the rule-side onset
+provider returns different boundaries for two symbols under one violation code**
+(`LongParameterListRule`'s VO branch is the case, and it bypasses
+`getEffectiveOptions()`, so an inline `@qmx-threshold` reaches ordinary methods
+only — the provider must reproduce that, not an idealisation of it); **the
+cutoff-on-identity channel fills its pre-cutoff snapshot, and the key it reports
+is byte-identical to the one its own observation carries**; **every rule with an
+allow-list reports what that list silenced, scoped to where it silenced it** —
+a report covering the whole channel would make every entry of that channel
+`suppressed` and is the defect §5.6's two-valued verdict exists to prevent;
+`duplication.code-duplication`'s onset is `(min_lines, min_tokens)`, and a test
+shows raising `min_lines` yields `policy`, never `fixed`; **each channel names
+the configuration keys that feed its measurement digest** (§5.7), with tests
+that editing `coupling.framework_namespaces` and excluding a health dimension
+both yield `policy`; `architecture.coverage` declares its unmatched-end count as
+an axis and its `mode` as a non-numeric onset, so the channel ratchets at all;
+the silencing report is addressed by the observation's own identity, proven by a
+test where one allowed entry in a file does **not** silence a second entry of
+the same channel in that same file.
 
 ### P1c — Occurrence identity in collectors
 Files: `src/Metrics/**`, `src/Analysis/Duplication/**`,
 `src/Core/Duplication/**`, `src/Infrastructure/Parallel/**`,
 `src/Infrastructure/Serializer/**`, `tests/Unit/Metrics/**`,
 `tests/Unit/Analysis/Duplication/**`, `src/Metrics/README.md`.
-Dependencies: P1a. Parallel with P1b.
+Dependencies: P1a′. Parallel with P1b.
 
 `src/Analysis/Duplication/**` is included because the normalised token hash is
 produced there, not in `Core/Duplication`. The parallel and serializer paths are
@@ -1269,17 +2147,30 @@ rather than each side asserting only its own half.
 Files: `src/Analysis/Coverage/**`, `src/Analysis/Collection/**`,
 `src/Analysis/Pipeline/**`, `src/Analysis/RuleExecution/**`, matching tests,
 `src/Analysis/README.md`.
-Dependencies: P1a.
+Dependencies: P1a′.
+Also implements the three run-scoped queries whose contracts P1a′ defines: run
+coverage (including the occurrence-addressed answer), the silencing query, and
+the run-scoped onset facade.
 DoD: partial, failed, and interrupted runs are distinguishable from complete
 ones; the deviation list is empty on a clean full run; the coverage key includes
 the violation code; the evaluation gate implements §5.6's first category before
-rules execute.
+rules execute; the pre-cutoff identity snapshot is taken **during** rule
+execution and survives onto the analysis result, since `AnalysisContext` does
+not (§7.4); the silencing query is **two-valued** and unions the centre's own
+exclusions with the sparse silencing reports rules produce, with magnitude
+cutoffs left to the band evidence; **removing a `computed_metrics` definition
+from `qmx.yaml` leaves its entries `unobserved`, not `orphaned`** — asserted end
+to end against a real configuration change, not on a stub with both registry
+answers supplied by hand, since the stub is exactly what would pass while
+production did the opposite.
 
 ### P3 — Baseline v7 domain and lifecycle
 Files: `src/Baseline/**`, its tests, `src/Baseline/README.md`.
-Dependencies: P1a only — genuinely parallel with P2 now that the coverage
+Dependencies: P1a′ only — genuinely parallel with P2 now that the coverage
 contract is in Core.
-DoD: comparison matrices pass for every kind, status, and attribute; the
+DoD: the lifecycle policy §0.8 kept out of Core lands here and is asserted
+against §5.6's table — which statuses an ordinary command may mutate, and which
+resolution reasons `cleanup` may remove; comparison matrices pass for every kind, status, and attribute; the
 migration plan schema is specified and versioned; malformed files fail closed;
 writes are atomic with a real CAS guard; no-op operations preserve bytes; v5 is
 rejected outside migration.
@@ -1350,22 +2241,40 @@ reference in `ARCHITECTURE.md` (removed by ADR 0014) is corrected.
 ## 12. Execution Sequence
 
 1. ~~Review, then approve P0.~~ Done — P0 closed at 7.7.
-2. P1a; standard review; freeze as the common base.
-3. P1b and P1c in parallel worktrees; verify each diff against its DoD.
-4. P2 and P3 in parallel; integrate one at a time.
-5. P4, then P5 without touching earlier packages' files.
-6. Full validation and self-analysis, including lifecycle commands against this
+2. ~~P1a; standard review; freeze as the common base.~~ Done — landed and
+   reviewed; the review found four contract seams its DoD had not enumerated.
+3. P1a′; standard review. Only then is the base actually frozen.
+4. P1b and P1c in parallel worktrees; verify each diff against its DoD.
+5. P2 and P3 in parallel; integrate one at a time.
+6. P4, then P5 without touching earlier packages' files.
+7. Full validation and self-analysis, including lifecycle commands against this
    repository's own `qmx.yaml`.
-7. Extended review with three independent reviewers.
-8. Verify every finding, fix confirmed ones, re-validate.
-9. P6, final validation, website build, seam-focused second round if round 1
-   found contract or coverage issues.
+8. Extended review with three independent reviewers.
+9. Verify every finding, fix confirmed ones, re-validate.
+10. P6, final validation, website build, seam-focused second round if round 1
+    found contract or coverage issues.
 
 ## 13. Test Plan
 
 - **Core contracts** — per-kind construction invariants; finite values; null
   axis values; epsilon; identity canonicalisation; version compared after
   identity match, never as part of it.
+- **The four P1a′ seams, each asked from the consumer's side** — a registry
+  answer for a channel with no violation this run; a silencing answer both for
+  a scope with no finding and for one whose finding exceeds its allowance; the
+  three band-evidence branches, with `unknown` and `absent` asserted to lead to
+  *different* statuses; and a `resolutionReason` computed with no observation
+  available, across all four of the onset provider's answers. A producer-side test that only builds the type and reads it back
+  proves nothing about a seam — P1a passed exactly that kind of test with four
+  seams open. Every stub asserts a **decision**, not a shape.
+- **Reachability of the positive outcome, asserted directly.** One entry walks
+  the whole §7.1 queue and arrives at `resolved`/`fixed`; one arrives at
+  `regressed` on a channel whose allow-list silenced other scopes but not this
+  one; and one inside `exclude_paths` arrives at `suppressed` despite carrying a
+  finding worse than its allowance. Three
+  revisions of this plan have now shipped a state that reads as correct and
+  cannot occur, and each time the suite consisted only of tests that something
+  is refused. A refusal-only suite cannot detect that nothing is ever allowed.
 - **The allowance rule** — captured tighter than onset; onset tighter than
   captured; both directions; **the warning→error transition, asserted to be
   `regressed` and not `matched`**; inline `@qmx-threshold` changing the onset for
@@ -1443,7 +2352,12 @@ behaviour, so that it cannot be silently "fixed" into a different behaviour.
    occurrence at equal count is indistinguishable.
 3. **Renames** — mitigated but not solved by `update`'s debt-neutral
    re-pointing (§8), which requires identical captured axes; a rename combined
-   with a change still appears as resolved plus new.
+   with a change still appears as resolved plus new. The mitigation is also
+   order-dependent, which is why §8 forbids `cleanup` from removing a
+   re-pointing candidate. A configuration change can rename symbols just as a
+   code change can — the namespace strategy and the aggregation prefixes both
+   do — and such an entry is indistinguishable from a deletion by the symbol
+   inventory alone.
 4. **Relaxing a threshold widens every allowance under it** in one move. This is
    the accepted cost of making policy the source of truth; it is visible in the
    `qmx.yaml` diff, and `cleanup` will not delete the affected captured values,
@@ -1458,10 +2372,39 @@ behaviour, so that it cannot be silently "fixed" into a different behaviour.
    between dropping it and aborting the migration; there is no third option, and
    no amount of tooling creates one.
 7. **A rule with a magnitude cutoff cannot prove resolution by absence** (§5.1).
-   Entries for such rules — today only `architecture.circular-dependency` via
-   `maxCycleSize` — resolve only on positive evidence that the identity is gone,
-   so a cycle that grew past the cutoff stays in the baseline rather than
-   silently resolving.
+   The codebase has two banded channels, of two different shapes.
+   `architecture.circular-dependency` cuts off by `maxCycleSize` on the
+   identity: its entries resolve only on positive evidence that the identity is
+   gone, so a cycle that grew past the cutoff stays in the baseline rather than
+   silently resolving. `design.data-class` cuts off on an axis that is not the
+   finding's leading one, and nothing survives that cutoff to enumerate, so
+   §5.9 governs instead: its entries resolve as `policy` and are never removed
+   automatically. An earlier revision claimed only the first channel existed,
+   and described the second through the value it reports today rather than
+   through the axes its v7 contract will carry.
+8. **A line-addressed author tag silences its whole file for entries that carry
+   no line** (§5.6). `@qmx-ignore` and `@qmx-ignore-next-line` key on a line
+   number, and a baseline entry carries a symbol. Where the entry's symbol has
+   no line span to test against, Baseline answers conservatively: a matching tag
+   anywhere in the file marks the entry `suppressed`. That direction cannot
+   delete real debt, but `cleanup` will leave a genuinely fixed finding in such
+   a file, and removing it is a manual edit. The report says so rather than
+   implying the entry is still debt.
+
+   This is the whole residue. A draft of 7.9 also treated occurrence allow-lists
+   as undecidable, which would have made `resolved` unreachable for entire
+   channels — including two configured in this project's own `qmx.yaml`. They
+   are decidable, from data the run already keeps, and §5.6 now says how.
+9. **Values measured under different configuration are still compared.** An
+   entry records a digest of the configuration its measurement depended on
+   (§5.7), and a difference forces reason `policy` rather than `fixed` — but the
+   allowance comparison itself proceeds as usual. Strictly, a value produced
+   under different measurement inputs is about as comparable as one produced
+   under a different contract, and the rigorous answer would be `incompatible`.
+   That answer is not taken, because a routine edit to
+   `coupling.framework_namespaces` would then invalidate every coupling entry in
+   the file at once. The digest is stored, so the decision can be revisited
+   without a file-format change.
 
 ## 15. Rejected Alternatives
 
@@ -1538,3 +2481,191 @@ Observation recorded during this analysis, out of scope here: `src/Baseline/
 Suppression/` (inline `@qmx-ignore` and `@qmx-threshold` extraction) is a
 different subject that happens to share the directory. §5.6 separates the two
 concepts; separating them physically is a later, independent piece of work.
+
+## 17. The v8 Inversion — Decision, 2026-08-05
+
+**Decision: replace the negative inference behind `resolutionReason` with
+positive proof of repair.** Recorded here rather than applied, because applying
+it rewrites half this document and that work deserves a session with room to
+review it. Nothing below is provisional: the direction is settled, the open
+items are enumerated, and the next session executes rather than re-derives.
+
+### 17.1 Why the current design cannot be finished by enumeration
+
+§7.1 decides `fixed` by comparing boundaries, because §5.2 leaves no current
+observation once a finding stops firing. That makes the decision an **open
+negative**: a repair is inferred whenever no known mechanism explains the
+disappearance. Four review rounds discovered nine such mechanisms, one or two
+per round, and each was folded in as another rule keyed on another proxy:
+
+widened threshold · compound predicate stops firing · magnitude cutoff hides
+growth · measurement inputs changed (`coupling.framework_namespaces`,
+`exclude_health` renormalisation, layer definitions) · eligibility gate on a
+measured value (`minAfferent`, `excludeDataClasses`) · silenced by configuration
+· channel deactivated · scope not analysed · symbol renamed
+
+The list has no reason to be complete, and the error direction deletes real
+debt: `cleanup` acts on `fixed`. Two reviewers working independently — one
+attacking a stated hypothesis, one given only the symptom and blind to it —
+converged on the same correction, which is the strongest evidence available
+that it is the right one.
+
+### 17.2 The inversion
+
+`fixed` requires a **positive answer from a policy-independent reader** of the
+same underlying facts: the axes the entry captured are re-read now, ahead of
+thresholds, eligibility gates, band cutoffs and exclusion filters. No reader, no
+completeness, or a changed configuration fingerprint yields "not established" —
+never `fixed`. An undiscovered tenth mechanism is closed by the same default
+that closes the nine known ones.
+
+The consequence worth stating plainly, because §5.1 and §5.2 both move under it:
+**the baseline stops being a record of accepted findings compared against
+findings, and becomes a record of accepted measurements re-measured each run.**
+The finding becomes secondary evidence.
+
+### 17.3 What survives, and why now is the cheapest moment
+
+Everything landed in `main` survives: `DebtObservation` and its axes,
+`ContractReference`, `OccurrenceKey`, `WorseDirection`, the coverage contracts,
+the status and reason vocabulary, `Violation::$observation`, the `qmx.yaml`
+topology. The rule remains authoritative at capture time, so no drift risk is
+introduced there.
+
+What changes is mostly **P1a′, which is not written yet**: the channel registry
+survives nearly as-is; the onset provider becomes a value reader; the silencing
+query drops from safety-critical to reporting-only, since an error in it can no
+longer delete an entry; the per-channel measurement digest collapses into one
+configuration fingerprint; pre-cutoff evidence becomes a special case of the
+general reader protocol rather than its own feature. The cost of switching only
+grows from here.
+
+### 17.4 The four sub-decisions
+
+| Question                                                    | Decision                                                                                                           | Consequence accepted                                                                                                             |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| Symbol absent from complete discovery                       | **not** proof of repair                                                                                            | a rename is indistinguishable from delete-plus-create, so `update` becomes a required part of the lifecycle, not a convenience   |
+| Configuration fingerprint granularity                       | one global fingerprint of the resolved configuration, by default                                                   | any `qmx.yaml` edit suspends automatic `fixed` project-wide; a per-channel projection may be offered later, explicitly less safe |
+| Where the measurement comes from                            | read the metric repository — no new pipeline phase                                                                 | covers 45 of 52 channels; `AnalysisResult` already carries the repository and `baseline: [core]` already permits consuming it    |
+| The six channels whose artefacts die with `AnalysisContext` | `duplication.code-duplication` and five `architecture.*` declare themselves unsupported for automatic repair proof | the guarantee is explicitly partial; those entries are reported as requiring manual review, never auto-cleaned                   |
+
+### 17.5 The decisions the completeness pass forced — settled 2026-08-05
+
+**A. No new status is needed, and `regressed` stops requiring a violation.**
+The completeness pass surfaced a state the vocabulary could not express — "the
+finding is gone and the debt is still measurable" — and the first proposal was
+to add a status for it. Working the decision through dissolved the problem
+instead: once a measurement is the basis of the decision, all four outcome
+statuses are decidable *without* a finding, and the state falls into the
+existing vocabulary rather than beside it.
+
+| Measurement, read policy-independently | Status                        |
+| -------------------------------------- | ----------------------------- |
+| worse than the allowance               | `regressed`                   |
+| better than captured, still debt       | `improved`                    |
+| no longer debt at all                  | `resolved`, reason from below |
+| otherwise                              | `matched`                     |
+| unavailable                            | `unobserved`                  |
+
+The consequence must be stated rather than left to emerge: **§5.1's invariant
+that a regression is always also a current violation is retired.** That
+invariant was a property of inferring from findings; under measurement a
+compound predicate that stops firing while an axis worsens is a plain
+`regressed`, which is exactly the case §5.9 was built to work around. §5.9's
+special handling of compound channels goes away with it.
+
+**B. One attribute, not a status, carries "no rule reports this any more."**
+It qualifies `matched` / `improved` / `regressed` when the status came from
+measurement alone. The same attribute covers §14.4's case — captured 10, onset
+raised to 20, current 15 — which is `matched` by the allowance rule and worth
+showing as growth inside a declared policy. This is the `withinWidenedPolicy`
+attribute that revision 7.3 removed as unreachable; under measurement it is
+reachable and means what it was introduced to mean.
+
+**C. Exit behaviour follows the allowance, not the visibility.** `regressed`
+fails the build exactly as §9.3 already specifies, whether or not a rule
+reported the finding. Nothing else newly fails: debt that is unchanged but no
+longer reported is shown, not fatal. The ratchet fails on worsening, never on
+invisibility — otherwise the first run after adopting this design fails on every
+entry whose rule quietly stopped reporting, and the feature is switched off
+before it proves anything.
+
+**D. Renames are not repairs** (§17.4), so `update` is a required part of the
+lifecycle rather than a convenience, and §8's re-pointing predicate is the only
+path for them.
+
+**E. Configuration fingerprint: global by default, projection as an opt-in.**
+A single fingerprint of the resolved configuration is the safe default. It is
+also genuinely costly on this repository, which tunes thresholds continuously:
+every `qmx.yaml` edit suspends automatic `fixed` project-wide, and a `cleanup`
+that rarely acts pushes users toward `generate --force`, which re-accepts the
+entire debt at once — a worse outcome than the risk it was avoiding. So a
+per-channel projection of the configuration is offered as an explicit opt-in,
+documented as less safe, with the global fingerprint in force unless chosen.
+This is the one decision here taken without confidence; revisit it once real
+usage exists.
+
+**F. The reader is self-checked on every run.** Every firing finding yields both
+a rule observation and a reader measurement of the same axes. They must agree,
+and the check runs at full scale on every analysis rather than in a fixture.
+This is the only structural defence against the two implementations drifting,
+and it is a Definition of Done item for P1b, not a rationale paragraph.
+
+### 17.6 What the next session does
+
+The design decisions are settled above; what remains is rewriting and
+re-cutting. In order:
+
+1. **Rewrite the affected sections against the reader**: §5.1 (retire the
+   regression-implies-violation invariant), §5.2 (the rule is authoritative at
+   capture; the reader answers at comparison), §5.9 (deleted — subsumed by A),
+   §7.1 (the table in 17.5 A replaces the boundary test; add the attribute from
+   B), §7.4 (pre-cutoff evidence becomes one case of the reader protocol),
+   §9.1/§9.3 (the attribute and C), §14.4 (closes for the 46 measurable
+   channels, stays for the six), §15 (narrow the v6 rejection, whose stated
+   reason was circular).
+2. **Re-cut P1a′** against the new contract — the registry survives, the onset
+   provider becomes the reader, the silencing query drops to reporting-only, the
+   per-channel digest collapses into E's fingerprint.
+3. **Re-cut P1b's per-channel obligation**: a reader per channel or an explicit
+   declaration of no support, plus F's self-check.
+4. **Review the rewrite before writing any code.** Four rounds on this document,
+   and every round found HIGH findings in the previous round's corrections.
+   Reviewing the corrections is not optional here; it is where the yield was.
+
+Two things not to redo: the uncommitted lifecycle work in §6 and §8 (the `scope`
+field, the shared re-pointing predicate, the deadlock rule) is unaffected by the
+inversion and stands; and the channel inventory needs no new trait columns under
+this design, since the reader answers per channel what the columns were being
+invented to declare.
+
+### 17.7 Three cautions carried forward
+
+**G. The self-check of F has a blind spot exactly where the risk is.** F pairs
+every firing finding's observation with the reader's measurement, which
+validates readers against the population of findings that still fire. The
+decision that destroys data is the opposite one: the reader claiming a debt is
+gone, where by construction no observation exists to disagree with it. A channel
+whose findings have all been repaired stops being exercised precisely when its
+reader's verdict starts deleting entries. So the run-time pairing is necessary
+and not sufficient: P5 owes fixtures where a finding is deliberately removed and
+the reader must return "cleared", one per reader shape, plus the dogfooding run
+against this repository's own baseline.
+
+**H. "Policy-independent" means independent of the *rule's* policy, not of the
+collector's.** The reader reads ahead of thresholds, eligibility gates, band
+cutoffs and exclusion filters — but for the measurable channels it reads the
+metric repository, and several metrics are themselves computed under
+configuration (`coupling.framework_namespaces` shapes `cbo_app` during
+Collection; `min_lines` / `min_tokens` decide what duplication exists at all).
+That residue is exactly what E's fingerprint covers, and the boundary must be
+written that way, or an implementer will claim an independence the design does
+not have.
+
+**I. The ratchet and `check` will visibly disagree, and that is new.** With the
+invariant of §5.1 retired, an entry can be `regressed` on a symbol that produces
+no violation at all — a compound predicate that stopped firing while an axis
+worsened is the canonical case. A user reading `qmx check` will see nothing
+there. This is correct behaviour and it will read as a bug unless the reports
+say why, so P6 owes an explanation of it in the user documentation, and §9.1's
+regression line should name the case rather than printing a bare delta.
