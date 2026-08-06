@@ -2,10 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Infrastructure\Rule;
-
-use Qualimetrix\Core\Violation\ChannelDeclaration;
-use Qualimetrix\Core\Violation\ViolationChannel;
+namespace Qualimetrix\Core\Violation;
 
 /**
  * Answers "what is the declaration for this channel?" — the single lookup
@@ -24,6 +21,17 @@ use Qualimetrix\Core\Violation\ViolationChannel;
  *
  * A channel absent from both is not an error: {@see declarationFor()}
  * returns `null`, and the caller treats the channel as not baselineable.
+ *
+ * The interface lives in `Core\Violation`, beside {@see ChannelDeclaration},
+ * {@see ChannelShape} and {@see ViolationChannel} — the types it traffics in
+ * — rather than beside its implementation in `Infrastructure\Rule`. Any
+ * consumer that may not depend on `Infrastructure` (e.g. `Baseline`, which
+ * `qmx.yaml` permits to depend only on `Core`) still needs this lookup;
+ * mirrors {@see \Qualimetrix\Configuration\KnownRuleNamesProviderInterface}
+ * (contract) / {@see \Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter}
+ * (adapter) — the same split for the same reason. The concrete
+ * {@see \Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry} stays in
+ * `Infrastructure\Rule`, unchanged.
  */
 interface ChannelDeclarationRegistryInterface
 {

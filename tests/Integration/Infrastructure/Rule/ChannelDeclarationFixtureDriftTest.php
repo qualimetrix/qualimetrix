@@ -7,10 +7,14 @@ namespace Qualimetrix\Tests\Integration\Infrastructure\Rule;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\Rule\RuleNameReader;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
+use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use RuntimeException;
 
 /**
@@ -76,6 +80,101 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
                 ),
             );
         }
+    }
+
+    /**
+     * Structural invariant, independent of {@see ChannelEmissionStaticGuardTest}:
+     * the `violationCode` half of a declared key must either be the
+     * `ruleName` half verbatim, or that same string with a `.suffix`
+     * appended. This is what {@see ViolationChannel::fromKey()}'s own
+     * "full key, not a bare code" design implies but does not itself
+     * enforce, and it is exactly the shape a hand-typed declaration line
+     * can violate silently — a `ruleName` half misspelled relative to its
+     * own `violationCode` half would otherwise pass the drift guard above
+     * (which only compares declarations against the fixture, not against
+     * this shape) as long as the fixture line matches the wrong
+     * declaration.
+     */
+    #[Test]
+    public function everyDeclaredViolationCodeEqualsOrIsPrefixedByItsRuleName(): void
+    {
+        $violations = [];
+
+        foreach (self::realStaticDeclarations() as $key => $declaration) {
+            $channel = ViolationChannel::fromKey($key);
+
+            $matches = $channel->violationCode === $channel->ruleName
+                || str_starts_with($channel->violationCode, $channel->ruleName . '.');
+
+            if (!$matches) {
+                $violations[] = $key;
+            }
+        }
+
+        self::assertSame(
+            [],
+            $violations,
+            \sprintf(
+                'Declared key(s) whose violationCode is neither equal to nor prefixed by "<ruleName>.": %s',
+                implode(', ', $violations),
+            ),
+        );
+    }
+
+    /**
+     * Structural invariant: the `ruleName` half of every declared key must
+     * name something that actually emits under that name — either a real
+     * rule's `NAME` constant, or one of {@see LayerViolationRule}'s four
+     * `*_DIAGNOSTIC_NAME` constants (it emits those under names other than
+     * its own `NAME`). A `ruleName` half that matches neither would mean
+     * the declaration addresses a channel no rule class can ever produce —
+     * a typo this guard, unlike the drift guard above, can catch even when
+     * the typo is consistent between the fixture and the declaration.
+     */
+    #[Test]
+    public function everyDeclaredRuleNameHalfNamesARealRuleOrALayerViolationDiagnostic(): void
+    {
+        $knownRuleNames = self::allRuleNames();
+        $violations = [];
+
+        foreach (self::realStaticDeclarations() as $key => $declaration) {
+            $channel = ViolationChannel::fromKey($key);
+
+            if (!\in_array($channel->ruleName, $knownRuleNames, true)) {
+                $violations[] = $key;
+            }
+        }
+
+        self::assertSame(
+            [],
+            $violations,
+            \sprintf(
+                'Declared key(s) whose ruleName half names neither a real rule\'s NAME nor a'
+                . ' LayerViolationRule diagnostic constant: %s',
+                implode(', ', $violations),
+            ),
+        );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function allRuleNames(): array
+    {
+        $registry = (new ContainerFactory())->create()->get(RuleRegistryInterface::class);
+        \assert($registry instanceof RuleRegistryInterface);
+
+        $names = [];
+        foreach ($registry->getClasses() as $ruleClass) {
+            $names[] = RuleNameReader::read($ruleClass);
+        }
+
+        $names[] = LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME;
+        $names[] = LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME;
+        $names[] = LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
+        $names[] = LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
+
+        return $names;
     }
 
     /**

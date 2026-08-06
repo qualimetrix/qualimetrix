@@ -15,7 +15,7 @@ use Qualimetrix\Core\Observation\WorseDirection;
  * Nothing else belongs here: no axis name, no threshold binding, no
  * epsilon. A channel that declares no {@see ChannelDeclaration} at all is
  * not an error state — it is simply not baselineable (see
- * `Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistryInterface`).
+ * {@see ChannelDeclarationRegistryInterface}).
  *
  * The invariant below is the whole contract: a direction is present exactly
  * when the shape is `magnitude`. An `occurrence` channel's reported number

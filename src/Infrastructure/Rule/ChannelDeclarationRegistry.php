@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Rule;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
+use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Core\Violation\ViolationChannel;
 
 /**

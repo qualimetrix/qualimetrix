@@ -11,7 +11,10 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Rule\ChannelDeclarationReader;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\ViolationChannel;
+use Qualimetrix\Rules\CodeSmell\AbstractCodeSmellRule;
 use Qualimetrix\Rules\CodeSmell\GotoRule;
+use Qualimetrix\Rules\Security\AbstractSecurityPatternRule;
+use RuntimeException;
 
 #[CoversClass(ChannelDeclarationReader::class)]
 final class ChannelDeclarationReaderTest extends TestCase
@@ -128,6 +131,52 @@ final class ChannelDeclarationReaderTest extends TestCase
 
         /** @phpstan-ignore argument.type (deliberately passing an unloadable class) */
         ChannelDeclarationReader::read('Qualimetrix\Rules\NoSuchRule');
+    }
+
+    /**
+     * A rule's channelDeclarations() body can throw before this reader ever
+     * gets a return value to inspect — e.g. building an invalid VO inline.
+     * The reader's own docblock promises LogicException for every failure
+     * mode; without wrapping the invoke() call, whatever the method throws
+     * (here a plain RuntimeException) would escape unwrapped instead.
+     */
+    #[Test]
+    public function itWrapsAnExceptionThrownFromWithinChannelDeclarationsInALogicException(): void
+    {
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('threw while being invoked');
+
+        ChannelDeclarationReader::read(FixtureRuleThatThrowsFromWithinChannelDeclarations::class);
+    }
+
+    /**
+     * The real-world instance of the case above: AbstractCodeSmellRule and
+     * AbstractSecurityPatternRule both declare `NAME = ''` so their shared
+     * channelDeclarations() has something to bind via late static binding.
+     * Reading the declaration directly off the abstract base — reflection
+     * has no notion of "this class is never meant to be read directly" —
+     * makes `static::NAME` resolve to `''`, and `channelDeclarations()`
+     * builds `new ViolationChannel('', '')`, which throws
+     * InvalidArgumentException from inside the invoked method. This must
+     * surface as the documented LogicException, not the VO's own exception
+     * type.
+     */
+    #[Test]
+    public function itThrowsALogicExceptionRatherThanTheVosOwnExceptionWhenReadingAbstractCodeSmellRuleDirectly(): void
+    {
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('threw while being invoked');
+
+        ChannelDeclarationReader::read(AbstractCodeSmellRule::class);
+    }
+
+    #[Test]
+    public function itThrowsALogicExceptionRatherThanTheVosOwnExceptionWhenReadingAbstractSecurityPatternRuleDirectly(): void
+    {
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('threw while being invoked');
+
+        ChannelDeclarationReader::read(AbstractSecurityPatternRule::class);
     }
 }
 
@@ -263,5 +312,19 @@ final class FixtureRuleWithWrongValueType
     public static function channelDeclarations(): array
     {
         return ['fixture.rule#fixture.bad-value' => 'not a ChannelDeclaration'];
+    }
+}
+
+/**
+ * @internal
+ */
+final class FixtureRuleThatThrowsFromWithinChannelDeclarations
+{
+    /**
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        throw new RuntimeException('boom — thrown from inside the declared method, not by the reader.');
     }
 }

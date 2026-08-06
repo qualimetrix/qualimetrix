@@ -93,8 +93,7 @@ Infrastructure/
 ├── Rule/
 │   ├── RuleRegistryInterface.php
 │   ├── RuleRegistry.php
-│   ├── ChannelDeclarationRegistryInterface.php # Baseline: (ruleName, violationCode) -> ChannelDeclaration
-│   ├── ChannelDeclarationRegistry.php
+│   ├── ChannelDeclarationRegistry.php     # Implements Core\Violation\ChannelDeclarationRegistryInterface: (ruleName, violationCode) -> ChannelDeclaration
 │   └── Exception/
 │       └── ConflictingCliAliasException.php
 └── Console/                          # -> See Console/README.md

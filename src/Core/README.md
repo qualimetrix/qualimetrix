@@ -74,6 +74,7 @@ Core/
 │   ├── ViolationChannel.php               # VO: (ruleName, violationCode) — the address of a kind of finding
 │   ├── ChannelShape.php                   # Enum: magnitude / occurrence — what a channel's metricValue means for baseline purposes
 │   ├── ChannelDeclaration.php             # VO: a channel's shape plus, for magnitude channels, its WorseDirection
+│   ├── ChannelDeclarationRegistryInterface.php # Contract: (ruleName, violationCode) -> ChannelDeclaration; implemented in Infrastructure\Rule
 │   ├── Severity.php
 │   ├── Location.php
 │   ├── RuleExclusionCaptureHolder.php     # Static holder: whether RuleExecutor retains suppressed Violation objects
@@ -397,8 +398,9 @@ declares nothing — to implement a no-op override. It is read by
 `ChannelDeclarationReader::read(class-string): array<string, ChannelDeclaration>`
 via reflection, mirroring `RuleNameReader`/`CliAliasReader`; a rule with no
 such method is untouched and `read()` returns `[]`. See `ChannelDeclaration`
-below and `Infrastructure\Rule\ChannelDeclarationRegistryInterface` for how
-the declarations are assembled and consumed.
+below and `Core\Violation\ChannelDeclarationRegistryInterface` (implemented by
+`Infrastructure\Rule\ChannelDeclarationRegistry`) for how the declarations
+are assembled and consumed.
 
 **DI Tags:** `qmx.rule`
 
@@ -603,7 +605,7 @@ The two facts a channel declares for baseline purposes: its shape, and — for a
 - `magnitude(WorseDirection $direction): self`
 - `occurrence(): self`
 
-A channel that declares no `ChannelDeclaration` at all is not an error — it is simply not baselineable. See `Core\Rule\ChannelDeclarationReader` (how a rule declares its channels) and `Infrastructure\Rule\ChannelDeclarationRegistryInterface` (how declarations are assembled, including the run-time `computed.*` / `health.*` family).
+A channel that declares no `ChannelDeclaration` at all is not an error — it is simply not baselineable. See `Core\Rule\ChannelDeclarationReader` (how a rule declares its channels) and `Core\Violation\ChannelDeclarationRegistryInterface` (how declarations are assembled, including the run-time `computed.*` / `health.*` family — implemented by `Infrastructure\Rule\ChannelDeclarationRegistry`).
 
 ### ViolationFilterInterface
 
