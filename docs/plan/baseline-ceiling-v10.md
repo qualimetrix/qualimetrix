@@ -921,7 +921,20 @@ removed without touching the `constructor-overinjection` annotation (P3's, per
 §10); `qmx.yaml` and `DogfoodingTopologyTest` restored byte-for-byte to their
 pre-`171aa72` content; `composer check` green (6161 tests, PHPStan level 8).
 
-### P1 — The channel declaration
+### P1 — The channel declaration — **LANDED** (`9b388aa` mechanism, `91631dc` declarations)
+Delivered as stated below, with three things worth carrying forward. The
+declaration key is the **full** `ruleName#violationCode` form, because
+`LayerViolationRule` emits four of its five channels under rule names other than
+its own and a bare code could not address them. The shared declaration for the
+code-smell and security families lives on their abstract bases via
+`static::NAME`, after the duplication detector flagged twelve near-identical
+methods. And `code-smell.unused-private` is declared by judgement (§5.4's fifth
+family): two independent derivations agreed it reports a measured class-wide
+count with no gating comparison, and a threshold is not what establishes
+direction.
+
+Original scope, for the record:
+
 Files: `src/Core/Violation/**` (the declaration lives beside `ViolationChannel`,
 not in a new `src/Core/Channel/` — two directories "about channels" would fail
 ADR 0016's naming and co-change tests, and `ViolationChannel` is already the key
