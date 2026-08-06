@@ -66,19 +66,13 @@ This adds a summary line showing the count of resolved violations -- entries tha
 
 ## Stale entries
 
-A baseline entry becomes "stale" when the file it references no longer exists (e.g., a file was deleted or renamed).
+A baseline entry becomes "stale" when it did not appear in the run -- its finding was repaired, or configuration stopped producing it.
 
-By default, Qualimetrix reports an error when stale entries are found. You have two options:
+Stale entries are **reported and nothing more**. They never fail the run, and they never stop the
+remaining entries from applying: under the entry identity Qualimetrix uses, repairing one finding on
+a symbol strands that entry alone, and failing on it would mean punishing an improvement.
 
-### Option 1: Ignore stale entries
-
-```bash
-bin/qmx check src/ --baseline=baseline.json --baseline-ignore-stale
-```
-
-### Option 2: Clean up the baseline
-
-Remove all stale entries permanently:
+Nothing is removed automatically. `baseline:cleanup` removes entries whose file no longer exists:
 
 ```bash
 bin/qmx baseline:cleanup baseline.json

@@ -318,14 +318,6 @@ Show how many violations from the baseline have been fixed:
 bin/qmx check src/ --baseline=baseline.json --show-resolved
 ```
 
-### `--baseline-ignore-stale`
-
-By default, Qualimetrix reports an error if the baseline references files that no longer exist. This flag silently ignores stale entries instead:
-
-```bash
-bin/qmx check src/ --baseline=baseline.json --baseline-ignore-stale
-```
-
 ---
 
 ## Suppression options

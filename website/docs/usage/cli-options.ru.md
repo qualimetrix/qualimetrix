@@ -315,14 +315,6 @@ bin/qmx check src/ --baseline=baseline.json
 bin/qmx check src/ --baseline=baseline.json --show-resolved
 ```
 
-### `--baseline-ignore-stale`
-
-По умолчанию Qualimetrix выдаёт ошибку, если baseline ссылается на файлы, которых больше не существует. Этот флаг позволяет молча игнорировать устаревшие записи:
-
-```bash
-bin/qmx check src/ --baseline=baseline.json --baseline-ignore-stale
-```
-
 ---
 
 ## Опции подавления
