@@ -6,15 +6,18 @@ namespace Qualimetrix\Rules\Coupling;
 
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -111,6 +114,27 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
     public static function getOptionsClass(): string
     {
         return InstabilityOptions::class;
+    }
+
+    /**
+     * Both instability channels report the instability value
+     * (`$instabilityValue` — see {@see analyzeClassLevel()} and
+     * {@see analyzeNamespaceLevel()}) as `metricValue`, judged worse the
+     * higher it goes: {@see ClassInstabilityOptions::getSeverity()}'s
+     * `$instability >= $this->maxError` (line 61) / `$instability >=
+     * $this->maxWarning` (line 65) for the class channel, and
+     * {@see NamespaceInstabilityOptions::getSeverity()}'s `$instability >=
+     * $this->maxError` (line 62) / `$instability >= $this->maxWarning`
+     * (line 66) for the namespace channel.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME . '.class'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            (new ViolationChannel(self::NAME, self::NAME . '.namespace'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        ];
     }
 
     /**

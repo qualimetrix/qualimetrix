@@ -7,15 +7,18 @@ namespace Qualimetrix\Rules\Complexity;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -108,6 +111,28 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     public static function getOptionsClass(): string
     {
         return CognitiveComplexityOptions::class;
+    }
+
+    /**
+     * Both cognitive-complexity channels report the metric they check as
+     * `metricValue` (`$cognitiveValue` in {@see analyzeMethodLevel()},
+     * `$maxCognitiveValue` in {@see analyzeClassLevel()}), judged worse the
+     * higher it goes:
+     * {@see MethodCognitiveComplexityOptions::getSeverity()}'s `$value >=
+     * $this->error` (line 48) / `$value >= $this->warning` (line 52) for the
+     * method channel, and
+     * {@see ClassCognitiveComplexityOptions::getSeverity()}'s `$value >=
+     * $this->maxError` (line 50) / `$value >= $this->maxWarning` (line 54)
+     * for the class channel.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME . '.method'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            (new ViolationChannel(self::NAME, self::NAME . '.class'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        ];
     }
 
     /**

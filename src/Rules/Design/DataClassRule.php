@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Design;
 
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -141,5 +144,28 @@ final class DataClassRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return DataClassOptions::class;
+    }
+
+    /**
+     * `design.data-class` reports WOC (`$wocValue`) as `metricValue` — see
+     * the emission above — the only one of the rule's two gating axes that
+     * reaches the `Violation`: emission requires the conjunction
+     * `$wocValue < $effectiveOptions->wocThreshold ||
+     * $wmcValue > $effectiveOptions->wmcThreshold` to be **false**
+     * ({@see evaluateClass()}, line 116), i.e. `woc >= wocThreshold`
+     * (inclusive). Higher WOC on the reported axis is worse — a higher
+     * public-surface percentage with the WMC gate still satisfied is a
+     * stronger Data Class signal. WMC's own gate is unaffected by this
+     * declaration: it is not reported and therefore not baselineable on its
+     * own terms (§13.3 of the baseline-ceiling plan — a compound rule is
+     * baselined only on the axis it actually reports).
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        ];
     }
 }

@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\CodeSmell;
 
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -55,6 +58,22 @@ final class UnreachableCodeRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return UnreachableCodeOptions::class;
+    }
+
+    /**
+     * `code-smell.unreachable-code` reports the count of unreachable
+     * statements (`$unreachableCountValue` — see the emission above) as
+     * `metricValue`, judged worse the higher it goes:
+     * {@see UnreachableCodeOptions::getSeverity()}'s `$value >= $this->error`
+     * (line 65) and `$value >= $this->warning` (line 69).
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        ];
     }
 
     /**

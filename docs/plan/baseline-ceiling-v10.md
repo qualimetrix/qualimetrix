@@ -478,14 +478,24 @@ no manifest. A channel that declares neither is not baselineable, and its entrie
 do not suppress (§5.1).
 
 **How the inventory's three kinds map onto two shapes**, stated once here because
-P1 transcribes it 52 times: the inventory's `magnitude` kind becomes shape
-`magnitude`; both `marker` and `absent` become `occurrence`. The one exception is
-the `annotation.*` family, which declares no baseline support at all. Without
-this sentence the mapping is derivable from §2.1 and §5.1 but never written down,
-in the one section that insists the values be filled "never by analogy".
+P1 transcribes it once per channel: the inventory's `magnitude` kind becomes
+shape `magnitude`; both `marker` and `absent` become `occurrence`. The one
+exception is the `annotation.*` family, which declares no baseline support at all.
+Without this sentence the mapping is derivable from §2.1 and §5.1 but never
+written down, in the one section that insists the values be filled "never by
+analogy".
+
+**The channel count, since three documents disagreed about it.** The 43 emission
+points expand to **64 concrete channels**: **51** declared statically, **7**
+`annotation.*` variants excluded outright, and **6** built-in `computed.health.*`
+resolved at run time alongside any user-defined `computed.*`. The older
+`channel-trait-inventory.md` counts 52, which is neither the static set nor the
+total — it predates both the `annotation.invalid-threshold.*` per-validator codes
+and the decision to treat the computed family as resolved rather than enumerated.
+P1's tracked fixture is the number that governs from here.
 
 Filled per channel against the inventory, **never by analogy** — the rule v7 had
-to learn twice. Four families need naming because a reader will otherwise
+to learn twice. Five families need naming because a reader will otherwise
 generalise wrongly:
 
 - **`annotation.unsupported-threshold` and `annotation.invalid-threshold.*`
@@ -512,6 +522,17 @@ generalise wrongly:
   it stands for is `coupling.cbo`'s job, and that channel stays `magnitude`.
   `coupling.distance` and `coupling.instability` also stay `magnitude`: they move
   when a real dependency appears, which is debt genuinely worsening (§13.10).
+- **`code-smell.unused-private` is `magnitude` / `higher`**, declared although no
+  comparison in the code establishes a direction — the rule fires on any nonzero
+  count and never consults its own `getSeverity()`. **A threshold is not what
+  establishes direction; the meaning of the measured value is.** The reported
+  magnitude is a count of unused private members, and more of them is worse debt;
+  the missing comparison says only *when* the rule fires, not *which way* the
+  channel worsens. Two independent readings of the source agreed on those facts
+  and differed only on whether they sufficed, which is why this is written down
+  here rather than left to a reader's judgement. Note the quirk §12 pins: every
+  member of the group reports the same class-wide total, so count and magnitude
+  move together — redundant, not wrong.
 
 One family cannot declare statically: **`computed.*` / `health.*` resolve *both*
 facts at run time** — shape is always `magnitude`, and direction comes from the
@@ -910,12 +931,19 @@ form §6 mandates), `src/Rules/**`, `src/Architecture/Rules/**`,
 Dependencies: P0 (landed).
 DoD: every channel declares shape and, for `magnitude`, direction — or declares
 no baseline support; the inventory-kind mapping of §5.4 is applied as stated
-there; the **four** families of §5.4 are declared as stated, with `annotation.*`
-the only family excluded, all five `LayerViolationRule` channels present as
-`occurrence`, and `coupling.class-rank` as `occurrence` while `coupling.cbo`,
-`.distance` and `.instability` stay `magnitude`; the three decided declarations
-(`architecture.circular-dependency`, `coupling.class-rank`, and the
-`LayerViolationRule` family) carry their rationale in code; **`computed.*` /
+there; **51 channels are declared statically**, the **five** families of §5.4 as
+stated there — `annotation.*` the only family excluded, all five
+`LayerViolationRule` channels present as `occurrence`, `coupling.class-rank` as
+`occurrence` while `coupling.cbo`, `.distance` and `.instability` stay
+`magnitude`, and `code-smell.unused-private` as `magnitude` / `higher`; the four
+declarations decided by judgement rather than derived
+(`architecture.circular-dependency`, `coupling.class-rank`,
+`code-smell.unused-private`, and the `LayerViolationRule` family) carry their
+rationale in code; **every `magnitude` channel's direction is read at its own
+gating comparison, and the enumeration is verified by two independent
+derivations** — one from the inventory, one from the source alone with the
+inventory withheld, because a single agent filling both the declarations and
+their oracle can be consistently wrong and pass its own drift guard; **`computed.*` /
 `health.*` resolve both shape and direction from the definition at run time**,
 proven by a case with a configured user metric and an `inverted` one — 10.2
 resolved only direction, which left the whole open family unbaselineable under

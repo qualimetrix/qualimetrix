@@ -7,22 +7,84 @@
 #     direction := higher | lower   (magnitude channels only)
 #
 # The drift guard
-# (tests/Unit/Infrastructure/Rule/ChannelDeclarationFixtureDriftTest.php)
+# (tests/Integration/Infrastructure/Rule/ChannelDeclarationFixtureDriftTest.php)
 # compares this file against
 # ChannelDeclarationRegistryInterface::staticDeclarations() in both
 # directions: a channel declared in code but missing here fails, and a line
 # here no longer declared in code fails. It is scoped to the STATIC set
 # only — the run-time computed.*/health.* family is guarded separately (see
-# excluded.txt's note and ChannelDeclarationRegistryComputedMetricTest)
-# because its vocabulary is open-ended and no fixture line could enumerate
-# it.
+# excluded.txt's note and
+# tests/Unit/Infrastructure/Rule/ChannelDeclarationRegistryTest.php's
+# run-time resolution cases) because its vocabulary is open-ended and no
+# fixture line could enumerate it.
 #
-# This package (P1a of the baseline-ceiling plan's P1) declares exactly
-# three static channels end to end, to prove the mechanism. A later package
-# fills in the rest of violation-magnitude-inventory.md's emission points.
+# P1a of the baseline-ceiling plan's P1 declared three static channels end
+# to end to prove the mechanism (code-smell.goto, complexity.cyclomatic.method,
+# maintainability.index). P1b fills in every other static emission point in
+# violation-magnitude-inventory.md, per the shape mapping and the four named
+# families of plan §5.4. One emission point remains deliberately outside this
+# file: annotation.unsupported-threshold / annotation.invalid-threshold(.*),
+# excluded outright by plan §5.4 — see excluded.txt.
+#
+# code-smell.unused-private has no gating threshold comparison (the rule
+# fires on any nonzero count; severity is a fixed constant) but is declared
+# `magnitude`/`higher` anyway, as a decision rather than a derivation — the
+# same class of decision as architecture.circular-dependency: a threshold is
+# not what establishes direction, the meaning of the measured value is, and
+# more unused private members is unambiguously worse debt. See the rationale
+# on UnusedPrivateRule::channelDeclarations().
+#
 # Do not add a line here without reading that channel's own emission point
 # first — never by analogy with a neighbouring line.
 
+architecture.circular-dependency#architecture.circular-dependency magnitude:higher
+architecture.coverage#architecture.coverage occurrence
+architecture.empty-template#architecture.empty-template occurrence
+architecture.layer-violation#architecture.layer-violation occurrence
+architecture.potential-shadow#architecture.potential-shadow occurrence
+architecture.unreachable-layer#architecture.unreachable-layer occurrence
+code-smell.boolean-argument#code-smell.boolean-argument occurrence
+code-smell.constructor-overinjection#code-smell.constructor-overinjection magnitude:higher
+code-smell.count-in-loop#code-smell.count-in-loop occurrence
+code-smell.debug-code#code-smell.debug-code occurrence
+code-smell.empty-catch#code-smell.empty-catch occurrence
+code-smell.error-suppression#code-smell.error-suppression occurrence
+code-smell.eval#code-smell.eval occurrence
+code-smell.exit#code-smell.exit occurrence
 code-smell.goto#code-smell.goto occurrence
+code-smell.identical-subexpression#code-smell.identical-subexpression occurrence
+code-smell.long-parameter-list#code-smell.long-parameter-list magnitude:higher
+code-smell.superglobals#code-smell.superglobals occurrence
+code-smell.unreachable-code#code-smell.unreachable-code magnitude:higher
+code-smell.unused-private#code-smell.unused-private magnitude:higher
+complexity.cognitive#complexity.cognitive.class magnitude:higher
+complexity.cognitive#complexity.cognitive.method magnitude:higher
+complexity.cyclomatic#complexity.cyclomatic.class magnitude:higher
 complexity.cyclomatic#complexity.cyclomatic.method magnitude:higher
+complexity.npath#complexity.npath.class magnitude:higher
+complexity.npath#complexity.npath.method magnitude:higher
+complexity.wmc#complexity.wmc magnitude:higher
+coupling.cbo#coupling.cbo.class magnitude:higher
+coupling.cbo#coupling.cbo.namespace magnitude:higher
+coupling.class-rank#coupling.class-rank occurrence
+coupling.distance#coupling.distance magnitude:higher
+coupling.instability#coupling.instability.class magnitude:higher
+coupling.instability#coupling.instability.namespace magnitude:higher
+design.data-class#design.data-class magnitude:higher
+design.god-class#design.god-class magnitude:higher
+design.inheritance#design.inheritance magnitude:higher
+design.lcom#design.lcom magnitude:higher
+design.noc#design.noc magnitude:higher
+design.type-coverage#design.type-coverage.param magnitude:lower
+design.type-coverage#design.type-coverage.property magnitude:lower
+design.type-coverage#design.type-coverage.return magnitude:lower
+duplication.code-duplication#duplication.code-duplication magnitude:higher
 maintainability.index#maintainability.index magnitude:lower
+security.command-injection#security.command-injection occurrence
+security.hardcoded-credentials#security.hardcoded-credentials occurrence
+security.sensitive-parameter#security.sensitive-parameter occurrence
+security.sql-injection#security.sql-injection occurrence
+security.xss#security.xss occurrence
+size.class-count#size.class-count magnitude:higher
+size.method-count#size.method-count magnitude:higher
+size.property-count#size.property-count magnitude:higher

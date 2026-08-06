@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Structure;
 
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -106,5 +109,20 @@ final class InheritanceRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return InheritanceOptions::class;
+    }
+
+    /**
+     * `design.inheritance` reports DIT (`$ditValue` — see the emission
+     * above) as `metricValue`, judged worse the higher it goes:
+     * {@see InheritanceOptions::getSeverity()}'s `$value >= $this->error`
+     * (line 73) / `$value >= $this->warning` (line 77).
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        ];
     }
 }

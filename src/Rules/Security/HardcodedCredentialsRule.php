@@ -8,8 +8,10 @@ use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -106,5 +108,26 @@ final class HardcodedCredentialsRule extends AbstractRule
         }
 
         return $violations;
+    }
+
+    /**
+     * `security.hardcoded-credentials` reports a fixed `1.0` occurrence
+     * marker per entry (see the emission above) regardless of how many
+     * entries the file has. Severity does use `count($entries)` — via
+     * {@see \Qualimetrix\Rules\AbstractRule::getEffectiveSeverity()} calling
+     * {@see HardcodedCredentialsOptions::getSeverity()}'s `$value > 0` — but
+     * that count never reaches `metricValue`, and the comparison is
+     * unreachable-false in practice (the call site already guards
+     * `$entries === []` before invoking it, so `count($entries)` is always
+     * `>= 1`): there is no live threshold that varies the outcome, so no
+     * direction to declare.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(),
+        ];
     }
 }

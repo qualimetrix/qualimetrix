@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Size;
 
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -55,6 +58,22 @@ final class MethodCountRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return MethodCountOptions::class;
+    }
+
+    /**
+     * `size.method-count` reports the class's method count
+     * (`$methodCountValue` — see the emission above) as `metricValue`,
+     * judged worse the higher it goes:
+     * {@see MethodCountOptions::getSeverity()}'s `$value >= $this->error`
+     * (line 67) / `$value >= $this->warning` (line 71).
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        ];
     }
 
     /**

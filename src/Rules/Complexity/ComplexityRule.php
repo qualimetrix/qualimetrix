@@ -122,18 +122,19 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     }
 
     /**
-     * Declares the baseline shape of the method-level channel only.
-     *
      * `complexity.cyclomatic.method` reports the method's raw CCN
      * (`$ccnValue`, an `int`) as `metricValue` — see the emission at
      * {@see analyzeMethodLevel()} — and is judged worse the higher it goes,
-     * per `MethodComplexityOptions::getSeverity()`'s `$value >= $this->error`
-     * / `$value >= $this->warning` comparisons. The class-level channel
-     * (`complexity.cyclomatic.class`) is deliberately left undeclared here —
-     * not yet verified at its own emission point.
+     * per {@see MethodComplexityOptions::getSeverity()}'s `$value >=
+     * $this->error` (line 53) / `$value >= $this->warning` (line 57)
+     * comparisons. `complexity.cyclomatic.class` reports the class's maximum
+     * method CCN (`$maxCcnValue` — see {@see analyzeClassLevel()}), also
+     * higher-is-worse, per {@see ClassComplexityOptions::getSeverity()}'s
+     * `$value >= $this->maxError` (line 55) / `$value >= $this->maxWarning`
+     * (line 59).
      *
      * Keyed by the full channel key: the `ruleName` half is `self::NAME`,
-     * the `violationCode` half adds the `.method` suffix.
+     * the `violationCode` half adds the `.method`/`.class` suffix.
      *
      * @return array<string, ChannelDeclaration>
      */
@@ -141,6 +142,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     {
         return [
             (new ViolationChannel(self::NAME, self::NAME . '.method'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            (new ViolationChannel(self::NAME, self::NAME . '.class'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
         ];
     }
 

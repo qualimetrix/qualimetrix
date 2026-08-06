@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Architecture\Rules;
 
 use Qualimetrix\Core\Dependency\CycleInterface;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -162,5 +165,27 @@ final class CircularDependencyRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return CircularDependencyOptions::class;
+    }
+
+    /**
+     * `architecture.circular-dependency` reports the cycle's class count
+     * (`$size` — see the emission above) as `metricValue`. Declared
+     * `magnitude` / `higher` is a **decision, not a derivation**
+     * (baseline-ceiling plan §5.4): {@see CircularDependencyOptions::getSeverity()}
+     * is not monotone in `$size` — a direct two-class cycle is `Error` while a
+     * twelve-class cycle is only `Warning`, and any cycle whose size exceeds
+     * `maxCycleSize` is dropped before a `Violation` is ever built (`$size >
+     * $this->maxCycleSize` — line 56). Declaring `higher` says a cycle that
+     * gains a member is worse debt, independent of that severity ladder; it
+     * does not change the rule's own cutoff, which stays exactly as
+     * configured.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        ];
     }
 }

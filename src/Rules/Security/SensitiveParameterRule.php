@@ -8,8 +8,10 @@ use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -94,5 +96,23 @@ final class SensitiveParameterRule extends AbstractRule
         }
 
         return $violations;
+    }
+
+    /**
+     * `security.sensitive-parameter` reports a fixed `1.0` occurrence
+     * marker per entry — same pattern as `security.hardcoded-credentials`:
+     * severity uses `count($entries)` via
+     * {@see SensitiveParameterOptions::getSeverity()}'s `$value > 0`, but
+     * that count never reaches `metricValue`, and the call site's
+     * `$entries === []` guard makes the comparison unreachable-false in
+     * practice — no live threshold, no direction to declare.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(),
+        ];
     }
 }

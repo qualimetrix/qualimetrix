@@ -8,14 +8,17 @@ use Psr\Log\LoggerInterface;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -214,5 +217,22 @@ final class DistanceRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return DistanceOptions::class;
+    }
+
+    /**
+     * `coupling.distance` reports the distance-from-main-sequence value
+     * (`$distanceValue` — see the emission above) as `metricValue`, judged
+     * worse the higher it goes:
+     * {@see DistanceOptions::getSeverity()}'s `$distance >=
+     * $this->maxDistanceError` (line 95) / `$distance >=
+     * $this->maxDistanceWarning` (line 99).
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        ];
     }
 }

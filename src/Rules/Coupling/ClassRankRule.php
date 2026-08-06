@@ -9,9 +9,11 @@ use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -158,5 +160,30 @@ final class ClassRankRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return ClassRankOptions::class;
+    }
+
+    /**
+     * `coupling.class-rank` is declared `occurrence` — a **decision, not a
+     * derivation** (baseline-ceiling plan §5.4) — even though it reports a
+     * real number (`$rankValue`, see the emission above). ClassRank is an
+     * iterative PageRank normalised over the *whole project*: it moves
+     * whenever anything anywhere is added or removed, and this rule's own
+     * threshold is rescaled for the current class count to compensate
+     * (`$scaleFactor = self::computeScaleFactor($classCount)`, applied to
+     * `$effectiveOptions->warning`/`->error` before comparison — see
+     * {@see analyze()}). A stored raw rank from an earlier run is therefore
+     * not a boundary in a later run's units; no rounding or tolerance fixes
+     * a units mismatch. Bounded by `count` instead, the entry says "this
+     * class is an accepted coupling hotspot" — the only claim the number
+     * actually supports. Ratcheting the coupling ClassRank stands for is
+     * `coupling.cbo`'s job; that channel stays `magnitude`.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(),
+        ];
     }
 }

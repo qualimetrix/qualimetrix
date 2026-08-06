@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\CodeSmell;
 
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -100,5 +103,34 @@ final class UnusedPrivateRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return UnusedPrivateOptions::class;
+    }
+
+    /**
+     * `code-smell.unused-private` is declared `magnitude` / `higher` as a
+     * **decision, not a derivation** (baseline-ceiling plan §5.4) — the same
+     * class of decision as `architecture.circular-dependency`. There is no
+     * gating threshold comparison to read a direction from (the rule fires
+     * on any nonzero `$total`, and severity is the fixed constant
+     * `Severity::Warning`; {@see UnusedPrivateOptions::getSeverity()} exists
+     * but is never called), but a threshold is not what establishes
+     * direction — the meaning of the measured value does. `$total` is a
+     * count of unused private members for the class, and more unused
+     * private members is unambiguously worse debt, independent of whether
+     * anything currently gates on it.
+     *
+     * Quirk worth pinning: every `Violation` in the group reports the
+     * *same* class-wide `$total` (see the emission in {@see analyze()}) —
+     * a class with three unused private members emits three violations
+     * that each report `metricValue: 3`. Under the ceiling, `count` and
+     * `magnitudes` therefore move together for this channel: redundant,
+     * not wrong.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        ];
     }
 }

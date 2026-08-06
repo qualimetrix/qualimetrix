@@ -7,9 +7,11 @@ namespace Qualimetrix\Rules\CodeSmell;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -52,6 +54,33 @@ abstract class AbstractCodeSmellRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return CodeSmellOptions::class;
+    }
+
+    /**
+     * Every subclass that does not override {@see analyze()} emits its
+     * channel through the loop below with a fixed `1.0` occurrence marker
+     * (`metricValue: 1.0` at the `new Violation(...)` call) — never a
+     * measured magnitude — so `occurrence` is the correct shape for all of
+     * them uniformly. `static::NAME` resolves per concrete subclass via
+     * late static binding, exactly as {@see getName()} above already relies
+     * on; {@see \Qualimetrix\Core\Rule\ChannelDeclarationReader} reads this
+     * method via reflection on the concrete rule class, so the binding
+     * target is correct without any special-casing on the reader's side.
+     *
+     * A subclass whose shape genuinely differs from this base emission
+     * overrides this method instead of inheriting it — none currently do
+     * (every subclass of this base is occurrence-shaped); if one starts
+     * overriding `analyze()` to emit a real magnitude, it must also override
+     * this method, or the drift guard will catch the mismatch against
+     * `tests/Fixtures/Channels/declared.txt`.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(static::NAME, static::NAME))->toKey() => ChannelDeclaration::occurrence(),
+        ];
     }
 
     /**

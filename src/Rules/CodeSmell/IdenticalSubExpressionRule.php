@@ -7,9 +7,11 @@ namespace Qualimetrix\Rules\CodeSmell;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -110,5 +112,20 @@ final class IdenticalSubExpressionRule extends AbstractRule
         }
 
         return $violations;
+    }
+
+    /**
+     * `code-smell.identical-subexpression` reports a fixed `1.0` occurrence
+     * marker (see the emission above) — severity is always `Warning` and
+     * {@see IdenticalSubExpressionOptions::getSeverity()} is never called, so
+     * there is no threshold comparison to read a direction from.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(),
+        ];
     }
 }

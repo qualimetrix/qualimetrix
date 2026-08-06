@@ -9,14 +9,18 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Observation\WorseDirection;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
+use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
 use Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry;
 use Qualimetrix\Rules\CodeSmell\GotoRule;
 use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Qualimetrix\Rules\Maintainability\MaintainabilityRule;
-use Qualimetrix\Rules\Size\ClassCountRule;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 #[CoversClass(ChannelDeclarationCompilerPass::class)]
@@ -35,9 +39,13 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             ->setClass(MaintainabilityRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
         // A rule with no channelDeclarations() at all must contribute nothing
-        // and must not break the pass.
-        $container->register(ClassCountRule::class)
-            ->setClass(ClassCountRule::class)
+        // and must not break the pass. A dedicated fixture, not a production
+        // rule: after this package every production rule declares something,
+        // so any production rule used here would break the moment a later
+        // package declares it — which is exactly how this exemplar drifted
+        // twice already (ClassCountRule, then UnusedPrivateRule).
+        $container->register(FixtureRuleWithNoChannelDeclarations::class)
+            ->setClass(FixtureRuleWithNoChannelDeclarations::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
 
         (new ChannelDeclarationCompilerPass())->process($container);
@@ -125,5 +133,87 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         self::expectExceptionMessage('Duplicate channel declaration for "code-smell.goto#code-smell.goto"');
 
         (new ChannelDeclarationCompilerPass())->process($container);
+    }
+}
+
+/**
+ * @internal
+ *
+ * The "declares nothing" exemplar for {@see ChannelDeclarationCompilerPassTest}.
+ * Deliberately a dedicated fixture, not a production rule: every production
+ * rule reachable from `src/Rules/**` and `src/Architecture/Rules/**` now
+ * declares a channel (baseline-ceiling plan P1b), so pointing this test at
+ * one would break again the moment a future package declared it — which is
+ * exactly how this exemplar drifted twice already (`ClassCountRule`, then
+ * `UnusedPrivateRule`). A fixture with no production meaning cannot drift
+ * that way.
+ */
+final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
+{
+    public function getName(): string
+    {
+        return 'fixture.no-channel-declarations';
+    }
+
+    public function getDescription(): string
+    {
+        return 'Fixture rule with no channelDeclarations() method, for the compiler pass "declares nothing" case.';
+    }
+
+    public function getCategory(): RuleCategory
+    {
+        return RuleCategory::CodeSmell;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return list<\Qualimetrix\Core\Violation\Violation>
+     */
+    public function analyze(AnalysisContext $context): array
+    {
+        return [];
+    }
+
+    /**
+     * @return class-string<RuleOptionsInterface>
+     */
+    public static function getOptionsClass(): string
+    {
+        return FixtureOptionsWithNoChannelDeclarations::class;
+    }
+}
+
+/**
+ * @internal
+ *
+ * Minimal {@see RuleOptionsInterface} for {@see FixtureRuleWithNoChannelDeclarations}.
+ * Never actually invoked by this test — the compiler pass never calls
+ * `getOptionsClass()` — but the return type must be a real class-string.
+ */
+final class FixtureOptionsWithNoChannelDeclarations implements RuleOptionsInterface
+{
+    /**
+     * @param array<string, mixed> $config
+     */
+    public static function fromArray(array $config): self
+    {
+        return new self();
+    }
+
+    public function isEnabled(): bool
+    {
+        return true;
+    }
+
+    public function getSeverity(int|float $value): ?Severity
+    {
+        return null;
     }
 }

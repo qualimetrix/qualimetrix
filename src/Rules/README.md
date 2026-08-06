@@ -920,13 +920,22 @@ that must be readable without instantiating the rule:
 public static function channelDeclarations(): array
 {
     return [
-        self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
     ];
 }
 ```
 
-- Keyed by `violationCode`; the `ruleName` half of the channel is the rule's
-  own `NAME` (read via `RuleNameReader`).
+- **Keyed by the full channel key** — `ViolationChannel::toKey()`'s
+  `ruleName#violationCode` form — not by a bare `violationCode` paired
+  implicitly with the declaring rule's own name. There is deliberately no
+  such shorthand: a rule may emit a channel under a `ruleName` other than
+  its own (`LayerViolationRule` does this for four of its five channels), and
+  a shorthand that assumed otherwise would make exactly those channels
+  undeclarable. The cost is that most rules — whose emitted `ruleName`
+  always equals their own `NAME` — repeat it in every key, e.g.
+  `(new ViolationChannel(self::NAME, self::NAME))->toKey()` for a rule with
+  one channel, or `self::NAME . '.method'` / `.class'` appended to the
+  `violationCode` half for a hierarchical rule with several.
 - **Not** part of `RuleInterface` and **not** an attribute — most rules
   declare nothing, and an interface method would force every one of them to
   implement a no-op override. A rule with no `channelDeclarations()` method
@@ -941,12 +950,30 @@ public static function channelDeclarations(): array
 - Only fill in a declaration after reading that channel's own emission point
   and comparison operator — never by analogy with a neighboring channel. The
   full enumeration of every `new Violation(` emission point and the
-  magnitude (or lack of one) each reports lives in a tracked fixture under
-  `tests/Fixtures/Channels/`, guarded by a drift test against this registry.
+  magnitude (or lack of one) each reports lives in
+  `docs/plan/violation-magnitude-inventory.md`, transcribed into a tracked
+  fixture under `tests/Fixtures/Channels/` and guarded by a drift test
+  against this registry.
 - The `computed.*` / `health.*` family (`ComputedMetricRule`) cannot declare
   statically — its vocabulary is open-ended (user-defined computed metrics)
   — and is instead resolved by the registry at run time from each
   configured `ComputedMetricDefinition` (`inverted` maps to the direction).
+
+### Per-category shape and direction
+
+Every category's channels are declared `magnitude` in the direction the
+rule's own threshold comparison judges worse, with these exceptions carrying
+their rationale as a code comment on the declaring rule (never by analogy):
+
+| Category                                                                                         | Shape / direction                                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Complexity, Coupling (`.cbo`, `.distance`, `.instability`), Structure, Size, Duplication, Design | `magnitude` / `higher` — the reported number moves against real code changes                                                                                                                                                                                      |
+| `design.type-coverage.*`, `maintainability.index`                                                | `magnitude` / `lower` — less coverage / a lower index is worse                                                                                                                                                                                                    |
+| Every fixed-`1.0`-marker CodeSmell/Security channel (`code-smell.goto`, `security.xss`, …)       | `occurrence` — the reported number is not a magnitude, only the count matters                                                                                                                                                                                     |
+| All five `LayerViolationRule` diagnostics, including its own `architecture.layer-violation`      | `occurrence` — none of the five carries a `metricValue` at all                                                                                                                                                                                                    |
+| `architecture.circular-dependency`, `code-smell.unused-private`                                  | `magnitude` / `higher` — a decision about debt, not a derivation from a threshold: neither channel has a gating comparison to read a direction from, but the meaning of the reported value (cycle size; class-wide unused-member count) is unambiguous regardless |
+| `coupling.class-rank`                                                                            | `occurrence` — a real number, but a project-wide normalised PageRank that is not a boundary in a later run's units                                                                                                                                                |
+| `annotation.unsupported-threshold`, `annotation.invalid-threshold(.*)`                           | **undeclared, excluded outright** — configuration mistakes, not code debt; emitted by `AnalysisPipeline`, not a rule class                                                                                                                                        |
 
 ---
 

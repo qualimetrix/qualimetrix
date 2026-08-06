@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\CodeSmell;
 
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -61,6 +64,27 @@ final class LongParameterListRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return LongParameterListOptions::class;
+    }
+
+    /**
+     * `code-smell.long-parameter-list` has two emission call sites
+     * (the VO-constructor branch and the regular branch — see
+     * {@see checkSymbol()}) that resolve to the same literal channel key and
+     * report the same magnitude (`$parameterCountValue`), differing only in
+     * which threshold pair gates them. Both are `higher`-is-worse:
+     * {@see LongParameterListOptions::getVoSeverity()}'s `$value >=
+     * $this->voError` (line 110) / `$value >= $this->voWarning` (line 114)
+     * for the VO branch, and {@see LongParameterListOptions::getSeverity()}'s
+     * `$value >= $this->error` (line 94) / `$value >= $this->warning`
+     * (line 98) for the regular branch. One declaration covers both.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        ];
     }
 
     /**

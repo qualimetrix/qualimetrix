@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Size;
 
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -56,7 +59,25 @@ final class PropertyCountRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return PropertyCountOptions::class;
-    }    public function analyze(AnalysisContext $context): array
+    }
+
+    /**
+     * `size.property-count` reports the class's property count
+     * (`$propertyCountValue` — see the emission above) as `metricValue`,
+     * judged worse the higher it goes:
+     * {@see PropertyCountOptions::getSeverity()}'s `$value >= $this->error`
+     * (line 68) / `$value >= $this->warning` (line 72).
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        ];
+    }
+
+    public function analyze(AnalysisContext $context): array
     {
         if (!$this->options instanceof PropertyCountOptions || !$this->options->isEnabled()) {
             return [];

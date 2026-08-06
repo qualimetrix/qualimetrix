@@ -387,7 +387,10 @@ container.
 
 **Channel declarations** (baseline) — a rule may optionally declare a static
 `channelDeclarations(): array<string, ChannelDeclaration>` method, keyed by
-`violationCode` (paired with the rule's own `NAME` to form the full channel).
+the **full channel key** (`ViolationChannel::toKey()`'s `ruleName#violationCode`
+form) — not by a bare `violationCode` paired implicitly with the rule's own
+`NAME`, because a rule may emit a channel under a `ruleName` other than its
+own (`LayerViolationRule` does this for four of its five channels).
 This is deliberately not part of `RuleInterface` and not an attribute: an
 interface method would force every rule — including the majority that
 declares nothing — to implement a no-op override. It is read by

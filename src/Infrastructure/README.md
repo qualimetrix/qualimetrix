@@ -216,9 +216,10 @@ Rules and their Options are made lazy via `->setLazy(true)`:
 - Reads each rule's optional static `channelDeclarations(): array<string, ChannelDeclaration>`
   method via `Core\Rule\ChannelDeclarationReader` (reflection, no instantiation — a rule
   with no such method is untouched)
-- Pairs each returned `violationCode` with the rule's own `RuleNameReader::read()` result
-  to form the full `ViolationChannel`, and injects the assembled map into
-  `ChannelDeclarationRegistry`
+- Each rule already returns full channel keys (`ruleName#violationCode`), so this pass
+  does no pairing of its own — it only assembles the map and injects it into
+  `ChannelDeclarationRegistry`, along with `ComputedMetricRule::NAME` as the
+  run-time family discriminator
 - Fails the container build on a channel declared by more than one rule class
 
 **FormatterCompilerPass:**

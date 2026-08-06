@@ -6,14 +6,17 @@ namespace Qualimetrix\Rules\Design;
 
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -179,5 +182,24 @@ final class GodClassRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return GodClassOptions::class;
+    }
+
+    /**
+     * `design.god-class` reports `$matchedCount` — the tally of how many of
+     * the (up to 4) evaluable God Class criteria matched — as `metricValue`
+     * (see the emission above), not any individual criterion's value. Higher
+     * is worse: {@see determineSeverity()} returns `Severity::Error` when
+     * `$matchedCount === $evaluableCount` (line 165, all evaluable criteria
+     * matched) and `Severity::Warning` when `$matchedCount >=
+     * $options->minCriteria` (line 169) — both branches escalate as the
+     * count grows.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        ];
     }
 }

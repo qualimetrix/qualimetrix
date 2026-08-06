@@ -19,9 +19,11 @@ use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -145,6 +147,37 @@ final class LayerViolationRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return LayerViolationOptions::class;
+    }
+
+    /**
+     * All five diagnostics this rule builds — including its own primary
+     * `architecture.layer-violation` channel — carry `metricValue: null`
+     * (see every `new Violation(...)` call site above: none passes
+     * `metricValue:`). Baseline-ceiling plan §5.4 is explicit that this is
+     * true of all five, not just the four emitted under the
+     * `*_DIAGNOSTIC_NAME` constants: they report no magnitude at all, so
+     * `occurrence` is the only shape any of them can take. There is no
+     * "decision" here the way there is for `architecture.circular-dependency`
+     * — an `occurrence` declaration is the direct consequence of §2.1's fact,
+     * not a judgement call.
+     *
+     * `architecture.layer-violation` carries a dependency edge
+     * (`dependencyTarget`/`dependencyType` on the `Violation` — see
+     * {@see buildViolation()}), so per §5.1 its identity is per-edge; that is
+     * an identity-layer concern the channel declaration itself does not
+     * encode.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(),
+            (new ViolationChannel(self::COVERAGE_DIAGNOSTIC_NAME, self::COVERAGE_DIAGNOSTIC_NAME))->toKey() => ChannelDeclaration::occurrence(),
+            (new ViolationChannel(self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME))->toKey() => ChannelDeclaration::occurrence(),
+            (new ViolationChannel(self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME, self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME))->toKey() => ChannelDeclaration::occurrence(),
+            (new ViolationChannel(self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME, self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME))->toKey() => ChannelDeclaration::occurrence(),
+        ];
     }
 
     /**

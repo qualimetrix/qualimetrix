@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Duplication;
 
 use Qualimetrix\Core\Duplication\DuplicateBlock;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -61,6 +64,29 @@ final class CodeDuplicationRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return CodeDuplicationOptions::class;
+    }
+
+    /**
+     * `duplication.code-duplication` reports the duplicated block's line
+     * count (`$block->lines` — see the emission above) as `metricValue`,
+     * judged worse the higher it goes:
+     * {@see CodeDuplicationOptions::getSeverity()}'s `$value >=
+     * $this->error` (line 58) / `$value >= $this->warning` (line 62).
+     * Emission itself is unconditional — every `DuplicateBlock` produces a
+     * `Violation` regardless of size (`$severity ?? Severity::Warning` at
+     * line 102 is only ever a fallback) — but that does not change the
+     * direction question: the threshold comparison genuinely gates
+     * *severity*, and severity is monotone in `$block->lines`, so `higher`
+     * is a real fact about the code, not an inference from the channel's
+     * unconditional trigger.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        ];
     }
 
     private function createViolation(AnalysisContext $context, DuplicateBlock $block): Violation

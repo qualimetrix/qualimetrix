@@ -7,14 +7,17 @@ namespace Qualimetrix\Rules\Design;
 use LogicException;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -64,6 +67,25 @@ final class TypeCoverageRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return TypeCoverageOptions::class;
+    }
+
+    /**
+     * All three type-coverage channels (`.param`, `.return`, `.property`)
+     * share one emission helper, {@see checkCoverage()}, which reports the
+     * coverage percentage (`$coverage`) as `metricValue` and is judged worse
+     * the *lower* it goes: `$coverage < $errorThreshold` (line 161, strict)
+     * and `elseif ($coverage < $warningThreshold)` (line 164, strict) — less
+     * type coverage is worse debt.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME . '.param'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower),
+            (new ViolationChannel(self::NAME, self::NAME . '.return'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower),
+            (new ViolationChannel(self::NAME, self::NAME . '.property'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower),
+        ];
     }
 
     /**
