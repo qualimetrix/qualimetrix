@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Configuration\KnownRuleNamesProviderInterface;
+use Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry;
+use Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -26,6 +28,7 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
     {
         $this->registerRules($container);
         $this->registerRuleRegistry($container);
+        $this->registerChannelDeclarationRegistry($container);
     }
 
     /**
@@ -85,5 +88,21 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
             ->setPublic(false);
 
         $container->setAlias(KnownRuleNamesProviderInterface::class, KnownRuleNamesAdapter::class);
+    }
+
+    private function registerChannelDeclarationRegistry(ContainerBuilder $container): void
+    {
+        // ChannelDeclarationRegistry will have the static declaration map and
+        // the computed-metric family discriminator injected by
+        // ChannelDeclarationCompilerPass.
+        $container->register(ChannelDeclarationRegistry::class)
+            ->setArguments([
+                '$staticDeclarations' => [],
+                '$computedMetricRuleName' => '',
+            ])
+            ->setPublic(true);
+
+        $container->setAlias(ChannelDeclarationRegistryInterface::class, ChannelDeclarationRegistry::class)
+            ->setPublic(true);
     }
 }

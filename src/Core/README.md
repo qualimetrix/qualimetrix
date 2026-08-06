@@ -46,6 +46,7 @@ Core/
 │   ├── RuleMatcher.php                    # Prefix matching utility
 │   ├── RuleNameReader.php                 # Reads the NAME constant (reflection, no instantiation)
 │   ├── CliAliasReader.php                 # Reads #[CliAlias] attributes (reflection, no instantiation)
+│   ├── ChannelDeclarationReader.php       # Reads the optional channelDeclarations() method (reflection, no instantiation)
 │   └── Attribute/
 │       └── CliAlias.php                   # Repeatable attribute declaring a rule's CLI aliases
 ├── Symbol/
@@ -71,6 +72,8 @@ Core/
 ├── Violation/
 │   ├── Violation.php
 │   ├── ViolationChannel.php               # VO: (ruleName, violationCode) — the address of a kind of finding
+│   ├── ChannelShape.php                   # Enum: magnitude / occurrence — what a channel's metricValue means for baseline purposes
+│   ├── ChannelDeclaration.php             # VO: a channel's shape plus, for magnitude channels, its WorseDirection
 │   ├── Severity.php
 │   ├── Location.php
 │   ├── RuleExclusionCaptureHolder.php     # Static holder: whether RuleExecutor retains suppressed Violation objects
@@ -382,6 +385,18 @@ constructor dependencies beyond their Options object, so rule metadata must be
 obtainable without instantiation and rule instances must come from the DI
 container.
 
+**Channel declarations** (baseline) — a rule may optionally declare a static
+`channelDeclarations(): array<string, ChannelDeclaration>` method, keyed by
+`violationCode` (paired with the rule's own `NAME` to form the full channel).
+This is deliberately not part of `RuleInterface` and not an attribute: an
+interface method would force every rule — including the majority that
+declares nothing — to implement a no-op override. It is read by
+`ChannelDeclarationReader::read(class-string): array<string, ChannelDeclaration>`
+via reflection, mirroring `RuleNameReader`/`CliAliasReader`; a rule with no
+such method is untouched and `read()` returns `[]`. See `ChannelDeclaration`
+below and `Infrastructure\Rule\ChannelDeclarationRegistryInterface` for how
+the declarations are assembled and consumed.
+
 **DI Tags:** `qmx.rule`
 
 ### HierarchicalRuleInterface
@@ -563,6 +578,29 @@ Channels are **not** in bijection with rule classes, which is why nothing downst
 - `toKey(): string` — stable string form, suitable as an array key
 
 Read the channel of an emitted finding via `Violation::channel()`. There is deliberately no `ViolationChannel::fromViolation()` factory — the pair would form a dependency cycle (caught by `architecture.circular-dependency` during dogfooding), and the direction that survives is the one where the richer type knows the primitive.
+
+### ChannelShape (Enum)
+
+What a channel's `Violation::$metricValue` means for baseline purposes — never a rule's options or its severity ladder.
+
+| Value        | Description                                                                                                   |
+| ------------ | ------------------------------------------------------------------------------------------------------------- |
+| `Magnitude`  | The reported value is a real measured magnitude — a boundary a later run's value can be compared against.     |
+| `Occurrence` | The reported value, if any, is not a magnitude (a fixed marker such as `1.0`, or absent). Only count matters. |
+
+### ChannelDeclaration
+
+The two facts a channel declares for baseline purposes: its shape, and — for a `magnitude` shape only — the `WorseDirection` that makes its reported number comparable. Nothing else: no axis name, no threshold binding, no epsilon.
+
+**Fields:** `shape: ChannelShape`, `direction: ?WorseDirection`.
+
+**Invariant** (enforced in the constructor): a direction is present *exactly* when the shape is `Magnitude`. A `Magnitude` declaration without a direction, or an `Occurrence` declaration carrying one, throws `InvalidArgumentException`.
+
+**Factory methods:**
+- `magnitude(WorseDirection $direction): self`
+- `occurrence(): self`
+
+A channel that declares no `ChannelDeclaration` at all is not an error — it is simply not baselineable. See `Core\Rule\ChannelDeclarationReader` (how a rule declares its channels) and `Infrastructure\Rule\ChannelDeclarationRegistryInterface` (how declarations are assembled, including the run-time `computed.*` / `health.*` family).
 
 ### ViolationFilterInterface
 

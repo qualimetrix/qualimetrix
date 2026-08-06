@@ -900,6 +900,56 @@ Violations are triggered when a metric value meets or exceeds the threshold (`>=
 
 ---
 
+## Baseline Channel Declarations (optional)
+
+The baseline ceiling (see `src/Baseline/README.md`) needs exactly two facts
+per channel: its **shape** (`magnitude` or `occurrence`) and, for `magnitude`
+channels only, its **direction** (`higher` or `lower` is worse) —
+`Core\Violation\ChannelShape` / `ChannelDeclaration`. A channel that declares
+neither is simply not baselineable; that is a legitimate state, not an
+error.
+
+A rule declares this by defining an optional static method, mirroring the
+`NAME`-constant / `#[CliAlias]` idiom already used for other rule metadata
+that must be readable without instantiating the rule:
+
+```php
+/**
+ * @return array<string, ChannelDeclaration>
+ */
+public static function channelDeclarations(): array
+{
+    return [
+        self::NAME => ChannelDeclaration::magnitude(WorseDirection::Higher),
+    ];
+}
+```
+
+- Keyed by `violationCode`; the `ruleName` half of the channel is the rule's
+  own `NAME` (read via `RuleNameReader`).
+- **Not** part of `RuleInterface` and **not** an attribute — most rules
+  declare nothing, and an interface method would force every one of them to
+  implement a no-op override. A rule with no `channelDeclarations()` method
+  is completely untouched by this mechanism.
+- Read via reflection by `Core\Rule\ChannelDeclarationReader`, then assembled
+  across every `qmx.rule`-tagged service by
+  `Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass`
+  into `Infrastructure\Rule\ChannelDeclarationRegistry`. `Core` may not
+  depend on `Rules`, so this compile-time assembly is the only place a
+  static map can be built at all — the registry itself only *receives* the
+  result.
+- Only fill in a declaration after reading that channel's own emission point
+  and comparison operator — never by analogy with a neighboring channel. The
+  full enumeration of every `new Violation(` emission point and the
+  magnitude (or lack of one) each reports lives in a tracked fixture under
+  `tests/Fixtures/Channels/`, guarded by a drift test against this registry.
+- The `computed.*` / `health.*` family (`ComputedMetricRule`) cannot declare
+  statically — its vocabulary is open-ended (user-defined computed metrics)
+  — and is instead resolved by the registry at run time from each
+  configured `ComputedMetricDefinition` (`inverted` maps to the direction).
+
+---
+
 ## Creating a New Rule
 
 ### Simple Rule

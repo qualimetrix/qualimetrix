@@ -96,4 +96,50 @@ final class ViolationChannelTest extends TestCase
         self::assertSame('rules.a#rules.a.method', $channel->toKey());
         self::assertSame($channel->toKey(), (string) $channel);
     }
+
+    #[Test]
+    public function itParsesAKeyBackIntoTheSameChannel(): void
+    {
+        $original = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+
+        $parsed = ViolationChannel::fromKey($original->toKey());
+
+        self::assertTrue($original->equals($parsed));
+    }
+
+    #[Test]
+    public function itParsesAKeyWhoseRuleNameDiffersFromItsViolationCode(): void
+    {
+        $channel = ViolationChannel::fromKey('architecture.layer-violation#architecture.coverage');
+
+        self::assertSame('architecture.layer-violation', $channel->ruleName);
+        self::assertSame('architecture.coverage', $channel->violationCode);
+    }
+
+    #[Test]
+    public function itRejectsAKeyWithNoSeparator(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('not a valid channel key');
+
+        ViolationChannel::fromKey('no-separator-here');
+    }
+
+    #[Test]
+    public function itRejectsAKeyWithAnEmptyRuleNameHalf(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('ruleName must not be empty');
+
+        ViolationChannel::fromKey('#violation-code');
+    }
+
+    #[Test]
+    public function itRejectsAKeyWithAnEmptyViolationCodeHalf(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('violationCode must not be empty');
+
+        ViolationChannel::fromKey('rule-name#');
+    }
 }

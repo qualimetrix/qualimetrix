@@ -45,6 +45,33 @@ final readonly class ViolationChannel implements Stringable
         }
     }
 
+    /**
+     * Parses the {@see toKey()} string form back into a channel.
+     *
+     * The static declaration mechanism (see
+     * `Core\Rule\ChannelDeclarationReader`) stores declarations keyed by this
+     * exact form, so this is how a consumer recovers the `(ruleName,
+     * violationCode)` pair from such a key — e.g. to check that the
+     * `ruleName` half still names a rule that exists.
+     *
+     * @throws InvalidArgumentException when `$key` does not contain the
+     *                                  separator, or either half would be empty
+     */
+    public static function fromKey(string $key): self
+    {
+        $parts = explode(self::SEPARATOR, $key, 2);
+
+        if (\count($parts) !== 2) {
+            throw new InvalidArgumentException(\sprintf(
+                '"%s" is not a valid channel key — expected the form "ruleName%sviolationCode".',
+                $key,
+                self::SEPARATOR,
+            ));
+        }
+
+        return new self($parts[0], $parts[1]);
+    }
+
     public function equals(self $other): bool
     {
         return $this->ruleName === $other->ruleName

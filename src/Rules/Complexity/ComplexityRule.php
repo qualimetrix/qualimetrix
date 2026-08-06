@@ -7,15 +7,18 @@ namespace Qualimetrix\Rules\Complexity;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -116,6 +119,29 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     public static function getOptionsClass(): string
     {
         return ComplexityOptions::class;
+    }
+
+    /**
+     * Declares the baseline shape of the method-level channel only.
+     *
+     * `complexity.cyclomatic.method` reports the method's raw CCN
+     * (`$ccnValue`, an `int`) as `metricValue` — see the emission at
+     * {@see analyzeMethodLevel()} — and is judged worse the higher it goes,
+     * per `MethodComplexityOptions::getSeverity()`'s `$value >= $this->error`
+     * / `$value >= $this->warning` comparisons. The class-level channel
+     * (`complexity.cyclomatic.class`) is deliberately left undeclared here —
+     * not yet verified at its own emission point.
+     *
+     * Keyed by the full channel key: the `ruleName` half is `self::NAME`,
+     * the `violationCode` half adds the `.method` suffix.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME . '.method'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+        ];
     }
 
     /**

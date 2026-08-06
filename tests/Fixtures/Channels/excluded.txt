@@ -1,0 +1,13 @@
+# Channels verified at their emission point to deliberately declare no
+# baseline support (§5.4 of the baseline-ceiling plan). Their absence from
+# declared.txt is not drift — a channel that declares nothing is legitimately
+# "not baselineable", not an oversight.
+#
+# Format (one channel per line):
+#   <ruleName>#<violationCode> -- <reason>
+#
+# Used by tests/Integration/Violation/ChannelCoverageTest.php to distinguish
+# a deliberate exclusion from an undeclared channel that should have been
+# covered by this package's own corpus.
+
+annotation.unsupported-threshold#annotation.unsupported-threshold -- emitted directly by AnalysisPipeline::buildUnsupportedOverrideViolations() (src/Analysis/Pipeline/AnalysisPipeline.php:256), not by any rule class; reports a configuration mistake (an unsupported @qmx-threshold annotation), not code debt. annotation.* is the one family §5.4 excludes outright.

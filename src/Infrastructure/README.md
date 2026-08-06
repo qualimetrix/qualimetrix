@@ -85,6 +85,7 @@ Infrastructure/
 │       ├── GlobalCollectorCompilerPass.php
 │       ├── RuleCompilerPass.php
 │       ├── RuleRegistryCompilerPass.php
+│       ├── ChannelDeclarationCompilerPass.php
 │       ├── RuleOptionsCompilerPass.php
 │       ├── FormatterCompilerPass.php
 │       ├── ConfigurationStageCompilerPass.php
@@ -92,6 +93,8 @@ Infrastructure/
 ├── Rule/
 │   ├── RuleRegistryInterface.php
 │   ├── RuleRegistry.php
+│   ├── ChannelDeclarationRegistryInterface.php # Baseline: (ruleName, violationCode) -> ChannelDeclaration
+│   ├── ChannelDeclarationRegistry.php
 │   └── Exception/
 │       └── ConflictingCliAliasException.php
 └── Console/                          # -> See Console/README.md
@@ -207,6 +210,16 @@ Rules and their Options are made lazy via `->setLazy(true)`:
 - Collects rule classes (not instances)
 - Injects into `RuleRegistry` for CLI option discovery
 - Fails the container build when a rule class omits its `NAME` constant
+
+**ChannelDeclarationCompilerPass:**
+- Walks the same `qmx.rule`-tagged services as `RuleRegistryCompilerPass`
+- Reads each rule's optional static `channelDeclarations(): array<string, ChannelDeclaration>`
+  method via `Core\Rule\ChannelDeclarationReader` (reflection, no instantiation — a rule
+  with no such method is untouched)
+- Pairs each returned `violationCode` with the rule's own `RuleNameReader::read()` result
+  to form the full `ViolationChannel`, and injects the assembled map into
+  `ChannelDeclarationRegistry`
+- Fails the container build on a channel declared by more than one rule class
 
 **FormatterCompilerPass:**
 - Collects services with tag `qmx.formatter`

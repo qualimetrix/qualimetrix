@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Maintainability;
 
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
 
 /**
@@ -122,6 +125,26 @@ final class MaintainabilityRule extends AbstractRule
     public static function getOptionsClass(): string
     {
         return MaintainabilityOptions::class;
+    }
+
+    /**
+     * `maintainability.index` reports the Maintainability Index itself
+     * (`round($miValue, 1)`) as `metricValue` — see the emission above —
+     * and is judged worse the lower it goes, per
+     * `MaintainabilityOptions::getSeverity()`'s `$value < $this->error` /
+     * `$value < $this->warning` comparisons (strict `<`, intentionally: the
+     * threshold is the first acceptable value for the better category).
+     *
+     * Keyed by the full channel key (`ruleName#violationCode`) — both halves
+     * equal `self::NAME` here.
+     *
+     * @return array<string, ChannelDeclaration>
+     */
+    public static function channelDeclarations(): array
+    {
+        return [
+            (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Lower),
+        ];
     }
 
     private function isTestFile(?RelativePath $file): bool
