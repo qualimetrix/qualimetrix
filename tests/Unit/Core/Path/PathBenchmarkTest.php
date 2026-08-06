@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Core\Path;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -31,18 +32,24 @@ use Qualimetrix\Core\Path\RelativePath;
  * | fast path removed, every call normalizes       | 5.12 – 5.61 | 5.03 – 5.75 |
  * | one `realpath()` added, its cache already warm | 7.3         | —           |
  *
- * {@see self::MAX_COST_RATIO} sits in the gap. Widening it past ~4.5 stops the
- * measurement detecting the regression it exists for; below ~3.5 it starts
- * reporting the machine instead.
+ * {@see self::MAX_COST_RATIO} sits in the gap *on that machine only*. The
+ * baseline turned out not to travel: on a GitHub-hosted x86 runner (Ubuntu,
+ * PHP 8.4) the unmodified fast path measures 4.93× and 5.73× — the band this
+ * limit calls a regression on arm64. That is a property of the reference, not
+ * of the code under test: numerator and denominator are *different*
+ * operations, and `preg_match` is priced differently against
+ * `str_starts_with`/`substr` on a different ISA and PCRE build. Restating the
+ * ADR's wording literally inherited that flaw.
  *
- * This runs in the default suite — the wall-clock version it replaces sat in
- * the `benchmark` group, which `composer test` excludes, so the budget went
- * unmeasured for long enough to drift out of date unnoticed. Should a CI
- * runner's architecture put the healthy ratio somewhere other than the band
- * above, recalibrate from the failure message (it reports the observed ratio);
- * park it back in the `benchmark` group only if no band separates healthy from
- * regressed there, since a test in that group never runs.
+ * So the test stays in the `benchmark` group, which `composer test` excludes —
+ * meaning it does not run, and the budget it describes is not currently
+ * enforced anywhere. The fix is a reference that cannot drift between
+ * architectures: the same `fromString()` measured against its own slow path,
+ * where both sides share a call shape and only the branch under test differs
+ * (~0.5 healthy, → 1.0 once the fast path stops being taken). Calibrate that
+ * on the runner, not here, before returning the test to the default suite.
  */
+#[Group('benchmark')]
 #[CoversClass(AbsolutePath::class)]
 #[CoversClass(RelativePath::class)]
 final class PathBenchmarkTest extends TestCase
