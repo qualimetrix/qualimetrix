@@ -192,13 +192,23 @@ nowhere under `src/Analysis/`. The set of findings a run produces is therefore
 unaffected by report narrowing — which is what makes §5.5's choice of set for
 staleness safe.
 
-### 2.5 Stale entries today disable the whole baseline
+### 2.5 Stale entries disabled the whole baseline — **changed by P2**
 
-`ViolationFilterPipeline` applies `BaselineFilter` only when
+*This section records the state this plan started from. P2 has since landed the
+change described below, so the "today" here is the tree before P2, not the tree
+now; the rest of §2 still describes the current code.*
+
+`ViolationFilterPipeline` applied `BaselineFilter` only when
 `$staleKeys === [] || $options->ignoreStaleBaseline`, and stale keys otherwise
-raise `InvalidArgumentException` (exit 3). Under v5's coarse key that is rare;
-under v10's finer key it would fire on the first repaired finding, so §5.7
+raised `InvalidArgumentException` (exit 3). Under v5's coarse key that was rare;
+under v10's finer key it fires on the first repaired finding, which is why §5.7
 changes it deliberately.
+
+**As of P2** the filter is applied unconditionally, a stale entry is reported
+and does nothing else, and `--baseline-ignore-stale` no longer exists. §5.7's
+declarations 1 and 2 were pulled forward for the reason recorded in P2's
+description: between a P2 that re-keys staleness and a P4 that removes the
+failure path, the first partial repair would have hard-failed `check` on `main`.
 
 ### 2.6 The default `fail_on` is `error`
 
@@ -762,12 +772,18 @@ command preserves the existing timestamp and bytes.
 **Float representation is pinned at the encode site, not inherited from the
 environment.** `BaselineWriter` encodes without `JSON_PRESERVE_ZERO_FRACTION`,
 and PHP's float output is governed by `serialize_precision`, which a user can
-set. Combined with §5.1's six-decimal normalisation, the written text is
-identical at any `serialize_precision` and decodes to the same value — which is
-what makes a zero tolerance sound rather than a bet on an ini default. Note the
-consequence for byte stability: a normalised `40.0` is written as `40` and
-reloads as `int`, which is harmless for a numeric comparison and stable from the
-first write, but P2 states it rather than leaving it to a flaky test.
+set. **The pin is what makes the text independent of that setting; §5.1's
+six-decimal normalisation is not.** 10.3 claimed the two combined were enough,
+and they are not: `0.1` has no exact binary form, so at
+`serialize_precision=17` PHP writes `0.10000000000000001` and at `15` it writes
+`0.1` — one normalised value, two files. `-1` selects the shortest
+representation that round-trips to the identical double, which is stable across
+every ambient setting and lossless; normalisation does the separate job of
+collapsing values that differ below the sixth decimal. Together they earn the
+zero tolerance rather than betting on an ini default. Note the consequence for
+byte stability: a normalised `40.0` is written as `40` and reloads as `int`,
+which is harmless for a numeric comparison and stable from the first write, but
+P2 states it rather than leaving it to a flaky test.
 
 ## 7. CLI and lifecycle
 
@@ -882,12 +898,12 @@ stale, inert and scope-mismatched entries without failing on them (§5.7, §6).
 package. A file may appear in two packages when the changes are disjoint and
 each DoD names its own:
 
-| File                                                         | Earlier                                                         | Later                                                                                                             |
-| ------------------------------------------------------------ | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `src/Core/Violation/Violation.php`                           | P0 removed `$observation` (done)                                | P3 adds the accepted-level field and re-evaluates the `constructor-overinjection` annotation                      |
-| `src/Infrastructure/Console/ViolationFilterPipeline.php`     | P3 moves the stage, makes it transforming and group-valued      | P4 adds the reporting of stale, inert and scope-mismatched entries                                                |
-| `src/Infrastructure/Console/ViolationFilterOrchestrator.php` | P3 extracts the measured-set seam (§5.5) out of it              | P4 rewrites `--show-resolved` and removes the staleness failure path with its `--baseline-ignore-stale` messaging |
-| `src/Infrastructure/Console/ViolationFilterResult.php`       | P3 exposes the measured set and reshapes the per-stage counters | P4 replaces the `?BaselineFilter` carrier once resolved-reporting becomes entry-keyed                             |
+| File                                                         | Earlier                                                                                                                                         | Later                                                                                        |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `src/Core/Violation/Violation.php`                           | P0 removed `$observation` (done)                                                                                                                | P3 adds the accepted-level field and re-evaluates the `constructor-overinjection` annotation |
+| `src/Infrastructure/Console/ViolationFilterPipeline.php`     | P3 moves the stage, makes it transforming and group-valued                                                                                      | P4 adds the reporting of stale, inert and scope-mismatched entries                           |
+| `src/Infrastructure/Console/ViolationFilterOrchestrator.php` | P2 removed the staleness failure path, the `--baseline-ignore-stale` messaging and the flag; P3 extracts the measured-set seam (§5.5) out of it | P4 rewrites `--show-resolved` over the measured set                                          |
+| `src/Infrastructure/Console/ViolationFilterResult.php`       | P3 exposes the measured set and reshapes the per-stage counters                                                                                 | P4 replaces the `?BaselineFilter` carrier once resolved-reporting becomes entry-keyed        |
 
 Three corrections to 10.2's assignments, each a fact rather than a preference:
 
@@ -909,8 +925,9 @@ Three corrections to 10.2's assignments, each a fact rather than a preference:
   removes the `--generate-baseline` path entirely. Without this said, P3's DoD
   depended on a file assigned to P4.
 
-`src/Infrastructure/Console/ViolationFilterOptions.php` is P3's alone (the
-stale/ignore-stale options change shape and `--baseline-ignore-stale` goes).
+`src/Infrastructure/Console/ViolationFilterOptions.php`: P2 removed
+`$ignoreStaleBaseline` with the flag; the remaining reshaping of its options is
+P3's alone.
 
 ### P0 — Retire the v7 landings — **LANDED** (`3ae829d`)
 Every DoD item verified: the five observation types, the four coverage types and
@@ -992,6 +1009,24 @@ writes are atomic under a real CAS guard; staleness and resolved-reporting are
 keyed on the §5.1 identity; v5 is rejected outside `migrate`; §14's symbol-key
 uniqueness question is decided here and its outcome pinned.
 
+**Two obligations move here from P4, and the reason is that P2 cannot stand
+alone without them.** P2 re-keys staleness onto the §5.1 identity while P4 owns
+the removal of the failure path, so between the two packages the *first repair
+of one channel on a multi-channel symbol* disables the whole baseline and fails
+the build — the exact outcome §5.7 exists to prevent, on `main`, for however
+long P2 stands alone. Declarations 1 and 2 of §5.7 therefore land in P2: a stale
+entry is reported, never fails the run, and never disables the other entries.
+`--baseline-ignore-stale` is removed with them rather than in P4, because
+without a failure path it is a flag that does nothing, and a no-op flag is the
+compatibility shim the project's policy forbids. Declaration 3 (`cleanup` never
+removes on its own) and the `scope` guard stay in P4. Two consequences are
+pinned here: `--show-resolved` works on a green build — it reads the same
+predicate as staleness, so while staleness threw it could only print when there
+was nothing to print — and the stale message stops claiming "symbols no longer
+exist" and stops advising `baseline:cleanup`, which selects on a vanished
+`file:` path and is a guaranteed no-op for a `method:`/`class:`/`ns:`/`project:`
+entry.
+
 ### P3 — The stage, its new position and nature, the measured-set seam, and capture
 Files: `src/Baseline/Filter/**`, `src/Infrastructure/Console/ViolationFilterPipeline.php`,
 `src/Infrastructure/Console/ViolationFilterOrchestrator.php`,
@@ -1027,6 +1062,21 @@ DoD:
   magnitude reading and `mode: suppress`; a test works the shrink cases by hand,
   including **the case that killed rank alignment: the best member of a group is
   repaired, nothing else changes, and the group is accepted.**
+- **The recomputed side of the comparison is normalised too.** `round($v, 6)` is
+  applied to the stored side by `BaselineEntry`'s constructor (P2), and the zero
+  tolerance of §5.1 is unsound unless the number it is compared against goes
+  through the same function: a raw recomputed value and its rounded stored copy
+  can differ below the sixth decimal and read as a breach. The seam already
+  exists — `BaselineEntry::normalizeMagnitude()` is public precisely for this —
+  so the obligation is to call it, and to have a test that fails if it is not.
+- **The measured-set seam replaces `BaselineFilter::measuredIdentityKeys()`, it
+  does not merely wrap it.** That method is a `public static` the pipeline calls
+  *before* any filter exists, and the same predicate is evaluated twice per run
+  from two separately supplied lists — the pipeline's own `$violations` and the
+  orchestrator's `$result->violations`. They agree today only because the
+  baseline still runs at stage 1; moving the stage is exactly what stops them
+  agreeing. Both call sites must read the seam, and the static must disappear
+  rather than acquire a second caller.
 - **Promotion is scoped to measured breaches** (§5.6): a test asserts, for each
   ambiguity of §5.1 including non-finite magnitudes, that the finding is reported
   **at its own configured severity** and not at Error; a separate test asserts a
@@ -1069,7 +1119,8 @@ prints both the stored number and the number currently compared (§13.5);
 §5.1 identity** — the two facts that actually change, since "counts entries, not
 violations" is already true of today's code and would have been signed off
 unchanged; `BaselinePresenter` is deleted with `--generate-baseline`;
-`--baseline-ignore-stale` is gone; the accepted level reaches the text report and
+the staleness failure path and `--baseline-ignore-stale` are **already gone (P2)**,
+so P4 asserts nothing about them; the accepted level reaches the text report and
 every machine format with schemas still valid, and promoted severities are correct
 in SARIF's result levels and run-level default; §14's `migrate` report shape is
 decided here; the §13 cases named to P4 land here.
