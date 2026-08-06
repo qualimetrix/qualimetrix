@@ -182,12 +182,6 @@ final class CheckCommandDefinition
                 null,
                 InputOption::VALUE_NONE,
                 'Show count of violations resolved since baseline',
-            )
-            ->addOption(
-                'baseline-ignore-stale',
-                null,
-                InputOption::VALUE_NONE,
-                'Ignore stale baseline entries instead of failing',
             );
     }
 

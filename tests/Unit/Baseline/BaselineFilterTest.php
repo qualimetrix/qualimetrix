@@ -10,219 +10,138 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEntry;
+use Qualimetrix\Baseline\BaselineIdentity;
 use Qualimetrix\Baseline\Filter\BaselineFilter;
-use Qualimetrix\Baseline\ViolationHasher;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Tests\Support\Violation\ViolationFactory;
 
 #[CoversClass(BaselineFilter::class)]
 final class BaselineFilterTest extends TestCase
 {
-    private ViolationHasher $hasher;
-
-    protected function setUp(): void
+    #[Test]
+    public function itFiltersOutAViolationRecordedInTheBaseline(): void
     {
-        $this->hasher = new ViolationHasher();
+        $violation = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+
+        $filter = new BaselineFilter(self::baselineFor($violation));
+
+        self::assertFalse($filter->shouldInclude($violation));
     }
 
     #[Test]
-    public function itFiltersOutKnownViolation(): void
+    public function itPassesAViolationTheBaselineDoesNotHold(): void
     {
-        $violation = new Violation(
-            location: new Location(RelativePath::fromString('src/Foo.php'), 45),
-            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-            ruleName: 'complexity',
-            violationCode: 'complexity',
-            message: 'Complexity 15 exceeds 10',
-            severity: Severity::Warning,
-        );
+        $recorded = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
+        $fresh = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'other'), 15);
 
-        $hash = $this->hasher->hash($violation);
+        $filter = new BaselineFilter(self::baselineFor($recorded));
 
-        $baseline = new Baseline(
-            version: 1,
-            generated: new DateTimeImmutable(),
-            entries: [
-                'method:App\Foo::bar' => [
-                    new BaselineEntry('complexity', $hash),
-                ],
-            ],
-        );
-
-        $filter = new BaselineFilter($baseline, $this->hasher);
-
-        self::assertFalse($filter->shouldInclude($violation), 'Known violation should be filtered out');
+        self::assertTrue($filter->shouldInclude($fresh));
     }
 
     #[Test]
-    public function itPassesNewViolation(): void
+    public function itPassesAViolationOnAnotherChannelOfTheSameSymbol(): void
     {
-        $violation = new Violation(
-            location: new Location(RelativePath::fromString('src/Foo.php'), 45),
-            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-            ruleName: 'complexity',
-            violationCode: 'complexity',
-            message: 'Complexity 15 exceeds 10',
-            severity: Severity::Warning,
-        );
+        $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
+        $recorded = ViolationFactory::magnitude($symbol, 15);
+        $otherChannel = ViolationFactory::occurrence($symbol);
 
-        $baseline = new Baseline(
-            version: 1,
+        $filter = new BaselineFilter(self::baselineFor($recorded));
+
+        self::assertTrue($filter->shouldInclude($otherChannel));
+    }
+
+    /**
+     * The reason the edge is part of the identity: without it, swapping one
+     * forbidden dependency for another leaves the count unchanged and passes
+     * in silence.
+     */
+    #[Test]
+    public function itPassesAForbiddenEdgeSwappedForAnother(): void
+    {
+        $source = SymbolPath::forClass('App\Web', 'Controller');
+        $recorded = ViolationFactory::edge($source, SymbolPath::forClass('App\Db', 'Connection'));
+        $swapped = ViolationFactory::edge($source, SymbolPath::forClass('App\Db', 'Statement'));
+
+        $filter = new BaselineFilter(self::baselineFor($recorded));
+
+        self::assertFalse($filter->shouldInclude($recorded));
+        self::assertTrue($filter->shouldInclude($swapped));
+    }
+
+    /**
+     * An entry the loader could not apply is not in `entries` at all, so it
+     * cannot suppress — the governing invariant, observed from the outside.
+     */
+    #[Test]
+    public function itSuppressesNothingForAnEmptyBaseline(): void
+    {
+        $filter = new BaselineFilter(new Baseline(
             generated: new DateTimeImmutable(),
+            scope: ['src'],
             entries: [],
-        );
+        ));
 
-        $filter = new BaselineFilter($baseline, $this->hasher);
-
-        self::assertTrue($filter->shouldInclude($violation), 'New violation should pass through');
+        self::assertTrue($filter->shouldInclude(
+            ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15),
+        ));
     }
 
     #[Test]
-    public function itPassesViolationFromDifferentFile(): void
+    public function itReportsEntriesWhoseGroupDidNotAppear(): void
     {
-        $violation = new Violation(
-            location: new Location(RelativePath::fromString('src/Bar.php'), 45),
-            symbolPath: SymbolPath::forMethod('App', 'Bar', 'baz'),
-            ruleName: 'complexity',
-            violationCode: 'complexity',
-            message: 'Complexity 15 exceeds 10',
-            severity: Severity::Warning,
-        );
+        $repaired = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'repaired'), 15);
+        $stillFailing = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'failing'), 15);
 
-        $baseline = new Baseline(
-            version: 1,
-            generated: new DateTimeImmutable(),
-            entries: [
-                'method:App\Foo::bar' => [
-                    new BaselineEntry('complexity', 'different'),
-                ],
-            ],
-        );
+        $filter = new BaselineFilter(self::baselineFor($repaired, $stillFailing));
 
-        $filter = new BaselineFilter($baseline, $this->hasher);
+        $resolved = $filter->getResolvedFromBaseline([$stillFailing]);
 
-        self::assertTrue($filter->shouldInclude($violation));
+        self::assertCount(1, $resolved);
+        self::assertSame('method:App\Foo::repaired', $resolved[0]->identity->symbolKey);
     }
 
     #[Test]
-    public function itDetectsResolvedViolations(): void
+    public function itReportsNothingResolvedWhenEveryGroupStillAppears(): void
     {
-        // Current run has only the first violation (second was fixed)
-        $violation1 = new Violation(
-            location: new Location(RelativePath::fromString('src/Foo.php'), 45),
-            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-            ruleName: 'complexity',
-            violationCode: 'complexity',
-            message: 'Complexity 15 exceeds 10',
-            severity: Severity::Warning,
-        );
+        $violation = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
 
-        $violation2 = new Violation(
-            location: new Location(RelativePath::fromString('src/Foo.php'), 10),
-            symbolPath: SymbolPath::forClass('App', 'Foo'),
-            ruleName: 'size',
-            violationCode: 'size',
-            message: 'Class too large',
-            severity: Severity::Warning,
-        );
+        $filter = new BaselineFilter(self::baselineFor($violation));
 
-        // Generate real hashes
-        $hash1 = $this->hasher->hash($violation1);
-        $hash2 = $this->hasher->hash($violation2);
-
-        $entry1 = new BaselineEntry('complexity', $hash1);
-        $entry2 = new BaselineEntry('size', $hash2);
-
-        $baseline = new Baseline(
-            version: 1,
-            generated: new DateTimeImmutable(),
-            entries: [
-                'method:App\Foo::bar' => [$entry1],
-                'class:App\Foo' => [$entry2],
-            ],
-        );
-
-        $filter = new BaselineFilter($baseline, $this->hasher);
-        $resolved = $filter->getResolvedFromBaseline([$violation1]); // Only violation1, violation2 was fixed
-
-        self::assertArrayHasKey('class:App\Foo', $resolved);
-        self::assertCount(1, $resolved['class:App\Foo']);
-        self::assertSame('size', $resolved['class:App\Foo'][0]->rule);
+        self::assertSame([], $filter->getResolvedFromBaseline([$violation]));
     }
 
     #[Test]
-    public function itReturnsEmptyWhenNothingResolved(): void
+    public function itCollapsesAGroupIntoOneMeasuredIdentityKey(): void
     {
-        $violation = new Violation(
-            location: new Location(RelativePath::fromString('src/Foo.php'), 45),
-            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-            ruleName: 'complexity',
-            violationCode: 'complexity',
-            message: 'Complexity 15 exceeds 10',
-            severity: Severity::Warning,
-        );
+        $symbol = SymbolPath::forFile(RelativePath::fromString('src/dup.php'));
 
-        $hash = $this->hasher->hash($violation);
+        $keys = BaselineFilter::measuredIdentityKeys([
+            ViolationFactory::magnitude($symbol, 100, 'duplication.code-duplication', 'duplication.code-duplication'),
+            ViolationFactory::magnitude($symbol, 40, 'duplication.code-duplication', 'duplication.code-duplication'),
+        ]);
 
-        $baseline = new Baseline(
-            version: 1,
-            generated: new DateTimeImmutable(),
-            entries: [
-                'method:App\Foo::bar' => [
-                    new BaselineEntry('complexity', $hash),
-                ],
-            ],
-        );
-
-        $filter = new BaselineFilter($baseline, $this->hasher);
-        $resolved = $filter->getResolvedFromBaseline([$violation]);
-
-        self::assertEmpty($resolved);
+        self::assertCount(1, $keys);
     }
 
-    #[Test]
-    public function itHashStableAcrossLineChanges(): void
+    private static function baselineFor(Violation ...$violations): Baseline
     {
-        // Violation originally at line 45
-        $violation1 = new Violation(
-            location: new Location(RelativePath::fromString('src/Foo.php'), 45),
-            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-            ruleName: 'complexity',
-            violationCode: 'complexity',
-            message: 'Complexity 15 exceeds 10',
-            severity: Severity::Warning,
-        );
+        $entries = [];
+        foreach ($violations as $violation) {
+            $identity = BaselineIdentity::forViolation($violation);
+            $entries[] = new BaselineEntry(
+                $identity,
+                $violation->metricValue !== null && $identity->edge === null ? [$violation->metricValue] : null,
+                1,
+            );
+        }
 
-        $hash = $this->hasher->hash($violation1);
-
-        $baseline = new Baseline(
-            version: 1,
+        return new Baseline(
             generated: new DateTimeImmutable(),
-            entries: [
-                'method:App\Foo::bar' => [
-                    new BaselineEntry('complexity', $hash),
-                ],
-            ],
-        );
-
-        // Same violation now at line 55 (line drift)
-        $violation2 = new Violation(
-            location: new Location(RelativePath::fromString('src/Foo.php'), 55),
-            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-            ruleName: 'complexity',
-            violationCode: 'complexity',
-            message: 'Complexity 15 exceeds 10',
-            severity: Severity::Warning,
-        );
-
-        $filter = new BaselineFilter($baseline, $this->hasher);
-
-        self::assertFalse(
-            $filter->shouldInclude($violation2),
-            'Violation should still be filtered despite line change',
+            scope: ['src'],
+            entries: $entries,
         );
     }
 }

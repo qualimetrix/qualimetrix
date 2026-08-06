@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Qualimetrix\Baseline\BaselineEntry;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\Filter\BaselineFilter;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
-use Qualimetrix\Baseline\ViolationHasher;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Util\NamespaceMatcher;
@@ -28,7 +28,6 @@ final readonly class ViolationFilterPipeline
 {
     public function __construct(
         private BaselineLoader $baselineLoader,
-        private ViolationHasher $violationHasher,
         private SuppressionFilter $suppressionFilter,
         private ConfigurationProviderInterface $configurationProvider,
     ) {}
@@ -65,29 +64,35 @@ final readonly class ViolationFilterPipeline
         if ($options->baselinePath !== null && $options->baselinePath !== '') {
             $baseline = $this->baselineLoader->load($options->baselinePath);
 
-            // Detect stale entries
-            $existingCanonicals = array_values(array_unique(
-                array_map(
-                    fn(Violation $v) => $v->symbolPath->toCanonical(),
-                    $violations,
+            // Detect stale entries — keyed on the complete identity (symbol,
+            // channel, dependency edge), not on the symbol alone, so a
+            // repaired finding strands its own entry instead of its
+            // neighbours'.
+            $staleEntries = $baseline->staleEntries(BaselineFilter::measuredIdentityKeys($violations));
+            $staleKeys = array_map(
+                static fn(BaselineEntry $entry) => \sprintf(
+                    '%s [%s]',
+                    $entry->identity->describe(),
+                    $entry->selector()->value,
                 ),
+                $staleEntries,
+            );
+            $staleCount = \count($staleEntries);
+
+            // A stale entry is reported, never acted on: it does not fail the
+            // run and it does not disable its neighbours (§5.7). Under the
+            // per-identity key of §5.1 an entry goes stale the moment one
+            // channel of a symbol is repaired, so the old "any stale key
+            // skips the filter" rule would answer the first repair by
+            // resurfacing every accepted finding at once — the tool punishing
+            // an improvement.
+            $baselineFilter = new BaselineFilter($baseline);
+            $beforeCount = \count($violations);
+            $violations = array_values(array_filter(
+                $violations,
+                fn(Violation $v) => $baselineFilter->shouldInclude($v),
             ));
-            $staleKeys = $baseline->getStaleKeys($existingCanonicals);
-
-            foreach ($staleKeys as $key) {
-                $staleCount += \count($baseline->entries[$key] ?? []);
-            }
-
-            // Apply filter only if stale check passes (caller decides what to do with stale data)
-            if ($staleKeys === [] || $options->ignoreStaleBaseline) {
-                $baselineFilter = new BaselineFilter($baseline, $this->violationHasher);
-                $beforeCount = \count($violations);
-                $violations = array_values(array_filter(
-                    $violations,
-                    fn(Violation $v) => $baselineFilter->shouldInclude($v),
-                ));
-                $baselineFiltered = $beforeCount - \count($violations);
-            }
+            $baselineFiltered = $beforeCount - \count($violations);
         }
 
         // 2. Suppression filter

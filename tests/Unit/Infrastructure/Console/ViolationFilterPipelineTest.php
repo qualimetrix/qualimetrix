@@ -9,9 +9,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
+use Qualimetrix\Baseline\BaselineEntryParser;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
-use Qualimetrix\Baseline\ViolationHasher;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Path\RelativePath;
@@ -23,6 +23,7 @@ use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\Console\ViolationFilterOptions;
 use Qualimetrix\Infrastructure\Console\ViolationFilterPipeline;
+use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
 
 /**
  * Tests for baseline, suppression, path exclusion, and git scope filters
@@ -31,15 +32,8 @@ use Qualimetrix\Infrastructure\Console\ViolationFilterPipeline;
 #[CoversClass(ViolationFilterPipeline::class)]
 final class ViolationFilterPipelineTest extends TestCase
 {
-    private ViolationHasher $hasher;
-
     /** @var list<string> */
     private array $tempFiles = [];
-
-    protected function setUp(): void
-    {
-        $this->hasher = new ViolationHasher();
-    }
 
     protected function tearDown(): void
     {
@@ -55,19 +49,19 @@ final class ViolationFilterPipelineTest extends TestCase
     #[Test]
     public function baselineFilterRemovesMatchingViolations(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
-        $hash = $this->hasher->hash($violation);
-        $canonical = $violation->symbolPath->toCanonical();
+        $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
+        $symbolKey = $violation->symbolPath->toCanonical();
 
         $baselinePath = $this->writeBaselineFile([
-            $canonical => [['rule' => 'complexity.cyclomatic', 'hash' => $hash]],
+            $symbolKey => [
+                ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+            ],
         ]);
 
         $pipeline = $this->createPipeline();
 
         $options = new ViolationFilterOptions(
             baselinePath: $baselinePath,
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
             excludeNamespaces: [],
@@ -89,7 +83,6 @@ final class ViolationFilterPipelineTest extends TestCase
 
         $options = new ViolationFilterOptions(
             baselinePath: null,
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
             excludeNamespaces: [],
@@ -111,7 +104,6 @@ final class ViolationFilterPipelineTest extends TestCase
 
         $options = new ViolationFilterOptions(
             baselinePath: '',
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
             excludeNamespaces: [],
@@ -124,68 +116,77 @@ final class ViolationFilterPipelineTest extends TestCase
         self::assertSame(0, $result->baselineFiltered);
     }
 
+    /**
+     * A stale entry on an unrelated symbol is reported and changes nothing
+     * else — the case v5 also handled, kept as a regression guard.
+     */
     #[Test]
-    public function staleBaselineBlocksFilteringUnlessIgnored(): void
+    public function itReportsAStaleEntryWithoutDisablingTheRestOfTheBaseline(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
-        $hash = $this->hasher->hash($violation);
-        $canonical = $violation->symbolPath->toCanonical();
+        $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
+        $symbolKey = $violation->symbolPath->toCanonical();
 
-        // Baseline with entries for a canonical that doesn't exist in current violations
+        // Baseline with an entry matching the current violation, plus an
+        // entry for an identity that does not exist in current violations.
         $baselinePath = $this->writeBaselineFile([
-            $canonical => [['rule' => 'complexity.cyclomatic', 'hash' => $hash]],
-            'stale::canonical' => [['rule' => 'some.rule', 'hash' => 'aaaa1111bbbb2222']],
+            $symbolKey => [
+                ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+            ],
+            'class:App\\Service\\OtherClass' => [
+                ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 3],
+            ],
         ]);
 
-        $pipeline = $this->createPipeline();
-
-        // Without ignoreStaleBaseline — filtering should NOT be applied
-        $options = new ViolationFilterOptions(
-            baselinePath: $baselinePath,
-            ignoreStaleBaseline: false,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
-        );
-
-        $result = $pipeline->filter([$violation], $options);
-
-        // Violation is NOT filtered because stale keys prevent baseline application
-        self::assertCount(1, $result->violations);
-        self::assertSame(0, $result->baselineFiltered);
-        self::assertNotEmpty($result->staleBaselineKeys);
-        self::assertSame(1, $result->staleBaselineCount);
-    }
-
-    #[Test]
-    public function staleBaselineIgnoredWhenFlagSet(): void
-    {
-        $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
-        $hash = $this->hasher->hash($violation);
-        $canonical = $violation->symbolPath->toCanonical();
-
-        $baselinePath = $this->writeBaselineFile([
-            $canonical => [['rule' => 'complexity.cyclomatic', 'hash' => $hash]],
-            'stale::canonical' => [['rule' => 'some.rule', 'hash' => 'aaaa1111bbbb2222']],
-        ]);
-
-        $pipeline = $this->createPipeline();
-
-        // With ignoreStaleBaseline — filtering IS applied despite stale entries
-        $options = new ViolationFilterOptions(
-            baselinePath: $baselinePath,
-            ignoreStaleBaseline: true,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
-        );
-
-        $result = $pipeline->filter([$violation], $options);
+        $result = $this->createPipeline()->filter([$violation], $this->baselineOptions($baselinePath));
 
         self::assertCount(0, $result->violations);
         self::assertSame(1, $result->baselineFiltered);
+        self::assertSame(1, $result->staleBaselineCount);
+        self::assertStringContainsString('class:App\Service\OtherClass', $result->staleBaselineKeys[0]);
+    }
+
+    /**
+     * The case the per-identity key of §5.1 introduced and the one v5's
+     * symbol-level predicate could not produce: one channel of a symbol is
+     * repaired while another still fires. The repaired entry goes stale, and
+     * its neighbour under the same symbol must keep suppressing (§5.7).
+     */
+    #[Test]
+    public function itKeepsApplyingSiblingEntriesWhenOneChannelOfASymbolIsRepaired(): void
+    {
+        $stillFiring = $this->makeViolation(
+            'src/Service/UserService.php',
+            'App\\Service',
+            'UserService',
+            metricValue: 25,
+        );
+        $symbolKey = $stillFiring->symbolPath->toCanonical();
+
+        // Two entries under one symbol; only the cyclomatic one still fires.
+        $baselinePath = $this->writeBaselineFile([
+            $symbolKey => [
+                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+                ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
+            ],
+        ]);
+
+        $result = $this->createPipeline()->filter([$stillFiring], $this->baselineOptions($baselinePath));
+
+        self::assertCount(0, $result->violations, 'The surviving entry must still suppress its finding.');
+        self::assertSame(1, $result->baselineFiltered);
+        self::assertSame(1, $result->staleBaselineCount);
+        self::assertStringContainsString('code-smell.goto', $result->staleBaselineKeys[0]);
+    }
+
+    private function baselineOptions(string $baselinePath): ViolationFilterOptions
+    {
+        return new ViolationFilterOptions(
+            baselinePath: $baselinePath,
+            disableSuppression: true,
+            excludePaths: [],
+            excludeNamespaces: [],
+            gitScope: null,
+        );
     }
 
     // -- Suppression filter (step 2) --
@@ -211,7 +212,6 @@ final class ViolationFilterPipelineTest extends TestCase
 
         $options = new ViolationFilterOptions(
             baselinePath: null,
-            ignoreStaleBaseline: false,
             disableSuppression: false,
             excludePaths: [],
             excludeNamespaces: [],
@@ -244,7 +244,6 @@ final class ViolationFilterPipelineTest extends TestCase
 
         $options = new ViolationFilterOptions(
             baselinePath: null,
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
             excludeNamespaces: [],
@@ -269,7 +268,6 @@ final class ViolationFilterPipelineTest extends TestCase
 
         $options = new ViolationFilterOptions(
             baselinePath: null,
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: ['vendor'],
             excludeNamespaces: [],
@@ -296,15 +294,13 @@ final class ViolationFilterPipelineTest extends TestCase
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $pipeline = new ViolationFilterPipeline(
-            new BaselineLoader(),
-            new ViolationHasher(),
+            $this->createBaselineLoader(),
             new SuppressionFilter(),
             $configProvider,
         );
 
         $options = new ViolationFilterOptions(
             baselinePath: null,
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
             excludeNamespaces: [],
@@ -331,15 +327,13 @@ final class ViolationFilterPipelineTest extends TestCase
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $pipeline = new ViolationFilterPipeline(
-            new BaselineLoader(),
-            new ViolationHasher(),
+            $this->createBaselineLoader(),
             new SuppressionFilter(),
             $configProvider,
         );
 
         $options = new ViolationFilterOptions(
             baselinePath: null,
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: ['vendor'],
             excludeNamespaces: [],
@@ -362,7 +356,6 @@ final class ViolationFilterPipelineTest extends TestCase
 
         $options = new ViolationFilterOptions(
             baselinePath: null,
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
             excludeNamespaces: [],
@@ -390,15 +383,13 @@ final class ViolationFilterPipelineTest extends TestCase
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $pipeline = new ViolationFilterPipeline(
-            new BaselineLoader(),
-            new ViolationHasher(),
+            $this->createBaselineLoader(),
             new SuppressionFilter(),
             $configProvider,
         );
 
         $options = new ViolationFilterOptions(
             baselinePath: null,
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
             excludeNamespaces: [],
@@ -425,15 +416,13 @@ final class ViolationFilterPipelineTest extends TestCase
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $pipeline = new ViolationFilterPipeline(
-            new BaselineLoader(),
-            new ViolationHasher(),
+            $this->createBaselineLoader(),
             new SuppressionFilter(),
             $configProvider,
         );
 
         $options = new ViolationFilterOptions(
             baselinePath: null,
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
             excludeNamespaces: [],
@@ -465,15 +454,13 @@ final class ViolationFilterPipelineTest extends TestCase
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $pipeline = new ViolationFilterPipeline(
-            new BaselineLoader(),
-            new ViolationHasher(),
+            $this->createBaselineLoader(),
             new SuppressionFilter(),
             $configProvider,
         );
 
         $options = new ViolationFilterOptions(
             baselinePath: null,
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
             excludeNamespaces: [],
@@ -500,15 +487,13 @@ final class ViolationFilterPipelineTest extends TestCase
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $pipeline = new ViolationFilterPipeline(
-            new BaselineLoader(),
-            new ViolationHasher(),
+            $this->createBaselineLoader(),
             new SuppressionFilter(),
             $configProvider,
         );
 
         $options = new ViolationFilterOptions(
             baselinePath: null,
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
             excludeNamespaces: ['App\\Entity'],
@@ -531,7 +516,6 @@ final class ViolationFilterPipelineTest extends TestCase
 
         $options = new ViolationFilterOptions(
             baselinePath: null,
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
             excludeNamespaces: [],
@@ -564,7 +548,6 @@ final class ViolationFilterPipelineTest extends TestCase
 
         $options = new ViolationFilterOptions(
             baselinePath: null,
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
             excludeNamespaces: [],
@@ -589,7 +572,6 @@ final class ViolationFilterPipelineTest extends TestCase
 
         $options = new ViolationFilterOptions(
             baselinePath: null,
-            ignoreStaleBaseline: false,
             disableSuppression: true,
             excludePaths: [],
             excludeNamespaces: [],
@@ -609,6 +591,7 @@ final class ViolationFilterPipelineTest extends TestCase
         string $namespace = 'App',
         string $class = 'TestClass',
         string $ruleName = 'complexity.cyclomatic',
+        int|float|null $metricValue = null,
     ): Violation {
         return new Violation(
             location: new Location(RelativePath::fromString($file), 10),
@@ -617,6 +600,7 @@ final class ViolationFilterPipelineTest extends TestCase
             violationCode: $ruleName . '.method',
             message: 'CCN too high',
             severity: Severity::Error,
+            metricValue: $metricValue,
         );
     }
 
@@ -627,8 +611,7 @@ final class ViolationFilterPipelineTest extends TestCase
             ->willReturn(new AnalysisConfiguration());
 
         return new ViolationFilterPipeline(
-            new BaselineLoader(),
-            new ViolationHasher(),
+            $this->createBaselineLoader(),
             new SuppressionFilter(),
             $configProvider,
         );
@@ -644,19 +627,28 @@ final class ViolationFilterPipelineTest extends TestCase
         $configProvider->method('getConfiguration')->willReturn($config);
 
         return new ViolationFilterPipeline(
-            new BaselineLoader(),
-            new ViolationHasher(),
+            $this->createBaselineLoader(),
             new SuppressionFilter(),
             $configProvider,
         );
     }
 
     /**
-     * Writes a temporary baseline JSON file.
-     *
-     * @param array<string, list<array{rule: string, hash: string}>> $violations
+     * A loader wired with the channels these tests need declared — see
+     * {@see StubChannelDeclarationRegistry::withDefaults()}.
      */
-    private function writeBaselineFile(array $violations): string
+    private function createBaselineLoader(): BaselineLoader
+    {
+        return new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
+    }
+
+    /**
+     * Writes a temporary version 10 baseline JSON file.
+     *
+     * @param array<string, list<array<string, mixed>>> $entries symbol key => list of entry objects
+     *                                                           (each in the `channel`/`magnitudes`/`count` shape)
+     */
+    private function writeBaselineFile(array $entries): string
     {
         $tmpBase = (string) tempnam(sys_get_temp_dir(), 'qmx_baseline_');
         $path = $tmpBase . '.json';
@@ -664,9 +656,10 @@ final class ViolationFilterPipelineTest extends TestCase
         $this->tempFiles[] = $path;
 
         $data = [
-            'version' => 5,
+            'version' => 10,
             'generated' => (new DateTimeImmutable())->format('c'),
-            'violations' => $violations,
+            'scope' => ['src'],
+            'entries' => $entries,
         ];
 
         file_put_contents($path, json_encode($data, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT));

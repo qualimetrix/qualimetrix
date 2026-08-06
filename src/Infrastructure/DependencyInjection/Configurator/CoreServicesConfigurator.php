@@ -6,6 +6,8 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Psr\Log\LoggerInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Time\ClockInterface;
+use Qualimetrix\Core\Time\SystemClock;
 use Qualimetrix\Infrastructure\Console\Progress\DelegatingProgressReporter;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
@@ -22,9 +24,22 @@ final class CoreServicesConfigurator implements ContainerConfiguratorInterface
     public function configure(ContainerBuilder $container): void
     {
         $this->configureDefaults($container);
+        $this->registerClock($container);
         $this->registerLogging($container);
         $this->registerProgress($container);
         $this->registerProfiler($container);
+    }
+
+    /**
+     * Registers the wall clock behind {@see ClockInterface}.
+     *
+     * Anything that stamps an artefact with a moment injects the contract,
+     * so a test can hold time still and assert the artefact's bytes.
+     */
+    private function registerClock(ContainerBuilder $container): void
+    {
+        $container->register(SystemClock::class);
+        $container->setAlias(ClockInterface::class, SystemClock::class);
     }
 
     /**

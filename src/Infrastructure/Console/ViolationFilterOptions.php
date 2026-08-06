@@ -15,7 +15,6 @@ final readonly class ViolationFilterOptions
      */
     public function __construct(
         public ?string $baselinePath,
-        public bool $ignoreStaleBaseline,
         public bool $disableSuppression,
         public array $excludePaths,
         public array $excludeNamespaces,

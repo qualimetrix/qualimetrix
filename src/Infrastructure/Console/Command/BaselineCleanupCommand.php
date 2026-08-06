@@ -48,26 +48,39 @@ final class BaselineCleanupCommand extends Command
             return self::FAILURE;
         }
 
-        // Load baseline
+        // Load baseline. The "was N" figure counts the whole file, inert
+        // entries included: this command removes them too, and a total that
+        // silently omitted them would describe a file the user does not have.
         $baseline = $this->baselineLoader->load($baselinePath);
-        $originalCount = $baseline->count();
+        $originalCount = $baseline->totalCount();
 
         // Find stale entries (symbols whose files no longer exist)
         $cleanedEntries = [];
+        $cleanedInert = [];
         $staleKeys = [];
+        $staleCount = 0;
 
-        foreach ($baseline->entries as $canonical => $entries) {
-            $filePath = $this->extractFilePathFromCanonical($canonical);
-
-            if ($filePath === null || file_exists($filePath)) {
-                // Keep entries without file path info or with existing files
-                $cleanedEntries[$canonical] = $entries;
+        foreach ($baseline->entries as $entry) {
+            if ($this->symbolFileExists($entry->identity->symbolKey)) {
+                $cleanedEntries[] = $entry;
             } else {
-                $staleKeys[] = $canonical;
+                $staleKeys[$entry->identity->symbolKey] = true;
+                ++$staleCount;
             }
         }
 
-        $staleCount = $originalCount - array_sum(array_map(count(...), $cleanedEntries));
+        // Inert entries follow their symbol too: the file being gone is a
+        // fact about the key, not about whether the entry parsed — and they
+        // are counted, because a removal the total does not mention reads as
+        // "nothing changed" over a file that just lost data.
+        foreach ($baseline->inertEntries as $inert) {
+            if ($this->symbolFileExists($inert->symbolKey)) {
+                $cleanedInert[] = $inert;
+            } else {
+                $staleKeys[$inert->symbolKey] = true;
+                ++$staleCount;
+            }
+        }
 
         // If no stale entries, nothing to do
         if ($staleCount === 0) {
@@ -76,11 +89,15 @@ final class BaselineCleanupCommand extends Command
             return self::SUCCESS;
         }
 
-        // Create new baseline without stale entries
+        // Create new baseline without stale entries. The loaded content hash
+        // travels with it, so the write refuses to clobber a file someone
+        // else changed in the meantime.
         $cleanedBaseline = new Baseline(
-            version: $baseline->version,
             generated: $baseline->generated,
+            scope: $baseline->scope,
             entries: $cleanedEntries,
+            inertEntries: $cleanedInert,
+            sourceContentHash: $baseline->sourceContentHash,
         );
 
         // Write cleaned baseline
@@ -99,15 +116,14 @@ final class BaselineCleanupCommand extends Command
 
         if ($output->isVerbose()) {
             $output->writeln('<comment>Removed symbols:</comment>');
-            foreach ($staleKeys as $canonical) {
-                $entryCount = \count($baseline->entries[$canonical] ?? []);
-                $output->writeln(\sprintf('  - %s (%d entries)', $canonical, $entryCount));
+            foreach (array_keys($staleKeys) as $canonical) {
+                $output->writeln(\sprintf('  - %s', $canonical));
             }
         }
 
-        $newCount = $cleanedBaseline->count();
+        $newCount = $cleanedBaseline->totalCount();
         $output->writeln(\sprintf(
-            '<info>Baseline updated: %d violations (was %d)</info>',
+            '<info>Baseline updated: %d entries (was %d)</info>',
             $newCount,
             $originalCount,
         ));
@@ -116,18 +132,17 @@ final class BaselineCleanupCommand extends Command
     }
 
     /**
-     * Extracts file path from canonical symbol path if available.
+     * Whether the file a symbol key names still exists.
      *
-     * Canonical formats:
-     * - file:path/to/file.php -> returns path/to/file.php
-     * - class:App\Class, method:App\Class::method, ns:App -> returns null (no file info)
+     * Only `file:` keys carry a path; `class:`, `method:` and `ns:` keys are
+     * FQN-based and carry no file information, so they are always kept.
      */
-    private function extractFilePathFromCanonical(string $canonical): ?string
+    private function symbolFileExists(string $canonical): bool
     {
-        if (str_starts_with($canonical, 'file:')) {
-            return substr($canonical, 5);
+        if (!str_starts_with($canonical, 'file:')) {
+            return true;
         }
 
-        return null;
+        return file_exists(substr($canonical, 5));
     }
 }

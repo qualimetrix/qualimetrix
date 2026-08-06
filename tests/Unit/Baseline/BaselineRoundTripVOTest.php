@@ -10,12 +10,16 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEntry;
+use Qualimetrix\Baseline\BaselineEntryParser;
+use Qualimetrix\Baseline\BaselineIdentity;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Violation\ViolationChannel;
+use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
 
 /**
- * ADR 0015 Phase 4 regression pin: BaselineWriter now relies on
+ * ADR 0015 Phase 4 regression pin: BaselineWriter relies on
  * PathFactory::tryProjectRelative() for canonical key relativization. This
  * test asserts the writer→loader contract still round-trips identically:
  * the same canonical keys are restored, and out-of-tree absolute file: keys
@@ -32,7 +36,9 @@ final class BaselineRoundTripVOTest extends TestCase
     protected function setUp(): void
     {
         $this->writer = new BaselineWriter();
-        $this->loader = new BaselineLoader();
+        $this->loader = new BaselineLoader(
+            new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()),
+        );
         $this->tempDir = sys_get_temp_dir() . '/qmx_baseline_vo_test_' . uniqid();
         mkdir($this->tempDir, 0755, true);
     }
@@ -52,77 +58,94 @@ final class BaselineRoundTripVOTest extends TestCase
     #[Test]
     public function itRoundTripsRelativeFileKeys(): void
     {
-        $original = new Baseline(
-            version: 5,
-            generated: new DateTimeImmutable('2026-05-19T12:00:00+00:00'),
-            entries: [
-                'file:src/Service/UserService.php' => [
-                    new BaselineEntry('complexity.cyclomatic', 'h1'),
-                    new BaselineEntry('complexity.cognitive', 'h2'),
-                ],
-                'class:App\\Service\\UserService' => [
-                    new BaselineEntry('coupling.cbo', 'h3'),
-                ],
-            ],
+        $reloaded = $this->roundTrip(
+            'file:src/Service/UserService.php',
+            'class:App\Service\UserService',
         );
 
-        $path = $this->tempDir . '/baseline.json';
-        $this->writer->write($original, $path, AbsolutePath::fromString('/home/user/project'));
-
-        $reloaded = $this->loader->load($path);
-
-        self::assertSame(array_keys($original->entries), array_keys($reloaded->entries));
-        self::assertCount(2, $reloaded->entries['file:src/Service/UserService.php']);
-        self::assertCount(1, $reloaded->entries['class:App\\Service\\UserService']);
+        self::assertEqualsCanonicalizing(
+            ['file:src/Service/UserService.php', 'class:App\Service\UserService'],
+            $reloaded->symbolKeys(),
+        );
     }
 
     #[Test]
     public function itRoundTripsAbsoluteFileKeysAfterRelativization(): void
     {
-        $original = new Baseline(
-            version: 5,
-            generated: new DateTimeImmutable(),
-            entries: [
-                'file:/home/user/project/src/Foo.php' => [
-                    new BaselineEntry('size.loc', 'abc'),
-                ],
-            ],
-        );
+        $reloaded = $this->roundTrip('file:/home/user/project/src/Foo.php');
 
-        $path = $this->tempDir . '/baseline.json';
-        $this->writer->write($original, $path, AbsolutePath::fromString('/home/user/project'));
-
-        $reloaded = $this->loader->load($path);
-
-        self::assertSame(['file:src/Foo.php'], array_keys($reloaded->entries));
+        self::assertSame(['file:src/Foo.php'], $reloaded->symbolKeys());
     }
 
     #[Test]
     public function itPreservesOutOfTreeAbsoluteFileKeys(): void
     {
+        $reloaded = $this->roundTrip(
+            'file:/external/vendor/src/Bar.php',
+            'file:/home/user/project/src/InTree.php',
+        );
+
+        self::assertEqualsCanonicalizing(
+            ['file:/external/vendor/src/Bar.php', 'file:src/InTree.php'],
+            $reloaded->symbolKeys(),
+            'Out-of-tree absolute paths must be preserved verbatim',
+        );
+    }
+
+    #[Test]
+    public function itKeepsSeveralChannelsUnderOneSymbolApart(): void
+    {
+        $symbol = 'file:src/Service/UserService.php';
+
         $original = new Baseline(
-            version: 5,
-            generated: new DateTimeImmutable(),
+            generated: new DateTimeImmutable('2026-05-19T12:00:00+00:00'),
+            scope: ['src'],
             entries: [
-                'file:/external/vendor/src/Bar.php' => [
-                    new BaselineEntry('size.loc', 'xyz'),
-                ],
-                'file:/home/user/project/src/InTree.php' => [
-                    new BaselineEntry('complexity.cyclomatic', 'def'),
-                ],
+                new BaselineEntry(
+                    new BaselineIdentity($symbol, new ViolationChannel('code-smell.goto', 'code-smell.goto')),
+                    null,
+                    1,
+                ),
+                new BaselineEntry(
+                    new BaselineIdentity(
+                        $symbol,
+                        new ViolationChannel('duplication.code-duplication', 'duplication.code-duplication'),
+                    ),
+                    [12.0],
+                    1,
+                ),
             ],
         );
 
+        $reloaded = $this->writeAndLoad($original);
+
+        self::assertSame(2, $reloaded->count());
+        self::assertSame([$symbol], $reloaded->symbolKeys());
+    }
+
+    private function roundTrip(string ...$symbolKeys): Baseline
+    {
+        $entries = [];
+        foreach ($symbolKeys as $symbolKey) {
+            $entries[] = new BaselineEntry(
+                new BaselineIdentity($symbolKey, new ViolationChannel('code-smell.goto', 'code-smell.goto')),
+                null,
+                1,
+            );
+        }
+
+        return $this->writeAndLoad(new Baseline(
+            generated: new DateTimeImmutable('2026-05-19T12:00:00+00:00'),
+            scope: ['src'],
+            entries: $entries,
+        ));
+    }
+
+    private function writeAndLoad(Baseline $baseline): Baseline
+    {
         $path = $this->tempDir . '/baseline.json';
-        $this->writer->write($original, $path, AbsolutePath::fromString('/home/user/project'));
+        $this->writer->write($baseline, $path, AbsolutePath::fromString('/home/user/project'));
 
-        $reloaded = $this->loader->load($path);
-
-        self::assertArrayHasKey(
-            'file:/external/vendor/src/Bar.php',
-            $reloaded->entries,
-            'Out-of-tree absolute paths must be preserved verbatim',
-        );
-        self::assertArrayHasKey('file:src/InTree.php', $reloaded->entries);
+        return $this->loader->load($path);
     }
 }

@@ -4,41 +4,159 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Baseline;
 
+use InvalidArgumentException;
+use Qualimetrix\Core\Violation\ChannelShape;
+
 /**
- * Represents a single violation entry in baseline.
+ * One accepted group: an identity, how many findings shared it at capture,
+ * and — for a `magnitude` channel — the magnitude each of them reported.
  *
- * Since version 2/3, the symbol path is stored as the key (not in the entry).
+ * ```text
+ * entry(identity) = { magnitudes: number[] | null, count: int }
+ * ```
+ *
+ * The comparison that decides whether a later run's group is still accepted
+ * lives with the filter, not here (§5.1 of the baseline-ceiling plan); this
+ * class owns the entry's *shape* and its normal form.
+ *
+ * **Magnitudes are normalized here, not at the call site.** Every
+ * construction path — capture, load, a future `update` — goes through this
+ * constructor, so `round($v, 6)` applies once and applies to all of them.
+ * Normalizing at capture only would leave the stored side rounded and the
+ * recomputed side raw, which is exactly the asymmetry that makes a zero
+ * tolerance unsound.
+ *
+ * **The list is stored ascending.** That is a determinism convention and
+ * nothing more: the acceptance rule counts members per severity level and
+ * never reads the list positionally, so no consumer re-sorts it and no
+ * consumer may assume the order means anything. Ascending is checkable
+ * without knowing the channel's direction, which computed metrics resolve
+ * only at run time.
  */
 final readonly class BaselineEntry
 {
-    public function __construct(
-        public string $rule,
-        public string $hash,
-    ) {}
+    /** Decimal places every stored and compared magnitude is rounded to (§5.1). */
+    public const int MAGNITUDE_PRECISION = 6;
+
+    /** @var ?list<float> */
+    public ?array $magnitudes;
 
     /**
-     * Creates entry from array representation (for deserialization).
+     * @param ?list<int|float> $magnitudes present exactly for `magnitude` channels
      *
-     * @param array{rule: string, hash: string} $data
+     * @throws InvalidArgumentException when the entry cannot be a valid entry at all —
+     *                                  a non-positive count, a magnitude list whose length
+     *                                  disagrees with it, or a non-finite magnitude. The
+     *                                  loader catches this and turns the line inert rather
+     *                                  than failing the run (§6)
      */
-    public static function fromArray(array $data): self
-    {
-        return new self(
-            rule: $data['rule'],
-            hash: $data['hash'],
-        );
+    public function __construct(
+        public BaselineIdentity $identity,
+        ?array $magnitudes,
+        public int $count,
+        public ?BaselineEntryMode $mode = null,
+    ) {
+        if ($count < 1) {
+            throw new InvalidArgumentException(\sprintf(
+                'A baseline entry count must be a positive integer, got %d.',
+                $count,
+            ));
+        }
+
+        if ($magnitudes === null) {
+            $this->magnitudes = null;
+
+            return;
+        }
+
+        if (\count($magnitudes) !== $count) {
+            throw new InvalidArgumentException(\sprintf(
+                'A baseline entry must hold exactly %d magnitudes, got %d.',
+                $count,
+                \count($magnitudes),
+            ));
+        }
+
+        $normalized = [];
+        foreach ($magnitudes as $magnitude) {
+            $normalized[] = self::normalizeMagnitude($magnitude);
+        }
+
+        usort($normalized, static fn(float $a, float $b): int => $a <=> $b);
+
+        $this->magnitudes = $normalized;
     }
 
     /**
-     * Converts entry to array representation (for serialization).
+     * Rounds a magnitude to the stored precision.
      *
-     * @return array{rule: string, hash: string}
+     * Six decimal places survive any `serialize_precision`, which is what
+     * makes the stored value round-trip to itself regardless of the reader's
+     * ini — and therefore what earns the zero tolerance in the comparison.
+     * Values that their own rules already rounded (one decimal place for
+     * `maintainability.index` and computed metrics) pass through unchanged.
+     *
+     * Negative zero collapses to positive zero: the two are numerically
+     * equal but spell differently in JSON, and one written form per value is
+     * a precondition for byte stability.
+     *
+     * @throws InvalidArgumentException when the value is NaN or infinite
+     */
+    public static function normalizeMagnitude(int|float $magnitude): float
+    {
+        $value = (float) $magnitude;
+
+        if (!is_finite($value)) {
+            throw new InvalidArgumentException(
+                'A baseline magnitude must be finite — NaN and infinity are not boundaries.',
+            );
+        }
+
+        $rounded = round($value, self::MAGNITUDE_PRECISION);
+
+        // `-0.0 === 0.0` holds, so this catches negative zero as well.
+        return $rounded === 0.0 ? 0.0 : $rounded;
+    }
+
+    /**
+     * The shape this entry claims, read off its own contents. Compared
+     * against the channel's declared shape at load time; a disagreement in
+     * either direction makes the entry inert (§6).
+     */
+    public function shape(): ChannelShape
+    {
+        return $this->magnitudes === null ? ChannelShape::Occurrence : ChannelShape::Magnitude;
+    }
+
+    public function selector(): EntrySelector
+    {
+        return $this->identity->selector();
+    }
+
+    /**
+     * The entry object of §6, with a fixed key order so that the same entry
+     * always produces the same bytes.
+     *
+     * @return array<string, mixed>
      */
     public function toArray(): array
     {
-        return [
-            'rule' => $this->rule,
-            'hash' => $this->hash,
-        ];
+        $data = ['channel' => $this->identity->channel->toKey()];
+
+        if ($this->identity->edge !== null) {
+            $data['edge'] = $this->identity->edge->toArray();
+        }
+
+        if ($this->magnitudes !== null) {
+            $data['magnitudes'] = $this->magnitudes;
+        }
+
+        $data['count'] = $this->count;
+
+        if ($this->mode !== null) {
+            $data['mode'] = $this->mode->value;
+        }
+
+        return $data;
     }
 }

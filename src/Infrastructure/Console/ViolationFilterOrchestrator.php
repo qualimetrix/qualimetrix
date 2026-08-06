@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use InvalidArgumentException;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\RuleExecution\RuleExclusionStats;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
@@ -58,7 +57,6 @@ final readonly class ViolationFilterOrchestrator
 
         $options = new ViolationFilterOptions(
             baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
-            ignoreStaleBaseline: (bool) $input->getOption('baseline-ignore-stale'),
             disableSuppression: (bool) $input->getOption('no-suppression'),
             excludePaths: $cliExcludePaths,
             excludeNamespaces: $cliExcludeNamespaces,
@@ -68,16 +66,15 @@ final readonly class ViolationFilterOrchestrator
         $filterResult = $this->violationFilterPipeline->filter($result->violations, $options);
 
         if ($filterResult->staleBaselineKeys !== []) {
-            $this->handleStaleBaselineOutput($filterResult, $options, $output);
+            $this->reportStaleBaselineEntries($filterResult, $output);
         }
 
         if ($input->getOption('show-resolved') === true && $filterResult->baselineFilter !== null) {
-            $resolved = $filterResult->baselineFilter->getResolvedFromBaseline($result->violations);
-            $resolvedCount = array_sum(array_map(count(...), $resolved));
+            $resolvedCount = \count($filterResult->baselineFilter->getResolvedFromBaseline($result->violations));
 
             if ($resolvedCount > 0) {
                 $output->writeln(\sprintf(
-                    '<info>%d violations from baseline have been resolved!</info>',
+                    '<info>%d baseline entries have been resolved!</info>',
                     $resolvedCount,
                 ));
             }
@@ -196,35 +193,37 @@ final readonly class ViolationFilterOrchestrator
         return implode(', ', $parts);
     }
 
-    private function handleStaleBaselineOutput(
+    /**
+     * Reports entries whose identity the run did not measure — and does
+     * nothing else with them (§5.7).
+     *
+     * The message says what was actually measured. "Symbols no longer exist"
+     * was true while staleness was keyed on the symbol; under the identity of
+     * §5.1 the symbol is usually still right there and one of its channels
+     * simply stopped firing, which the list printed underneath makes plain.
+     *
+     * There is deliberately no `baseline:cleanup` suggestion. That command
+     * selects on a different predicate — whether the `file:` a key names is
+     * gone — so for a `method:`, `class:`, `ns:` or `project:` entry it is a
+     * guaranteed no-op, and advising it would send a user round a loop with
+     * no exit. Removal by identity arrives with `cleanup --remove` in P4.
+     */
+    private function reportStaleBaselineEntries(
         ViolationFilterResult $filterResult,
-        ViolationFilterOptions $options,
         OutputInterface $output,
     ): void {
-        if ($options->ignoreStaleBaseline) {
-            $output->writeln(\sprintf(
-                '<comment>Warning: Baseline contains %d stale entries (symbols no longer exist)</comment>',
-                $filterResult->staleBaselineCount,
-            ));
-            $output->writeln(\sprintf(
-                '<comment>Run `bin/qmx baseline:cleanup %s` to remove them.</comment>',
-                $options->baselinePath ?? '',
-            ));
-
-            return;
-        }
-
         $output->writeln(\sprintf(
-            '<error>Error: Baseline contains %d stale entries (symbols no longer exist):</error>',
+            '<comment>%d baseline entries did not appear in this run:</comment>',
             $filterResult->staleBaselineCount,
         ));
+
         foreach ($filterResult->staleBaselineKeys as $key) {
             $output->writeln(\sprintf('  - %s', $key));
         }
-        $output->writeln('');
-        $output->writeln(\sprintf('Run `bin/qmx baseline:cleanup %s` to remove stale entries.', $options->baselinePath ?? ''));
-        $output->writeln('Or use --baseline-ignore-stale to continue anyway.');
 
-        throw new InvalidArgumentException('Baseline contains stale entries');
+        $output->writeln(
+            '<comment>An entry stops appearing when its finding was repaired, or when configuration '
+            . 'stopped producing it. Nothing is removed automatically; the remaining entries still apply.</comment>',
+        );
     }
 }

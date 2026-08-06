@@ -129,14 +129,13 @@ Export dependency graph in DOT or JSON format.
 
 ### Baseline
 
-| Option                    | Description                                                                                                                                |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--baseline`              | Use baseline file                                                                                                                          |
-| `--generate-baseline`     | Generate baseline from current violations                                                                                                  |
-| `--show-resolved`         | Show count of resolved violations                                                                                                          |
-| `--baseline-ignore-stale` | Ignore stale entries (do not fail)                                                                                                         |
-| `--show-suppressed`       | Show suppressed violations — `@qmx-ignore` tags and per-rule `exclude_namespaces`/`exclude_paths` exclusions, each listed in its own block |
-| `--no-suppression`        | Ignore suppression tags                                                                                                                    |
+| Option                | Description                                                                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `--baseline`          | Use baseline file                                                                                                                          |
+| `--generate-baseline` | Generate baseline from current violations                                                                                                  |
+| `--show-resolved`     | Show count of resolved violations                                                                                                          |
+| `--show-suppressed`   | Show suppressed violations — `@qmx-ignore` tags and per-rule `exclude_namespaces`/`exclude_paths` exclusions, each listed in its own block |
+| `--no-suppression`    | Ignore suppression tags                                                                                                                    |
 
 ### Rules
 

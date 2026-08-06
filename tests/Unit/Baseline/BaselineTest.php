@@ -5,192 +5,214 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Baseline;
 
 use DateTimeImmutable;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Baseline;
+use Qualimetrix\Baseline\BaselineEdge;
 use Qualimetrix\Baseline\BaselineEntry;
+use Qualimetrix\Baseline\BaselineIdentity;
+use Qualimetrix\Baseline\EntrySelector;
+use Qualimetrix\Baseline\InertBaselineEntry;
+use Qualimetrix\Baseline\InertEntryReason;
+use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Violation\ViolationChannel;
 
 #[CoversClass(Baseline::class)]
+#[CoversClass(InertBaselineEntry::class)]
 final class BaselineTest extends TestCase
 {
     #[Test]
-    public function itContainsReturnsTrueForExistingViolation(): void
+    public function itCountsApplicableEntriesOnly(): void
     {
         $baseline = new Baseline(
-            version: 1,
             generated: new DateTimeImmutable(),
-            entries: [
-                'method:App\Foo::bar' => [
-                    new BaselineEntry('complexity', 'a1b2c3d4'),
-                ],
-            ],
+            scope: ['src'],
+            entries: [self::entry('method:App\Foo::bar'), self::entry('method:App\Foo::baz')],
+            inertEntries: [self::inert('method:App\Foo::qux')],
         );
 
-        self::assertTrue($baseline->contains('method:App\Foo::bar', 'a1b2c3d4'));
+        self::assertSame(2, $baseline->count());
     }
 
     #[Test]
-    public function itContainsReturnsFalseForNonExistingViolation(): void
+    public function itFindsAnEntryByItsIdentity(): void
     {
-        $baseline = new Baseline(
-            version: 1,
-            generated: new DateTimeImmutable(),
-            entries: [
-                'method:App\Foo::bar' => [
-                    new BaselineEntry('complexity', 'a1b2c3d4'),
-                ],
-            ],
-        );
+        $entry = self::entry('method:App\Foo::bar');
+        $baseline = self::baselineOf($entry);
 
-        self::assertFalse($baseline->contains('method:App\Foo::bar', 'different'));
+        self::assertTrue($baseline->hasIdentity($entry->identity));
+        self::assertSame($entry, $baseline->findByIdentity($entry->identity));
     }
 
     #[Test]
-    public function itContainsReturnsFalseForNonExistingFile(): void
+    public function itDoesNotFindAnIdentityItDoesNotHold(): void
     {
-        $baseline = new Baseline(
-            version: 1,
-            generated: new DateTimeImmutable(),
-            entries: [
-                'method:App\Foo::bar' => [
-                    new BaselineEntry('complexity', 'a1b2c3d4'),
-                ],
-            ],
+        $baseline = self::baselineOf(self::entry('method:App\Foo::bar'));
+
+        self::assertFalse($baseline->hasIdentity(new BaselineIdentity(
+            'method:App\Foo::other',
+            new ViolationChannel('code-smell.goto', 'code-smell.goto'),
+        )));
+    }
+
+    /**
+     * The case `<symbol>#<channel>` cannot address: two forbidden edges out
+     * of one class on one channel agree on every component but the edge.
+     */
+    #[Test]
+    public function itAddressesExactlyOneOfTwoEntriesDifferingOnlyByEdge(): void
+    {
+        $channel = new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation');
+        $toConnection = new BaselineEntry(
+            new BaselineIdentity(
+                'class:App\Web\Controller',
+                $channel,
+                new BaselineEdge('class:App\Db\Connection', DependencyType::New_),
+            ),
+            null,
+            1,
+        );
+        $toStatement = new BaselineEntry(
+            new BaselineIdentity(
+                'class:App\Web\Controller',
+                $channel,
+                new BaselineEdge('class:App\Db\Statement', DependencyType::New_),
+            ),
+            null,
+            1,
         );
 
-        self::assertFalse($baseline->contains('method:App\Bar::baz', 'a1b2c3d4'));
+        $baseline = self::baselineOf($toConnection, $toStatement);
+
+        $found = $baseline->findBySelector($toStatement->selector());
+
+        self::assertCount(1, $found);
+        self::assertSame($toStatement, $found[0]);
     }
 
     #[Test]
-    public function itCountReturnsCorrectTotal(): void
+    public function itFindsAnInertEntryByItsSelectorToo(): void
     {
+        $inert = self::inert('method:App\Foo::qux');
         $baseline = new Baseline(
-            version: 1,
             generated: new DateTimeImmutable(),
-            entries: [
-                'method:App\Foo::bar' => [
-                    new BaselineEntry('complexity', 'a1b2c3d4'),
-                ],
-                'class:App\Foo' => [
-                    new BaselineEntry('size', 'e5f6g7h8'),
-                ],
-                'class:App\Bar' => [
-                    new BaselineEntry('coupling', 'i9j0k1l2'),
-                ],
-            ],
-        );
-
-        self::assertSame(3, $baseline->count());
-    }
-
-    #[Test]
-    public function itCountReturnsZeroForEmptyBaseline(): void
-    {
-        $baseline = new Baseline(
-            version: 1,
-            generated: new DateTimeImmutable(),
+            scope: [],
             entries: [],
+            inertEntries: [$inert],
         );
 
-        self::assertSame(0, $baseline->count());
+        self::assertSame([$inert], $baseline->findBySelector($inert->selector->value));
     }
 
     #[Test]
-    public function itDiffReturnsResolvedViolations(): void
+    public function itFindsNothingForAStringThatIsNotASelector(): void
     {
-        $entry1 = new BaselineEntry('complexity', 'a1b2c3d4');
-        $entry2 = new BaselineEntry('size', 'e5f6g7h8');
-        $entry3 = new BaselineEntry('coupling', 'i9j0k1l2');
+        $baseline = self::baselineOf(self::entry('method:App\Foo::bar'));
 
-        $baseline = new Baseline(
-            version: 1,
-            generated: new DateTimeImmutable(),
-            entries: [
-                'method:App\Foo::bar' => [$entry1],
-                'class:App\Foo' => [$entry2],
-                'class:App\Bar' => [$entry3],
-            ],
-        );
-
-        // Current run has only entry1 and entry3 (entry2 was fixed)
-        $currentHashes = [
-            'method:App\Foo::bar' => ['a1b2c3d4'],
-            'class:App\Bar' => ['i9j0k1l2'],
-        ];
-
-        $resolved = $baseline->diff($currentHashes);
-
-        self::assertArrayHasKey('class:App\Foo', $resolved);
-        self::assertCount(1, $resolved['class:App\Foo']);
-        self::assertSame($entry2, $resolved['class:App\Foo'][0]);
+        self::assertSame([], $baseline->findBySelector('not-a-selector'));
     }
 
     #[Test]
-    public function itDiffReturnsEmptyWhenNothingResolved(): void
+    public function itReportsEntriesWhoseIdentityDidNotAppearInTheRun(): void
     {
-        $baseline = new Baseline(
-            version: 1,
-            generated: new DateTimeImmutable(),
-            entries: [
-                'method:App\Foo::bar' => [
-                    new BaselineEntry('complexity', 'a1b2c3d4'),
-                ],
-            ],
-        );
+        $repaired = self::entry('method:App\Foo::bar');
+        $stillFailing = self::entry('method:App\Foo::baz');
 
-        $currentHashes = [
-            'method:App\Foo::bar' => ['a1b2c3d4'],
-        ];
+        $baseline = self::baselineOf($repaired, $stillFailing);
 
-        $resolved = $baseline->diff($currentHashes);
+        $stale = $baseline->staleEntries([$stillFailing->identity->key()]);
 
-        self::assertEmpty($resolved);
+        self::assertCount(1, $stale);
+        self::assertSame($repaired, $stale[0]);
+    }
+
+    /**
+     * Under the finer identity a repaired finding strands its own entry and
+     * leaves its neighbours under the same symbol applying.
+     */
+    #[Test]
+    public function itLeavesSiblingEntriesUnderOneSymbolAloneWhenOneGoesStale(): void
+    {
+        $symbol = 'method:App\Foo::bar';
+        $goto = self::entry($symbol, 'code-smell.goto', 'code-smell.goto');
+        $cyclomatic = self::entry($symbol, 'complexity.cyclomatic', 'complexity.cyclomatic.method');
+
+        $baseline = self::baselineOf($goto, $cyclomatic);
+
+        self::assertSame([$goto], $baseline->staleEntries([$cyclomatic->identity->key()]));
     }
 
     #[Test]
-    public function itGetStaleKeysReturnsNonExistentKeys(): void
+    public function itRejectsTwoEntriesClaimingOneIdentity(): void
     {
-        $baseline = new Baseline(
-            version: 1,
-            generated: new DateTimeImmutable(),
-            entries: [
-                'method:App\Foo::bar' => [
-                    new BaselineEntry('complexity', 'a1b2c3d4'),
-                ],
-                'class:App\Bar' => [
-                    new BaselineEntry('size', 'e5f6g7h8'),
-                ],
-                'class:App\Deleted' => [
-                    new BaselineEntry('coupling', 'i9j0k1l2'),
-                ],
-            ],
-        );
+        $this->expectException(InvalidArgumentException::class);
 
-        $existingKeys = ['method:App\Foo::bar', 'class:App\Bar'];
-
-        $staleKeys = $baseline->getStaleKeys($existingKeys);
-
-        self::assertSame(['class:App\Deleted'], $staleKeys);
+        self::baselineOf(self::entry('method:App\Foo::bar'), self::entry('method:App\Foo::bar'));
     }
 
     #[Test]
-    public function itGetStaleKeysReturnsEmptyWhenAllKeysExist(): void
+    public function itListsTheSymbolKeysOfValidAndInertEntriesAlike(): void
     {
         $baseline = new Baseline(
-            version: 1,
             generated: new DateTimeImmutable(),
-            entries: [
-                'method:App\Foo::bar' => [
-                    new BaselineEntry('complexity', 'a1b2c3d4'),
-                ],
-            ],
+            scope: [],
+            entries: [self::entry('method:App\Foo::bar')],
+            inertEntries: [self::inert('file:src/Legacy.php')],
         );
 
-        $existingKeys = ['method:App\Foo::bar'];
+        self::assertEqualsCanonicalizing(
+            ['method:App\Foo::bar', 'file:src/Legacy.php'],
+            $baseline->symbolKeys(),
+        );
+    }
 
-        $staleKeys = $baseline->getStaleKeys($existingKeys);
+    #[Test]
+    public function itDropsItsCompareAndSwapTokenWhenDetached(): void
+    {
+        $baseline = new Baseline(
+            generated: new DateTimeImmutable(),
+            scope: ['src'],
+            entries: [self::entry('method:App\Foo::bar')],
+            sourceContentHash: 'abc',
+        );
 
-        self::assertEmpty($staleKeys);
+        self::assertNull($baseline->detached()->sourceContentHash);
+        self::assertSame($baseline->count(), $baseline->detached()->count());
+    }
+
+    private static function baselineOf(BaselineEntry ...$entries): Baseline
+    {
+        return new Baseline(
+            generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
+            scope: ['src'],
+            entries: array_values($entries),
+        );
+    }
+
+    private static function entry(
+        string $symbolKey,
+        string $ruleName = 'code-smell.goto',
+        string $violationCode = 'code-smell.goto',
+    ): BaselineEntry {
+        return new BaselineEntry(
+            new BaselineIdentity($symbolKey, new ViolationChannel($ruleName, $violationCode)),
+            null,
+            1,
+        );
+    }
+
+    private static function inert(string $symbolKey): InertBaselineEntry
+    {
+        return new InertBaselineEntry(
+            symbolKey: $symbolKey,
+            channelKey: null,
+            identity: null,
+            selector: EntrySelector::forKey($symbolKey),
+            reason: InertEntryReason::Malformed,
+            detail: 'entry must be a JSON object',
+            raw: 'garbage',
+        );
     }
 }

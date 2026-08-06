@@ -6,17 +6,20 @@ namespace Qualimetrix\Tests\Integration\Baseline;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Baseline\BaselineEntryParser;
 use Qualimetrix\Baseline\BaselineGenerator;
+use Qualimetrix\Baseline\BaselineIdentity;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Baseline\Filter\BaselineFilter;
-use Qualimetrix\Baseline\ViolationHasher;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Tests\Support\Time\FixedClock;
+use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
 
 /**
  * Integration test for baseline workflow.
@@ -45,6 +48,10 @@ final class BaselineWorkflowTest extends TestCase
         if (file_exists($this->baselinePath)) {
             unlink($this->baselinePath);
         }
+        $lockPath = $this->baselinePath . '.lock';
+        if (file_exists($lockPath)) {
+            unlink($lockPath);
+        }
         if (is_dir($this->tempDir)) {
             rmdir($this->tempDir);
         }
@@ -53,20 +60,22 @@ final class BaselineWorkflowTest extends TestCase
     #[Test]
     public function itExecutesCompleteBaselineWorkflow(): void
     {
-        // Create test violations
+        // Create test violations, one on a declared magnitude channel and
+        // one on a declared occurrence channel.
         $violations = [
             new Violation(
-                ruleName: 'complexity',
-                violationCode: 'complexity',
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.method',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
+                metricValue: 15,
             ),
             new Violation(
-                ruleName: 'size',
-                violationCode: 'size',
-                message: 'Class has 300 lines of code',
+                ruleName: 'code-smell.goto',
+                violationCode: 'code-smell.goto',
+                message: 'goto statement found',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
                 location: new Location(RelativePath::fromString(basename(__FILE__)), 1),
@@ -74,14 +83,13 @@ final class BaselineWorkflowTest extends TestCase
         ];
 
         // Step 1: Generate baseline
-        $hasher = new ViolationHasher();
-        $generator = new BaselineGenerator($hasher);
-        $baseline = $generator->generate($violations);
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $generator = new BaselineGenerator($declarations, new FixedClock());
+        $baseline = $generator->generate($violations, ['src'])->baseline;
 
         self::assertSame(2, $baseline->count());
-        // Check that entries exist for both canonical paths
-        self::assertArrayHasKey('method:App\Service\UserService::calculateDiscount', $baseline->entries);
-        self::assertArrayHasKey('class:App\Service\UserService', $baseline->entries);
+        self::assertTrue($baseline->hasIdentity(BaselineIdentity::forViolation($violations[0])));
+        self::assertTrue($baseline->hasIdentity(BaselineIdentity::forViolation($violations[1])));
 
         // Step 2: Write baseline to file
         $writer = new BaselineWriter();
@@ -90,14 +98,14 @@ final class BaselineWorkflowTest extends TestCase
         self::assertFileExists($this->baselinePath);
 
         // Step 3: Load baseline from file
-        $loader = new BaselineLoader();
+        $loader = new BaselineLoader(new BaselineEntryParser($declarations));
         $loadedBaseline = $loader->load($this->baselinePath);
 
         self::assertSame($baseline->count(), $loadedBaseline->count());
-        self::assertSame($baseline->version, $loadedBaseline->version);
+        self::assertSame(0, \count($loadedBaseline->inertEntries));
 
         // Step 4: Filter violations using baseline
-        $filter = new BaselineFilter($loadedBaseline, $hasher);
+        $filter = new BaselineFilter($loadedBaseline);
 
         // Both violations should be filtered out (in baseline)
         self::assertFalse($filter->shouldInclude($violations[0]));
@@ -105,12 +113,13 @@ final class BaselineWorkflowTest extends TestCase
 
         // Step 5: Test new violation (not in baseline)
         $newViolation = new Violation(
-            ruleName: 'complexity',
-            violationCode: 'complexity',
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.method',
             message: 'Complexity 25 exceeds threshold 10',
             severity: Severity::Error,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
             location: new Location(RelativePath::fromString(basename(__FILE__)), 100),
+            metricValue: 25,
         );
 
         // New violation should NOT be filtered
@@ -121,56 +130,61 @@ final class BaselineWorkflowTest extends TestCase
     public function itDetectsResolvedViolations(): void
     {
         // Create initial violations and baseline
-        $hasher = new ViolationHasher();
-        $generator = new BaselineGenerator($hasher);
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $generator = new BaselineGenerator($declarations, new FixedClock());
 
         $initialViolations = [
             new Violation(
-                ruleName: 'complexity',
-                violationCode: 'complexity',
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.method',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method1'),
                 location: new Location(RelativePath::fromString(basename(__FILE__)), 10),
+                metricValue: 15,
             ),
             new Violation(
-                ruleName: 'complexity',
-                violationCode: 'complexity',
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.method',
                 message: 'Complexity 20 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method2'),
                 location: new Location(RelativePath::fromString(basename(__FILE__)), 20),
+                metricValue: 20,
             ),
         ];
 
-        $baseline = $generator->generate($initialViolations);
+        $baseline = $generator->generate($initialViolations, ['src'])->baseline;
         $writer = new BaselineWriter();
         $writer->write($baseline, $this->baselinePath, AbsolutePath::fromString($this->tempDir));
 
         // Load baseline
-        $loader = new BaselineLoader();
+        $loader = new BaselineLoader(new BaselineEntryParser($declarations));
         $loadedBaseline = $loader->load($this->baselinePath);
-        $filter = new BaselineFilter($loadedBaseline, $hasher);
+        $filter = new BaselineFilter($loadedBaseline);
 
         // Current violations: only method1 (method2 was fixed)
         $currentViolations = [
             new Violation(
-                ruleName: 'complexity',
-                violationCode: 'complexity',
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.method',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method1'),
                 location: new Location(RelativePath::fromString(basename(__FILE__)), 10),
+                metricValue: 15,
             ),
         ];
 
-        // Get resolved violations
+        // Get resolved entries
         $resolved = $filter->getResolvedFromBaseline($currentViolations);
 
         // Should detect that method2 was resolved
-        $methodKey = 'method:App\Service\UserService::method2';
-        self::assertArrayHasKey($methodKey, $resolved);
-        self::assertCount(1, $resolved[$methodKey]);
+        self::assertCount(1, $resolved);
+        self::assertSame(
+            'method:App\Service\UserService::method2',
+            $resolved[0]->identity->symbolKey,
+        );
     }
 
     #[Test]
@@ -181,126 +195,138 @@ final class BaselineWorkflowTest extends TestCase
         // Create violations — file-level uses relative path (as the actual pipeline does)
         $violations = [
             new Violation(
-                ruleName: 'size.loc',
-                violationCode: 'size.loc',
-                message: 'File has 500 lines',
+                ruleName: 'code-smell.goto',
+                violationCode: 'code-smell.goto',
+                message: 'goto statement found',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service.php')),
                 location: new Location(RelativePath::fromString('src/Service.php'), 1),
             ),
             new Violation(
-                ruleName: 'complexity',
-                violationCode: 'complexity',
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.method',
                 message: 'Complexity 15',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'Service', 'handle'),
                 location: new Location(RelativePath::fromString('src/Service.php'), 10),
+                metricValue: 15,
             ),
         ];
 
         // Generate and write baseline
-        $hasher = new ViolationHasher();
-        $generator = new BaselineGenerator($hasher);
-        $baseline = $generator->generate($violations);
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $generator = new BaselineGenerator($declarations, new FixedClock());
+        $baseline = $generator->generate($violations, ['src'])->baseline;
         $writer = new BaselineWriter();
         $writer->write($baseline, $this->baselinePath, AbsolutePath::fromString($projectRoot));
 
         // Verify JSON contains relative file: path
         $data = json_decode((string) file_get_contents($this->baselinePath), true);
-        self::assertArrayHasKey('file:src/Service.php', $data['violations']);
+        self::assertArrayHasKey('file:src/Service.php', $data['entries']);
         // Method canonical should be unchanged
-        self::assertArrayHasKey('method:App\Service\Service::handle', $data['violations']);
+        self::assertArrayHasKey('method:App\Service\Service::handle', $data['entries']);
 
         // Load baseline — paths kept as-is (relative)
-        $loader = new BaselineLoader();
+        $loader = new BaselineLoader(new BaselineEntryParser($declarations));
         $loadedBaseline = $loader->load($this->baselinePath);
 
         // Filter should match the original violations
-        $filter = new BaselineFilter($loadedBaseline, $hasher);
+        $filter = new BaselineFilter($loadedBaseline);
         self::assertFalse($filter->shouldInclude($violations[0]), 'File-level violation should be filtered by baseline');
         self::assertFalse($filter->shouldInclude($violations[1]), 'Method-level violation should be filtered by baseline');
     }
 
     #[Test]
-    public function itProducesStableHashAcrossLineChanges(): void
+    public function itKeepsIdentityStableAcrossLineChanges(): void
     {
-        $hasher = new ViolationHasher();
-
         // Same violation at different lines
         $violation1 = new Violation(
-            ruleName: 'complexity',
-            violationCode: 'complexity',
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.method',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
+            metricValue: 15,
         );
 
         $violation2 = new Violation(
-            ruleName: 'complexity',
-            violationCode: 'complexity',
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.method',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             location: new Location(RelativePath::fromString(basename(__FILE__)), 100), // Different line
+            metricValue: 15,
         );
 
-        // Hashes should be identical (line drift stability)
-        self::assertSame($hasher->hash($violation1), $hasher->hash($violation2));
+        // Identity keys should be identical (line drift stability) — the
+        // location does not participate in the identity at all.
+        self::assertSame(
+            BaselineIdentity::forViolation($violation1)->key(),
+            BaselineIdentity::forViolation($violation2)->key(),
+        );
     }
 
     #[Test]
-    public function itProducesStableHashAcrossValueChanges(): void
+    public function itKeepsIdentityStableAcrossMagnitudeChanges(): void
     {
-        $hasher = new ViolationHasher();
-
         // Same violation with different numeric values
         $violation1 = new Violation(
-            ruleName: 'complexity',
-            violationCode: 'complexity',
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.method',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
+            metricValue: 15,
         );
 
         $violation2 = new Violation(
-            ruleName: 'complexity',
-            violationCode: 'complexity',
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.method',
             message: 'Complexity 25 exceeds threshold 20', // Different values
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
+            metricValue: 25,
         );
 
-        // Hashes should be identical (value normalization)
-        self::assertSame($hasher->hash($violation1), $hasher->hash($violation2));
+        // Identity keys should be identical — magnitude drift changes the
+        // entry's recorded value, not which entry it belongs to.
+        self::assertSame(
+            BaselineIdentity::forViolation($violation1)->key(),
+            BaselineIdentity::forViolation($violation2)->key(),
+        );
     }
 
     #[Test]
-    public function itChangesHashOnMethodRename(): void
+    public function itChangesIdentityOnMethodRename(): void
     {
-        $hasher = new ViolationHasher();
-
         $violation1 = new Violation(
-            ruleName: 'complexity',
-            violationCode: 'complexity',
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.method',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
+            metricValue: 15,
         );
 
         $violation2 = new Violation(
-            ruleName: 'complexity',
-            violationCode: 'complexity',
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.method',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'compute'), // Different method
             location: new Location(RelativePath::fromString(basename(__FILE__)), 45),
+            metricValue: 15,
         );
 
-        // Hashes should be different (method name changed)
-        self::assertNotSame($hasher->hash($violation1), $hasher->hash($violation2));
+        // Identity keys should be different (method name changed)
+        self::assertNotSame(
+            BaselineIdentity::forViolation($violation1)->key(),
+            BaselineIdentity::forViolation($violation2)->key(),
+        );
     }
 }

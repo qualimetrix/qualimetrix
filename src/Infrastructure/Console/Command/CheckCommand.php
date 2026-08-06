@@ -207,7 +207,12 @@ final class CheckCommand extends Command
         $filterResult = $this->violationFilterOrchestrator->filterAndReport($result, $input, $output, $scopeResolution);
         $filteredViolations = $filterResult->violations;
 
-        $baselineGenerated = $this->baselinePresenter->generateBaselineIfRequested($result->violations, $input, $output);
+        $baselineGenerated = $this->baselinePresenter->generateBaselineIfRequested(
+            $result->violations,
+            $scopeResolution->paths,
+            $input,
+            $output,
+        );
 
         $scopedReporting = $scopeResolution->reportScope !== null;
         $exitCode = $this->resultPresenter->presentResults(

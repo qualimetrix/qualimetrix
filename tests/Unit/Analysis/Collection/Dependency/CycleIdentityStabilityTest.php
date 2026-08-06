@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Architecture\Rules\CircularDependencyOptions;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
-use Qualimetrix\Baseline\ViolationHasher;
+use Qualimetrix\Baseline\BaselineIdentity;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Violation;
@@ -24,9 +24,10 @@ use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
  * The detected SCC partition is unique, but the order of members inside an SCC
  * used to fall out of the traversal order — which follows file discovery order.
  * Since the first member becomes the violation's symbol path, and the symbol
- * path feeds {@see ViolationHasher}, adding an unrelated file could silently
- * re-key an existing baseline entry: the recorded violation would look resolved
- * and a "new" one would appear in its place for the very same cycle.
+ * path feeds {@see BaselineIdentity::forViolation()}, adding an unrelated file
+ * could silently re-key an existing baseline entry: the recorded violation
+ * would look resolved and a "new" one would appear in its place for the very
+ * same cycle.
  */
 #[CoversClass(CircularDependencyDetector::class)]
 #[CoversClass(CircularDependencyRule::class)]
@@ -106,24 +107,22 @@ final class CycleIdentityStabilityTest extends TestCase
     }
 
     #[Test]
-    public function itKeepsTheBaselineHashStableWhenAnUnrelatedClassIsAdded(): void
+    public function itKeepsTheBaselineIdentityStableWhenAnUnrelatedClassIsAdded(): void
     {
-        $hasher = new ViolationHasher();
-
-        $before = $hasher->hash($this->violationFor([
+        $before = BaselineIdentity::forViolation($this->violationFor([
             'App\Alpha' => ['App\Beta'],
             'App\Beta' => ['App\Gamma'],
             'App\Gamma' => ['App\Alpha'],
-        ]));
+        ]))->key();
 
         // A newly discovered file that merely points into the cycle. It joins no
         // cycle itself, but it is visited first and thus reorders the traversal.
-        $after = $hasher->hash($this->violationFor([
+        $after = BaselineIdentity::forViolation($this->violationFor([
             'App\Newcomer' => ['App\Beta'],
             'App\Alpha' => ['App\Beta'],
             'App\Beta' => ['App\Gamma'],
             'App\Gamma' => ['App\Alpha'],
-        ]));
+        ]))->key();
 
         self::assertSame($before, $after, 'An unrelated file must not re-key an existing baseline entry');
     }

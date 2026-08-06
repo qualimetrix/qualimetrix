@@ -13,7 +13,6 @@ use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
-use Qualimetrix\Baseline\ViolationHasher;
 use Qualimetrix\Configuration\ComputedMetricFormulaValidator;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
@@ -140,13 +139,21 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
 
         // Auto-register all baseline services from src/Baseline/*
-        // Excludes: Value Objects (Baseline, BaselineEntry, Suppression)
+        // Excludes: value objects, enums and exceptions — data, not services.
+        // A value object with required constructor arguments cannot be
+        // autowired, so leaving one in would fail container compilation
+        // rather than merely registering something unused.
         $prototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $prototype,
             'Qualimetrix\\Baseline\\',
             $this->srcDir . '/Baseline/*',
-            $this->srcDir . '/Baseline/{Baseline.php,BaselineEntry.php,Suppression/Suppression.php}',
+            $this->srcDir . '/Baseline/{'
+                . 'Baseline.php,BaselineEdge.php,BaselineEntry.php,BaselineEntryMode.php,'
+                . 'BaselineIdentity.php,EntrySelector.php,InertBaselineEntry.php,InertEntryReason.php,'
+                . 'BaselineConflictException.php,BaselineEntryRejection.php,'
+                . 'BaselineCapture.php,UncapturedGroup.php,UncapturedReason.php,'
+                . 'Suppression/Suppression.php}',
         );
     }
 
@@ -160,7 +167,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(ViolationFilterPipeline::class)
             ->setArguments([
                 new Reference(BaselineLoader::class),
-                new Reference(ViolationHasher::class),
                 new Reference(SuppressionFilter::class),
                 new Reference(ConfigurationProviderInterface::class),
             ]);

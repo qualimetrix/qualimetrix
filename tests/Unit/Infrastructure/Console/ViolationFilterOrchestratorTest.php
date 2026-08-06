@@ -11,9 +11,9 @@ use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\RuleExecution\RuleExclusionStats;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Baseline\BaselineEntryParser;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
-use Qualimetrix\Baseline\ViolationHasher;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -26,6 +26,7 @@ use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
 use Qualimetrix\Infrastructure\Console\ViolationFilterPipeline;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
+use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
@@ -41,6 +42,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[CoversClass(ViolationFilterOrchestrator::class)]
 final class ViolationFilterOrchestratorTest extends TestCase
 {
+    /** @var list<string> */
+    private array $tempFiles = [];
+
+    protected function tearDown(): void
+    {
+        foreach ($this->tempFiles as $file) {
+            if (file_exists($file)) {
+                unlink($file);
+            }
+        }
+    }
+
     #[Test]
     public function itPrintsNothingAboutRuleExclusionsWhenStatsAreEmptyAndNotVerbose(): void
     {
@@ -178,14 +191,110 @@ final class ViolationFilterOrchestratorTest extends TestCase
         self::assertStringNotContainsString('CCN too high', $output->fetch());
     }
 
+    /**
+     * The user-visible half of §5.7's first two declarations: a stale entry
+     * neither fails the run nor takes its neighbours down with it.
+     *
+     * The premise is the one the per-identity key of §5.1 introduced — the
+     * stale entry shares its symbol with an entry that still fires — because
+     * that is the case whose behaviour changed. A stale entry on some other
+     * symbol was already stale under v5 and proves nothing about the change.
+     */
+    #[Test]
+    public function itReportsAStaleEntryWithoutFailingTheRunOrDisablingItsNeighbour(): void
+    {
+        $stillFiring = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $baselinePath = $this->writeBaseline([
+            $stillFiring->symbolPath->toCanonical() => [
+                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+                ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
+            ],
+        ]);
+
+        $output = new BufferedOutput();
+        $result = $this->createOrchestrator(new RuleExclusionStats())->filterAndReport(
+            $this->createAnalysisResult([$stillFiring]),
+            $this->createInput(['--baseline' => $baselinePath]),
+            $output,
+            $this->createScopeResolution(),
+        );
+
+        $display = $output->fetch();
+
+        self::assertSame([], $result->violations, 'The surviving entry must still suppress its finding.');
+        self::assertStringContainsString('1 baseline entries did not appear in this run', $display);
+        self::assertStringContainsString('code-smell.goto', $display);
+        self::assertStringNotContainsString('Error:', $display);
+        // The advice that cannot work must not be given: `baseline:cleanup`
+        // selects on a vanished `file:` path and cannot touch this entry.
+        self::assertStringNotContainsString('baseline:cleanup', $display);
+    }
+
+    /**
+     * `--show-resolved` reads the same predicate as staleness, so while a
+     * stale entry aborted the run it could only ever print on a run with
+     * nothing to print.
+     */
+    #[Test]
+    public function itPrintsResolvedEntriesOnARunThatStaysGreen(): void
+    {
+        $stillFiring = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $baselinePath = $this->writeBaseline([
+            $stillFiring->symbolPath->toCanonical() => [
+                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+                ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
+            ],
+        ]);
+
+        $output = new BufferedOutput();
+        $this->createOrchestrator(new RuleExclusionStats())->filterAndReport(
+            $this->createAnalysisResult([$stillFiring]),
+            $this->createInput(['--baseline' => $baselinePath, '--show-resolved' => true]),
+            $output,
+            $this->createScopeResolution(),
+        );
+
+        self::assertStringContainsString('1 baseline entries have been resolved!', $output->fetch());
+    }
+
+    private static function violation(string $file, string $namespace, string $class): Violation
+    {
+        return new Violation(
+            location: new Location(RelativePath::fromString($file), 10),
+            symbolPath: SymbolPath::forClass($namespace, $class),
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.method',
+            message: 'CCN too high',
+            severity: Severity::Error,
+            metricValue: 25,
+        );
+    }
+
+    /**
+     * @param array<string, list<array<string, mixed>>> $entries
+     */
+    private function writeBaseline(array $entries): string
+    {
+        $path = (string) tempnam(sys_get_temp_dir(), 'qmx_orch_baseline_') . '.json';
+        $this->tempFiles[] = $path;
+
+        file_put_contents($path, json_encode([
+            'version' => 10,
+            'generated' => '2026-08-05T12:00:00+03:00',
+            'scope' => ['src'],
+            'entries' => $entries,
+        ], \JSON_THROW_ON_ERROR));
+
+        return $path;
+    }
+
     private function createOrchestrator(RuleExclusionStats $stats): ViolationFilterOrchestrator
     {
         $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn(new AnalysisConfiguration());
 
         $pipeline = new ViolationFilterPipeline(
-            new BaselineLoader(),
-            new ViolationHasher(),
+            new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())),
             new SuppressionFilter(),
             $configProvider,
         );
@@ -206,7 +315,6 @@ final class ViolationFilterOrchestratorTest extends TestCase
             new InputOption('exclude-path', mode: InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, default: []),
             new InputOption('exclude-namespace', mode: InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, default: []),
             new InputOption('report-strict', mode: InputOption::VALUE_NONE),
-            new InputOption('baseline-ignore-stale', mode: InputOption::VALUE_NONE),
             new InputOption('no-suppression', mode: InputOption::VALUE_NONE),
             new InputOption('show-resolved', mode: InputOption::VALUE_NONE),
             new InputOption('show-suppressed', mode: InputOption::VALUE_NONE),
@@ -215,12 +323,15 @@ final class ViolationFilterOrchestratorTest extends TestCase
         return new ArrayInput($options, $definition);
     }
 
-    private function createAnalysisResult(): AnalysisResult
+    /**
+     * @param list<Violation> $violations
+     */
+    private function createAnalysisResult(array $violations = []): AnalysisResult
     {
         $repository = self::createStub(MetricRepositoryInterface::class);
 
         return new AnalysisResult(
-            violations: [],
+            violations: $violations,
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.1,
