@@ -96,20 +96,7 @@ Core/
 │   ├── SuppressionType.php                # Enum: suppression scope (symbol/next-line/file)
 │   └── ThresholdOverride.php              # VO: threshold override from docblock (@qmx-threshold)
 ├── Observation/
-│   ├── DebtObservation.php                # VO: the measured debt behind one emitted finding
-│   ├── AxisObservation.php                # VO: one measured dimension (raw value, onset boundary, epsilon)
-│   ├── ObservationKind.php                # Enum: scalar / vector / occurrence / presence / graph
-│   ├── WorseDirection.php                 # Enum: higher-is-worse / lower-is-worse + the comparison operators
-│   ├── ContractReference.php              # VO: contract id + version; identity is the id alone
-│   └── OccurrenceKey.php                  # VO: stable discriminator between findings of one channel on one symbol
-├── Coverage/
-│   ├── RunCoverageInterface.php           # Contract: what a completed run actually evaluated
-│   ├── ScopeCoverage.php                  # VO: coverage of one channel, optionally narrowed to a symbol
-│   ├── ScopeCoverageStatus.php            # Enum: evaluated / not-evaluated / indeterminate
-│   └── CoverageDeviationReporterInterface.php # Opt-in: rules that skip work the centre believes it covered
-├── Comparison/
-│   ├── ComparisonStatus.php               # Enum: how a recorded finding stands relative to the current run
-│   └── ResolutionReason.php               # Enum: fixed / policy — why a recorded finding no longer appears
+│   └── WorseDirection.php                 # Enum: higher-is-worse / lower-is-worse + the comparison operators
 ├── Util/
 │   ├── StringSet.php                      # Immutable set of unique strings
 │   └── PathMatcher.php                    # Glob pattern matching for file paths
@@ -554,7 +541,6 @@ A rule violation.
 - `threshold: int|float|null` — threshold that was exceeded (for programmatic comparison)
 - `dependencyTarget: ?SymbolPath` — target symbol of the offending dependency edge (for dependency-based rules such as `architecture.layer-violation`); null for non-dependency rules
 - `dependencyType: ?DependencyType` — type of the offending dependency edge; null for non-dependency rules. Both fields are included in the baseline hash when non-null, enabling per-edge baseline identity that survives line drift
-- `observation: ?DebtObservation` — structured measurement behind this finding (see [Observation Contracts](#observation-contracts)). Optional and null by default: rules are migrated to report observations one at a time. One bundled value object rather than several scalars, because the axes, their boundaries, the contract, and the occurrence discriminator are only meaningful together — and `metricValue` cannot carry them, since different rules already put different things in it (a criteria count, a cycle size, a display-rounded value, one axis of a multi-axis decision)
 
 **Methods:**
 - `getFingerprint(): string` — unique identifier for baseline (`ruleName:symbolPath`)
@@ -864,154 +850,18 @@ Static runtime holder for resolved computed metric definitions. Similar to `Prof
 
 ## Observation Contracts
 
-Contracts under `Core/Observation/` describe **measured debt of a symbol**. They are named for what they describe, not for the feature that consumes them: a rule reports what it measured and knows nothing about who reads it later.
-
-### DebtObservation
-
-The measured debt behind one emitted finding. A rule attaches one to every `Violation` it emits.
-
-**Fields:**
-- `contract: ContractReference`
-- `kind: ObservationKind`
-- `axes: array<string, AxisObservation>` — keyed by axis name and sorted, so two observations built from the same measurements in different orders are byte-identical once serialized
-- `occurrenceKey: ?OccurrenceKey`
-
-**Construction invariants** (enforced in the constructor, one source of truth in `ObservationKind`):
-
-| Kind         | Axes          | Occurrence key |
-| ------------ | ------------- | -------------- |
-| `Scalar`     | exactly 1     | optional       |
-| `Vector`     | 2 or more     | optional       |
-| `Occurrence` | 0 or more     | optional       |
-| `Presence`   | **exactly 0** | **forbidden**  |
-| `Graph`      | 0 or more     | **required**   |
-
-Duplicate axis names are rejected. `Graph` requires a key because its identity spans several symbols and must be canonical and traversal-order independent. `Presence` forbids one instead of merely not requiring it: §7.3 of the ratchet-baseline plan compares presence findings by identity present / new / missing and never consults an occurrence key, so a `Presence` observation carrying axes or a key would claim a role the type does not have.
-
-**Factories:** `scalar()`, `vector()`, `occurrence()`, `presence()`, `graph()`.
-
-**Methods:** `axis(string $name): ?AxisObservation`, `axisNames(): list<string>`, `hasOccurrenceKey(): bool`.
-
-### AxisObservation
-
-One measured dimension. Carries the **raw** measurement, not a display-rounded one.
-
-**Fields:** `name: string`, `rawValue: int|float|null`, `onsetBoundary: int|float|null`, `worseDirection: WorseDirection`, `epsilon: float`.
-
-> **Note:** a null `rawValue` is a legal, first-class state and not a shape change — a class with fewer than two public methods has no TCC at all (`TccLccCollector`). A null axis is skipped in comparison rather than read as an improvement or a regression. A null `onsetBoundary` means the finding fires on a predicate rather than on a numeric threshold.
-
-`onsetBoundary` is the **violation-onset boundary**: the most permissive boundary at which a violation is emitted at all for this symbol, under the configuration and run in force now. It is not `Violation::$threshold`, which is the severity tier the measurement landed in and therefore widens as the code worsens.
-
-NaN and infinity are rejected for every numeric field; `-0.0` is normalized to `0.0`; `epsilon` must be finite and non-negative. `name` must be non-empty and must not be a string PHP's array-key coercion would turn into an integer (e.g. `"10"`) — `DebtObservation::$axes` is keyed by `name`, and a coerced key would silently break `axisNames(): list<string>` and the manifest's byte-level axis-name comparison (§6.2 of the ratchet-baseline plan) for a reason invisible in any printed output.
-
-### ObservationKind
-
-`Scalar | Vector | Occurrence | Presence | Graph`. Backed by lowercase string values.
-
-**Methods:** `minimumAxes(): int`, `maximumAxes(): ?int`, `requiresOccurrenceKey(): bool`, `permitsOccurrenceKey(): bool` (false only for `Presence`; `Graph` requires one, the rest leave it optional).
-
 ### WorseDirection
 
 `Higher` (larger is worse — CCN, CBO) or `Lower` (smaller is worse — Maintainability Index, cohesion, health scores). Per axis, not per rule.
 
 Carries the two comparison operators, so consumers do not each re-derive their own sign handling:
 
-- `morePermissive(int|float $a, int|float $b): int|float` — the operator behind the allowance rule
-- `isWorse(int|float $current, int|float $allowance, float $epsilon = 0.0): bool`
-- `isBetter(int|float $current, int|float $reference, float $epsilon = 0.0): bool`
+- `morePermissive(int|float $a, int|float $b): int|float` — the primitive behind `baseline:update` (§7 of the ratchet-baseline plan): a boundary may move only toward stricter, never toward more permissive
+- `isWorse(int|float $current, int|float $allowance, float $epsilon = 0.0): bool` — the comparison behind an entry's group-acceptance decision (§5.1 of the ratchet-baseline plan)
 
-Epsilon is a tolerance band around the allowance, never a shift of it: inside the band a value is neither worse nor better.
+Epsilon is a tolerance band around the allowance, never a shift of it: inside the band a value is not worse.
 
-`morePermissive()`'s result type does not depend on argument order, even when the two boundaries are numerically equal but differ in `int`/`float` type: the result is written to the baseline file (§6.2), whose byte-stability contract leaves no room for `morePermissive(10, 10.0)` and `morePermissive(10.0, 10)` to disagree. A tie normalizes to `int` only when both inputs are `int`, and to `float` the moment either one is — the same numeric-promotion rule `AxisObservation` already applies to its own fields.
-
-### ContractReference
-
-Names the debt contract an observation was produced under, plus its revision.
-
-**Fields:** `id: string` (non-empty), `version: int` (>= 1, default 1).
-
-> **Note:** the version is deliberately **not** part of identity. `matchesIdentity()` compares the id alone; `hasSameVersion()` is asked afterwards, only once identity matched. Folding the version into the key makes a bump behave as "the old thing disappeared and an unrelated one appeared", which is mutually exclusive with the intent that a bump means "no longer comparable".
-
-**Methods:** `matchesIdentity(self $other): bool`, `hasSameVersion(self $other): bool` (throws `LogicException` when `matchesIdentity()` would return false — the ordering is enforced, not advisory), `describe(): string` (diagnostics only — it embeds the version).
-
-### OccurrenceKey
-
-A stable discriminator that tells two findings of the same channel, on the same symbol, apart across runs. The carrier that crosses the collector → rule seam: a collector that can distinguish its findings produces one; the rule attaches it to the observation it emits.
-
-**Null semantics — two different absences, only one representable:**
-
-- **"This channel offers no stable discriminator"** — a property of the channel, expressed by a null `DebtObservation::$occurrenceKey`. A legitimate, permanent state: such findings collapse into a counted bucket under their symbol.
-- **"This particular occurrence has no key"** — *not* representable. An `OccurrenceKey` can never hold an empty value, so a channel that discriminates its occurrences discriminates all of them. A missing key on one occurrence of a discriminating channel is an invariant violation raised at construction, never a null carried forward.
-
-**Factories:** `of(string)` (wraps an **opaque single-token** identity such as a content hash — rejects a value containing the `|` separator or the `%` escape character, since either would let it collide byte-for-byte with a key `fromParts()`/`fromUnorderedParts()` could produce), `fromParts(string ...)` (order is part of the identity), `fromUnorderedParts(string ...)` (sorted first — the canonical form for cycles and any finding whose members form a set).
-
-Composition percent-escapes `%` and `|` inside each part before joining with `|`, so it is injective and PHP namespace separators pass through unescaped.
-
----
-
-## Coverage Contracts
-
-Contracts under `Core/Coverage/` describe **what a run actually evaluated**. They live in Core rather than next to the orchestration code that implements them because their consumers (`baseline`, `reporting`) are allowed `[core]` alone — placing the answer next to its producer would force those consumers into an upward dependency the architecture rules reject.
-
-### RunCoverageInterface
-
-**Methods:**
-- `forSymbol(ViolationChannel $channel, SymbolPath $symbol): ScopeCoverage`
-- `forChannel(ViolationChannel $channel): ScopeCoverage` — the question aggregate and graph findings ask, since their identity spans symbols
-
-Neither returns null: "nothing is known" is itself an answer, expressed as `ScopeCoverageStatus::Indeterminate`.
-
-Coverage is computed centrally, from data the orchestration layer already owns — discovery inventory, parse failures, worker failures, enabled rules, exclusion configuration. Rules contribute only what the centre cannot see.
-
-### ScopeCoverage
-
-What a run can say about one scope.
-
-**Fields:** `channel: ViolationChannel`, `status: ScopeCoverageStatus`, `symbol: ?SymbolPath` (null makes the statement channel-wide), `reason: ?string`.
-
-A reason is required for every non-evaluated status and forbidden on an evaluated one.
-
-**Factories:** `evaluated()`, `notEvaluated()`, `indeterminate()`. **Methods:** `provesEvaluation(): bool`, `isChannelWide(): bool`.
-
-### ScopeCoverageStatus
-
-`Evaluated | NotEvaluated | Indeterminate`. Three values rather than a boolean: "not evaluated" names a cause the user chose, "indeterminate" admits the run lost track, and collapsing them would make an interrupted run indistinguishable from a deliberately narrowed one. `provesEvaluation()` is true only for `Evaluated`.
-
-### CoverageDeviationReporterInterface
-
-Opt-in contract for the handful of rules that skip work the centre believes it covered — a rule with its own applicability check, one that can disable an individual level, or one whose input may be incomplete.
-
-**Methods:** `coverageDeviations(AnalysisContext $context): list<ScopeCoverage>` — a **sparse** list of non-evaluated scopes, never a per-symbol map.
-
-Deliberately not part of `RuleInterface`: the vast majority of rules deviate in no way at all, and an empty method on every one of them would make the empty answer indistinguishable from an unconsidered one.
-
----
-
-## Comparison Contracts
-
-Contracts under `Core/Comparison/` describe **how a recorded finding stands relative to the current run**. Produced when a recorded finding is compared against a run, rendered by every output format, and consulted by exit-code policy — three independent subjects name this vocabulary, which is what makes it a cross-cutting primitive.
-
-### ComparisonStatus (Enum)
-
-`New | Matched | Improved | Regressed | Resolved | Suppressed | Unobserved | Orphaned | Incompatible`.
-
-Exactly one applies to a recorded finding. Conditions overlap in practice, so the statuses are **ordered** and the first match wins — `precedence()` returns the position:
-
-1. `Orphaned` — the rule is absent from the build, so nothing else can be computed
-2. `Unobserved` — the scope was not evaluated, so no comparison is possible
-3. `Incompatible` — evaluated, but the contracts cannot be compared
-4. `Suppressed` — comparison succeeded and is deliberately silenced
-5. `Regressed`, then `Resolved`, then `Improved`, then `Matched`
-
-`New` has no position (`participatesInPrecedence()` is false): it describes a current finding with no recorded entry, so it never competes with the rest.
-
-Both enums under `Core/Comparison/` carry vocabulary and ordering only — `ComparisonStatus` deliberately has **no** `permitsEntryMutation()` method, and `ResolutionReason` has no `permitsRemoval()` method. "May an ordinary command mutate this entry" and "may cleanup remove it" are questions asked only by Baseline's lifecycle commands, so per ADR 0016's duplication test they belong entirely in Baseline, not on a cross-cutting vocabulary type. An earlier revision put `permitsEntryMutation()` here and it implemented the wrong rule for one case (`Suppressed`), contradicting the ratchet-baseline plan's §5.6 "may mutate entry: no" for both silencing categories — see the class docblock on `ComparisonStatus` for the full account.
-
-### ResolutionReason (Enum)
-
-`Fixed | Policy`. Qualifies `Resolved` rather than splitting it, because the distinction changes what may be *done* with the entry, not what the entry is.
-
-Decided by comparing **boundaries, not values**: when a finding resolves there is no current observation to compare. `Fixed` — the boundary in force now is no more permissive than the recorded one, so the absence proves the measurement moved past the same line. `Policy` — the boundary moved, so the absence proves nothing about the code.
+`morePermissive()`'s result type does not depend on argument order, even when the two boundaries are numerically equal but differ in `int`/`float` type: the result is written to the baseline file (§6.2 of the ratchet-baseline plan), whose byte-stability contract leaves no room for `morePermissive(10, 10.0)` and `morePermissive(10.0, 10)` to disagree. A tie normalizes to `int` only when both inputs are `int`, and to `float` the moment either one is.
 
 ---
 

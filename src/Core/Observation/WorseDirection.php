@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Observation;
 
 /**
- * The direction in which an axis of measured debt gets worse.
+ * The direction in which a magnitude gets worse.
  *
- * Carries the two seam formulas that every consumer of a
- * {@see DebtObservation} would otherwise re-derive with its own sign
- * handling: the "more permissive of" operator behind the allowance rule,
- * and the epsilon-aware worseness test behind comparison.
+ * Carries the two seam formulas that every consumer would otherwise
+ * re-derive with its own sign handling: the "more permissive of" operator
+ * behind `baseline:update` (§7 of the ratchet-baseline plan), and the
+ * epsilon-aware worseness test behind an entry's group-acceptance decision
+ * (§5.1 of the ratchet-baseline plan).
  */
 enum WorseDirection: string
 {
@@ -23,12 +24,13 @@ enum WorseDirection: string
     /**
      * Returns the more permissive of two boundaries in this direction.
      *
-     * This is the operator behind the allowance rule: the allowance for an
-     * axis is the more permissive of the captured value and the current
-     * violation-onset boundary, so the allowance is never stricter than the
-     * onset. The result is written to the baseline file, whose byte-stability
-     * contract (§6.2) leaves no room for the numeric type to depend on
-     * argument order.
+     * This is the primitive behind `baseline:update` (§7 of the
+     * ratchet-baseline plan): a boundary may move only toward stricter,
+     * never toward more permissive, so `update` folds the recorded boundary
+     * and the current one through this operator rather than overwriting one
+     * with the other. The result is written to the baseline file, whose
+     * byte-stability contract (§6.2) leaves no room for the numeric type to
+     * depend on argument order.
      *
      * `max()`/`min()` alone are not enough: when the two boundaries are
      * numerically equal but differ in type (`10` vs `10.0`), PHP resolves the
@@ -39,9 +41,7 @@ enum WorseDirection: string
      * the larger (or smaller) of the two, regardless of call order — so only
      * the tie needs normalizing. The canonical rule mirrors PHP's own
      * arithmetic promotion: the result is `int` only when both inputs are
-     * `int`, and `float` the moment either one is, matching how
-     * {@see \Qualimetrix\Core\Observation\AxisObservation} normalizes its own
-     * numeric fields (negative zero, NaN, infinity) at the same seam.
+     * `int`, and `float` the moment either one is.
      */
     public function morePermissive(int|float $a, int|float $b): int|float
     {
@@ -65,26 +65,17 @@ enum WorseDirection: string
      *
      * Epsilon is a tolerance band around the allowance, never a shift of it:
      * a value inside the band is not worse in either direction.
+     *
+     * This is the comparison behind §5.1's group acceptance in the
+     * ratchet-baseline plan: a group is accepted only when every current
+     * member is no worse than the stored member at the same rank, in the
+     * channel's declared direction.
      */
     public function isWorse(int|float $current, int|float $allowance, float $epsilon = 0.0): bool
     {
         return match ($this) {
             self::Higher => $current > $allowance + $epsilon,
             self::Lower => $current < $allowance - $epsilon,
-        };
-    }
-
-    /**
-     * Tests whether $current is better than $reference beyond $epsilon.
-     *
-     * The mirror of {@see isWorse()}. Both are false inside the epsilon band,
-     * which is what makes "not worse and not better" a representable state.
-     */
-    public function isBetter(int|float $current, int|float $reference, float $epsilon = 0.0): bool
-    {
-        return match ($this) {
-            self::Higher => $current < $reference - $epsilon,
-            self::Lower => $current > $reference + $epsilon,
         };
     }
 }

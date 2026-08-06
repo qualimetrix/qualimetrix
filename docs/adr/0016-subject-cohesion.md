@@ -83,6 +83,14 @@ every rule and consumed by both Baseline and Reporting. The constraint
 is sound — and Baseline needs no vertical slice, because once the contract is in
 Core what remains is exactly the existing `src/Baseline/` content.
 
+> **Note:** the ratchet-baseline plan's v10 revision retired the
+> debt-observation contract itself (`DebtObservation`, `AxisObservation`,
+> `ObservationKind`, `ContractReference`, `OccurrenceKey`) as dead code — only
+> `WorseDirection` survived, still under `Core/Observation`. The example
+> above still illustrates the subject-vs-constraint reasoning that governed
+> the placement decision; it is not a claim about what `Core/Observation`
+> currently contains.
+
 ### Adapters
 
 Adapters — CLI commands, HTTP endpoints, message handlers, shell hooks — belong

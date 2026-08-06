@@ -7,9 +7,6 @@ namespace Qualimetrix\Tests\Unit\Core\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Observation\AxisObservation;
-use Qualimetrix\Core\Observation\ContractReference;
-use Qualimetrix\Core\Observation\DebtObservation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -219,59 +216,6 @@ final class ViolationTest extends TestCase
             'Cyclomatic complexity is 15, exceeds threshold of 10',
             $violation->getDisplayMessage(),
         );
-    }
-
-    /**
-     * Every rule that constructs a Violation is migrated separately, so the
-     * observation must be optional from the day it is introduced — otherwise
-     * the type change and every call site have to land in one commit.
-     */
-    #[Test]
-    public function itDefaultsToCarryingNoObservation(): void
-    {
-        $violation = new Violation(
-            location: new Location(RelativePath::fromString('src/test.php'), 10),
-            symbolPath: SymbolPath::forClass('App', 'Foo'),
-            ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.class',
-            message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
-            severity: Severity::Error,
-        );
-
-        self::assertNull($violation->observation);
-    }
-
-    /**
-     * One bundled value object rather than several scalars: the axes, their
-     * boundaries, the contract, and the occurrence discriminator are only
-     * meaningful together, and `metricValue` cannot carry them — different
-     * rules already put different things in it.
-     */
-    #[Test]
-    public function itCarriesASingleBundledObservation(): void
-    {
-        $observation = DebtObservation::scalar(
-            new ContractReference('complexity.cyclomatic.method'),
-            new AxisObservation('ccn', 15, 10),
-        );
-
-        $violation = new Violation(
-            location: new Location(RelativePath::fromString('src/test.php'), 10),
-            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
-            ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
-            message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
-            severity: Severity::Error,
-            metricValue: 15,
-            observation: $observation,
-        );
-
-        self::assertSame($observation, $violation->observation);
-
-        $axis = $violation->observation->axis('ccn');
-        self::assertNotNull($axis);
-        self::assertSame(15, $axis->rawValue);
-        self::assertSame(10, $axis->onsetBoundary);
     }
 
     #[Test]

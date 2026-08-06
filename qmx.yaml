@@ -98,24 +98,6 @@ architecture:
     - name: analysis-pipeline
       patterns: ['Qualimetrix\Analysis\Pipeline\**']
 
-    # ── analysis-coverage — DECIDED, NOT YET ACTIVATABLE ───────────
-    # `Qualimetrix\Analysis\Coverage\**` is the run-coverage centre. Its
-    # layer name, its outbound allow-list, and the full set of inbound
-    # edges are decided here (this file has a single owner), but the
-    # declaration CANNOT be activated until the namespace holds at least
-    # one class: `unreachable_layer_severity: error` below turns a layer
-    # that matches nothing into a build error, and there is no per-layer
-    # opt-out. Activate every marker below — the `- name: analysis-coverage`
-    # declaration, the `analysis-coverage:` outbound allow-list, and the six
-    # inbound edges (four commented `- analysis-coverage` list items plus two
-    # inline `# + analysis-coverage` hints) — in the same change that adds
-    # the first class under src/Analysis/Coverage/. DogfoodingTopologyTest
-    # fails with the exact YAML to paste as soon as that directory becomes
-    # non-empty, so this cannot be forgotten.
-    #
-    #   - name: analysis-coverage
-    #     patterns: ['Qualimetrix\Analysis\Coverage\**']
-
     # ── Infrastructure sub-layers (10) — adapters / glue ───────────
     - name: infra-serializer
       patterns: ['Qualimetrix\Infrastructure\Serializer\**']
@@ -207,16 +189,9 @@ architecture:
     analysis-repository:    [core]
     analysis-duplication:   [core, configuration]
     analysis-aggregator:    [core, analysis-exception]
-    analysis-ruleexecution: [core, configuration]                     # + analysis-coverage
-    analysis-collection:    [core, baseline, analysis-exception]      # + analysis-coverage
+    analysis-ruleexecution: [core, configuration]
+    analysis-collection:    [core, baseline, analysis-exception]
     analysis-lifecycle:     [core, configuration]
-    # analysis-coverage: the run-coverage centre reads the discovery
-    # inventory, the exclusion configuration, and the parse/worker
-    # failures. Deliberately NOT reachable from `baseline` — Baseline
-    # consumes the coverage contract from Core, and an edge from
-    # baseline to an Analysis sub-layer is the upward dependency that
-    # putting the contract in Core exists to prevent.
-    #   analysis-coverage:  [core, configuration, analysis-exception]
     # Pipeline is the orchestration hub — sees every domain plus all
     # other Analysis sub-layers, but not other Infra sub-layers.
     analysis-pipeline:
@@ -239,7 +214,6 @@ architecture:
       - analysis-ruleexecution
       - analysis-collection
       - analysis-lifecycle
-      # - analysis-coverage
 
     # ── Infrastructure leaves ──────────────────────────────────────
     infra-serializer: [core]
@@ -256,7 +230,6 @@ architecture:
       - configuration
       - baseline
       - analysis-collection
-      # - analysis-coverage
       - infra-serializer
       - infra-ast
       - infra-cache
@@ -281,7 +254,6 @@ architecture:
       - analysis-repository
       - analysis-ruleexecution
       - analysis-lifecycle
-      # - analysis-coverage
       - infra-git
       - infra-rule
       - infra-cache
@@ -314,7 +286,6 @@ architecture:
       - analysis-collection
       - analysis-lifecycle
       - analysis-pipeline
-      # - analysis-coverage
       - infra-serializer
       - infra-logging
       - infra-profiler

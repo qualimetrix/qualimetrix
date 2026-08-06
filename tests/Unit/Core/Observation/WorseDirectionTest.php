@@ -39,9 +39,15 @@ final class WorseDirectionTest extends TestCase
         yield 'lower: tie between float and int promotes to float' => [WorseDirection::Lower, 65.0, 65, 65.0];
     }
 
+    /**
+     * {@see WorseDirection::morePermissive()} is what makes `baseline:update`
+     * (§7 of the ratchet-baseline plan) direction-aware: it is the primitive
+     * `update` folds the recorded boundary and the current one through so a
+     * boundary may only move toward stricter, never toward more permissive.
+     */
     #[Test]
     #[DataProvider('provideMorePermissiveCases')]
-    public function itPicksTheMorePermissiveBoundary(
+    public function itPicksTheBoundaryBaselineUpdateMayWidenTowards(
         WorseDirection $direction,
         int|float $a,
         int|float $b,
@@ -51,8 +57,14 @@ final class WorseDirectionTest extends TestCase
         self::assertSame($expected, $direction->morePermissive($b, $a), 'the operator is commutative');
     }
 
+    /**
+     * {@see WorseDirection::isWorse()} is the comparison behind §5.1's group
+     * acceptance in the ratchet-baseline plan: a group is accepted only when
+     * every current member is no worse than the stored member at the same
+     * rank, in the channel's declared direction.
+     */
     #[Test]
-    public function itTreatsHigherValuesAsWorseWhenHigherIsWorse(): void
+    public function itDecidesGroupAcceptanceWhenHigherIsWorse(): void
     {
         $direction = WorseDirection::Higher;
 
@@ -61,8 +73,13 @@ final class WorseDirectionTest extends TestCase
         self::assertFalse($direction->isWorse(24, 25));
     }
 
+    /**
+     * {@see WorseDirection::isWorse()} is the comparison behind §5.1's group
+     * acceptance in the ratchet-baseline plan, mirrored for lower-is-worse
+     * channels (Maintainability Index, cohesion, health scores).
+     */
     #[Test]
-    public function itTreatsLowerValuesAsWorseWhenLowerIsWorse(): void
+    public function itDecidesGroupAcceptanceWhenLowerIsWorse(): void
     {
         $direction = WorseDirection::Lower;
 
@@ -73,7 +90,8 @@ final class WorseDirectionTest extends TestCase
 
     /**
      * Epsilon is a tolerance band around the allowance, not a shift of it:
-     * a value inside the band is neither worse nor better.
+     * a value inside the band is not worse. §5.1 passes an epsilon of `0.0`
+     * (the tolerance is zero), but the parameter itself is exercised here.
      */
     #[Test]
     public function itAbsorbsMovementInsideTheEpsilonBand(): void
@@ -81,9 +99,7 @@ final class WorseDirectionTest extends TestCase
         $direction = WorseDirection::Higher;
 
         self::assertFalse($direction->isWorse(25.4, 25.0, 0.5));
-        self::assertFalse($direction->isBetter(24.6, 25.0, 0.5));
         self::assertTrue($direction->isWorse(25.6, 25.0, 0.5), 'beyond the band is worse again');
-        self::assertTrue($direction->isBetter(24.4, 25.0, 0.5), 'beyond the band is better again');
     }
 
     #[Test]
@@ -92,21 +108,6 @@ final class WorseDirectionTest extends TestCase
         $direction = WorseDirection::Lower;
 
         self::assertFalse($direction->isWorse(19.6, 20.0, 0.5));
-        self::assertFalse($direction->isBetter(20.4, 20.0, 0.5));
         self::assertTrue($direction->isWorse(19.4, 20.0, 0.5));
-        self::assertTrue($direction->isBetter(20.6, 20.0, 0.5));
-    }
-
-    #[Test]
-    public function itNeverCallsAValueBothWorseAndBetter(): void
-    {
-        foreach (WorseDirection::cases() as $direction) {
-            foreach ([-3, 0, 3, 10, 25] as $current) {
-                self::assertFalse(
-                    $direction->isWorse($current, 10, 0.5) && $direction->isBetter($current, 10, 0.5),
-                    'worse and better must stay mutually exclusive',
-                );
-            }
-        }
     }
 }
