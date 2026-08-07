@@ -67,10 +67,10 @@ final readonly class BaselineUpdater
 
     /**
      * @param list<Violation> $measured the run's measured set (§5.5)
-     * @param list<string> $scope the paths this run analysed; {@see Baseline}
-     *                            normalizes it on the way in
+     * @param RunScope $scope the paths this run analysed; recorded only when it covers
+     *                        what the file already records — see {@see scopeToRecord()}
      */
-    public function update(Baseline $baseline, array $measured, array $scope): BaselineUpdateResult
+    public function update(Baseline $baseline, array $measured, RunScope $scope): BaselineUpdateResult
     {
         $groups = self::groupByIdentity($measured);
 
@@ -94,13 +94,38 @@ final readonly class BaselineUpdater
 
         $updated = new Baseline(
             generated: $this->clock->now(),
-            scope: $scope,
+            scope: self::scopeToRecord($baseline, $scope),
             entries: $entries,
             inertEntries: $baseline->inertEntries,
             sourceContentHash: $baseline->sourceContentHash,
         );
 
         return new BaselineUpdateResult($updated, $outcomes);
+    }
+
+    /**
+     * The `scope` the updated file records: the run's own only when it covers
+     * what the file already records, and otherwise the recorded one, unchanged.
+     *
+     * **Why a narrower run must not overwrite it.** The scope guard (§5.7) is
+     * a precondition of this command, overridable with `--force` — and an
+     * overwrite would make one `--force` permanent. A user updating from
+     * `src/Legacy` once would leave the file claiming a narrow run produced
+     * it, after which every subsequent narrow run covers the recorded scope
+     * and the guard never fires again: the single override silently becomes a
+     * standing rule. Keeping the recorded scope means `--force` does exactly
+     * what it says — it lets *this* invocation write — while the file goes on
+     * remembering the breadth its entries were actually captured over.
+     *
+     * A run that *does* cover the recorded scope is recorded as-is: it is at
+     * least as wide, so the entries it wrote are backed by at least as much
+     * measurement, and widening the file's own claim is the honest direction.
+     *
+     * @return list<string>
+     */
+    private static function scopeToRecord(Baseline $baseline, RunScope $scope): array
+    {
+        return $scope->covers($baseline->scope) ? $scope->paths() : $baseline->scope;
     }
 
     /**
@@ -142,7 +167,7 @@ final readonly class BaselineUpdater
         $currentCount = \count($group);
 
         if (!GroupAcceptance::countWithin($currentCount, $entry->count)) {
-            return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, BaselineUpdateRefusalReason::Worsened)];
+            return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, self::worsenedReason($entry))];
         }
 
         $written = new BaselineEntry($entry->identity, null, $currentCount, $entry->mode);
@@ -182,12 +207,30 @@ final readonly class BaselineUpdater
         }
 
         if (!GroupAcceptance::magnitudesWithin($current, $stored, $direction)) {
-            return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, BaselineUpdateRefusalReason::Worsened)];
+            return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, self::worsenedReason($entry))];
         }
 
         $written = new BaselineEntry($entry->identity, $current, \count($current), $entry->mode);
 
         return [$written, BaselineEntryUpdateOutcome::updated($entry->identity)];
+    }
+
+    /**
+     * Which refusal a declined comparison is, on this entry.
+     *
+     * The comparison itself is the same one on every entry — a suppressed
+     * entry is *not* exempt from it, or `update` would become a way to widen
+     * an acceptance (§7). What differs is what the refusal means to a user:
+     * on a `mode: suppress` entry the ceiling never compares these numbers at
+     * `check` time, so nothing observable worsened and the word "worsened"
+     * would send the user looking for a red build that is not there.
+     * Behaviour is identical in both branches; only the name is not.
+     */
+    private static function worsenedReason(BaselineEntry $entry): BaselineUpdateRefusalReason
+    {
+        return $entry->mode === BaselineEntryMode::Suppress
+            ? BaselineUpdateRefusalReason::WorsenedUnderSuppression
+            : BaselineUpdateRefusalReason::Worsened;
     }
 
     /**

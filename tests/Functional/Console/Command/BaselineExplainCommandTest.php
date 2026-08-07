@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Functional\Console\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEntry;
 use Qualimetrix\Baseline\BaselineEntryParser;
@@ -16,6 +17,8 @@ use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Baseline\BoundaryExplanationService;
 use Qualimetrix\Configuration\RuleOptionsFactory;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
@@ -30,6 +33,7 @@ use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Rules\CodeSmell\LongParameterListRule;
 use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Qualimetrix\Tests\Support\Console\StubBaselineRun;
 use Qualimetrix\Tests\Support\Console\TempDirectory;
@@ -48,6 +52,7 @@ final class BaselineExplainCommandTest extends TestCase
 {
     private const string CCN_CHANNEL = 'complexity.cyclomatic#complexity.cyclomatic.method';
     private const string CBO_CHANNEL = 'coupling.cbo#coupling.cbo.class';
+    private const string LONG_PARAMETER_LIST_CHANNEL = 'code-smell.long-parameter-list#code-smell.long-parameter-list';
     private const string SYMBOL_FILE = 'src/OrderService.php';
 
     private string $tempDir;
@@ -137,6 +142,57 @@ final class BaselineExplainCommandTest extends TestCase
         self::assertStringContainsString('accepted 12; now 19', $tester->getDisplay());
     }
 
+    /**
+     * One channel judged against two thresholds prints neither.
+     *
+     * `LongParameterListRule` emits `code-smell.long-parameter-list` for an
+     * ordinary method against `warning: 4` and for a readonly value object's
+     * constructor against `voWarning: 8`, and the channel carries nothing
+     * that says which. Resolving it by property-name convention picks the
+     * generic `warning`, so a nine-parameter VO constructor — measured
+     * against 8, and therefore only just over — is explained as "qmx.yaml
+     * says 4". A number a user acts on is worse wrong than missing, so the
+     * ambiguity is reported as one, in the spelling already reserved for a
+     * boundary that cannot be read from configuration and already distinct
+     * from a configured `0`.
+     */
+    #[Test]
+    public function itRefusesToPickOneOfTwoThresholdsAChannelIsJudgedAgainst(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'OrderService', '__construct');
+
+        $tester = $this->execute(
+            [self::finding($symbol, self::LONG_PARAMETER_LIST_CHANNEL, 9.0)],
+            [],
+            [],
+            [],
+            ruleClasses: [LongParameterListRule::class],
+            symbol: $symbol,
+        );
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+
+        $display = $tester->getDisplay();
+        self::assertStringContainsString('qmx.yaml:      (not resolvable from configuration)', $display);
+        self::assertStringNotContainsString('qmx.yaml:      4', $display);
+        self::assertStringNotContainsString('qmx.yaml:      8', $display);
+        self::assertStringNotContainsString('qmx.yaml:      0', $display);
+    }
+
+    /**
+     * The counterpart, so the rule above cannot be satisfied by giving up on
+     * every channel: one warning boundary, one answer, printed.
+     */
+    #[Test]
+    public function itStillResolvesAChannelWhoseOptionsHoldOneBoundary(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
+
+        $tester = $this->execute([self::finding($symbol, self::CCN_CHANNEL, 31.0)]);
+
+        self::assertStringContainsString('qmx.yaml:      10', $tester->getDisplay());
+    }
+
     #[Test]
     public function itRejectsAChannelThatIsNotAChannelKey(): void
     {
@@ -147,10 +203,40 @@ final class BaselineExplainCommandTest extends TestCase
     }
 
     /**
+     * The case §7 gives as the reason `$symbolLocations` exists: an
+     * `@qmx-threshold` that raised the limit is normally *why* the rule no
+     * longer fires, so the symbol most worth explaining has no violation to
+     * read a declaration site off. Without the run's metric repository,
+     * `locationForSymbol()` has nothing to search and the annotation prints
+     * as "(none)" even though one covers the symbol.
+     */
+    #[Test]
+    public function itPrintsTheAnnotationForASymbolThatViolatesNothing(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
+
+        $metrics = new InMemoryMetricRepository();
+        $metrics->add($symbol, new MetricBag(), RelativePath::fromString(self::SYMBOL_FILE), 12);
+
+        $tester = $this->execute(
+            measured: [],
+            options: ['--channel' => self::CCN_CHANNEL],
+            overrides: [self::SYMBOL_FILE => [new ThresholdOverride('complexity.cyclomatic', 40, 60, 1, 99)]],
+            symbol: $symbol,
+            metrics: $metrics,
+        );
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('warning=40 error=60', $tester->getDisplay());
+    }
+
+    /**
      * @param list<Violation> $measured
      * @param array<string, mixed> $options
      * @param array<string, list<ThresholdOverride>> $overrides
      * @param array<string, mixed> $ruleOptions
+     * @param ?list<class-string<RuleInterface>> $ruleClasses overrides `$registerRules` when a test
+     *                                                        needs one specific rule's options
      */
     private function execute(
         array $measured,
@@ -158,26 +244,36 @@ final class BaselineExplainCommandTest extends TestCase
         array $overrides = [],
         array $ruleOptions = [],
         bool $registerRules = true,
+        ?array $ruleClasses = null,
+        ?SymbolPath $symbol = null,
+        ?MetricRepositoryInterface $metrics = null,
     ): CommandTester {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(self::CBO_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher));
+        $declarations->declare(self::LONG_PARAMETER_LIST_CHANNEL, ChannelDeclaration::magnitude(WorseDirection::Higher));
 
         $registry = new RuleOptionsRegistry();
         $registry->setConfigFileOptions($ruleOptions);
 
         $command = new BaselineExplainCommand(
-            new StubBaselineRun($measured, ['src'], AbsolutePath::fromString($this->tempDir), $overrides),
+            new StubBaselineRun(
+                $measured,
+                ['src'],
+                AbsolutePath::fromString($this->tempDir),
+                $overrides,
+                metrics: $metrics,
+            ),
             new BaselineLoader(new BaselineEntryParser($declarations)),
             new BoundaryExplanationService(),
             new BaselineConfiguredThresholds(
-                self::ruleRegistry($registerRules ? [ComplexityRule::class] : []),
+                self::ruleRegistry($ruleClasses ?? ($registerRules ? [ComplexityRule::class] : [])),
                 new RuleOptionsFactory($registry),
             ),
         );
 
         $tester = new CommandTester($command);
         $tester->execute([
-            'symbol' => SymbolPath::forMethod('App', 'OrderService', 'calculate')->toCanonical(),
+            'symbol' => ($symbol ?? SymbolPath::forMethod('App', 'OrderService', 'calculate'))->toCanonical(),
             'paths' => ['src'],
             ...$options,
         ]);

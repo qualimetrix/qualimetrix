@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
+use Qualimetrix\Baseline\RunScope;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun;
@@ -17,8 +18,9 @@ use Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun;
  * object, but three other things travel with it because they are facts about
  * *that* run and cannot be recomputed later without risking disagreement:
  *
- * - the **scope**, in the project-relative form a baseline file records, so
- *   the scope guard of §5.7 compares two spellings of the same idea;
+ * - the **scope**, as a {@see RunScope} rather than a bare path list, so the
+ *   guard of §5.7 asks the object that derived the portable form whether it
+ *   covers the recorded one instead of two sides deriving it separately;
  * - the **project root**, which {@see \Qualimetrix\Baseline\BaselineWriter}
  *   needs to make `file:` keys portable;
  * - the **analysis result**, because `baseline:explain` reads the run's
@@ -28,13 +30,12 @@ use Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun;
 final readonly class BaselineRunContext
 {
     /**
-     * @param list<string> $scope the analysed paths, project-relative where possible —
-     *                            what a baseline file records and what the scope guard
-     *                            compares against
+     * @param RunScope $scope the analysed paths in the portable form a baseline file
+     *                        records, and the coverage predicate the scope guard reads
      */
     public function __construct(
         public MeasuredAnalysisRun $run,
-        public array $scope,
+        public RunScope $scope,
         public AbsolutePath $projectRoot,
     ) {}
 

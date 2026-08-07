@@ -16,6 +16,7 @@ use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use ReflectionObject;
+use ReflectionProperty;
 use Throwable;
 
 /**
@@ -45,8 +46,29 @@ use Throwable;
  * - a multi-axis rule's channel names its axis (`…#design.type-coverage.return`),
  *   so a property named after that axis is preferred (`returnWarning`).
  *
- * Rules with neither — every occurrence channel, where a boundary is not a
- * number at all — resolve to nothing, correctly.
+ * Rules with neither resolve to nothing, correctly.
+ *
+ * **Occurrence and "no number" are not the same thing**, and the earlier
+ * wording here equated them. `coupling.class-rank` is an occurrence channel —
+ * a baseline entry for it bounds a count, because a PageRank is renormalised
+ * over the whole project and is not a boundary in a later run's units — yet
+ * its options do configure the `0.02` the rule fires above, and printing that
+ * number answers exactly the question this line of `explain` asks. What an
+ * occurrence channel has no number for is the *entry*, which is a different
+ * column of the same output.
+ *
+ * **And a channel that names no axis while its options hold several
+ * boundaries resolves to nothing too, deliberately.** `LongParameterListRule`
+ * emits one channel and judges against two thresholds: `warning` for an
+ * ordinary method, `voWarning` for a readonly value object's constructor. The
+ * channel carries nothing that says which applied, so picking the generic
+ * property prints "qmx.yaml says 4" for a nine-parameter VO constructor the
+ * rule measured against 8. **A wrong number is worse than a missing one** —
+ * the user acts on it — so the ambiguity is reported as an ambiguity, through
+ * the same `null` the unresolvable channels use and therefore still distinct
+ * from a configured `0`. The condition is structural, not a list of rule
+ * names: more than one warning boundary on the options object, and no axis in
+ * the channel to choose between them.
  */
 final readonly class BaselineConfiguredThresholds
 {
@@ -120,13 +142,56 @@ final readonly class BaselineConfiguredThresholds
             return $levelOptions !== null ? self::readProperty($levelOptions, self::GENERIC_PROPERTIES) : null;
         }
 
-        $candidates = self::GENERIC_PROPERTIES;
-
         if ($axis !== null) {
-            array_unshift($candidates, self::axisProperty($axis));
+            $onAxis = self::readProperty($options, [self::axisProperty($axis)]);
+
+            if ($onAxis !== null) {
+                return $onAxis;
+            }
         }
 
-        return self::readProperty($options, $candidates);
+        // The channel names no boundary of its own, so a generic property is
+        // only an answer while there is one to be generic about. Where the
+        // options hold several, nothing in the channel says which the rule
+        // applied to the finding being explained, and the first one that
+        // happens to exist would be a guess printed as a fact.
+        if (self::countsWarningBoundaries($options) > 1) {
+            return null;
+        }
+
+        return self::readProperty($options, self::GENERIC_PROPERTIES);
+    }
+
+    /**
+     * How many distinct warning boundaries the options expose.
+     *
+     * Counted from the object rather than from a list of known rules: the
+     * property is "this rule judges one channel against more than one
+     * boundary", and a rule added tomorrow with a second `…Warning` gets the
+     * honest answer without anybody remembering to extend a list here.
+     * `error` counterparts are not counted — the boundary this class reports
+     * is the warning one, and a rule with `warning`/`error` is not ambiguous
+     * about which of them is being asked for.
+     */
+    private static function countsWarningBoundaries(RuleOptionsInterface $options): int
+    {
+        $found = 0;
+
+        foreach ((new ReflectionObject($options))->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
+            $name = $property->getName();
+
+            if ($name !== RuleOptionKey::WARNING && !str_ends_with($name, 'Warning')) {
+                continue;
+            }
+
+            $value = $property->getValue($options);
+
+            if (\is_int($value) || \is_float($value)) {
+                ++$found;
+            }
+        }
+
+        return $found;
     }
 
     private static function levelOptions(HierarchicalRuleOptionsInterface $options, RuleLevel $level): ?LevelOptionsInterface

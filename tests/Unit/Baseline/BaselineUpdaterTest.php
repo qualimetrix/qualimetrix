@@ -18,6 +18,7 @@ use Qualimetrix\Baseline\BaselineUpdateRefusalReason;
 use Qualimetrix\Baseline\EntrySelector;
 use Qualimetrix\Baseline\InertBaselineEntry;
 use Qualimetrix\Baseline\InertEntryReason;
+use Qualimetrix\Baseline\RunScope;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -57,7 +58,7 @@ final class BaselineUpdaterTest extends TestCase
 
         $current = ViolationFactory::magnitude($symbol, 100, 'duplication.code-duplication', 'duplication.code-duplication');
 
-        $result = $this->updater()->update(self::baselineOf($stored), [$current], ['src']);
+        $result = $this->updater()->update(self::baselineOf($stored), [$current], RunScope::fromRecorded(['src']));
 
         self::assertSame(BaselineUpdateDisposition::Updated, $result->outcomes[0]->disposition);
         self::assertSame([100.0], $result->baseline->entries[0]->magnitudes);
@@ -87,7 +88,7 @@ final class BaselineUpdaterTest extends TestCase
             ViolationFactory::magnitude($symbol, 70, 'maintainability.index', 'maintainability.index.class'),
         ];
 
-        $result = $this->updater()->update(self::baselineOf($stored), $current, ['src']);
+        $result = $this->updater()->update(self::baselineOf($stored), $current, RunScope::fromRecorded(['src']));
 
         self::assertSame(BaselineUpdateDisposition::Refused, $result->outcomes[0]->disposition);
         self::assertSame(BaselineUpdateRefusalReason::Worsened, $result->outcomes[0]->refusalReason);
@@ -101,7 +102,7 @@ final class BaselineUpdaterTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
         $stored = new BaselineEntry(BaselineIdentity::forViolation(ViolationFactory::magnitude($symbol, 25)), [25], 1);
 
-        $result = $this->updater()->update(self::baselineOf($stored), [], ['src']);
+        $result = $this->updater()->update(self::baselineOf($stored), [], RunScope::fromRecorded(['src']));
 
         self::assertSame(BaselineUpdateDisposition::Skipped, $result->outcomes[0]->disposition);
         self::assertSame($stored, $result->baseline->entries[0], 'the untouched entry is the exact same object, not a rebuilt copy');
@@ -113,7 +114,7 @@ final class BaselineUpdaterTest extends TestCase
         $baseline = new Baseline(generated: new DateTimeImmutable(), scope: [], entries: []);
         $found = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 25);
 
-        $result = $this->updater()->update($baseline, [$found], ['src']);
+        $result = $this->updater()->update($baseline, [$found], RunScope::fromRecorded(['src']));
 
         self::assertSame(0, $result->baseline->count());
         self::assertSame([], $result->outcomes);
@@ -134,7 +135,7 @@ final class BaselineUpdaterTest extends TestCase
 
         $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$inert]);
 
-        $result = $this->updater()->update($baseline, [], ['src']);
+        $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src']));
 
         self::assertSame([$inert], $result->baseline->inertEntries);
     }
@@ -152,9 +153,90 @@ final class BaselineUpdaterTest extends TestCase
 
         $current = ViolationFactory::magnitude($symbol, 20);
 
-        $result = $this->updater()->update(self::baselineOf($stored), [$current], ['src']);
+        $result = $this->updater()->update(self::baselineOf($stored), [$current], RunScope::fromRecorded(['src']));
 
         self::assertSame(BaselineEntryMode::Suppress, $result->baseline->entries[0]->mode);
+    }
+
+    /**
+     * A `mode: suppress` entry takes the same comparison as any other — a
+     * worse group must not be written into it, or `update` would become a
+     * way to widen an acceptance. What it must not take is the same *word*:
+     * the ceiling never compares these numbers at `check` time, so nothing
+     * the user can observe worsened and "worsened" would send them hunting a
+     * red build that does not exist.
+     */
+    #[Test]
+    public function itNamesASuppressedEntrysRefusalAfterTheSuppressionRatherThanAWorsening(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
+        $stored = new BaselineEntry(
+            BaselineIdentity::forViolation(ViolationFactory::magnitude($symbol, 25)),
+            [25],
+            1,
+            BaselineEntryMode::Suppress,
+        );
+
+        $result = $this->updater()->update(
+            self::baselineOf($stored),
+            [ViolationFactory::magnitude($symbol, 40)],
+            RunScope::fromRecorded(['src']),
+        );
+
+        self::assertSame(BaselineUpdateDisposition::Refused, $result->outcomes[0]->disposition);
+        self::assertSame(
+            BaselineUpdateRefusalReason::WorsenedUnderSuppression,
+            $result->outcomes[0]->refusalReason,
+        );
+        self::assertStringContainsString(
+            'suppress',
+            $result->outcomes[0]->refusalReason->description(),
+            'the wording a user reads must say the entry still suppresses, not that the build got worse',
+        );
+        self::assertSame([25.0], $result->baseline->entries[0]->magnitudes, 'behaviour is unchanged: the stored numbers are kept');
+    }
+
+    /**
+     * The counterpart: without `mode: suppress` the very same declined
+     * comparison keeps its own name, so the new case narrows nothing else.
+     */
+    #[Test]
+    public function itStillNamesAnOrdinaryEntrysRefusalAWorsening(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
+        $stored = new BaselineEntry(BaselineIdentity::forViolation(ViolationFactory::magnitude($symbol, 25)), [25], 1);
+
+        $result = $this->updater()->update(
+            self::baselineOf($stored),
+            [ViolationFactory::magnitude($symbol, 40)],
+            RunScope::fromRecorded(['src']),
+        );
+
+        self::assertSame(BaselineUpdateRefusalReason::Worsened, $result->outcomes[0]->refusalReason);
+    }
+
+    /**
+     * The occurrence shape reaches the same decision through a different
+     * branch of {@see BaselineUpdater}, so it is pinned separately.
+     */
+    #[Test]
+    public function itNamesASuppressedOccurrenceEntrysRefusalTheSameWay(): void
+    {
+        $symbol = SymbolPath::forFile(RelativePath::fromString('src/Legacy.php'));
+        $identity = new BaselineIdentity($symbol->toCanonical(), self::gotoChannel());
+        $stored = new BaselineEntry($identity, null, 1, BaselineEntryMode::Suppress);
+
+        $result = $this->updater()->update(
+            self::baselineOf($stored),
+            [ViolationFactory::occurrence($symbol), ViolationFactory::occurrence($symbol)],
+            RunScope::fromRecorded(['src']),
+        );
+
+        self::assertSame(
+            BaselineUpdateRefusalReason::WorsenedUnderSuppression,
+            $result->outcomes[0]->refusalReason,
+        );
+        self::assertSame(1, $result->baseline->entries[0]->count);
     }
 
     #[Test]
@@ -165,7 +247,7 @@ final class BaselineUpdaterTest extends TestCase
         $stored = new BaselineEntry(BaselineIdentity::forViolation($violation), [5], 1);
 
         $result = (new BaselineUpdater(new StubChannelDeclarationRegistry(), new FixedClock()))
-            ->update(self::baselineOf($stored), [$violation], ['src']);
+            ->update(self::baselineOf($stored), [$violation], RunScope::fromRecorded(['src']));
 
         self::assertSame(BaselineUpdateDisposition::Refused, $result->outcomes[0]->disposition);
         self::assertSame(BaselineUpdateRefusalReason::UndeclaredChannel, $result->outcomes[0]->refusalReason);
@@ -192,7 +274,7 @@ final class BaselineUpdaterTest extends TestCase
 
         $current = ViolationFactory::occurrence($symbol);
 
-        $result = $this->updater()->update(self::baselineOf($stored), [$current], ['src']);
+        $result = $this->updater()->update(self::baselineOf($stored), [$current], RunScope::fromRecorded(['src']));
 
         self::assertSame(BaselineUpdateDisposition::Refused, $result->outcomes[0]->disposition);
         self::assertSame(BaselineUpdateRefusalReason::ShapeMismatch, $result->outcomes[0]->refusalReason);
@@ -213,7 +295,7 @@ final class BaselineUpdaterTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $result = $this->updater()->update(self::baselineOf($stored), [$noNumber], ['src']);
+        $result = $this->updater()->update(self::baselineOf($stored), [$noNumber], RunScope::fromRecorded(['src']));
 
         self::assertSame(BaselineUpdateDisposition::Refused, $result->outcomes[0]->disposition);
         self::assertSame(BaselineUpdateRefusalReason::CurrentMagnitudeUnavailable, $result->outcomes[0]->refusalReason);
@@ -221,14 +303,46 @@ final class BaselineUpdaterTest extends TestCase
     }
 
     #[Test]
-    public function itStampsTheResultFromTheInjectedClockAndRunScope(): void
+    public function itStampsTheResultFromTheInjectedClock(): void
     {
-        $baseline = new Baseline(generated: new DateTimeImmutable('2020-01-01T00:00:00+00:00'), scope: ['tests'], entries: []);
+        $baseline = new Baseline(generated: new DateTimeImmutable('2020-01-01T00:00:00+00:00'), scope: ['src'], entries: []);
 
-        $result = $this->updater()->update($baseline, [], ['src', 'src/']);
+        $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src']));
 
         self::assertSame('2026-08-05T12:00:00+03:00', $result->baseline->generated->format('c'));
-        self::assertSame(['src'], $result->baseline->scope);
+    }
+
+    /**
+     * A run at least as wide as the file's recorded scope records its own:
+     * the entries it wrote are backed by at least as much measurement, so
+     * widening the file's claim is the honest direction.
+     */
+    #[Test]
+    public function itRecordsTheRunScopeWhenTheRunCoversWhatTheFileRecords(): void
+    {
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: []);
+
+        $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src', 'tests']));
+
+        self::assertSame(['src', 'tests'], $result->baseline->scope);
+    }
+
+    /**
+     * **The `--force` that must not become permanent (§5.7).** The scope
+     * guard is a command precondition a user overrides per invocation; if a
+     * narrower run also overwrote the recorded `scope`, that one override
+     * would silently become a standing rule — every later narrow run would
+     * then cover the file's own (now narrow) claim and the guard would never
+     * fire again.
+     */
+    #[Test]
+    public function itKeepsTheRecordedScopeWhenTheRunDoesNotCoverIt(): void
+    {
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src', 'tests'], entries: []);
+
+        $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src/Legacy']));
+
+        self::assertSame(['src', 'tests'], $result->baseline->scope);
     }
 
     #[Test]
@@ -236,7 +350,7 @@ final class BaselineUpdaterTest extends TestCase
     {
         $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], sourceContentHash: 'abc123');
 
-        $result = $this->updater()->update($baseline, [], ['src']);
+        $result = $this->updater()->update($baseline, [], RunScope::fromRecorded(['src']));
 
         self::assertSame('abc123', $result->baseline->sourceContentHash);
     }

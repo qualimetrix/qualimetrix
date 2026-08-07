@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Functional\Console\Command;
 
+use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -97,6 +98,69 @@ final class BaselineMigrateCommandTest extends TestCase
         self::assertSame($before, file_get_contents($this->baselinePath));
     }
 
+    /**
+     * `migrate` reads a file, runs an analysis, and writes back over what it
+     * read — the same read-modify-write `update` and `cleanup` perform, and
+     * the same reason they carry a compare-and-swap token (§5.8). Those two
+     * get the token from the loader; a version 5 file is not read by that
+     * loader, and without a token taken deliberately the whole analysis is a
+     * window in which another process's write is silently discarded.
+     */
+    #[Test]
+    public function itRefusesToWriteWhenTheVersion5FileChangedDuringTheAnalysis(): void
+    {
+        $this->writeV5(['file:src/Legacy.php' => [['rule' => 'code-smell.goto', 'hash' => 'aaa']]]);
+
+        $tester = $this->execute([], [self::gotoFinding('src/Legacy.php')], function (): void {
+            $this->writeV5([
+                'file:src/Legacy.php' => [['rule' => 'code-smell.goto', 'hash' => 'aaa']],
+                'file:src/Added.php' => [['rule' => 'code-smell.goto', 'hash' => 'ccc']],
+            ]);
+        });
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('changed since it was read', $tester->getDisplay());
+
+        /** @var array{version: int, entries: array<string, mixed>} $data */
+        $data = json_decode((string) file_get_contents($this->baselinePath), true, flags: \JSON_THROW_ON_ERROR);
+
+        self::assertSame(5, $data['version'], 'the other writer\'s file must survive intact');
+        self::assertArrayHasKey('file:src/Added.php', $data['entries']);
+    }
+
+    /**
+     * `migrate` runs once — a v5 row the reader could not parse is an
+     * acceptance the user loses without being told, unless the command names
+     * it. {@see V5BaselineReader} already collects these as
+     * {@see \Qualimetrix\Baseline\V5UnreadableRecord} rather than silently
+     * skipping them; this checks the command actually prints them.
+     */
+    #[Test]
+    public function itNamesVersion5RowsThatDidNotParse(): void
+    {
+        file_put_contents($this->baselinePath, (string) json_encode([
+            'version' => 5,
+            'generated' => '2026-01-01T00:00:00+00:00',
+            'entries' => [
+                'file:src/Legacy.php' => [
+                    ['rule' => 'code-smell.goto', 'hash' => 'aaa'],
+                    ['hash' => 'bbb'],
+                ],
+            ],
+        ], \JSON_THROW_ON_ERROR));
+
+        $tester = $this->execute([], [self::gotoFinding('src/Legacy.php')]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+
+        $display = $tester->getDisplay();
+        self::assertStringContainsString('unreadable: 1 version 5 row could not be read', $display);
+        self::assertStringContainsString(
+            'file:src/Legacy.php — "rule" is missing or not a non-empty string',
+            $display,
+        );
+    }
+
     #[Test]
     public function itReplacesANonVersion5DestinationUnderForce(): void
     {
@@ -119,14 +183,17 @@ final class BaselineMigrateCommandTest extends TestCase
     /**
      * @param array<string, mixed> $options
      * @param list<Violation> $measured
+     * @param ?Closure(): void $duringAnalysis what happens to the destination while the run
+     *                                         is measuring — the window between reading the
+     *                                         version 5 file and writing over it
      */
-    private function execute(array $options, array $measured): CommandTester
+    private function execute(array $options, array $measured, ?Closure $duringAnalysis = null): CommandTester
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $reader = new V5BaselineReader();
 
         $command = new BaselineMigrateCommand(
-            new StubBaselineRun($measured, ['src'], AbsolutePath::fromString($this->tempDir)),
+            new StubBaselineRun($measured, ['src'], AbsolutePath::fromString($this->tempDir), onMeasure: $duringAnalysis),
             new BaselineGenerator($declarations, new FixedClock()),
             new BaselineMigrator($reader),
             $reader,

@@ -28,7 +28,7 @@ Baseline/
 ├── UncapturedReason.php         # Enum: undeclared channel / no finite magnitude
 ├── BaselineLoader.php           # Loads a version 10 file
 ├── BaselineWriter.php           # Writes atomically under a compare-and-swap guard
-├── ScopeCoverage.php            # Predicate: does a run's scope cover a file's recorded scope?
+├── RunScope.php                 # VO: a run's analysed paths in the portable form the file records, plus the coverage predicate the scope guard reads
 │
 ├── BaselineUpdater.php          # `baseline:update`: direction-aware monotonic tightening
 ├── BaselineUpdateResult.php     # VO: the updated baseline plus one outcome per entry
@@ -43,9 +43,10 @@ Baseline/
 │
 ├── BaselineMigrator.php         # `baseline:migrate`: replaces the baseline with a fresh capture, matching v5 against it by (symbolKey, rule) to report continuity
 ├── BaselineMigratorResult.php   # VO: the migrated baseline plus its MigrationReport
-├── MigrationReport.php          # VO: carried/dropped/fresh pair counts, dropped entries enumerated in full
+├── MigrationReport.php          # VO: carried/dropped/fresh pair counts, dropped entries and unreadable v5 rows enumerated in full
 ├── MigrationReportDroppedEntry.php # VO: one v5 (symbolKey, rule) pair the fresh capture no longer backs
-├── V5Baseline.php               # VO: a parsed version 5 file — read-only, never applied
+├── V5Baseline.php               # VO: a parsed version 5 file — read-only, never applied; holds what parsed and what did not
+├── V5UnreadableRecord.php       # VO: one v5 row that did not parse — the symbol it was listed under and what failed
 ├── V5Entry.php                  # VO: one v5 record — symbol, rule, and the opaque hash v5 stored instead of a magnitude
 ├── V5BaselineReader.php         # Reads a v5 file (or checks it is one, for --force's guard); BaselineLoader refuses version 5 outright
 │
@@ -162,25 +163,42 @@ parsing, the scope-guard refusal message, and writing the result through
 
 ### The scope guard
 
-`ScopeCoverage` is the shared predicate both writing commands check before
-doing anything else (§5.7): **the current run's scope must cover the file's
-recorded `scope`**, overridable with `--force`. The hazard is one-directional
-— a run *narrower* than the recorded scope makes every identity outside it
-look absent, so `cleanup` would offer to delete the rest of the file and
-`update` would silently believe nothing changed. A *wider* run is harmless.
+`RunScope` owns both halves of the guard: the **portable form** a run records
+and the **coverage predicate** every reader of that form applies. They are one
+type because they are one rule — while they lived apart, each side derived the
+portable form itself and the two disagreed about the project root.
 
 ```php
-ScopeCoverage::covers(runScope: $paths, recordedScope: $baseline->scope); // bool
-ScopeCoverage::uncoveredPaths(runScope: $paths, recordedScope: $baseline->scope); // list<string>
+$scope = RunScope::record($absolutePaths, $projectRoot);  // what a run writes
+$scope = RunScope::fromRecorded($baseline->scope);        // what a file holds
+$scope->paths();                                          // list<string>
+$scope->covers($baseline->scope);                         // bool
+$scope->uncoveredPaths($baseline->scope);                 // list<string>
 ```
 
-Coverage is by whole path segment (`Baseline::normalizeScope()`'s normal
-form): `src` covers `src/Foo` but neither covers nor is covered by `srcfoo`
-or by `src/Foo` itself.
+`record()` writes each path project-relatively where it can. **A path equal to
+the project root records as `.`**, never as the absolute machine path it sits
+at: a baseline is a tracked file, and `/Users/<you>/...` in one both breaks
+portability between checkouts and violates the repository's own rule on
+absolute home paths (CLAUDE.md §10). A path genuinely *outside* the project
+root has no relative form and is kept as given — the analysed tree really is
+elsewhere.
+
+Coverage is by whole path segment: `src` covers `src/Foo` but neither covers
+nor is covered by `srcfoo` or by `src/Foo` itself. Two paths cover
+unconditionally — `.` (every project-relative path) and `/` (everything).
+
+Both writing commands check the predicate before doing anything else (§5.7):
+**the current run's scope must cover the file's recorded `scope`**, overridable
+with `--force`. The hazard is one-directional — a run *narrower* than the
+recorded scope makes every identity outside it look absent, so `cleanup` would
+offer to delete the rest of the file and `update` would silently believe
+nothing changed. A *wider* run is harmless. `check` reports the same mismatch
+and never fails on it.
 
 ### `BaselineUpdater` — direction-aware monotonic tightening
 
-`BaselineUpdater::update(Baseline $baseline, list<Violation> $measured, list<string> $scope): BaselineUpdateResult`
+`BaselineUpdater::update(Baseline $baseline, list<Violation> $measured, RunScope $scope): BaselineUpdateResult`
 reconciles every entry the loaded baseline holds against the run's measured
 set (§5.5, §7):
 
@@ -201,9 +219,20 @@ byte-for-byte unchanged — never partially adjusted, since a partial write
 disguised as a refusal would be an undocumented second acceptance rule.
 `BaselineUpdateResult::$outcomes` names, per entry, one of `Updated`,
 `Refused` (with a `BaselineUpdateRefusalReason`: `UndeclaredChannel`,
-`ShapeMismatch`, `CurrentMagnitudeUnavailable`, `Worsened`) or `Skipped`.
-`mode` and `Baseline::$inertEntries` are carried forward verbatim; `update`
-does not read either to decide anything.
+`ShapeMismatch`, `CurrentMagnitudeUnavailable`, `Worsened`,
+`WorsenedUnderSuppression`) or `Skipped`. The last two are the same declined
+comparison: a `mode: suppress` entry is tested like any other — otherwise
+`update` would be a way to widen an acceptance — but calling its refusal
+"worsened" would point a user at a red build that cannot happen, since the
+ceiling never compares that entry's numbers at `check` time. `mode` and
+`Baseline::$inertEntries` are carried forward verbatim; `update` does not read
+either to decide anything.
+
+**The recorded `scope` is not overwritten by a narrower run.** `update` writes
+the run's own scope only when it covers what the file already records, and
+otherwise keeps the recorded one. The guard above is a per-invocation
+override; if one `--force` over `src/Legacy` also narrowed the file's claim,
+every later narrow run would cover it and the guard would never fire again.
 
 ### `BaselineCleaner` — candidate enumeration and selector removal
 
@@ -244,11 +273,30 @@ magnitude to recover. A pair the fresh capture still backs is counted as
 carried; a pair it does not is enumerated in `MigrationReport::$dropped`,
 since a user needs to know which acceptance was lost, not just how many.
 
+A v5 row that never parsed into a record belongs to none of those groups, and
+`V5BaselineReader` **collects rather than skips** it: `read()` returns it in
+`V5Baseline::$unreadable`, and `BaselineMigrator` carries it into
+`MigrationReport::$unreadableV5Records` for the command to name. `migrate` runs
+once, so a row dropped in silence is an acceptance the user loses without ever
+learning it existed — while refusing the whole file over one bad row would be
+the opposite mistake (§6).
+
 `BoundaryExplanationService` is unrelated to migration but shares this
 package's "read-only against the measured set" shape: `baseline:explain`
 gives it the loaded baseline, the run's violations, and configuration read
 by its own command (thresholds, annotations), and it answers with one
 `EffectiveBoundary` per relevant identity — never touching a file itself.
+
+It also takes the run's `MetricRepositoryInterface` (optional, last argument),
+and only to locate a symbol that reports no violation. Matching an
+`@qmx-threshold` needs a file and a line; reading them off the symbol's
+findings answers only for symbols that are currently violating something,
+which is the wrong half of the population — a raised threshold is normally
+*why* the rule stopped firing, so §7's own example ("`qmx.yaml` says 10;
+annotation raises it to 40") is precisely the case with no finding to read.
+The repository knows where every measured symbol is declared, violating or
+not. A symbol with no declaration line anywhere — `ns:`, `project:`, or one
+the run never measured — reports the annotation as absent rather than guessed.
 
 ## Entry Identity
 
@@ -324,9 +372,11 @@ Entries under one symbol key sort by channel and then by edge, **whatever their 
 an entry that happens to be inert in the writing process sorts exactly where it would if
 it were applicable. Only an entry whose channel could not be read at all has nothing to
 sort on; those follow, ordered by selector. Order therefore does not depend on which
-command wrote the file: `baseline:cleanup` runs without an analysis configuration and
-loads every `computed.*` entry inert, which under a valid-block-then-inert-block layout
-moved those lines on every cleanup.
+configuration produced the file: applicability is not a stable fact about an entry — a
+different `--preset`, a different `--config`, or a run with `computed_metrics:` absent
+can each change whether a `computed.*` entry resolves as applicable or inert from one
+invocation to the next — so a valid-block-then-inert-block layout would move those lines
+whenever that changed.
 
 Everything except `generated` is deterministic for the same analysis. The writer pins
 the float representation at the encode site (`serialize_precision=-1` for the duration

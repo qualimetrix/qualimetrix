@@ -34,11 +34,20 @@ namespace Qualimetrix\Baseline;
  * refused to record (§5.4, §6) is invisible everywhere else this report
  * looks, and a `migrate` that reported carried/dropped/fresh while silently
  * losing this count would misstate how much of the run actually landed.
+ *
+ * {@see $unreadableV5Records} is the same argument applied to the *input*:
+ * a row of the v5 file that did not parse belongs to none of the three
+ * groups above, because it never became a pair to classify. It is
+ * enumerated, not counted — a user who is told "3 rows were unreadable"
+ * without being told which ones has no way to recover them, and `migrate`
+ * does not run twice.
  */
 final readonly class MigrationReport
 {
     /**
      * @param list<MigrationReportDroppedEntry> $dropped fully enumerated — see the class docblock
+     * @param list<V5UnreadableRecord> $unreadableV5Records rows of the v5 file that never
+     *                                                      parsed into a record, in file order
      */
     public function __construct(
         public int $carriedV5EntryCount,
@@ -46,5 +55,6 @@ final readonly class MigrationReport
         public array $dropped,
         public int $freshV10EntryCount,
         public int $uncapturedGroupCount,
+        public array $unreadableV5Records = [],
     ) {}
 }

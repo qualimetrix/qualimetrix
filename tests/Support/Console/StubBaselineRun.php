@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Support\Console;
 
+use Closure;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Baseline\RunScope;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Violation\Violation;
@@ -24,36 +27,53 @@ use Symfony\Component\Console\Output\OutputInterface;
  * source fixture for every boundary case, including ones no PHP file
  * produces on demand (a `lower`-direction channel whose group grew by one
  * member, say), and would test the pipeline on the way.
+ *
+ * `$onMeasure` is the one thing a stub of a *run* must still be able to do:
+ * a real run resolves configuration and touches the world before it answers,
+ * and two of the properties under test are about what happens in that window
+ * — a `computed.*` declaration that only exists afterwards, and a baseline
+ * file another process rewrites while it is open.
  */
 final readonly class StubBaselineRun implements BaselineRunInterface
 {
     /**
      * @param list<Violation> $violations the measured set this run reports
-     * @param list<string> $scope the paths it claims to have analysed
+     * @param list<string> $scope the paths it claims to have analysed, already portable
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides per-file `@qmx-threshold`
      *                                                                   annotations the run found
+     * @param ?Closure(): void $onMeasure side effect of running, performed before the context is
+     *                                    returned — what the real run does to the world on its way
+     *                                    to an answer
+     * @param ?MetricRepositoryInterface $metrics the run's measured symbols, as
+     *                                            {@see \Qualimetrix\Analysis\Pipeline\AnalysisResult::$metrics}
+     *                                            would carry them; defaults to an empty repository
+     *                                            when a test has no need to populate declaration sites
      */
     public function __construct(
         private array $violations,
         private array $scope,
         private AbsolutePath $projectRoot,
         private array $thresholdOverrides = [],
+        private ?Closure $onMeasure = null,
+        private ?MetricRepositoryInterface $metrics = null,
     ) {}
 
     public function measure(InputInterface $input, OutputInterface $output): BaselineRunContext
     {
+        ($this->onMeasure ?? static fn(): null => null)();
+
         $result = new AnalysisResult(
             violations: $this->violations,
             filesAnalyzed: 1,
             filesSkipped: 0,
             duration: 0.0,
-            metrics: new InMemoryMetricRepository(),
+            metrics: $this->metrics ?? new InMemoryMetricRepository(),
             thresholdOverrides: $this->thresholdOverrides,
         );
 
         return new BaselineRunContext(
             new MeasuredAnalysisRun($result, $this->violations),
-            $this->scope,
+            RunScope::fromRecorded($this->scope),
             $this->projectRoot,
         );
     }

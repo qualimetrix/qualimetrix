@@ -8,10 +8,13 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEntry;
 use Qualimetrix\Baseline\BaselineIdentity;
 use Qualimetrix\Baseline\BoundaryExplanationService;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -193,13 +196,13 @@ final class BoundaryExplanationServiceTest extends TestCase
     }
 
     /**
-     * The annotation source needs a file and line to scope the match; when
-     * the symbol reports nothing in the measured set at all, there is
-     * nowhere to read them from, and the annotation is absent rather than
-     * guessed.
+     * The annotation source needs a file and line to scope the match. With
+     * no finding to read them off *and* no measured symbol to fall back on,
+     * there is nowhere to get them, and the annotation is reported absent
+     * rather than guessed.
      */
     #[Test]
-    public function itReportsNoAnnotationWhenNothingCurrentlyLocatesTheSymbol(): void
+    public function itReportsNoAnnotationWhenNoSourceLocatesTheSymbol(): void
     {
         $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
 
@@ -215,6 +218,77 @@ final class BoundaryExplanationServiceTest extends TestCase
         );
 
         self::assertNull($explanation->boundaries[0]->annotation);
+    }
+
+    /**
+     * **§7's own example, which used to be the case that did not work.**
+     * "`qmx.yaml` says 10; annotation raises it to 40" describes a symbol
+     * that is *not* violating anything — the raised threshold is normally
+     * why the rule stopped firing. Reading the symbol's location only off
+     * its findings therefore went silent exactly where the annotation
+     * mattered most; the run's measured symbols answer where it is declared
+     * whether or not it violates.
+     */
+    #[Test]
+    public function itFindsTheAnnotationForASymbolThatViolatesNothing(): void
+    {
+        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+
+        $explanation = $this->service->explain(
+            symbolKey: self::SYMBOL_KEY,
+            channelFilter: $channel,
+            baseline: null,
+            measuredViolations: [],
+            thresholdOverridesByFile: [
+                'src/Foo.php' => [new ThresholdOverride('complexity.cyclomatic', 15, 40, 12, 50)],
+            ],
+            configuredThresholds: [$channel->toKey() => 10],
+            symbolLocations: $this->repositoryLocating(SymbolPath::forMethod('App', 'Foo', 'bar'), 'src/Foo.php', 14),
+        );
+
+        $boundary = $explanation->boundaries[0];
+
+        self::assertNotNull($boundary->annotation, 'the annotation is what raised the threshold; it must be printed');
+        self::assertSame(40, $boundary->annotation->error);
+        self::assertSame(10, $boundary->configuredThreshold);
+        self::assertNull($boundary->baseline);
+    }
+
+    /**
+     * A symbol the run never measured has no declaration site anywhere, so
+     * the fallback does not invent one.
+     */
+    #[Test]
+    public function itReportsNoAnnotationForASymbolTheRunNeverMeasured(): void
+    {
+        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+
+        $explanation = $this->service->explain(
+            symbolKey: self::SYMBOL_KEY,
+            channelFilter: $channel,
+            baseline: null,
+            measuredViolations: [],
+            thresholdOverridesByFile: [
+                'src/Foo.php' => [new ThresholdOverride('complexity.cyclomatic', 15, 40, 1, 50)],
+            ],
+            configuredThresholds: [],
+            symbolLocations: $this->repositoryLocating(SymbolPath::forMethod('App', 'Other', 'baz'), 'src/Other.php', 3),
+        );
+
+        self::assertNull($explanation->boundaries[0]->annotation);
+    }
+
+    /**
+     * A repository that knows where exactly one symbol is declared — the
+     * shape a run leaves behind for every symbol it measured, violating or
+     * not.
+     */
+    private function repositoryLocating(SymbolPath $symbol, string $file, int $line): MetricRepositoryInterface
+    {
+        $repository = new InMemoryMetricRepository();
+        $repository->add($symbol, new MetricBag(), RelativePath::fromString($file), $line);
+
+        return $repository;
     }
 
     /**

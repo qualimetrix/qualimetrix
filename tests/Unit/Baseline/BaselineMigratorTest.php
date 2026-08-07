@@ -18,6 +18,7 @@ use Qualimetrix\Baseline\UncapturedReason;
 use Qualimetrix\Baseline\V5Baseline;
 use Qualimetrix\Baseline\V5BaselineReader;
 use Qualimetrix\Baseline\V5Entry;
+use Qualimetrix\Baseline\V5UnreadableRecord;
 use Qualimetrix\Core\Violation\ViolationChannel;
 
 /**
@@ -105,6 +106,24 @@ final class BaselineMigratorTest extends TestCase
         $result = $this->migrator->migrate($this->v5Fixture(), $freshCapture);
 
         self::assertSame($freshCapture->baseline, $result->baseline);
+    }
+
+    /**
+     * A row the reader could not parse belongs to none of the three groups —
+     * it never became a pair to classify — so it travels into the report
+     * verbatim. Losing it here would undo the reader's whole reason for
+     * collecting it: `migrate` runs once, and the report is where a user
+     * finds out what did not come across.
+     */
+    #[Test]
+    public function itCarriesTheV5FilesUnreadableRowsIntoTheReport(): void
+    {
+        $unreadable = [new V5UnreadableRecord('class:App\Broken', '"hash" is missing')];
+        $v5 = new V5Baseline($this->v5Fixture()->entries, $unreadable);
+
+        $report = $this->migrator->migrate($v5, $this->freshCaptureFixture())->report;
+
+        self::assertSame($unreadable, $report->unreadableV5Records);
     }
 
     #[Test]

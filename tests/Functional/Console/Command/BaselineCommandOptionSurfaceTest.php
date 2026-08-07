@@ -18,14 +18,29 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Command\Command;
 
 /**
- * §5.5's prohibition, checked rather than trusted.
+ * §5.5's rule, checked rather than trusted — and it has two halves.
  *
  * The measured set is defined by configuration and by the source's own
- * annotations; a flag that could move it would let a baseline command and the
+ * annotations. A flag that could move it lets a baseline command and the
  * `check` it must agree with measure two different sets, and the user who
- * passed the flag to one and not the other would never be told. The three
- * options below are exactly the ones that would do it, so no baseline command
- * may declare any of them.
+ * passed the flag to one and not the other is never told. Which way the set
+ * moves decides what the surface must do about the flag:
+ *
+ * - **Narrowing flags are refused.** `--exclude-path`, `--exclude-namespace`
+ *   and `--no-suppression-annotations` only ever remove findings from a
+ *   report. A capture taken under one of them records less than `check`
+ *   measures, and the entries it did not write are debt nothing bounds.
+ * - **Configuration flags are required.** `--preset`, `--rule-opt`,
+ *   `--only-rule` and `--disable-rule` decide which rules run and against
+ *   which thresholds — they *are* the configuration §5.5 defines the set by.
+ *   Withholding them does not keep the two sides equal, it guarantees they
+ *   differ the dangerous way: `check --preset=strict --baseline=b.json`
+ *   measures more than `baseline:generate b.json` could capture, and every
+ *   finding the capture never saw reads as a breach and promotes its group to
+ *   Error on untouched code (§5.6).
+ *
+ * Both halves are asserted, because either alone is satisfied by a command
+ * with no options at all.
  *
  * Asked of each command's own definition, because "we did not add it" is a
  * fact about today and this is a property of the surface.
@@ -38,6 +53,14 @@ use Symfony\Component\Console\Command\Command;
 final class BaselineCommandOptionSurfaceTest extends TestCase
 {
     private const array FORBIDDEN_OPTIONS = ['exclude-path', 'exclude-namespace', 'no-suppression-annotations'];
+
+    /**
+     * The options that decide which rules run and against which thresholds.
+     * Spelled exactly as `check` spells them — the configuration stages read
+     * them off the input by name, so a different spelling here would leave
+     * the option accepted and inert.
+     */
+    private const array REQUIRED_CONFIGURATION_OPTIONS = ['preset', 'rule-opt', 'only-rule', 'disable-rule'];
 
     /**
      * @return iterable<string, array{class-string<Command>}>
@@ -84,6 +107,44 @@ final class BaselineCommandOptionSurfaceTest extends TestCase
 
         self::assertTrue($definition->hasOption('config'));
         self::assertTrue($definition->hasArgument('paths'));
+    }
+
+    /**
+     * The other half: every option that decides *what runs* is accepted, and
+     * accepted under the same name `check` gives it.
+     *
+     * The `check` side is asserted in the same loop rather than assumed. The
+     * property under test is agreement between two surfaces, and a test that
+     * hard-coded the names would keep passing if `check` renamed one of them
+     * — which is exactly the day the two commands would start measuring
+     * different sets.
+     *
+     * @param class-string<Command> $commandClass
+     */
+    #[Test]
+    #[DataProvider('provideBaselineCommands')]
+    public function itAcceptsEveryOptionThatDecidesWhatIsMeasured(string $commandClass): void
+    {
+        $definition = self::command($commandClass)->getDefinition();
+        $check = self::command(CheckCommand::class)->getDefinition();
+
+        foreach (self::REQUIRED_CONFIGURATION_OPTIONS as $option) {
+            self::assertTrue(
+                $check->hasOption($option),
+                \sprintf('check no longer declares --%s; the two surfaces must be compared on names both use.', $option),
+            );
+
+            self::assertTrue(
+                $definition->hasOption($option),
+                \sprintf(
+                    '%s must accept --%s: without it `check --%s` measures more than this command '
+                    . 'can capture, and the excess reads as a breach (§5.5).',
+                    $commandClass,
+                    $option,
+                    $option,
+                ),
+            );
+        }
     }
 
     /**

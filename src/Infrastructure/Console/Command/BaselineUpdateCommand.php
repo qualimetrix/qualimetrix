@@ -78,8 +78,12 @@ final class BaselineUpdateCommand extends BaselineCommand
         $baselinePath = $input->getArgument('baseline');
         $force = $input->getOption('force') === true;
 
-        $baseline = $this->loader->load($baselinePath);
+        // The run first, then the file (§5.4): a `computed.*` channel resolves
+        // its shape and direction from configuration this run resolves, and a
+        // file read before it loads every such entry inert — which here means
+        // silently declining to tighten entries `check` applies normally.
         $context = $this->baselineRun->measure($input, $output);
+        $baseline = $this->loader->load($baselinePath);
 
         if (!$this->assertScopeCovers($context->scope, $baseline->scope, $force, $output)) {
             return self::FAILURE;

@@ -7,10 +7,7 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\RuleExecution\RuleExclusionStats;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
-use Qualimetrix\Baseline\Baseline;
-use Qualimetrix\Baseline\ScopeCoverage;
-use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Baseline\RunScope;
 use Qualimetrix\Core\Violation\Filter\ViolationFilterStage;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
@@ -198,6 +195,10 @@ final readonly class ViolationFilterOrchestrator
      * A narrower run makes every identity outside it look absent, which is
      * exactly what the stale list above reports — so the explanation here
      * points back at it rather than duplicating the mechanism.
+     *
+     * The run's own scope is derived by {@see RunScope::record()} — the same
+     * call the writing commands make — so this side of the guard and theirs
+     * cannot disagree about what a run analysed.
      */
     private function reportScopeMismatch(
         ViolationFilterResult $filterResult,
@@ -208,8 +209,8 @@ final readonly class ViolationFilterOrchestrator
             return;
         }
 
-        $runScope = Baseline::normalizeScope(self::portableScope($scopeResolution->paths, $scopeResolution->projectRoot));
-        $uncovered = ScopeCoverage::uncoveredPaths($runScope, $filterResult->baselineScope);
+        $runScope = RunScope::record($scopeResolution->paths, $scopeResolution->projectRoot);
+        $uncovered = $runScope->uncoveredPaths($filterResult->baselineScope);
 
         if ($uncovered === []) {
             return;
@@ -225,30 +226,6 @@ final readonly class ViolationFilterOrchestrator
             . 'stale entries above — they are not resolved. Run against the recorded scope to see the '
             . 'baseline\'s full state.</comment>',
         );
-    }
-
-    /**
-     * The run's analysed paths in the same portable, project-relative form
-     * the baseline file records its `scope` in — see the retired
-     * `BaselinePresenter::portableScope()` (still in git history at
-     * `48513af`), which this mirrors so a run's own scope compares against
-     * a loaded file on equal terms. A path outside the project root has no
-     * relative form and is kept as given.
-     *
-     * @param list<AbsolutePath> $paths
-     *
-     * @return list<string>
-     */
-    private static function portableScope(array $paths, AbsolutePath $projectRoot): array
-    {
-        $scope = [];
-
-        foreach ($paths as $path) {
-            $relative = PathFactory::tryProjectRelative($path->value(), $projectRoot);
-            $scope[] = $relative?->value() ?? $path->value();
-        }
-
-        return $scope;
     }
 
     private function reportSuppressedViolations(

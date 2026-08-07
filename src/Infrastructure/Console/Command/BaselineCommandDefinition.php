@@ -11,18 +11,40 @@ use Symfony\Component\Console\Input\InputOption;
 /**
  * The input every baseline command shares, defined once.
  *
- * **What is deliberately absent is the point.** §5.5 of the
- * baseline-ceiling plan forbids these commands the exclusion and suppression
- * flags `check` accepts — `--exclude-path`, `--exclude-namespace`,
- * `--no-suppression-annotations` — because a set that a flag can move is a
- * set two commands can disagree about. Defining the shared input in one place
- * means the prohibition is one thing to check rather than five, and
- * {@see \Qualimetrix\Tests\Functional\Console\Command\BaselineCommandOptionSurfaceTest}
- * checks it by asking each command's definition rather than by reading them.
+ * **The line these options are drawn along is §5.5's asymmetry: a flag may
+ * narrow the measured set, none may widen it.**
  *
- * `--config` is not such a flag: it names *which* configuration defines the
- * set, and without it a baseline command could not be pointed at the same
- * `qmx.yaml` the `check` it must agree with was pointed at.
+ * *Absent, and deliberately so* — the exclusion and suppression flags `check`
+ * accepts (`--exclude-path`, `--exclude-namespace`,
+ * `--no-suppression-annotations`). They only ever *remove* findings from a
+ * report, so a baseline command that took them would capture less than the
+ * `check` it must agree with, leaving entries that can never apply.
+ *
+ * *Present, and equally deliberately* — the four options that decide **which
+ * rules run and against which thresholds**: `--preset`, `--rule-opt`,
+ * `--only-rule`, `--disable-rule`. These are configuration, not exclusion — a
+ * preset is a configuration layer, and §5.5 defines the measured set by
+ * configuration. Denying them to these commands does not keep the two sides
+ * in agreement, it breaks them: `check --preset=strict --baseline=b.json`
+ * measures strictly more than `baseline:generate b.json` captured, and every
+ * finding the capture could not see reads as a breach and promotes its whole
+ * group to Error on code nobody touched (§5.6). Widening is the direction
+ * that costs, and this is the one place it could happen silently.
+ *
+ * Defining the shared input in one place means both halves are one thing to
+ * check rather than five, and
+ * {@see \Qualimetrix\Tests\Functional\Console\Command\BaselineCommandOptionSurfaceTest}
+ * checks them by asking each command's definition rather than by reading it.
+ *
+ * `--config` belongs with the second group for the same reason: it names
+ * *which* configuration defines the set, and without it a baseline command
+ * could not be pointed at the same `qmx.yaml` the `check` it must agree with
+ * was pointed at.
+ *
+ * The per-rule CLI aliases `check` registers dynamically (`--max-ccn` and
+ * friends) are not mirrored here: `--rule-opt=rule:option=value` reaches every
+ * one of them without this class needing the rule registry, and one spelling
+ * of a thing is what keeps the two surfaces comparable.
  */
 final class BaselineCommandDefinition
 {
@@ -38,10 +60,16 @@ final class BaselineCommandDefinition
      * The paths to analyse, plus the configuration that defines the measured
      * set over them.
      *
-     * `paths` is named exactly as `check` names it so that
-     * {@see \Qualimetrix\Configuration\Pipeline\Stage\CliStage} picks it up:
-     * the paths then travel the same route into the resolved configuration
-     * for both commands, instead of one of them applying them afterwards.
+     * Every name below is spelled exactly as `check` spells it, and that is
+     * the requirement rather than a convenience: `paths`, `preset`,
+     * `disable-rule` and `only-rule` are read by
+     * {@see \Qualimetrix\Configuration\Pipeline\Stage\CliStage} and
+     * {@see \Qualimetrix\Configuration\Pipeline\Stage\PresetStage} off the
+     * `InputInterface` by name, and `rule-opt` by
+     * {@see \Qualimetrix\Infrastructure\Console\CliOptionsParser}. A different
+     * spelling here would leave the option accepted and inert — the failure
+     * mode where a user narrows one side of the comparison and is never told
+     * the other side did not follow.
      */
     public static function addMeasuredRunInput(Command $command): void
     {
@@ -57,6 +85,34 @@ final class BaselineCommandDefinition
                 'c',
                 InputOption::VALUE_REQUIRED,
                 'Path to configuration file',
+            )
+            ->addOption(
+                'preset',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Apply a named preset (strict, legacy, ci) or path to preset file (can be repeated or comma-separated)',
+                [],
+            )
+            ->addOption(
+                'disable-rule',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Disable a rule or group by prefix (e.g., complexity, size.class-count)',
+                [],
+            )
+            ->addOption(
+                'only-rule',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Run only specified rules or group by prefix (e.g., complexity, code-smell)',
+                [],
+            )
+            ->addOption(
+                'rule-opt',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Rule-specific option (format: rule-name:option=value)',
+                [],
             );
     }
 }

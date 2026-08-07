@@ -28,13 +28,17 @@ use RuntimeException;
  * the file is read completely rather than partially.
  *
  * Unlike {@see BaselineLoader}, this reader does not try to salvage a
- * malformed entry as "inert but present": v5 is retired, `migrate` runs
- * once, and a row that does not parse as `{rule, hash}` is simply not a v5
- * record — it is skipped rather than reported, since nothing downstream
- * (§14.1's report) has a slot for "unreadable v5 line". The **envelope**
- * still fails loudly: an unreadable file, invalid JSON, or a version that is
- * not 5 rejects the whole read, mirroring {@see BaselineLoader}'s split
- * between envelope and entry failures.
+ * malformed entry as "inert but present": v5 is retired and a row that does
+ * not parse as `{rule, hash}` is simply not a v5 record, so it cannot become
+ * an entry. It is **collected rather than dropped**, though — see
+ * {@see V5UnreadableRecord}: `migrate` runs once, so a row skipped in silence
+ * is an acceptance the user loses without ever learning it was there. Refusing
+ * the whole file over one bad row would be the opposite mistake, and the one
+ * §6 names explicitly for the v10 loader.
+ *
+ * The **envelope** still fails loudly: an unreadable file, invalid JSON, or a
+ * version that is not 5 rejects the whole read, mirroring
+ * {@see BaselineLoader}'s split between envelope and entry failures.
  */
 final readonly class V5BaselineReader
 {
@@ -148,30 +152,67 @@ final readonly class V5BaselineReader
         }
 
         $entries = [];
+        $unreadable = [];
 
         foreach ($rawEntries as $symbolKey => $symbolEntries) {
             $symbolKey = (string) $symbolKey;
 
             if (!\is_array($symbolEntries)) {
+                $unreadable[] = new V5UnreadableRecord(
+                    $symbolKey,
+                    'the symbol\'s value is not a list of records',
+                );
+
                 continue;
             }
 
             foreach ($symbolEntries as $raw) {
                 if (!\is_array($raw)) {
+                    $unreadable[] = new V5UnreadableRecord($symbolKey, 'a record is not an object');
+
                     continue;
                 }
 
                 $rule = $raw['rule'] ?? null;
                 $hash = $raw['hash'] ?? null;
 
-                if (!\is_string($rule) || $rule === '' || !\is_string($hash) || $hash === '') {
+                $problem = self::recordProblem($rule, $hash);
+
+                if ($problem !== null) {
+                    $unreadable[] = new V5UnreadableRecord($symbolKey, $problem);
+
                     continue;
                 }
+
+                \assert(\is_string($rule) && \is_string($hash));
 
                 $entries[] = new V5Entry($symbolKey, $rule, $hash);
             }
         }
 
-        return new V5Baseline($entries);
+        return new V5Baseline($entries, $unreadable);
+    }
+
+    /**
+     * What is wrong with a record's two fields, or `null` when nothing is.
+     *
+     * Both fields are named in one message rather than reporting the first
+     * failure only: a user fixing a hand-edited file wants the whole verdict
+     * on the row, and `migrate` will not read the file a second time to find
+     * the rest.
+     */
+    private static function recordProblem(mixed $rule, mixed $hash): ?string
+    {
+        $problems = [];
+
+        if (!\is_string($rule) || $rule === '') {
+            $problems[] = '"rule" is missing or not a non-empty string';
+        }
+
+        if (!\is_string($hash) || $hash === '') {
+            $problems[] = '"hash" is missing or not a non-empty string';
+        }
+
+        return $problems === [] ? null : implode('; ', $problems);
     }
 }

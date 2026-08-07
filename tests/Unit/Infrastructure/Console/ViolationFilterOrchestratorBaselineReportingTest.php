@@ -179,6 +179,36 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
     }
 
     /**
+     * **A run over the project root is the widest run there is**, so it
+     * covers whatever the file recorded and there is nothing to report. It
+     * used to report a mismatch against every baseline: the root has no
+     * project-relative form, so it was compared as an absolute machine path
+     * and matched no recorded segment at all.
+     */
+    #[Test]
+    public function itPrintsNoScopeMismatchForARunOverTheProjectRoot(): void
+    {
+        $baselinePath = $this->writeBaseline(entries: [], scope: ['src', 'tests']);
+        $projectRoot = AbsolutePath::fromString(sys_get_temp_dir());
+
+        $output = new BufferedOutput();
+        $this->createOrchestrator()->filterAndReport(
+            $this->createAnalysisResult(),
+            $this->createInput(['--baseline' => $baselinePath]),
+            $output,
+            new GitScopeResolution(
+                paths: [$projectRoot],
+                fileDiscovery: self::createStub(FileDiscoveryInterface::class),
+                gitClient: null,
+                reportScope: null,
+                projectRoot: $projectRoot,
+            ),
+        );
+
+        self::assertStringNotContainsString('does not cover', $output->fetch());
+    }
+
+    /**
      * Without `--baseline`, none of the three baseline-reporting facts has
      * anything to report — `$filterResult->baselineScope` is `null` and
      * `$filterResult->inertEntries` is empty by construction.

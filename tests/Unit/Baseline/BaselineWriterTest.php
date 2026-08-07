@@ -20,6 +20,7 @@ use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Baseline\EntrySelector;
 use Qualimetrix\Baseline\InertBaselineEntry;
 use Qualimetrix\Baseline\InertEntryReason;
+use Qualimetrix\Baseline\RunScope;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Violation\ViolationChannel;
@@ -526,6 +527,43 @@ final class BaselineWriterTest extends TestCase
         $data = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertArrayHasKey('file:src/Foo.php', $data['entries']);
+    }
+
+    /**
+     * **A baseline is a tracked file, so nothing in it may name a developer's
+     * home directory** (CLAUDE.md §10, enforced by
+     * `scripts/check-private-leaks.sh`). The scope is the one field that used
+     * to leak one: a run over the project root has no project-relative form,
+     * so it was written verbatim. Here the run is `bin/qmx baseline:generate
+     * baseline.json .` — the project root itself — and the bytes are checked
+     * for the absolute form rather than the object, because the file is what
+     * gets committed.
+     */
+    #[Test]
+    public function itWritesNoAbsoluteMachinePathForARunOverTheProjectRoot(): void
+    {
+        $projectRoot = AbsolutePath::fromString('/Users/dev/projects/app');
+        $path = $this->tempDir . '/baseline.json';
+
+        $this->writer->write(
+            new Baseline(
+                generated: new DateTimeImmutable('2026-08-05T12:00:00+03:00'),
+                scope: RunScope::record([$projectRoot], $projectRoot)->paths(),
+                entries: [],
+            ),
+            $path,
+            $projectRoot,
+        );
+
+        $content = (string) file_get_contents($path);
+
+        self::assertStringNotContainsString('/Users', $content);
+        self::assertStringNotContainsString('/home', $content);
+
+        /** @var array{scope: list<string>} $data */
+        $data = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame(['.'], $data['scope']);
     }
 
     private function write(Baseline $baseline, string $name = 'baseline.json'): string

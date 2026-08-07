@@ -33,6 +33,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  * version 10, unparseable, or absent — because a typo'd path otherwise
  * replaces a perfectly good v10 baseline with a fresh capture, silently
  * accepting every finding it had been holding the line on.
+ *
+ * **It carries a compare-and-swap token like every other writing command**
+ * (§5.8). `migrate` reads a file, runs an analysis, and writes back over what
+ * it read; without the token the whole analysis is a window in which another
+ * process's write is lost. `update` and `cleanup` get the token from the
+ * loader — a v5 file has no such loader, so {@see readSourceToken()} takes it
+ * the way {@see BaselineWriter} verifies it.
  */
 #[AsCommand(
     name: 'baseline:migrate',
@@ -89,12 +96,17 @@ final class BaselineMigrateCommand extends BaselineCommand
         }
 
         $v5 = $this->readSource($baselinePath, $force);
+        $source = self::readSourceToken($baselinePath);
 
         $context = $this->baselineRun->measure($input, $output);
-        $capture = $this->generator->generate($context->violations(), $context->scope);
+        $capture = $this->generator->generate($context->violations(), $context->scope->paths());
         $result = $this->migrator->migrate($v5, $capture);
 
-        $this->writer->write($result->baseline, $baselinePath, $context->projectRoot);
+        $this->writer->write(
+            $source === null ? $result->baseline : $result->baseline->withSourceContentHash($source),
+            $baselinePath,
+            $context->projectRoot,
+        );
 
         $output->writeln(\sprintf(
             '<info>Migrated %s to version %d: %d entries written</info>',
@@ -131,6 +143,29 @@ final class BaselineMigrateCommand extends BaselineCommand
         }
     }
 
+    /**
+     * The compare-and-swap token for the file being converted (§5.8).
+     *
+     * `migrate` writes over the source it just read, exactly as `update` and
+     * `cleanup` do, and the analysis between the two is long enough for
+     * someone else to write in the gap. Those two commands get the token for
+     * free — {@see \Qualimetrix\Baseline\BaselineLoader} records it on the
+     * {@see Baseline} it returns — but a v5 file is not read by that loader,
+     * so it is taken here, the same way {@see BaselineWriter} verifies it: a
+     * SHA-256 of the file's bytes. A destination that does not exist has no
+     * token and needs none; there is nothing there to lose.
+     */
+    private static function readSourceToken(string $path): ?string
+    {
+        if (!is_file($path)) {
+            return null;
+        }
+
+        $hash = hash_file('sha256', $path);
+
+        return $hash === false ? null : $hash;
+    }
+
     private static function reportMigration(MigrationReport $report, OutputInterface $output): void
     {
         $output->writeln(\sprintf(
@@ -158,6 +193,20 @@ final class BaselineMigrateCommand extends BaselineCommand
 
             foreach ($report->dropped as $dropped) {
                 $output->writeln(\sprintf('<comment>    - %s %s</comment>', $dropped->symbolKey, $dropped->rule));
+            }
+        }
+
+        if ($report->unreadableV5Records === []) {
+            $output->writeln('  unreadable: none');
+        } else {
+            $output->writeln(\sprintf(
+                '<comment>  unreadable: %d version 5 row%s could not be read — their acceptance is lost:</comment>',
+                \count($report->unreadableV5Records),
+                \count($report->unreadableV5Records) === 1 ? '' : 's',
+            ));
+
+            foreach ($report->unreadableV5Records as $unreadable) {
+                $output->writeln(\sprintf('<comment>    - %s</comment>', $unreadable->describe()));
             }
         }
 

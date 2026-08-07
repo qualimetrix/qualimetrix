@@ -23,6 +23,10 @@ namespace Qualimetrix\Baseline;
  * across the format boundary. A symbol/rule pair that produced two v10
  * entries (two violation codes, or two edges) still counts as one carried
  * pair; {@see MigrationReport::$carriedV10EntryCount} is where that shows up.
+ *
+ * A v5 row that never parsed into a record belongs to no pair at all, so it
+ * is carried into the report verbatim rather than classified — see
+ * {@see MigrationReport::$unreadableV5Records}.
  */
 final readonly class BaselineMigrator
 {
@@ -69,6 +73,7 @@ final readonly class BaselineMigrator
             dropped: $dropped,
             freshV10EntryCount: $freshV10EntryCount,
             uncapturedGroupCount: \count($freshCapture->uncaptured),
+            unreadableV5Records: $v5->unreadable,
         );
 
         return new BaselineMigratorResult($freshCapture->baseline, $report);

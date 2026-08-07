@@ -96,8 +96,13 @@ final class BaselineExplainCommand extends BaselineCommand
             return self::EXIT_INVALID_INPUT;
         }
 
-        $baseline = $this->readBaseline($input);
+        // The run first, then the file (§5.4). A `computed.*` / `health.*`
+        // channel's declaration is resolved from configuration this run
+        // resolves; a file read before it loads every such entry inert, and
+        // `explain` would then deny the existence of an acceptance `check`
+        // applies on the same file.
         $context = $this->baselineRun->measure($input, $output);
+        $baseline = $this->readBaseline($input);
 
         $explanation = $this->explanationService->explain(
             $symbolKey,
@@ -106,6 +111,7 @@ final class BaselineExplainCommand extends BaselineCommand
             $context->violations(),
             $context->result()->thresholdOverrides,
             $this->configuredThresholds->resolve(),
+            $context->result()->metrics,
         );
 
         self::render($explanation, $output);

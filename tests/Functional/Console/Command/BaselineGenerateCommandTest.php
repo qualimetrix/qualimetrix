@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Functional\Console\Command;
 
+use Closure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -69,6 +70,50 @@ final class BaselineGenerateCommandTest extends TestCase
     }
 
     /**
+     * The refusal is decided before the analysis and must still hold after
+     * it.
+     *
+     * An analysis takes minutes; the neighbouring terminal takes seconds. A
+     * check made only up front promises about a moment long past by the time
+     * the file is written, and the file it would then overwrite is one this
+     * run never decided to replace — the exact loss `--force` exists to make
+     * deliberate.
+     */
+    #[Test]
+    public function itRefusesToWriteOverAFileThatAppearedDuringTheAnalysis(): void
+    {
+        $tester = $this->execute([], null, function (): void {
+            file_put_contents($this->baselinePath, 'written by somebody else');
+        });
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('was created while the analysis was running', $tester->getDisplay());
+        self::assertSame('written by somebody else', file_get_contents($this->baselinePath));
+    }
+
+    /**
+     * The same window on the `--force` path, where the decision was "replace
+     * *this* file" rather than "create one".
+     *
+     * Here the writer's own compare-and-swap token carries the decision into
+     * the lock it holds across the rename, so the refusal comes from the
+     * write itself rather than from a check in front of it.
+     */
+    #[Test]
+    public function itRefusesToForceOverAFileRewrittenDuringTheAnalysis(): void
+    {
+        file_put_contents($this->baselinePath, 'the file the decision was about');
+
+        $tester = $this->execute(['--force' => true], null, function (): void {
+            file_put_contents($this->baselinePath, 'somebody else got here first');
+        });
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('changed since it was read', $tester->getDisplay());
+        self::assertSame('somebody else got here first', file_get_contents($this->baselinePath));
+    }
+
+    /**
      * The ratchet default writes no `mode` key at all: an entry without one
      * *is* a ratchet entry, and spelling the default would make its absence
      * mean something else in every file already written.
@@ -129,8 +174,11 @@ final class BaselineGenerateCommandTest extends TestCase
     /**
      * @param array<string, mixed> $options
      * @param ?list<Violation> $violations
+     * @param ?Closure(): void $duringAnalysis what happens to the world while the run is
+     *                                         measuring — the window the overwrite decision
+     *                                         has to survive
      */
-    private function execute(array $options, ?array $violations = null): CommandTester
+    private function execute(array $options, ?array $violations = null, ?Closure $duringAnalysis = null): CommandTester
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
 
@@ -139,6 +187,7 @@ final class BaselineGenerateCommandTest extends TestCase
                 $violations ?? [self::violation('code-smell.goto', 'code-smell.goto')],
                 ['src'],
                 AbsolutePath::fromString($this->tempDir),
+                onMeasure: $duringAnalysis,
             ),
             new BaselineGenerator($declarations, new FixedClock()),
             new BaselineWriter(),

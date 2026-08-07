@@ -88,8 +88,15 @@ final class BaselineCleanupCommand extends BaselineCommand
         $baselinePath = $input->getArgument('baseline');
         $force = $input->getOption('force') === true;
 
-        $baseline = $this->loader->load($baselinePath);
+        // The run comes first, and the order is load-bearing (§5.4). The
+        // `computed.*` / `health.*` family declares its shape and direction
+        // from configuration resolved during the run, so a file read before
+        // it has no declaration to match: every entry on a user-defined
+        // computed metric would load inert and this command would list it for
+        // removal — an answer contradicting the `check` that applies the very
+        // same entry.
         $context = $this->baselineRun->measure($input, $output);
+        $baseline = $this->loader->load($baselinePath);
 
         if (!$this->assertScopeCovers($context->scope, $baseline->scope, $force, $output)) {
             return self::FAILURE;

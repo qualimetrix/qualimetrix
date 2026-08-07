@@ -38,6 +38,16 @@ use Qualimetrix\Core\Violation\ViolationChannel;
  * demands a {@see MetricRepositoryInterface}, which the override lookup
  * never touches — {@see self::nullMetrics()} is that unused argument, not a
  * second metrics source.
+ *
+ * **Why the symbol's location does not come from its findings alone.** That
+ * lookup needs a file and a line, and taking them from the symbol's current
+ * violations answers only for symbols that are currently violating something.
+ * The example §7 gives — "`qmx.yaml` says 10; annotation raises it to 40" —
+ * is the opposite case: the annotation is usually *why* the rule no longer
+ * fires, so exactly when it is most worth printing there is no finding left
+ * to read a location off. {@see $symbolLocations} is the second source, and
+ * the run's own metric repository is where every symbol it measured records
+ * its declaration site.
  */
 final readonly class BoundaryExplanationService
 {
@@ -57,6 +67,13 @@ final readonly class BoundaryExplanationService
      *                                                       a channel absent from this map
      *                                                       reports {@see EffectiveBoundary::$configuredThreshold}
      *                                                       as `null`
+     * @param ?MetricRepositoryInterface $symbolLocations the run's measured symbols — read only
+     *                                                    for the declaration site of a symbol
+     *                                                    that reports no violation, which is
+     *                                                    the case an `@qmx-threshold` usually
+     *                                                    causes. `null` limits the annotation
+     *                                                    lookup to symbols that are currently
+     *                                                    violating something
      */
     public function explain(
         string $symbolKey,
@@ -65,9 +82,10 @@ final readonly class BoundaryExplanationService
         array $measuredViolations,
         array $thresholdOverridesByFile,
         array $configuredThresholds,
+        ?MetricRepositoryInterface $symbolLocations = null,
     ): BoundaryExplanation {
         $identities = self::relevantIdentities($symbolKey, $channelFilter, $baseline, $measuredViolations);
-        $location = self::locationForSymbol($symbolKey, $measuredViolations);
+        $location = self::locationForSymbol($symbolKey, $measuredViolations, $symbolLocations);
 
         $boundaries = [];
         foreach ($identities as $identity) {
@@ -216,22 +234,38 @@ final readonly class BoundaryExplanationService
     }
 
     /**
-     * The declaration line of the symbol, taken from any currently-measured
-     * violation reported against it. This is what
-     * {@see AnalysisContext::getThresholdOverride()} expects for the `$line`
-     * argument: rules pass the symbol's own declaration line (e.g.
-     * `$methodInfo->line`), not a violation's precise offending line, so any
-     * violation on this symbol carries the right value regardless of which
-     * channel fired it. `null` when nothing currently reports this symbol —
-     * the annotation source is then reported absent, since there is no
-     * location left to scope it by.
+     * The declaration site of the symbol, from its findings if it has any and
+     * from the run's measured symbols otherwise.
+     *
+     * This is what {@see AnalysisContext::getThresholdOverride()} expects for
+     * its `$file`/`$line` arguments: rules pass the symbol's own declaration
+     * line (e.g. `$methodInfo->line`), not a violation's precise offending
+     * line, so both sources answer the same question — a violation carries
+     * the value the rule was given, and {@see MetricRepositoryInterface}
+     * carries the value the collector recorded, which is where the rule got
+     * it from.
+     *
+     * **The second source is not a fallback for tidiness; it is the case the
+     * feature exists for.** An `@qmx-threshold` that raised a limit is
+     * normally the reason the rule stopped firing, so the symbol most likely
+     * to carry one is precisely the symbol with no violation to read a
+     * location off. Consulting only the findings made `explain` silent about
+     * the annotation in exactly the example §7 gives for it.
+     *
+     * `null` — and so no annotation reported — when neither source knows
+     * where the symbol is declared: a symbol nothing measured, or an
+     * aggregate (`ns:`, `project:`, and any `file:`-level metric recorded
+     * without a line) that has no declaration line to scope an annotation by.
      *
      * @param list<Violation> $measuredViolations
      *
      * @return ?array{RelativePath, int}
      */
-    private static function locationForSymbol(string $symbolKey, array $measuredViolations): ?array
-    {
+    private static function locationForSymbol(
+        string $symbolKey,
+        array $measuredViolations,
+        ?MetricRepositoryInterface $symbolLocations,
+    ): ?array {
         foreach ($measuredViolations as $violation) {
             if ($violation->symbolPath->toCanonical() !== $symbolKey) {
                 continue;
@@ -242,6 +276,34 @@ final readonly class BoundaryExplanationService
 
             if ($file !== null && $line !== null) {
                 return [$file, $line];
+            }
+        }
+
+        return $symbolLocations === null ? null : self::declarationSite($symbolKey, $symbolLocations);
+    }
+
+    /**
+     * Where the run recorded this symbol's declaration, or `null` when it
+     * recorded no usable site for it.
+     *
+     * Every symbol type is searched rather than the one the key's prefix
+     * names: the prefix is parsed nowhere else in this package, and a scan
+     * that compares whole canonical keys cannot mis-parse one. The cost is a
+     * pass over the run's symbols for a single-symbol command.
+     *
+     * @return ?array{RelativePath, int}
+     */
+    private static function declarationSite(string $symbolKey, MetricRepositoryInterface $symbolLocations): ?array
+    {
+        foreach (SymbolType::cases() as $type) {
+            foreach ($symbolLocations->all($type) as $info) {
+                if ($info->symbolPath->toCanonical() !== $symbolKey) {
+                    continue;
+                }
+
+                if ($info->file !== null && $info->line !== null) {
+                    return [$info->file, $info->line];
+                }
             }
         }
 

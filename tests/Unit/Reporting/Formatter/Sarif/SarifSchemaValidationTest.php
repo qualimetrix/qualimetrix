@@ -136,7 +136,7 @@ final class SarifSchemaValidationTest extends TestCase
     }
 
     #[Test]
-    public function reportWithAMeasuredBreach_conformsToSarif2_1_0Schema(): void
+    public function itConformsToTheSarifSchemaWhenAReportCarriesAMeasuredBreach(): void
     {
         // The accepted level rides in message.text (§8); confirms that
         // appending it doesn't break schema conformance.

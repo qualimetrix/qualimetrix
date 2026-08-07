@@ -31,6 +31,20 @@ enum BaselineUpdateRefusalReason: string
     /** The measured group is not accepted against the stored one (§5.1) — it is worse, not better. */
     case Worsened = 'worsened';
 
+    /**
+     * The same comparison declined, on an entry carrying `mode: suppress`.
+     *
+     * A suppressed entry is tested exactly like any other — `update` must not
+     * write a worse group into it, or `update` would become a way to widen an
+     * acceptance (§7). But the *consequence* is not the same, and "worsened"
+     * describes it wrongly: `mode: suppress` accepts this identity regardless
+     * of magnitude and count (§5.1), so `check` never compares the numbers
+     * this refusal is about and the build does not go red. Telling a user
+     * "worsened" where nothing they can observe worsened sends them looking
+     * for a failure that is not there.
+     */
+    case WorsenedUnderSuppression = 'worsened-under-suppression';
+
     public function description(): string
     {
         return match ($this) {
@@ -38,6 +52,8 @@ enum BaselineUpdateRefusalReason: string
             self::ShapeMismatch => 'the entry no longer matches the channel\'s declared shape',
             self::CurrentMagnitudeUnavailable => 'the measured group reports no finite magnitude',
             self::Worsened => 'the measured group is not accepted against the stored one',
+            self::WorsenedUnderSuppression => 'the measured group is not accepted against the stored one, '
+                . 'so the recorded numbers are kept; mode: suppress means this entry suppresses either way',
         };
     }
 }

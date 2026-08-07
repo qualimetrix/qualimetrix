@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
+use Qualimetrix\Baseline\RunScope;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
@@ -65,7 +66,7 @@ final readonly class BaselineRun implements BaselineRunInterface
         $run = $this->measuredViolationSet->runForPaths($paths, new FinderFileDiscovery($resolved->paths->excludes));
         $projectRoot = $this->configurationProvider->getConfiguration()->projectRoot;
 
-        return new BaselineRunContext($run, self::portableScope($paths, $projectRoot), $projectRoot);
+        return new BaselineRunContext($run, RunScope::record($paths, $projectRoot), $projectRoot);
     }
 
     /**
@@ -116,25 +117,4 @@ final readonly class BaselineRun implements BaselineRunInterface
         }
     }
 
-    /**
-     * Records the scope project-relatively where possible, so a baseline
-     * committed by one developer means the same thing in another checkout.
-     * A path outside the project root has no relative form and is kept as
-     * given.
-     *
-     * @param list<AbsolutePath> $paths
-     *
-     * @return list<string>
-     */
-    private static function portableScope(array $paths, AbsolutePath $projectRoot): array
-    {
-        $scope = [];
-
-        foreach ($paths as $path) {
-            $relative = PathFactory::tryProjectRelative($path->value(), $projectRoot);
-            $scope[] = $relative?->value() ?? $path->value();
-        }
-
-        return $scope;
-    }
 }

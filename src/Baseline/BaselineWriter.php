@@ -255,13 +255,15 @@ final readonly class BaselineWriter
      *
      * **Order does not depend on whether an entry happens to be applicable.**
      * All entries under a symbol sort by channel and then by edge, whatever
-     * their state, so the file a command writes does not depend on how rich
-     * that command's channel declarations are — `baseline:cleanup` runs
-     * without an analysis configuration and loads every `computed.*` entry
-     * inert, which under a valid-block-then-inert-block layout moved those
-     * lines on every cleanup. Only an entry whose channel could not be read
-     * at all has nothing to sort on; those follow, ordered by selector.
-     * Ties keep their input order, which a stable sort guarantees.
+     * their state, so the file a command writes does not depend on which
+     * configuration produced it. Applicability itself is not a stable fact
+     * about an entry — a different `--preset`, a different `--config`, or a
+     * run with `computed_metrics:` absent can each change whether a
+     * `computed.*` entry resolves as applicable or inert from one invocation
+     * to the next — so a valid-block-then-inert-block layout would move
+     * those lines whenever that changed. Only an entry whose channel could
+     * not be read at all has nothing to sort on; those follow, ordered by
+     * selector. Ties keep their input order, which a stable sort guarantees.
      *
      * Inert entries are written back exactly as they were read: `cleanup`
      * never removes an entry on its own, and rewriting a line the loader
