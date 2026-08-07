@@ -72,7 +72,7 @@ bin/qmx check src/ --report=git:main..HEAD
 
 ```bash
 # Generate baseline for existing violations
-bin/qmx check src/ --generate-baseline=baseline.json
+bin/qmx baseline:generate baseline.json src/
 
 # Use baseline
 bin/qmx check src/ --baseline=baseline.json

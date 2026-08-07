@@ -83,7 +83,7 @@ every rule and consumed by both Baseline and Reporting. The constraint
 is sound — and Baseline needs no vertical slice, because once the contract is in
 Core what remains is exactly the existing `src/Baseline/` content.
 
-> **Note:** the ratchet-baseline plan's v10 revision retired the
+> **Note:** [ADR 0017](0017-baseline-ceiling.md) retired the
 > debt-observation contract itself (`DebtObservation`, `AxisObservation`,
 > `ObservationKind`, `ContractReference`, `OccurrenceKey`) as dead code — only
 > `WorseDirection` survived, still under `Core/Observation`. The example

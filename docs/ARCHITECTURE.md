@@ -96,6 +96,15 @@ Symfony DI with autoconfiguration — new components are registered automaticall
 
 **No need** to modify `ContainerFactory` when adding new components.
 
+### 6. Baseline Ceiling
+
+The version 10 baseline is a post-rule, reported-magnitude ceiling. It compares
+only groups of findings that currently fire, after source/configuration
+suppression and exclusions but before git report scoping. A measured breach is
+promoted to Error; a malformed, stale, or otherwise inapplicable entry is
+fail-safe and suppresses nothing. See [ADR 0017](adr/0017-baseline-ceiling.md)
+and [Baseline](../src/Baseline/README.md) for the lifecycle and file contract.
+
 For full details (CompilerPasses, exclude patterns, autowiring constraints for rules), see [CLAUDE.md § Symfony DI](../CLAUDE.md#7-symfony-di-automatic-service-registration).
 
 ---

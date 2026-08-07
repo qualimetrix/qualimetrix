@@ -7,15 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Baselines now use version 10 reported-magnitude ceilings: an accepted live group can fail only when its count or reported magnitude worsens, while a stale or inapplicable entry is reported without disabling the remaining baseline. Create files with `bin/qmx baseline:generate <baseline> <paths...>` and maintain them with `baseline:update` or explicitly selected `baseline:cleanup --remove` entries.
+
+### Breaking
+- Baseline file format v5 was removed. Convert an existing file with `bin/qmx baseline:migrate <baseline> <paths...>`; migration makes a fresh v10 capture because v5 has no recorded magnitude boundary.
+- `check --generate-baseline=<file>` was removed. Use `bin/qmx baseline:generate <file> <paths...>` instead.
+- `--baseline-ignore-stale` was removed. Stale entries now report without failing a run or disabling other baseline entries; inspect and remove only explicitly selected entries with `bin/qmx baseline:cleanup <baseline> <paths...> --remove=<selector>`.
+- `--no-suppression` was renamed to `--no-suppression-annotations` with no alias. It is report-only: annotated findings are restored after baseline measurement, so the flag no longer widens the measured set or promotes an annotated finding to Error.
+- The `Cycle data:` JSON trailer of an `architecture.circular-dependency` recommendation now lists fully qualified class names in its `cycle` array, where it used to list bare class names. The trailer exists to be machine-read, and a bare name does not identify a class. The keys and the shape of the object are unchanged; consumers matching on a short name must match on the fully qualified name or its trailing segment. Baseline entries are unaffected — they are not keyed by the recommendation.
+- Baseline entries for `architecture.circular-dependency` must be regenerated. Cycles are now keyed by the canonically smallest class of the cycle, so any recorded entry whose key was a different member no longer matches and the cycle is reported as new. For a v5 file run `bin/qmx baseline:migrate <baseline> <paths...>`; for a v10 file, review the capture and replace it with `bin/qmx baseline:generate <baseline> <paths...> --force`. Entries for other rules are unaffected.
+- `@qmx-threshold` accepts only a non-negative numeric shorthand or the generic `warning=N` / `error=N` keys (one or both, in either order). Arbitrary YAML / `--rule-opt` option names and trailing prose that were accidentally accepted by substring matching are now rejected; put an optional non-empty reason after `--` or an em dash (`—`). Prefix and wildcard rule patterns remain supported but skip per-rule validator checks, so exact rule names are recommended.
+
 ### Fixed
 - `architecture.circular-dependency` now identifies a cycle by its smallest member instead of by whichever member the graph traversal happened to reach first. The reported symbol, the displayed cycle path and the order of reported cycles used to depend on file discovery order, so adding an unrelated file could re-key an existing cycle: its baseline entry looked resolved and the same cycle reappeared as a new violation.
 - `architecture.circular-dependency` no longer renders every member of a cycle by its bare class name. Members of the same cycle that share a class name now carry the shortest trailing namespace suffix that tells them apart, so a cycle between `App\Billing\Service` and `App\Orders\Service` reads `Billing\Service → Orders\Service → Billing\Service` instead of the useless `Service → Service → Service`. Members whose short name is unique in the cycle are unchanged. This also changes the GitLab Code Quality fingerprint of an affected violation, so one such cycle will be reported as resolved and re-raised once.
 - `@qmx-threshold` parsing now validates the entire value expression instead of accepting `warning=` or `error=` substrings hidden inside unsupported syntax. The documentation now also reflects the actual scope rule: a class override applies to evaluations inside the class, including its methods, while the smallest matching source span wins.
 
-### Breaking
-- The `Cycle data:` JSON trailer of an `architecture.circular-dependency` recommendation now lists fully qualified class names in its `cycle` array, where it used to list bare class names. The trailer exists to be machine-read, and a bare name does not identify a class. The keys and the shape of the object are unchanged; consumers matching on a short name must match on the fully qualified name or its trailing segment. Baseline entries are unaffected — they are not keyed by the recommendation.
-- Baseline entries for `architecture.circular-dependency` must be regenerated. Cycles are now keyed by the canonically smallest class of the cycle, so any recorded entry whose key was a different member no longer matches and the cycle is reported as new. Run `bin/qmx check <path> --generate-baseline=<file>` again; entries for other rules are unaffected.
-- `@qmx-threshold` accepts only a non-negative numeric shorthand or the generic `warning=N` / `error=N` keys (one or both, in either order). Arbitrary YAML / `--rule-opt` option names and trailing prose that were accidentally accepted by substring matching are now rejected; put an optional non-empty reason after `--` or an em dash (`—`). Prefix and wildcard rule patterns remain supported but skip per-rule validator checks, so exact rule names are recommended.
 
 ## [0.23.0] - 2026-07-29
 

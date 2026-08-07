@@ -134,7 +134,7 @@ If the project already contains legacy code with violations:
 
 ```bash
 # Create a baseline for existing issues
-vendor/bin/qmx check src/ --generate-baseline=baseline.json
+vendor/bin/qmx baseline:generate baseline.json src/
 
 # Now the hook will ignore issues from the baseline
 git commit -m "Add feature"

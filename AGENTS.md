@@ -508,7 +508,7 @@ bin/qmx check src/ --report=git:main..HEAD
 
 # Baseline
 bin/qmx check src/ --baseline=baseline.json
-bin/qmx check src/ --generate-baseline=baseline.json
+bin/qmx baseline:generate baseline.json src/
 
 # Benchmarks (metric calibration against real projects)
 cd benchmarks && composer install

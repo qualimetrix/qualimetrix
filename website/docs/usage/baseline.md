@@ -1,327 +1,137 @@
 # Baseline
 
-A baseline is a snapshot of all current violations in your project. Once you have a baseline, Qualimetrix only reports **new** violations -- anything that was already there is silently ignored.
+A baseline records accepted debt so an existing project can adopt Qualimetrix without treating every current finding as new work. Version 10 is a **reported-magnitude ceiling**, not a list of hashes to ignore: an existing group stays accepted only while it does not grow or become worse.
 
-## Why use a baseline?
+## Create and use a baseline
 
-When you add Qualimetrix to an existing project, the first run may report hundreds of violations. You cannot fix them all at once. A baseline lets you:
-
-- **Start today** -- adopt Qualimetrix without fixing every legacy issue
-- **Prevent new debt** -- every new violation is reported immediately
-- **Track progress** -- see how many old violations you have fixed over time
-
----
-
-## Creating a baseline
-
-Run analysis with the `--generate-baseline` flag:
+Capture the current measured findings into a new file:
 
 ```bash
-bin/qmx check src/ --generate-baseline=baseline.json
+bin/qmx baseline:generate baseline.json src/
 ```
 
-This runs the full analysis and saves all violations to `baseline.json`. The file is a JSON document with stable hashes for each violation, so it works even when line numbers shift.
-
-!!! tip
-    Commit `baseline.json` to your repository. This way, the whole team shares the same baseline.
-
----
-
-## Using a baseline
-
-Pass the `--baseline` flag on subsequent runs:
+Then check against it:
 
 ```bash
 bin/qmx check src/ --baseline=baseline.json
 ```
 
-Qualimetrix loads the baseline, runs the analysis, and only reports violations that are **not** in the baseline. If you introduced a new violation, you will see it. If you fixed an old one, it silently disappears from the baseline matches.
+Commit the file with the project so local development and CI use the same accepted boundary.
 
----
+!!! warning "A baseline can make a warning fail"
 
-## How it works
+    A finding that currently fires but exceeds its accepted boundary is promoted to Error. With the default `--fail-on=error`, it fails the run even if the rule's configured severity was Warning. A malformed or inapplicable entry never promotes a finding: it is reported as inert and the finding keeps its normal severity.
 
-Each violation in the baseline is identified by:
+## What is measured
 
-- **File path** -- relative path to the source file
-- **Violation code** -- rule identifier (e.g., `complexity.cyclomatic.method`)
-- **Symbol path** -- the class, method, or namespace where the violation occurs
-- **Content hash** -- a stable hash of the file contents
+Baseline lifecycle commands measure the findings after source/configuration `@qmx-ignore` suppression and configured path or namespace exclusions. `check` uses that same set; its `--exclude-path` and `--exclude-namespace` options can safely narrow it further, but can leave an entry inert. The lifecycle commands do not accept those CLI-only exclusions, so capture and maintenance cannot silently use a different option surface. `--no-suppression-annotations` is report-only: it restores annotated findings after baseline measurement and never widens the set. `--report=git:...` likewise narrows presentation only.
 
-When Qualimetrix runs with a baseline, it matches current violations against baseline entries. If a match is found, the violation is filtered out.
+Each baseline entry identifies a symbol, a channel, and a dependency edge when the finding has one. For a magnitude channel, the file stores the group count and its reported values; for an occurrence channel, it stores the count only. The current group is accepted when it has no more findings at every severity level than the stored group. This handles repairs without guessing which individual finding disappeared.
 
----
+The baseline does not make a non-firing rule fire. A finding that vanishes is stale, not proven fixed.
 
-## Tracking progress with --show-resolved
+## Lifecycle commands
 
-Want to know how many old violations you have fixed? Use `--show-resolved`:
+All analysis-bearing baseline commands accept the same configuration options needed to reproduce the measured set:
+
+```text
+--preset=PRESET
+--rule-opt=RULE-OPT
+--only-rule=ONLY-RULE
+--disable-rule=DISABLE-RULE
+```
+
+They also accept `--config=CONFIG`. They do **not** accept `--exclude-path` or `--exclude-namespace`, because those safe `check` narrowings would otherwise make lifecycle operations asymmetric. They also do not accept `--no-suppression-annotations`, which is report-only and cannot widen the measured set.
+
+### Generate
+
+```bash
+bin/qmx baseline:generate baseline.json src/
+bin/qmx baseline:generate baseline.json src/ --mode=suppress --force
+```
+
+`baseline:generate <baseline> [<paths>...]` captures every currently measured finding. Its default `--mode=ratchet` records a ceiling; `--mode=suppress` accepts each captured identity regardless of later count or magnitude. `--force` overwrites an existing baseline file and discards its recorded acceptances.
+
+### Migrate version 5
+
+```bash
+bin/qmx baseline:migrate baseline.json src/
+```
+
+`baseline:migrate <baseline> [<paths>...]` is the required migration for a version 5 file. It makes a fresh v10 capture because v5 stored no magnitude boundary, and reports v5 entries that no longer fire. Its `--force` allows a fresh capture even when the destination is not a v5 file; use it only when replacing that destination is intentional.
+
+### Tighten after repairs
+
+```bash
+bin/qmx baseline:update baseline.json src/
+```
+
+`baseline:update <baseline> [<paths>...]` only moves an entry toward a stricter boundary. It never adds identities and leaves an absent identity unchanged. It refuses a run whose analysed scope does not cover the scope recorded in the file; `--force` overrides that scope guard.
+
+### Inspect and explicitly remove stale entries
+
+```bash
+bin/qmx baseline:cleanup baseline.json src/
+bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
+```
+
+Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candidates and never writes the file. Repeat `--remove=<selector>` for exactly the entries you have reviewed. There is no bulk removal: absence can be caused by a configuration change, not only a repair. `--force` has the same scope-guard meaning as `baseline:update`.
+
+### Explain a boundary
+
+```bash
+bin/qmx baseline:explain 'method:App\\OrderService::calculate' src/ --baseline=baseline.json
+bin/qmx baseline:explain 'method:App\\OrderService::calculate' src/ --channel='complexity.cyclomatic#complexity.cyclomatic.method'
+```
+
+`baseline:explain <symbol> [<paths>...]` shows the accepted level, what fires now, the configured threshold, and any `@qmx-threshold` override. Use `--baseline=BASELINE` to include accepted levels and `--channel=CHANNEL` to restrict the answer.
+
+## Stale, inert, and resolved entries
+
+With `--baseline`, `check` reports stale entries, inert entries, and a scope mismatch without failing the run or disabling other entries. Use `--show-resolved` to count entries whose complete identity no longer appears in the measured set. A group that shrinks but still fires is not resolved.
 
 ```bash
 bin/qmx check src/ --baseline=baseline.json --show-resolved
 ```
 
-This adds a summary line showing the count of resolved violations -- entries that exist in the baseline but no longer appear in the current analysis.
+## Inline suppression
 
----
+Use an inline suppression for an intentional exception rather than silently accepting it in a baseline. The tags work in PHPDoc, line comments, and block comments; place them on a separate line before their target.
 
-## Stale entries
+| Tag                                     | Scope                 | Example                                                  |
+| --------------------------------------- | --------------------- | -------------------------------------------------------- |
+| `@qmx-ignore <rule> [reason]`           | Symbol                | `@qmx-ignore complexity.cyclomatic Legacy state machine` |
+| `@qmx-ignore * [reason]`                | All rules on a symbol | `@qmx-ignore * Generated mapper`                         |
+| `@qmx-ignore-next-line <rule> [reason]` | Next line             | `@qmx-ignore-next-line code-smell.exit CLI entry point`  |
+| `@qmx-ignore-file`                      | Whole file            | `@qmx-ignore-file`                                       |
 
-A baseline entry becomes "stale" when it did not appear in the run -- its finding was repaired, or configuration stopped producing it.
+Rule names support prefix matching: `@qmx-ignore complexity` suppresses every `complexity.*` rule. An inline same-line comment is not supported.
 
-Stale entries are **reported and nothing more**. They never fail the run, and they never stop the
-remaining entries from applying: under the entry identity Qualimetrix uses, repairing one finding on
-a symbol strands that entry alone, and failing on it would mean punishing an improvement.
-
-Nothing is removed automatically. `baseline:cleanup` removes entries whose file no longer exists:
-
-```bash
-bin/qmx baseline:cleanup baseline.json
-```
-
-!!! tip
-    Run `baseline:cleanup` periodically (e.g., after major refactoring) to keep your baseline file clean.
-
----
-
-## Inline suppression with @qmx-ignore
-
-For cases where a violation is intentional and you do not want it in the baseline, you can suppress it directly in the code using comments.
-
-Suppression tags work in all comment styles:
-
-- PHPDoc docblocks: `/** @qmx-ignore rule */`
-- Line comments: `// @qmx-ignore rule`
-- Block comments: `/* @qmx-ignore rule */`
-
-!!! note "Limitation"
-    Inline same-line comments are not supported: `$x = foo(); // @qmx-ignore rule` will **not** work.
-    Place the comment on a separate line before the target.
-
-### Suppress a specific rule
-
-```php
-class LegacyProcessor
-{
-    /**
-     * @qmx-ignore complexity.cyclomatic This method handles all legacy formats
-     */
-    public function process(array $data): array
-    {
-        // complex but intentional logic
-    }
-}
-```
-
-### Suppress all rules for a symbol
-
-```php
-/**
- * @qmx-ignore * Generated code, do not analyze
- */
-class GeneratedMapper
-{
-    // ...
-}
-```
-
-### Suppress all rules for an entire file
-
-Add a file-level docblock at the top of the file:
-
-```php
-<?php
-/**
- * @qmx-ignore-file
- */
-
-class GeneratedCode
-{
-    // All violations in this file are suppressed
-}
-```
-
-### Suppress on the next line only
-
-Use `@qmx-ignore-next-line` in a comment to suppress a violation on the very next line:
-
-```php
-class CliApplication
-{
-    public function run(): void
-    {
-        // process commands...
-
-        // @qmx-ignore-next-line code-smell.exit CLI entry point
-        exit(0);
-    }
-}
-```
-
-This is useful for one-off suppressions where a docblock-level tag would be too broad.
-
-This also works for suppressing empty catch violations:
-
-```php
-try {
-    $cache->delete($key);
-} catch (CacheException) {
-    // @qmx-ignore code-smell.empty-catch Best-effort caching
-}
-```
-
-### Suppression tag syntax
-
-| Tag                                     | Scope                              | Example                                                 |
-| --------------------------------------- | ---------------------------------- | ------------------------------------------------------- |
-| `@qmx-ignore <rule> [reason]`           | The symbol this comment belongs to | `@qmx-ignore complexity.cyclomatic Legacy code`         |
-| `@qmx-ignore * [reason]`                | All rules for this symbol          | `@qmx-ignore * Generated code`                          |
-| `@qmx-ignore-next-line <rule> [reason]` | The next line only                 | `@qmx-ignore-next-line code-smell.exit CLI entry point` |
-| `@qmx-ignore-file`                      | Entire file                        | `@qmx-ignore-file`                                      |
-
-The rule name supports prefix matching: `@qmx-ignore complexity` suppresses all `complexity.*` rules.
-
-### Viewing suppressed violations
-
-To see what was suppressed:
+### View what annotations hide
 
 ```bash
 bin/qmx check src/ --show-suppressed
-```
-
-### Reporting what suppression tags hide
-
-To see the violations `@qmx-ignore` tags suppress:
-
-```bash
 bin/qmx check src/ --no-suppression-annotations
 ```
 
-This changes the report, not the baseline. A baseline measures what your
-configuration and your annotations leave standing, so a finding an
-`@qmx-ignore` tag removes is never written into a baseline and never compared
-against one. Under this flag such a finding is therefore shown at its own
-severity and is never promoted to an error.
-
----
+`--show-suppressed` lists suppressed findings. `--no-suppression-annotations` restores findings hidden by `@qmx-ignore` only for the report: they remain outside the baseline's measured set, keep their own severity, and cannot be promoted by a baseline entry.
 
 ## Per-symbol threshold overrides with @qmx-threshold
 
-Sometimes a class or method legitimately needs different thresholds than the project default. Instead of suppressing the violation entirely with `@qmx-ignore`, you can override specific thresholds using `@qmx-threshold` annotations.
-
-### Override a threshold for a class
+Use `@qmx-threshold` when a symbol needs a different limit but should still be checked:
 
 ```php
 /**
- * @qmx-threshold complexity.cyclomatic warning=20 error=40
+ * @qmx-threshold complexity.cyclomatic warning=20 error=40 -- Legacy state machine
  */
-class ComplexStateMachine
+final class ComplexStateMachine
 {
-    // Methods in this class use higher complexity thresholds
 }
 ```
 
-### Override a threshold for a method
-
-```php
-class OrderProcessor
-{
-    /**
-     * @qmx-threshold complexity.cyclomatic warning=25 error=50 -- Legacy state machine
-     * @qmx-threshold complexity.npath warning=500 error=2000
-     */
-    public function processLegacyOrder(array $data): Order
-    {
-        // This method handles many legacy edge cases
-    }
-}
-```
-
-### Syntax
-
-```
+```text
 @qmx-threshold <rule> <number> [-- <reason>]
 @qmx-threshold <rule> warning=<number> [error=<number>] [-- <reason>]
-@qmx-threshold <rule> error=<number> [warning=<number>] [-- <reason>]
 ```
 
-- Numbers must be non-negative integers or decimals. The shorthand number sets both warning and error
-- The explicit form accepts only the generic `warning` and `error` keys, one or both, in either order. Arbitrary YAML or `--rule-opt` option names are not accepted
-- An optional non-empty reason must follow `--` or an em dash (`—`); trailing text without a delimiter is invalid
-- Exact rule names are recommended. Prefix patterns such as `complexity` and the `*` wildcard are supported, but skip per-rule validator checks because they may match rules with different threshold semantics
-- Multiple `@qmx-threshold` tags can be used on the same symbol for different rules
-- A class override applies to rule evaluations inside that class, including its methods
-- A method override applies only to that method. When scopes overlap, the smallest source span wins; if spans are equal, the first extracted override wins
-
-!!! tip
-    Use `@qmx-threshold` when a violation is expected but you still want Qualimetrix to enforce _some_ limit. Use `@qmx-ignore` when you want to suppress the violation entirely.
-
-### Rule-specific override semantics
-
-Most rules accept the standard "warning threshold ≤ error threshold" form — anything above the warning value is a warning, anything above the error value is an error. A handful of rules use different semantics because their metric is interpreted differently. Annotations are validated per-rule at parse time:
-
-- **Inverted thresholds** (`maintainability.index`, `design.type-coverage`) — higher metric values are *better*, so the override must use `warning ≥ error`. Example: `@qmx-threshold maintainability.index warning=50 error=30` warns when MI drops below 50 and errors when it drops below 30.
-- **Independent axes** (`design.data-class`) — `warning` and `error` set unrelated metrics: warning maps to `wocThreshold` (minimum Weight of Class, high = more public surface) and error maps to `wmcThreshold` (maximum Weighted Method Count, low = simple methods). The two values are unrelated; W > E is just as valid as W < E.
-- **Warning-only** (`design.god-class`) — the rule has a single tunable knob (`minCriteria`); the error half of the annotation has no equivalent. Use the shorthand form `@qmx-threshold design.god-class N` (sets the warning threshold), or the explicit `warning=N` form. Supplying `error=N` is rejected with a clear diagnostic so the discarded value does not surprise you.
-
-Validation failures appear as `@qmx-threshold` diagnostics in the analyzer output and carry stable codes (`warning_exceeds_error`, `error_exceeds_warning`, `error_not_supported`, etc.) for cross-referencing in machine-readable output. The codes surface as `violationCode: annotation.invalid-threshold.<code>` in JSON/SARIF/Checkstyle output.
-
-!!! note "Partial overrides keep the default for the other half"
-    Validation is applied to the values you wrote — not to the resulting Options after the override merges with the defaults. If you set only one half (`@qmx-threshold complexity.cyclomatic warning=25`), the rule keeps its default `error` value, and that combination may produce a state the validator would have rejected if both halves had been written explicitly. Prefer the explicit form when tuning both thresholds.
-
----
-
-## Best practices
-
-### 1. Commit the baseline
-
-```bash
-git add baseline.json
-git commit -m "chore: add Qualimetrix baseline"
-```
-
-This ensures every team member and CI pipeline uses the same baseline.
-
-### 2. Update the baseline periodically
-
-After fixing a batch of violations, regenerate the baseline:
-
-```bash
-bin/qmx check src/ --generate-baseline=baseline.json
-git add baseline.json
-git commit -m "chore: update Qualimetrix baseline (15 violations resolved)"
-```
-
-### 3. Use --show-resolved in CI
-
-Add `--show-resolved` to your CI pipeline to track progress:
-
-```bash
-bin/qmx check src/ --baseline=baseline.json --show-resolved --no-progress
-```
-
-### 4. Prefer baseline over inline suppression
-
-Use `@qmx-ignore` for intentional exceptions (e.g., generated code, known trade-offs). Use the baseline for legacy violations you plan to fix eventually.
-
-### 5. Clean up stale entries after refactoring
-
-```bash
-bin/qmx baseline:cleanup baseline.json
-git add baseline.json
-git commit -m "chore: clean up stale baseline entries"
-```
-
-### 6. Escape tags in documentation
-
-When referencing `@qmx-ignore` or `@qmx-threshold` in docblocks as documentation (format descriptions, examples), wrap them in backticks to prevent the parser from treating them as real tags:
-
-```php
-/**
- * Use `@qmx-ignore complexity` to suppress this rule.       // escaped — not parsed
- * Use `@qmx-threshold complexity.cyclomatic 15` to override. // escaped — not parsed
- *
- * @qmx-ignore coupling Real suppression tag                   // real — will be parsed
- */
-```
-
-An unpaired backtick is safe — without a closing pair, the tag is parsed normally.
+Numbers are non-negative. The explicit form accepts only `warning` and `error`; a non-empty reason follows `--` or an em dash. Class overrides apply inside the class (including methods), method overrides apply to that method, and the smallest matching source span wins. Prefer this to `@qmx-ignore` when a useful limit remains.

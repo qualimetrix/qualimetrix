@@ -540,8 +540,7 @@ $violation->violationCode // Stable violation code for identification
 $violation->symbolPath    // SymbolPath object
 $violation->location      // Location object (file, line); check isNone() for architectural violations
 $violation->metricValue   // int|float|null
-$violation->acceptedLevel // ?AcceptedLevel — set only on a measured baseline breach (§5.6 of the
-                          // baseline-ceiling plan); null on every other violation, including one
+$violation->acceptedLevel // ?AcceptedLevel — set only on a measured baseline breach (ADR 0017); null on every other violation, including one
                           // no baseline ever judged. See "Accepted level" below.
 
 $report->violations       // list<Violation>
@@ -560,7 +559,7 @@ $report->topIssues        // list<RankedIssue> — top violations by impact scor
 ## Accepted level (baseline breach)
 
 `Violation::$acceptedLevel` is set only when a finding is a **measured breach**
-of a baseline entry (§5.6 of `docs/plan/baseline-ceiling-v10.md`): the group
+of a baseline entry (ADR 0017): the group
 was checked against an applicable entry and exceeded it, and severity was
 already promoted to `Error` via `Violation::reportedAsBreach()`. It is `null`
 on every other violation, including one no baseline ever judged.

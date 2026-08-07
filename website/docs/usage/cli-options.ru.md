@@ -289,19 +289,11 @@ bin/qmx check src/ --clear-cache
 
 ## Опции baseline
 
-Baseline позволяет игнорировать известные нарушения и сосредоточиться на новых. Полное руководство смотрите в разделе [Baseline](baseline.md).
+Полный жизненный цикл и формат файла описаны в [Baseline](baseline.ru.md).
 
-### `--generate-baseline`
+### `--baseline=BASELINE`
 
-Запустить анализ и сохранить все текущие нарушения в файл baseline:
-
-```bash
-bin/qmx check src/ --generate-baseline=baseline.json
-```
-
-### `--baseline`
-
-Отфильтровать нарушения, которые уже есть в файле baseline:
+Использовать файл baseline, чтобы применить принятые потолки к текущим нарушениям:
 
 ```bash
 bin/qmx check src/ --baseline=baseline.json
@@ -309,11 +301,35 @@ bin/qmx check src/ --baseline=baseline.json
 
 ### `--show-resolved`
 
-Показать, сколько нарушений из baseline были исправлены:
+Посчитать записи, чья полная идентичность больше не появляется в измеряемом наборе:
 
 ```bash
 bin/qmx check src/ --baseline=baseline.json --show-resolved
 ```
+
+Stale- и inert-записи сообщаются, но не завершают прогон ошибкой и не отключают другие записи baseline. Группа, которая всё ещё срабатывает с меньшим числом элементов, не считается resolved.
+
+### Lifecycle-команды baseline
+
+Ниже приведена единственная поверхность команд для записи и миграции baseline:
+
+```text
+bin/qmx baseline:generate <baseline> [<paths>...] [--mode=MODE] [--force]
+bin/qmx baseline:migrate  <baseline> [<paths>...] [--force]
+bin/qmx baseline:update   <baseline> [<paths>...] [--force]
+bin/qmx baseline:cleanup  <baseline> [<paths>...] [--remove=REMOVE]... [--force]
+bin/qmx baseline:explain  <symbol> [<paths>...] [--baseline=BASELINE] [--channel=CHANNEL]
+```
+
+Все пять команд принимают `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=DISABLE-RULE`, `--only-rule=ONLY-RULE` и `--rule-opt=RULE-OPT`. Ни одна не принимает опции исключения или suppression.
+
+- `baseline:generate` захватывает текущие измеряемые нарушения. По умолчанию используется `--mode=ratchet`; `--mode=suppress` записывает безусловное принятие захваченных идентичностей. Его `--force` перезаписывает существующий файл.
+- `baseline:migrate` конвертирует только файл v5, создавая свежий v10 capture. Его `--force` заменяет свежим capture путь назначения, который не является v5.
+- `baseline:update` только ужесточает существующие записи. Его `--force` снимает проверку покрытия записанной области.
+- `baseline:cleanup` по умолчанию выводит кандидатов и удаляет только повторяемые селекторы `--remove=REMOVE`. Его `--force` также снимает проверку области.
+- `baseline:explain` показывает порог из конфигурации, принятую величину baseline и override из исходника для канонического символа; `--channel=CHANNEL` сужает ответ.
+
+Удалённые опции `--generate-baseline` и `--baseline-ignore-stale` не имеют алиасов. Используй вместо них `baseline:generate` и явный `baseline:cleanup --remove`.
 
 ---
 
@@ -632,10 +648,11 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:method.error=30
 
 ### baseline:cleanup
 
-Удалить устаревшие записи (ссылки на файлы, которых больше нет) из файла baseline:
+Проверить stale-кандидатов в baseline. Без `--remove` команда только выводит их и никогда не меняет файл; удалить явно проверенный selector можно так, как описано в [Baseline](baseline.ru.md):
 
 ```bash
-bin/qmx baseline:cleanup baseline.json
+bin/qmx baseline:cleanup baseline.json src/
+bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 ```
 
 ### graph:export

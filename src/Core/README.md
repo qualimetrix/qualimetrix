@@ -904,12 +904,12 @@ Static runtime holder for resolved computed metric definitions. Similar to `Prof
 
 Carries the two comparison operators, so consumers do not each re-derive their own sign handling:
 
-- `morePermissive(int|float $a, int|float $b): int|float` — the primitive behind `baseline:update` (§7 of the ratchet-baseline plan): a boundary may move only toward stricter, never toward more permissive
-- `isWorse(int|float $current, int|float $allowance, float $epsilon = 0.0): bool` — the comparison behind an entry's group-acceptance decision (§5.1 of the ratchet-baseline plan)
+- `morePermissive(int|float $a, int|float $b): int|float` — the primitive behind `baseline:update` (ADR 0017): a boundary may move only toward stricter, never toward more permissive
+- `isWorse(int|float $current, int|float $allowance, float $epsilon = 0.0): bool` — the comparison behind an entry's group-acceptance decision (ADR 0017)
 
 Epsilon is a tolerance band around the allowance, never a shift of it: inside the band a value is not worse.
 
-`morePermissive()`'s result type does not depend on argument order, even when the two boundaries are numerically equal but differ in `int`/`float` type: the result is written to the baseline file (§6.2 of the ratchet-baseline plan), whose byte-stability contract leaves no room for `morePermissive(10, 10.0)` and `morePermissive(10.0, 10)` to disagree. A tie normalizes to `int` only when both inputs are `int`, and to `float` the moment either one is.
+`morePermissive()`'s result type does not depend on argument order, even when the two boundaries are numerically equal but differ in `int`/`float` type: the result is written to the baseline file (ADR 0017), whose byte-stability contract leaves no room for `morePermissive(10, 10.0)` and `morePermissive(10.0, 10)` to disagree. A tie normalizes to `int` only when both inputs are `int`, and to `float` the moment either one is.
 
 ---
 

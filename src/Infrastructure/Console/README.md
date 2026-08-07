@@ -16,7 +16,7 @@ CLI application based on Symfony Console with support for:
 Console/
 ├── Application.php
 ├── CliOptionsParser.php
-├── MeasuredViolationSet.php         # The set a baseline measures (§5.5): the pipeline's findings before the baseline stage. Defined by config + source annotations; a CLI flag may narrow it, never widen it
+├── MeasuredViolationSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by config + source annotations; a CLI flag may narrow it, never widen it
 ├── ViolationFilterPipeline.php      # suppression -> path exclusion -> namespace exclusion -> baseline -> git scope; --no-suppression-annotations restores annotated findings after the baseline stage
 ├── ViolationFilterOptions.php
 ├── CliOnlyNarrowing.php             # check-only narrowing: --exclude-path / --exclude-namespace / --no-suppression-annotations
@@ -145,23 +145,23 @@ reports about the loaded baseline — each with its own header and its own
 explaining line, so they never run together. None of the three prints
 anything on a run without `--baseline`.
 
-- **Stale entries** — an entry whose identity (§5.1: symbol, channel, edge)
-  did not appear in the measured set (§5.5). `--show-resolved` reads the same
+- **Stale entries** — an entry whose identity (ADR 0017: symbol, channel, edge)
+  did not appear in the measured set. `--show-resolved` reads the same
   list and reports the same predicate in a different unit — entries, not
   violations. Because the predicate is keyed on the *full* identity rather
   than the symbol, a group that shrank without vanishing (say five members
   down to two) is neither stale nor "resolved": its identity still fired, so
-  it is invisible to `--show-resolved` by design (§13's residual-limitation
+  it is invisible to `--show-resolved` by design (ADR 0017 residual-limitation
   list, item 2) — not a bug to be fixed later.
 - **Inert entries** — an entry the loaded baseline could not apply at all:
   malformed, addressing an undeclared channel, mismatching its channel's
   shape in either direction, an unrecognized `mode`, or a duplicate identity
-  (§6). Each line names the symbol, the channel, the entry's selector and the
+  (ADR 0017). Each line names the symbol, the channel, the entry's selector and the
   reason. An inert entry does not suppress anything and is not a load error —
   the findings it was meant to cover are reported at their own severity, and
   the run does not fail on it.
 - **Scope mismatch** — when this run's analysed paths do not cover the
-  baseline file's recorded `scope` (§5.7), `check` names the uncovered paths.
+  baseline file's recorded `scope` (ADR 0017), `check` names the uncovered paths.
   This never fails the run: a narrower run legitimately sees fewer
   identities, and failing on it would punish the ordinary case of checking
   one directory. The scope guard that *does* refuse to run is a precondition

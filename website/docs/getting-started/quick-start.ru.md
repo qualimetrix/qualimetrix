@@ -134,7 +134,7 @@ git commit --no-verify -m "WIP: work in progress"
 
 ```bash
 # Создать базовую линию для существующих проблем
-vendor/bin/qmx check src/ --generate-baseline=baseline.json
+vendor/bin/qmx baseline:generate baseline.json src/
 
 # Теперь хук будет игнорировать проблемы из базовой линии
 git commit -m "Add feature"

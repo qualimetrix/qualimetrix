@@ -292,19 +292,11 @@ bin/qmx check src/ --clear-cache
 
 ## Baseline options
 
-Baselines let you ignore known violations and focus on new ones. See [Baseline](baseline.md) for the full guide.
+See [Baseline](baseline.md) for the lifecycle and file format.
 
-### `--generate-baseline`
+### `--baseline=BASELINE`
 
-Run analysis and save all current violations to a baseline file:
-
-```bash
-bin/qmx check src/ --generate-baseline=baseline.json
-```
-
-### `--baseline`
-
-Filter out violations that exist in the baseline file:
+Use a baseline file to apply accepted ceilings to live findings:
 
 ```bash
 bin/qmx check src/ --baseline=baseline.json
@@ -312,11 +304,35 @@ bin/qmx check src/ --baseline=baseline.json
 
 ### `--show-resolved`
 
-Show how many violations from the baseline have been fixed:
+Count entries whose complete identity no longer appears in the measured set:
 
 ```bash
 bin/qmx check src/ --baseline=baseline.json --show-resolved
 ```
+
+Stale and inert entries are reported without failing the run or disabling other baseline entries. A group that still fires with fewer members is not resolved.
+
+### Baseline lifecycle commands
+
+The commands below are the only baseline write and migration surface:
+
+```text
+bin/qmx baseline:generate <baseline> [<paths>...] [--mode=MODE] [--force]
+bin/qmx baseline:migrate  <baseline> [<paths>...] [--force]
+bin/qmx baseline:update   <baseline> [<paths>...] [--force]
+bin/qmx baseline:cleanup  <baseline> [<paths>...] [--remove=REMOVE]... [--force]
+bin/qmx baseline:explain  <symbol> [<paths>...] [--baseline=BASELINE] [--channel=CHANNEL]
+```
+
+All five commands accept `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=DISABLE-RULE`, `--only-rule=ONLY-RULE`, and `--rule-opt=RULE-OPT`. They do not accept any exclusion or suppression option.
+
+- `baseline:generate` captures the current measured findings. `--mode=ratchet` is the default; `--mode=suppress` records unconditional acceptance for captured identities. Its `--force` overwrites an existing file.
+- `baseline:migrate` converts only a v5 file by making a fresh v10 capture. Its `--force` replaces a destination that is not v5 with that fresh capture.
+- `baseline:update` tightens existing entries only. Its `--force` overrides the recorded-scope coverage guard.
+- `baseline:cleanup` lists candidates by default and removes only repeated `--remove=REMOVE` selectors. Its `--force` also overrides the scope guard.
+- `baseline:explain` shows the configured threshold, accepted baseline level, and source override for a canonical symbol; `--channel=CHANNEL` narrows the answer.
+
+The removed `--generate-baseline` and `--baseline-ignore-stale` options have no aliases. Use `baseline:generate` and explicit `baseline:cleanup --remove` instead.
 
 ---
 
@@ -634,10 +650,11 @@ Many rules have dedicated CLI flags for quick threshold adjustments:
 
 ### baseline:cleanup
 
-Remove stale entries (references to files that no longer exist) from a baseline file:
+Inspect stale candidates in a baseline. Without `--remove`, it only lists them and never writes the file; remove an explicitly reviewed selector as described in [Baseline](baseline.md):
 
 ```bash
-bin/qmx baseline:cleanup baseline.json
+bin/qmx baseline:cleanup baseline.json src/
+bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 ```
 
 ### graph:export

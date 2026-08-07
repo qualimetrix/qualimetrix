@@ -122,7 +122,7 @@ Infrastructure/
     └── Command/
         ├── CheckCommand.php           # Thin orchestrator (delegates to extracted classes)
         ├── BaselineCommand.php              # Base class for the five baseline commands: shared error-to-exit-code mapping and the scope-covers guard the two writers apply
-        ├── BaselineCommandDefinition.php    # Shared input definition: paths + the configuration options that decide what is measured (--config, --preset, --rule-opt, --only-rule, --disable-rule), deliberately without check's exclusion/suppression flags (§5.5)
+        ├── BaselineCommandDefinition.php    # Shared input definition: paths + the configuration options that decide what is measured (--config, --preset, --rule-opt, --only-rule, --disable-rule), deliberately without check's exclusion/suppression flags (ADR 0017)
         ├── BaselineRunInterface.php         # The one way a baseline command obtains the set it measures
         ├── BaselineRun.php                  # Implements BaselineRunInterface: resolves configuration, configures the runtime and runs the analysis exactly as `check` does
         ├── BaselineRunContext.php           # VO: one run's measured violations, its RunScope and project root

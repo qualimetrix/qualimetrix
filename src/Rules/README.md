@@ -951,8 +951,7 @@ public static function channelDeclarations(): array
   and comparison operator — never by analogy with a neighboring channel. The
   full enumeration of every `new Violation(` emission point and the
   magnitude (or lack of one) each reports lives in
-  `docs/plan/violation-magnitude-inventory.md`, transcribed into a tracked
-  fixture under `tests/Fixtures/Channels/` and guarded by a drift test
+  the tracked fixture under `tests/Fixtures/Channels/`, guarded by a drift test
   against this registry.
 - The `computed.*` / `health.*` family (`ComputedMetricRule`) cannot declare
   statically — its vocabulary is open-ended (user-defined computed metrics)

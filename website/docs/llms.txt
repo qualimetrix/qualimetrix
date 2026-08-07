@@ -21,7 +21,7 @@ vendor/bin/qmx check src/ --namespace='App\Service'    # drill down into namespa
 vendor/bin/qmx check src/ --disable-rule=complexity    # disable rule group
 vendor/bin/qmx check src/ --only-rule=coupling.cbo     # run specific rule
 vendor/bin/qmx check src/ --baseline=baseline.json     # ignore known violations
-vendor/bin/qmx check src/ --generate-baseline=b.json   # generate baseline
+vendor/bin/qmx baseline:generate b.json src/       # generate baseline
 vendor/bin/qmx rules                                   # list all rules with options
 vendor/bin/qmx graph:export src/ -o graph.dot          # dependency graph
 vendor/bin/qmx hook:install                            # pre-commit hook

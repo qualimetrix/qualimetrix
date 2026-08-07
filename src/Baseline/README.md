@@ -45,10 +45,10 @@ Baseline/
 ├── BaselineMigratorResult.php   # VO: the migrated baseline plus its MigrationReport
 ├── MigrationReport.php          # VO: carried/dropped/fresh pair counts, dropped entries and unreadable v5 rows enumerated in full
 ├── MigrationReportDroppedEntry.php # VO: one v5 (symbolKey, rule) pair the fresh capture no longer backs
-├── V5Baseline.php               # VO: a parsed version 5 file — read-only, never applied; holds what parsed and what did not
+├── V5Baseline.php               # VO: a parsed version 5 snapshot — read-only, never applied; holds what parsed, what did not, and its source-byte hash
 ├── V5UnreadableRecord.php       # VO: one v5 row that did not parse — the symbol it was listed under and what failed
 ├── V5Entry.php                  # VO: one v5 record — symbol, rule, and the opaque hash v5 stored instead of a magnitude
-├── V5BaselineReader.php         # Reads a v5 file (or checks it is one, for --force's guard); BaselineLoader refuses version 5 outright
+├── V5BaselineReader.php         # Reads a v5 `violations` snapshot (or checks it is one, for --force's guard) with its source-byte hash; BaselineLoader refuses version 5 outright
 │
 ├── BoundaryExplanationService.php # `baseline:explain`: builds a BoundaryExplanation from the baseline, qmx.yaml-configured thresholds, and @qmx-threshold annotations
 ├── EffectiveBoundary.php        # VO: one identity's boundary — baseline source, configured threshold, annotation, each independently nullable
@@ -148,8 +148,8 @@ decimal places by `BaselineEntry`'s constructor and the recomputed side by the s
 tolerance.
 
 `judgeAll()` judges a whole list in one pass and returns a `CeilingOutcome` bundling
-the filtered/promoted result together with the stale entries (§5.7) and the entries the
-loader could not apply (§6) — one call, one measured set, so the three cannot be read
+the filtered/promoted result together with the stale entries and the entries the
+loader could not apply, as ADR 0017 requires — one call, one measured set, so the three cannot be read
 from different lists by accident. `apply()`, required by `ViolationFilterStageInterface`,
 is `judgeAll()->result`.
 
@@ -188,7 +188,7 @@ Coverage is by whole path segment: `src` covers `src/Foo` but neither covers
 nor is covered by `srcfoo` or by `src/Foo` itself. Two paths cover
 unconditionally — `.` (every project-relative path) and `/` (everything).
 
-Both writing commands check the predicate before doing anything else (§5.7):
+Both writing commands check the predicate before doing anything else (ADR 0017):
 **the current run's scope must cover the file's recorded `scope`**, overridable
 with `--force`. The hazard is one-directional — a run *narrower* than the
 recorded scope makes every identity outside it look absent, so `cleanup` would
@@ -200,7 +200,7 @@ and never fails on it.
 
 `BaselineUpdater::update(Baseline $baseline, list<Violation> $measured, RunScope $scope): BaselineUpdateResult`
 reconciles every entry the loaded baseline holds against the run's measured
-set (§5.5, §7):
+set (ADR 0017):
 
 - an identity **absent from the measured set is left untouched** — a
   vanished group is `cleanup`'s business, not a reason to rewrite an entry;
@@ -210,7 +210,7 @@ set (§5.5, §7):
   accepts it against the stored one** — the identical primitive
   `BaselineCeilingStage` uses at `check` time, never a second definition of
   "not more permissive". Because the cumulative rule subsumes the count
-  condition (§5.1), a magnitude channel needs no separate "count may only
+  condition (ADR 0017), a magnitude channel needs no separate "count may only
   shrink" check — the comparison already refuses a group that grew, even
   when every individual member improved.
 
@@ -249,8 +249,8 @@ delete an unreadable line.
 
 `BaselineCleaner::remove(Baseline $baseline, list<EntrySelector> $selectors): BaselineCleanupRemoval`
 is the only method that writes anything, and only for the selectors it is
-given — **there is no bulk "remove everything listed" form** (§5.7's third
-decision withdraws 10.2's `--all-listed`: the candidate list is recomputed
+given — **there is no bulk "remove everything listed" form**. ADR 0017's
+cleanup decision rejects the withdrawn `--all-listed` shape: the candidate list is recomputed
 inside the same call that would consume it, so a bulk flag would be
 inference-by-absence wearing a flag). Each selector resolves through
 `Baseline::findBySelector()` into exactly one of three outcomes — `removed`,
@@ -279,7 +279,7 @@ A v5 row that never parsed into a record belongs to none of those groups, and
 `MigrationReport::$unreadableV5Records` for the command to name. `migrate` runs
 once, so a row dropped in silence is an acceptance the user loses without ever
 learning it existed — while refusing the whole file over one bad row would be
-the opposite mistake (§6).
+the opposite mistake (ADR 0017).
 
 `BoundaryExplanationService` is unrelated to migration but shares this
 package's "read-only against the measured set" shape: `baseline:explain`
@@ -292,7 +292,7 @@ and only to locate a symbol that reports no violation. Matching an
 `@qmx-threshold` needs a file and a line; reading them off the symbol's
 findings answers only for symbols that are currently violating something,
 which is the wrong half of the population — a raised threshold is normally
-*why* the rule stopped firing, so §7's own example ("`qmx.yaml` says 10;
+*why* the rule stopped firing, so ADR 0017's example ("`qmx.yaml` says 10;
 annotation raises it to 40") is precisely the case with no finding to read.
 The repository knows where every measured symbol is declared, violating or
 not. A symbol with no declaration line anywhere — `ns:`, `project:`, or one
@@ -402,8 +402,10 @@ file (worth adding to `.gitignore`) holds an exclusive lock across both the
 content-hash check and the rename, so a read-modify-write cannot silently discard a
 concurrent writer: a `Baseline` loaded from a file carries that file's content hash,
 and writing it back to a file that no longer matches raises
-`BaselineConflictException`. The hash is a property of the guard, never a field of the
-file. `write()` returns the token for the bytes it wrote, and
+`BaselineConflictException`. A command that observed an absent target carries that
+expectation explicitly and is likewise refused if a file appears before the locked
+check. The provenance is a property of the guard, never a field of the file.
+`write()` returns the token for the bytes it wrote, and
 `Baseline::withSourceContentHash()` carries it back — without which a caller writing one
 instance twice would be refused by its own first write.
 

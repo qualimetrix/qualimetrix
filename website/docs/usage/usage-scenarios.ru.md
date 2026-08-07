@@ -46,7 +46,7 @@ rules:
 При обновлении Qualimetrix до новой версии могут появиться новые правила. Если вы используете `only_rules`, новые правила не активируются автоматически. Если вы не используете `only_rules`, просмотрите CHANGELOG на предмет новых правил и либо:
 
 - Добавьте их в `disabled_rules`, если они вам не нужны
-- Перегенерируйте baseline: `vendor/bin/qmx check src/ --generate-baseline=baseline.json`
+- Перегенерируйте baseline: `vendor/bin/qmx baseline:generate baseline.json src/`
 
 !!! tip
     Комбинация `only_rules` с baseline даёт максимально стабильный CI. Вы полностью контролируете, какие правила запускаются и какие существующие нарушения игнорируются.

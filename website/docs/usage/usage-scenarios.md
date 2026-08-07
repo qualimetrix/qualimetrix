@@ -46,7 +46,7 @@ Since `--fail-on=error` is the default, you don't need to specify it explicitly.
 When upgrading Qualimetrix to a new version, new rules may be added. If you use `only_rules`, new rules won't activate automatically. If you don't use `only_rules`, review the CHANGELOG for new rules and either:
 
 - Add them to `disabled_rules` if you don't want them
-- Regenerate your baseline: `vendor/bin/qmx check src/ --generate-baseline=baseline.json`
+- Regenerate your baseline: `vendor/bin/qmx baseline:generate baseline.json src/`
 
 !!! tip
     Combining `only_rules` with a baseline gives you the most stable CI experience. You control exactly which rules run and which existing violations are ignored.

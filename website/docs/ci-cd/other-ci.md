@@ -184,7 +184,7 @@ vendor/bin/qmx check src/ || true
 If you are adding Qualimetrix to a project that already has many issues, generate a baseline first:
 
 ```bash
-vendor/bin/qmx check src/ --generate-baseline=baseline.json
+vendor/bin/qmx baseline:generate baseline.json src/
 ```
 
 Then use it in CI to only report new violations:
