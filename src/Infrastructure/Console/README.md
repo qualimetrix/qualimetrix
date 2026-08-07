@@ -139,6 +139,37 @@ Export dependency graph in DOT or JSON format.
 | `--show-suppressed`            | Show suppressed violations — `@qmx-ignore` tags and per-rule `exclude_namespaces`/`exclude_paths` exclusions, each listed in its own block                                                                                                                                                                                                   |
 | `--no-suppression-annotations` | Report findings `@qmx-ignore` suppresses. It does **not** change what a baseline measures: the annotated findings never reach the baseline stage and are never captured, so they are shown at their own severity and compared against no entry. A flag may narrow the measured set (`--exclude-path`, `--exclude-namespace`), never widen it |
 
+### `check`'s baseline reporting
+
+`ViolationFilterOrchestrator` prints up to three unconditional, non-failing
+reports about the loaded baseline — each with its own header and its own
+explaining line, so they never run together. None of the three prints
+anything on a run without `--baseline`.
+
+- **Stale entries** — an entry whose identity (§5.1: symbol, channel, edge)
+  did not appear in the measured set (§5.5). `--show-resolved` reads the same
+  list and reports the same predicate in a different unit — entries, not
+  violations. Because the predicate is keyed on the *full* identity rather
+  than the symbol, a group that shrank without vanishing (say five members
+  down to two) is neither stale nor "resolved": its identity still fired, so
+  it is invisible to `--show-resolved` by design (§13's residual-limitation
+  list, item 2) — not a bug to be fixed later.
+- **Inert entries** — an entry the loaded baseline could not apply at all:
+  malformed, addressing an undeclared channel, mismatching its channel's
+  shape in either direction, an unrecognized `mode`, or a duplicate identity
+  (§6). Each line names the symbol, the channel, the entry's selector and the
+  reason. An inert entry does not suppress anything and is not a load error —
+  the findings it was meant to cover are reported at their own severity, and
+  the run does not fail on it.
+- **Scope mismatch** — when this run's analysed paths do not cover the
+  baseline file's recorded `scope` (§5.7), `check` names the uncovered paths.
+  This never fails the run: a narrower run legitimately sees fewer
+  identities, and failing on it would punish the ordinary case of checking
+  one directory. The scope guard that *does* refuse to run is a precondition
+  of the writing commands (`baseline:update`, `baseline:cleanup`), not a
+  `check` behaviour — every identity under an uncovered path looks absent
+  from this run and is already counted among the stale entries above.
+
 ### Rules
 
 | Option                 | Description                                         |

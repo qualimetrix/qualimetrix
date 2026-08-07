@@ -7,6 +7,10 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\RuleExecution\RuleExclusionStats;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Baseline\Baseline;
+use Qualimetrix\Baseline\ScopeCoverage;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Violation\Filter\ViolationFilterStage;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
@@ -15,8 +19,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Turns `check`'s options into a pipeline run and reports what the run's
- * stages did — stale baseline entries, resolved entries, suppressed and
- * excluded findings.
+ * stages did — stale baseline entries, resolved entries, inert entries,
+ * a scope mismatch against the loaded baseline, suppressed and excluded
+ * findings.
  *
  * This class is where `InputInterface` stops: the pipeline and
  * {@see MeasuredViolationSet} below it take values, which is what lets a
@@ -46,6 +51,8 @@ final readonly class ViolationFilterOrchestrator
         );
 
         $this->reportBaselineEntries($filterResult, $input, $output);
+        $this->reportInertEntries($filterResult, $output);
+        $this->reportScopeMismatch($filterResult, $scopeResolution, $output);
         $this->reportSuppressedViolations($filterResult, $input, $output);
         $this->reportExclusionCounts($filterResult, $output);
         $this->reportRuleExclusions($input, $output);
@@ -138,6 +145,110 @@ final readonly class ViolationFilterOrchestrator
                 $filterResult->staleEntryCount(),
             ));
         }
+    }
+
+    /**
+     * Reports every entry the loaded baseline could not apply (§6): a bad
+     * `channel`, an undeclared one, a shape mismatch in either direction, an
+     * unrecognized `mode`, or two entries claiming one identity.
+     *
+     * Printed unconditionally, not behind a flag — an inert entry suppresses
+     * nothing, so the findings it was meant to cover are reported at their
+     * own severity with no other signal that the baseline file has a line
+     * that no longer does anything. This is not a load failure and does not
+     * fail the run: refusing to load would punish the whole file for one bad
+     * line.
+     */
+    private function reportInertEntries(ViolationFilterResult $filterResult, OutputInterface $output): void
+    {
+        if ($filterResult->inertEntries === []) {
+            return;
+        }
+
+        $output->writeln('');
+        $output->writeln(\sprintf(
+            '<comment>%d baseline entries could not be applied and are not suppressing anything:</comment>',
+            \count($filterResult->inertEntries),
+        ));
+
+        foreach ($filterResult->inertEntries as $entry) {
+            $output->writeln(\sprintf(
+                '  - %s [%s]: %s — %s',
+                $entry->describe(),
+                $entry->selector->value,
+                $entry->reason->description(),
+                $entry->detail,
+            ));
+        }
+
+        $output->writeln(
+            '<comment>The findings these entries were meant to cover are reported at their own severity, '
+            . 'not suppressed. Fix or remove the line in the baseline file to stop seeing this.</comment>',
+        );
+    }
+
+    /**
+     * Reports when this run's analysed paths do not cover the loaded
+     * baseline's recorded `scope` (§5.7). Narrower than usual is legitimate —
+     * checking one directory is the ordinary case — so this never fails the
+     * run; the scope guard that refuses to run is a precondition of the
+     * writing commands (`baseline:update`, `baseline:cleanup`), not of
+     * `check`.
+     *
+     * A narrower run makes every identity outside it look absent, which is
+     * exactly what the stale list above reports — so the explanation here
+     * points back at it rather than duplicating the mechanism.
+     */
+    private function reportScopeMismatch(
+        ViolationFilterResult $filterResult,
+        GitScopeResolution $scopeResolution,
+        OutputInterface $output,
+    ): void {
+        if ($filterResult->baselineScope === null) {
+            return;
+        }
+
+        $runScope = Baseline::normalizeScope(self::portableScope($scopeResolution->paths, $scopeResolution->projectRoot));
+        $uncovered = ScopeCoverage::uncoveredPaths($runScope, $filterResult->baselineScope);
+
+        if ($uncovered === []) {
+            return;
+        }
+
+        $output->writeln('');
+        $output->writeln(\sprintf(
+            '<comment>This run does not cover the baseline\'s recorded scope: %s</comment>',
+            implode(', ', $uncovered),
+        ));
+        $output->writeln(
+            '<comment>Entries under an uncovered path look absent from this run and are counted among the '
+            . 'stale entries above — they are not resolved. Run against the recorded scope to see the '
+            . 'baseline\'s full state.</comment>',
+        );
+    }
+
+    /**
+     * The run's analysed paths in the same portable, project-relative form
+     * the baseline file records its `scope` in — see the retired
+     * `BaselinePresenter::portableScope()` (still in git history at
+     * `48513af`), which this mirrors so a run's own scope compares against
+     * a loaded file on equal terms. A path outside the project root has no
+     * relative form and is kept as given.
+     *
+     * @param list<AbsolutePath> $paths
+     *
+     * @return list<string>
+     */
+    private static function portableScope(array $paths, AbsolutePath $projectRoot): array
+    {
+        $scope = [];
+
+        foreach ($paths as $path) {
+            $relative = PathFactory::tryProjectRelative($path->value(), $projectRoot);
+            $scope[] = $relative?->value() ?? $path->value();
+        }
+
+        return $scope;
     }
 
     private function reportSuppressedViolations(
