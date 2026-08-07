@@ -1165,7 +1165,78 @@ DoD:
 - A stale entry neither fails the run nor disables other entries (§5.7).
 - The §13 cases named to P3 land here.
 
-### P4 — Commands and reporting
+### P4 — Commands and reporting — **LANDED** (`9278683`…`135760d`, eight commits)
+
+Delivered as stated below. Four things are worth carrying forward, and the
+first two are corrections to *this document*.
+
+**§7's signature block is now incomplete, and §5.5 overstates its own case.**
+The five commands also take `--preset`, `--rule-opt`, `--only-rule` and
+`--disable-rule`. Extended review found that without them
+`check --preset=strict --baseline=b.json` measures a wider set than
+`baseline:generate b.json` captured, and promotes findings the capture never
+saw — the exact harm §5.5's widening invariant exists to prevent. These are
+*configuration* options, not the exclusion and suppression flags §7 refuses,
+and §5.5 already says the set is defined by configuration; the sentence
+"every baseline command would have to replicate `check`'s option surface"
+was true of exclusions and false of these. The asymmetry is narrowed rather
+than closed: `check`'s dynamically registered per-rule aliases (`--max-ccn`
+and friends) are not mirrored, and `--rule-opt` reaches all of them instead.
+
+**§14.1 is decided.** The only thing a v5 entry and a v10 finding both carry
+is the pair `(symbolKey, ruleName)` — v5's key is the same canonical symbol
+form, and the rule name is the prefix of a v10 channel key. `migrate` writes
+a fresh capture and merges nothing; the report splits the v5 file three ways:
+*carried* and *fresh* are counted, *dropped* are listed in full, because each
+of those is an acceptance the user loses and a v5 entry has no magnitude and
+no channel that a v10 entry could be built from. Rows the v5 file spelled
+unreadably are named too — `migrate` is one run, and a row silently skipped
+is an acceptance the user never learns was not even read. `migrate`'s
+`--force`, which §7 left unassigned, permits overwriting a destination that
+is *not* a v5 file, so a mistyped path cannot replace a good v10 baseline
+with a fresh capture.
+
+**The measured set had a second, quieter way to disagree with itself.**
+`cleanup`, `update` and `explain` originally read the baseline file *before*
+resolving configuration. A `computed.*` or `health.*` channel is declared
+only once configuration is resolved (§5.4's open family), and the loader
+turns an entry on an undeclared channel inert — so those three commands
+answered differently from `check` on the same file, and the premise had
+already been written into two docblocks as though it were intended. Order is
+now configuration first, file second, pinned by a test that fails on the old
+order and by an integration test on the real measured-set seam. That seam had
+been reachable only through a stub until then, which is why the defect
+survived the package's own DoD.
+
+**Scope was five findings serving one mechanism.** A path equal to the
+project root has no project-relative form, so a run over the root recorded an
+absolute machine path — non-portable across checkouts, and a breach of
+CLAUDE.md §10's rule against home paths in tracked files — and then read as a
+*narrowing* against `scope: ["src"]`, refusing the widest run there is.
+`update` additionally overwrote the recorded scope with the run's, so one
+`--force` over a narrow run made the file claim a narrow run had produced it
+and the guard never fired again. `RunScope` now owns portability,
+normalisation and coverage together; `ScopeCoverage` and both copies of
+`portableScope()` are gone.
+
+Two smaller review outcomes worth keeping: `explain` resolved a rule's
+configured threshold by property-name convention, which returns a *wrong*
+number rather than none where one channel is judged against two boundaries
+(`code-smell.long-parameter-list` measures a readonly-VO constructor against
+`voWarning`, not `warning`) — it now reports the boundary as unresolvable,
+distinctly from zero. And `migrate` wrote without a compare-and-swap token
+while the other writing commands carried one.
+
+**One defect found in passing and deliberately not fixed here:**
+`--only-rule` silently drops every built-in `computed.*` finding.
+`ComputedMetricRule::NAME` is `computed.health`, but each violation's code is
+the definition's own name (`health.complexity`), which shares no prefix with
+it; `RuleExecutor` lets the rule run on a `ruleName` match and then filters
+its violations on the code. It predates this feature, and it now matters more
+because the baseline commands accept `--only-rule` too.
+
+Original scope, for the record:
+
 Files: `src/Infrastructure/Console/Command/Baseline*`, `CheckCommandDefinition.php`,
 `src/Infrastructure/Console/ViolationFilterPipeline.php` and
 `ViolationFilterOrchestrator.php` and `ViolationFilterResult.php` (the later
@@ -1241,7 +1312,10 @@ the plan.
    transform-shaped contract and the measured-set seam, each of which 10.2 had
    hidden inside a one-line DoD clause; its own review round added §5.5's
    widening invariant.
-3. **P4**, then P5, then P6.
+3. ~~P4~~ — done, in eight commits, with an extended review round between the
+   implementation and the fixes. Its review found eight HIGH defects, five of
+   which served the single scope mechanism and were closed by replacing it.
+   Then P5, then P6.
 4. Full validation: `composer check`, `bin/qmx check src/`, benchmark regression
    suite, website build.
 
