@@ -10,8 +10,8 @@ namespace Qualimetrix\Core\Observation;
  * Carries the two seam formulas that every consumer would otherwise
  * re-derive with its own sign handling: the "more permissive of" operator
  * behind `baseline:update` (§7 of the ratchet-baseline plan), and the
- * epsilon-aware worseness test behind an entry's group-acceptance decision
- * (§5.1 of the ratchet-baseline plan).
+ * epsilon-aware worseness test the group-acceptance decision counts members
+ * with (§5.1 of the ratchet-baseline plan).
  */
 enum WorseDirection: string
 {
@@ -67,9 +67,17 @@ enum WorseDirection: string
      * a value inside the band is not worse in either direction.
      *
      * This is the comparison behind §5.1's group acceptance in the
-     * ratchet-baseline plan: a group is accepted only when every current
-     * member is no worse than the stored member at the same rank, in the
-     * channel's declared direction.
+     * ratchet-baseline plan, and it is what "at least as bad as" is measured
+     * with there: a member is at least as bad as a level exactly when the
+     * level is not worse than it. Acceptance then **counts members per level
+     * of severity** — for every value the current group supplies, it must
+     * hold no more members at least that bad than the stored group did.
+     *
+     * It never pairs a current member with a stored one. A rank comparison
+     * has an end to align from and each end is wrong in one direction (§5.1,
+     * §15): aligning from the best end reports a breach when a group's best
+     * member is simply repaired, aligning from the worst end accepts a group
+     * that grew. Counting assumes neither.
      */
     public function isWorse(int|float $current, int|float $allowance, float $epsilon = 0.0): bool
     {

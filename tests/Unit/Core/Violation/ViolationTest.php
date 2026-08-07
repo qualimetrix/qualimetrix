@@ -7,13 +7,17 @@ namespace Qualimetrix\Tests\Unit\Core\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Core\Violation\ViolationChannel;
+use ReflectionClass;
+use ReflectionParameter;
 
 #[CoversClass(Violation::class)]
 final class ViolationTest extends TestCase
@@ -234,6 +238,115 @@ final class ViolationTest extends TestCase
             $violation->channel()->equals(
                 new ViolationChannel('architecture.layer-violation', 'architecture.coverage'),
             ),
+        );
+    }
+
+    #[Test]
+    public function itCarriesNoAcceptedLevelUnlessOneIsGiven(): void
+    {
+        $violation = self::warning();
+
+        self::assertNull($violation->acceptedLevel);
+    }
+
+    #[Test]
+    public function itReportsItselfAsABreachAtErrorCarryingTheAcceptedLevel(): void
+    {
+        $level = new AcceptedLevel([25.0], 1);
+
+        $promoted = self::warning()->reportedAsBreach($level);
+
+        self::assertSame(Severity::Error, $promoted->severity);
+        self::assertSame($level, $promoted->acceptedLevel);
+    }
+
+    /**
+     * Every field {@see Violation::reportedAsBreach()} is supposed to carry
+     * across, asserted one by one — **and the list itself checked against the
+     * constructor by reflection**, because a hand-written list of twelve
+     * assertions is exactly as forgettable as the constructor call it guards.
+     * A field added with a default would otherwise be copied nowhere and
+     * asserted nowhere, and every test in the suite would stay green.
+     *
+     * Each constructor parameter is therefore either named here as copied or
+     * named below as rewritten; an unaccounted one fails the test, and so
+     * does a name here that the constructor no longer has.
+     */
+    #[Test]
+    public function itCopiesEveryOtherFieldWhenItReportsItselfAsABreach(): void
+    {
+        $original = self::warning();
+
+        $promoted = $original->reportedAsBreach(new AcceptedLevel(null, 1));
+
+        /** @var array<string, array{mixed, mixed}> $copied */
+        $copied = [
+            'location' => [$original->location, $promoted->location],
+            'symbolPath' => [$original->symbolPath, $promoted->symbolPath],
+            'ruleName' => [$original->ruleName, $promoted->ruleName],
+            'violationCode' => [$original->violationCode, $promoted->violationCode],
+            'message' => [$original->message, $promoted->message],
+            'metricValue' => [$original->metricValue, $promoted->metricValue],
+            'level' => [$original->level, $promoted->level],
+            'relatedLocations' => [$original->relatedLocations, $promoted->relatedLocations],
+            'recommendation' => [$original->recommendation, $promoted->recommendation],
+            'threshold' => [$original->threshold, $promoted->threshold],
+            'dependencyTarget' => [$original->dependencyTarget, $promoted->dependencyTarget],
+            'dependencyType' => [$original->dependencyType, $promoted->dependencyType],
+        ];
+
+        foreach ($copied as $field => [$before, $after]) {
+            self::assertSame($before, $after, \sprintf('reportedAsBreach() did not carry over $%s', $field));
+        }
+
+        // The two the promotion is *about*, asserted by the case above.
+        $rewritten = ['severity', 'acceptedLevel'];
+        $accounted = [...array_keys($copied), ...$rewritten];
+        $parameters = self::constructorParametersOfViolation();
+
+        self::assertSame(
+            [],
+            array_values(array_diff($parameters, $accounted)),
+            'a new Violation field must be copied by reportedAsBreach() and listed here, or listed as rewritten',
+        );
+        self::assertSame(
+            [],
+            array_values(array_diff($accounted, $parameters)),
+            'this test names a constructor parameter Violation no longer has',
+        );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function constructorParametersOfViolation(): array
+    {
+        $constructor = (new ReflectionClass(Violation::class))->getConstructor();
+
+        self::assertNotNull($constructor, 'Violation is constructed by hand, so it has a constructor to read');
+
+        return array_map(
+            static fn(ReflectionParameter $parameter): string => $parameter->getName(),
+            $constructor->getParameters(),
+        );
+    }
+
+    private static function warning(): Violation
+    {
+        return new Violation(
+            location: new Location(RelativePath::fromString('src/test.php'), 10),
+            symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.method',
+            message: 'Cyclomatic complexity is 31',
+            severity: Severity::Warning,
+            metricValue: 31,
+            level: RuleLevel::Method,
+            relatedLocations: [new Location(RelativePath::fromString('src/other.php'), 3)],
+            recommendation: 'Split the method',
+            threshold: 10,
+            dependencyTarget: SymbolPath::forClass('App', 'Bar'),
+            dependencyType: DependencyType::New_,
         );
     }
 }

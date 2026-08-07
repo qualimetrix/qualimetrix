@@ -30,7 +30,8 @@ Baseline/
 ├── BaselineWriter.php           # Writes atomically under a compare-and-swap guard
 │
 ├── Filter/
-│   └── BaselineFilter.php    # ViolationFilterInterface: filters violations present in baseline
+│   ├── BaselineCeilingStage.php # ViolationFilterStageInterface: applies entries as ceilings over groups
+│   └── GroupCeilingVerdict.php  # VO: accepted / measured breach / reported, for one group
 │
 └── Suppression/
     ├── SuppressionType.php              # Enum: Symbol, NextLine, File
@@ -45,8 +46,19 @@ Baseline/
 ```
 Violations -> BaselineGenerator -> BaselineCapture -> BaselineWriter -> JSON file
                                     |          `-> uncaptured groups -> reported
-JSON file -> BaselineLoader -> Baseline -> BaselineFilter -> filtered Violations
+JSON file -> BaselineLoader -> Baseline -> BaselineCeilingStage -> Violations
+                                                                   (accepted dropped,
+                                                                    breaches promoted)
 ```
+
+The stage runs **fourth** in `ViolationFilterPipeline`, after `@qmx-ignore` and the
+`exclude_paths` / `exclude_namespaces` filters and immediately before git scope. That
+position is what gives the run a single measured set: suppression is per line while an
+identity spans a file or a class, so a baseline placed first would judge *n* findings
+where capture recorded *n−1*. A consequence worth stating: a hand-written `@qmx-ignore`
+now outranks a generated entry, and an excluded finding is neither captured nor judged —
+except on `architecture.*` channels, which `exclude_namespaces` does not apply to at all
+and which therefore reach the baseline even inside an excluded namespace.
 
 Two kinds of group never become an entry: one on a channel no rule declares, and a
 `magnitude` group where some member reports no finite number. Both are the fail-safe
@@ -65,6 +77,53 @@ report it otherwise, and "Baseline with 0 entries written" would read as success
 
 Only version 10 is loadable. A version 5 file is rejected with a message naming
 `bin/qmx baseline:migrate`; every other version is rejected as unsupported.
+
+## Applying a Baseline: the Ceiling
+
+An entry bounds the **group** of findings sharing its identity, and `BaselineCeilingStage`
+returns one of three verdicts per group:
+
+| Verdict             | What happens                                                                                                    |
+| ------------------- | --------------------------------------------------------------------------------------------------------------- |
+| **Accepted**        | Every member is removed from the report                                                                         |
+| **Measured breach** | Every member is reported and **promoted to `Severity::Error`**, carrying the `AcceptedLevel` it was accepted at |
+| **Reported**        | Every member is reported at the severity its own rule gave it                                                   |
+
+**Acceptance is cumulative, never rank-paired.** A group is accepted when every current
+magnitude is finite and, for every value `t`, the number of current members at least as
+bad as `t` is no greater than the number of stored members at least as bad as `t` —
+`>=` on a `higher` channel, `<=` on a `lower` one. On an `occurrence` channel there are
+no magnitudes and one level: the group holds no more members than `count`.
+
+Counting rather than pairing is what makes a repair safe. With `[40, 100]` stored and
+the 40-line duplicate deleted, a rank comparison from the best end would measure the
+surviving `100` against the vacated `40` and fail the build on code nobody touched. The
+price of counting is recorded rather than hidden: a survivor may grow into a slot a
+repair vacated, bounded above by the worst magnitude already accepted.
+
+**The shape decides, not the value.** A `marker` channel emits a fixed `1.0` and
+`coupling.class-rank` emits a real PageRank score; both are declared `occurrence`, and
+both numbers are ignored by contract.
+
+**An entry that cannot be applied does not suppress — and does not promote.** An
+undeclared channel, a shape mismatch in either direction, a group whose magnitude is
+absent or non-finite, an entry the loader turned inert, a renamed symbol: each reports
+the findings unchanged. None of them is evidence that the debt got worse, so promoting
+on one would fail a build over a stale file.
+
+The invariant has no `mode` exception, so applicability is settled before `mode` is
+read: `mode: suppress` waives the comparison of magnitudes and count, not the question
+of whether the entry bounds that channel at all. An entry naming an undeclared channel
+or disagreeing with its channel's shape does not suppress, whatever its `mode`.
+
+**Both sides of the comparison are normalised.** The stored side is rounded to six
+decimal places by `BaselineEntry`'s constructor and the recomputed side by the same
+`BaselineEntry::normalizeMagnitude()`, which is what earns the comparison's zero
+tolerance.
+
+Staleness is asked of the stage — `staleEntriesOver()` — over the very list handed to
+`apply()`, so the run has one measured set and one answer to "which entries did not
+appear".
 
 ## Entry Identity
 

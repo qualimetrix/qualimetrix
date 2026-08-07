@@ -75,11 +75,16 @@ Core/
 │   ├── ChannelShape.php                   # Enum: magnitude / occurrence — what a channel's metricValue means for baseline purposes
 │   ├── ChannelDeclaration.php             # VO: a channel's shape plus, for magnitude channels, its WorseDirection
 │   ├── ChannelDeclarationRegistryInterface.php # Contract: (ruleName, violationCode) -> ChannelDeclaration; implemented in Infrastructure\Rule
+│   ├── AcceptedLevel.php                  # VO: the magnitudes/count a baseline entry accepted a finding's group at
 │   ├── Severity.php
 │   ├── Location.php
 │   ├── RuleExclusionCaptureHolder.php     # Static holder: whether RuleExecutor retains suppressed Violation objects
 │   └── Filter/
-│       ├── ViolationFilterInterface.php
+│       ├── ViolationFilterInterface.php   # Per-violation predicate: shouldInclude(Violation): bool
+│       ├── ViolationFilterStageInterface.php # Transforming stage: list<Violation> in, list<Violation> out
+│       ├── ViolationFilterStage.php       # Enum: the ordered stages (suppression, exclusions, baseline, git scope); definesMeasuredSet() marks which of them produce the set a baseline measures
+│       ├── ViolationFilterStageResult.php # VO: what one stage produced, and what it removed
+│       ├── PredicateFilterStage.php       # Adapter running a ViolationFilterInterface as a stage
 │       ├── PathExclusionFilter.php        # Filters by file path patterns; exempts architecture.* rules
 │       └── NamespaceExclusionFilter.php   # Filters by namespace patterns; exempts architecture.* rules
 ├── Progress/

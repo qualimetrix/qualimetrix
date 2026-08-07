@@ -59,9 +59,10 @@ final class WorseDirectionTest extends TestCase
 
     /**
      * {@see WorseDirection::isWorse()} is the comparison behind §5.1's group
-     * acceptance in the ratchet-baseline plan: a group is accepted only when
-     * every current member is no worse than the stored member at the same
-     * rank, in the channel's declared direction.
+     * acceptance in the ratchet-baseline plan: acceptance counts, per level
+     * of severity, how many members each side holds, and this predicate is
+     * how "at least as bad as a level" is decided in the channel's declared
+     * direction. Members are never paired by rank.
      */
     #[Test]
     public function itDecidesGroupAcceptanceWhenHigherIsWorse(): void
@@ -74,9 +75,10 @@ final class WorseDirectionTest extends TestCase
     }
 
     /**
-     * {@see WorseDirection::isWorse()} is the comparison behind §5.1's group
-     * acceptance in the ratchet-baseline plan, mirrored for lower-is-worse
-     * channels (Maintainability Index, cohesion, health scores).
+     * The same counting predicate, mirrored for lower-is-worse channels
+     * (Maintainability Index, cohesion, health scores): "at least as bad as"
+     * reads `<=` there, which is why §5.1 is stated in terms of severity
+     * levels rather than of larger and smaller numbers.
      */
     #[Test]
     public function itDecidesGroupAcceptanceWhenLowerIsWorse(): void
