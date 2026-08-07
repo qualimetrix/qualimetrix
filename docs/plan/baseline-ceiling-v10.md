@@ -1,6 +1,7 @@
 # Baseline v10 — the reported-magnitude ceiling
 
-**Status:** revision 10.3 — rounds 1, 2 and 3 folded in; P0 has landed
+**Status:** revision 10.3 — rounds 1, 2 and 3 folded in; P0 through P3 have
+landed, and execution resumes at P4
 **Date:** 2026-08-06
 **Supersedes:** `baseline-ceiling-v9.md` (revision 9.0, `372d831`),
 `ratchet-baseline-v7.md` (revision 8.1, `ac23907`) and `ratchet-baseline-v6.md`.
@@ -119,7 +120,10 @@ Read in this order before touching code:
 the pipeline (§5.2), the argument that it is not v7 (§5.3), the channel
 declaration (§5.4), the measured set and its seam (§5.5), breach severity
 (§5.6), staleness (§5.7), the file contract (§6), the commands (§7). Open: the
-three items in §14. **P0 has landed** (`3ae829d`); execution resumes at P1.
+three items in §14, of which §14.2 and §14.3 were decided in P2 — leaving only
+§14.1, the `migrate` report's shape, for P4. **P0 through P3 have landed**
+(P0 `3ae829d`, P1 `9b388aa`/`91631dc`, P2 `8f8fb91`, P3 `7a656d2`/`6007b82`);
+execution resumes at P4.
 
 **This document is temporary.** Delete `docs/plan/` once the feature lands; what
 must outlive it goes into the ADR produced by P6, and what P1 needs permanently
@@ -575,12 +579,41 @@ Two decisions make one set reachable from all of them:
 - **The measured set is defined by configuration alone.** Exclusions and
   suppression that come from `qmx.yaml` and from source annotations are part of
   it; exclusions supplied only as `check` flags — `--exclude-path`,
-  `--exclude-namespace`, `--no-suppression` — are **not**, and §7's commands do
-  not accept them. Otherwise every baseline command would have to replicate
-  `check`'s option surface to agree with it, and a user who passed a flag to one
-  and not the other would be measuring two sets again. The cost is stated rather
-  than hidden: a CLI-only exclusion can leave an entry that never applies, which
+  `--exclude-namespace` — are **not**, and §7's commands do not accept them.
+  Otherwise every baseline command would have to replicate `check`'s option
+  surface to agree with it, and a user who passed a flag to one and not the
+  other would be measuring two sets again. The cost is stated rather than
+  hidden: a CLI-only exclusion can leave an entry that never applies, which
   `check` reports as inert (§6).
+- **A flag may narrow the set; no flag may widen it.** The asymmetry is not a
+  convention, it is the whole safety argument. Narrowing is harmless because a
+  group that lost members cannot breach the entry that bounded it, so the worst
+  a `--exclude-*` flag costs is the inert entry named above. Widening is
+  authorised by nothing: a finding the set never held has no entry, so it reads
+  as a breach and promotes its whole group to Error on code nobody touched, and
+  a capture taken under the flag writes an entry no later run can see.
+
+  This is where 10.3 was wrong in one place and the impl review caught it, twice
+  and independently, once by running it. `--no-suppression-annotations` (named
+  `--no-suppression` before this correction) was listed above as merely "not
+  part of the set", and was implemented by dropping the suppression stage from
+  the definition — which widens. **Annotation suppression is therefore
+  unconditional in the definition of the set, and the flag is honoured
+  downstream:** the findings it removed rejoin the report after the baseline
+  stage has judged the set and before git scope narrows it, meeting the same
+  exclusions and the same scope as everything else on the way. The consequence
+  to accept rather than rediscover: under the flag an annotated finding is shown
+  at **its own severity**, compared against no entry, because the ceiling never
+  measured it. The flag is a diagnostic view of what the annotations hide, not a
+  stricter mode of the baseline.
+
+  The rename follows from the same finding — "suppression" was the ambiguity
+  that made a report-level flag look like a set-level one, while the annotations
+  it reads live in docblocks, `//` comments and `/* */` blocks alike, so
+  "annotations" is the honest word and "phpdoc" would name a third of them. No
+  alias, per the Backward Compatibility Policy; there is deliberately no paired
+  `--no-suppression-baseline`, because a baseline is not configurable and "do
+  not suppress by baseline" is spelled by not passing `--baseline`.
 - **One named seam delivers it.** Paths plus resolved configuration in, the
   violation list at the baseline stage's input out, with no `InputInterface`
   dependency. `check` obtains its set from the same seam it already runs, and
@@ -799,9 +832,12 @@ bin/qmx check <paths...> --baseline=<baseline> [--show-resolved]
 This block is the complete signature: a **baseline-related** flag named in prose
 and absent here is a defect in this section. 10.2 wrote the rule without that
 qualifier, which made the section fail its own self-test — `--report=git:*`,
-`--exclude-path`, `--exclude-namespace` and `--no-suppression` are all named in
-prose as behaviours, and the last three are deliberately *not* accepted by these
-commands (§5.5). None of the five takes any exclusion or suppression flag.
+`--exclude-path`, `--exclude-namespace` and `--no-suppression-annotations` are
+all named in prose as behaviours; the two exclusion flags are deliberately *not*
+accepted by these commands (§5.5), and `--no-suppression-annotations` is a
+`check` report flag that no baseline command has any reading for, since it
+cannot change the set (§5.5). None of the five takes any exclusion or
+suppression flag.
 
 `--force` is per command and overrides two different things: on `generate` it
 permits overwriting an existing file, on `update` and `cleanup` it overrides the
@@ -990,7 +1026,7 @@ exercise. The guard is scoped to the static set explicitly, because with any
 list — so the open family is guarded by its own run-time case instead, which is
 stated here rather than discovered in P5.
 
-### P2 — File format and entry semantics
+### P2 — File format and entry semantics — **LANDED** (`8f8fb91`)
 Files: `src/Baseline/Baseline.php`, `BaselineEntry.php`, `BaselineLoader.php`,
 `BaselineWriter.php`, `BaselineGenerator.php`, `ViolationHasher.php` (removal),
 matching tests, `src/Baseline/README.md`.
@@ -1027,7 +1063,34 @@ exist" and stops advising `baseline:cleanup`, which selects on a vanished
 `file:` path and is a guaranteed no-op for a `method:`/`class:`/`ns:`/`project:`
 entry.
 
-### P3 — The stage, its new position and nature, the measured-set seam, and capture
+### P3 — The stage, its new position and nature, the measured-set seam, and capture — **LANDED** (`7a656d2` engine, `6007b82` pipeline and seam)
+
+Delivered as stated below. Three things are worth carrying forward. The
+stage-order assertion reads a public, enumerable stage list, and the predicate
+filters reach it through an adapter rather than being rewritten to consume
+lists. The measured-set seam has two ways in — the stage list `check` continues
+past, and a paths-in/findings-out entry point for the commands P4 adds — routed
+through one definition, so a command cannot disagree with `check` about what was
+measured. And the review round found that the set was still flag-dependent in the
+widening direction, which produced §5.5's invariant and the rename of
+`--no-suppression`; the two regression cases for it are named in this DoD.
+
+Two obligations pass to P4, both recorded because a session boundary is where
+they would be lost. **Inert entries have no route out of the pipeline:**
+`Baseline::$inertEntries` is populated by the loader, but the ceiling stage holds
+its baseline privately and the pipeline result carries only stale entries, so
+§6's "`check` reports it as inert, naming symbol, channel and selector" is not
+reachable yet. P4 opens that access in the shape it actually wants — carried out
+of the pipeline beside the stale entries, or fetched — rather than adding an
+accessor blindly. **Staleness is still a second call:**
+`BaselineCeilingStage::staleEntriesOver()` must be handed the very list given to
+`apply()`, and that holds by docblock only. The airtight shape returns the
+filtered findings and the stale entries together from a `Baseline`-owned outcome
+type — `Core` may not carry a `BaselineEntry` — which means changing the one
+caller in `ViolationFilterPipeline`.
+
+Original scope, for the record:
+
 Files: `src/Baseline/Filter/**`, `src/Infrastructure/Console/ViolationFilterPipeline.php`,
 `src/Infrastructure/Console/ViolationFilterOrchestrator.php`,
 `src/Infrastructure/Console/ViolationFilterOptions.php`,
@@ -1081,6 +1144,14 @@ DoD:
   ambiguity of §5.1 including non-finite magnitudes, that the finding is reported
   **at its own configured severity** and not at Error; a separate test asserts a
   measured breach does promote and reports every group member.
+- **No CLI flag widens the measured set** (§5.5): the definition of the set is
+  flag-independent where suppression is concerned, `--no-suppression-annotations`
+  is honoured after the baseline stage, and the restored findings still meet the
+  exclusions and the git scope. Regression cases: capture then `check --baseline`
+  under the flag on unchanged code does not promote and does not fail; capture
+  *under* the flag writes no entry for an annotated finding; the measured set is
+  identical with and without it; the flag is not thereby a no-op — the annotated
+  finding reaches the report, at its own severity.
 - **No entry is written for a finding `exclude_paths` or `@qmx-ignore` removes,
   and a group with one ignored member round-trips through `generate` then
   `check`** — the observable a DoD phrased as "reads the stage-1 input" would have
@@ -1150,8 +1221,13 @@ Dependencies: P5.
 DoD: the ADR records the ceiling decision, §5.3's boundary against v7, §5.1's
 cumulative rule with the argument for it, and §15; documented options match
 `--help`; EN/RU parity; strict MkDocs build clean; `Breaking` entries name the
-removed v5 format, `--generate-baseline`, `--baseline-ignore-stale` and the
-stale-entry behaviour change; `docs/plan/` is gone and **nothing outside it
+removed v5 format, `--generate-baseline`, `--baseline-ignore-stale`, the
+stale-entry behaviour change, and **the rename of `--no-suppression` to
+`--no-suppression-annotations` together with the behaviour change behind it —
+the flag no longer widens what a baseline measures, so a run that passes it can
+no longer promote an annotated finding to Error (§5.5; landed in P3, and the
+`Breaking` entry is owed here because a CHANGELOG written from P3's commits
+alone would record the rename without the reason)**; `docs/plan/` is gone and **nothing outside it
 references it by section number either** — `WorseDirection`'s two operator
 docblocks and its tests currently cite "§7 / §5.1 of the ratchet-baseline plan"
 and must be repointed at the ADR, which is the whole point of the ADR outliving
@@ -1160,11 +1236,12 @@ the plan.
 ## 11. Execution sequence
 
 1. ~~Review this revision~~ — three rounds done; round 3's 19 findings are folded
-   in above, and P0 has landed.
-2. P1 → P2 → P3, sequential. P1 and P2 are small; **P3 is not** — it carries the
-   stage-list extraction, the transform-shaped contract and the measured-set seam,
-   each of which 10.2 had hidden inside a one-line DoD clause.
-3. P4, then P5, then P6.
+   in above.
+2. ~~P1 → P2 → P3, sequential~~ — done. P3 carried the stage-list extraction, the
+   transform-shaped contract and the measured-set seam, each of which 10.2 had
+   hidden inside a one-line DoD clause; its own review round added §5.5's
+   widening invariant.
+3. **P4**, then P5, then P6.
 4. Full validation: `composer check`, `bin/qmx check src/`, benchmark regression
    suite, website build.
 
