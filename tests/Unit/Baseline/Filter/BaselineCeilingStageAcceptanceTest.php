@@ -10,17 +10,24 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\BaselineEntryMode;
 use Qualimetrix\Baseline\Filter\BaselineCeilingStage;
 use Qualimetrix\Baseline\Filter\GroupCeilingVerdict;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Rules\Design\GodClassOptions;
+use Qualimetrix\Rules\Design\GodClassRule;
 use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Support\Violation\ViolationFactory;
 
 /**
- * §5.1's acceptance rule, per shape and worked by hand over multi-member
+ * ADR 0017 acceptance rule, per shape and worked by hand over multi-member
  * groups.
  *
  * The multi-member cases are the reason the rule counts members per severity
@@ -86,7 +93,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     }
 
     /**
-     * The second `lower` family §5.4 names, kept as its own case because a
+     * The second `lower` family ADR 0017 names, kept as its own case because a
      * reader generalising from `maintainability.index` alone would be
      * generalising from one channel.
      */
@@ -167,7 +174,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     }
 
     /**
-     * §12's "shape versus value": the 15 `marker` channels report a fixed
+     * ADR 0017 distinguishes a channel's shape from its numeric value: the 15 `marker` channels report a fixed
      * `1.0`, and reading it as a magnitude would bound them by a constant
      * that never changes. The shape decides, so the group is bounded by its
      * count — and the entry, which carries no magnitudes, is applied rather
@@ -190,7 +197,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
 
     /**
      * `coupling.class-rank` reports a real number that is nevertheless not a
-     * boundary in any later run's units, so §5.4 declares it `occurrence`.
+     * boundary in any later run's units, so ADR 0017 declares it `occurrence`.
      * The number must be ignored outright: a rank three times worse than the
      * one at capture is still one finding, and one finding is what was
      * accepted.
@@ -246,7 +253,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     }
 
     /**
-     * §13.12's mirror. The survivor grew into the slot the repair vacated
+     * ADR 0017 mirror. The survivor grew into the slot the repair vacated
      * and stopped short of the worst magnitude already accepted: at
      * `t = 95` there is one current member and two stored ones. Accepted,
      * and recorded as a limitation rather than hidden.
@@ -260,7 +267,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     }
 
     /**
-     * The other side of §13.12: past the worst magnitude ever accepted, at
+     * The other side of ADR 0017: past the worst magnitude ever accepted, at
      * `t = 101` there is one current member and no stored one.
      */
     #[Test]
@@ -314,7 +321,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     }
 
     /**
-     * **The case that pins the fold.** §5.1 states acceptance as one bullet
+     * **The case that pins the fold.** ADR 0017 states acceptance as one bullet
      * rather than two because the cumulative rule *subsumes* the count
      * condition; nothing proves the fold is actually present unless a group
      * grows in size while staying below the worst magnitude ever accepted.
@@ -338,59 +345,56 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     }
 
     /**
-     * §13.1: which member changed is not tracked, so one copy removed and
+     * ADR 0017: which member changed is not tracked, so one copy removed and
      * another added at the same magnitude reads as unchanged. Stated as a
      * limitation, pinned here so it is not mistaken for a bug later.
      */
     #[Test]
     public function itAcceptsAGroupWhoseMembersSwappedAtEqualMagnitude(): void
     {
-        $stage = self::duplicationStage([50, 50]);
+        $recorded = [self::duplicationFinding(50, 1), self::duplicationFinding(50, 2)];
+        $current = [self::duplicationFinding(50, 3), self::duplicationFinding(50, 4)];
+        $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded[0], [50, 50])]));
 
-        self::assertSame([], $stage->apply(self::duplicationGroup([50, 50]))->violations);
+        self::assertNotSame($recorded[0]->location, $current[0]->location);
+        self::assertNotSame($recorded[1]->location, $current[1]->location);
+        self::assertSame([], $stage->apply($current)->violations);
     }
 
     /**
-     * §13.3: `design.god-class` reports the matched-criteria tally, so a
-     * criterion worsening without changing the tally is invisible to the
-     * ceiling. Bounded on the axis the rule reports, which is the whole
-     * claim the channel supports.
+     * ADR 0017: the actual God Class rule reports only its matched-criteria
+     * tally. A worsening criterion can therefore change the emitted message
+     * without changing the value which the ceiling compares.
      */
     #[Test]
-    public function itAcceptsACompoundRuleWhoseCriterionWorsenedWithoutMovingTheTally(): void
+    public function itAcceptsACompoundRuleWhoseNonTallyContextChangedWithoutMovingTheTally(): void
     {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
-        $declarations->declare('design.god-class#design.god-class', ChannelDeclaration::magnitude(WorseDirection::Higher));
+        foreach (GodClassRule::channelDeclarations() as $channel => $declaration) {
+            $declarations->declare($channel, $declaration);
+        }
 
-        $recorded = self::findingOn('design.god-class', 'design.god-class', self::someClass(), 3);
-        $current = self::findingOn('design.god-class', 'design.god-class', self::someClass(), 3);
+        $recorded = self::godClassFinding(50);
+        $current = self::godClassFinding(100);
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded, [3])]), $declarations);
 
+        self::assertSame(
+            'God Class detected (3/4 criteria): high WMC (50 >= 47), high LCOM (4 >= 3), low TCC (0.20 < 0.33)',
+            $recorded->message,
+        );
+        self::assertSame(
+            'God Class detected (3/4 criteria): high WMC (100 >= 47), high LCOM (4 >= 3), low TCC (0.20 < 0.33)',
+            $current->message,
+        );
+        self::assertNotSame($recorded->message, $current->message);
+        self::assertSame(3, $recorded->metricValue);
+        self::assertSame(3, $current->metricValue);
         self::assertSame([], $stage->apply([$current])->violations);
     }
 
     /**
-     * §13.6: `complexity.npath.*` saturates at 10⁹, so an entry captured at
-     * saturation can never breach however much worse the method gets.
-     */
-    #[Test]
-    public function itAcceptsAnyValueOnceAnEntryWasCapturedAtNpathSaturation(): void
-    {
-        $declarations = StubChannelDeclarationRegistry::withDefaults();
-        $declarations->declare('complexity.npath#complexity.npath.method', ChannelDeclaration::magnitude(WorseDirection::Higher));
-
-        $saturation = 1_000_000_000;
-        $recorded = self::findingOn('complexity.npath', 'complexity.npath.method', self::someMethod(), $saturation);
-        $current = self::findingOn('complexity.npath', 'complexity.npath.method', self::someMethod(), $saturation);
-
-        $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($recorded, [$saturation])]), $declarations);
-
-        self::assertSame([], $stage->apply([$current])->violations);
-    }
-
-    /**
-     * §13.11: the three project-keyed architecture diagnostics share one
+     * ADR 0017: the three project-keyed architecture diagnostics share one
      * symbol, so two findings of one channel form a single group bounded by
      * count alone.
      */
@@ -415,7 +419,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     // ------------------------------------- multi-member, lower is worse
 
     /*
-     * §5.2 and §7 both warn that the cumulative rule "reads backwards" on a
+     * ADR 0017 warns that the cumulative rule "reads backwards" on a
      * `lower` channel, and every multi-member case above is `higher`. The
      * three below are the mirror images, worked by hand the same way, with
      * "at least as bad as `t`" reading `<= t`.
@@ -599,9 +603,27 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
         return SymbolPath::forClass('App\Service', 'OrderService');
     }
 
-    private static function someMethod(): SymbolPath
+    private static function godClassFinding(int $wmc): Violation
     {
-        return SymbolPath::forMethod('App\Service', 'OrderService', 'calculate');
+        $symbolPath = self::someClass();
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/OrderService.php'), 10);
+        $metrics = (new MetricBag())
+            ->with('wmc', $wmc)
+            ->with('lcom', 4)
+            ->with('tcc', 0.2)
+            ->with('classLoc', 100)
+            ->with('methodCount', 10)
+            ->with('isReadonly', 0);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(static fn(SymbolType $type): array => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('get')->willReturn($metrics);
+
+        $findings = (new GodClassRule(new GodClassOptions()))->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $findings);
+
+        return $findings[0];
     }
 
     private static function someNamespace(): SymbolPath

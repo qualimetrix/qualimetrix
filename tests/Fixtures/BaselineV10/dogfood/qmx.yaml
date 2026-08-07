@@ -1,0 +1,2 @@
+failOn: error
+onlyRules: ['code-smell.error-suppression']

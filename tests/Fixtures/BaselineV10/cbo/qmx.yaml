@@ -1,0 +1,8 @@
+onlyRules: ['coupling.cbo']
+rules:
+  coupling.cbo:
+    class:
+      warning: 1
+      error: 99
+    namespace:
+      enabled: false
