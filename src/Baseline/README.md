@@ -41,6 +41,19 @@ Baseline/
 ├── BaselineCleanupReason.php    # Enum: stale / channel no longer declared / inert
 ├── BaselineCleanupRemoval.php   # VO: what one `--remove` run did — removed/not-found/ambiguous
 │
+├── BaselineMigrator.php         # `baseline:migrate`: replaces the baseline with a fresh capture, matching v5 against it by (symbolKey, rule) to report continuity
+├── BaselineMigratorResult.php   # VO: the migrated baseline plus its MigrationReport
+├── MigrationReport.php          # VO: carried/dropped/fresh pair counts, dropped entries enumerated in full
+├── MigrationReportDroppedEntry.php # VO: one v5 (symbolKey, rule) pair the fresh capture no longer backs
+├── V5Baseline.php               # VO: a parsed version 5 file — read-only, never applied
+├── V5Entry.php                  # VO: one v5 record — symbol, rule, and the opaque hash v5 stored instead of a magnitude
+├── V5BaselineReader.php         # Reads a v5 file (or checks it is one, for --force's guard); BaselineLoader refuses version 5 outright
+│
+├── BoundaryExplanationService.php # `baseline:explain`: builds a BoundaryExplanation from the baseline, qmx.yaml-configured thresholds, and @qmx-threshold annotations
+├── EffectiveBoundary.php        # VO: one identity's boundary — baseline source, configured threshold, annotation, each independently nullable
+├── EffectiveBoundaryBaselineSource.php # VO: the baseline half of an EffectiveBoundary — the accepted level plus what the measured set currently compares against it
+├── BoundaryExplanation.php      # VO: every boundary bearing on one symbol — what the command prints
+│
 ├── Filter/
 │   ├── BaselineCeilingStage.php # ViolationFilterStageInterface: applies entries as ceilings over groups
 │   └── GroupCeilingVerdict.php  # VO: accepted / measured breach / reported, for one group
@@ -216,6 +229,26 @@ inference-by-absence wearing a flag). Each selector resolves through
 is removed, since the digest is not a proof of uniqueness). A selector
 addresses the *complete* identity including the dependency edge, so it can
 remove one of two entries differing only by edge without touching the other.
+
+### `BaselineMigrator` — converting a version 5 file
+
+`baseline:migrate` reads the old file through `V5BaselineReader` and
+reconciles it against a fresh capture through `BaselineMigrator`. The new
+baseline is never a merge of the two — it is exactly what the fresh capture
+produced, because a v5 record carries no magnitude to merge in. What
+`BaselineMigrator` adds is the continuity report: matching is done **only**
+on the pair `(symbolKey, ruleName)` — the one thing a v5 record and a v10
+finding both carry — and **never** on the v5 `hash`, which is opaque (a
+digest of `rule|namespace|type|member|violationCode`) and holds no
+magnitude to recover. A pair the fresh capture still backs is counted as
+carried; a pair it does not is enumerated in `MigrationReport::$dropped`,
+since a user needs to know which acceptance was lost, not just how many.
+
+`BoundaryExplanationService` is unrelated to migration but shares this
+package's "read-only against the measured set" shape: `baseline:explain`
+gives it the loaded baseline, the run's violations, and configuration read
+by its own command (thresholds, annotations), and it answers with one
+`EffectiveBoundary` per relevant identity — never touching a file itself.
 
 ## Entry Identity
 

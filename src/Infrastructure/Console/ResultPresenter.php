@@ -42,7 +42,6 @@ final class ResultPresenter
         AnalysisResult $analysisResult,
         InputInterface $input,
         OutputInterface $output,
-        bool $baselineGenerated = false,
         bool $scopedReporting = false,
     ): int {
         $profiler = $this->profilerHolder->get(); // @phpstan-ignore staticMethod.dynamicCall
@@ -83,12 +82,6 @@ final class ResultPresenter
         $this->writeOutput($formattedOutput, $format, $input, $output);
 
         $profiler->stop('reporting');
-
-        // When a baseline was successfully written, the purpose was to capture current state —
-        // not to assert clean code. Override exit code to 0 regardless of violation count.
-        if ($baselineGenerated) {
-            return 0;
-        }
 
         return $this->exitCodeResolver->resolve($violations);
     }

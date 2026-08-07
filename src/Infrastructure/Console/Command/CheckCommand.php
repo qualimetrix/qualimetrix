@@ -207,15 +207,14 @@ final class CheckCommand extends Command
 
         $scopedReporting = $scopeResolution->reportScope !== null;
 
-        // `check` no longer writes baselines — `bin/qmx baseline:generate`
-        // does — so the "a baseline was just captured, report success
-        // regardless" path is dead here and the flag is always false.
+        // `check` no longer writes baselines — `bin/qmx baseline:generate` does —
+        // so ResultPresenter no longer has a "baseline was just captured, report
+        // success regardless" path to opt into here.
         $exitCode = $this->resultPresenter->presentResults(
             $filteredViolations,
             $result,
             $input,
             $output,
-            false,
             $scopedReporting,
         );
 

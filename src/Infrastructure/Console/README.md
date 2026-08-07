@@ -134,7 +134,6 @@ Export dependency graph in DOT or JSON format.
 | Option                         | Description                                                                                                                                                                                                                                                                                                                                  |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--baseline`                   | Use baseline file                                                                                                                                                                                                                                                                                                                            |
-| `--generate-baseline`          | Generate baseline from current violations                                                                                                                                                                                                                                                                                                    |
 | `--show-resolved`              | Show count of resolved violations                                                                                                                                                                                                                                                                                                            |
 | `--show-suppressed`            | Show suppressed violations — `@qmx-ignore` tags and per-rule `exclude_namespaces`/`exclude_paths` exclusions, each listed in its own block                                                                                                                                                                                                   |
 | `--no-suppression-annotations` | Report findings `@qmx-ignore` suppresses. It does **not** change what a baseline measures: the annotated findings never reach the baseline stage and are never captured, so they are shown at their own severity and compared against no entry. A flag may narrow the measured set (`--exclude-path`, `--exclude-namespace`), never widen it |
@@ -228,7 +227,7 @@ bin/qmx check src/ --report=git:main..HEAD
 bin/qmx check src/ --baseline=baseline.json
 
 # Generate baseline
-bin/qmx check src/ --generate-baseline=baseline.json
+bin/qmx baseline:generate baseline.json src/
 
 # Export dependency graph
 bin/qmx graph:export src/ --output=graph.dot
