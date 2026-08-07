@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 
@@ -16,6 +17,15 @@ final readonly class AnalysisResult
     /**
      * @param list<Violation> $violations
      * @param array<string, list<Suppression>> $suppressions Per-file suppression tags
+     * @param array<string, list<ThresholdOverride>> $thresholdOverrides Per-file `@qmx-threshold`
+     *                                                                   overrides — the same map
+     *                                                                   {@see \Qualimetrix\Core\Rule\AnalysisContext}
+     *                                                                   used to evaluate rules, kept
+     *                                                                   here too so a caller outside
+     *                                                                   rule execution (e.g.
+     *                                                                   `baseline:explain`) can read
+     *                                                                   the annotation a symbol carried
+     *                                                                   in *this* run
      */
     public function __construct(
         public array $violations,
@@ -25,6 +35,7 @@ final readonly class AnalysisResult
         public MetricRepositoryInterface $metrics,
         public array $suppressions = [],
         public ?NamespaceTree $namespaceTree = null,
+        public array $thresholdOverrides = [],
     ) {}
 
     public function hasErrors(): bool
@@ -98,6 +109,11 @@ final readonly class AnalysisResult
             $mergedSuppressions[$file] = array_merge($mergedSuppressions[$file] ?? [], $list);
         }
 
+        $mergedThresholdOverrides = $this->thresholdOverrides;
+        foreach ($other->thresholdOverrides as $file => $list) {
+            $mergedThresholdOverrides[$file] = array_merge($mergedThresholdOverrides[$file] ?? [], $list);
+        }
+
         return new self(
             violations: [...$this->violations, ...$other->violations],
             filesAnalyzed: $this->filesAnalyzed + $other->filesAnalyzed,
@@ -106,6 +122,7 @@ final readonly class AnalysisResult
             metrics: $mergedMetrics,
             suppressions: $mergedSuppressions,
             namespaceTree: $this->namespaceTree ?? $other->namespaceTree,
+            thresholdOverrides: $mergedThresholdOverrides,
         );
     }
 

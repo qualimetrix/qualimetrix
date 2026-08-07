@@ -14,6 +14,7 @@ use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\SuppressionType;
+use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -269,6 +270,41 @@ final class AnalysisResultTest extends TestCase
         // Non-overlapping files preserved
         self::assertCount(1, $merged->suppressions['only1.php']);
         self::assertCount(1, $merged->suppressions['only2.php']);
+    }
+
+    #[Test]
+    public function itMergesThresholdOverridesForOverlappingFiles(): void
+    {
+        $override1 = new ThresholdOverride('complexity.cyclomatic', 15, 25, 10);
+        $override2 = new ThresholdOverride('coupling.cbo', 10, 20, 20);
+        $override3 = new ThresholdOverride('size.method-count', 5, 10, 30);
+
+        $result1 = new AnalysisResult(
+            violations: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.1,
+            metrics: self::createStub(MetricRepositoryInterface::class),
+            thresholdOverrides: ['shared.php' => [$override1], 'only1.php' => [$override2]],
+        );
+
+        $result2 = new AnalysisResult(
+            violations: [],
+            filesAnalyzed: 1,
+            filesSkipped: 0,
+            duration: 0.1,
+            metrics: self::createStub(MetricRepositoryInterface::class),
+            thresholdOverrides: ['shared.php' => [$override3], 'only2.php' => [$override2]],
+        );
+
+        $merged = $result1->merge($result2);
+
+        self::assertCount(2, $merged->thresholdOverrides['shared.php']);
+        self::assertSame($override1, $merged->thresholdOverrides['shared.php'][0]);
+        self::assertSame($override3, $merged->thresholdOverrides['shared.php'][1]);
+
+        self::assertCount(1, $merged->thresholdOverrides['only1.php']);
+        self::assertCount(1, $merged->thresholdOverrides['only2.php']);
     }
 
     #[Test]

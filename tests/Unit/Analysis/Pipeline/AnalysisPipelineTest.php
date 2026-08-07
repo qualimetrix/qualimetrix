@@ -164,6 +164,39 @@ final class AnalysisPipelineTest extends TestCase
         self::assertInstanceOf(MetricRepositoryInterface::class, $result->metrics); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
+    /**
+     * A `@qmx-threshold` annotation is extracted during Collection and
+     * carried into `AnalysisContext` for rule execution — but the
+     * baseline-ceiling plan's `explain` command needs to read the same
+     * overrides *after* the run, from `AnalysisResult` alone. This is the
+     * run this package's DoD requires: a real `AnalysisPipeline::analyze()`
+     * call over a file whose Collection phase reported a `@qmx-threshold`
+     * override must leave that override readable on the result it returns.
+     */
+    #[Test]
+    public function itCarriesThresholdOverridesFromCollectionOntoTheResult(): void
+    {
+        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
+
+        $overrides = [
+            'src/Foo.php' => [
+                new ThresholdOverride('complexity.cyclomatic', 15.0, 25.0, 10),
+            ],
+        ];
+
+        $this->collectionOrchestrator->method('collect')->willReturn(
+            new CollectionPhaseOutput(
+                new CollectionResult(1, 0, thresholdOverrides: $overrides),
+                [],
+            ),
+        );
+
+        $pipeline = $this->createPipeline();
+        $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
+
+        self::assertSame($overrides, $result->thresholdOverrides);
+    }
+
     #[Test]
     public function itExecutesRulesAfterCollection(): void
     {

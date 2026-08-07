@@ -126,6 +126,34 @@ final class MeasuredViolationSetTest extends TestCase
     }
 
     /**
+     * `runForPaths()` must return the same measured set `forPaths()` does —
+     * the two are not two definitions, one is the other with the run kept —
+     * and must expose the {@see AnalysisResult} the run itself produced,
+     * not a rebuilt or partial one.
+     */
+    #[Test]
+    public function itReturnsTheRunAlongsideTheSameMeasuredSetForPathsReturns(): void
+    {
+        $ignored = self::violation('src/Legacy/Service.php', 'App\\Legacy', 'Service');
+        $reported = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
+
+        $set = $this->createSet(
+            [$ignored, $reported],
+            new AnalysisConfiguration(),
+            [
+                'src/Legacy/Service.php' => [
+                    new Suppression(rule: '*', reason: 'Reviewed', line: 1, type: SuppressionType::File),
+                ],
+            ],
+        );
+
+        $run = $set->runForPaths([AbsolutePath::fromString(sys_get_temp_dir())]);
+
+        self::assertSame([$reported], $run->violations);
+        self::assertSame([$ignored, $reported], $run->result->violations);
+    }
+
+    /**
      * @param list<Violation> $violations
      * @param array<string, list<Suppression>> $suppressions
      */

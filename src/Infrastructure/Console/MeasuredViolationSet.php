@@ -33,10 +33,18 @@ use Qualimetrix\Core\Violation\Violation;
  * same predicate was evaluated twice per run from two separately supplied
  * lists — they agreed only for as long as the baseline ran first.
  *
- * So the definition lives here in one place with two ways in:
+ * So the definition lives here in one place with three ways in:
  *
  * - {@see forPaths()} — paths in, the measured set out. This is what a
  *   command that only wants the set calls; it owns the analysis run.
+ * - {@see runForPaths()} — the same run, but returning the {@see AnalysisResult}
+ *   alongside the measured set rather than discarding it. `baseline:explain`
+ *   needs a second thing the run produced — the `@qmx-threshold` overrides
+ *   now carried on {@see AnalysisResult} — and it must be *this run's*
+ *   overrides, not a second analysis that could disagree with the first.
+ *   {@see forPaths()} delegates to this rather than duplicating the
+ *   definition, so there remains exactly one place the measured set is
+ *   assembled (§5.5).
  * - {@see stages()} — the ordered stages that produce it, for a caller that
  *   already holds the findings and continues past the set. That is `check`:
  *   the pipeline appends the baseline and git-scope stages to this list, so
@@ -78,11 +86,28 @@ final readonly class MeasuredViolationSet
      */
     public function forPaths(array $paths, ?FileDiscoveryInterface $fileDiscovery = null): array
     {
+        return $this->runForPaths($paths, $fileDiscovery)->violations;
+    }
+
+    /**
+     * {@see forPaths()}, but keeping the {@see AnalysisResult} the run
+     * produced instead of discarding it once the measured set is taken.
+     *
+     * `baseline:explain` needs the run's `@qmx-threshold` overrides as well
+     * as its measured set, and both must come from one analysis: a second
+     * call to {@see forPaths()} would run the pipeline again, and nothing
+     * guarantees a second run agrees with the first (a file could change
+     * between the two, or the run could simply be expensive to repeat).
+     *
+     * @param list<AbsolutePath> $paths
+     */
+    public function runForPaths(array $paths, ?FileDiscoveryInterface $fileDiscovery = null): MeasuredAnalysisRun
+    {
         $result = $this->analyzer->analyze($paths, $fileDiscovery);
 
         $this->loadSuppressions($result->suppressions);
 
-        return $this->measure($result->violations);
+        return new MeasuredAnalysisRun($result, $this->measure($result->violations));
     }
 
     /**

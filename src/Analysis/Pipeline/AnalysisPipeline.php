@@ -220,6 +220,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             metrics: $repository,
             suppressions: $collectionResult->suppressions,
             namespaceTree: $enrichmentResult->namespaceTree,
+            thresholdOverrides: $collectionResult->thresholdOverrides,
         );
     }
 
