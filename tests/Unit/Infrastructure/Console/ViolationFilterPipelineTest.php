@@ -355,6 +355,68 @@ final class ViolationFilterPipelineTest extends TestCase
         self::assertSame(0, $result->removedCountBy(ViolationFilterStage::Baseline));
     }
 
+    // -- Inert entries and baseline scope (§6, §5.7) --
+
+    /**
+     * §6 requires `check` to be able to name an entry it could not apply —
+     * symbol, channel and selector. The pipeline's job is only to deliver
+     * the loader's own inert entries unconditionally; it does not filter or
+     * interpret them.
+     */
+    #[Test]
+    public function itCollectsInertEntriesFromTheLoadedBaseline(): void
+    {
+        $violation = $this->makeViolation('src/Service/UserService.php');
+
+        $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions(
+            baselinePath: $this->writeBaselineFile([
+                'class:App\\Nowhere\\Ghost' => [
+                    ['channel' => 'nonexistent.channel#nonexistent.channel', 'count' => 1],
+                ],
+            ]),
+        ));
+
+        self::assertCount(1, $result->inertEntries);
+        self::assertSame('class:App\Nowhere\Ghost', $result->inertEntries[0]->symbolKey);
+    }
+
+    #[Test]
+    public function itHasNoInertEntriesWithoutABaseline(): void
+    {
+        $violation = $this->makeViolation('src/Service/UserService.php');
+
+        $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions());
+
+        self::assertSame([], $result->inertEntries);
+    }
+
+    /**
+     * `baselineScope` is what a future scope-guard command compares its own
+     * run against (§5.7) — the pipeline only has to carry the file's own
+     * `scope` field through unchanged.
+     */
+    #[Test]
+    public function itReportsTheLoadedBaselinesScope(): void
+    {
+        $violation = $this->makeViolation('src/Service/UserService.php');
+
+        $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions(
+            baselinePath: $this->writeBaselineFile([]),
+        ));
+
+        self::assertSame(['src'], $result->baselineScope);
+    }
+
+    #[Test]
+    public function itHasANullBaselineScopeWithoutABaseline(): void
+    {
+        $violation = $this->makeViolation('src/Service/UserService.php');
+
+        $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions());
+
+        self::assertNull($result->baselineScope);
+    }
+
     /**
      * A stale entry on an unrelated symbol is reported and changes nothing
      * else — the case v5 also handled, kept as a regression guard.

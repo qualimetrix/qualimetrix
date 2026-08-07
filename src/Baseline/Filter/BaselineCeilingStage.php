@@ -9,6 +9,7 @@ use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEntry;
 use Qualimetrix\Baseline\BaselineEntryMode;
 use Qualimetrix\Baseline\BaselineIdentity;
+use Qualimetrix\Baseline\GroupAcceptance;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
@@ -29,29 +30,12 @@ use Qualimetrix\Core\Violation\Violation;
  *
  * ## The acceptance rule
  *
- * A group is accepted when every current magnitude is finite and **no level
- * of severity holds more current members than the stored group held**. For
- * each value `t`, the number of current members at least as bad as `t` must
- * not exceed the number of stored members at least as bad as `t`, where "at
- * least as bad" is `>=` on a `higher` channel and `<=` on a `lower` one.
- * Only the levels the current group itself supplies need checking: the test
- * can only fail at a level some current member reaches.
- *
- * **It counts members; it never pairs them.** A rank comparison has an end
- * to align from, and each end is wrong in one direction. Stored `[100, 40]`
- * on a `higher` channel with the 40-line duplicate deleted and nothing else
- * touched: aligning from the best end reads `100` against `40` and reports a
- * breach on a symbol nobody touched — the tool answering a pure repair with
- * a red build. Aligning from the worst end assumes the opposite. Counting
- * assumes nothing. (The cumulative form is provably equivalent to worst-end
- * alignment and additionally subsumes the count condition, which is why
- * there is one rule here and not two.)
- *
- * On an `occurrence` channel there are no magnitudes and there is one level:
- * the group must hold no more members than `count`. That is the same
- * sentence with the severity axis collapsed, not a second mechanism — and
- * the number such a channel's findings report, fixed marker or real value,
- * is ignored by contract.
+ * A group is accepted when every current magnitude is finite and — per
+ * {@see GroupAcceptance} — no level of severity holds more current members
+ * than the stored group held. That type owns the cumulative rule and the
+ * argument for counting members instead of pairing them by rank; this class
+ * only decides *which* comparison applies (magnitude vs. occurrence) and
+ * what happens around it (applicability, `mode`, promotion).
  *
  * ## The governing invariant
  *
@@ -91,10 +75,27 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
 
     public function apply(array $violations): ViolationFilterStageResult
     {
+        return $this->judgeAll($violations)->result;
+    }
+
+    /**
+     * Judges every group in one pass over one list and returns everything
+     * this stage can say about it: the filtered/promoted result, the entries
+     * whose identity did not appear (§5.7), and the entries the loader could
+     * not apply at all (§6). See {@see CeilingOutcome} for why bundling these
+     * together — rather than a second call reading `apply()`'s own input a
+     * second time — is what makes the two unable to disagree.
+     *
+     * @param list<Violation> $violations
+     */
+    public function judgeAll(array $violations): CeilingOutcome
+    {
         /** @var array<int, GroupCeilingVerdict> $verdictByIndex */
         $verdictByIndex = [];
+        $measuredIdentityKeys = [];
 
         foreach (self::groupByIdentity($violations) as $group) {
+            $measuredIdentityKeys[$group['identity']->key()] = true;
             $verdict = $this->judge($group['identity'], $group['violations']);
 
             foreach ($group['indexes'] as $index) {
@@ -119,47 +120,23 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
                 : $violation;
         }
 
-        return new ViolationFilterStageResult(ViolationFilterStage::Baseline, $kept, $removed);
+        return new CeilingOutcome(
+            result: new ViolationFilterStageResult(ViolationFilterStage::Baseline, $kept, $removed),
+            staleEntries: $this->baseline->staleEntries(array_keys($measuredIdentityKeys)),
+            inertEntries: $this->baseline->inertEntries,
+        );
     }
 
     /**
-     * Entries whose identity did not appear in the measured set — the debt
-     * that was paid off, or silenced, since capture (§5.7).
+     * The scope the loaded baseline file recorded — `check` compares it
+     * against the run's own scope to report a mismatch (§5.7), never to fail
+     * on one.
      *
-     * **The argument must be the very list handed to {@see apply()}.** The
-     * predicate is "absent from the set the ceiling measured", and the set
-     * the ceiling measured is its own input: passing the output instead
-     * would report every accepted entry as stale, and passing a differently
-     * filtered list is how the previous `public static` version came to be
-     * evaluated twice per run over two sets that only agreed by accident.
-     * It is an instance method on the stage precisely so there is one
-     * object, one baseline and one set to pass.
-     *
-     * **This is one object short of making the mistake impossible, and the
-     * remaining step is deliberately not taken here.** The airtight shape is
-     * a single call that returns the filtered list and the stale entries
-     * together, so the two cannot be computed over different sets at all —
-     * an outcome type owned by this component, since `list<BaselineEntry>`
-     * cannot travel in {@see ViolationFilterStageResult} (that type lives in
-     * `Core`, which may not depend on `Baseline`). Introducing it means
-     * changing the one caller, which sits in `Infrastructure`; until that
-     * caller moves, a second entry point here would be two surfaces where
-     * the danger is having two. See {@see ViolationFilterStageInterface} for
-     * why the caller reaches this method through a downcast.
-     *
-     * @param list<Violation> $measured the exact list {@see apply()} was given
-     *
-     * @return list<BaselineEntry>
+     * @return list<string>
      */
-    public function staleEntriesOver(array $measured): array
+    public function baselineScope(): array
     {
-        $keys = [];
-
-        foreach ($measured as $violation) {
-            $keys[BaselineIdentity::forViolation($violation)->key()] = true;
-        }
-
-        return $this->baseline->staleEntries(array_keys($keys));
+        return $this->baseline->scope;
     }
 
     /**
@@ -209,7 +186,7 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
 
     /**
      * One level, no magnitudes: the group must hold no more members than the
-     * entry recorded.
+     * entry recorded — {@see GroupAcceptance::countWithin()}.
      *
      * @param list<Violation> $group
      */
@@ -226,13 +203,14 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
             return GroupCeilingVerdict::accepted();
         }
 
-        return \count($group) <= $entry->count
+        return GroupAcceptance::countWithin(\count($group), $entry->count)
             ? GroupCeilingVerdict::accepted()
             : GroupCeilingVerdict::breached(self::levelOf($entry));
     }
 
     /**
-     * The cumulative rule over both magnitude vectors.
+     * The cumulative rule over both magnitude vectors —
+     * {@see GroupAcceptance::magnitudesWithin()}.
      *
      * Three ways to arrive with nothing comparable, all resolving to
      * "reported": the entry stores no magnitudes though its channel says it
@@ -268,54 +246,9 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
             return GroupCeilingVerdict::reported();
         }
 
-        return self::isWithin($current, $stored, $direction)
+        return GroupAcceptance::magnitudesWithin($current, $stored, $direction)
             ? GroupCeilingVerdict::accepted()
             : GroupCeilingVerdict::breached(self::levelOf($entry));
-    }
-
-    /**
-     * The cumulative rule of §5.1, evaluated at every level the current group
-     * supplies.
-     *
-     * @param list<float> $current
-     * @param list<float> $stored
-     */
-    private static function isWithin(array $current, array $stored, WorseDirection $direction): bool
-    {
-        foreach ($current as $level) {
-            $currentAtLevel = self::countAtLeastAsBadAs($current, $level, $direction);
-            $storedAtLevel = self::countAtLeastAsBadAs($stored, $level, $direction);
-
-            if ($currentAtLevel > $storedAtLevel) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * How many of these magnitudes are at least as bad as `$level`.
-     *
-     * "At least as bad" is the negation of "the level is worse than this
-     * magnitude", so the direction's own operator answers it and no sign
-     * handling is re-derived here. The epsilon stays at its `0.0` default:
-     * both sides are already normalised to six decimal places, which is what
-     * earns the zero.
-     *
-     * @param list<float> $magnitudes
-     */
-    private static function countAtLeastAsBadAs(array $magnitudes, float $level, WorseDirection $direction): int
-    {
-        $count = 0;
-
-        foreach ($magnitudes as $magnitude) {
-            if (!$direction->isWorse($level, $magnitude)) {
-                ++$count;
-            }
-        }
-
-        return $count;
     }
 
     /**

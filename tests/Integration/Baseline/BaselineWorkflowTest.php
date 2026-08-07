@@ -176,8 +176,8 @@ final class BaselineWorkflowTest extends TestCase
         ];
 
         // Get resolved entries — measured over the very list the ceiling
-        // judged, which is the stage's input
-        $resolved = $stage->staleEntriesOver($currentViolations);
+        // judges, which is judgeAll()'s input
+        $resolved = $stage->judgeAll($currentViolations)->staleEntries;
 
         // Should detect that method2 was resolved
         self::assertCount(1, $resolved);

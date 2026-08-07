@@ -28,6 +28,18 @@ Baseline/
 ├── UncapturedReason.php         # Enum: undeclared channel / no finite magnitude
 ├── BaselineLoader.php           # Loads a version 10 file
 ├── BaselineWriter.php           # Writes atomically under a compare-and-swap guard
+├── ScopeCoverage.php            # Predicate: does a run's scope cover a file's recorded scope?
+│
+├── BaselineUpdater.php          # `baseline:update`: direction-aware monotonic tightening
+├── BaselineUpdateResult.php     # VO: the updated baseline plus one outcome per entry
+├── BaselineEntryUpdateOutcome.php # VO: what update did to one entry, and why
+├── BaselineUpdateDisposition.php  # Enum: updated / refused / skipped
+├── BaselineUpdateRefusalReason.php # Enum: why update refused to tighten an entry
+│
+├── BaselineCleaner.php          # `baseline:cleanup`: candidate enumeration and selector removal
+├── BaselineCleanupCandidate.php # VO: one removal candidate — selector, description, reason
+├── BaselineCleanupReason.php    # Enum: stale / channel no longer declared / inert
+├── BaselineCleanupRemoval.php   # VO: what one `--remove` run did — removed/not-found/ambiguous
 │
 ├── Filter/
 │   ├── BaselineCeilingStage.php # ViolationFilterStageInterface: applies entries as ceilings over groups
@@ -121,9 +133,89 @@ decimal places by `BaselineEntry`'s constructor and the recomputed side by the s
 `BaselineEntry::normalizeMagnitude()`, which is what earns the comparison's zero
 tolerance.
 
-Staleness is asked of the stage — `staleEntriesOver()` — over the very list handed to
-`apply()`, so the run has one measured set and one answer to "which entries did not
-appear".
+`judgeAll()` judges a whole list in one pass and returns a `CeilingOutcome` bundling
+the filtered/promoted result together with the stale entries (§5.7) and the entries the
+loader could not apply (§6) — one call, one measured set, so the three cannot be read
+from different lists by accident. `apply()`, required by `ViolationFilterStageInterface`,
+is `judgeAll()->result`.
+
+## The Writing Commands' Domain Services
+
+`baseline:update` and `baseline:cleanup` are pure domain logic here — no
+`symfony/console` dependency anywhere in this directory. The command classes
+that call these services (Infrastructure, a later package) own argument
+parsing, the scope-guard refusal message, and writing the result through
+`BaselineWriter`.
+
+### The scope guard
+
+`ScopeCoverage` is the shared predicate both writing commands check before
+doing anything else (§5.7): **the current run's scope must cover the file's
+recorded `scope`**, overridable with `--force`. The hazard is one-directional
+— a run *narrower* than the recorded scope makes every identity outside it
+look absent, so `cleanup` would offer to delete the rest of the file and
+`update` would silently believe nothing changed. A *wider* run is harmless.
+
+```php
+ScopeCoverage::covers(runScope: $paths, recordedScope: $baseline->scope); // bool
+ScopeCoverage::uncoveredPaths(runScope: $paths, recordedScope: $baseline->scope); // list<string>
+```
+
+Coverage is by whole path segment (`Baseline::normalizeScope()`'s normal
+form): `src` covers `src/Foo` but neither covers nor is covered by `srcfoo`
+or by `src/Foo` itself.
+
+### `BaselineUpdater` — direction-aware monotonic tightening
+
+`BaselineUpdater::update(Baseline $baseline, list<Violation> $measured, list<string> $scope): BaselineUpdateResult`
+reconciles every entry the loaded baseline holds against the run's measured
+set (§5.5, §7):
+
+- an identity **absent from the measured set is left untouched** — a
+  vanished group is `cleanup`'s business, not a reason to rewrite an entry;
+- `update` **never adds an identity** — a measured finding with no existing
+  entry is ignored;
+- a measured group **replaces the stored one exactly when `GroupAcceptance`
+  accepts it against the stored one** — the identical primitive
+  `BaselineCeilingStage` uses at `check` time, never a second definition of
+  "not more permissive". Because the cumulative rule subsumes the count
+  condition (§5.1), a magnitude channel needs no separate "count may only
+  shrink" check — the comparison already refuses a group that grew, even
+  when every individual member improved.
+
+Every other measured group is **refused** and its entry is written back
+byte-for-byte unchanged — never partially adjusted, since a partial write
+disguised as a refusal would be an undocumented second acceptance rule.
+`BaselineUpdateResult::$outcomes` names, per entry, one of `Updated`,
+`Refused` (with a `BaselineUpdateRefusalReason`: `UndeclaredChannel`,
+`ShapeMismatch`, `CurrentMagnitudeUnavailable`, `Worsened`) or `Skipped`.
+`mode` and `Baseline::$inertEntries` are carried forward verbatim; `update`
+does not read either to decide anything.
+
+### `BaselineCleaner` — candidate enumeration and selector removal
+
+`BaselineCleaner::candidates(Baseline $baseline, list<Violation> $measured, ChannelDeclarationRegistryInterface $declarations): list<BaselineCleanupCandidate>`
+lists every entry `cleanup` would offer to remove — **and changes nothing**.
+A valid entry is offered for `Stale` (absent from the measured set, via
+`Baseline::staleEntries()`) or `ChannelNotDeclared`; an entry whose channel
+is no longer declared is reported under the latter even when it is also
+stale, since a channel nothing declares can never produce a measured
+finding and the more permanent cause is the more useful answer. Every
+`InertBaselineEntry` is offered too, under `Inert`, carrying its own
+`InertEntryReason` — it already has a selector, and the user is entitled to
+delete an unreadable line.
+
+`BaselineCleaner::remove(Baseline $baseline, list<EntrySelector> $selectors): BaselineCleanupRemoval`
+is the only method that writes anything, and only for the selectors it is
+given — **there is no bulk "remove everything listed" form** (§5.7's third
+decision withdraws 10.2's `--all-listed`: the candidate list is recomputed
+inside the same call that would consume it, so a bulk flag would be
+inference-by-absence wearing a flag). Each selector resolves through
+`Baseline::findBySelector()` into exactly one of three outcomes — `removed`,
+`notFound`, or `ambiguous` (more than one entry shares the selector; neither
+is removed, since the digest is not a proof of uniqueness). A selector
+addresses the *complete* identity including the dependency edge, so it can
+remove one of two entries differing only by edge without touching the other.
 
 ## Entry Identity
 

@@ -242,7 +242,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
         $stage = self::stageOver(self::baselineOf([$entry]));
 
         self::assertReportedUntouched($stage->apply([$after])->violations, $after);
-        self::assertSame([$entry], $stage->staleEntriesOver([$after]));
+        self::assertSame([$entry], $stage->judgeAll([$after])->staleEntries);
     }
 
     /**
@@ -264,7 +264,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
         $result = $stage->apply([$accepted]);
 
         self::assertSame([], $result->violations);
-        self::assertCount(1, $stage->staleEntriesOver([$accepted]));
+        self::assertCount(1, $stage->judgeAll([$accepted])->staleEntries);
     }
 
     /**

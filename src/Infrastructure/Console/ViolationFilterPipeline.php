@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Baseline\BaselineEntry;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\Filter\BaselineCeilingStage;
+use Qualimetrix\Baseline\InertBaselineEntry;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Core\Violation\Filter\PredicateFilterStage;
@@ -124,6 +125,10 @@ final readonly class ViolationFilterPipeline
         $removed = [];
         /** @var list<BaselineEntry> $stale */
         $stale = [];
+        /** @var list<InertBaselineEntry> $inert */
+        $inert = [];
+        /** @var ?list<string> $baselineScope */
+        $baselineScope = null;
         /** @var list<Violation> $restored */
         $restored = [];
 
@@ -139,16 +144,23 @@ final readonly class ViolationFilterPipeline
                 $restored = [];
             }
 
-            // Staleness is the one thing computed from a stage's *input*:
-            // an entry is stale when its identity is absent from what the
-            // ceiling measured, and the ceiling's output has the accepted
-            // groups already taken out of it — reading that would report
-            // every accepted entry as stale.
             if ($stage instanceof BaselineCeilingStage) {
-                $stale = $stage->staleEntriesOver($violations);
+                // Staleness and inert entries are read off the stage's
+                // *input*: an entry is stale when its identity is absent
+                // from what the ceiling measured, and the ceiling's output
+                // has the accepted groups already taken out of it — reading
+                // that would report every accepted entry as stale. One call
+                // answers both, and the filtered result, together, so
+                // nothing here can compute them from two different lists.
+                $ceiling = $stage->judgeAll($violations);
+                $outcome = $ceiling->result;
+                $stale = $ceiling->staleEntries;
+                $inert = $ceiling->inertEntries;
+                $baselineScope = $stage->baselineScope();
+            } else {
+                $outcome = $stage->apply($violations);
             }
 
-            $outcome = $stage->apply($violations);
             $violations = $outcome->violations;
             $removed[$current->value] = $outcome->removed;
 
@@ -174,6 +186,8 @@ final readonly class ViolationFilterPipeline
             measuredViolations: $measured ?? $violations,
             removedByStage: $removed,
             staleEntries: $stale,
+            inertEntries: $inert,
+            baselineScope: $baselineScope,
         );
     }
 }

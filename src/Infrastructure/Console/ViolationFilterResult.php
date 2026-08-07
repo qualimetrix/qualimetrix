@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Baseline\BaselineEntry;
+use Qualimetrix\Baseline\InertBaselineEntry;
 use Qualimetrix\Core\Violation\Filter\ViolationFilterStage;
 use Qualimetrix\Core\Violation\Violation;
 
@@ -24,6 +25,10 @@ use Qualimetrix\Core\Violation\Violation;
  * a transforming stage can rewrite a finding without dropping it, so a
  * counter derived from list sizes stops being a removal count the moment
  * the baseline promotes rather than filters.
+ *
+ * `inertEntries` and `baselineScope` exist only to give `check` a route to
+ * report what §6 and §5.7 require of it — this class does not do that
+ * reporting itself. Both are empty/`null` when no `--baseline` was given.
  */
 final readonly class ViolationFilterResult
 {
@@ -33,12 +38,20 @@ final readonly class ViolationFilterResult
      * @param array<string, list<Violation>> $removedByStage what each stage removed, keyed by {@see ViolationFilterStage}'s value
      * @param list<BaselineEntry> $staleEntries entries whose identity the measured set did not hold (§5.7);
      *                                          reported, never acted on
+     * @param list<InertBaselineEntry> $inertEntries every entry the loaded baseline could not apply, naming
+     *                                               symbol, channel and selector so `check` can report it (§6);
+     *                                               empty when no baseline was loaded
+     * @param ?list<string> $baselineScope the `scope` the loaded baseline file recorded, in its normal
+     *                                     form; `null` when no baseline was loaded, never used to fail
+     *                                     the run — only to report a mismatch (§5.7)
      */
     public function __construct(
         public array $violations,
         public array $measuredViolations = [],
         public array $removedByStage = [],
         public array $staleEntries = [],
+        public array $inertEntries = [],
+        public ?array $baselineScope = null,
     ) {}
 
     /**

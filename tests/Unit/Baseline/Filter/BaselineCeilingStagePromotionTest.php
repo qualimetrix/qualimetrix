@@ -175,7 +175,7 @@ final class BaselineCeilingStagePromotionTest extends TestCase
         $finding = ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15);
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($finding, [15])]));
 
-        self::assertSame([], $stage->staleEntriesOver([$finding]));
+        self::assertSame([], $stage->judgeAll([$finding])->staleEntries);
     }
 
     /**
@@ -191,7 +191,7 @@ final class BaselineCeilingStagePromotionTest extends TestCase
 
         $stage = self::stageOver(self::baselineOf([self::magnitudeEntry($first, [100, 40])]));
 
-        self::assertSame([], $stage->staleEntriesOver([$first, $second]));
+        self::assertSame([], $stage->judgeAll([$first, $second])->staleEntries);
     }
 
     #[Test]
@@ -202,7 +202,7 @@ final class BaselineCeilingStagePromotionTest extends TestCase
 
         $stage = self::stageOver(self::baselineOf([$entry]));
 
-        self::assertSame([$entry], $stage->staleEntriesOver([]));
+        self::assertSame([$entry], $stage->judgeAll([])->staleEntries);
     }
 
     private static function duplicationFinding(int|float $magnitude, int $line = 1): Violation
