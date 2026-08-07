@@ -9,6 +9,7 @@ use Qualimetrix\Core\Version;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Debt\DebtCalculator;
+use Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
 use Qualimetrix\Reporting\Formatter\Support\ViolationSorter;
@@ -117,13 +118,23 @@ final class TextFormatter implements FormatterInterface
         $line = $violation->location->line;
         $severity = $this->formatSeverity($violation->severity, $color);
         $rule = $color->dim($violation->violationCode);
-        $message = $violation->message;
+        $message = $violation->message . $this->formatBreachSuffix($violation);
         $symbol = $this->formatSymbol($violation);
 
-        // Format: file:line: severity[rule]: message (symbol)
+        // Format: file:line: severity[rule]: message (accepted at X, now Y) (symbol)
         $location = $line !== null && $violation->location->precise ? "{$file}:{$line}" : $file;
 
         return \sprintf('%s: %s[%s]: %s%s', $location, $severity, $rule, $message, $symbol);
+    }
+
+    /**
+     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (§8).
+     */
+    private function formatBreachSuffix(Violation $violation): string
+    {
+        $breach = AcceptedLevelNarrator::describe($violation);
+
+        return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }
 
     private function formatSeverity(Severity $severity, AnsiColor $color): string

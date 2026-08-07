@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -632,6 +633,70 @@ final class SarifFormatterTest extends TestCase
 
         // Should NOT have relatedLocations when empty
         self::assertArrayNotHasKey('relatedLocations', $result);
+    }
+
+    #[Test]
+    public function itIncludesTheAcceptedLevelInTheMessageOnABreach(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation((new Violation(
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Cyclomatic complexity of 31 exceeds threshold',
+                severity: Severity::Warning,
+                metricValue: 31,
+            ))->reportedAsBreach(new AcceptedLevel([25.0], 1)))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $result = $data['runs'][0]['results'][0];
+        self::assertSame(
+            'Cyclomatic complexity of 31 exceeds threshold (accepted at 25, now 31)',
+            $result['message']['text'],
+        );
+    }
+
+    #[Test]
+    public function itPropagatesAMeasuredBreachsPromotedSeverityToResultAndRuleLevel(): void
+    {
+        // §5.6/§8: promotion to Error happens once, on Violation::severity via
+        // reportedAsBreach(). SARIF must derive both the per-result 'level'
+        // and the rule's run-level default from that same field — no
+        // separate mapping that could fall out of sync with the promotion.
+        $breach = (new Violation(
+            location: new Location(RelativePath::fromString('src/A.php'), 10),
+            symbolPath: SymbolPath::forClass('App', 'A'),
+            ruleName: 'duplication.code-duplication',
+            violationCode: 'duplication.code-duplication',
+            message: 'Duplicated code block accepted at 20 lines',
+            severity: Severity::Warning,
+            metricValue: 35,
+        ))->reportedAsBreach(new AcceptedLevel([20.0], 1));
+
+        self::assertSame(Severity::Error, $breach->severity, 'sanity: reportedAsBreach() promotes severity');
+
+        $report = ReportBuilder::create()
+            ->addViolation($breach)
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        $result = $data['runs'][0]['results'][0];
+        self::assertSame('error', $result['level']);
+
+        $rule = $data['runs'][0]['tool']['driver']['rules'][0];
+        self::assertSame('error', $rule['defaultConfiguration']['level']);
     }
 
     #[Test]

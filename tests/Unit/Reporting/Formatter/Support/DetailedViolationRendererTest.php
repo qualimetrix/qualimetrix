@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -323,6 +324,48 @@ final class DetailedViolationRendererTest extends TestCase
         // Debt breakdown must include the rule from $allViolations, not just $displayed
         self::assertStringContainsString('design.lcom', $output);
         self::assertStringContainsString('complexity.cyclomatic', $output);
+    }
+
+    #[Test]
+    public function itShowsTheAcceptedLevelOnABreach(): void
+    {
+        $violations = [
+            (new Violation(
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
+                symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.method',
+                message: 'Complexity is 31',
+                severity: Severity::Warning,
+                metricValue: 31,
+            ))->reportedAsBreach(new AcceptedLevel([25.0], 1)),
+        ];
+
+        $context = new FormatterContext(useColor: false);
+        $output = $this->renderer->render($violations, $context);
+
+        self::assertStringContainsString('Complexity is 31 (accepted at 25, now 31)', $output);
+    }
+
+    #[Test]
+    public function itOmitsTheAcceptedLevelFragmentWhenAbsent(): void
+    {
+        $violations = [
+            new Violation(
+                location: new Location(RelativePath::fromString('src/Foo.php'), 10),
+                symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.method',
+                message: 'Complexity is 31',
+                severity: Severity::Warning,
+                metricValue: 31,
+            ),
+        ];
+
+        $context = new FormatterContext(useColor: false);
+        $output = $this->renderer->render($violations, $context);
+
+        self::assertStringNotContainsString('accepted at', $output);
     }
 
     #[Test]

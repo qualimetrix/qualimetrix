@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -130,6 +131,31 @@ final class SarifSchemaValidationTest extends TestCase
             $report,
             new FormatterContext(basePath: '/home/user/project'),
         );
+
+        $this->assertOutputMatchesSarifSchema($output);
+    }
+
+    #[Test]
+    public function reportWithAMeasuredBreach_conformsToSarif2_1_0Schema(): void
+    {
+        // The accepted level rides in message.text (§8); confirms that
+        // appending it doesn't break schema conformance.
+        $report = ReportBuilder::create()
+            ->addViolation((new Violation(
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+                symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'calculateDiscount'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Cyclomatic complexity of 31 exceeds threshold',
+                severity: Severity::Warning,
+                metricValue: 31,
+            ))->reportedAsBreach(new AcceptedLevel([25.0], 1)))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
 
         $this->assertOutputMatchesSarifSchema($output);
     }

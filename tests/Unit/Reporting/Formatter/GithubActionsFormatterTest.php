@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -293,6 +294,32 @@ final class GithubActionsFormatterTest extends TestCase
 
         self::assertStringContainsString('file=src/path%3Awith%2Cspecial/File.php', $output);
         self::assertStringContainsString('title=test%3Arule%2Cname', $output);
+    }
+
+    #[Test]
+    public function itIncludesTheAcceptedLevelInTheMessageOnABreach(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation((new Violation(
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Cyclomatic complexity 31 exceeds threshold 25',
+                severity: Severity::Warning,
+                metricValue: 31,
+            ))->reportedAsBreach(new AcceptedLevel([25.0], 1)))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+
+        self::assertSame(
+            "::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic::Cyclomatic complexity 31 exceeds threshold 25 (accepted at 25, now 31)\n",
+            $output,
+        );
     }
 
     #[Test]

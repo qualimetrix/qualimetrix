@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -408,6 +409,48 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     public function itReturnsNoneAsDefaultGroupBy(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
+    }
+
+    #[Test]
+    public function itIncludesTheAcceptedLevelInTheDescriptionOnABreach(): void
+    {
+        $violation = new Violation(
+            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+            symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
+            ruleName: 'cyclomatic-complexity',
+            violationCode: 'cyclomatic-complexity',
+            message: 'Cyclomatic complexity of 31 exceeds threshold',
+            severity: Severity::Warning,
+            metricValue: 31,
+        );
+
+        $report = ReportBuilder::create()
+            ->addViolation($violation->reportedAsBreach(new AcceptedLevel([25.0], 1)))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame(
+            'Cyclomatic complexity of 31 exceeds threshold (accepted at 25, now 31)',
+            $data[0]['description'],
+        );
+
+        // The fingerprint must hash the unmodified message so it stays
+        // stable across the run where a breach first appears.
+        $plainReport = ReportBuilder::create()
+            ->addViolation($violation)
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+        $plainOutput = $this->formatter->format($plainReport, new FormatterContext());
+        $plainData = json_decode($plainOutput, true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame($plainData[0]['fingerprint'], $data[0]['fingerprint']);
     }
 
     #[Test]

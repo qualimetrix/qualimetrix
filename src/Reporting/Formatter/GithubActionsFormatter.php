@@ -6,6 +6,7 @@ namespace Qualimetrix\Reporting\Formatter;
 
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -65,8 +66,19 @@ final class GithubActionsFormatter implements FormatterInterface
             '::%s %s::%s',
             $command,
             implode(',', $params),
-            $this->escapeData($violation->message),
+            $this->escapeData($violation->message . $this->formatBreachSuffix($violation)),
         );
+    }
+
+    /**
+     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (§8).
+     * Appended before escaping, so it goes through escapeData() too.
+     */
+    private function formatBreachSuffix(Violation $violation): string
+    {
+        $breach = AcceptedLevelNarrator::describe($violation);
+
+        return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }
 
     private function severityToCommand(Severity $severity): string

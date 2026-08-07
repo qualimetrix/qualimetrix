@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -288,6 +289,64 @@ final class CheckstyleFormatterTest extends TestCase
     public function itReturnsNoneAsDefaultGroupBy(): void
     {
         self::assertSame(GroupBy::None, $this->formatter->getDefaultGroupBy());
+    }
+
+    #[Test]
+    public function itIncludesTheAcceptedLevelInTheMessageOnABreach(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation((new Violation(
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Cyclomatic complexity of 31 exceeds threshold',
+                severity: Severity::Warning,
+                metricValue: 31,
+            ))->reportedAsBreach(new AcceptedLevel([25.0], 1)))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $xml = $this->parseXml($output);
+
+        $error = $xml->getElementsByTagName('error')->item(0);
+        self::assertNotNull($error);
+        self::assertSame(
+            'Cyclomatic complexity of 31 exceeds threshold (accepted at 25, now 31)',
+            $error->getAttribute('message'),
+        );
+        // Promotion to Error propagates through severity, not a separate flag.
+        self::assertSame('error', $error->getAttribute('severity'));
+    }
+
+    #[Test]
+    public function itOmitsTheAcceptedLevelFragmentWhenAbsent(): void
+    {
+        // Regression pin: byte-for-byte the same message as before this feature.
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
+                ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
+                message: 'Cyclomatic complexity of 25 exceeds threshold',
+                severity: Severity::Error,
+                metricValue: 25,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, new FormatterContext());
+        $xml = $this->parseXml($output);
+
+        $error = $xml->getElementsByTagName('error')->item(0);
+        self::assertNotNull($error);
+        self::assertSame('Cyclomatic complexity of 25 exceeds threshold', $error->getAttribute('message'));
     }
 
     #[Test]

@@ -64,7 +64,8 @@ Reporting/
     ├── Support/                            # Shared formatter utilities
     │   ├── AnsiColor.php                  # Lightweight ANSI color wrapper
     │   ├── ViolationSorter.php            # Sorting/grouping utility for violations
-    │   └── DetailedViolationRenderer.php  # Detailed violation output (--detail mode)
+    │   ├── DetailedViolationRenderer.php  # Detailed violation output (--detail mode)
+    │   └── AcceptedLevelNarrator.php      # "accepted at 25, now 31" fragment for a measured breach
     ├── Summary/
     │   ├── SummaryFormatter.php           # Default: health overview + worst offenders + hints
     │   ├── HealthBarRenderer.php          # Renders ANSI health bars for console output
@@ -379,11 +380,13 @@ Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includ
   "health": { "complexity": { "score": 65, "label": "Fair", "threshold": { "warning": 50, "error": 25 }, "decomposition": [...] } },
   "worstNamespaces": [{ "symbolPath": "App\\Payment", "healthOverall": 31, "reason": "low cohesion, high complexity" }],
   "worstClasses": [{ "symbolPath": "App\\Payment\\PaymentService", "file": "src/...", "healthOverall": 28, "metrics": {...} }],
-  "violations": [{ "file": "src/...", "line": 42, "symbol": "...", "namespace": "App\\Service", "rule": "complexity.cyclomatic", "code": "complexity.cyclomatic.method", "severity": "error", "message": "...", "metricValue": 15, "threshold": 10 }]
+  "violations": [{ "file": "src/...", "line": 42, "symbol": "...", "namespace": "App\\Service", "rule": "complexity.cyclomatic", "code": "complexity.cyclomatic.method", "severity": "error", "message": "...", "metricValue": 15, "threshold": 10, "acceptedLevel": null }]
 }
 ```
 
 **Options:** `--format-opt=violations=all|0|N` (default: 50), `--format-opt=top=N` (default: 10 offenders). `--detail` shows violations (default limit: 200, `--detail=all` for unlimited). `--namespace`/`--class` filters violations and worst offenders. Partial analysis: `health` is `null`.
+
+**`acceptedLevel`:** `null` unless the violation is a measured baseline breach (see [Accepted level](#accepted-level-baseline-breach) below), in which case it is `{ "shape": "magnitude" | "occurrence", "describe": "25", "count": 1 }`. For a `magnitude` channel, the current value is the sibling `metricValue` field — not duplicated here.
 
 ---
 
@@ -537,6 +540,9 @@ $violation->violationCode // Stable violation code for identification
 $violation->symbolPath    // SymbolPath object
 $violation->location      // Location object (file, line); check isNone() for architectural violations
 $violation->metricValue   // int|float|null
+$violation->acceptedLevel // ?AcceptedLevel — set only on a measured baseline breach (§5.6 of the
+                          // baseline-ceiling plan); null on every other violation, including one
+                          // no baseline ever judged. See "Accepted level" below.
 
 $report->violations       // list<Violation>
 $report->filesAnalyzed    // int
@@ -550,6 +556,35 @@ $report->techDebtMinutes  // int — total remediation time
 $report->debtPer1kLoc     // ?float — debt density (minutes per 1K LOC)
 $report->topIssues        // list<RankedIssue> — top violations by impact score
 ```
+
+## Accepted level (baseline breach)
+
+`Violation::$acceptedLevel` is set only when a finding is a **measured breach**
+of a baseline entry (§5.6 of `docs/plan/baseline-ceiling-v10.md`): the group
+was checked against an applicable entry and exceeded it, and severity was
+already promoted to `Error` via `Violation::reportedAsBreach()`. It is `null`
+on every other violation, including one no baseline ever judged.
+
+`Formatter\Support\AcceptedLevelNarrator::describe(Violation $v): ?string`
+renders the human fragment — `"accepted at 25, now 31"` for a `magnitude`
+channel, `"accepted at 3 occurrences"` for an `occurrence` channel (no
+fabricated "now": the mechanism compares a group size no single `Violation`
+carries). Returns `null` when `$acceptedLevel` is absent.
+
+Per-format decision — whether the accepted level is carried, and how:
+
+| Format                  | Carries it? | Mechanism                                                                                                                                                            |
+| ----------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `text` / `text-verbose` | Yes         | Appended to the message via `AcceptedLevelNarrator`                                                                                                                  |
+| `summary --detail`      | Yes         | Shares `DetailedViolationRenderer` with `text --detail`                                                                                                              |
+| `checkstyle`            | Yes         | Appended to the `message` attribute (schema has no dedicated field)                                                                                                  |
+| `gitlab`                | Yes         | Appended to `description` (fingerprint still hashes the unmodified message)                                                                                          |
+| `github`                | Yes         | Appended to the annotation message, before escaping                                                                                                                  |
+| `sarif`                 | Yes         | Appended to `message.text`; `result.level` and the rule's run-level default already derive from `Violation::severity`, so promotion propagates without extra mapping |
+| `json`                  | Yes         | Structured `acceptedLevel: {shape, describe, count} \| null` field per violation; `now` is the existing sibling `metricValue` field, not duplicated                  |
+| `metrics`               | No          | Carries no violations at all — only raw collected metric values                                                                                                      |
+| `health`                | No          | Renders health-dimension scores, never individual violations                                                                                                         |
+| `html`                  | No          | Would need `Template/` (JS) changes to render; left for a dedicated follow-up rather than shipping an inert data field                                               |
 
 ## Formatter Comparison
 

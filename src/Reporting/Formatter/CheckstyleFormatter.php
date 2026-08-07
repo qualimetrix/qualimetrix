@@ -6,6 +6,7 @@ namespace Qualimetrix\Reporting\Formatter;
 
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -82,6 +83,11 @@ final class CheckstyleFormatter implements FormatterInterface
 
     /**
      * Writes a single <error> element for a violation.
+     *
+     * Checkstyle XML has no field for the accepted level (the schema is
+     * fixed to `line`/`severity`/`message`/`source`), so a measured breach
+     * (§5.6, §8) carries it appended to `message` — the only free-text
+     * attribute Checkstyle consumers already surface.
      */
     private function writeError(XMLWriter $xml, Violation $violation): void
     {
@@ -90,10 +96,20 @@ final class CheckstyleFormatter implements FormatterInterface
         $xml->writeAttribute('line', (string) ($violation->location->line ?? 1));
 
         $xml->writeAttribute('severity', $this->severityToString($violation->severity));
-        $xml->writeAttribute('message', $violation->message);
+        $xml->writeAttribute('message', $violation->message . $this->formatBreachSuffix($violation));
         $xml->writeAttribute('source', 'qmx.' . $violation->violationCode);
 
         $xml->endElement(); // error
+    }
+
+    /**
+     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (§8).
+     */
+    private function formatBreachSuffix(Violation $violation): string
+    {
+        $breach = AcceptedLevelNarrator::describe($violation);
+
+        return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }
 
     private function severityToString(Severity $severity): string

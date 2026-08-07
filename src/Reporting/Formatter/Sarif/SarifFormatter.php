@@ -8,6 +8,7 @@ use Qualimetrix\Core\Version;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
+use Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -87,11 +88,17 @@ final class SarifFormatter implements FormatterInterface
     {
         return array_map(
             function (Violation $v) use ($context, $ruleIndexMap): array {
+                // 'level' derives from Violation::severity, which a measured
+                // breach already promoted to Error via reportedAsBreach()
+                // (§5.6) — no extra mapping needed here for promotion to
+                // propagate. The accepted level itself has no dedicated SARIF
+                // field, so it rides along in the free-text message, same as
+                // checkstyle/gitlab/github (§8).
                 $result = [
                     'ruleId' => $v->violationCode,
                     'ruleIndex' => $ruleIndexMap[$v->violationCode] ?? 0,
                     'level' => $this->ruleCollector->mapLevel($v->severity),
-                    'message' => ['text' => $v->message],
+                    'message' => ['text' => $v->message . $this->formatBreachSuffix($v)],
                     'partialFingerprints' => [
                         'primaryLocationLineHash' => $v->getFingerprint(),
                     ],
@@ -141,6 +148,16 @@ final class SarifFormatter implements FormatterInterface
             },
             $violations,
         );
+    }
+
+    /**
+     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (§8).
+     */
+    private function formatBreachSuffix(Violation $violation): string
+    {
+        $breach = AcceptedLevelNarrator::describe($violation);
+
+        return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }
 
     /**

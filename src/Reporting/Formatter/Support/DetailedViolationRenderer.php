@@ -156,8 +156,8 @@ final class DetailedViolationRenderer
         }
         $lines[] = $line1;
 
-        // Line 2: human message + rule code
-        $message = $violation->getDisplayMessage();
+        // Line 2: human message (+ accepted level on a breach) + rule code
+        $message = $violation->getDisplayMessage() . $this->formatBreachSuffix($violation);
         $ruleCode = $color->dim('[' . $violation->violationCode . ']');
         $lines[] = \sprintf('    %s  %s', $message, $ruleCode);
         $lines[] = '';
@@ -203,6 +203,16 @@ final class DetailedViolationRenderer
         $line = $violation->location->line;
 
         return $line !== null && $violation->location->precise ? \sprintf('at line %d', $line) : '';
+    }
+
+    /**
+     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (§8).
+     */
+    private function formatBreachSuffix(Violation $violation): string
+    {
+        $breach = AcceptedLevelNarrator::describe($violation);
+
+        return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }
 
     /**

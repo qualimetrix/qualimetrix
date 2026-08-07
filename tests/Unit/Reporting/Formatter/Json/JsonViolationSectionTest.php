@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -74,6 +75,50 @@ final class JsonViolationSectionTest extends TestCase
         self::assertSame(15, $item['metricValue']);
         self::assertSame(10, $item['threshold']);
         self::assertArrayHasKey('techDebtMinutes', $item);
+        self::assertNull($item['acceptedLevel']);
+    }
+
+    #[Test]
+    public function itIncludesTheAcceptedLevelOnAMagnitudeBreach(): void
+    {
+        $violation = (new Violation(
+            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+            symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'process'),
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic',
+            message: 'Cyclomatic complexity is 31',
+            severity: Severity::Warning,
+            metricValue: 31,
+        ))->reportedAsBreach(new AcceptedLevel([25.0], 1));
+
+        $result = $this->section->format([$violation], new FormatterContext());
+
+        self::assertSame(
+            ['shape' => 'magnitude', 'describe' => '25', 'count' => 1],
+            $result[0]['acceptedLevel'],
+        );
+        // Promotion propagates through the ordinary severity field.
+        self::assertSame('error', $result[0]['severity']);
+    }
+
+    #[Test]
+    public function itIncludesTheAcceptedLevelOnAnOccurrenceBreachWithoutMetricValue(): void
+    {
+        $violation = (new Violation(
+            location: new Location(RelativePath::fromString('src/Foo.php'), 5),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Foo.php')),
+            ruleName: 'code-smell.goto',
+            violationCode: 'code-smell.goto',
+            message: 'goto statement used',
+            severity: Severity::Warning,
+        ))->reportedAsBreach(new AcceptedLevel(null, 3));
+
+        $result = $this->section->format([$violation], new FormatterContext());
+
+        self::assertSame(
+            ['shape' => 'occurrence', 'describe' => '3 occurrences', 'count' => 3],
+            $result[0]['acceptedLevel'],
+        );
     }
 
     #[Test]

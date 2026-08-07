@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -92,6 +93,62 @@ final class TextFormatterTest extends TestCase
         self::assertStringContainsString('1 error(s), 0 warning(s) in 1 file(s)', $lines[2]);
         self::assertStringStartsWith('Technical debt:', $lines[3]);
         self::assertStringEndsWith("\n", $output);
+    }
+
+    #[Test]
+    public function itNamesTheAcceptedLevelOnABreach(): void
+    {
+        $report = ReportBuilder::create()
+            ->addViolation((new Violation(
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
+                ruleName: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic',
+                message: 'Cyclomatic complexity of 31 exceeds threshold',
+                severity: Severity::Warning,
+                metricValue: 31,
+            ))->reportedAsBreach(new AcceptedLevel([25.0], 1)))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, $this->plainContext);
+
+        self::assertStringContainsString(
+            'Cyclomatic complexity of 31 exceeds threshold (accepted at 25, now 31) (UserService::calculateDiscount)',
+            $output,
+        );
+    }
+
+    #[Test]
+    public function itOmitsTheAcceptedLevelFragmentWhenAbsent(): void
+    {
+        // Regression pin: a violation with no acceptedLevel must produce
+        // byte-for-byte the same line as before this feature existed.
+        $report = ReportBuilder::create()
+            ->addViolation(new Violation(
+                location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+                symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
+                ruleName: 'cyclomatic-complexity',
+                violationCode: 'cyclomatic-complexity',
+                message: 'Cyclomatic complexity of 25 exceeds threshold',
+                severity: Severity::Error,
+                metricValue: 25,
+            ))
+            ->filesAnalyzed(1)
+            ->filesSkipped(0)
+            ->duration(0.1)
+            ->build();
+
+        $output = $this->formatter->format($report, $this->plainContext);
+        $lines = explode("\n", rtrim($output, "\n"));
+
+        self::assertSame(
+            'src/Service/UserService.php: error[cyclomatic-complexity]: Cyclomatic complexity of 25 exceeds threshold (UserService::calculateDiscount)',
+            $lines[0],
+        );
+        self::assertStringNotContainsString('accepted at', $output);
     }
 
     #[Test]

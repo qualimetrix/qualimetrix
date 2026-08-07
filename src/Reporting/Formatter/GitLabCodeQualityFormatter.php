@@ -6,6 +6,7 @@ namespace Qualimetrix\Reporting\Formatter;
 
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Report;
@@ -24,7 +25,12 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
 
         foreach ($report->violations as $violation) {
             $issues[] = [
-                'description' => $violation->message,
+                // The Code Climate spec has no field for the accepted level, so
+                // a measured breach (§5.6, §8) carries it in the free-text
+                // description — the fingerprint below still hashes the
+                // unmodified $violation->message, so it stays stable across
+                // the run where a breach first appears.
+                'description' => $violation->message . $this->formatBreachSuffix($violation),
                 'check_name' => $violation->violationCode,
                 'fingerprint' => $this->generateFingerprint($violation),
                 'severity' => $this->mapSeverity($violation->severity),
@@ -82,5 +88,15 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
             Severity::Warning => 'major',
             Severity::Info => 'info',
         };
+    }
+
+    /**
+     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (§8).
+     */
+    private function formatBreachSuffix(Violation $violation): string
+    {
+        $breach = AcceptedLevelNarrator::describe($violation);
+
+        return $breach === null ? '' : \sprintf(' (%s)', $breach);
     }
 }
