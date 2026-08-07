@@ -171,7 +171,7 @@ final class CircularDependencyRule extends AbstractRule
      * `architecture.circular-dependency` reports the cycle's class count
      * (`$size` — see the emission above) as `metricValue`. Declared
      * `magnitude` / `higher` is a **decision, not a derivation**
-     * (baseline-ceiling plan §5.4): {@see CircularDependencyOptions::getSeverity()}
+     * (ADR 0017): {@see CircularDependencyOptions::getSeverity()}
      * is not monotone in `$size` — a direct two-class cycle is `Error` while a
      * twelve-class cycle is only `Warning`, and any cycle whose size exceeds
      * `maxCycleSize` is dropped before a `Violation` is ever built (`$size >

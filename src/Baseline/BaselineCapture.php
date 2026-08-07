@@ -16,7 +16,7 @@ namespace Qualimetrix\Baseline;
 final readonly class BaselineCapture
 {
     /**
-     * @param list<UncapturedGroup> $uncaptured groups that produced no entry (§5.4, §6)
+     * @param list<UncapturedGroup> $uncaptured groups that produced no entry (ADR 0017)
      */
     public function __construct(
         public Baseline $baseline,

@@ -136,7 +136,7 @@ final class BaselineWriterTest extends TestCase
     }
 
     /**
-     * §6's normalisation earns its zero tolerance only if the written text
+     * ADR 0017 normalisation earns its zero tolerance only if the written text
      * is the same at any `serialize_precision`. A single-value test runs
      * under the developer's own ini and proves nothing for users.
      */
@@ -215,6 +215,67 @@ final class BaselineWriterTest extends TestCase
         // Writer B still holds the reading from before A.
         $this->expectException(BaselineConflictException::class);
         $this->writer->write($readByBoth, $path, $this->projectRoot);
+    }
+
+    #[Test]
+    public function itRefusesToReplaceASymlinkEvenWhenItsReferentMatchesTheExpectedHash(): void
+    {
+        $referent = $this->tempDir . '/referent.json';
+        $contents = '{"owned": "by another process"}';
+        file_put_contents($referent, $contents);
+
+        $path = $this->tempDir . '/baseline-link.json';
+        symlink($referent, $path);
+
+        try {
+            $this->writer->write(
+                $this->baseline()->withSourceContentHash(hash('sha256', $contents)),
+                $path,
+                $this->projectRoot,
+            );
+            self::fail('Expected the write to be refused.');
+        } catch (BaselineConflictException $e) {
+            self::assertStringContainsString('is a symbolic link', $e->getMessage());
+        }
+
+        self::assertTrue(is_link($path));
+        self::assertSame($referent, readlink($path));
+        self::assertSame($contents, file_get_contents($referent));
+    }
+
+    #[Test]
+    public function itWritesWhenTheTargetIsStillExpectedToBeAbsent(): void
+    {
+        $path = $this->tempDir . '/expected-absent.json';
+
+        $this->writer->write(
+            $this->baseline()->withExpectedSourceAbsence(),
+            $path,
+            $this->projectRoot,
+        );
+
+        self::assertFileExists($path);
+    }
+
+    #[Test]
+    public function itRefusesWhenAFileAppearedSinceItWasExpectedAbsent(): void
+    {
+        $path = $this->tempDir . '/expected-absent.json';
+        $created = '{"created": "by another process"}';
+        file_put_contents($path, $created);
+
+        try {
+            $this->writer->write(
+                $this->baseline()->withExpectedSourceAbsence(),
+                $path,
+                $this->projectRoot,
+            );
+            self::fail('Expected the write to be refused.');
+        } catch (BaselineConflictException $e) {
+            self::assertStringContainsString('appeared since it was read as absent', $e->getMessage());
+        }
+
+        self::assertSame($created, file_get_contents($path));
     }
 
     /**
@@ -575,7 +636,7 @@ final class BaselineWriterTest extends TestCase
     }
 
     /**
-     * Three entries covering the shapes §6 names: a single magnitude, a
+     * Three entries covering the shapes ADR 0017 names: a single magnitude, a
      * multi-element magnitude list, and an edge-bearing occurrence entry.
      */
     private function baseline(bool $reversed = false): Baseline

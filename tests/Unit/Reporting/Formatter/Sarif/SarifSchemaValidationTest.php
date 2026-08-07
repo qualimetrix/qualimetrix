@@ -138,7 +138,7 @@ final class SarifSchemaValidationTest extends TestCase
     #[Test]
     public function itConformsToTheSarifSchemaWhenAReportCarriesAMeasuredBreach(): void
     {
-        // The accepted level rides in message.text (§8); confirms that
+        // The accepted level rides in message.text (ADR 0017); confirms that
         // appending it doesn't break schema conformance.
         $report = ReportBuilder::create()
             ->addViolation((new Violation(

@@ -87,8 +87,53 @@ final class BaselineGenerateCommandTest extends TestCase
         });
 
         self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('was created while the analysis was running', $tester->getDisplay());
+        self::assertStringContainsString('appeared since it was read as absent', $tester->getDisplay());
         self::assertSame('written by somebody else', file_get_contents($this->baselinePath));
+    }
+
+    #[Test]
+    public function itRefusesADanglingSymlinkWithoutForceAndLeavesItUntouched(): void
+    {
+        $target = $this->tempDir . '/missing-target.json';
+        symlink($target, $this->baselinePath);
+
+        $tester = $this->execute([]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('already exists', $tester->getDisplay());
+        self::assertTrue(is_link($this->baselinePath));
+        self::assertSame($target, readlink($this->baselinePath));
+    }
+
+    #[Test]
+    public function itRefusesToForceOverADanglingSymlinkWithoutAnUnsafeFallback(): void
+    {
+        $target = $this->tempDir . '/missing-target.json';
+        symlink($target, $this->baselinePath);
+
+        $tester = $this->execute(['--force' => true]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('not a regular file', $tester->getDisplay());
+        self::assertTrue(is_link($this->baselinePath));
+        self::assertSame($target, readlink($this->baselinePath));
+    }
+
+    #[Test]
+    public function itRefusesToForceOverASymlinkToARegularFileWithoutTouchingEither(): void
+    {
+        $target = $this->tempDir . '/target.json';
+        $contents = '{"owned": "by another process"}';
+        file_put_contents($target, $contents);
+        symlink($target, $this->baselinePath);
+
+        $tester = $this->execute(['--force' => true]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('not a regular file', $tester->getDisplay());
+        self::assertTrue(is_link($this->baselinePath));
+        self::assertSame($target, readlink($this->baselinePath));
+        self::assertSame($contents, file_get_contents($target));
     }
 
     /**

@@ -8,7 +8,7 @@ use InvalidArgumentException;
 
 /**
  * The level a finding's group was accepted at — what a report means by
- * "accepted at 25, now 31" (§8 of the baseline-ceiling plan).
+ * "accepted at 25, now 31" (ADR 0017).
  *
  * A finding carries one only when it was measured against an applicable
  * baseline entry and exceeded it; see {@see Violation::reportedAsBreach()}.

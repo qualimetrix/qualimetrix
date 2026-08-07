@@ -24,8 +24,8 @@ use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Support\Violation\ViolationFactory;
 
 /**
- * §5.1's governing invariant, asserted one ambiguity at a time: *an entry
- * that cannot be applied does not suppress* — and, per §5.6, does not
+ * ADR 0017 governing invariant, asserted one ambiguity at a time: *an entry
+ * that cannot be applied does not suppress* — and does not
  * promote either.
  *
  * Every case here asserts both halves. Asserting only "not suppressed" would
@@ -83,10 +83,10 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
 
     /**
      * **`mode: suppress` is not a way out of the invariant.** It waives the
-     * comparison of magnitudes and count (§5.1); it does not answer the
+     * comparison of magnitudes and count (ADR 0017); it does not answer the
      * prior question of whether the entry bounds this channel at all, and
-     * neither §5.4's "a channel that declares neither … its entries do not
-     * suppress" nor §6's "an entry that addresses an undeclared channel does
+     * neither ADR 0017's "a channel that declares neither … its entries do not
+     * suppress" nor ADR 0017 "an entry that addresses an undeclared channel does
      * not suppress" carries a `mode` exception.
      *
      * The loader refuses such an entry before the stage sees it, whatever
@@ -228,7 +228,7 @@ final class BaselineCeilingStageFailSafeTest extends TestCase
     }
 
     /**
-     * §13.7: a rename produces a fresh finding and strands the old entry.
+     * ADR 0017: a rename produces a fresh finding and strands the old entry.
      * Noisy rather than silent, and in particular not a breach — the entry
      * measured nothing.
      */

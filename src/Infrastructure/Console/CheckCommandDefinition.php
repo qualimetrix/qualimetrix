@@ -166,7 +166,7 @@ final class CheckCommandDefinition
      * `check` reads a baseline; it never writes one.
      *
      * Capture lives in `bin/qmx baseline:generate`, which is why there is no
-     * `--generate-baseline` here and deliberately no alias for it: a command
+     * inline baseline-generation option here and deliberately no alias for it: a command
      * whose job is to report can quietly write the file that decides what it
      * reports, and the two runs a user then has — one that captures, one that
      * checks — are the two the ceiling exists to keep identical.
@@ -184,7 +184,7 @@ final class CheckCommandDefinition
                 'show-resolved',
                 null,
                 InputOption::VALUE_NONE,
-                'Show count of violations resolved since baseline',
+                'Show count of baseline entries resolved since baseline',
             );
     }
 

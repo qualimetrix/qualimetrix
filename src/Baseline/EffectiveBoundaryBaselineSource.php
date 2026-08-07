@@ -10,7 +10,7 @@ use Qualimetrix\Core\Violation\AcceptedLevel;
  * The baseline half of an {@see EffectiveBoundary}: what was accepted, and
  * what the measured set currently compares against it.
  *
- * Both numbers are required by design (§13.5 of the baseline-ceiling plan):
+ * Both numbers are required by design (ADR 0017):
  * a channel's magnitude can change scale without the channel itself
  * changing — `coupling.cbo` changes meaning with the `scope` option, a
  * computed metric's formula or `inverted` flag can be rewritten — so the

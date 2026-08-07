@@ -21,7 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * `baseline:explain` — prints the boundary in force for one symbol and where
- * each part of it comes from (§7 of the baseline-ceiling plan).
+ * each part of it comes from (ADR 0017).
  *
  * Three sources answer the same question and a user cannot see which is
  * deciding: the baseline accepted a level, `qmx.yaml` configured a threshold,
@@ -33,7 +33,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * On a channel whose scale can drift — `coupling.cbo` changes meaning with its
  * `scope` option, a computed metric's formula can be rewritten — the stored
  * number and the number being compared against it today are printed side by
- * side (§13.5). The divergence cannot be detected without storing the
+ * side (ADR 0017). The divergence cannot be detected without storing the
  * configuration that produced the magnitude, so the least this command can do
  * is show both numbers where a user would look for them.
  *
@@ -96,7 +96,7 @@ final class BaselineExplainCommand extends BaselineCommand
             return self::EXIT_INVALID_INPUT;
         }
 
-        // The run first, then the file (§5.4). A `computed.*` / `health.*`
+        // The run first, then the file (ADR 0017). A `computed.*` / `health.*`
         // channel's declaration is resolved from configuration this run
         // resolves; a file read before it loads every such entry inert, and
         // `explain` would then deny the existence of an acceptance `check`
@@ -174,7 +174,7 @@ final class BaselineExplainCommand extends BaselineCommand
 
     /**
      * Both numbers, always: the level the entry stores and the level being
-     * compared against it in this run (§13.5).
+     * compared against it in this run (ADR 0017).
      */
     private static function describeBaseline(?EffectiveBoundaryBaselineSource $source): string
     {

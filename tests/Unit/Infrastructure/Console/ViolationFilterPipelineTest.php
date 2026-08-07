@@ -65,7 +65,7 @@ final class ViolationFilterPipelineTest extends TestCase
     // -- The stage sequence --
 
     /**
-     * The order is a behavioural contract (§5.2), so the assertion reads the
+     * The order is a behavioural contract (ADR 0017), so the assertion reads the
      * pipeline's own stage list. Counters cannot stand in for it: they do not
      * distinguish "the baseline ran fourth" from "the baseline removed
      * nothing".
@@ -115,7 +115,7 @@ final class ViolationFilterPipelineTest extends TestCase
         );
     }
 
-    // -- The measured set (§5.5) --
+    // -- The measured set (ADR 0017) --
 
     /**
      * The witness for the stage's move to the end of the pipeline: with the
@@ -217,7 +217,7 @@ final class ViolationFilterPipelineTest extends TestCase
 
     /**
      * Git scope is presentation only, so it runs after the measured set is
-     * taken and cannot make an identity look absent (§2.4). This holds under
+     * taken and cannot make an identity look absent under ADR 0017's pipeline order. This holds under
      * the old order too — it is a regression guard, not evidence of the move.
      */
     #[Test]
@@ -265,7 +265,7 @@ final class ViolationFilterPipelineTest extends TestCase
     /**
      * A measured breach reaches the report promoted to Error, carrying what
      * was accepted — end to end through the pipeline, not only through the
-     * stage (§5.6).
+     * stage (ADR 0017).
      */
     #[Test]
     public function itReportsAMeasuredBreachAtErrorWithEveryMemberOfTheGroup(): void
@@ -304,7 +304,7 @@ final class ViolationFilterPipelineTest extends TestCase
 
     /**
      * An entry the mechanism cannot apply says nothing about the debt: the
-     * findings keep the severity their own rule gave them (§5.1's governing
+     * findings keep the severity their own rule gave them (ADR 0017 governing
      * invariant, observed through the pipeline).
      */
     #[Test]
@@ -355,10 +355,10 @@ final class ViolationFilterPipelineTest extends TestCase
         self::assertSame(0, $result->removedCountBy(ViolationFilterStage::Baseline));
     }
 
-    // -- Inert entries and baseline scope (§6, §5.7) --
+    // -- Inert entries and baseline scope (ADR 0017) --
 
     /**
-     * §6 requires `check` to be able to name an entry it could not apply —
+     * ADR 0017 requires `check` to be able to name an entry it could not apply —
      * symbol, channel and selector. The pipeline's job is only to deliver
      * the loader's own inert entries unconditionally; it does not filter or
      * interpret them.
@@ -392,7 +392,7 @@ final class ViolationFilterPipelineTest extends TestCase
 
     /**
      * `baselineScope` is what a future scope-guard command compares its own
-     * run against (§5.7) — the pipeline only has to carry the file's own
+     * run against (ADR 0017) — the pipeline only has to carry the file's own
      * `scope` field through unchanged.
      */
     #[Test]
@@ -444,10 +444,10 @@ final class ViolationFilterPipelineTest extends TestCase
     }
 
     /**
-     * The case the per-identity key of §5.1 introduced and the one v5's
+     * The case enabled by ADR 0017's per-identity key, and the one v5's
      * symbol-level predicate could not produce: one channel of a symbol is
      * repaired while another still fires. The repaired entry goes stale, and
-     * its neighbour under the same symbol must keep applying (§5.7).
+     * its neighbour under the same symbol must keep applying (ADR 0017).
      */
     #[Test]
     public function itKeepsApplyingSiblingEntriesWhenOneChannelOfASymbolIsRepaired(): void
@@ -535,7 +535,7 @@ final class ViolationFilterPipelineTest extends TestCase
     }
 
     /**
-     * The invariant of §5.5 stated as an equality: a flag may narrow the
+     * The invariant of ADR 0017 stated as an equality: a flag may narrow the
      * report, but the set the ceiling measures is the same either way.
      */
     #[Test]

@@ -8,8 +8,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 
 /**
- * A loaded or freshly captured baseline file (§6 of the baseline-ceiling
- * plan): when it was written, over which paths, and the entries it holds.
+ * A loaded or freshly captured baseline file (ADR 0017): when it was written, over which paths, and the entries it holds.
  *
  * The version is a constant rather than a field. This type *is* the version
  * 10 shape; a file carrying any other version never becomes an instance of
@@ -23,7 +22,7 @@ use InvalidArgumentException;
  */
 final readonly class Baseline
 {
-    /** The only file version this type represents (§6). */
+    /** The only file version this type represents (ADR 0017). */
     public const int VERSION = 10;
 
     /** @var array<string, BaselineEntry> identity key => entry */
@@ -34,7 +33,7 @@ final readonly class Baseline
 
     /**
      * The analysed path set that produced this file, in the normal form of
-     * {@see normalizeScope()} — §6 states the normalisation as an invariant of
+     * {@see normalizeScope()} — ADR 0017 states the normalisation as an invariant of
      * the *file*, so it is enforced here rather than by whichever component
      * happens to build the object.
      *
@@ -50,7 +49,10 @@ final readonly class Baseline
      * @param ?string $sourceContentHash the compare-and-swap token of the file this was
      *                                   loaded from — see {@see BaselineWriter}. It describes
      *                                   *this object's provenance*, not the file's content:
-     *                                   nothing in the file is a hash (§5.8)
+     *                                   nothing in the file is a hash (ADR 0017)
+     * @param bool $expectsSourceAbsence whether the source snapshot was absent. It is distinct
+     *                                   from no provenance: a writer must refuse if the target
+     *                                   appeared before it acquired its lock.
      *
      * @throws InvalidArgumentException when two entries claim one identity. The loader
      *                                  turns such entries inert before constructing, so
@@ -62,7 +64,14 @@ final readonly class Baseline
         public array $entries,
         public array $inertEntries = [],
         public ?string $sourceContentHash = null,
+        public bool $expectsSourceAbsence = false,
     ) {
+        if ($sourceContentHash !== null && $expectsSourceAbsence) {
+            throw new InvalidArgumentException(
+                'Baseline source provenance cannot expect both content and absence.',
+            );
+        }
+
         $this->scope = self::normalizeScope($scope);
 
         $byIdentityKey = [];
@@ -117,7 +126,7 @@ final readonly class Baseline
      * sorted.
      *
      * Normalizing on the way into the object rather than at one call site is
-     * what makes §6's invariant true of *every* baseline: two runs that named
+     * what makes ADR 0017 invariant true of *every* baseline: two runs that named
      * the same paths in a different order produce one file, and a loaded file
      * is comparable with a freshly captured one without either side having to
      * remember to normalize first.
@@ -181,12 +190,12 @@ final readonly class Baseline
     /**
      * Entries whose identity did not appear in the run.
      *
-     * Keyed on the complete identity of §5.1, not on the symbol: under the
+     * Keyed on the complete identity of ADR 0017, not on the symbol: under the
      * finer identity a repaired finding strands its own entry and leaves its
      * neighbours under the same symbol untouched, which is the whole point
      * of the change. What the caller does with the answer differs by
      * caller — staleness reports it, `--show-resolved` counts it — but the
-     * predicate is one predicate (§5.7).
+     * predicate is one predicate (ADR 0017).
      *
      * @param list<string> $measuredIdentityKeys {@see BaselineIdentity::key()} of every
      *                                           identity the run measured
@@ -228,12 +237,11 @@ final readonly class Baseline
     }
 
     /**
-     * The same baseline with its compare-and-swap token dropped.
+     * The same baseline with its source provenance dropped.
      *
-     * Needed when a loaded baseline is written somewhere other than where it
-     * came from: the token asserts "the target still holds what I read", and
-     * against a different file that assertion is meaningless rather than
-     * false.
+     * Needed when a baseline is written somewhere other than where it came
+     * from: neither "the target still holds what I read" nor "the target was
+     * absent" says anything about a different file.
      */
     public function detached(): self
     {
@@ -243,6 +251,7 @@ final readonly class Baseline
             entries: $this->entries,
             inertEntries: $this->inertEntries,
             sourceContentHash: null,
+            expectsSourceAbsence: false,
         );
     }
 
@@ -263,6 +272,25 @@ final readonly class Baseline
             entries: $this->entries,
             inertEntries: $this->inertEntries,
             sourceContentHash: $sourceContentHash,
+            expectsSourceAbsence: false,
+        );
+    }
+
+    /**
+     * The same baseline expecting its target to remain absent until the
+     * write's compare-and-swap check. This is provenance too: a forced
+     * migration may replace a path that was absent at its snapshot, but must
+     * not erase a file another process created while it was measuring.
+     */
+    public function withExpectedSourceAbsence(): self
+    {
+        return new self(
+            generated: $this->generated,
+            scope: $this->scope,
+            entries: $this->entries,
+            inertEntries: $this->inertEntries,
+            sourceContentHash: null,
+            expectsSourceAbsence: true,
         );
     }
 }

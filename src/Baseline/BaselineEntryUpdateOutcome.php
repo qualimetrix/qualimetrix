@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Baseline;
 
 /**
- * What happened to one entry during a `baseline:update` run (§7 of the
- * baseline-ceiling plan).
+ * What happened to one entry during a `baseline:update` run (ADR 0017).
  */
 final readonly class BaselineEntryUpdateOutcome
 {

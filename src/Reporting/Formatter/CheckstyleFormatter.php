@@ -86,7 +86,7 @@ final class CheckstyleFormatter implements FormatterInterface
      *
      * Checkstyle XML has no field for the accepted level (the schema is
      * fixed to `line`/`severity`/`message`/`source`), so a measured breach
-     * (§5.6, §8) carries it appended to `message` — the only free-text
+     * (ADR 0017) carries it appended to `message` — the only free-text
      * attribute Checkstyle consumers already surface.
      */
     private function writeError(XMLWriter $xml, Violation $violation): void
@@ -103,7 +103,7 @@ final class CheckstyleFormatter implements FormatterInterface
     }
 
     /**
-     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (§8).
+     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
      */
     private function formatBreachSuffix(Violation $violation): string
     {

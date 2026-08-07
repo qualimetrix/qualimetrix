@@ -18,7 +18,7 @@ namespace Qualimetrix\Baseline;
  * would mean nullable everything.
  *
  * **What it must not lose.** `check` reports inert entries so a user can act
- * on them (§6), which needs the symbol, the channel, the selector and the
+ * on them (ADR 0017), which needs the symbol, the channel, the selector and the
  * reason. It also keeps `$raw` — the entry exactly as the file spelled it —
  * so a rewrite of the file preserves the line verbatim. That is not a
  * convenience: `cleanup` never removes an entry on its own, and dropping an

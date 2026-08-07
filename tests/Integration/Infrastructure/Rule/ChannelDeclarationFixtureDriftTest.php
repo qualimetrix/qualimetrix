@@ -25,7 +25,7 @@ use RuntimeException;
  * integration suite's coverage: a channel a rule declares but the fixture
  * doesn't list fails, and a fixture line naming a channel no rule declares
  * any more also fails. Both directions are real drift — see
- * `docs/plan/baseline-ceiling-v10.md` §5.4/P1 for why a suite-only guard
+ * ADR 0017 for why a suite-only guard
  * would silently narrow to whatever tests happen to exercise.
  *
  * Deliberately scoped to {@see ChannelDeclarationRegistryInterface::staticDeclarations()},

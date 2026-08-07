@@ -100,7 +100,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
      * `violationCode` is `$definition->name`, the configured computed
      * metric's name, which is an open per-installation vocabulary with no
      * literal to resolve — the run-time `computed.*`/`health.*` family
-     * §5.4 describes, guarded separately by
+     * ADR 0017 describes, guarded separately by
      * `ChannelDeclarationRegistryTest`'s run-time resolution cases rather
      * than by this static guard.
      *
@@ -110,7 +110,7 @@ final class ChannelEmissionStaticGuardTest extends TestCase
         'Qualimetrix\Rules\ComputedMetric\ComputedMetricRule::checkLevel()#violationCode' =>
             'violationCode is $definition->name — the configured computed metric\'s name, an '
             . 'open per-installation vocabulary with no fixed literal to resolve. This is the '
-            . 'run-time computed.*/health.* family (plan §5.4); guarded by '
+            . 'run-time computed.*/health.* family (ADR 0017); guarded by '
             . 'ChannelDeclarationRegistryTest\'s run-time resolution cases instead.',
     ];
 

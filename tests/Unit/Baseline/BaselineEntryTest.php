@@ -126,7 +126,7 @@ final class BaselineEntryTest extends TestCase
     }
 
     /**
-     * The observable §6 names outright: a normalized `40.0` is written as
+     * The observable ADR 0017 names outright: a normalized `40.0` is written as
      * `40` and decodes as an `int`. Stated here rather than left to surface
      * as a flaky byte-stability failure somewhere else.
      */

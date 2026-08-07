@@ -180,7 +180,7 @@ final class BaselineGeneratorTest extends TestCase
             ViolationFactory::magnitude($symbol, 30),
         ], ['src']);
 
-        self::assertSame(1, $baseline->count(), 'Two same-FQN declarations share one entry (§13.9).');
+        self::assertSame(1, $baseline->count(), 'Two same-FQN declarations share one entry (ADR 0017).');
         self::assertSame([12.0, 30.0], $baseline->entries[0]->magnitudes);
     }
 

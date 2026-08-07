@@ -25,7 +25,7 @@ use Qualimetrix\Core\Violation\ViolationChannel;
  * A v5 file carries only `(symbolKey, rule)` — no magnitude, no
  * `violationCode`, no edge — so {@see BaselineMigrator} can only match on
  * that pair against the fresh capture's v10 entries. The fixture below is
- * built so every one of §14.1's three groups is exercised by one run:
+ * built so every migration-report group defined by ADR 0017 is exercised by one run:
  *
  * - `method:App\Foo::bar` / `complexity.cyclomatic` — the fresh capture
  *   wrote two v10 entries under it (method- and class-level violation
@@ -130,7 +130,7 @@ final class BaselineMigratorTest extends TestCase
     public function itNeedsNoForceToOverwriteAV5Destination(): void
     {
         $path = $this->writeJson(<<<'JSON'
-            {"version": 5, "generated": "2026-01-01T00:00:00+00:00", "entries": {}}
+            {"version": 5, "generated": "2026-01-01T00:00:00+00:00", "violations": {}}
             JSON);
 
         self::assertFalse($this->migrator->destinationRequiresForce($path));

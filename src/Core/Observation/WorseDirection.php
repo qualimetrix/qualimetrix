@@ -9,9 +9,8 @@ namespace Qualimetrix\Core\Observation;
  *
  * Carries the two seam formulas that every consumer would otherwise
  * re-derive with its own sign handling: the "more permissive of" operator
- * behind `baseline:update` (§7 of the ratchet-baseline plan), and the
- * epsilon-aware worseness test the group-acceptance decision counts members
- * with (§5.1 of the ratchet-baseline plan).
+ * behind `baseline:update`, and the epsilon-aware worseness test the
+ * group-acceptance decision in ADR 0017 counts members with.
  */
 enum WorseDirection: string
 {
@@ -24,12 +23,11 @@ enum WorseDirection: string
     /**
      * Returns the more permissive of two boundaries in this direction.
      *
-     * This is the primitive behind `baseline:update` (§7 of the
-     * ratchet-baseline plan): a boundary may move only toward stricter,
+     * This is the primitive behind `baseline:update` (ADR 0017): a boundary may move only toward stricter,
      * never toward more permissive, so `update` folds the recorded boundary
      * and the current one through this operator rather than overwriting one
      * with the other. The result is written to the baseline file, whose
-     * byte-stability contract (§6.2) leaves no room for the numeric type to
+     * byte-stability contract in ADR 0017 leaves no room for the numeric type to
      * depend on argument order.
      *
      * `max()`/`min()` alone are not enough: when the two boundaries are
@@ -66,16 +64,16 @@ enum WorseDirection: string
      * Epsilon is a tolerance band around the allowance, never a shift of it:
      * a value inside the band is not worse in either direction.
      *
-     * This is the comparison behind §5.1's group acceptance in the
-     * ratchet-baseline plan, and it is what "at least as bad as" is measured
+     * This is the comparison behind the group-acceptance rule in ADR 0017,
+     * and it is what "at least as bad as" is measured
      * with there: a member is at least as bad as a level exactly when the
      * level is not worse than it. Acceptance then **counts members per level
      * of severity** — for every value the current group supplies, it must
      * hold no more members at least that bad than the stored group did.
      *
      * It never pairs a current member with a stored one. A rank comparison
-     * has an end to align from and each end is wrong in one direction (§5.1,
-     * §15): aligning from the best end reports a breach when a group's best
+     * has an end to align from and each end is wrong in one direction, as ADR 0017
+     * records when rejecting rank alignment: aligning from the best end reports a breach when a group's best
      * member is simply repaired, aligning from the worst end accepts a group
      * that grew. Counting assumes neither.
      */

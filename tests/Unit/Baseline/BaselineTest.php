@@ -182,6 +182,36 @@ final class BaselineTest extends TestCase
         self::assertSame($baseline->count(), $baseline->detached()->count());
     }
 
+    #[Test]
+    public function itDistinguishesExpectedAbsenceFromUncheckedProvenance(): void
+    {
+        $unchecked = self::baselineOf(self::entry('method:App\Foo::bar'));
+        $expectedAbsent = $unchecked->withExpectedSourceAbsence();
+        $expectedContent = $expectedAbsent->withSourceContentHash('abc');
+
+        self::assertNull($unchecked->sourceContentHash);
+        self::assertFalse($unchecked->expectsSourceAbsence);
+        self::assertNull($expectedAbsent->sourceContentHash);
+        self::assertTrue($expectedAbsent->expectsSourceAbsence);
+        self::assertSame('abc', $expectedContent->sourceContentHash);
+        self::assertFalse($expectedContent->expectsSourceAbsence);
+        self::assertFalse($expectedAbsent->detached()->expectsSourceAbsence);
+    }
+
+    #[Test]
+    public function itRejectsMutuallyExclusiveSourceProvenance(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        new Baseline(
+            generated: new DateTimeImmutable(),
+            scope: [],
+            entries: [],
+            sourceContentHash: 'abc',
+            expectsSourceAbsence: true,
+        );
+    }
+
     private static function baselineOf(BaselineEntry ...$entries): Baseline
     {
         return new Baseline(

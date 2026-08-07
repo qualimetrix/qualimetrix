@@ -81,7 +81,7 @@ abstract class BaselineCommand extends Command
     }
 
     /**
-     * The precondition both writing commands share (§5.7): a run narrower
+     * The precondition both writing commands share (ADR 0017): a run narrower
      * than the file's recorded scope makes every identity outside it look
      * absent, so `cleanup` would offer the rest of the file for removal and
      * `update` would leave it silently untouched. A wider run measures more

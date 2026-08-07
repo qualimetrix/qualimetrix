@@ -6,8 +6,7 @@ namespace Qualimetrix\Baseline;
 
 /**
  * What `bin/qmx baseline:explain <symbol>` prints, before printing: every
- * boundary bearing on the symbol, one per applicable identity (§7 of the
- * baseline-ceiling plan). This type carries data only — formatting it is
+ * boundary bearing on the symbol, one per applicable identity (ADR 0017). This type carries data only — formatting it is
  * the command's job, not {@see BoundaryExplanationService}'s.
  */
 final readonly class BoundaryExplanation

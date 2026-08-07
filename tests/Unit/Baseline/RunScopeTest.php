@@ -11,7 +11,7 @@ use Qualimetrix\Baseline\RunScope;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 /**
- * §5.7's scope guard and the portable form it compares: a run narrower than
+ * ADR 0017 scope guard and the portable form it compares: a run narrower than
  * the baseline's recorded scope is refused, a wider or equal one is allowed,
  * and the widest run of all — the project root — is recorded as `.` rather
  * than as the machine path it happens to sit at.

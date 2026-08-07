@@ -9,7 +9,7 @@ namespace Qualimetrix\Baseline;
  *
  * Both values are the plan's fail-safe direction — an entry that could never
  * be applied is worse than none — but neither is something a user should have
- * to infer from a later run's output (§5.4, §6 of the baseline-ceiling plan).
+ * to infer from a later run's output (ADR 0017).
  */
 enum UncapturedReason: string
 {
@@ -18,7 +18,7 @@ enum UncapturedReason: string
 
     /**
      * The channel stores magnitudes and some member of the group reported no
-     * finite number. §6 requires exactly one per member, and inventing one
+     * finite number. ADR 0017 requires exactly one per member, and inventing one
      * would fabricate the very boundary the entry exists to state.
      */
     case MagnitudeUnavailable = 'magnitude-unavailable';

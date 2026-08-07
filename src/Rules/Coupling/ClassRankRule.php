@@ -164,7 +164,7 @@ final class ClassRankRule extends AbstractRule
 
     /**
      * `coupling.class-rank` is declared `occurrence` — a **decision, not a
-     * derivation** (baseline-ceiling plan §5.4) — even though it reports a
+     * derivation** (ADR 0017) — even though it reports a
      * real number (`$rankValue`, see the emission above). ClassRank is an
      * iterative PageRank normalised over the *whole project*: it moves
      * whenever anything anywhere is added or removed, and this rule's own

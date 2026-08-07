@@ -90,7 +90,7 @@ final readonly class ViolationFilterOrchestrator
 
     /**
      * Reports entries whose identity the run did not measure — and does
-     * nothing else with them (§5.7).
+     * nothing else with them (ADR 0017).
      *
      * `--show-resolved` reads the same predicate and reports the same set in
      * a different unit: entries whose group did not appear, not findings. It
@@ -99,7 +99,7 @@ final readonly class ViolationFilterOrchestrator
      *
      * The stale message says what was actually measured. "Symbols no longer
      * exist" was true while staleness was keyed on the symbol; under the
-     * identity of §5.1 the symbol is usually still right there and one of its
+     * identity of ADR 0017 the symbol is usually still right there and one of its
      * channels simply stopped firing, which the list printed underneath makes
      * plain.
      *
@@ -145,7 +145,7 @@ final readonly class ViolationFilterOrchestrator
     }
 
     /**
-     * Reports every entry the loaded baseline could not apply (§6): a bad
+     * Reports every entry the loaded baseline could not apply (ADR 0017): a bad
      * `channel`, an undeclared one, a shape mismatch in either direction, an
      * unrecognized `mode`, or two entries claiming one identity.
      *
@@ -186,7 +186,7 @@ final readonly class ViolationFilterOrchestrator
 
     /**
      * Reports when this run's analysed paths do not cover the loaded
-     * baseline's recorded `scope` (§5.7). Narrower than usual is legitimate —
+     * baseline's recorded `scope` (ADR 0017). Narrower than usual is legitimate —
      * checking one directory is the ordinary case — so this never fails the
      * run; the scope guard that refuses to run is a precondition of the
      * writing commands (`baseline:update`, `baseline:cleanup`), not of

@@ -33,7 +33,7 @@ use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
 /**
  * What capture is allowed to record.
  *
- * Capture reads the measured set (§5.5), so an entry is never written for a
+ * Capture reads the measured set (ADR 0017), so an entry is never written for a
  * finding the same run suppressed or excluded: such an entry could never be
  * matched again, would be reported as inert forever, and nothing short of
  * hand-editing could retire it.

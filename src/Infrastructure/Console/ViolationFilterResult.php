@@ -15,7 +15,7 @@ use Qualimetrix\Core\Violation\Violation;
  * **Two lists of findings, and the difference between them is the point.**
  * `violations` is what the user is shown — everything the stages left,
  * including any report narrowing. `measuredViolations` is the set a baseline
- * measures (§5.5 of the baseline-ceiling plan): the input to the baseline
+ * measures (ADR 0017): the input to the baseline
  * stage, after `@qmx-ignore` and the exclusions and before git scope. Every
  * baseline operation reads the second one, capture included; feeding capture
  * the raw analysis output is what let a run record entries for findings the
@@ -27,7 +27,7 @@ use Qualimetrix\Core\Violation\Violation;
  * the baseline promotes rather than filters.
  *
  * `inertEntries` and `baselineScope` exist only to give `check` a route to
- * report what §6 and §5.7 require of it — this class does not do that
+ * report the stale and inert baseline entries required by ADR 0017 — this class does not do that
  * reporting itself. Both are empty/`null` when no `--baseline` was given.
  */
 final readonly class ViolationFilterResult
@@ -36,14 +36,14 @@ final readonly class ViolationFilterResult
      * @param list<Violation> $violations what the run reports, after every stage
      * @param list<Violation> $measuredViolations the set a baseline measures — the baseline stage's input
      * @param array<string, list<Violation>> $removedByStage what each stage removed, keyed by {@see ViolationFilterStage}'s value
-     * @param list<BaselineEntry> $staleEntries entries whose identity the measured set did not hold (§5.7);
+     * @param list<BaselineEntry> $staleEntries entries whose identity the measured set did not hold (ADR 0017);
      *                                          reported, never acted on
      * @param list<InertBaselineEntry> $inertEntries every entry the loaded baseline could not apply, naming
-     *                                               symbol, channel and selector so `check` can report it (§6);
+     *                                               symbol, channel and selector so `check` can report it (ADR 0017);
      *                                               empty when no baseline was loaded
      * @param ?list<string> $baselineScope the `scope` the loaded baseline file recorded, in its normal
      *                                     form; `null` when no baseline was loaded, never used to fail
-     *                                     the run — only to report a mismatch (§5.7)
+     *                                     the run — only to report a mismatch (ADR 0017)
      */
     public function __construct(
         public array $violations,

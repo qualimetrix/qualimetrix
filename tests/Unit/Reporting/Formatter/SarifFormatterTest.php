@@ -666,7 +666,7 @@ final class SarifFormatterTest extends TestCase
     #[Test]
     public function itPropagatesAMeasuredBreachsPromotedSeverityToResultAndRuleLevel(): void
     {
-        // §5.6/§8: promotion to Error happens once, on Violation::severity via
+        // ADR 0017: promotion to Error happens once, on Violation::severity via
         // reportedAsBreach(). SARIF must derive both the per-result 'level'
         // and the rule's run-level default from that same field — no
         // separate mapping that could fall out of sync with the promotion.

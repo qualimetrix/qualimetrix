@@ -167,7 +167,7 @@ final class AnalysisPipelineTest extends TestCase
     /**
      * A `@qmx-threshold` annotation is extracted during Collection and
      * carried into `AnalysisContext` for rule execution — but the
-     * baseline-ceiling plan's `explain` command needs to read the same
+     * ADR 0017's `explain` command needs to read the same
      * overrides *after* the run, from `AnalysisResult` alone. This is the
      * run this package's DoD requires: a real `AnalysisPipeline::analyze()`
      * call over a file whose Collection phase reported a `@qmx-threshold`

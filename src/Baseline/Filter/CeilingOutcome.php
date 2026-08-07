@@ -11,8 +11,8 @@ use Qualimetrix\Core\Violation\Filter\ViolationFilterStageResult;
 /**
  * Everything {@see BaselineCeilingStage::judgeAll()} learns from one pass
  * over one list of violations: the filtered/promoted result, the entries
- * whose identity was absent from that same list (§5.7), and the entries the
- * loader could not apply at all (§6).
+ * whose identity was absent from that same list, and the entries the loader could
+ * not apply at all, as ADR 0017 requires.
  *
  * **Why this exists instead of a second method call.** Staleness is "absent
  * from the set the ceiling measured", and the set the ceiling measured is
@@ -32,10 +32,10 @@ final readonly class CeilingOutcome
 {
     /**
      * @param list<BaselineEntry> $staleEntries entries whose identity did not appear in the
-     *                                          measured list (§5.7); reported, never acted on
+     *                                          measured list (ADR 0017); reported, never acted on
      * @param list<InertBaselineEntry> $inertEntries every entry the loader read but could not
      *                                               apply, unconditional on what was measured —
-     *                                               `check` names them so a user can act (§6)
+     *                                               `check` names them so a user can act (ADR 0017)
      */
     public function __construct(
         public ViolationFilterStageResult $result,

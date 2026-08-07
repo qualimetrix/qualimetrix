@@ -14,12 +14,12 @@ use Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun;
  * Everything one run of a baseline command needs from the analysis it just
  * performed.
  *
- * The measured set (§5.5 of the baseline-ceiling plan) is the point of the
+ * The measured set (ADR 0017) is the point of the
  * object, but three other things travel with it because they are facts about
  * *that* run and cannot be recomputed later without risking disagreement:
  *
  * - the **scope**, as a {@see RunScope} rather than a bare path list, so the
- *   guard of §5.7 asks the object that derived the portable form whether it
+ *   guard of ADR 0017 asks the object that derived the portable form whether it
  *   covers the recorded one instead of two sides deriving it separately;
  * - the **project root**, which {@see \Qualimetrix\Baseline\BaselineWriter}
  *   needs to make `file:` keys portable;
@@ -40,7 +40,7 @@ final readonly class BaselineRunContext
     ) {}
 
     /**
-     * The measured set: the findings every baseline operation reads (§5.5).
+     * The measured set: the findings every baseline operation reads (ADR 0017).
      *
      * @return list<Violation>
      */

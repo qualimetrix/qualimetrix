@@ -10,9 +10,9 @@ namespace Qualimetrix\Core\Violation\Filter;
  *
  * The order they must run in is a *behavioural* contract, not an
  * implementation detail: `@qmx-ignore` and the exclusions run before the
- * baseline so that one set is measured, captured and compared (§5.2 of the
- * baseline-ceiling plan), and git scope runs last so that report narrowing
- * cannot change what was accepted or what went stale (§2.4). A test that
+ * baseline so that one set is measured, captured and compared, and git scope runs last so that report narrowing
+ * cannot change what was accepted or what went stale under ADR 0017's
+ * pipeline order. A test that
  * pins that order needs something to name the stages with; inferring the
  * order from counts cannot distinguish "the baseline ran fourth" from "the
  * baseline happened to remove nothing".
@@ -32,7 +32,7 @@ namespace Qualimetrix\Core\Violation\Filter;
  * lives, is declared here; until it is, it has no place in the order and no
  * answer to {@see definesMeasuredSet()}. That is what a checkable order
  * costs: an open stage list could only be asserted against itself, which is
- * exactly what §5.2 needs the order not to be. Nothing here is a dependency
+ * exactly what ADR 0017 needs the order not to be. Nothing here is a dependency
  * — a case is a name, not a class reference — so the price is paid in edits,
  * not in coupling.
  */
@@ -54,7 +54,7 @@ enum ViolationFilterStage: string
     case GitScope = 'git-scope';
 
     /**
-     * Whether this stage is part of what produces the measured set (§5.5):
+     * Whether this stage is part of what produces the measured set (ADR 0017):
      * the findings a baseline captures, compares against and calls stale.
      *
      * The set is the input to the baseline stage — everything the

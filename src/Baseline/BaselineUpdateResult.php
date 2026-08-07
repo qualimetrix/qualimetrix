@@ -6,8 +6,7 @@ namespace Qualimetrix\Baseline;
 
 /**
  * What one `baseline:update` run produced: the new baseline, and what
- * happened to every entry the loaded one held (§7 of the baseline-ceiling
- * plan).
+ * happened to every entry the loaded one held (ADR 0017).
  *
  * Bundled the way {@see BaselineCapture} bundles a generation, so the report
  * and the file cannot be read from two different computations by accident.

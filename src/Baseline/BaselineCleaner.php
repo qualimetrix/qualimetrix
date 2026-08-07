@@ -10,14 +10,14 @@ use Qualimetrix\Core\Violation\Violation;
 
 /**
  * `baseline:cleanup`'s two halves: listing removal candidates, and removing
- * exactly the ones a user named (§5.7, §7 of the baseline-ceiling plan).
+ * exactly the ones a user named (ADR 0017).
  *
  * **`cleanup` never removes on its own.** {@see candidates()} only reports;
  * calling it changes nothing. Only {@see remove()}, given an explicit,
  * non-empty list of selectors, writes anything — and it removes precisely
  * those selectors and nothing else. There is deliberately no "remove
- * everything listed" method: §5.7's third decision names that exact shape
- * (10.2's withdrawn `--all-listed`) as the same inference-by-absence the
+ * everything listed" method. ADR 0017 rejects that withdrawn `--all-listed`
+ * shape as the same inference-by-absence the
  * whole command exists to forbid, because the list {@see candidates()}
  * returns is recomputed inside the same invocation that would consume it —
  * `baseline:cleanup file.json src/ --all-listed` run in CI after a threshold
@@ -34,7 +34,7 @@ final readonly class BaselineCleaner
      * selector. A valid entry is offered for one of two reasons — stale, or
      * its channel is no longer declared — and every inert entry is offered
      * too, since it already has a selector and the user is entitled to
-     * delete an unreadable line (§6).
+     * delete an unreadable line (ADR 0017).
      *
      * A valid entry whose channel is no longer declared is reported as
      * {@see BaselineCleanupReason::ChannelNotDeclared} rather than
@@ -43,7 +43,7 @@ final readonly class BaselineCleaner
      * measured finding. The two reasons are not independent for that entry,
      * and the more specific, more permanent cause is the more useful answer.
      *
-     * @param list<Violation> $measured the run's measured set (§5.5)
+     * @param list<Violation> $measured the run's measured set (ADR 0017)
      *
      * @return list<BaselineCleanupCandidate>
      */
@@ -99,10 +99,10 @@ final readonly class BaselineCleaner
     /**
      * Removes exactly the named entries — valid or inert — and reports which
      * selectors matched exactly one entry, which matched none, and which
-     * matched more than one and were therefore left alone (§7). An empty
+     * matched more than one and were therefore left alone (ADR 0017). An empty
      * `$selectors` list changes nothing but still stamps a fresh `generated`
      * — callers implementing "no `--remove` given" as "report and change
-     * nothing" (§7) do so by not calling this method at all, not by calling
+     * nothing" (ADR 0017) do so by not calling this method at all, not by calling
      * it with an empty list.
      *
      * @param list<EntrySelector> $selectors

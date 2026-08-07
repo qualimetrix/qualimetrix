@@ -90,10 +90,10 @@ final class SarifFormatter implements FormatterInterface
             function (Violation $v) use ($context, $ruleIndexMap): array {
                 // 'level' derives from Violation::severity, which a measured
                 // breach already promoted to Error via reportedAsBreach()
-                // (§5.6) — no extra mapping needed here for promotion to
+                // (ADR 0017) — no extra mapping needed here for promotion to
                 // propagate. The accepted level itself has no dedicated SARIF
                 // field, so it rides along in the free-text message, same as
-                // checkstyle/gitlab/github (§8).
+                // checkstyle/gitlab/github (ADR 0017).
                 $result = [
                     'ruleId' => $v->violationCode,
                     'ruleIndex' => $ruleIndexMap[$v->violationCode] ?? 0,
@@ -151,7 +151,7 @@ final class SarifFormatter implements FormatterInterface
     }
 
     /**
-     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (§8).
+     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
      */
     private function formatBreachSuffix(Violation $violation): string
     {

@@ -133,11 +133,11 @@ final class BaselineLoaderTest extends TestCase
     }
 
     /**
-     * §6 says ISO 8601, and `new DateTimeImmutable($s)` accepts far more than
+     * ADR 0017 says ISO 8601, and `new DateTimeImmutable($s)` accepts far more than
      * that: a relative expression parses into a perfectly valid timestamp
      * that has nothing to do with when the file was written.
      *
-     * @param string $generated a spelling §6 does not allow
+     * @param string $generated a spelling ADR 0017 does not allow
      */
     #[Test]
     #[TestWith(['tomorrow'])]
@@ -158,7 +158,7 @@ final class BaselineLoaderTest extends TestCase
     }
 
     /**
-     * @param string $generated a spelling §6 does allow
+     * @param string $generated a spelling ADR 0017 does allow
      * @param string $expectedUtc the instant it names, in UTC
      */
     #[Test]
@@ -179,7 +179,7 @@ final class BaselineLoaderTest extends TestCase
     }
 
     /**
-     * §6 calls the scope normalised, so a hand-written one becomes normalised
+     * ADR 0017 calls the scope normalised, so a hand-written one becomes normalised
      * on the way in rather than being carried into a comparison as spelled.
      */
     #[Test]

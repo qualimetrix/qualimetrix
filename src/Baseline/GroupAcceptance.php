@@ -7,9 +7,9 @@ namespace Qualimetrix\Baseline;
 use Qualimetrix\Core\Observation\WorseDirection;
 
 /**
- * §5.1's acceptance rule, addressable on its own so `baseline:update` can
+ * ADR 0017 acceptance rule, addressable on its own so `baseline:update` can
  * apply the identical test rather than defining monotonicity a second time —
- * §7 states the requirement: "acceptance is already 'no level of severity
+ * ADR 0017 states the requirement: "acceptance is already 'no level of severity
  * holds more members than before', which is precisely 'not more permissive'
  * at group level, so `update` needs no second definition of the same idea."
  *
@@ -21,7 +21,7 @@ use Qualimetrix\Core\Observation\WorseDirection;
  * red build. Aligning from the worst end assumes the opposite. Counting
  * assumes neither: for every value `t`, the number of current members at
  * least as bad as `t` must not exceed the number of stored members at least
- * as bad as `t` (§5.1 of the baseline-ceiling plan). The cumulative form is
+ * as bad as `t` (ADR 0017). The cumulative form is
  * provably equivalent to worst-end alignment and additionally subsumes the
  * count condition, which is why {@see countWithin()} is the same rule with
  * the severity axis collapsed rather than a second mechanism.
@@ -29,7 +29,7 @@ use Qualimetrix\Core\Observation\WorseDirection;
 final class GroupAcceptance
 {
     /**
-     * The cumulative rule of §5.1, evaluated at every level the current group
+     * The cumulative rule of ADR 0017, evaluated at every level the current group
      * supplies. Only those levels need checking: the test can only fail at a
      * level some current member actually reaches.
      *

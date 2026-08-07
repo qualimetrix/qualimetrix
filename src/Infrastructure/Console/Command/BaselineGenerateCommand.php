@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Qualimetrix\Baseline\Baseline;
-use Qualimetrix\Baseline\BaselineConflictException;
 use Qualimetrix\Baseline\BaselineEntry;
 use Qualimetrix\Baseline\BaselineEntryMode;
 use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineWriter;
+use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -17,7 +17,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * `baseline:generate` — captures the run's findings as a new baseline file
- * (§7 of the baseline-ceiling plan).
+ * (ADR 0017).
  *
  * **It refuses to overwrite.** A baseline is the record of what a team
  * decided to accept; regenerating it silently discards every deliberately
@@ -29,14 +29,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  * check made only up front is a promise about a moment minutes before the
  * write: a file created in the meantime — the neighbouring terminal, the CI
  * step that runs two jobs — would be overwritten by a decision taken when it
- * did not exist. Where a file was already there the writer's compare-and-swap
- * token carries the decision into the lock it holds across the rename; where
- * there was none, {@see assertDestinationUnchanged()} re-asserts the absence
- * the decision rested on.
+ * did not exist. The writer's provenance carries both possible decisions
+ * into the lock it holds across the rename: a content hash for an existing
+ * regular file, or an explicit expected absence.
  *
  * **`--mode=ratchet` writes no `mode` key at all.** The default is not
  * spelled in the file because an entry with no `mode` *is* a ratchet entry
- * (§6); writing `mode: ratchet` would make the absence of the key mean
+ * (ADR 0017); writing `mode: ratchet` would make the absence of the key mean
  * something else, and every existing file would then be ambiguous.
  * `--mode=suppress` writes `mode: suppress` on every entry it captures — the
  * old "this identity is accepted whatever it reports" behaviour, kept as an
@@ -104,9 +103,9 @@ final class BaselineGenerateCommand extends BaselineCommand
             return self::EXIT_INVALID_INPUT;
         }
 
-        $destination = self::readDestination($baselinePath);
+        $destinationExists = self::destinationExists($baselinePath);
 
-        if ($destination !== null && !$force) {
+        if ($destinationExists && !$force) {
             $output->writeln(\sprintf(
                 '<error>%s already exists. Regenerating discards every acceptance it records — '
                 . 'pass --force if that is intended, or use `baseline:update` to tighten it in place.</error>',
@@ -116,16 +115,20 @@ final class BaselineGenerateCommand extends BaselineCommand
             return self::FAILURE;
         }
 
+        $destination = $destinationExists
+            ? self::readRegularDestinationHash($baselinePath)
+            : null;
+
         $context = $this->baselineRun->measure($input, $output);
         $capture = $this->generator->generate($context->violations(), $context->scope->paths());
         $baseline = $mode === BaselineEntryMode::Suppress
             ? self::withMode($capture->baseline, BaselineEntryMode::Suppress)
             : $capture->baseline;
 
-        $this->assertDestinationUnchanged($baselinePath, $destination);
-
         $this->writer->write(
-            $destination === null ? $baseline : $baseline->withSourceContentHash($destination),
+            $destination === null
+                ? $baseline->withExpectedSourceAbsence()
+                : $baseline->withSourceContentHash($destination),
             $baselinePath,
             $context->projectRoot,
         );
@@ -142,54 +145,44 @@ final class BaselineGenerateCommand extends BaselineCommand
     }
 
     /**
-     * The destination's state at the moment the overwrite decision is taken:
-     * its content hash, or `null` when there is no file there.
-     *
-     * That hash is the compare-and-swap token {@see BaselineWriter} already
-     * verifies inside the lock it holds across the rename (§5.8), so a
-     * `--force` regeneration over a file another process rewrote during the
-     * analysis is refused rather than silently discarding that process's work.
+     * Whether a filesystem entry is present at the destination. A dangling
+     * symlink counts: replacing it would discard an existing entry even though
+     * `file_exists()` follows it and answers false.
      */
-    private static function readDestination(string $path): ?string
+    private static function destinationExists(string $path): bool
     {
-        if (!is_file($path)) {
-            return null;
-        }
-
-        $hash = hash_file('sha256', $path);
-
-        return $hash === false ? null : $hash;
+        return file_exists($path) || is_link($path);
     }
 
     /**
-     * The half of the guard the writer's token cannot express.
+     * The destination's source snapshot at the moment the forced overwrite
+     * decision is taken.
      *
-     * The refusal above is decided before the analysis and honoured after it,
-     * and an analysis takes minutes — long enough for someone to run
-     * `baseline:generate` in the next terminal. Where a file was already
-     * there, {@see BaselineWriter} carries the check into its own lock. Where
-     * there was none, there is no token to carry: the writer's guard speaks
-     * about a file that changed, and "a file appeared" is the state it reads
-     * as nothing to check. So this asserts the decision still holds, at the
-     * last moment before the write rather than only at the first.
+     * That hash is the compare-and-swap token {@see BaselineWriter} already
+     * verifies inside the lock it holds across the rename (ADR 0017), so a
+     * `--force` regeneration over a file another process rewrote during the
+     * analysis is refused rather than silently discarding that process's work.
      *
-     * The residual window — between this call and the rename — is the
-     * writer's to close, and closing it means creating the destination
-     * exclusively inside the lock the writer already takes.
+     * A non-regular or unreadable existing entry has no snapshot this contract
+     * can safely compare, so `--force` refuses it instead of treating it as an
+     * unchecked fresh target.
      *
-     * @throws BaselineConflictException
+     * @throws RuntimeException
      */
-    private function assertDestinationUnchanged(string $path, ?string $destination): void
+    private static function readRegularDestinationHash(string $path): string
     {
-        if ($destination !== null || !is_file($path)) {
-            return;
+        if (is_link($path) || !is_file($path)) {
+            throw new RuntimeException(
+                "Baseline destination {$path} exists but is not a regular file; refusing to replace it safely.",
+            );
         }
 
-        throw new BaselineConflictException(\sprintf(
-            '%s was created while the analysis was running; refusing to overwrite a baseline this '
-            . 'run never decided to replace. Re-run with --force if the new file is to be discarded.',
-            $path,
-        ));
+        $content = file_get_contents($path);
+        if ($content === false) {
+            throw new RuntimeException("Failed to read baseline destination safely: {$path}");
+        }
+
+        return hash('sha256', $content);
     }
 
     /**

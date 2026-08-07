@@ -25,7 +25,7 @@ use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Support\Violation\ViolationFactory;
 
 /**
- * §5.7's and §7's rules for `baseline:cleanup`: enumeration is read-only,
+ * ADR 0017's rules for `baseline:cleanup`: enumeration is read-only,
  * and removal touches exactly the selectors it is given.
  */
 #[CoversClass(BaselineCleaner::class)]

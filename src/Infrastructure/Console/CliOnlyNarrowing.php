@@ -9,7 +9,7 @@ namespace Qualimetrix\Infrastructure\Console;
  * `--exclude-path`, `--exclude-namespace` and `--no-suppression-annotations`.
  *
  * **It is deliberately separate from the configuration, and it is not part
- * of the measured set** (§5.5 of the baseline-ceiling plan). The set a
+ * of the measured set** (ADR 0017). The set a
  * baseline captures and compares against is defined by `qmx.yaml` and by the
  * annotations in the source, both of which every command sees. A flag lives
  * on one invocation of one command, and the baseline commands do not accept
@@ -22,7 +22,7 @@ namespace Qualimetrix\Infrastructure\Console;
  * a flag may keep findings out of the report, but no flag may put findings
  * into what the ceiling measures.** Narrowing is safe in the one direction
  * that matters — a smaller group cannot breach an entry, so the worst a
- * `--exclude-*` flag can do is leave an entry unmatched, and §5.5 names that
+ * `--exclude-*` flag can do is leave an entry unmatched, and ADR 0017 names that
  * cost: an entry captured without a flag can be permanently inert under a
  * run that passes one, which `check` reports.
  *

@@ -107,7 +107,7 @@ final class UnusedPrivateRule extends AbstractRule
 
     /**
      * `code-smell.unused-private` is declared `magnitude` / `higher` as a
-     * **decision, not a derivation** (baseline-ceiling plan §5.4) — the same
+     * **decision, not a derivation** (ADR 0017) — the same
      * class of decision as `architecture.circular-dependency`. There is no
      * gating threshold comparison to read a direction from (the rule fires
      * on any nonzero `$total`, and severity is the fixed constant

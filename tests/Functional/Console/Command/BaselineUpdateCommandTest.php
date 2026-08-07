@@ -176,7 +176,7 @@ final class BaselineUpdateCommandTest extends TestCase
     }
 
     /**
-     * §6 requires a no-op command to leave the bytes alone; a `generated`
+     * ADR 0017 requires a no-op command to leave the bytes alone; a `generated`
      * that moved on every scheduled run would show up as a change in version
      * control that nothing caused.
      */
@@ -269,7 +269,7 @@ final class BaselineUpdateCommandTest extends TestCase
     private function storedMagnitudesOf(string $channelKey): array
     {
         // JSON drops a trailing `.0`, so a normalised 40.0 reloads as int —
-        // stated in §6 and harmless for a numeric comparison, but it means
+        // stated in ADR 0017 and harmless for a numeric comparison, but it means
         // the read side has to normalise before asserting.
         /** @var list<int|float> $magnitudes */
         $magnitudes = self::entryData($this->baselinePath, $channelKey)['magnitudes'] ?? [];

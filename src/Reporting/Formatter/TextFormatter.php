@@ -128,7 +128,7 @@ final class TextFormatter implements FormatterInterface
     }
 
     /**
-     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (§8).
+     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
      */
     private function formatBreachSuffix(Violation $violation): string
     {

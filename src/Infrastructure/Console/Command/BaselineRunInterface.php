@@ -12,9 +12,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * The one way a baseline command obtains the set it measures.
  *
- * All five commands of §7 resolve configuration, configure the runtime and
+ * All five commands of ADR 0017 resolve configuration, configure the runtime and
  * run the analysis in exactly the same way; only what they then do with the
- * findings differs. Naming that shared half is what keeps §5.5's "one
+ * findings differs. Naming that shared half is what keeps ADR 0017 "one
  * measured set" true across commands rather than true five times over by
  * coincidence.
  *

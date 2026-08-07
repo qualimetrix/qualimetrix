@@ -11,7 +11,7 @@ namespace Qualimetrix\Infrastructure\Console;
  * rest rather than flattened into it: those three flags are the part of a
  * run that no other command shares, and keeping them in
  * {@see CliOnlyNarrowing} is what stops them from quietly becoming part of
- * the measured set (§5.5 of the baseline-ceiling plan).
+ * the measured set (ADR 0017).
  */
 final readonly class ViolationFilterOptions
 {

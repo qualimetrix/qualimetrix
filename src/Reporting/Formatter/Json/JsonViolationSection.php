@@ -111,8 +111,8 @@ final class JsonViolationSection
     }
 
     /**
-     * Structured form of the accepted level a measured breach carries (§5.6,
-     * §8) — `null` on every other violation, including one no baseline ever
+     * Structured form of the accepted level a measured breach carries under ADR 0017 —
+     * `null` on every other violation, including one no baseline ever
      * judged. `describe` is the human string (e.g. "25" or "3 occurrences");
      * `now` reuses the sibling `metricValue` field on purpose — an
      * `occurrence` channel has no per-finding "now" to report, so this

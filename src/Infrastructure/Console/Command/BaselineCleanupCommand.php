@@ -18,8 +18,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * `baseline:cleanup` — lists the entries nothing reports any more, and
- * removes exactly the ones a user names (§5.7, §7 of the baseline-ceiling
- * plan).
+ * removes exactly the ones a user names (ADR 0017).
  *
  * **Absence is not proof.** A loosened threshold, a changed `min_lines`, a
  * rewritten computed formula or an edited layer topology all silence a
@@ -88,7 +87,7 @@ final class BaselineCleanupCommand extends BaselineCommand
         $baselinePath = $input->getArgument('baseline');
         $force = $input->getOption('force') === true;
 
-        // The run comes first, and the order is load-bearing (§5.4). The
+        // The run comes first, and the order is load-bearing (ADR 0017). The
         // `computed.*` / `health.*` family declares its shape and direction
         // from configuration resolved during the run, so a file read before
         // it has no declaration to match: every entry on a user-defined

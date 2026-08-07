@@ -9,9 +9,7 @@ use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineMigrator;
 use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Baseline\MigrationReport;
-use Qualimetrix\Baseline\V5Baseline;
 use Qualimetrix\Baseline\V5BaselineReader;
-use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -19,7 +17,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * `baseline:migrate` — converts a version 5 baseline into a version 10 one,
- * in a single run (§7 of the baseline-ceiling plan).
+ * in a single run (ADR 0017).
  *
  * **Nothing is carried across structurally.** A v5 record is a rule name plus
  * an opaque hash and holds no magnitude, so there is no boundary in it to
@@ -35,11 +33,11 @@ use Symfony\Component\Console\Output\OutputInterface;
  * accepting every finding it had been holding the line on.
  *
  * **It carries a compare-and-swap token like every other writing command**
- * (§5.8). `migrate` reads a file, runs an analysis, and writes back over what
+ * (ADR 0017). `migrate` reads a file, runs an analysis, and writes back over what
  * it read; without the token the whole analysis is a window in which another
  * process's write is lost. `update` and `cleanup` get the token from the
- * loader — a v5 file has no such loader, so {@see readSourceToken()} takes it
- * the way {@see BaselineWriter} verifies it.
+ * loader; {@see V5BaselineReader} gives v5 migration the corresponding token
+ * from the exact bytes it parsed.
  */
 #[AsCommand(
     name: 'baseline:migrate',
@@ -95,15 +93,18 @@ final class BaselineMigrateCommand extends BaselineCommand
             return self::FAILURE;
         }
 
-        $v5 = $this->readSource($baselinePath, $force);
-        $source = self::readSourceToken($baselinePath);
+        $v5 = $this->v5Reader->readForMigration($baselinePath, $force);
 
         $context = $this->baselineRun->measure($input, $output);
         $capture = $this->generator->generate($context->violations(), $context->scope->paths());
         $result = $this->migrator->migrate($v5, $capture);
 
+        $baseline = $v5->sourceContentHash === null
+            ? $result->baseline->withExpectedSourceAbsence()
+            : $result->baseline->withSourceContentHash($v5->sourceContentHash);
+
         $this->writer->write(
-            $source === null ? $result->baseline : $result->baseline->withSourceContentHash($source),
+            $baseline,
             $baselinePath,
             $context->projectRoot,
         );
@@ -119,51 +120,6 @@ final class BaselineMigrateCommand extends BaselineCommand
         BaselineCaptureReporter::reportUncaptured($capture, $output);
 
         return self::SUCCESS;
-    }
-
-    /**
-     * The v5 side of the report.
-     *
-     * Under `--force` the destination need not be a v5 file at all, and an
-     * unreadable one then contributes nothing rather than aborting: the user
-     * has already asserted that this path is to be replaced by a fresh
-     * capture, and the report simply has no old acceptances to compare
-     * against.
-     */
-    private function readSource(string $baselinePath, bool $force): V5Baseline
-    {
-        try {
-            return $this->v5Reader->read($baselinePath);
-        } catch (RuntimeException $e) {
-            if (!$force) {
-                throw $e;
-            }
-
-            return new V5Baseline([]);
-        }
-    }
-
-    /**
-     * The compare-and-swap token for the file being converted (§5.8).
-     *
-     * `migrate` writes over the source it just read, exactly as `update` and
-     * `cleanup` do, and the analysis between the two is long enough for
-     * someone else to write in the gap. Those two commands get the token for
-     * free — {@see \Qualimetrix\Baseline\BaselineLoader} records it on the
-     * {@see Baseline} it returns — but a v5 file is not read by that loader,
-     * so it is taken here, the same way {@see BaselineWriter} verifies it: a
-     * SHA-256 of the file's bytes. A destination that does not exist has no
-     * token and needs none; there is nothing there to lose.
-     */
-    private static function readSourceToken(string $path): ?string
-    {
-        if (!is_file($path)) {
-            return null;
-        }
-
-        $hash = hash_file('sha256', $path);
-
-        return $hash === false ? null : $hash;
     }
 
     private static function reportMigration(MigrationReport $report, OutputInterface $output): void

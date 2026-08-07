@@ -9,13 +9,13 @@ namespace Qualimetrix\Baseline;
  *
  * `baseline:migrate` runs once and there is no second chance: an acceptance
  * the reader could not read is an acceptance the user loses without being
- * told, which is exactly the silence §6 forbids the v10 loader. So the
+ * told, which is exactly the silence ADR 0017 forbids the v10 loader. So the
  * reader collects these instead of skipping them, and the command names
  * them.
  *
  * Refusing the whole file over one bad line would be the opposite mistake —
  * one malformed record must not cost a user every other acceptance in the
- * file (§6). Reading everything readable and reporting the rest is the
+ * file (ADR 0017). Reading everything readable and reporting the rest is the
  * only behaviour that loses nothing.
  *
  * @see V5BaselineReader

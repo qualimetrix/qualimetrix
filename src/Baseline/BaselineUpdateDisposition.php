@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Baseline;
 
 /**
- * What `baseline:update` did to one entry (§7 of the baseline-ceiling plan).
+ * What `baseline:update` did to one entry (ADR 0017).
  */
 enum BaselineUpdateDisposition: string
 {
@@ -22,7 +22,7 @@ enum BaselineUpdateDisposition: string
     /**
      * The entry's identity did not appear in the measured set. Left
      * untouched: a vanished group is `baseline:cleanup`'s business, not a
-     * reason for `update` to rewrite an entry to nothing (§7).
+     * reason for `update` to rewrite an entry to nothing (ADR 0017).
      */
     case Skipped = 'skipped';
 }

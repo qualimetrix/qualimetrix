@@ -105,7 +105,7 @@ final class BaselineEntryParserTest extends TestCase
     }
 
     /**
-     * §5.1 calls `count` a *positive* integer. A present-but-non-positive one
+     * ADR 0017 calls `count` a *positive* integer. A present-but-non-positive one
      * is a different branch from a missing one and from a length mismatch,
      * and it is the branch that would let an entry claim a group of nobody.
      *

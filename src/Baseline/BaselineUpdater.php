@@ -14,11 +14,11 @@ use Qualimetrix\Core\Violation\Violation;
 
 /**
  * `baseline:update`: a direction-aware monotonic tightening of an existing
- * baseline against a fresh measured run (§7 of the baseline-ceiling plan).
+ * baseline against a fresh measured run (ADR 0017).
  *
  * Three rules, applied per entry, none of them a comparison this class
  * re-derives — {@see GroupAcceptance} already states the acceptance test for
- * the ceiling, and §7 requires `update` to call the identical primitive
+ * the ceiling, and ADR 0017 requires `update` to call the identical primitive
  * rather than write a second definition of "not more permissive":
  *
  * - **An identity absent from the measured set is left untouched.** A
@@ -38,10 +38,10 @@ use Qualimetrix\Core\Violation\Violation;
  * **Why a magnitude channel needs no separate count-only check.**
  * {@see GroupAcceptance::magnitudesWithin()}, evaluated at the current
  * group's own least-bad magnitude, already covers the whole current group
- * (§5.1's own proof of the cumulative rule): a current group larger than the
+ * (ADR 0017's proof of the cumulative rule): a current group larger than the
  * stored one fails the comparison before any position-by-position
  * difference is even considered. A bug class once existed here by treating
- * "count may only shrink" as a second, `higher`-only rule (§7 names it as
+ * "count may only shrink" as a second, `higher`-only rule (ADR 0017 names it as
  * the defect 10.1 was written to fix); calling one primitive for both
  * magnitudes and their implied count makes that recurrence impossible.
  * {@see \Qualimetrix\Tests\Unit\Baseline\BaselineUpdaterTest} still pins a
@@ -50,13 +50,13 @@ use Qualimetrix\Core\Violation\Violation;
  *
  * `mode` is preserved verbatim on every written entry. `update` does not
  * read it to decide whether to tighten: `mode: suppress`'s "accept this
- * identity regardless of magnitude and count" (§5.1) is the *ceiling*'s
+ * identity regardless of magnitude and count" (ADR 0017) is the *ceiling*'s
  * reading of an entry at `check` time, not a license for `update` to
  * overwrite a suppressed entry's recorded numbers with something worse than
  * what is already on file. Inert entries are carried forward exactly as
  * loaded — `update` does not read {@see Baseline::$inertEntries} at all, and
  * must not lose a line an unrelated defect put there; `cleanup` is the only
- * command with an opinion about them (§6).
+ * command with an opinion about them (ADR 0017).
  */
 final readonly class BaselineUpdater
 {
@@ -66,7 +66,7 @@ final readonly class BaselineUpdater
     ) {}
 
     /**
-     * @param list<Violation> $measured the run's measured set (§5.5)
+     * @param list<Violation> $measured the run's measured set (ADR 0017)
      * @param RunScope $scope the paths this run analysed; recorded only when it covers
      *                        what the file already records — see {@see scopeToRecord()}
      */
@@ -107,7 +107,7 @@ final readonly class BaselineUpdater
      * The `scope` the updated file records: the run's own only when it covers
      * what the file already records, and otherwise the recorded one, unchanged.
      *
-     * **Why a narrower run must not overwrite it.** The scope guard (§5.7) is
+     * **Why a narrower run must not overwrite it.** The scope guard (ADR 0017) is
      * a precondition of this command, overridable with `--force` — and an
      * overwrite would make one `--force` permanent. A user updating from
      * `src/Legacy` once would leave the file claiming a narrow run produced
@@ -220,7 +220,7 @@ final readonly class BaselineUpdater
      *
      * The comparison itself is the same one on every entry — a suppressed
      * entry is *not* exempt from it, or `update` would become a way to widen
-     * an acceptance (§7). What differs is what the refusal means to a user:
+     * an acceptance (ADR 0017). What differs is what the refusal means to a user:
      * on a `mode: suppress` entry the ceiling never compares these numbers at
      * `check` time, so nothing observable worsened and the word "worsened"
      * would send the user looking for a red build that is not there.

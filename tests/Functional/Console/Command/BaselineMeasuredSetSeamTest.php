@@ -24,13 +24,13 @@ use Symfony\Component\Console\Tester\CommandTester;
  * {@see \Qualimetrix\Tests\Support\Console\StubBaselineRun}, which is the
  * right call for enumerating what a command does with a set of findings —
  * but it leaves the seam that *produces* the set untested, and that seam is
- * the whole of §5.5. The one defect that lived there was invisible to every
+ * the whole of ADR 0017. The one defect that lived there was invisible to every
  * stubbed test by construction: a stub resolves no configuration, so it
  * cannot show that reading the file before the configuration exists changes
  * what the file means.
  *
  * The fixture configures a threshold on `health.complexity` because that
- * family is the one §5.4 cannot declare statically: a `computed.*` /
+ * family is the one ADR 0017 cannot declare statically: a `computed.*` /
  * `health.*` channel's shape and direction come from a definition resolved at
  * run time, so an entry on one is exactly the entry that goes inert when a
  * command reads the file too early.
@@ -94,7 +94,7 @@ final class BaselineMeasuredSetSeamTest extends TestCase
      * What was captured is what `check` measures: `generate` immediately
      * followed by `check --baseline` reports nothing at all.
      *
-     * This is the property §5.5 exists for, and it is asserted on both sides.
+     * This is the property ADR 0017 exists for, and it is asserted on both sides.
      * The same run without the baseline reports the findings, so "nothing
      * reported" cannot be satisfied by a project that has nothing to report,
      * and the captured channel is named, so it cannot be satisfied by a

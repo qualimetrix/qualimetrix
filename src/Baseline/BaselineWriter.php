@@ -12,7 +12,7 @@ use stdClass;
 
 /**
  * Writes a baseline file atomically, under a real compare-and-swap guard
- * (§5.8 of the baseline-ceiling plan).
+ * (ADR 0017).
  *
  * **Atomicity** is temp file plus rename, as before.
  *
@@ -26,7 +26,7 @@ use stdClass;
  * discarding their work.
  *
  * The hash is a property of the guard, never of the file: nothing written
- * here is described by it, and §6 lists no such field.
+ * here is described by it, and ADR 0017 lists no such field.
  *
  * **The lock is a sibling file**, `<baseline>.lock`, and it is not removed.
  * Removing a lock file is the classic way to break locking: a process
@@ -183,8 +183,28 @@ final readonly class BaselineWriter
      */
     private function assertUnchanged(Baseline $baseline, string $path): void
     {
+        if ($baseline->expectsSourceAbsence) {
+            if (file_exists($path) || is_link($path)) {
+                throw new BaselineConflictException(\sprintf(
+                    'Baseline file %s appeared since it was read as absent; refusing to overwrite. '
+                    . 'Re-run the command to pick up the current file.',
+                    $path,
+                ));
+            }
+
+            return;
+        }
+
         if ($baseline->sourceContentHash === null) {
             return;
+        }
+
+        if (is_link($path)) {
+            throw new BaselineConflictException(\sprintf(
+                'Baseline file %s is a symbolic link; refusing to replace a different filesystem entry '
+                . 'than the one whose contents were read.',
+                $path,
+            ));
         }
 
         if (!is_file($path)) {

@@ -18,7 +18,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Command\Command;
 
 /**
- * §5.5's rule, checked rather than trusted — and it has two halves.
+ * ADR 0017 rule, checked rather than trusted — and it has two halves.
  *
  * The measured set is defined by configuration and by the source's own
  * annotations. A flag that could move it lets a baseline command and the
@@ -32,12 +32,12 @@ use Symfony\Component\Console\Command\Command;
  *   measures, and the entries it did not write are debt nothing bounds.
  * - **Configuration flags are required.** `--preset`, `--rule-opt`,
  *   `--only-rule` and `--disable-rule` decide which rules run and against
- *   which thresholds — they *are* the configuration §5.5 defines the set by.
+ *   which thresholds — they *are* the configuration ADR 0017 defines the set by.
  *   Withholding them does not keep the two sides equal, it guarantees they
  *   differ the dangerous way: `check --preset=strict --baseline=b.json`
  *   measures more than `baseline:generate b.json` could capture, and every
  *   finding the capture never saw reads as a breach and promotes its group to
- *   Error on untouched code (§5.6).
+ *   Error on untouched code (ADR 0017).
  *
  * Both halves are asserted, because either alone is satisfied by a command
  * with no options at all.
@@ -86,7 +86,7 @@ final class BaselineCommandOptionSurfaceTest extends TestCase
         foreach (self::FORBIDDEN_OPTIONS as $option) {
             self::assertFalse(
                 $definition->hasOption($option),
-                \sprintf('%s must not accept --%s: it would move the measured set (§5.5).', $commandClass, $option),
+                \sprintf('%s must not accept --%s: it would move the measured set (ADR 0017).', $commandClass, $option),
             );
         }
     }
@@ -138,7 +138,7 @@ final class BaselineCommandOptionSurfaceTest extends TestCase
                 $definition->hasOption($option),
                 \sprintf(
                     '%s must accept --%s: without it `check --%s` measures more than this command '
-                    . 'can capture, and the excess reads as a breach (§5.5).',
+                    . 'can capture, and the excess reads as a breach (ADR 0017).',
                     $commandClass,
                     $option,
                     $option,
@@ -160,6 +160,49 @@ final class BaselineCommandOptionSurfaceTest extends TestCase
         self::assertFalse($definition->hasOption('generate-baseline'));
         self::assertTrue($definition->hasOption('baseline'));
         self::assertTrue($definition->hasOption('show-resolved'));
+    }
+
+    /**
+     * Repository entrypoints are executable consumers of the CLI surface, not
+     * historical documentation. Keep them in lockstep with the command
+     * definitions so an action, compose profile, or installed hook does not
+     * fail only after users upgrade.
+     */
+    #[Test]
+    public function itKeepsRepositoryEntrypointsOnTheBaselineLifecycleSurface(): void
+    {
+        $entrypoints = [
+            'action.yml' => ['ARGS="$ARGS --baseline=${{ inputs.baseline }}"'],
+            'docker-compose.yml' => [
+                'docker-compose run --rm qmx check lib/',
+                'command: check src/',
+                'command: baseline:generate baseline.json src/ --force',
+                'command: check src/ --format=sarif',
+                'command: check src/ --baseline=baseline.json',
+                'command: check src/ --config=qmx.yaml',
+            ],
+            'scripts/pre-commit-hook.sh' => [
+                'BASELINE_ADVICE="Replace accepted levels intentionally: $QMX_BIN baseline:generate baseline.json src/ --force"',
+                'BASELINE_ADVICE="Create a baseline: $QMX_BIN baseline:generate baseline.json src/"',
+            ],
+        ];
+
+        foreach ($entrypoints as $path => $expectedSnippets) {
+            $contents = file_get_contents(\dirname(__DIR__, 4) . '/' . $path);
+
+            self::assertIsString($contents, \sprintf('Could not read repository entrypoint %s.', $path));
+            self::assertStringNotContainsString('--generate-baseline', $contents, $path);
+            self::assertStringNotContainsString('--baseline-ignore-stale', $contents, $path);
+
+            if ($path === 'docker-compose.yml') {
+                self::assertStringNotContainsString('analyze ', $contents, $path);
+                self::assertStringContainsString('check ', $contents, $path);
+            }
+
+            foreach ($expectedSnippets as $expectedSnippet) {
+                self::assertStringContainsString($expectedSnippet, $contents, $path);
+            }
+        }
     }
 
     /**

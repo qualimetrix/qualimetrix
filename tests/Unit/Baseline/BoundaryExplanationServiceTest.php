@@ -37,7 +37,7 @@ final class BoundaryExplanationServiceTest extends TestCase
 
     /**
      * All three sources present at once, each holding a different number —
-     * the shape §7's illustration describes: "`ccn` ≤ 25 from baseline;
+     * the shape ADR 0017 illustration describes: "`ccn` ≤ 25 from baseline;
      * `qmx.yaml` says 10; annotation raises it to 40".
      */
     #[Test]
@@ -70,7 +70,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     }
 
     /**
-     * §13.5: a channel's magnitude can change scale without the channel
+     * ADR 0017: a channel's magnitude can change scale without the channel
      * changing, so the stored acceptance and the current comparison must
      * both be printed — and here they must disagree, since that is the
      * whole point of showing both.
@@ -221,7 +221,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     }
 
     /**
-     * **§7's own example, which used to be the case that did not work.**
+     * **ADR 0017's example, which used to be the case that did not work.**
      * "`qmx.yaml` says 10; annotation raises it to 40" describes a symbol
      * that is *not* violating anything — the raised threshold is normally
      * why the rule stopped firing. Reading the symbol's location only off

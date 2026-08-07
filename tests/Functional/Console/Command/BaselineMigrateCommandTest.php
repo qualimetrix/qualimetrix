@@ -101,7 +101,7 @@ final class BaselineMigrateCommandTest extends TestCase
     /**
      * `migrate` reads a file, runs an analysis, and writes back over what it
      * read — the same read-modify-write `update` and `cleanup` perform, and
-     * the same reason they carry a compare-and-swap token (§5.8). Those two
+     * the same reason they carry a compare-and-swap token (ADR 0017). Those two
      * get the token from the loader; a version 5 file is not read by that
      * loader, and without a token taken deliberately the whole analysis is a
      * window in which another process's write is silently discarded.
@@ -121,11 +121,11 @@ final class BaselineMigrateCommandTest extends TestCase
         self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString('changed since it was read', $tester->getDisplay());
 
-        /** @var array{version: int, entries: array<string, mixed>} $data */
+        /** @var array{version: int, violations: array<string, mixed>} $data */
         $data = json_decode((string) file_get_contents($this->baselinePath), true, flags: \JSON_THROW_ON_ERROR);
 
         self::assertSame(5, $data['version'], 'the other writer\'s file must survive intact');
-        self::assertArrayHasKey('file:src/Added.php', $data['entries']);
+        self::assertArrayHasKey('file:src/Added.php', $data['violations']);
     }
 
     /**
@@ -141,7 +141,7 @@ final class BaselineMigrateCommandTest extends TestCase
         file_put_contents($this->baselinePath, (string) json_encode([
             'version' => 5,
             'generated' => '2026-01-01T00:00:00+00:00',
-            'entries' => [
+            'violations' => [
                 'file:src/Legacy.php' => [
                     ['rule' => 'code-smell.goto', 'hash' => 'aaa'],
                     ['hash' => 'bbb'],
@@ -180,6 +180,63 @@ final class BaselineMigrateCommandTest extends TestCase
         self::assertArrayHasKey('file:src/Legacy.php', $data['entries']);
     }
 
+    #[Test]
+    public function itKeepsForceOverAnExistingNonV5DestinationCompareAndSwapProtected(): void
+    {
+        file_put_contents($this->baselinePath, (string) json_encode([
+            'version' => 10,
+            'generated' => '2026-08-05T12:00:00+03:00',
+            'scope' => ['src'],
+            'entries' => new stdClass(),
+        ], \JSON_THROW_ON_ERROR));
+
+        $replacement = (string) json_encode([
+            'version' => 10,
+            'generated' => '2026-08-06T12:00:00+03:00',
+            'scope' => ['other'],
+            'entries' => new stdClass(),
+        ], \JSON_THROW_ON_ERROR);
+
+        $tester = $this->execute(
+            ['--force' => true],
+            [self::gotoFinding('src/Legacy.php')],
+            duringAnalysis: function () use ($replacement): void {
+                file_put_contents($this->baselinePath, $replacement);
+            },
+        );
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('changed since it was read', $tester->getDisplay());
+        self::assertSame($replacement, file_get_contents($this->baselinePath));
+    }
+
+    #[Test]
+    public function itCreatesAMissingDestinationUnderForce(): void
+    {
+        $tester = $this->execute(['--force' => true], [self::gotoFinding('src/Legacy.php')]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertFileExists($this->baselinePath);
+    }
+
+    #[Test]
+    public function itRefusesToWriteWhenAMissingForceDestinationAppearsDuringAnalysis(): void
+    {
+        $created = '{"created": "during migration"}';
+
+        $tester = $this->execute(
+            ['--force' => true],
+            [self::gotoFinding('src/Legacy.php')],
+            duringAnalysis: function () use ($created): void {
+                file_put_contents($this->baselinePath, $created);
+            },
+        );
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('appeared since it was read as absent', $tester->getDisplay());
+        self::assertSame($created, file_get_contents($this->baselinePath));
+    }
+
     /**
      * @param array<string, mixed> $options
      * @param list<Violation> $measured
@@ -187,8 +244,11 @@ final class BaselineMigrateCommandTest extends TestCase
      *                                         is measuring — the window between reading the
      *                                         version 5 file and writing over it
      */
-    private function execute(array $options, array $measured, ?Closure $duringAnalysis = null): CommandTester
-    {
+    private function execute(
+        array $options,
+        array $measured,
+        ?Closure $duringAnalysis = null,
+    ): CommandTester {
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $reader = new V5BaselineReader();
 
@@ -214,7 +274,7 @@ final class BaselineMigrateCommandTest extends TestCase
         file_put_contents($this->baselinePath, (string) json_encode([
             'version' => 5,
             'generated' => '2026-01-01T00:00:00+00:00',
-            'entries' => $entries,
+            'violations' => $entries,
         ], \JSON_THROW_ON_ERROR));
     }
 

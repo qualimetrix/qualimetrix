@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Baseline;
 
 /**
- * The optional `mode` of an entry (§6 of the baseline-ceiling plan).
+ * The optional `mode` of an entry (ADR 0017).
  *
  * The enum has exactly one case on purpose. An entry with no `mode` is a
  * ceiling — the default and the whole point of the mechanism — so "ceiling"

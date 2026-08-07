@@ -21,7 +21,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  *
  * The fixture channel is `code-smell.error-suppression` on purpose: it is an
  * occurrence channel reported at Warning severity, so the default
- * `fail_on: error` makes the promotion of §5.6 visible as the difference
+ * `fail_on: error` makes the promotion of ADR 0017 visible as the difference
  * between a green run and a red one rather than as a word in the output.
  */
 #[CoversClass(CheckCommand::class)]
@@ -63,7 +63,7 @@ final class CheckCommandBaselineTest extends TestCase
         //
         // The rule selection lives in the config file rather than on the
         // command line because `baseline:generate` accepts no flag that could
-        // move the set it measures (§5.5): both commands must narrow through
+        // move the set it measures (ADR 0017): both commands must narrow through
         // the same configuration or they are not measuring one set.
         file_put_contents($this->configPath, "failOn: error\nonlyRules: ['code-smell.error-suppression']\n");
     }
@@ -202,7 +202,7 @@ final class CheckCommandBaselineTest extends TestCase
     }
 
     /**
-     * The other half of §5.6: promotion is scoped to a *measured* breach. An
+     * The other half of ADR 0017: promotion is scoped to a *measured* breach. An
      * entry the mechanism cannot apply — here one storing magnitudes on an
      * occurrence channel, the shape a later release could introduce for a
      * whole channel at once — says nothing about the debt, so the findings

@@ -18,7 +18,7 @@ use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Tests\Support\Violation\ViolationFactory;
 
 /**
- * §5.6 — a *measured* breach is reported at Error, carries the level it was
+ * ADR 0017 — a *measured* breach is reported at Error, carries the level it was
  * accepted at, and reports every member of its group.
  *
  * The fail-safe half of the same rule lives in
@@ -67,7 +67,7 @@ final class BaselineCeilingStagePromotionTest extends TestCase
     }
 
     /**
-     * §13.4: the design cannot tell which member is new, so a breach reports
+     * ADR 0017: the design cannot tell which member is new, so a breach reports
      * the whole group. Loud on occurrence channels, and pinned so it is not
      * silently "fixed" into reporting one.
      */
@@ -148,7 +148,7 @@ final class BaselineCeilingStagePromotionTest extends TestCase
     }
 
     /**
-     * §5.1's zero tolerance is only sound if both sides pass through the
+     * ADR 0017 zero tolerance is only sound if both sides pass through the
      * same normalisation. The stored side is rounded by
      * {@see BaselineEntry}'s constructor; this pins that the recomputed side
      * is rounded too.

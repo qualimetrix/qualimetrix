@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Baseline;
 
 /**
- * Why `baseline:update` refused to tighten a measured entry (§7 of the
- * baseline-ceiling plan).
+ * Why `baseline:update` refused to tighten a measured entry (ADR 0017).
  *
  * The first two mirror {@see InertEntryReason}'s fail-safe direction: an
  * entry `update` cannot compare is left exactly as it was, never widened and
@@ -28,7 +27,7 @@ enum BaselineUpdateRefusalReason: string
     /** A member of the measured group reports no finite magnitude. */
     case CurrentMagnitudeUnavailable = 'current-magnitude-unavailable';
 
-    /** The measured group is not accepted against the stored one (§5.1) — it is worse, not better. */
+    /** The measured group is not accepted against the stored one (ADR 0017) — it is worse, not better. */
     case Worsened = 'worsened';
 
     /**
@@ -36,9 +35,9 @@ enum BaselineUpdateRefusalReason: string
      *
      * A suppressed entry is tested exactly like any other — `update` must not
      * write a worse group into it, or `update` would become a way to widen an
-     * acceptance (§7). But the *consequence* is not the same, and "worsened"
+     * acceptance (ADR 0017). But the *consequence* is not the same, and "worsened"
      * describes it wrongly: `mode: suppress` accepts this identity regardless
-     * of magnitude and count (§5.1), so `check` never compares the numbers
+     * of magnitude and count (ADR 0017), so `check` never compares the numbers
      * this refusal is about and the build does not go red. Telling a user
      * "worsened" where nothing they can observe worsened sends them looking
      * for a failure that is not there.

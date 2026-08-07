@@ -10,8 +10,7 @@ use Qualimetrix\Core\Violation\ViolationChannel;
 
 /**
  * What a baseline entry is *about*: the symbol, the channel, and — when the
- * finding carries one — the dependency edge (§5.1 of the baseline-ceiling
- * plan).
+ * finding carries one — the dependency edge (ADR 0017).
  *
  * Every violation in a run maps onto exactly one identity, and the set of
  * violations sharing an identity is the *group* an entry bounds. Nothing
@@ -22,8 +21,7 @@ use Qualimetrix\Core\Violation\ViolationChannel;
  *
  * The symbol half is `SymbolPath::toCanonical()`, which is a name, not a
  * location. Three consequences are known and deliberately not fixed here
- * (§13.9 of the plan; the question was left open as §14.2 and is answered
- * in this class):
+ * (documented as residual limitation 9 in ADR 0017):
  *
  * - **Two same-FQN declarations share one entry.** PHP cannot load both, so
  *   the situation is already a defect in the analysed code; merging their
@@ -54,7 +52,7 @@ use Qualimetrix\Core\Violation\ViolationChannel;
  * act before the key is formed: the key is always the namespace that was
  * actually reported, and the same configuration produces the same key. What
  * they do cause is a *rename* — the old key goes stale and the new one fires
- * as new, which is the documented rename behaviour (§13.7), noisy rather
+ * as new, which is the documented rename behaviour (ADR 0017), noisy rather
  * than silent. An aggregation prefix additionally introduces a parent
  * namespace whose findings are a different symbol from its children's; those
  * are separate identities holding separate ceilings, never one merged group.
@@ -72,7 +70,7 @@ final readonly class BaselineIdentity
      * from arbitrary JSON strings, and a JSON string may spell any code point.
      * So the property is **enforced by the constructor** rather than assumed:
      * a component carrying the separator is rejected, which the loader turns
-     * into an inert entry (§6). "Cannot occur" is a fact about emitted
+     * into an inert entry (ADR 0017). "Cannot occur" is a fact about emitted
      * findings; for everything else it is a check.
      */
     private const string KEY_SEPARATOR = "\x1F";

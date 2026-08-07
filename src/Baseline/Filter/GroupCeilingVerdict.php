@@ -16,10 +16,10 @@ use Qualimetrix\Core\Violation\AcceptedLevel;
  *   every member is removed from the output;
  * - **measured breach** — the group was compared against an applicable entry
  *   and exceeded it, so every member is reported and promoted to Error
- *   (§5.6 of the baseline-ceiling plan);
+ *   (ADR 0017);
  * - **reported** — nothing bounded this group: there is no entry for it, or
  *   the entry could not be applied. Every member is reported at the severity
- *   its own rule gave it. This is *not* a breach; §5.1's governing invariant
+ *   its own rule gave it. This is *not* a breach; ADR 0017 governing invariant
  *   is that an entry the mechanism cannot apply says nothing about the debt,
  *   and failing a build on it would punish a user for a stale file rather
  *   than for worsening code.

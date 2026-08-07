@@ -77,7 +77,7 @@ final class BaselineCeilingStageJudgeAllTest extends TestCase
     }
 
     /**
-     * `inertEntries` is the route §6 needs for `check` to name an entry it
+     * `inertEntries` is the route ADR 0017 needs for `check` to name an entry it
      * could not apply — populated by the loader on the {@see \Qualimetrix\Baseline\Baseline}
      * the stage holds, and carried through unconditionally on every call.
      */

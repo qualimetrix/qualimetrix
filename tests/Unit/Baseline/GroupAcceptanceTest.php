@@ -11,10 +11,10 @@ use Qualimetrix\Baseline\GroupAcceptance;
 use Qualimetrix\Core\Observation\WorseDirection;
 
 /**
- * §5.1's cumulative rule, tested directly against the primitive rather than
+ * ADR 0017 cumulative rule, tested directly against the primitive rather than
  * through {@see \Qualimetrix\Baseline\Filter\BaselineCeilingStage}'s
  * `Violation`-shaped scaffolding — this is the type `baseline:update` also
- * has to call (§7), so it must be checkable on its own.
+ * has to call (ADR 0017), so it must be checkable on its own.
  *
  * The two cases below are chosen to actually distinguish the cumulative rule
  * from rank alignment rather than merely exercise it — a comparison that
@@ -25,7 +25,7 @@ use Qualimetrix\Core\Observation\WorseDirection;
 final class GroupAcceptanceTest extends TestCase
 {
     /**
-     * **The case that killed rank alignment (§5.1, §15).** Stored `[40, 100]`
+     * **The case that killed rank alignment (ADR 0017).** Stored `[40, 100]`
      * on a `higher` channel; the 40-line duplicate is repaired and nothing
      * else changes, so the current group is `[100]`.
      *
@@ -49,7 +49,7 @@ final class GroupAcceptanceTest extends TestCase
      *
      * Counting rejects it: at `t = 40` there are two current members at
      * least that bad and only one stored one. This is the case that pins
-     * §5.1's claim that the cumulative rule subsumes the count condition
+     * ADR 0017 claim that the cumulative rule subsumes the count condition
      * instead of needing a second bullet for it.
      */
     #[Test]

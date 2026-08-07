@@ -17,7 +17,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * `baseline:update` — moves every entry it can toward stricter, and nothing
- * toward more permissive (§7 of the baseline-ceiling plan).
+ * toward more permissive (ADR 0017).
  *
  * The rule is direction-aware and stated over the whole group, not per
  * position: a stored `[40, 100]` whose 40-line duplicate has been deleted is
@@ -31,7 +31,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * permissive" has one definition in the codebase rather than two that have to
  * be kept in agreement.
  *
- * **Nothing is written when nothing moved.** §6 requires a no-op command to
+ * **Nothing is written when nothing moved.** ADR 0017 requires a no-op command to
  * preserve the file's bytes, and `generated` alone changing would make every
  * scheduled `update` look like a change in version control.
  */
@@ -78,7 +78,7 @@ final class BaselineUpdateCommand extends BaselineCommand
         $baselinePath = $input->getArgument('baseline');
         $force = $input->getOption('force') === true;
 
-        // The run first, then the file (§5.4): a `computed.*` channel resolves
+        // The run first, then the file (ADR 0017): a `computed.*` channel resolves
         // its shape and direction from configuration this run resolves, and a
         // file read before it loads every such entry inert — which here means
         // silently declining to tighten entries `check` applies normally.

@@ -11,8 +11,7 @@ use Qualimetrix\Core\Dependency\DependencyType;
  * The dependency edge a finding carries, as an entry stores it: the target
  * symbol and — when the emitting rule reports one — the kind of reference.
  *
- * The edge is part of an entry's identity (§5.1 of the baseline-ceiling
- * plan), not decoration. Without it, replacing one forbidden dependency with
+ * The edge is part of an entry's identity (ADR 0017), not decoration. Without it, replacing one forbidden dependency with
  * another leaves the group's count unchanged and the swap is accepted in
  * silence, which would be a regression against the pre-v10 hash rather than
  * a simplification of it.
@@ -44,7 +43,7 @@ final readonly class BaselineEdge
     }
 
     /**
-     * The `edge` object of §6. `type` is omitted rather than written as
+     * The `edge` object of ADR 0017. `type` is omitted rather than written as
      * `null` when the emitting rule reported none — an absent key and a null
      * key would otherwise be two spellings of one fact.
      *

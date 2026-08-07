@@ -21,7 +21,7 @@ use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Applies a baseline as a ceiling: each entry bounds the group of findings
- * that share its identity (§5.1 of the baseline-ceiling plan).
+ * that share its identity (ADR 0017).
  *
  * Three things can happen to a group, and the stage is transforming rather
  * than filtering because of the second (see {@see GroupCeilingVerdict}):
@@ -81,8 +81,8 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
     /**
      * Judges every group in one pass over one list and returns everything
      * this stage can say about it: the filtered/promoted result, the entries
-     * whose identity did not appear (§5.7), and the entries the loader could
-     * not apply at all (§6). See {@see CeilingOutcome} for why bundling these
+     * whose identity did not appear, and the entries the loader could not apply at all.
+     * See {@see CeilingOutcome} for why ADR 0017 bundles these
      * together — rather than a second call reading `apply()`'s own input a
      * second time — is what makes the two unable to disagree.
      *
@@ -129,7 +129,7 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
 
     /**
      * The scope the loaded baseline file recorded — `check` compares it
-     * against the run's own scope to report a mismatch (§5.7), never to fail
+     * against the run's own scope to report a mismatch (ADR 0017), never to fail
      * on one.
      *
      * @return list<string>
@@ -146,9 +146,9 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
      *
      * The order is not incidental. `mode: suppress` waives the comparison of
      * magnitudes and count — it does not waive the question of whether this
-     * entry bounds this channel in the first place. §5.4 says a channel
+     * entry bounds this channel in the first place. ADR 0017 says a channel
      * declaring neither shape nor direction has entries that do not suppress,
-     * and §6 says an entry addressing an undeclared channel or mismatching
+     * and that an entry addressing an undeclared channel or mismatching
      * its channel's shape does not suppress; neither sentence carries a `mode`
      * exception. Reading `mode` first would make `suppress` the one way to
      * silence a finding no declaration covers, and it would fail in the
@@ -220,7 +220,7 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
      *
      * The first two are applicability, so they precede `mode`; the third is
      * the comparison itself, so `mode: suppress` waives it — an entry that
-     * says "accept this identity regardless of magnitude and count" (§5.1)
+     * says "accept this identity regardless of magnitude and count" (ADR 0017)
      * has no use for the group's numbers.
      *
      * @param list<Violation> $group

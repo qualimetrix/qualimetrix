@@ -9,7 +9,7 @@ use Qualimetrix\Core\Violation\Violation;
 
 /**
  * Renders the "accepted at 25, now 31" fragment a measured breach carries
- * (§8 of the baseline-ceiling plan) — what makes a breach distinguishable
+ * (ADR 0017) — what makes a breach distinguishable
  * from a fresh violation without running `explain`.
  *
  * Shared by every formatter that decided to carry the accepted level in its

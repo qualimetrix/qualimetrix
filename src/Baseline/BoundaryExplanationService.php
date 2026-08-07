@@ -17,8 +17,8 @@ use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Core\Violation\ViolationChannel;
 
 /**
- * Builds a {@see BoundaryExplanation} for `bin/qmx baseline:explain` (§7 of
- * the baseline-ceiling plan): the effective boundary for a symbol, and where
+ * Builds a {@see BoundaryExplanation} for `bin/qmx baseline:explain`, as
+ * specified by ADR 0017: the effective boundary for a symbol, and where
  * every part of it comes from.
  *
  * **Why `$configuredThresholds` arrives pre-resolved rather than being
@@ -33,7 +33,7 @@ use Qualimetrix\Core\Violation\ViolationChannel;
  * **Why the `@qmx-threshold` match is not reimplemented here.**
  * {@see AnalysisContext::getThresholdOverride()} already picks the
  * smallest-scope override for a rule, file and line — the same rule
- * §7 asks `explain` to reuse rather than restate. It is Core, so this
+ * ADR 0017 asks `explain` to reuse rather than restate. It is Core, so this
  * package may call it; the only friction is that `AnalysisContext` also
  * demands a {@see MetricRepositoryInterface}, which the override lookup
  * never touches — {@see self::nullMetrics()} is that unused argument, not a
@@ -42,7 +42,7 @@ use Qualimetrix\Core\Violation\ViolationChannel;
  * **Why the symbol's location does not come from its findings alone.** That
  * lookup needs a file and a line, and taking them from the symbol's current
  * violations answers only for symbols that are currently violating something.
- * The example §7 gives — "`qmx.yaml` says 10; annotation raises it to 40" —
+ * The example ADR 0017 gives — "`qmx.yaml` says 10; annotation raises it to 40" —
  * is the opposite case: the annotation is usually *why* the rule no longer
  * fires, so exactly when it is most worth printing there is no finding left
  * to read a location off. {@see $symbolLocations} is the second source, and
@@ -52,9 +52,9 @@ use Qualimetrix\Core\Violation\ViolationChannel;
 final readonly class BoundaryExplanationService
 {
     /**
-     * @param list<Violation> $measuredViolations the measured set (§5.5) this run produced —
+     * @param list<Violation> $measuredViolations the measured set (ADR 0017) this run produced —
      *                                            both the "currently compared" magnitudes of
-     *                                            §13.5 and the symbol's file/line for matching
+     *                                            ADR 0017 and the symbol's file/line for matching
      *                                            `@qmx-threshold` annotations come from here
      * @param array<string, list<ThresholdOverride>> $thresholdOverridesByFile per-file
      *                                                                         `@qmx-threshold`
@@ -250,7 +250,7 @@ final readonly class BoundaryExplanationService
      * normally the reason the rule stopped firing, so the symbol most likely
      * to carry one is precisely the symbol with no violation to read a
      * location off. Consulting only the findings made `explain` silent about
-     * the annotation in exactly the example §7 gives for it.
+     * the annotation in exactly the example ADR 0017 gives for it.
      *
      * `null` — and so no annotation reported — when neither source knows
      * where the symbol is declared: a symbol nothing measured, or an

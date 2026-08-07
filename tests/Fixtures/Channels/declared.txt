@@ -1,5 +1,5 @@
 # Tracked fixture: the STATIC channel declarations verified at their
-# emission point against docs/plan/violation-magnitude-inventory.md.
+# emission point against the channel declaration registry.
 #
 # Format (one channel per line, sorted, blank lines and '#' comments ignored):
 #   <ruleName>#<violationCode> <shape>[:<direction>]
@@ -18,13 +18,13 @@
 # run-time resolution cases) because its vocabulary is open-ended and no
 # fixture line could enumerate it.
 #
-# P1a of the baseline-ceiling plan's P1 declared three static channels end
+# P1a of the ADR 0017's P1 declared three static channels end
 # to end to prove the mechanism (code-smell.goto, complexity.cyclomatic.method,
 # maintainability.index). P1b fills in every other static emission point in
 # violation-magnitude-inventory.md, per the shape mapping and the four named
-# families of plan §5.4. One emission point remains deliberately outside this
+# families of ADR 0017. One emission point remains deliberately outside this
 # file: annotation.unsupported-threshold / annotation.invalid-threshold(.*),
-# excluded outright by plan §5.4 — see excluded.txt.
+# excluded outright by ADR 0017 — see excluded.txt.
 #
 # code-smell.unused-private has no gating threshold comparison (the rule
 # fires on any nonzero count; severity is a fixed constant) but is declared

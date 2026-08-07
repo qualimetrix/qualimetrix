@@ -45,6 +45,9 @@ fi
 BASELINE_ARG=""
 if [ -f "baseline.json" ]; then
     BASELINE_ARG="--baseline=baseline.json"
+    BASELINE_ADVICE="Replace accepted levels intentionally: $QMX_BIN baseline:generate baseline.json src/ --force"
+else
+    BASELINE_ADVICE="Create a baseline: $QMX_BIN baseline:generate baseline.json src/"
 fi
 
 # Run qmx
@@ -59,7 +62,7 @@ else
     echo ""
     echo "Options:"
     echo "  - Fix the issues and try again"
-    echo "  - Update baseline: $QMX_BIN check src/ --generate-baseline=baseline.json"
+    echo "  - $BASELINE_ADVICE"
     echo "  - Skip this check: git commit --no-verify"
     exit $EXIT_CODE
 fi

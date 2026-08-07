@@ -19,7 +19,7 @@ use Throwable;
  * A rule declares its channels via an optional static
  * `channelDeclarations(): array<string, ChannelDeclaration>` method, keyed by
  * the **full channel key** — exactly {@see ViolationChannel::toKey()}'s
- * `ruleName#violationCode` form, the same form §6 of the baseline-ceiling
+ * `ruleName#violationCode` form, the same form ADR 0017
  * plan stores in the file. There is deliberately no shorthand that accepts a
  * bare `violationCode` paired with the declaring rule's own name: a rule may
  * emit a channel under a `ruleName` other than its own (`LayerViolationRule`

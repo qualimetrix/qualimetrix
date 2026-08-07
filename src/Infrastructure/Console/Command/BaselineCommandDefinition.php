@@ -11,7 +11,7 @@ use Symfony\Component\Console\Input\InputOption;
 /**
  * The input every baseline command shares, defined once.
  *
- * **The line these options are drawn along is §5.5's asymmetry: a flag may
+ * **The line these options are drawn along is ADR 0017 asymmetry: a flag may
  * narrow the measured set, none may widen it.**
  *
  * *Absent, and deliberately so* — the exclusion and suppression flags `check`
@@ -23,12 +23,12 @@ use Symfony\Component\Console\Input\InputOption;
  * *Present, and equally deliberately* — the four options that decide **which
  * rules run and against which thresholds**: `--preset`, `--rule-opt`,
  * `--only-rule`, `--disable-rule`. These are configuration, not exclusion — a
- * preset is a configuration layer, and §5.5 defines the measured set by
+ * preset is a configuration layer, and ADR 0017 defines the measured set by
  * configuration. Denying them to these commands does not keep the two sides
  * in agreement, it breaks them: `check --preset=strict --baseline=b.json`
  * measures strictly more than `baseline:generate b.json` captured, and every
  * finding the capture could not see reads as a breach and promotes its whole
- * group to Error on code nobody touched (§5.6). Widening is the direction
+ * group to Error on code nobody touched (ADR 0017). Widening is the direction
  * that costs, and this is the one place it could happen silently.
  *
  * Defining the shared input in one place means both halves are one thing to

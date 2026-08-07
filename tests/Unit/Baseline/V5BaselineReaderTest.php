@@ -43,7 +43,10 @@ final class V5BaselineReaderTest extends TestCase
             {
                 "version": 5,
                 "generated": "2026-01-01T00:00:00+00:00",
-                "entries": {
+                "count": 3,
+                "violationCount": 3,
+                "symbolCount": 2,
+                "violations": {
                     "method:App\\OrderService::calculate": [
                         {"rule": "complexity.cyclomatic", "hash": "0123456789abcdef"},
                         {"rule": "coupling.cbo", "hash": "abcdef0123456789"}
@@ -69,6 +72,10 @@ final class V5BaselineReaderTest extends TestCase
         self::assertSame(['design.god-class'], $bySymbol['class:App\\Web\\Controller']);
 
         self::assertSame('0123456789abcdef', $baseline->entries[0]->hash);
+        self::assertSame(
+            hash('sha256', (string) file_get_contents($this->tempDir . '/baseline.json')),
+            $baseline->sourceContentHash,
+        );
     }
 
     /**
@@ -118,7 +125,7 @@ final class V5BaselineReaderTest extends TestCase
             {
                 "version": 5,
                 "generated": "2026-01-01T00:00:00+00:00",
-                "entries": {
+                "violations": {
                     "class:App\\Foo": "this should have been a list"
                 }
             }
@@ -136,7 +143,7 @@ final class V5BaselineReaderTest extends TestCase
             {
                 "version": 5,
                 "generated": "2026-01-01T00:00:00+00:00",
-                "entries": {
+                "violations": {
                     "class:App\\Foo": [{"rule": "complexity.cyclomatic", "hash": "0123456789abcdef"}]
                 }
             }
@@ -155,7 +162,7 @@ final class V5BaselineReaderTest extends TestCase
             {
                 "version": 5,
                 "generated": "2026-01-01T00:00:00+00:00",
-                "entries": {
+                "violations": {
                     "class:App\\Foo": [
                         {"rule": "complexity.cyclomatic", "hash": "0123456789abcdef"},
                         {"rule": "no-hash-here"},
@@ -165,6 +172,33 @@ final class V5BaselineReaderTest extends TestCase
                 }
             }
             JSON;
+    }
+
+    #[Test]
+    public function itRejectsTheV5LookalikeThatUsesVersionTenEntries(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Baseline "violations" must be an object');
+
+        $this->readJson(<<<'JSON'
+            {
+                "version": 5,
+                "generated": "2026-01-01T00:00:00+00:00",
+                "entries": {
+                    "class:App\\Foo": [{"rule": "complexity.cyclomatic", "hash": "0123456789abcdef"}]
+                }
+            }
+            JSON);
+    }
+
+    #[Test]
+    public function itDoesNotRecognizeTheV5LookalikeThatUsesVersionTenEntries(): void
+    {
+        $path = $this->writeJson(<<<'JSON'
+            {"version": 5, "generated": "2026-01-01T00:00:00+00:00", "entries": {}}
+            JSON);
+
+        self::assertFalse($this->reader->isV5File($path));
     }
 
     #[Test]
@@ -201,7 +235,7 @@ final class V5BaselineReaderTest extends TestCase
         $this->expectExceptionMessageMatches('/version 5.*version 9/');
 
         $this->readJson(<<<'JSON'
-            {"version": 9, "generated": "2026-01-01T00:00:00+00:00", "entries": {}}
+            {"version": 9, "generated": "2026-01-01T00:00:00+00:00", "violations": {}}
             JSON);
     }
 
@@ -209,7 +243,7 @@ final class V5BaselineReaderTest extends TestCase
     public function itRecognizesAValidV5FileForTheForceGuard(): void
     {
         $path = $this->writeJson(<<<'JSON'
-            {"version": 5, "generated": "2026-01-01T00:00:00+00:00", "entries": {}}
+            {"version": 5, "generated": "2026-01-01T00:00:00+00:00", "violations": {}}
             JSON);
 
         self::assertTrue($this->reader->isV5File($path));

@@ -9,7 +9,7 @@ use JsonException;
 use RuntimeException;
 
 /**
- * Reads a version 10 baseline file (§6 of the baseline-ceiling plan).
+ * Reads a version 10 baseline file (ADR 0017).
  *
  * Two failure classes, deliberately handled differently:
  *
@@ -22,7 +22,7 @@ use RuntimeException;
  *
  * The loader also records the file's content hash on the returned
  * {@see Baseline}. That is the compare-and-swap token
- * {@see BaselineWriter} needs to make a read-modify-write safe (§5.8); it is
+ * {@see BaselineWriter} needs to make a read-modify-write safe (ADR 0017); it is
  * not, and must never become, a field of the file.
  */
 final readonly class BaselineLoader
@@ -120,7 +120,7 @@ final readonly class BaselineLoader
     }
 
     /**
-     * §6 says ISO 8601, so ISO 8601 is what is accepted — not everything
+     * ADR 0017 says ISO 8601, so ISO 8601 is what is accepted — not everything
      * PHP's date parser understands.
      *
      * `new DateTimeImmutable($s)` accepts `"tomorrow"`, `"now"` and every
@@ -179,7 +179,7 @@ final readonly class BaselineLoader
     }
 
     /**
-     * §6 spells `entries` as an object, and an empty JSON *list* is accepted
+     * ADR 0017 spells `entries` as an object, and an empty JSON *list* is accepted
      * for it deliberately. `json_decode(..., true)` renders `{}` and `[]`
      * identically as an empty PHP array, so no check can tell them apart, and
      * both mean the same thing: no entries. A non-empty list is a different
@@ -231,7 +231,7 @@ final readonly class BaselineLoader
      * Demotes every entry of a repeated identity, not just the repeats.
      *
      * With nothing in the file to say which of two entries for one identity
-     * was meant, keeping either is a guess, and the guess suppresses. §6
+     * was meant, keeping either is a guess, and the guess suppresses. ADR 0017
      * calls duplicate identities invalid; this is what invalid has to mean
      * for the fail-safe direction to hold.
      *

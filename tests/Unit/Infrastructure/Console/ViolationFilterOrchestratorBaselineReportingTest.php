@@ -38,10 +38,10 @@ use Symfony\Component\Console\Output\BufferedOutput;
  * Covers the three reporting facts P4-D2 adds on top of the existing stale
  * / `--show-resolved` reporting in {@see ViolationFilterOrchestratorTest}:
  *
- * - §13.2 — a group that shrank without vanishing is not "resolved".
- * - §6 — an entry the loaded baseline could not apply is reported as inert,
+ * - ADR 0017 — a group that shrank without vanishing is not "resolved".
+ * - An entry the loaded baseline could not apply is reported as inert,
  *   naming symbol, channel, selector and reason, and never fails the run.
- * - §5.7 — a run narrower than the baseline's recorded `scope` is reported,
+ * - ADR 0017 — a run narrower than the baseline's recorded `scope` is reported,
  *   never failed.
  *
  * A run with no `--baseline` is confirmed to print none of the three.
@@ -62,12 +62,12 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
     }
 
     /**
-     * §13.2: five `goto` statements were accepted for one symbol; only two
+     * ADR 0017: five `goto` statements were accepted for one symbol; only two
      * fire now. The group shrank but did not vanish — its identity is still
      * present in the measured set, so it is neither stale nor counted by
      * `--show-resolved`. This is a documented limitation, not a bug: the
      * design cannot tell which member repaired, only that the whole group
-     * grew or shrank (§5.6, §13.1).
+     * grew or shrank (ADR 0017).
      */
     #[Test]
     public function itDoesNotCountAShrunkButPresentGroupAsResolved(): void
@@ -99,7 +99,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
     }
 
     /**
-     * §6: an entry addressing a channel no rule declares does not suppress,
+     * ADR 0017: an entry addressing a channel no rule declares does not suppress,
      * and `check` names the symbol, the channel, the selector and the
      * reason — without failing the run.
      */
@@ -133,7 +133,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
     }
 
     /**
-     * §5.7: `check` reports a scope narrower than the baseline's recorded
+     * ADR 0017: `check` reports a scope narrower than the baseline's recorded
      * one; it never fails on it — that guard belongs to the writing
      * commands, not to `check`.
      */
@@ -160,7 +160,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
 
     /**
      * A run whose scope covers (or exceeds) the recorded one prints nothing
-     * about a mismatch — only the narrowing direction is a problem (§5.7).
+     * about a mismatch — only the narrowing direction is a problem (ADR 0017).
      */
     #[Test]
     public function itPrintsNoScopeMismatchWhenTheRunCoversTheRecordedScope(): void

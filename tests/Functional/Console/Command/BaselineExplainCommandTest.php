@@ -119,7 +119,7 @@ final class BaselineExplainCommandTest extends TestCase
     }
 
     /**
-     * §13.5: `coupling.cbo` changes meaning with its `scope` option, so a
+     * ADR 0017: `coupling.cbo` changes meaning with its `scope` option, so a
      * stored magnitude can end up bounding a differently-meaning quantity.
      * Nothing detects that without storing the configuration that produced
      * the number — so both numbers are printed where a user would look.
@@ -203,7 +203,7 @@ final class BaselineExplainCommandTest extends TestCase
     }
 
     /**
-     * The case §7 gives as the reason `$symbolLocations` exists: an
+     * The case ADR 0017 gives as the reason `$symbolLocations` exists: an
      * `@qmx-threshold` that raised the limit is normally *why* the rule no
      * longer fires, so the symbol most worth explaining has no violation to
      * read a declaration site off. Without the run's metric repository,

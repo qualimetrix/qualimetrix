@@ -100,7 +100,7 @@ final class BaselineIdentityTest extends TestCase
     }
 
     /**
-     * §13.9, decided in P2: symbol keys are names, not locations, and the
+     * ADR 0017, decided in P2: symbol keys are names, not locations, and the
      * collisions that follow are accepted rather than discriminated away.
      *
      * Two declarations of one FQN — which PHP itself cannot load — produce
@@ -140,7 +140,7 @@ final class BaselineIdentityTest extends TestCase
     }
 
     /**
-     * The other half of §14.2: aggregation levels. The namespace strategy
+     * ADR 0017 also records the aggregation-level consequence: the namespace strategy
      * and the aggregation prefixes both change which namespace a symbol is
      * reported under with no code change — but both act before the key is
      * formed, so a namespace-level entry stays unambiguous, and a parent

@@ -30,7 +30,7 @@ use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
 use Qualimetrix\Tests\Support\Violation\ViolationFactory;
 
 /**
- * §7's rules for `baseline:update`, exercised through the domain service
+ * ADR 0017 rules for `baseline:update`, exercised through the domain service
  * itself rather than through {@see \Qualimetrix\Baseline\GroupAcceptance}
  * directly — `GroupAcceptanceTest` already pins the primitive; this pins
  * that `BaselineUpdater` actually calls it and does the right thing with the
@@ -40,7 +40,7 @@ use Qualimetrix\Tests\Support\Violation\ViolationFactory;
 final class BaselineUpdaterTest extends TestCase
 {
     /**
-     * **The case that killed the per-position rule (§7, §5.1).** Stored
+     * **The case that killed the per-position rule (ADR 0017).** Stored
      * `[40, 100]` on a `higher` channel, the 40-line duplicate repaired,
      * measured group `[100]`. A per-position rule reads rank 0 growing from
      * 40 to 100 and refuses; the group rule accepts it because `{100}` sits
@@ -66,10 +66,10 @@ final class BaselineUpdaterTest extends TestCase
     }
 
     /**
-     * **The `lower`-channel count widening that must be refused (§7).**
+     * **The `lower`-channel count widening that must be refused (ADR 0017).**
      * Stored `[40]`; the measured group is `[55, 70]` — both members
      * individually improved over the one stored value, but the group
-     * doubled in size. §5.1's cumulative rule catches this without a
+     * doubled in size. ADR 0017 cumulative rule catches this without a
      * separate count check: at `t = 70` there are two current members at
      * least that bad and only one stored one.
      */
@@ -328,7 +328,7 @@ final class BaselineUpdaterTest extends TestCase
     }
 
     /**
-     * **The `--force` that must not become permanent (§5.7).** The scope
+     * **The `--force` that must not become permanent (ADR 0017).** The scope
      * guard is a command precondition a user overrides per invocation; if a
      * narrower run also overwrote the recorded `scope`, that one override
      * would silently become a standing rule — every later narrow run would

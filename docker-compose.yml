@@ -3,11 +3,11 @@
 # This file demonstrates multiple ways to run the Qualimetrix using Docker.
 #
 # Usage:
-#   # Run analysis on src/ directory (default)
+#   # Run checks on src/ directory (default)
 #   docker-compose run --rm qmx
 #
-#   # Run analysis on specific path
-#   docker-compose run --rm qmx analyze lib/
+#   # Run checks on a specific path
+#   docker-compose run --rm qmx check lib/
 #
 #   # Generate baseline from current violations
 #   docker-compose run --rm --profile generate-baseline qmx
@@ -16,10 +16,10 @@
 #   docker-compose run --rm --profile sarif qmx
 #
 #   # With custom configuration file
-#   docker-compose run --rm qmx analyze src/ --config=qmx.yaml
+#   docker-compose run --rm qmx check src/ --config=qmx.yaml
 #
-#   # Analyze with baseline file (if exists)
-#   docker-compose run --rm qmx analyze src/ --baseline=baseline.json
+#   # Check with a baseline file (if it exists)
+#   docker-compose run --rm qmx check src/ --baseline=baseline.json
 #
 
 version: '3.9'
@@ -50,9 +50,9 @@ services:
     # Working directory (matches Dockerfile WORKDIR)
     working_dir: /app
 
-    # Default command - analyze src/ directory
-    # Can be overridden: docker-compose run --rm qmx analyze lib/
-    command: analyze src/
+    # Default command - check src/ directory
+    # Can be overridden: docker-compose run --rm qmx check lib/
+    command: check src/
 
     # Environment variables (optional, for future use)
     # environment:
@@ -68,7 +68,7 @@ services:
     profiles:
       - generate-baseline
     container_name: qmx-generate-baseline
-    command: analyze src/ --generate-baseline=baseline.json
+    command: baseline:generate baseline.json src/ --force
     # Allow write access only to the baseline file
     volumes:
       - .:/app:ro
@@ -81,16 +81,16 @@ services:
     profiles:
       - sarif
     container_name: qmx-sarif
-    command: analyze src/ --format=sarif
+    command: check src/ --format=sarif
 
-  # Profile: Analyze with baseline file
+  # Profile: Check with baseline file
   # Usage: docker-compose run --rm --profile baseline qmx
   qmx-baseline:
     extends: qmx
     profiles:
       - baseline
     container_name: qmx-baseline
-    command: analyze src/ --baseline=baseline.json
+    command: check src/ --baseline=baseline.json
     volumes:
       - .:/app:ro
       - ./baseline.json:/app/baseline.json
@@ -102,7 +102,7 @@ services:
     profiles:
       - custom-config
     container_name: qmx-custom-config
-    command: analyze src/ --config=qmx.yaml
+    command: check src/ --config=qmx.yaml
     volumes:
       - .:/app:ro
       - ./qmx.yaml:/app/qmx.yaml

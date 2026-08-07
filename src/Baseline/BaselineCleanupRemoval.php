@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Baseline;
 
 /**
- * What one `baseline:cleanup --remove` run produced (§7 of the
- * baseline-ceiling plan).
+ * What one `baseline:cleanup --remove` run produced (ADR 0017).
  *
  * Three buckets rather than one, because a selector can fail in two distinct
  * ways a user needs to tell apart: it named nothing in the file, or it named

@@ -153,17 +153,18 @@ final class LayerViolationRule extends AbstractRule
      * All five diagnostics this rule builds — including its own primary
      * `architecture.layer-violation` channel — carry `metricValue: null`
      * (see every `new Violation(...)` call site above: none passes
-     * `metricValue:`). Baseline-ceiling plan §5.4 is explicit that this is
+     * `metricValue:`). ADR 0017 is explicit that this is
      * true of all five, not just the four emitted under the
      * `*_DIAGNOSTIC_NAME` constants: they report no magnitude at all, so
      * `occurrence` is the only shape any of them can take. There is no
      * "decision" here the way there is for `architecture.circular-dependency`
-     * — an `occurrence` declaration is the direct consequence of §2.1's fact,
+     * — an `occurrence` declaration is the direct consequence of ADR 0017's
+     * channel-shape decision,
      * not a judgement call.
      *
      * `architecture.layer-violation` carries a dependency edge
      * (`dependencyTarget`/`dependencyType` on the `Violation` — see
-     * {@see buildViolation()}), so per §5.1 its identity is per-edge; that is
+     * {@see buildViolation()}), so per ADR 0017 its identity is per-edge; that is
      * an identity-layer concern the channel declaration itself does not
      * encode.
      *

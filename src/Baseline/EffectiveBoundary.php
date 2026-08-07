@@ -9,7 +9,7 @@ use Qualimetrix\Core\Suppression\ThresholdOverride;
 /**
  * The effective boundary for one identity, and where each part of it comes
  * from — `baseline:explain`'s "`ccn` ≤ 25 from baseline; `qmx.yaml` says 10;
- * annotation raises it to 40" (§7 of the baseline-ceiling plan).
+ * annotation raises it to 40" (ADR 0017).
  *
  * Each source is independently nullable, and absence is never conflated
  * with a zero-valued source: a symbol with no baseline entry for this

@@ -157,7 +157,7 @@ final class DataClassRule extends AbstractRule
      * public-surface percentage with the WMC gate still satisfied is a
      * stronger Data Class signal. WMC's own gate is unaffected by this
      * declaration: it is not reported and therefore not baselineable on its
-     * own terms (§13.3 of the baseline-ceiling plan — a compound rule is
+     * own terms (ADR 0017 — a compound rule is
      * baselined only on the axis it actually reports).
      *
      * @return array<string, ChannelDeclaration>

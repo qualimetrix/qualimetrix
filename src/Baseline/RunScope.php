@@ -9,8 +9,8 @@ use Qualimetrix\Core\Path\PathFactory;
 
 /**
  * The path set a run analysed, in the portable form a baseline file records
- * as its `scope` (§6 of the baseline-ceiling plan), together with the
- * coverage predicate the scope guard of §5.7 is built on.
+ * as its `scope`, together with the coverage predicate the scope guard in
+ * ADR 0017 is built on.
  *
  * **One type, because portability and coverage are one rule.** The two used
  * to live apart: each side of the guard derived the portable form itself and
@@ -114,7 +114,7 @@ final readonly class RunScope
      * The recorded paths this run does not cover.
      *
      * Returned rather than a bare bool because the refusal message a command
-     * prints names exactly what is missing (§5.7).
+     * prints names exactly what is missing (ADR 0017).
      *
      * @param list<string> $recordedScope
      *

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Baseline;
 
 /**
- * The continuity report `baseline:migrate` shows a user (§14.1 of the
- * baseline-ceiling plan): what a v5 file's acceptances became once the fresh
+ * The continuity report `baseline:migrate` implements ADR 0017's migration
+ * decision: it shows what a v5 file's acceptances became once the fresh
  * capture that now backs {@see Baseline} was measured against them.
  *
  * The only thing a v5 record and a v10 finding share is the pair
@@ -31,7 +31,7 @@ namespace Qualimetrix\Baseline;
  *
  * {@see $uncapturedGroupCount} is {@see BaselineCapture::$uncaptured}'s
  * count, carried through rather than dropped: a group the capture itself
- * refused to record (§5.4, §6) is invisible everywhere else this report
+ * refused to record (ADR 0017) is invisible everywhere else this report
  * looks, and a `migrate` that reported carried/dropped/fresh while silently
  * losing this count would misstate how much of the run actually landed.
  *

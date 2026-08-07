@@ -7,7 +7,7 @@ namespace Qualimetrix\Baseline;
 /**
  * Why an entry could not be applied.
  *
- * The governing invariant of §5.1 is that *an entry the mechanism cannot
+ * The governing invariant of ADR 0017 is that *an entry the mechanism cannot
  * apply does not suppress*. This enum enumerates the ways that can happen at
  * load time, so a report can tell a user what is wrong with a line instead
  * of dropping it silently — and so that none of these paths is mistaken for
@@ -16,7 +16,7 @@ namespace Qualimetrix\Baseline;
  */
 enum InertEntryReason: string
 {
-    /** The entry's structure or field types are not what §6 describes. */
+    /** The entry's structure or field types are not what ADR 0017 describes. */
     case Malformed = 'malformed';
 
     /** No rule declares this channel, so nothing knows how to compare it. */

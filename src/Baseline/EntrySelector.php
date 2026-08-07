@@ -14,7 +14,7 @@ use Stringable;
  * `<symbol>#<channel>` cannot address an entry: `#` already separates
  * `ruleName` from `violationCode` inside a channel key, and two forbidden
  * edges out of one class on one channel agree on every other component
- * (§6). The selector is therefore a digest of the *complete* identity —
+ * (ADR 0017). The selector is therefore a digest of the *complete* identity —
  * symbol, channel and edge — so that whatever the identity distinguishes,
  * the selector distinguishes too.
  *

@@ -26,7 +26,7 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
         foreach ($report->violations as $violation) {
             $issues[] = [
                 // The Code Climate spec has no field for the accepted level, so
-                // a measured breach (§5.6, §8) carries it in the free-text
+                // a measured breach (ADR 0017) carries it in the free-text
                 // description — the fingerprint below still hashes the
                 // unmodified $violation->message, so it stays stable across
                 // the run where a breach first appears.
@@ -91,7 +91,7 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
     }
 
     /**
-     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (§8).
+     * " (accepted at 25, now 31)" on a measured breach, '' otherwise (ADR 0017).
      */
     private function formatBreachSuffix(Violation $violation): string
     {

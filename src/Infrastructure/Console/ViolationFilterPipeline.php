@@ -21,8 +21,7 @@ use Qualimetrix\Infrastructure\Git\GitScopeFilter;
  * {@see ViolationFilterStage}: `@qmx-ignore` → `exclude_paths` →
  * `exclude_namespaces` → baseline → git scope.
  *
- * **The order is a behavioural contract** (§5.2 of the baseline-ceiling
- * plan), which is why {@see stages()} is public: an assertion about it reads
+ * **The order is a behavioural contract** (ADR 0017), which is why {@see stages()} is public: an assertion about it reads
  * the list rather than inferring it from counters, which cannot tell "the
  * baseline ran fourth" from "the baseline removed nothing".
  *
@@ -37,11 +36,11 @@ use Qualimetrix\Infrastructure\Git\GitScopeFilter;
  *   hand-written `@qmx-ignore` outranks a generated entry, which is the
  *   right way round.
  * - **Git scope runs last**, so narrowing the report cannot change what was
- *   accepted, captured or called stale (§2.4).
+ *   accepted, captured or called stale under ADR 0017's pipeline order.
  *
  * **`--no-suppression-annotations` is honoured here rather than in the stage
  * list**, and that is the whole of its implementation. The measured set is
- * defined by configuration and annotations alone (§5.5), so the suppression
+ * defined by configuration and annotations alone (ADR 0017), so the suppression
  * stage always runs; the flag only asks for the findings it removed to be put
  * back into the report, which happens after the baseline stage has judged the
  * set and before git scope narrows what is shown. Making the flag drop the

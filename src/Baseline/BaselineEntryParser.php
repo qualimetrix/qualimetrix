@@ -16,7 +16,7 @@ use Qualimetrix\Core\Violation\ViolationChannel;
  * not one.
  *
  * It never throws for bad input. Refusing to load punishes a whole run for
- * one bad line (§6 of the baseline-ceiling plan), so every defect this class
+ * one bad line (ADR 0017), so every defect this class
  * can find resolves to an inert entry — which does not suppress, and which
  * `check` reports.
  *
@@ -126,7 +126,7 @@ final readonly class BaselineEntryParser
     }
 
     /**
-     * An absent `type` is a legal edge — §6 writes the key only when the
+     * An absent `type` is a legal edge — ADR 0017 writes the key only when the
      * finding carries one — while an unrecognized one is not, and the two
      * answers are different enough to be worth reading apart from the target
      * validation above.

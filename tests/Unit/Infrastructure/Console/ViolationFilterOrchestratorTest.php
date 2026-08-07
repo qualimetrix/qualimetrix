@@ -194,10 +194,10 @@ final class ViolationFilterOrchestratorTest extends TestCase
     }
 
     /**
-     * The user-visible half of §5.7's first two declarations: a stale entry
+     * ADR 0017 makes stale entries diagnostic-only: a stale entry
      * neither fails the run nor takes its neighbours down with it.
      *
-     * The premise is the one the per-identity key of §5.1 introduced — the
+     * The premise relies on ADR 0017's per-identity key — the
      * stale entry shares its symbol with an entry that still fires — because
      * that is the case whose behaviour changed. A stale entry on some other
      * symbol was already stale under v5 and proves nothing about the change.

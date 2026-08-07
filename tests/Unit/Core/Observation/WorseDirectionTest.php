@@ -29,7 +29,7 @@ final class WorseDirectionTest extends TestCase
         yield 'lower: equal' => [WorseDirection::Lower, 65.0, 65.0, 65.0];
 
         // Mixed int/float ties: written to the baseline file, whose byte
-        // stability contract (§6.2) forbids the numeric type from depending on
+        // stability contract in ADR 0017 forbids the numeric type from depending on
         // argument order. `max()`/`min()` alone break the tie by argument
         // position, so a test built only from same-type pairs cannot catch
         // this — it passes whether or not the tie is normalized.
@@ -41,7 +41,7 @@ final class WorseDirectionTest extends TestCase
 
     /**
      * {@see WorseDirection::morePermissive()} is what makes `baseline:update`
-     * (§7 of the ratchet-baseline plan) direction-aware: it is the primitive
+     * (ADR 0017) direction-aware: it is the primitive
      * `update` folds the recorded boundary and the current one through so a
      * boundary may only move toward stricter, never toward more permissive.
      */
@@ -58,8 +58,8 @@ final class WorseDirectionTest extends TestCase
     }
 
     /**
-     * {@see WorseDirection::isWorse()} is the comparison behind §5.1's group
-     * acceptance in the ratchet-baseline plan: acceptance counts, per level
+     * {@see WorseDirection::isWorse()} is the comparison behind the group-
+     * acceptance rule in ADR 0017: acceptance counts, per level
      * of severity, how many members each side holds, and this predicate is
      * how "at least as bad as a level" is decided in the channel's declared
      * direction. Members are never paired by rank.
@@ -77,7 +77,7 @@ final class WorseDirectionTest extends TestCase
     /**
      * The same counting predicate, mirrored for lower-is-worse channels
      * (Maintainability Index, cohesion, health scores): "at least as bad as"
-     * reads `<=` there, which is why §5.1 is stated in terms of severity
+     * reads `<=` there, which is why ADR 0017 is stated in terms of severity
      * levels rather than of larger and smaller numbers.
      */
     #[Test]
@@ -92,7 +92,7 @@ final class WorseDirectionTest extends TestCase
 
     /**
      * Epsilon is a tolerance band around the allowance, not a shift of it:
-     * a value inside the band is not worse. §5.1 passes an epsilon of `0.0`
+     * a value inside the band is not worse. ADR 0017 passes an epsilon of `0.0`
      * (the tolerance is zero), but the parameter itself is exercised here.
      */
     #[Test]

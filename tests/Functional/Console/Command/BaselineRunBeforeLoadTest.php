@@ -47,7 +47,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 /**
  * Every command that reads a baseline file resolves the configuration first.
  *
- * The order is not housekeeping. §5.4 leaves one channel family — `computed.*`
+ * The order is not housekeeping. ADR 0017 leaves one channel family — `computed.*`
  * and `health.*` — undeclarable at compile time, because a user defines those
  * metrics in `qmx.yaml` and both facts the ceiling needs (shape, direction)
  * exist only once configuration has resolved the definition. The declaration

@@ -16,7 +16,7 @@ use Qualimetrix\Core\Violation\Violation;
  * `PathExclusionFilter` reason about lists. But a predicate cannot express
  * *rewriting* a finding it keeps, and the baseline ceiling has to: a group
  * measured against an entry it exceeds is reported at Error carrying the
- * level it was accepted at (§5.6, §8 of the baseline-ceiling plan), and
+ * level it was accepted at (ADR 0017), and
  * {@see Violation} is `final readonly` with no `with*` helper. Nor can a
  * predicate see a *group*: the ceiling's decision is about every finding
  * sharing one identity at once, which no per-violation callback can observe.
@@ -27,7 +27,7 @@ use Qualimetrix\Core\Violation\Violation;
  *
  * **Why the pipeline downcasts to reach the baseline's stale entries, and
  * why that is not an oversight.** Besides filtering, the ceiling reports the
- * entries whose identity never appeared (§5.7); that report is a
+ * entries whose identity never appeared (ADR 0017); that report is a
  * `list<BaselineEntry>`, a type owned by the `Baseline` component. This
  * interface and {@see ViolationFilterStageResult} live in `Core`, which
  * `qmx.yaml` forbids from depending on `Baseline`, so the list cannot travel

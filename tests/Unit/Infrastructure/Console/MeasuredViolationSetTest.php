@@ -27,7 +27,7 @@ use Qualimetrix\Infrastructure\Console\CliOnlyNarrowing;
 use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
 
 /**
- * The seam of §5.5: paths in, the set a baseline measures out, with no
+ * The seam of ADR 0017: paths in, the set a baseline measures out, with no
  * `InputInterface` anywhere — which is what lets a command that does not
  * declare `check`'s options measure exactly what `check` measures.
  */
@@ -75,7 +75,7 @@ final class MeasuredViolationSetTest extends TestCase
      * The set is what configuration and the source say, and nothing else.
      * A narrowing that exists only as a `check` flag is not part of it —
      * otherwise every baseline command would have to replicate `check`'s
-     * option surface to agree with it, and the four §7 commands accept none
+     * option surface to agree with it, and the four ADR 0017 commands accept none
      * of those flags.
      */
     #[Test]

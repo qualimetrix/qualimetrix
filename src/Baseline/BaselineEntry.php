@@ -16,7 +16,7 @@ use Qualimetrix\Core\Violation\ChannelShape;
  * ```
  *
  * The comparison that decides whether a later run's group is still accepted
- * lives with the filter, not here (§5.1 of the baseline-ceiling plan); this
+ * lives with the filter, not here (ADR 0017); this
  * class owns the entry's *shape* and its normal form.
  *
  * **Magnitudes are normalized here, not at the call site.** Every
@@ -35,7 +35,7 @@ use Qualimetrix\Core\Violation\ChannelShape;
  */
 final readonly class BaselineEntry
 {
-    /** Decimal places every stored and compared magnitude is rounded to (§5.1). */
+    /** Decimal places every stored and compared magnitude is rounded to (ADR 0017). */
     public const int MAGNITUDE_PRECISION = 6;
 
     /** @var ?list<float> */
@@ -48,7 +48,7 @@ final readonly class BaselineEntry
      *                                  a non-positive count, a magnitude list whose length
      *                                  disagrees with it, or a non-finite magnitude. The
      *                                  loader catches this and turns the line inert rather
-     *                                  than failing the run (§6)
+     *                                  than failing the run (ADR 0017)
      */
     public function __construct(
         public BaselineIdentity $identity,
@@ -121,7 +121,7 @@ final readonly class BaselineEntry
     /**
      * The shape this entry claims, read off its own contents. Compared
      * against the channel's declared shape at load time; a disagreement in
-     * either direction makes the entry inert (§6).
+     * either direction makes the entry inert (ADR 0017).
      */
     public function shape(): ChannelShape
     {
@@ -134,7 +134,7 @@ final readonly class BaselineEntry
     }
 
     /**
-     * The entry object of §6, with a fixed key order so that the same entry
+     * The entry object of ADR 0017, with a fixed key order so that the same entry
      * always produces the same bytes.
      *
      * @return array<string, mixed>

@@ -20,8 +20,7 @@ use Qualimetrix\Core\Violation\Filter\ViolationFilterStageInterface;
 use Qualimetrix\Core\Violation\Violation;
 
 /**
- * The one definition of the set a baseline measures (§5.5 of the
- * baseline-ceiling plan): the run's findings after `@qmx-ignore` and the
+ * The one definition of the set a baseline measures (ADR 0017): the run's findings after `@qmx-ignore` and the
  * exclusions, before any report narrowing.
  *
  * **Why it is a seam and not a step inside the pipeline.** Capture,
@@ -44,7 +43,7 @@ use Qualimetrix\Core\Violation\Violation;
  *   overrides, not a second analysis that could disagree with the first.
  *   {@see forPaths()} delegates to this rather than duplicating the
  *   definition, so there remains exactly one place the measured set is
- *   assembled (§5.5).
+ *   assembled (ADR 0017).
  * - {@see stages()} — the ordered stages that produce it, for a caller that
  *   already holds the findings and continues past the set. That is `check`:
  *   the pipeline appends the baseline and git-scope stages to this list, so

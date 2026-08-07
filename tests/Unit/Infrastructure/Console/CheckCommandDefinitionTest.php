@@ -91,4 +91,18 @@ final class CheckCommandDefinitionTest extends TestCase
         $option = $definition->getOption('all');
         self::assertFalse($option->acceptValue(), '--all should be VALUE_NONE (boolean flag)');
     }
+
+    #[Test]
+    public function itDescribesShowResolvedAsBaselineEntries(): void
+    {
+        $command = new Command('test');
+        $registry = new RuleRegistry([]);
+
+        CheckCommandDefinition::addOptions($command, $registry);
+
+        $description = $command->getDefinition()->getOption('show-resolved')->getDescription();
+
+        self::assertStringContainsString('entries', $description);
+        self::assertStringNotContainsString('violations', $description);
+    }
 }

@@ -42,7 +42,7 @@ final readonly class Violation
     /**
      * The same finding, reported as a measured breach of what a baseline
      * accepted: severity raised to Error, carrying the level it was accepted
-     * at (§5.6 and §8 of the baseline-ceiling plan).
+     * at, as specified by ADR 0017.
      *
      * Promotion is what makes a breach fail a build at all — the default
      * `fail_on` is `error`, so without it a channel whose findings are

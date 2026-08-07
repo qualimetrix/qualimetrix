@@ -12,7 +12,7 @@ use RuntimeException;
  *
  * It never leaves {@see BaselineEntryParser}: the parser catches it and
  * returns an {@see InertBaselineEntry}. It exists so that the dozen
- * independent checks §6 requires read as a straight sequence instead of a
+ * independent checks ADR 0017 requires read as a straight sequence instead of a
  * nest of early returns, each of which would have to re-assemble the same
  * inert entry.
  */

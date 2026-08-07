@@ -23,7 +23,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Runs the analysis a baseline command measures against.
  *
  * **The set comes from configuration, never from this command's flags**
- * (§5.5 of the baseline-ceiling plan). None of the five commands declares
+ * (ADR 0017). None of the five commands declares
  * `--exclude-path`, `--exclude-namespace` or `--no-suppression-annotations`,
  * so there is nothing here to read them from: exclusions arrive through
  * `qmx.yaml` and suppression through the source's own annotations, which is

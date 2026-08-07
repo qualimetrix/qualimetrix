@@ -6,10 +6,10 @@ namespace Qualimetrix\Baseline;
 
 /**
  * Converts a version 5 baseline into a version 10 one — `bin/qmx
- * baseline:migrate` (§7 of the baseline-ceiling plan).
+ * baseline:migrate` (ADR 0017).
  *
  * The new baseline is not a merge: it is exactly `$freshCapture`'s baseline,
- * because a v5 record carries no magnitude to merge in (§6 — its `hash` is
+ * because a v5 record carries no magnitude to merge in (ADR 0017 — its `hash` is
  * opaque and does not recover one). What this class adds is the report:
  * which of the old file's acceptances the fresh capture still backs, which
  * it lost, and which entries are new. See {@see MigrationReport} for the
@@ -80,7 +80,7 @@ final readonly class BaselineMigrator
     }
 
     /**
-     * The predicate `--force` is built on (§7): a `migrate` destination that
+     * The predicate `--force` is built on (ADR 0017): a `migrate` destination that
      * is not recognisably the v5 file the command exists to convert — it is
      * already version 10, unparseable, or simply not present — must not be
      * silently overwritten by a fresh capture. A typo'd path pointing at a

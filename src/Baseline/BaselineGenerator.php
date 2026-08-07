@@ -12,7 +12,7 @@ use Qualimetrix\Core\Violation\Violation;
 /**
  * Captures a run's findings as baseline entries.
  *
- * Findings are grouped by identity (§5.1 of the baseline-ceiling plan); each
+ * Findings are grouped by identity (ADR 0017); each
  * group becomes one entry holding its size and, for a `magnitude` channel,
  * the magnitude every member reported.
  *
@@ -20,9 +20,9 @@ use Qualimetrix\Core\Violation\Violation;
  * that cannot be applied is worse than no entry — it would be reported as
  * inert on every subsequent run while suppressing nothing:
  *
- * - a channel no rule declares (§5.4's "not baselineable" default,
+ * - a channel no rule declares (ADR 0017 "not baselineable" default,
  *   `annotation.*` and any `computed.*` metric no longer configured);
- * - a `magnitude` channel where some member reports no usable number. §6
+ * - a `magnitude` channel where some member reports no usable number. ADR 0017
  *   requires exactly one finite magnitude per member, and inventing one
  *   would fabricate the very boundary the entry exists to state. The finding
  *   is simply reported next run, which is the fail-safe direction.
@@ -31,7 +31,7 @@ use Qualimetrix\Core\Violation\Violation;
  * The drop is sanctioned; the drop being invisible was not.
  *
  * `generated` comes from the injected {@see ClockInterface}: with it, the
- * whole file is determined by the analysis, which is what lets §6 claim byte
+ * whole file is determined by the analysis, which is what lets ADR 0017 claim byte
  * stability.
  */
 final readonly class BaselineGenerator

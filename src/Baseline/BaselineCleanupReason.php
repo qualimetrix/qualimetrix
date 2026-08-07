@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Baseline;
 
 /**
- * Why `baseline:cleanup` lists an entry as a removal candidate (§5.7, §7 of
- * the baseline-ceiling plan).
+ * Why `baseline:cleanup` lists an entry as a removal candidate under ADR 0017.
  *
  * None of these reasons is acted on by itself — `cleanup` never removes an
- * entry on its own (§5.7's third decision). A candidate is only ever a
+ * entry on its own. A candidate is only ever a
  * suggestion; the user confirms it by selector.
  */
 enum BaselineCleanupReason: string
