@@ -11,7 +11,7 @@ use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineIdentity;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
-use Qualimetrix\Baseline\Filter\BaselineFilter;
+use Qualimetrix\Baseline\Filter\BaselineCeilingStage;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -104,12 +104,11 @@ final class BaselineWorkflowTest extends TestCase
         self::assertSame($baseline->count(), $loadedBaseline->count());
         self::assertSame(0, \count($loadedBaseline->inertEntries));
 
-        // Step 4: Filter violations using baseline
-        $filter = new BaselineFilter($loadedBaseline);
+        // Step 4: Apply the baseline as a ceiling over the same findings
+        $stage = new BaselineCeilingStage($loadedBaseline, $declarations);
 
-        // Both violations should be filtered out (in baseline)
-        self::assertFalse($filter->shouldInclude($violations[0]));
-        self::assertFalse($filter->shouldInclude($violations[1]));
+        // Both groups are within what was captured, so neither is reported
+        self::assertSame([], $stage->apply($violations)->violations);
 
         // Step 5: Test new violation (not in baseline)
         $newViolation = new Violation(
@@ -122,8 +121,8 @@ final class BaselineWorkflowTest extends TestCase
             metricValue: 25,
         );
 
-        // New violation should NOT be filtered
-        self::assertTrue($filter->shouldInclude($newViolation));
+        // A finding no entry bounds is reported untouched
+        self::assertSame([$newViolation], $stage->apply([$newViolation])->violations);
     }
 
     #[Test]
@@ -161,7 +160,7 @@ final class BaselineWorkflowTest extends TestCase
         // Load baseline
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
         $loadedBaseline = $loader->load($this->baselinePath);
-        $filter = new BaselineFilter($loadedBaseline);
+        $stage = new BaselineCeilingStage($loadedBaseline, $declarations);
 
         // Current violations: only method1 (method2 was fixed)
         $currentViolations = [
@@ -176,8 +175,9 @@ final class BaselineWorkflowTest extends TestCase
             ),
         ];
 
-        // Get resolved entries
-        $resolved = $filter->getResolvedFromBaseline($currentViolations);
+        // Get resolved entries — measured over the very list the ceiling
+        // judged, which is the stage's input
+        $resolved = $stage->staleEntriesOver($currentViolations);
 
         // Should detect that method2 was resolved
         self::assertCount(1, $resolved);
@@ -230,10 +230,13 @@ final class BaselineWorkflowTest extends TestCase
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
         $loadedBaseline = $loader->load($this->baselinePath);
 
-        // Filter should match the original violations
-        $filter = new BaselineFilter($loadedBaseline);
-        self::assertFalse($filter->shouldInclude($violations[0]), 'File-level violation should be filtered by baseline');
-        self::assertFalse($filter->shouldInclude($violations[1]), 'Method-level violation should be filtered by baseline');
+        // The ceiling should accept the original violations
+        $stage = new BaselineCeilingStage($loadedBaseline, $declarations);
+        self::assertSame(
+            [],
+            $stage->apply($violations)->violations,
+            'Both the file-level and the method-level finding should be accepted by their entries',
+        );
     }
 
     #[Test]

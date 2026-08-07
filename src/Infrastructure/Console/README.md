@@ -16,8 +16,10 @@ CLI application based on Symfony Console with support for:
 Console/
 ├── Application.php
 ├── CliOptionsParser.php
-├── ViolationFilterPipeline.php
+├── MeasuredViolationSet.php         # The set a baseline measures (§5.5): the pipeline's findings before the baseline stage. Defined by config + source annotations; a CLI flag may narrow it, never widen it
+├── ViolationFilterPipeline.php      # suppression -> path exclusion -> namespace exclusion -> baseline -> git scope; --no-suppression-annotations restores annotated findings after the baseline stage
 ├── ViolationFilterOptions.php
+├── CliOnlyNarrowing.php             # check-only narrowing: --exclude-path / --exclude-namespace / --no-suppression-annotations
 ├── ViolationFilterResult.php
 ├── GitScopeFilterConfig.php
 ├── RuntimeConfigurator.php
@@ -129,13 +131,13 @@ Export dependency graph in DOT or JSON format.
 
 ### Baseline
 
-| Option                | Description                                                                                                                                |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--baseline`          | Use baseline file                                                                                                                          |
-| `--generate-baseline` | Generate baseline from current violations                                                                                                  |
-| `--show-resolved`     | Show count of resolved violations                                                                                                          |
-| `--show-suppressed`   | Show suppressed violations — `@qmx-ignore` tags and per-rule `exclude_namespaces`/`exclude_paths` exclusions, each listed in its own block |
-| `--no-suppression`    | Ignore suppression tags                                                                                                                    |
+| Option                         | Description                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--baseline`                   | Use baseline file                                                                                                                                                                                                                                                                                                                            |
+| `--generate-baseline`          | Generate baseline from current violations                                                                                                                                                                                                                                                                                                    |
+| `--show-resolved`              | Show count of resolved violations                                                                                                                                                                                                                                                                                                            |
+| `--show-suppressed`            | Show suppressed violations — `@qmx-ignore` tags and per-rule `exclude_namespaces`/`exclude_paths` exclusions, each listed in its own block                                                                                                                                                                                                   |
+| `--no-suppression-annotations` | Report findings `@qmx-ignore` suppresses. It does **not** change what a baseline measures: the annotated findings never reach the baseline stage and are never captured, so they are shown at their own severity and compared against no entry. A flag may narrow the measured set (`--exclude-path`, `--exclude-namespace`), never widen it |
 
 ### Rules
 

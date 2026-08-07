@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\RuleExecution\RuleExclusionStats;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
@@ -23,6 +24,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
 use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
 use Qualimetrix\Infrastructure\Console\ViolationFilterPipeline;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
@@ -293,10 +295,16 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn(new AnalysisConfiguration());
 
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+
         $pipeline = new ViolationFilterPipeline(
-            new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())),
-            new SuppressionFilter(),
-            $configProvider,
+            new BaselineLoader(new BaselineEntryParser($declarations)),
+            $declarations,
+            new MeasuredViolationSet(
+                self::createStub(AnalysisPipelineInterface::class),
+                new SuppressionFilter(),
+                $configProvider,
+            ),
         );
 
         $ruleExecutor = self::createStub(RuleExecutorInterface::class);
@@ -315,7 +323,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
             new InputOption('exclude-path', mode: InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, default: []),
             new InputOption('exclude-namespace', mode: InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, default: []),
             new InputOption('report-strict', mode: InputOption::VALUE_NONE),
-            new InputOption('no-suppression', mode: InputOption::VALUE_NONE),
+            new InputOption('no-suppression-annotations', mode: InputOption::VALUE_NONE),
             new InputOption('show-resolved', mode: InputOption::VALUE_NONE),
             new InputOption('show-suppressed', mode: InputOption::VALUE_NONE),
         ]);

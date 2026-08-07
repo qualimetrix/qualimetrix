@@ -188,13 +188,19 @@ To see what was suppressed:
 bin/qmx check src/ --show-suppressed
 ```
 
-### Ignoring suppression tags
+### Reporting what suppression tags hide
 
-To run analysis as if no `@qmx-ignore` tags existed:
+To see the violations `@qmx-ignore` tags suppress:
 
 ```bash
-bin/qmx check src/ --no-suppression
+bin/qmx check src/ --no-suppression-annotations
 ```
+
+This changes the report, not the baseline. A baseline measures what your
+configuration and your annotations leave standing, so a finding an
+`@qmx-ignore` tag removes is never written into a baseline and never compared
+against one. Under this flag such a finding is therefore shown at its own
+severity and is never promoted to an error.
 
 ---
 

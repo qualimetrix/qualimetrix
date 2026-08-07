@@ -100,10 +100,12 @@ Infrastructure/
     ├── Application.php
     ├── CliOptionsParser.php
     ├── OutputHelper.php               # Helper for large text output (line-by-line flush)
-    ├── ViolationFilterPipeline.php    # Violation filtering orchestration
-    ├── ViolationFilterOrchestrator.php # Orchestrates violation filtering, baseline checks, and CLI output — also reports per-rule exclude_namespaces/exclude_paths suppression (via injected RuleExecutorInterface, Analysis\RuleExecution\RuleExclusionStats) for -v / --show-suppressed
+    ├── MeasuredViolationSet.php       # The one definition of the set a baseline measures: paths + resolved config in, findings at the baseline stage's input out (no InputInterface)
+    ├── ViolationFilterPipeline.php    # Runs the ordered stages: suppression -> path exclusion -> namespace exclusion -> baseline -> git scope; also where --no-suppression-annotations puts annotated findings back into the report, past the baseline
+    ├── ViolationFilterOrchestrator.php # Turns check's options into a pipeline run and reports what its stages did — also reports per-rule exclude_namespaces/exclude_paths suppression (via injected RuleExecutorInterface, Analysis\RuleExecution\RuleExclusionStats) for -v / --show-suppressed
     ├── ViolationFilterOptions.php     # Filter options VO
-    ├── ViolationFilterResult.php      # Filter result VO
+    ├── CliOnlyNarrowing.php           # VO: --exclude-path / --exclude-namespace / --no-suppression-annotations — narrowing that is check's alone and not part of the measured set; a flag may shrink what the ceiling measures, never grow it
+    ├── ViolationFilterResult.php      # Filter result VO: reported findings, the measured set, per-stage removals, stale entries
     ├── GitScopeFilterConfig.php       # Git scope filter config VO
     ├── RuntimeConfigurator.php        # Runtime DI configuration; also sets Core\Violation\RuleExclusionCaptureHolder from --show-suppressed
     ├── ResultPresenter.php            # Output presentation

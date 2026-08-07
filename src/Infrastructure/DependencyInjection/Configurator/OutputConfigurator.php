@@ -24,6 +24,7 @@ use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\BaselinePresenter;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
@@ -35,6 +36,7 @@ use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
+use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
@@ -163,12 +165,22 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(YamlConfigLoader::class);
         $container->setAlias(ConfigLoaderInterface::class, YamlConfigLoader::class);
 
+        // MeasuredViolationSet — the single definition of the set a baseline
+        // measures. The pipeline runs its stages; baseline commands ask it
+        // for the set directly.
+        $container->register(MeasuredViolationSet::class)
+            ->setArguments([
+                new Reference(AnalysisPipelineInterface::class),
+                new Reference(SuppressionFilter::class),
+                new Reference(ConfigurationProviderInterface::class),
+            ]);
+
         // ViolationFilterPipeline
         $container->register(ViolationFilterPipeline::class)
             ->setArguments([
                 new Reference(BaselineLoader::class),
-                new Reference(SuppressionFilter::class),
-                new Reference(ConfigurationProviderInterface::class),
+                new Reference(ChannelDeclarationRegistryInterface::class),
+                new Reference(MeasuredViolationSet::class),
             ]);
 
         // RuntimeConfigurator for runtime service configuration. Public so the

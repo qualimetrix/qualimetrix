@@ -7,19 +7,20 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\RuleExecution\RuleExclusionStats;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Core\Violation\Filter\ViolationFilterStage;
+use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Orchestrates violation filtering and outputs filter-related messages.
+ * Turns `check`'s options into a pipeline run and reports what the run's
+ * stages did — stale baseline entries, resolved entries, suppressed and
+ * excluded findings.
  *
- * Combines ViolationFilterPipeline execution with CLI output for
- * stale baselines, resolved violations, suppression stats, and git scope notes.
- *
- * @qmx-threshold complexity.npath error=3000 — Coordinates independent filter stages and their CLI output.
- * @qmx-threshold complexity.cyclomatic error=25 — Coordinates independent filter stages and their CLI output.
- * Orchestrator method handles many filter stages with output — complexity is structural.
+ * This class is where `InputInterface` stops: the pipeline and
+ * {@see MeasuredViolationSet} below it take values, which is what lets a
+ * command with a different option surface measure the same set.
  */
 final readonly class ViolationFilterOrchestrator
 {
@@ -39,6 +40,23 @@ final readonly class ViolationFilterOrchestrator
     ): ViolationFilterResult {
         $this->violationFilterPipeline->loadSuppressions($result->suppressions);
 
+        $filterResult = $this->violationFilterPipeline->filter(
+            $result->violations,
+            self::optionsFrom($input, $scopeResolution),
+        );
+
+        $this->reportBaselineEntries($filterResult, $input, $output);
+        $this->reportSuppressedViolations($filterResult, $input, $output);
+        $this->reportExclusionCounts($filterResult, $output);
+        $this->reportRuleExclusions($input, $output);
+
+        return $filterResult;
+    }
+
+    private static function optionsFrom(
+        InputInterface $input,
+        GitScopeResolution $scopeResolution,
+    ): ViolationFilterOptions {
         $baselinePath = $input->getOption('baseline');
         /** @var list<string> $cliExcludePaths */
         $cliExcludePaths = $input->getOption('exclude-path');
@@ -55,74 +73,109 @@ final readonly class ViolationFilterOrchestrator
             );
         }
 
-        $options = new ViolationFilterOptions(
+        return new ViolationFilterOptions(
             baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
-            disableSuppression: (bool) $input->getOption('no-suppression'),
-            excludePaths: $cliExcludePaths,
-            excludeNamespaces: $cliExcludeNamespaces,
+            narrowing: new CliOnlyNarrowing(
+                excludePaths: $cliExcludePaths,
+                excludeNamespaces: $cliExcludeNamespaces,
+                annotationSuppressionDisabled: (bool) $input->getOption('no-suppression-annotations'),
+            ),
             gitScope: $gitScope,
         );
+    }
 
-        $filterResult = $this->violationFilterPipeline->filter($result->violations, $options);
-
-        if ($filterResult->staleBaselineKeys !== []) {
-            $this->reportStaleBaselineEntries($filterResult, $output);
+    /**
+     * Reports entries whose identity the run did not measure — and does
+     * nothing else with them (§5.7).
+     *
+     * `--show-resolved` reads the same predicate and reports the same set in
+     * a different unit: entries whose group did not appear, not findings. It
+     * is a presentation of staleness rather than a fourth operation, which is
+     * why both are answered from one list here.
+     *
+     * The stale message says what was actually measured. "Symbols no longer
+     * exist" was true while staleness was keyed on the symbol; under the
+     * identity of §5.1 the symbol is usually still right there and one of its
+     * channels simply stopped firing, which the list printed underneath makes
+     * plain.
+     *
+     * There is deliberately no `baseline:cleanup` suggestion. That command
+     * selects on a different predicate — whether the `file:` a key names is
+     * gone — so for a `method:`, `class:`, `ns:` or `project:` entry it is a
+     * guaranteed no-op, and advising it would send a user round a loop with
+     * no exit. Removal by identity arrives with `cleanup --remove` in P4.
+     */
+    private function reportBaselineEntries(
+        ViolationFilterResult $filterResult,
+        InputInterface $input,
+        OutputInterface $output,
+    ): void {
+        if ($filterResult->staleEntries === []) {
+            return;
         }
 
-        if ($input->getOption('show-resolved') === true && $filterResult->baselineFilter !== null) {
-            $resolvedCount = \count($filterResult->baselineFilter->getResolvedFromBaseline($result->violations));
+        $output->writeln(\sprintf(
+            '<comment>%d baseline entries did not appear in this run:</comment>',
+            $filterResult->staleEntryCount(),
+        ));
 
-            if ($resolvedCount > 0) {
-                $output->writeln(\sprintf(
-                    '<info>%d baseline entries have been resolved!</info>',
-                    $resolvedCount,
-                ));
-            }
-        }
-
-        if ($input->getOption('show-suppressed') === true && $filterResult->suppressedViolations !== []) {
-            $output->writeln('');
+        foreach ($filterResult->staleEntries as $entry) {
             $output->writeln(\sprintf(
-                '<info>%d violation(s) suppressed by @qmx-ignore tags:</info>',
-                \count($filterResult->suppressedViolations),
-            ));
-
-            $byFile = [];
-            foreach ($filterResult->suppressedViolations as $v) {
-                $file = $v->location->isNone() ? '(no file)' : $v->location->pathString();
-                $byFile[$file][] = $v;
-            }
-
-            foreach ($byFile as $file => $violations) {
-                $output->writeln(\sprintf('  <comment>%s</comment>', $file));
-                foreach ($violations as $v) {
-                    $output->writeln(\sprintf(
-                        '    line %s — %s [%s]',
-                        $v->location->line ?? '?',
-                        $v->getDisplayMessage(),
-                        $v->ruleName,
-                    ));
-                }
-            }
-        }
-
-        if ($filterResult->pathExclusionFiltered > 0 && $output->isVerbose()) {
-            $output->writeln(\sprintf(
-                '<info>%d violation(s) suppressed by path exclusion patterns</info>',
-                $filterResult->pathExclusionFiltered,
+                '  - %s [%s]',
+                $entry->identity->describe(),
+                $entry->selector()->value,
             ));
         }
 
-        if ($filterResult->namespaceExclusionFiltered > 0 && $output->isVerbose()) {
+        $output->writeln(
+            '<comment>An entry stops appearing when its finding was repaired, or when configuration '
+            . 'stopped producing it. Nothing is removed automatically; the remaining entries still apply.</comment>',
+        );
+
+        if ($input->getOption('show-resolved') === true) {
             $output->writeln(\sprintf(
-                '<info>%d violation(s) suppressed by namespace exclusion patterns</info>',
-                $filterResult->namespaceExclusionFiltered,
+                '<info>%d baseline entries have been resolved!</info>',
+                $filterResult->staleEntryCount(),
             ));
         }
+    }
 
-        $this->reportRuleExclusions($input, $output);
+    private function reportSuppressedViolations(
+        ViolationFilterResult $filterResult,
+        InputInterface $input,
+        OutputInterface $output,
+    ): void {
+        $suppressed = $filterResult->removedBy(ViolationFilterStage::Suppression);
 
-        return $filterResult;
+        if ($input->getOption('show-suppressed') !== true || $suppressed === []) {
+            return;
+        }
+
+        $output->writeln('');
+        $output->writeln(\sprintf(
+            '<info>%d violation(s) suppressed by @qmx-ignore tags:</info>',
+            \count($suppressed),
+        ));
+
+        self::listByFile($suppressed, $output);
+    }
+
+    private function reportExclusionCounts(ViolationFilterResult $filterResult, OutputInterface $output): void
+    {
+        if (!$output->isVerbose()) {
+            return;
+        }
+
+        $counts = [
+            'path exclusion patterns' => $filterResult->removedCountBy(ViolationFilterStage::PathExclusion),
+            'namespace exclusion patterns' => $filterResult->removedCountBy(ViolationFilterStage::NamespaceExclusion),
+        ];
+
+        foreach ($counts as $patterns => $count) {
+            if ($count > 0) {
+                $output->writeln(\sprintf('<info>%d violation(s) suppressed by %s</info>', $count, $patterns));
+            }
+        }
     }
 
     /**
@@ -144,86 +197,67 @@ final readonly class ViolationFilterOrchestrator
                 \count($stats->excludedViolations),
             ));
 
-            $byFile = [];
-            foreach ($stats->excludedViolations as $v) {
-                $file = $v->location->isNone() ? '(no file)' : $v->location->pathString();
-                $byFile[$file][] = $v;
-            }
-
-            foreach ($byFile as $file => $violations) {
-                $output->writeln(\sprintf('  <comment>%s</comment>', $file));
-                foreach ($violations as $v) {
-                    $output->writeln(\sprintf(
-                        '    line %s — %s [%s]',
-                        $v->location->line ?? '?',
-                        $v->getDisplayMessage(),
-                        $v->ruleName,
-                    ));
-                }
-            }
+            self::listByFile($stats->excludedViolations, $output);
         }
 
-        if ($stats->totalPathExclusions() > 0 && $output->isVerbose()) {
-            $output->writeln(\sprintf(
-                '<info>%d violation(s) suppressed by per-rule exclude_paths (%s)</info>',
-                $stats->totalPathExclusions(),
-                $this->formatRuleBreakdown($stats->pathExclusionsByRule),
-            ));
+        if (!$output->isVerbose()) {
+            return;
         }
 
-        if ($stats->totalNamespaceExclusions() > 0 && $output->isVerbose()) {
-            $output->writeln(\sprintf(
-                '<info>%d violation(s) suppressed by per-rule exclude_namespaces (%s)</info>',
-                $stats->totalNamespaceExclusions(),
-                $this->formatRuleBreakdown($stats->namespaceExclusionsByRule),
-            ));
+        $breakdowns = [
+            'exclude_paths' => [$stats->totalPathExclusions(), $stats->pathExclusionsByRule],
+            'exclude_namespaces' => [$stats->totalNamespaceExclusions(), $stats->namespaceExclusionsByRule],
+        ];
+
+        foreach ($breakdowns as $option => [$total, $byRule]) {
+            if ($total > 0) {
+                $output->writeln(\sprintf(
+                    '<info>%d violation(s) suppressed by per-rule %s (%s)</info>',
+                    $total,
+                    $option,
+                    self::formatRuleBreakdown($byRule),
+                ));
+            }
+        }
+    }
+
+    /**
+     * @param list<Violation> $violations
+     */
+    private static function listByFile(array $violations, OutputInterface $output): void
+    {
+        $byFile = [];
+
+        foreach ($violations as $violation) {
+            $file = $violation->location->isNone() ? '(no file)' : $violation->location->pathString();
+            $byFile[$file][] = $violation;
+        }
+
+        foreach ($byFile as $file => $fileViolations) {
+            $output->writeln(\sprintf('  <comment>%s</comment>', $file));
+
+            foreach ($fileViolations as $violation) {
+                $output->writeln(\sprintf(
+                    '    line %s — %s [%s]',
+                    $violation->location->line ?? '?',
+                    $violation->getDisplayMessage(),
+                    $violation->ruleName,
+                ));
+            }
         }
     }
 
     /**
      * @param array<string, int> $countsByRule
      */
-    private function formatRuleBreakdown(array $countsByRule): string
+    private static function formatRuleBreakdown(array $countsByRule): string
     {
         $parts = [];
+
         foreach ($countsByRule as $ruleName => $count) {
             $parts[] = \sprintf('%s: %d', $ruleName, $count);
         }
 
         return implode(', ', $parts);
-    }
-
-    /**
-     * Reports entries whose identity the run did not measure — and does
-     * nothing else with them (§5.7).
-     *
-     * The message says what was actually measured. "Symbols no longer exist"
-     * was true while staleness was keyed on the symbol; under the identity of
-     * §5.1 the symbol is usually still right there and one of its channels
-     * simply stopped firing, which the list printed underneath makes plain.
-     *
-     * There is deliberately no `baseline:cleanup` suggestion. That command
-     * selects on a different predicate — whether the `file:` a key names is
-     * gone — so for a `method:`, `class:`, `ns:` or `project:` entry it is a
-     * guaranteed no-op, and advising it would send a user round a loop with
-     * no exit. Removal by identity arrives with `cleanup --remove` in P4.
-     */
-    private function reportStaleBaselineEntries(
-        ViolationFilterResult $filterResult,
-        OutputInterface $output,
-    ): void {
-        $output->writeln(\sprintf(
-            '<comment>%d baseline entries did not appear in this run:</comment>',
-            $filterResult->staleBaselineCount,
-        ));
-
-        foreach ($filterResult->staleBaselineKeys as $key) {
-            $output->writeln(\sprintf('  - %s', $key));
-        }
-
-        $output->writeln(
-            '<comment>An entry stops appearing when its finding was repaired, or when configuration '
-            . 'stopped producing it. Nothing is removed automatically; the remaining entries still apply.</comment>',
-        );
     }
 }

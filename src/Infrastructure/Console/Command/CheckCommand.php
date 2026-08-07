@@ -207,8 +207,11 @@ final class CheckCommand extends Command
         $filterResult = $this->violationFilterOrchestrator->filterAndReport($result, $input, $output, $scopeResolution);
         $filteredViolations = $filterResult->violations;
 
+        // Capture reads the measured set, not the raw analysis output: an
+        // entry written for a finding this very run suppressed or excluded
+        // could never be matched again, and nothing could retire it.
         $baselineGenerated = $this->baselinePresenter->generateBaselineIfRequested(
-            $result->violations,
+            $filterResult->measuredViolations,
             $scopeResolution->paths,
             $input,
             $output,

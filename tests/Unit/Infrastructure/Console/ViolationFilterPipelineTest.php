@@ -8,32 +8,46 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Baseline\BaselineEntryParser;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\SuppressionType;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Filter\ViolationFilterStage;
+use Qualimetrix\Core\Violation\Filter\ViolationFilterStageInterface;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Infrastructure\Console\CliOnlyNarrowing;
+use Qualimetrix\Infrastructure\Console\GitScopeFilterConfig;
+use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
 use Qualimetrix\Infrastructure\Console\ViolationFilterOptions;
 use Qualimetrix\Infrastructure\Console\ViolationFilterPipeline;
+use Qualimetrix\Infrastructure\Git\GitClient;
+use Qualimetrix\Infrastructure\Git\GitScope;
 use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
+use RuntimeException;
+use Symfony\Component\Process\Process;
 
 /**
- * Tests for baseline, suppression, path exclusion, and git scope filters
- * in ViolationFilterPipeline (steps 1-4).
+ * The pipeline as a sequence: which stages it runs, in what order, what each
+ * of them removes, and which of them the measured set is taken at.
  */
 #[CoversClass(ViolationFilterPipeline::class)]
 final class ViolationFilterPipelineTest extends TestCase
 {
     /** @var list<string> */
     private array $tempFiles = [];
+
+    /** @var list<string> */
+    private array $tempDirs = [];
 
     protected function tearDown(): void
     {
@@ -42,78 +56,303 @@ final class ViolationFilterPipelineTest extends TestCase
                 unlink($file);
             }
         }
+
+        foreach ($this->tempDirs as $dir) {
+            self::removeDirectory($dir);
+        }
     }
 
-    // -- Baseline filter (step 1) --
+    // -- The stage sequence --
 
+    /**
+     * The order is a behavioural contract (§5.2), so the assertion reads the
+     * pipeline's own stage list. Counters cannot stand in for it: they do not
+     * distinguish "the baseline ran fourth" from "the baseline removed
+     * nothing".
+     */
     #[Test]
-    public function baselineFilterRemovesMatchingViolations(): void
+    public function itRunsTheBaselineStageImmediatelyBeforeGitScope(): void
+    {
+        $pipeline = $this->createPipeline(new AnalysisConfiguration(
+            excludePaths: ['vendor'],
+            excludeNamespaces: ['App\\Generated'],
+        ));
+
+        $options = new ViolationFilterOptions(
+            baselinePath: $this->writeBaselineFile([]),
+            gitScope: $this->createGitScope(),
+        );
+
+        self::assertSame(
+            [
+                ViolationFilterStage::Suppression,
+                ViolationFilterStage::PathExclusion,
+                ViolationFilterStage::NamespaceExclusion,
+                ViolationFilterStage::Baseline,
+                ViolationFilterStage::GitScope,
+            ],
+            self::stageNames($pipeline->stages($options)),
+        );
+    }
+
+    /**
+     * The pipeline names only the filtering a run performs: a stage whose
+     * configuration is empty is absent from the list rather than present as
+     * a no-op, and the relative order of the rest is unaffected.
+     */
+    #[Test]
+    public function itOmitsStagesTheRunHasNothingToFeed(): void
+    {
+        $pipeline = $this->createPipeline();
+
+        $stages = $pipeline->stages(new ViolationFilterOptions(
+            baselinePath: $this->writeBaselineFile([]),
+        ));
+
+        self::assertSame(
+            [ViolationFilterStage::Suppression, ViolationFilterStage::Baseline],
+            self::stageNames($stages),
+        );
+    }
+
+    // -- The measured set (§5.5) --
+
+    /**
+     * The witness for the stage's move to the end of the pipeline: with the
+     * baseline at stage 1 this was false by construction, because the
+     * baseline saw the raw analysis output.
+     *
+     * Both halves matter. The ignored finding is not in the set the ceiling
+     * measured, *and* the entry that bounded it is therefore reported as
+     * stale — which is what a run does with an identity it did not measure.
+     */
+    #[Test]
+    public function itDoesNotMeasureAFindingRemovedByAnIgnoreTag(): void
+    {
+        $ignored = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
+
+        $pipeline = $this->createPipeline();
+        $pipeline->loadSuppressions([
+            'src/Service/UserService.php' => [
+                new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 1, type: SuppressionType::File),
+            ],
+        ]);
+
+        $result = $pipeline->filter([$ignored], new ViolationFilterOptions(
+            baselinePath: $this->writeBaselineFile([
+                $ignored->symbolPath->toCanonical() => [
+                    ['channel' => $ignored->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+                ],
+            ]),
+        ));
+
+        self::assertSame([], $result->measuredViolations);
+        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::Suppression));
+        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::Baseline));
+        self::assertSame(1, $result->staleEntryCount());
+    }
+
+    /**
+     * The behaviour change the move brings with it: a suppression the user
+     * wrote by hand outranks one a tool generated. The finding leaves at the
+     * suppression stage, so the baseline never judges it.
+     */
+    #[Test]
+    public function itLetsAnIgnoreTagWinOverAnEntryThatWouldHaveAcceptedTheFinding(): void
     {
         $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
-        $symbolKey = $violation->symbolPath->toCanonical();
+
+        $pipeline = $this->createPipeline();
+        $pipeline->loadSuppressions([
+            'src/Service/UserService.php' => [
+                new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 1, type: SuppressionType::File),
+            ],
+        ]);
+
+        $result = $pipeline->filter([$violation], new ViolationFilterOptions(
+            baselinePath: $this->writeBaselineFile([
+                $violation->symbolPath->toCanonical() => [
+                    ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+                ],
+            ]),
+        ));
+
+        self::assertSame([], $result->violations);
+        self::assertSame([$violation], $result->removedBy(ViolationFilterStage::Suppression));
+        self::assertSame([], $result->removedBy(ViolationFilterStage::Baseline));
+    }
+
+    #[Test]
+    public function itDoesNotMeasureAFindingRemovedByPathExclusion(): void
+    {
+        $kept = $this->makeViolation('src/Service/UserService.php');
+        $excluded = $this->makeViolation('generated/Proxy.php');
+
+        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludePaths: ['generated']));
+
+        $result = $pipeline->filter([$kept, $excluded], new ViolationFilterOptions());
+
+        self::assertSame([$kept], $result->measuredViolations);
+    }
+
+    /**
+     * `exclude_namespaces` does not apply to `architecture.*` at all, so
+     * those findings are in the measured set even inside an excluded
+     * namespace — and are therefore captured. This is the one documented
+     * exception to "an exclusion keeps a finding out of the baseline", and
+     * the reason the exclusion case is written on an ordinary channel.
+     */
+    #[Test]
+    public function itMeasuresAnArchitectureFindingInsideAnExcludedNamespace(): void
+    {
+        $architecture = $this->makeViolation('src/Foo/Service.php', 'App\\Foo', 'Service', LayerViolationRule::NAME);
+        $ordinary = $this->makeViolation('src/Foo/Other.php', 'App\\Foo', 'Other');
+
+        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludeNamespaces: ['App\\Foo']));
+
+        $result = $pipeline->filter([$architecture, $ordinary], new ViolationFilterOptions());
+
+        self::assertSame([$architecture], $result->measuredViolations);
+    }
+
+    /**
+     * Git scope is presentation only, so it runs after the measured set is
+     * taken and cannot make an identity look absent (§2.4). This holds under
+     * the old order too — it is a regression guard, not evidence of the move.
+     */
+    #[Test]
+    public function itMarksNothingStaleOnAGitScopedRun(): void
+    {
+        $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
 
         $baselinePath = $this->writeBaselineFile([
-            $symbolKey => [
+            $violation->symbolPath->toCanonical() => [
                 ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
             ],
         ]);
 
-        $pipeline = $this->createPipeline();
-
-        $options = new ViolationFilterOptions(
+        // Nothing is staged, so the git-scope stage narrows the report to
+        // nothing at all.
+        $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions(
             baselinePath: $baselinePath,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
+            gitScope: $this->createGitScope(),
+        ));
+
+        self::assertSame([$violation], $result->measuredViolations);
+        self::assertSame([], $result->violations);
+        self::assertSame(0, $result->staleEntryCount());
+    }
+
+    // -- The baseline stage --
+
+    #[Test]
+    public function itAcceptsAGroupItsEntryBounds(): void
+    {
+        $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
+
+        $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions(
+            baselinePath: $this->writeBaselineFile([
+                $violation->symbolPath->toCanonical() => [
+                    ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+                ],
+            ]),
+        ));
+
+        self::assertSame([], $result->violations);
+        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::Baseline));
+    }
+
+    /**
+     * A measured breach reaches the report promoted to Error, carrying what
+     * was accepted — end to end through the pipeline, not only through the
+     * stage (§5.6).
+     */
+    #[Test]
+    public function itReportsAMeasuredBreachAtErrorWithEveryMemberOfTheGroup(): void
+    {
+        $first = $this->makeViolation(
+            'src/Service/UserService.php',
+            'App\\Service',
+            'UserService',
+            'code-smell.goto',
+            severity: Severity::Warning,
+        );
+        $second = $this->makeViolation(
+            'src/Service/UserService.php',
+            'App\\Service',
+            'UserService',
+            'code-smell.goto',
+            severity: Severity::Warning,
         );
 
-        $result = $pipeline->filter([$violation], $options);
+        $result = $this->createPipeline()->filter([$first, $second], new ViolationFilterOptions(
+            baselinePath: $this->writeBaselineFile([
+                $first->symbolPath->toCanonical() => [
+                    ['channel' => $first->channel()->toKey(), 'count' => 1],
+                ],
+            ]),
+        ));
 
-        self::assertCount(0, $result->violations);
-        self::assertSame(1, $result->baselineFiltered);
+        self::assertCount(2, $result->violations);
+        self::assertSame(
+            [Severity::Error, Severity::Error],
+            array_map(static fn(Violation $v): Severity => $v->severity, $result->violations),
+        );
+        self::assertSame(1, $result->violations[0]->acceptedLevel?->count);
+        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::Baseline));
+    }
+
+    /**
+     * An entry the mechanism cannot apply says nothing about the debt: the
+     * findings keep the severity their own rule gave them (§5.1's governing
+     * invariant, observed through the pipeline).
+     */
+    #[Test]
+    public function itKeepsTheConfiguredSeverityWhenTheEntryCannotBeApplied(): void
+    {
+        $violation = $this->makeViolation(
+            'src/Service/UserService.php',
+            'App\\Service',
+            'UserService',
+            'code-smell.goto',
+            severity: Severity::Warning,
+        );
+
+        // A magnitude list on an occurrence channel: the entry claims a
+        // boundary the channel's findings cannot be compared against.
+        $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions(
+            baselinePath: $this->writeBaselineFile([
+                $violation->symbolPath->toCanonical() => [
+                    ['channel' => $violation->channel()->toKey(), 'magnitudes' => [1], 'count' => 1],
+                ],
+            ]),
+        ));
+
+        self::assertCount(1, $result->violations);
+        self::assertSame(Severity::Warning, $result->violations[0]->severity);
+        self::assertNull($result->violations[0]->acceptedLevel);
     }
 
     #[Test]
-    public function noBaselineFilterWhenPathIsNull(): void
+    public function itSkipsTheBaselineStageWhenNoPathIsGiven(): void
     {
         $violation = $this->makeViolation('src/Service/UserService.php');
 
-        $pipeline = $this->createPipeline();
+        $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions());
 
-        $options = new ViolationFilterOptions(
-            baselinePath: null,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
-        );
-
-        $result = $pipeline->filter([$violation], $options);
-
-        self::assertCount(1, $result->violations);
-        self::assertSame(0, $result->baselineFiltered);
+        self::assertSame([$violation], $result->violations);
+        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::Baseline));
     }
 
     #[Test]
-    public function noBaselineFilterWhenPathIsEmpty(): void
+    public function itSkipsTheBaselineStageWhenThePathIsEmpty(): void
     {
         $violation = $this->makeViolation('src/Service/UserService.php');
 
-        $pipeline = $this->createPipeline();
+        $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions(baselinePath: ''));
 
-        $options = new ViolationFilterOptions(
-            baselinePath: '',
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
-        );
-
-        $result = $pipeline->filter([$violation], $options);
-
-        self::assertCount(1, $result->violations);
-        self::assertSame(0, $result->baselineFiltered);
+        self::assertSame([$violation], $result->violations);
+        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::Baseline));
     }
 
     /**
@@ -124,12 +363,9 @@ final class ViolationFilterPipelineTest extends TestCase
     public function itReportsAStaleEntryWithoutDisablingTheRestOfTheBaseline(): void
     {
         $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
-        $symbolKey = $violation->symbolPath->toCanonical();
 
-        // Baseline with an entry matching the current violation, plus an
-        // entry for an identity that does not exist in current violations.
         $baselinePath = $this->writeBaselineFile([
-            $symbolKey => [
+            $violation->symbolPath->toCanonical() => [
                 ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
             ],
             'class:App\\Service\\OtherClass' => [
@@ -137,19 +373,19 @@ final class ViolationFilterPipelineTest extends TestCase
             ],
         ]);
 
-        $result = $this->createPipeline()->filter([$violation], $this->baselineOptions($baselinePath));
+        $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions($baselinePath));
 
-        self::assertCount(0, $result->violations);
-        self::assertSame(1, $result->baselineFiltered);
-        self::assertSame(1, $result->staleBaselineCount);
-        self::assertStringContainsString('class:App\Service\OtherClass', $result->staleBaselineKeys[0]);
+        self::assertSame([], $result->violations);
+        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::Baseline));
+        self::assertSame(1, $result->staleEntryCount());
+        self::assertSame('class:App\Service\OtherClass', $result->staleEntries[0]->identity->symbolKey);
     }
 
     /**
      * The case the per-identity key of §5.1 introduced and the one v5's
      * symbol-level predicate could not produce: one channel of a symbol is
      * repaired while another still fires. The repaired entry goes stale, and
-     * its neighbour under the same symbol must keep suppressing (§5.7).
+     * its neighbour under the same symbol must keep applying (§5.7).
      */
     #[Test]
     public function itKeepsApplyingSiblingEntriesWhenOneChannelOfASymbolIsRepaired(): void
@@ -160,285 +396,312 @@ final class ViolationFilterPipelineTest extends TestCase
             'UserService',
             metricValue: 25,
         );
-        $symbolKey = $stillFiring->symbolPath->toCanonical();
 
-        // Two entries under one symbol; only the cyclomatic one still fires.
         $baselinePath = $this->writeBaselineFile([
-            $symbolKey => [
+            $stillFiring->symbolPath->toCanonical() => [
                 ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
                 ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
             ],
         ]);
 
-        $result = $this->createPipeline()->filter([$stillFiring], $this->baselineOptions($baselinePath));
+        $result = $this->createPipeline()->filter([$stillFiring], new ViolationFilterOptions($baselinePath));
 
-        self::assertCount(0, $result->violations, 'The surviving entry must still suppress its finding.');
-        self::assertSame(1, $result->baselineFiltered);
-        self::assertSame(1, $result->staleBaselineCount);
-        self::assertStringContainsString('code-smell.goto', $result->staleBaselineKeys[0]);
+        self::assertSame([], $result->violations, 'The surviving entry must still suppress its finding.');
+        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::Baseline));
+        self::assertSame(1, $result->staleEntryCount());
+        self::assertStringContainsString('code-smell.goto', $result->staleEntries[0]->identity->channel->toKey());
     }
 
-    private function baselineOptions(string $baselinePath): ViolationFilterOptions
-    {
-        return new ViolationFilterOptions(
-            baselinePath: $baselinePath,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
-        );
-    }
-
-    // -- Suppression filter (step 2) --
+    // -- Suppression --
 
     #[Test]
-    public function suppressionFilterRemovesMatchingViolations(): void
+    public function itRemovesAFindingCoveredByAnIgnoreTag(): void
     {
         $violation = $this->makeViolation('src/Service/UserService.php');
 
         $pipeline = $this->createPipeline();
-
-        // Load a file-level suppression for the violation's file
         $pipeline->loadSuppressions([
             'src/Service/UserService.php' => [
-                new Suppression(
-                    rule: '*',
-                    reason: 'Ignoring for now',
-                    line: 1,
-                    type: SuppressionType::File,
-                ),
+                new Suppression(rule: '*', reason: 'Ignoring for now', line: 1, type: SuppressionType::File),
             ],
         ]);
 
-        $options = new ViolationFilterOptions(
-            baselinePath: null,
-            disableSuppression: false,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
-        );
+        $result = $pipeline->filter([$violation], new ViolationFilterOptions());
 
-        $result = $pipeline->filter([$violation], $options);
-
-        self::assertCount(0, $result->violations);
-        self::assertSame(1, $result->suppressionFiltered);
+        self::assertSame([], $result->violations);
+        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::Suppression));
     }
 
+    // -- `--no-suppression-annotations`: report-only, never a wider set --
+
+    /**
+     * The flag is not a no-op: the annotated finding reaches the report.
+     *
+     * And it reaches it **at its own severity, judged by nothing** — the
+     * ceiling never measured it, so there is no entry to compare it against.
+     * This is where the flag used to drop the suppression stage from the run:
+     * the group then measured two members against an entry that bounds one,
+     * read as a breach, and promoted both findings to Error on code nobody
+     * had touched.
+     */
     #[Test]
-    public function suppressionFilterIsSkippedWhenDisabled(): void
+    public function itReportsAnAnnotatedFindingAtItsOwnSeverityWhenTheRunDisablesAnnotations(): void
     {
-        $violation = $this->makeViolation('src/Service/UserService.php');
+        [$measured, $annotated] = $this->makeAnnotatedPair();
 
-        $pipeline = $this->createPipeline();
+        $pipeline = $this->createPipelineIgnoringLine21();
 
-        $pipeline->loadSuppressions([
-            'src/Service/UserService.php' => [
-                new Suppression(
-                    rule: '*',
-                    reason: 'Ignoring',
-                    line: 1,
-                    type: SuppressionType::File,
-                ),
+        $result = $pipeline->filter([$measured, $annotated], new ViolationFilterOptions(
+            baselinePath: $this->writeBaselineFile([
+                $measured->symbolPath->toCanonical() => [
+                    ['channel' => $measured->channel()->toKey(), 'count' => 1],
+                ],
+            ]),
+            narrowing: new CliOnlyNarrowing(annotationSuppressionDisabled: true),
+        ));
+
+        self::assertSame([$annotated], $result->violations);
+        self::assertSame(Severity::Warning, $result->violations[0]->severity);
+        self::assertNull($result->violations[0]->acceptedLevel);
+        self::assertSame([$measured], $result->measuredViolations);
+        self::assertSame(0, $result->staleEntryCount());
+        self::assertSame(
+            [],
+            $result->removedBy(ViolationFilterStage::Suppression),
+            'Nothing was removed from the run, so the run must not report a suppression.',
+        );
+    }
+
+    /**
+     * The invariant of §5.5 stated as an equality: a flag may narrow the
+     * report, but the set the ceiling measures is the same either way.
+     */
+    #[Test]
+    public function itMeasuresTheSameSetWhetherOrNotAnnotationsAreDisabled(): void
+    {
+        [$measured, $annotated] = $this->makeAnnotatedPair();
+
+        $baselinePath = $this->writeBaselineFile([
+            $measured->symbolPath->toCanonical() => [
+                ['channel' => $measured->channel()->toKey(), 'count' => 1],
             ],
         ]);
 
-        $options = new ViolationFilterOptions(
-            baselinePath: null,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
+        $applied = $this->createPipelineIgnoringLine21()
+            ->filter([$measured, $annotated], new ViolationFilterOptions(baselinePath: $baselinePath));
+
+        $disabled = $this->createPipelineIgnoringLine21()->filter(
+            [$measured, $annotated],
+            new ViolationFilterOptions(
+                baselinePath: $baselinePath,
+                narrowing: new CliOnlyNarrowing(annotationSuppressionDisabled: true),
+            ),
         );
 
-        $result = $pipeline->filter([$violation], $options);
-
-        self::assertCount(1, $result->violations);
-        self::assertSame(0, $result->suppressionFiltered);
+        self::assertSame($applied->measuredViolations, $disabled->measuredViolations);
+        self::assertSame([$measured], $disabled->measuredViolations);
     }
 
-    // -- Path exclusion filter (step 3) --
-
+    /**
+     * The case that made the old shape reachable at all: with no baseline, no
+     * git scope and nothing excluded, the suppression stage was the only one
+     * in the list — so dropping it left the measured set equal to the raw
+     * analysis output. The stage is now unconditional, and the set is taken
+     * before the annotated findings rejoin the report.
+     */
     #[Test]
-    public function excludePathsFilterRemovesMatchingViolations(): void
+    public function itMeasuresTheSetAfterSuppressionWhenNoLaterStageRuns(): void
     {
-        $v1 = $this->makeViolation('src/Service/UserService.php');
-        $v2 = $this->makeViolation('vendor/library/SomeClass.php');
+        [$measured, $annotated] = $this->makeAnnotatedPair();
 
-        $pipeline = $this->createPipeline();
-
+        $pipeline = $this->createPipelineIgnoringLine21();
         $options = new ViolationFilterOptions(
-            baselinePath: null,
-            disableSuppression: true,
-            excludePaths: ['vendor'],
-            excludeNamespaces: [],
-            gitScope: null,
+            narrowing: new CliOnlyNarrowing(annotationSuppressionDisabled: true),
         );
 
-        $result = $pipeline->filter([$v1, $v2], $options);
+        $result = $pipeline->filter([$measured, $annotated], $options);
 
-        self::assertCount(1, $result->violations);
-        self::assertSame('src/Service/UserService.php', $result->violations[0]->location->pathString());
-        self::assertSame(1, $result->pathExclusionFiltered);
+        self::assertSame([$measured], $result->measuredViolations);
+        self::assertSame(
+            [ViolationFilterStage::Suppression],
+            self::stageNames($pipeline->stages($options)),
+            'Suppression defines the set, so it is in the list whatever the flags say.',
+        );
     }
 
+    /**
+     * The chosen order, pinned: findings that were never suppressed keep
+     * their positions and the restored ones are appended after them, rather
+     * than being spliced back where analysis found them. Nothing downstream
+     * depends on the interleaving — the formatters group by file — and one
+     * documented order is worth more than an incidental one.
+     */
     #[Test]
-    public function excludePathsFromConfigAreApplied(): void
+    public function itAppendsRestoredFindingsAfterTheOnesThatWereNeverSuppressed(): void
     {
-        $v1 = $this->makeViolation('src/Service/UserService.php');
-        $v2 = $this->makeViolation('generated/Proxy.php');
+        [$measured, $annotated] = $this->makeAnnotatedPair();
 
-        $config = new AnalysisConfiguration(
-            excludePaths: ['generated'],
-        );
-        $configProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn($config);
-
-        $pipeline = new ViolationFilterPipeline(
-            $this->createBaselineLoader(),
-            new SuppressionFilter(),
-            $configProvider,
+        $result = $this->createPipelineIgnoringLine21()->filter(
+            [$annotated, $measured],
+            new ViolationFilterOptions(
+                narrowing: new CliOnlyNarrowing(annotationSuppressionDisabled: true),
+            ),
         );
 
-        $options = new ViolationFilterOptions(
-            baselinePath: null,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
-        );
-
-        $result = $pipeline->filter([$v1, $v2], $options);
-
-        self::assertCount(1, $result->violations);
-        self::assertSame(1, $result->pathExclusionFiltered);
+        self::assertSame([$measured, $annotated], $result->violations);
     }
 
+    /**
+     * A restored finding is still subject to the exclusions — configured and
+     * CLI-supplied alike. Otherwise the flag would quietly reveal what an
+     * exclusion took out, which is a second way for one flag to widen what a
+     * run reports.
+     */
     #[Test]
-    public function excludePathsMergesConfigAndOptionPaths(): void
+    public function itStillExcludesRestoredFindingsByPathAndNamespace(): void
     {
-        $v1 = $this->makeViolation('src/Service/UserService.php');
-        $v2 = $this->makeViolation('generated/Proxy.php');
-        $v3 = $this->makeViolation('vendor/library/SomeClass.php');
+        $kept = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', line: 21);
+        $byPath = $this->makeViolation('generated/Proxy.php', 'App\\Generated', 'Proxy', line: 21);
+        $byNamespace = $this->makeViolation('src/Entity/User.php', 'App\\Entity', 'User', line: 21);
 
-        $config = new AnalysisConfiguration(
-            excludePaths: ['generated'],
-        );
-        $configProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn($config);
+        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludePaths: ['generated']));
+        $pipeline->loadSuppressions([
+            'src/Service/UserService.php' => [self::ignoreLine20()],
+            'generated/Proxy.php' => [self::ignoreLine20()],
+            'src/Entity/User.php' => [self::ignoreLine20()],
+        ]);
 
-        $pipeline = new ViolationFilterPipeline(
-            $this->createBaselineLoader(),
-            new SuppressionFilter(),
-            $configProvider,
+        $result = $pipeline->filter([$kept, $byPath, $byNamespace], new ViolationFilterOptions(
+            narrowing: new CliOnlyNarrowing(
+                excludeNamespaces: ['App\\Entity'],
+                annotationSuppressionDisabled: true,
+            ),
+        ));
+
+        self::assertSame([$kept], $result->violations);
+        self::assertSame([$byPath], $result->removedBy(ViolationFilterStage::PathExclusion));
+        self::assertSame([$byNamespace], $result->removedBy(ViolationFilterStage::NamespaceExclusion));
+        self::assertSame([], $result->measuredViolations);
+    }
+
+    /**
+     * Git scope runs last and narrows everything the run reports, restored
+     * findings included — the flag reveals annotations, not files outside the
+     * scope.
+     */
+    #[Test]
+    public function itStillNarrowsRestoredFindingsToTheGitScope(): void
+    {
+        [$measured, $annotated] = $this->makeAnnotatedPair();
+
+        $result = $this->createPipelineIgnoringLine21()->filter(
+            [$measured, $annotated],
+            new ViolationFilterOptions(
+                gitScope: $this->createGitScope(),
+                narrowing: new CliOnlyNarrowing(annotationSuppressionDisabled: true),
+            ),
         );
+
+        self::assertSame([], $result->violations);
+        self::assertSame([$measured], $result->measuredViolations);
+    }
+
+    // -- Path exclusion --
+
+    #[Test]
+    public function itRemovesFindingsUnderAnExcludedPathGivenOnTheCommandLine(): void
+    {
+        $kept = $this->makeViolation('src/Service/UserService.php');
+        $excluded = $this->makeViolation('vendor/library/SomeClass.php');
 
         $options = new ViolationFilterOptions(
-            baselinePath: null,
-            disableSuppression: true,
-            excludePaths: ['vendor'],
-            excludeNamespaces: [],
-            gitScope: null,
+            narrowing: new CliOnlyNarrowing(excludePaths: ['vendor']),
         );
 
-        $result = $pipeline->filter([$v1, $v2, $v3], $options);
+        $result = $this->createPipeline()->filter([$kept, $excluded], $options);
 
-        self::assertCount(1, $result->violations);
-        self::assertSame('src/Service/UserService.php', $result->violations[0]->location->pathString());
-        self::assertSame(2, $result->pathExclusionFiltered);
+        self::assertSame([$kept], $result->violations);
+        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::PathExclusion));
     }
 
     #[Test]
-    public function noPathExclusionWhenPathsAreEmpty(): void
+    public function itRemovesFindingsUnderAnExcludedPathGivenInConfiguration(): void
+    {
+        $kept = $this->makeViolation('src/Service/UserService.php');
+        $excluded = $this->makeViolation('generated/Proxy.php');
+
+        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludePaths: ['generated']));
+
+        $result = $pipeline->filter([$kept, $excluded], new ViolationFilterOptions());
+
+        self::assertSame([$kept], $result->violations);
+        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::PathExclusion));
+    }
+
+    #[Test]
+    public function itMergesConfiguredAndCommandLinePathExclusions(): void
+    {
+        $kept = $this->makeViolation('src/Service/UserService.php');
+        $configured = $this->makeViolation('generated/Proxy.php');
+        $flagged = $this->makeViolation('vendor/library/SomeClass.php');
+
+        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludePaths: ['generated']));
+
+        $options = new ViolationFilterOptions(
+            narrowing: new CliOnlyNarrowing(excludePaths: ['vendor']),
+        );
+
+        $result = $pipeline->filter([$kept, $configured, $flagged], $options);
+
+        self::assertSame([$kept], $result->violations);
+        self::assertSame(2, $result->removedCountBy(ViolationFilterStage::PathExclusion));
+    }
+
+    #[Test]
+    public function itRunsNoPathExclusionStageWhenNoPatternIsConfigured(): void
     {
         $violation = $this->makeViolation('src/Service/UserService.php');
 
-        $pipeline = $this->createPipeline();
+        $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions());
 
-        $options = new ViolationFilterOptions(
-            baselinePath: null,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
-        );
-
-        $result = $pipeline->filter([$violation], $options);
-
-        self::assertCount(1, $result->violations);
-        self::assertSame(0, $result->pathExclusionFiltered);
+        self::assertSame([$violation], $result->violations);
+        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::PathExclusion));
     }
 
-    // -- Namespace exclusion filter (step 4) --
+    // -- Namespace exclusion --
 
     #[Test]
-    public function excludeNamespacesFilterRemovesMatchingViolations(): void
+    public function itRemovesFindingsInAnExcludedNamespace(): void
     {
-        $v1 = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
-        $v2 = $this->makeViolation('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
+        $kept = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $excluded = $this->makeViolation('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
 
-        $config = new AnalysisConfiguration(
-            excludeNamespaces: ['App\\Generated'],
-        );
-        $configProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn($config);
+        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludeNamespaces: ['App\\Generated']));
 
-        $pipeline = new ViolationFilterPipeline(
-            $this->createBaselineLoader(),
-            new SuppressionFilter(),
-            $configProvider,
-        );
+        $result = $pipeline->filter([$kept, $excluded], new ViolationFilterOptions());
 
-        $options = new ViolationFilterOptions(
-            baselinePath: null,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
-        );
-
-        $result = $pipeline->filter([$v1, $v2], $options);
-
-        self::assertCount(1, $result->violations);
-        self::assertSame('App\\Service', $result->violations[0]->symbolPath->namespace);
-        self::assertSame(1, $result->namespaceExclusionFiltered);
+        self::assertSame([$kept], $result->violations);
+        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::NamespaceExclusion));
     }
 
     #[Test]
-    public function excludeNamespacesMatchesChildNamespaces(): void
+    public function itRemovesFindingsInChildNamespacesOfAnExcludedOne(): void
     {
-        $v1 = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
-        $v2 = $this->makeViolation('src/Generated/Sub/Proxy.php', 'App\\Generated\\Sub', 'Proxy');
+        $kept = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $excluded = $this->makeViolation('src/Generated/Sub/Proxy.php', 'App\\Generated\\Sub', 'Proxy');
 
-        $config = new AnalysisConfiguration(
-            excludeNamespaces: ['App\\Generated'],
-        );
-        $configProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn($config);
+        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludeNamespaces: ['App\\Generated']));
 
-        $pipeline = new ViolationFilterPipeline(
-            $this->createBaselineLoader(),
-            new SuppressionFilter(),
-            $configProvider,
-        );
+        $result = $pipeline->filter([$kept, $excluded], new ViolationFilterOptions());
 
-        $options = new ViolationFilterOptions(
-            baselinePath: null,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
-        );
-
-        $result = $pipeline->filter([$v1, $v2], $options);
-
-        self::assertCount(1, $result->violations);
-        self::assertSame(1, $result->namespaceExclusionFiltered);
+        self::assertSame([$kept], $result->violations);
+        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::NamespaceExclusion));
     }
 
     #[Test]
-    public function excludeNamespacesKeepsNullNamespace(): void
+    public function itKeepsAFindingThatHasNoNamespaceToExclude(): void
     {
-        $vFile = new Violation(
+        $fileLevel = new Violation(
             location: new Location(RelativePath::fromString('src/helpers.php'), 10),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/helpers.php')),
             ruleName: 'complexity.cyclomatic',
@@ -447,144 +710,136 @@ final class ViolationFilterPipelineTest extends TestCase
             severity: Severity::Error,
         );
 
-        $config = new AnalysisConfiguration(
-            excludeNamespaces: ['App'],
-        );
-        $configProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn($config);
+        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludeNamespaces: ['App']));
 
-        $pipeline = new ViolationFilterPipeline(
-            $this->createBaselineLoader(),
-            new SuppressionFilter(),
-            $configProvider,
-        );
+        $result = $pipeline->filter([$fileLevel], new ViolationFilterOptions());
 
-        $options = new ViolationFilterOptions(
-            baselinePath: null,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
-        );
-
-        $result = $pipeline->filter([$vFile], $options);
-
-        self::assertCount(1, $result->violations);
-        self::assertSame(0, $result->namespaceExclusionFiltered);
+        self::assertSame([$fileLevel], $result->violations);
+        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::NamespaceExclusion));
     }
 
     #[Test]
-    public function cliExcludeNamespaceMergesWithConfig(): void
+    public function itMergesConfiguredAndCommandLineNamespaceExclusions(): void
     {
-        $v1 = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
-        $v2 = $this->makeViolation('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
-        $v3 = $this->makeViolation('src/Entity/User.php', 'App\\Entity', 'User');
+        $kept = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
+        $configured = $this->makeViolation('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
+        $flagged = $this->makeViolation('src/Entity/User.php', 'App\\Entity', 'User');
 
-        $config = new AnalysisConfiguration(
-            excludeNamespaces: ['App\\Generated'],
-        );
-        $configProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn($config);
-
-        $pipeline = new ViolationFilterPipeline(
-            $this->createBaselineLoader(),
-            new SuppressionFilter(),
-            $configProvider,
-        );
+        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludeNamespaces: ['App\\Generated']));
 
         $options = new ViolationFilterOptions(
-            baselinePath: null,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: ['App\\Entity'],
-            gitScope: null,
+            narrowing: new CliOnlyNarrowing(excludeNamespaces: ['App\\Entity']),
         );
 
-        $result = $pipeline->filter([$v1, $v2, $v3], $options);
+        $result = $pipeline->filter([$kept, $configured, $flagged], $options);
 
-        self::assertCount(1, $result->violations);
-        self::assertSame('App\\Service', $result->violations[0]->symbolPath->namespace);
-        self::assertSame(2, $result->namespaceExclusionFiltered);
+        self::assertSame([$kept], $result->violations);
+        self::assertSame(2, $result->removedCountBy(ViolationFilterStage::NamespaceExclusion));
     }
 
     #[Test]
-    public function noNamespaceExclusionWhenEmpty(): void
+    public function itRunsNoNamespaceExclusionStageWhenNoPrefixIsConfigured(): void
     {
         $violation = $this->makeViolation('src/Service/UserService.php');
 
-        $pipeline = $this->createPipeline();
+        $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions());
 
-        $options = new ViolationFilterOptions(
-            baselinePath: null,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
-        );
-
-        $result = $pipeline->filter([$violation], $options);
-
-        self::assertCount(1, $result->violations);
-        self::assertSame(0, $result->namespaceExclusionFiltered);
+        self::assertSame([$violation], $result->violations);
+        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::NamespaceExclusion));
     }
 
     #[Test]
     public function itKeepsArchitectureRuleViolationsInExcludedNamespaces(): void
     {
-        $architectureViolation = $this->makeViolation(
-            'src/Foo/Service.php',
-            'App\\Foo',
-            'Service',
-            LayerViolationRule::NAME,
-        );
-        $ordinaryViolation = $this->makeViolation(
-            'src/Foo/Other.php',
-            'App\\Foo',
-            'Other',
-            'complexity.cyclomatic',
-        );
+        $architecture = $this->makeViolation('src/Foo/Service.php', 'App\\Foo', 'Service', LayerViolationRule::NAME);
+        $ordinary = $this->makeViolation('src/Foo/Other.php', 'App\\Foo', 'Other');
 
-        $pipeline = $this->createPipelineWithExcludedNamespaces(['App\\Foo']);
+        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludeNamespaces: ['App\\Foo']));
 
-        $options = new ViolationFilterOptions(
-            baselinePath: null,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
-        );
+        $result = $pipeline->filter([$architecture, $ordinary], new ViolationFilterOptions());
 
-        $result = $pipeline->filter([$architectureViolation, $ordinaryViolation], $options);
-
-        self::assertCount(1, $result->violations);
-        self::assertSame(LayerViolationRule::NAME, $result->violations[0]->ruleName);
-        self::assertSame(1, $result->namespaceExclusionFiltered);
+        self::assertSame([$architecture], $result->violations);
+        self::assertSame(1, $result->removedCountBy(ViolationFilterStage::NamespaceExclusion));
     }
 
-    // -- Git scope filter (step 5) --
+    // -- Git scope --
 
     #[Test]
-    public function gitScopeFilterIsSkippedWhenNull(): void
+    public function itRunsNoGitScopeStageWhenTheRunIsNotScoped(): void
     {
         $violation = $this->makeViolation('src/Service/UserService.php');
 
-        $pipeline = $this->createPipeline();
+        $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions());
 
-        $options = new ViolationFilterOptions(
-            baselinePath: null,
-            disableSuppression: true,
-            excludePaths: [],
-            excludeNamespaces: [],
-            gitScope: null,
-        );
-
-        $result = $pipeline->filter([$violation], $options);
-
-        self::assertCount(1, $result->violations);
-        self::assertSame(0, $result->gitScopeFiltered);
+        self::assertSame([$violation], $result->violations);
+        self::assertSame(0, $result->removedCountBy(ViolationFilterStage::GitScope));
     }
 
     // -- Helper methods --
+
+    /**
+     * @param list<ViolationFilterStageInterface> $stages
+     *
+     * @return list<ViolationFilterStage>
+     */
+    private static function stageNames(array $stages): array
+    {
+        return array_map(
+            static fn(ViolationFilterStageInterface $stage): ViolationFilterStage => $stage->stage(),
+            $stages,
+        );
+    }
+
+    /**
+     * Two findings on one occurrence channel of one symbol, one of which an
+     * `@qmx-ignore-next-line` covers — the smallest fixture in which "the
+     * group the ceiling measures" and "the findings analysis produced" differ.
+     *
+     * Warning severity, so a promotion to Error is visible as a change of
+     * severity rather than as a no-op.
+     *
+     * @return array{Violation, Violation} the measured one, then the annotated one
+     */
+    private function makeAnnotatedPair(): array
+    {
+        return [
+            $this->makeViolation(
+                'src/Service/UserService.php',
+                'App\\Service',
+                'UserService',
+                'code-smell.goto',
+                severity: Severity::Warning,
+                line: 10,
+            ),
+            $this->makeViolation(
+                'src/Service/UserService.php',
+                'App\\Service',
+                'UserService',
+                'code-smell.goto',
+                severity: Severity::Warning,
+                line: 21,
+            ),
+        ];
+    }
+
+    private static function ignoreLine20(): Suppression
+    {
+        return new Suppression(rule: '*', reason: 'Reviewed and accepted', line: 20, type: SuppressionType::NextLine);
+    }
+
+    /**
+     * A pipeline whose suppression filter covers line 21 of the pair's file
+     * and nothing else.
+     */
+    private function createPipelineIgnoringLine21(): ViolationFilterPipeline
+    {
+        $pipeline = $this->createPipeline();
+        $pipeline->loadSuppressions([
+            'src/Service/UserService.php' => [self::ignoreLine20()],
+        ]);
+
+        return $pipeline;
+    }
 
     private function makeViolation(
         string $file,
@@ -592,54 +847,70 @@ final class ViolationFilterPipelineTest extends TestCase
         string $class = 'TestClass',
         string $ruleName = 'complexity.cyclomatic',
         int|float|null $metricValue = null,
+        Severity $severity = Severity::Error,
+        int $line = 10,
     ): Violation {
         return new Violation(
-            location: new Location(RelativePath::fromString($file), 10),
+            location: new Location(RelativePath::fromString($file), $line),
             symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: $ruleName,
-            violationCode: $ruleName . '.method',
+            violationCode: $ruleName === 'code-smell.goto' ? $ruleName : $ruleName . '.method',
             message: 'CCN too high',
-            severity: Severity::Error,
+            severity: $severity,
             metricValue: $metricValue,
         );
     }
 
-    private function createPipeline(): ViolationFilterPipeline
+    private function createPipeline(?AnalysisConfiguration $configuration = null): ViolationFilterPipeline
     {
         $configProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')
-            ->willReturn(new AnalysisConfiguration());
+        $configProvider->method('getConfiguration')->willReturn($configuration ?? new AnalysisConfiguration());
+
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
 
         return new ViolationFilterPipeline(
-            $this->createBaselineLoader(),
-            new SuppressionFilter(),
-            $configProvider,
+            new BaselineLoader(new BaselineEntryParser($declarations)),
+            $declarations,
+            new MeasuredViolationSet(
+                self::createStub(AnalysisPipelineInterface::class),
+                new SuppressionFilter(),
+                $configProvider,
+            ),
         );
     }
 
     /**
-     * @param list<string> $excludeNamespaces
+     * A scope over an empty git repository: nothing is staged, so the stage
+     * narrows the report to nothing.
      */
-    private function createPipelineWithExcludedNamespaces(array $excludeNamespaces): ViolationFilterPipeline
+    private function createGitScope(): GitScopeFilterConfig
     {
-        $config = new AnalysisConfiguration(excludeNamespaces: $excludeNamespaces);
-        $configProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn($config);
+        $dir = sys_get_temp_dir() . '/qmx-pipeline-git-' . uniqid();
+        mkdir($dir, 0777, true);
+        $realPath = realpath($dir);
+        if ($realPath === false) {
+            throw new RuntimeException('Failed to resolve path: ' . $dir);
+        }
 
-        return new ViolationFilterPipeline(
-            $this->createBaselineLoader(),
-            new SuppressionFilter(),
-            $configProvider,
+        $this->tempDirs[] = $realPath;
+
+        foreach (['git init', 'git config user.email "test@example.com"', 'git config user.name "Test User"'] as $command) {
+            $process = Process::fromShellCommandline($command, $realPath);
+            $process->run();
+
+            if (!$process->isSuccessful()) {
+                throw new RuntimeException(\sprintf('Command failed: %s', $process->getErrorOutput()));
+            }
+        }
+
+        $projectRoot = AbsolutePath::fromString($realPath);
+
+        return new GitScopeFilterConfig(
+            gitClient: new GitClient($projectRoot),
+            reportScope: new GitScope('staged'),
+            strictMode: false,
+            projectRoot: $projectRoot,
         );
-    }
-
-    /**
-     * A loader wired with the channels these tests need declared — see
-     * {@see StubChannelDeclarationRegistry::withDefaults()}.
-     */
-    private function createBaselineLoader(): BaselineLoader
-    {
-        return new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()));
     }
 
     /**
@@ -665,5 +936,33 @@ final class ViolationFilterPipelineTest extends TestCase
         file_put_contents($path, json_encode($data, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT));
 
         return $path;
+    }
+
+    private static function removeDirectory(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $items = scandir($dir);
+        if ($items === false) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            $path = $dir . '/' . $item;
+
+            if (is_dir($path) && !is_link($path)) {
+                self::removeDirectory($path);
+            } else {
+                unlink($path);
+            }
+        }
+
+        rmdir($dir);
     }
 }

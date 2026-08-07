@@ -337,13 +337,25 @@ violations were suppressed this way — split into `exclude_namespaces` and `exc
 broken down by rule name. Unlike `@qmx-ignore`, this suppression is otherwise silent: nothing in
 the default output indicates it happened.
 
-### `--no-suppression`
+### `--no-suppression-annotations`
 
-Ignore all `@qmx-ignore` tags and report every violation:
+Report every violation, including the ones `@qmx-ignore` tags suppress:
 
 ```bash
-bin/qmx check src/ --no-suppression
+bin/qmx check src/ --no-suppression-annotations
 ```
+
+!!! note "It does not change what a baseline measures"
+
+    The flag affects the report only. A baseline measures the findings your
+    configuration and your source annotations leave standing, so a finding an
+    `@qmx-ignore` tag removes is never captured into a baseline and never
+    compared against one — whether or not this flag is passed.
+
+    The visible consequence: under this flag an annotated finding is shown at
+    its **own** severity and is never promoted to an error, because no baseline
+    entry covers it. A flag can narrow what a baseline measures
+    (`--exclude-path`, `--exclude-namespace`); none can widen it.
 
 ---
 

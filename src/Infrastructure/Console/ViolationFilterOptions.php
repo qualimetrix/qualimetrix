@@ -5,19 +5,19 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 /**
- * Options for the violation filter pipeline.
+ * What one `check` invocation asks the violation pipeline to do.
+ *
+ * The narrowing this invocation supplies on its own is held apart from the
+ * rest rather than flattened into it: those three flags are the part of a
+ * run that no other command shares, and keeping them in
+ * {@see CliOnlyNarrowing} is what stops them from quietly becoming part of
+ * the measured set (§5.5 of the baseline-ceiling plan).
  */
 final readonly class ViolationFilterOptions
 {
-    /**
-     * @param list<string> $excludePaths
-     * @param list<string> $excludeNamespaces
-     */
     public function __construct(
-        public ?string $baselinePath,
-        public bool $disableSuppression,
-        public array $excludePaths,
-        public array $excludeNamespaces,
-        public ?GitScopeFilterConfig $gitScope,
+        public ?string $baselinePath = null,
+        public CliOnlyNarrowing $narrowing = new CliOnlyNarrowing(),
+        public ?GitScopeFilterConfig $gitScope = null,
     ) {}
 }

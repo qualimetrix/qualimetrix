@@ -195,10 +195,10 @@ final class CheckCommandDefinition
                 'Show suppressed violations',
             )
             ->addOption(
-                'no-suppression',
+                'no-suppression-annotations',
                 null,
                 InputOption::VALUE_NONE,
-                'Ignore suppression tags',
+                'Report findings that `@qmx-ignore` annotations suppress (does not change what a baseline measures)',
             );
     }
 

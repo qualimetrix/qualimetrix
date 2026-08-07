@@ -6,30 +6,54 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use Qualimetrix\Baseline\BaselineEntry;
 use Qualimetrix\Baseline\BaselineLoader;
-use Qualimetrix\Baseline\Filter\BaselineFilter;
-use Qualimetrix\Baseline\Suppression\SuppressionFilter;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Baseline\Filter\BaselineCeilingStage;
 use Qualimetrix\Core\Suppression\Suppression;
-use Qualimetrix\Core\Util\NamespaceMatcher;
-use Qualimetrix\Core\Util\PathMatcher;
-use Qualimetrix\Core\Violation\Filter\NamespaceExclusionFilter;
-use Qualimetrix\Core\Violation\Filter\PathExclusionFilter;
+use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Core\Violation\Filter\PredicateFilterStage;
+use Qualimetrix\Core\Violation\Filter\ViolationFilterStage;
+use Qualimetrix\Core\Violation\Filter\ViolationFilterStageInterface;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\Git\GitScopeFilter;
 
 /**
- * Pipeline that applies all violation filters in order:
- * baseline -> suppression -> path exclusion -> namespace exclusion -> git scope.
+ * Runs a run's findings through the ordered stages of
+ * {@see ViolationFilterStage}: `@qmx-ignore` → `exclude_paths` →
+ * `exclude_namespaces` → baseline → git scope.
  *
- * @qmx-threshold complexity.cognitive error=35 — Preserves the ordered multi-stage violation filtering flow.
- * Multi-stage filter pipeline — cognitive complexity is structural.
+ * **The order is a behavioural contract** (§5.2 of the baseline-ceiling
+ * plan), which is why {@see stages()} is public: an assertion about it reads
+ * the list rather than inferring it from counters, which cannot tell "the
+ * baseline ran fourth" from "the baseline removed nothing".
+ *
+ * Two positions in that order carry a decision:
+ *
+ * - **The baseline runs after suppression and exclusion.** Suppression is
+ *   per line while a baseline identity spans a file or a class, so a
+ *   baseline placed first would see *n* findings where everything
+ *   downstream — capture included — sees *n−1*. The entry would read as
+ *   breached on the very next run and promote its whole group to Error.
+ *   One position means one set. The visible consequence is that a
+ *   hand-written `@qmx-ignore` outranks a generated entry, which is the
+ *   right way round.
+ * - **Git scope runs last**, so narrowing the report cannot change what was
+ *   accepted, captured or called stale (§2.4).
+ *
+ * **`--no-suppression-annotations` is honoured here rather than in the stage
+ * list**, and that is the whole of its implementation. The measured set is
+ * defined by configuration and annotations alone (§5.5), so the suppression
+ * stage always runs; the flag only asks for the findings it removed to be put
+ * back into the report, which happens after the baseline stage has judged the
+ * set and before git scope narrows what is shown. Making the flag drop the
+ * stage instead — the shape this class shipped with — let a run measure
+ * findings no capture had recorded, and promoted them to Error on unchanged
+ * code. See {@see CliOnlyNarrowing} for the invariant and its cost.
  */
 final readonly class ViolationFilterPipeline
 {
     public function __construct(
         private BaselineLoader $baselineLoader,
-        private SuppressionFilter $suppressionFilter,
-        private ConfigurationProviderInterface $configurationProvider,
+        private ChannelDeclarationRegistryInterface $declarations,
+        private MeasuredViolationSet $measuredSet,
     ) {}
 
     /**
@@ -41,137 +65,115 @@ final readonly class ViolationFilterPipeline
      */
     public function loadSuppressions(array $suppressions): void
     {
-        $this->suppressionFilter->clearSuppressions();
-
-        foreach ($suppressions as $file => $fileSuppression) {
-            $this->suppressionFilter->setSuppressions($file, $fileSuppression);
-        }
+        $this->measuredSet->loadSuppressions($suppressions);
     }
 
     /**
-     * Applies all filters to violations and returns result with metadata.
+     * The stages this run will apply, in order.
+     *
+     * The first three come from {@see MeasuredViolationSet}, which is the
+     * single definition of the measured set; the baseline and git-scope
+     * stages are appended here because neither belongs to that set.
+     *
+     * @return list<ViolationFilterStageInterface>
+     */
+    public function stages(ViolationFilterOptions $options): array
+    {
+        $stages = $this->measuredSet->stages($options->narrowing);
+
+        if ($options->baselinePath !== null && $options->baselinePath !== '') {
+            $stages[] = new BaselineCeilingStage(
+                $this->baselineLoader->load($options->baselinePath),
+                $this->declarations,
+            );
+        }
+
+        if ($options->gitScope !== null) {
+            $stages[] = new PredicateFilterStage(
+                ViolationFilterStage::GitScope,
+                new GitScopeFilter(
+                    $options->gitScope->gitClient,
+                    $options->gitScope->reportScope,
+                    $options->gitScope->projectRoot,
+                    !$options->gitScope->strictMode,
+                ),
+            );
+        }
+
+        return $stages;
+    }
+
+    /**
+     * Applies every stage in order and reports what each of them did.
+     *
+     * Findings the suppression stage removed are carried alongside the run
+     * when `--no-suppression-annotations` asks for them, on a path of their
+     * own: they still meet every exclusion and the git scope — otherwise the
+     * flag would start showing what an exclusion took out — but they never
+     * reach the baseline stage, because they are not in the set it measures.
+     * They rejoin the report immediately before git scope, or at the end of a
+     * run that has no git scope, and are appended after the findings that
+     * were never suppressed.
      *
      * @param list<Violation> $violations
      */
     public function filter(array $violations, ViolationFilterOptions $options): ViolationFilterResult
     {
-        $baselineFilter = null;
-        $baselineFiltered = 0;
-        $staleKeys = [];
-        $staleCount = 0;
+        /** @var ?list<Violation> $measured */
+        $measured = null;
+        $removed = [];
+        /** @var list<BaselineEntry> $stale */
+        $stale = [];
+        /** @var list<Violation> $restored */
+        $restored = [];
 
-        // 1. Baseline filter
-        if ($options->baselinePath !== null && $options->baselinePath !== '') {
-            $baseline = $this->baselineLoader->load($options->baselinePath);
+        foreach ($this->stages($options) as $stage) {
+            $current = $stage->stage();
 
-            // Detect stale entries — keyed on the complete identity (symbol,
-            // channel, dependency edge), not on the symbol alone, so a
-            // repaired finding strands its own entry instead of its
-            // neighbours'.
-            $staleEntries = $baseline->staleEntries(BaselineFilter::measuredIdentityKeys($violations));
-            $staleKeys = array_map(
-                static fn(BaselineEntry $entry) => \sprintf(
-                    '%s [%s]',
-                    $entry->identity->describe(),
-                    $entry->selector()->value,
-                ),
-                $staleEntries,
-            );
-            $staleCount = \count($staleEntries);
-
-            // A stale entry is reported, never acted on: it does not fail the
-            // run and it does not disable its neighbours (§5.7). Under the
-            // per-identity key of §5.1 an entry goes stale the moment one
-            // channel of a symbol is repaired, so the old "any stale key
-            // skips the filter" rule would answer the first repair by
-            // resurfacing every accepted finding at once — the tool punishing
-            // an improvement.
-            $baselineFilter = new BaselineFilter($baseline);
-            $beforeCount = \count($violations);
-            $violations = array_values(array_filter(
-                $violations,
-                fn(Violation $v) => $baselineFilter->shouldInclude($v),
-            ));
-            $baselineFiltered = $beforeCount - \count($violations);
-        }
-
-        // 2. Suppression filter
-        $suppressedViolations = [];
-        if (!$options->disableSuppression) {
-            $included = [];
-            foreach ($violations as $v) {
-                if ($this->suppressionFilter->shouldInclude($v)) {
-                    $included[] = $v;
-                } else {
-                    $suppressedViolations[] = $v;
-                }
+            if ($measured === null && !$current->definesMeasuredSet()) {
+                $measured = $violations;
             }
-            $violations = $included;
-        }
 
-        // 3. Path exclusion filter
-        $pathExclusionFiltered = 0;
-        $configPaths = $this->configurationProvider->getConfiguration()->excludePaths;
-        $allPaths = array_values(array_unique([...$configPaths, ...$options->excludePaths]));
+            if ($current === ViolationFilterStage::GitScope) {
+                $violations = [...$violations, ...$restored];
+                $restored = [];
+            }
 
-        if ($allPaths !== []) {
-            $pathMatcher = new PathMatcher($allPaths);
-            $filter = new PathExclusionFilter($pathMatcher);
+            // Staleness is the one thing computed from a stage's *input*:
+            // an entry is stale when its identity is absent from what the
+            // ceiling measured, and the ceiling's output has the accepted
+            // groups already taken out of it — reading that would report
+            // every accepted entry as stale.
+            if ($stage instanceof BaselineCeilingStage) {
+                $stale = $stage->staleEntriesOver($violations);
+            }
 
-            $beforeCount = \count($violations);
-            $violations = array_values(array_filter(
-                $violations,
-                fn(Violation $v) => $filter->shouldInclude($v),
-            ));
-            $pathExclusionFiltered = $beforeCount - \count($violations);
-        }
+            $outcome = $stage->apply($violations);
+            $violations = $outcome->violations;
+            $removed[$current->value] = $outcome->removed;
 
-        // 4. Namespace exclusion filter (architecture.* rules are exempt — see NamespaceExclusionFilter)
-        $namespaceExclusionFiltered = 0;
-        $configNamespaces = $this->configurationProvider->getConfiguration()->excludeNamespaces;
-        $allNamespaces = array_values(array_unique([...$configNamespaces, ...$options->excludeNamespaces]));
-        $namespaceMatcher = new NamespaceMatcher($allNamespaces);
+            if ($current === ViolationFilterStage::Suppression && $options->narrowing->annotationSuppressionDisabled) {
+                // Suppressed, therefore outside the measured set — and then
+                // handed back to the report, so nothing was removed from the
+                // run and `--show-suppressed` must not claim otherwise.
+                $restored = $outcome->removed;
+                $removed[$current->value] = [];
 
-        if (!$namespaceMatcher->isEmpty()) {
-            $filter = new NamespaceExclusionFilter($namespaceMatcher);
+                continue;
+            }
 
-            $beforeCount = \count($violations);
-            $violations = array_values(array_filter(
-                $violations,
-                fn(Violation $v) => $filter->shouldInclude($v),
-            ));
-            $namespaceExclusionFiltered = $beforeCount - \count($violations);
-        }
-
-        // 5. Git scope filter
-        $gitScopeFiltered = 0;
-        if ($options->gitScope !== null && $options->gitScope->reportScope !== null) {
-            $gitFilter = new GitScopeFilter(
-                $options->gitScope->gitClient,
-                $options->gitScope->reportScope,
-                $options->gitScope->projectRoot,
-                !$options->gitScope->strictMode,
-            );
-
-            $beforeCount = \count($violations);
-            $violations = array_values(array_filter(
-                $violations,
-                fn(Violation $v) => $gitFilter->shouldInclude($v),
-            ));
-            $gitScopeFiltered = $beforeCount - \count($violations);
+            if ($restored !== [] && $current->definesMeasuredSet()) {
+                $restoredOutcome = $stage->apply($restored);
+                $restored = $restoredOutcome->violations;
+                $removed[$current->value] = [...$removed[$current->value], ...$restoredOutcome->removed];
+            }
         }
 
         return new ViolationFilterResult(
-            violations: $violations,
-            baselineFiltered: $baselineFiltered,
-            suppressionFiltered: \count($suppressedViolations),
-            pathExclusionFiltered: $pathExclusionFiltered,
-            namespaceExclusionFiltered: $namespaceExclusionFiltered,
-            gitScopeFiltered: $gitScopeFiltered,
-            baselineFilter: $baselineFilter,
-            staleBaselineKeys: $staleKeys,
-            staleBaselineCount: $staleCount,
-            suppressedViolations: $suppressedViolations,
+            violations: [...$violations, ...$restored],
+            measuredViolations: $measured ?? $violations,
+            removedByStage: $removed,
+            staleEntries: $stale,
         );
     }
 }
