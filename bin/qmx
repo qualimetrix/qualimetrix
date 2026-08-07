@@ -7,6 +7,10 @@ namespace Qualimetrix;
 
 use Qualimetrix\Infrastructure\Console\Application;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineMigrateCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
@@ -50,7 +54,11 @@ $container = $containerFactory->create();
 $application = new Application();
 $application->setCommandLoader(new ContainerCommandLoader($container, [
     'check' => CheckCommand::class,
+    'baseline:generate' => BaselineGenerateCommand::class,
+    'baseline:migrate' => BaselineMigrateCommand::class,
+    'baseline:update' => BaselineUpdateCommand::class,
     'baseline:cleanup' => BaselineCleanupCommand::class,
+    'baseline:explain' => BaselineExplainCommand::class,
     'debug:layer-assignment' => LayerAssignmentCommand::class,
     'graph:export' => GraphExportCommand::class,
     'hook:install' => HookInstallCommand::class,

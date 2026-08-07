@@ -14,7 +14,6 @@ use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
-use Qualimetrix\Infrastructure\Console\BaselinePresenter;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Console\FilteredInputDefinition;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
@@ -52,7 +51,6 @@ final class CheckCommand extends Command
         private readonly ConfigurationPipeline $configurationPipeline,
         private readonly RuntimeConfigurator $runtimeConfigurator,
         private readonly ResultPresenter $resultPresenter,
-        private readonly BaselinePresenter $baselinePresenter,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct();
@@ -207,23 +205,17 @@ final class CheckCommand extends Command
         $filterResult = $this->violationFilterOrchestrator->filterAndReport($result, $input, $output, $scopeResolution);
         $filteredViolations = $filterResult->violations;
 
-        // Capture reads the measured set, not the raw analysis output: an
-        // entry written for a finding this very run suppressed or excluded
-        // could never be matched again, and nothing could retire it.
-        $baselineGenerated = $this->baselinePresenter->generateBaselineIfRequested(
-            $filterResult->measuredViolations,
-            $scopeResolution->paths,
-            $input,
-            $output,
-        );
-
         $scopedReporting = $scopeResolution->reportScope !== null;
+
+        // `check` no longer writes baselines — `bin/qmx baseline:generate`
+        // does — so the "a baseline was just captured, report success
+        // regardless" path is dead here and the flag is always false.
         $exitCode = $this->resultPresenter->presentResults(
             $filteredViolations,
             $result,
             $input,
             $output,
-            $baselineGenerated,
+            false,
             $scopedReporting,
         );
 

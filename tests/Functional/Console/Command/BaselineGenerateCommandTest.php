@@ -1,0 +1,192 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Functional\Console\Command;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Baseline\BaselineGenerator;
+use Qualimetrix\Baseline\BaselineWriter;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
+use Qualimetrix\Tests\Support\Console\StubBaselineRun;
+use Qualimetrix\Tests\Support\Console\TempDirectory;
+use Qualimetrix\Tests\Support\Time\FixedClock;
+use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Tester\CommandTester;
+
+#[CoversClass(BaselineGenerateCommand::class)]
+final class BaselineGenerateCommandTest extends TestCase
+{
+    private string $tempDir;
+    private string $baselinePath;
+
+    protected function setUp(): void
+    {
+        $this->tempDir = TempDirectory::create('qmx-baseline-generate-');
+        $this->baselinePath = $this->tempDir . '/baseline.json';
+    }
+
+    protected function tearDown(): void
+    {
+        TempDirectory::remove($this->tempDir);
+    }
+
+    /**
+     * Regenerating over an existing file discards every acceptance it
+     * records, including entries a user deliberately tightened — and the
+     * command line that does it is the one that created the file.
+     */
+    #[Test]
+    public function itRefusesToOverwriteAnExistingBaselineWithoutForce(): void
+    {
+        file_put_contents($this->baselinePath, 'do not touch');
+
+        $tester = $this->execute([]);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        self::assertStringContainsString('already exists', $tester->getDisplay());
+        self::assertSame('do not touch', file_get_contents($this->baselinePath));
+    }
+
+    #[Test]
+    public function itOverwritesAnExistingBaselineUnderForce(): void
+    {
+        file_put_contents($this->baselinePath, 'do not touch');
+
+        $tester = $this->execute(['--force' => true]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertSame([1], self::countsOf(self::entriesOf($this->baselinePath)));
+    }
+
+    /**
+     * The ratchet default writes no `mode` key at all: an entry without one
+     * *is* a ratchet entry, and spelling the default would make its absence
+     * mean something else in every file already written.
+     */
+    #[Test]
+    public function itWritesNoModeKeyByDefault(): void
+    {
+        $tester = $this->execute([]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+
+        foreach (self::entriesOf($this->baselinePath) as $entry) {
+            self::assertArrayNotHasKey('mode', $entry);
+        }
+    }
+
+    #[Test]
+    public function itWritesModeSuppressOnEveryEntryWhenAsked(): void
+    {
+        $tester = $this->execute(['--mode' => 'suppress']);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+
+        $entries = self::entriesOf($this->baselinePath);
+        self::assertNotSame([], $entries);
+
+        foreach ($entries as $entry) {
+            self::assertSame('suppress', $entry['mode'] ?? null);
+        }
+    }
+
+    #[Test]
+    public function itRejectsAModeItDoesNotKnow(): void
+    {
+        $tester = $this->execute(['--mode' => 'ratched']);
+
+        self::assertSame(Command::INVALID, $tester->getStatusCode());
+        self::assertStringContainsString('Unknown --mode value', $tester->getDisplay());
+        self::assertFileDoesNotExist($this->baselinePath);
+    }
+
+    /**
+     * A run whose findings all sit on channels no rule declares writes an
+     * empty baseline. Reporting only "0 entries written" would send the user
+     * straight into a `check` that reports everything they believed they had
+     * just accepted, with nothing anywhere to explain it.
+     */
+    #[Test]
+    public function itNamesTheGroupsItCouldNotCapture(): void
+    {
+        $tester = $this->execute([], [self::violation('no-such-rule', 'no-such-rule')]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('were not recorded and will be reported again', $tester->getDisplay());
+        self::assertStringContainsString('no rule declares the channel', $tester->getDisplay());
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     * @param ?list<Violation> $violations
+     */
+    private function execute(array $options, ?array $violations = null): CommandTester
+    {
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+
+        $command = new BaselineGenerateCommand(
+            new StubBaselineRun(
+                $violations ?? [self::violation('code-smell.goto', 'code-smell.goto')],
+                ['src'],
+                AbsolutePath::fromString($this->tempDir),
+            ),
+            new BaselineGenerator($declarations, new FixedClock()),
+            new BaselineWriter(),
+        );
+
+        $tester = new CommandTester($command);
+        $tester->execute(['baseline' => $this->baselinePath, 'paths' => ['src'], ...$options]);
+
+        return $tester;
+    }
+
+    private static function violation(string $ruleName, string $violationCode): Violation
+    {
+        return new Violation(
+            location: new Location(RelativePath::fromString('src/Legacy.php'), 3),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Legacy.php')),
+            ruleName: $ruleName,
+            violationCode: $violationCode,
+            message: 'finding',
+            severity: Severity::Warning,
+        );
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private static function entriesOf(string $path): array
+    {
+        /** @var array{entries: array<string, list<array<string, mixed>>>} $data */
+        $data = json_decode((string) file_get_contents($path), true, flags: \JSON_THROW_ON_ERROR);
+
+        $entries = [];
+        foreach ($data['entries'] as $forSymbol) {
+            foreach ($forSymbol as $entry) {
+                $entries[] = $entry;
+            }
+        }
+
+        return $entries;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $entries
+     *
+     * @return list<int>
+     */
+    private static function countsOf(array $entries): array
+    {
+        return array_map(static fn(array $entry): int => (int) $entry['count'], $entries);
+    }
+}

@@ -7,9 +7,11 @@ namespace Qualimetrix\Tests\Functional\Console\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Exception\InvalidOptionException;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
@@ -58,7 +60,12 @@ final class CheckCommandBaselineTest extends TestCase
 
         // A config of its own, so the repository's `qmx.yaml` — which
         // whitelists functions for this very rule — cannot reach the fixture.
-        file_put_contents($this->configPath, "failOn: error\n");
+        //
+        // The rule selection lives in the config file rather than on the
+        // command line because `baseline:generate` accepts no flag that could
+        // move the set it measures (§5.5): both commands must narrow through
+        // the same configuration or they are not measuring one set.
+        file_put_contents($this->configPath, "failOn: error\nonlyRules: ['code-smell.error-suppression']\n");
     }
 
     protected function tearDown(): void
@@ -81,7 +88,7 @@ final class CheckCommandBaselineTest extends TestCase
     {
         $this->writeFixture(self::FIXTURE_WITH_ONE_IGNORED_MEMBER);
 
-        $this->runCheck(['--generate-baseline' => $this->baselinePath]);
+        $this->runGenerate();
 
         self::assertSame([1], self::capturedCounts());
 
@@ -109,7 +116,7 @@ final class CheckCommandBaselineTest extends TestCase
     {
         $this->writeFixture(self::FIXTURE_WITH_ONE_IGNORED_MEMBER);
 
-        $this->runCheck(['--generate-baseline' => $this->baselinePath]);
+        $this->runGenerate();
 
         self::assertSame([1], self::capturedCounts());
 
@@ -123,23 +130,27 @@ final class CheckCommandBaselineTest extends TestCase
     }
 
     /**
-     * Capture reads the measured set, and no flag can widen it: a run that
-     * reports the annotated finding still writes no entry covering it. The
-     * count stays at the one member the annotations left standing — writing
-     * two would record debt for a finding a later run, without the flag,
-     * cannot even see.
+     * Capture reads the measured set, and nothing on a command line can widen
+     * it: `baseline:generate` does not accept the flag at all, and the count
+     * it writes is the one member the annotations left standing.
+     *
+     * Both halves matter. The refusal alone would be satisfied by a command
+     * that took no options; the count alone would be satisfied by a command
+     * that took the flag and happened to ignore it — which is the shape that
+     * once let a capture record debt a later run could not see.
      */
     #[Test]
-    public function itWritesNoEntryForAnAnnotatedFindingEvenWhenTheRunReportsIt(): void
+    public function itWritesNoEntryForAnAnnotatedFindingAndRefusesToBeAskedTo(): void
     {
         $this->writeFixture(self::FIXTURE_WITH_ONE_IGNORED_MEMBER);
 
-        $this->runCheck([
-            '--generate-baseline' => $this->baselinePath,
-            '--no-suppression-annotations' => true,
-        ]);
+        $this->runGenerate();
 
         self::assertSame([1], self::capturedCounts());
+
+        $this->expectException(InvalidOptionException::class);
+
+        $this->runGenerate(['--no-suppression-annotations' => true]);
     }
 
     /**
@@ -162,7 +173,7 @@ final class CheckCommandBaselineTest extends TestCase
             }
             PHP);
 
-        $this->runCheck(['--generate-baseline' => $this->baselinePath]);
+        $this->runGenerate();
 
         self::assertSame([1], self::capturedCounts());
 
@@ -213,7 +224,7 @@ final class CheckCommandBaselineTest extends TestCase
             }
             PHP);
 
-        $this->runCheck(['--generate-baseline' => $this->baselinePath]);
+        $this->runGenerate();
 
         self::mutateEntries(static function (array $entry): array {
             $entry['magnitudes'] = [1];
@@ -250,10 +261,40 @@ final class CheckCommandBaselineTest extends TestCase
         $tester->execute([
             'paths' => [$this->tempDir],
             '--config' => $this->configPath,
-            '--only-rule' => ['code-smell.error-suppression'],
             '--no-progress' => true,
             ...$options,
         ]);
+
+        return $tester;
+    }
+
+    /**
+     * Capture goes through `baseline:generate`, out of the same container
+     * `check` comes from — which is also what proves the command is wired and
+     * reachable, not merely constructible.
+     *
+     * @param array<string, mixed> $options
+     */
+    private function runGenerate(array $options = []): CommandTester
+    {
+        $containerFactory = new ContainerFactory();
+        $container = $containerFactory->create();
+
+        /** @var BaselineGenerateCommand $command */
+        $command = $container->get(BaselineGenerateCommand::class);
+
+        $application = new Application();
+        $application->addCommand($command);
+
+        $tester = new CommandTester($command);
+        $tester->execute([
+            'baseline' => $this->baselinePath,
+            'paths' => [$this->tempDir],
+            '--config' => $this->configPath,
+            ...$options,
+        ]);
+
+        self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
 
         return $tester;
     }

@@ -9,10 +9,15 @@ use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Baseline\BaselineCleaner;
 use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineLoader;
+use Qualimetrix\Baseline\BaselineMigrator;
+use Qualimetrix\Baseline\BaselineUpdater;
 use Qualimetrix\Baseline\BaselineWriter;
+use Qualimetrix\Baseline\BoundaryExplanationService;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
+use Qualimetrix\Baseline\V5BaselineReader;
 use Qualimetrix\Configuration\ComputedMetricFormulaValidator;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
@@ -20,14 +25,21 @@ use Qualimetrix\Configuration\HealthFormulaExcluder;
 use Qualimetrix\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Configuration\RuleOptionsFactory;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
-use Qualimetrix\Infrastructure\Console\BaselinePresenter;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
+use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineMigrateCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
+use Qualimetrix\Infrastructure\Console\Command\BaselineRunInterface;
+use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
@@ -244,14 +256,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ConfigurationProviderInterface::class),
             ]);
 
-        // BaselinePresenter for baseline generation
-        $container->register(BaselinePresenter::class)
-            ->setArguments([
-                new Reference(BaselineGenerator::class),
-                new Reference(BaselineWriter::class),
-                new Reference(ConfigurationProviderInterface::class),
-            ]);
-
         // ViolationFilter for --namespace/--class drill-down
         $container->register(ViolationFilter::class);
 
@@ -285,19 +289,11 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ConfigurationPipeline::class),
                 new Reference(RuntimeConfigurator::class),
                 new Reference(ResultPresenter::class),
-                new Reference(BaselinePresenter::class),
                 new Reference(DelegatingLogger::class),
             ])
             ->setPublic(true);
 
-        // BaselineCleanupCommand
-        $container->register(BaselineCleanupCommand::class)
-            ->setArguments([
-                new Reference(BaselineLoader::class),
-                new Reference(BaselineWriter::class),
-                new Reference(ConfigurationProviderInterface::class),
-            ])
-            ->setPublic(true);
+        $this->registerBaselineCommands($container);
 
         // GitRepositoryLocator (shared by hook commands)
         $container->register(GitRepositoryLocator::class);
@@ -340,6 +336,79 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(DependencyVisitor::class),
                 new Reference(DependencyGraphBuilder::class),
                 new Reference(DelegatingLogger::class),
+            ])
+            ->setPublic(true);
+    }
+
+    /**
+     * The five commands of the baseline lifecycle, plus the run they all
+     * measure against.
+     *
+     * `BaselineRun` is registered once and injected into every one of them:
+     * that is what makes "one measured set" a property of the wiring rather
+     * than a rule each command has to remember.
+     */
+    private function registerBaselineCommands(ContainerBuilder $container): void
+    {
+        $container->register(BaselineRun::class)
+            ->setArguments([
+                new Reference(ConfigurationPipeline::class),
+                new Reference(RuntimeConfigurator::class),
+                new Reference(MeasuredViolationSet::class),
+                new Reference(ConfigurationProviderInterface::class),
+            ]);
+
+        $container->setAlias(BaselineRunInterface::class, BaselineRun::class);
+
+        $container->register(BaselineConfiguredThresholds::class)
+            ->setArguments([
+                new Reference(RuleRegistryInterface::class),
+                new Reference(RuleOptionsFactory::class),
+            ]);
+
+        $container->register(BaselineGenerateCommand::class)
+            ->setArguments([
+                new Reference(BaselineRun::class),
+                new Reference(BaselineGenerator::class),
+                new Reference(BaselineWriter::class),
+            ])
+            ->setPublic(true);
+
+        $container->register(BaselineMigrateCommand::class)
+            ->setArguments([
+                new Reference(BaselineRun::class),
+                new Reference(BaselineGenerator::class),
+                new Reference(BaselineMigrator::class),
+                new Reference(V5BaselineReader::class),
+                new Reference(BaselineWriter::class),
+            ])
+            ->setPublic(true);
+
+        $container->register(BaselineUpdateCommand::class)
+            ->setArguments([
+                new Reference(BaselineRun::class),
+                new Reference(BaselineLoader::class),
+                new Reference(BaselineUpdater::class),
+                new Reference(BaselineWriter::class),
+            ])
+            ->setPublic(true);
+
+        $container->register(BaselineCleanupCommand::class)
+            ->setArguments([
+                new Reference(BaselineRun::class),
+                new Reference(BaselineLoader::class),
+                new Reference(BaselineCleaner::class),
+                new Reference(BaselineWriter::class),
+                new Reference(ChannelDeclarationRegistryInterface::class),
+            ])
+            ->setPublic(true);
+
+        $container->register(BaselineExplainCommand::class)
+            ->setArguments([
+                new Reference(BaselineRun::class),
+                new Reference(BaselineLoader::class),
+                new Reference(BoundaryExplanationService::class),
+                new Reference(BaselineConfiguredThresholds::class),
             ])
             ->setPublic(true);
     }

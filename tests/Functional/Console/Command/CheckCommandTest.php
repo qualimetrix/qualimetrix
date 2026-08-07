@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Functional\Console\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Symfony\Component\Console\Application;
@@ -210,12 +211,11 @@ class ComplexClass {
 
         $baselinePath = $this->tempDir . '/baseline.json';
 
-        // Create command from DI container
-        $commandTester = $this->createCommandTester();
+        // Capture is `baseline:generate`'s job; `check` only reads a baseline.
+        $commandTester = $this->createBaselineGenerateTester();
         $commandTester->execute([
+            'baseline' => $baselinePath,
             'paths' => [$this->tempDir],
-            '--generate-baseline' => $baselinePath,
-            '--no-progress' => true,
         ]);
 
         // Assert baseline was generated
@@ -252,11 +252,10 @@ class ComplexClass {
         $baselinePath = $this->tempDir . '/baseline.json';
 
         // First, generate baseline
-        $commandTester = $this->createCommandTester();
+        $commandTester = $this->createBaselineGenerateTester();
         $commandTester->execute([
+            'baseline' => $baselinePath,
             'paths' => [$this->tempDir],
-            '--generate-baseline' => $baselinePath,
-            '--no-progress' => true,
         ]);
 
         // Now analyze with baseline - should show no new violations
@@ -471,6 +470,20 @@ class SimpleClass {
 
         /** @var CheckCommand $command */
         $command = $container->get(CheckCommand::class);
+
+        $application = new Application();
+        $application->addCommand($command);
+
+        return new CommandTester($command);
+    }
+
+    private function createBaselineGenerateTester(): CommandTester
+    {
+        $containerFactory = new ContainerFactory();
+        $container = $containerFactory->create();
+
+        /** @var BaselineGenerateCommand $command */
+        $command = $container->get(BaselineGenerateCommand::class);
 
         $application = new Application();
         $application->addCommand($command);

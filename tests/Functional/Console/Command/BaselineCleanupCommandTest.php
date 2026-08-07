@@ -7,433 +7,297 @@ namespace Qualimetrix\Tests\Functional\Console\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Baseline\Baseline;
+use Qualimetrix\Baseline\BaselineCleaner;
+use Qualimetrix\Baseline\BaselineEdge;
+use Qualimetrix\Baseline\BaselineEntry;
 use Qualimetrix\Baseline\BaselineEntryParser;
-use Qualimetrix\Baseline\BaselineGenerator;
+use Qualimetrix\Baseline\BaselineIdentity;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BaselineWriter;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationHolder;
+use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
+use Qualimetrix\Tests\Support\Console\StubBaselineRun;
+use Qualimetrix\Tests\Support\Console\TempDirectory;
 use Qualimetrix\Tests\Support\Time\FixedClock;
 use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
-use Symfony\Component\Console\Application;
-use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 
+/**
+ * `baseline:cleanup` reports on its own and removes only what it is told to.
+ *
+ * The two properties worth defending are opposites: nothing is removed by
+ * inference (absence of a finding is not proof the debt is gone), and what is
+ * named *is* removed exactly — including one of two entries that differ in
+ * nothing but their dependency edge, which is the case a selector shorter
+ * than the full identity could not address at all.
+ */
 #[CoversClass(BaselineCleanupCommand::class)]
 final class BaselineCleanupCommandTest extends TestCase
 {
+    private const string EDGE_CHANNEL = 'architecture.layer-violation#architecture.layer-violation';
+    private const string OCCURRENCE_CHANNEL = 'code-smell.goto#code-smell.goto';
+
     private string $tempDir;
+    private string $baselinePath;
 
     protected function setUp(): void
     {
-        // Create temporary directory for test files
-        $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . uniqid();
-        mkdir($this->tempDir, 0777, true);
+        $this->tempDir = TempDirectory::create('qmx-baseline-cleanup-');
+        $this->baselinePath = $this->tempDir . '/baseline.json';
     }
 
     protected function tearDown(): void
     {
-        // Clean up temporary directory
-        if (is_dir($this->tempDir)) {
-            $this->removeDirectory($this->tempDir);
-        }
+        TempDirectory::remove($this->tempDir);
     }
 
+    /**
+     * With no `--remove` the command is a report. Neither the bytes nor the
+     * timestamp move: a scheduled `cleanup` that rewrote the file every night
+     * would be indistinguishable from one that had decided something.
+     */
     #[Test]
-    public function itRemovesStaleEntriesFromBaseline(): void
+    public function itReportsAndWritesNothingWithoutRemove(): void
     {
-        // Create a test PHP file. SymbolPath canonical keys carry project-relative paths
-        // (RelativePath VO after ADR 0015 Phase 1c); the cleanup command resolves them
-        // via file_exists() against the current working directory, so chdir into tempDir
-        // for the test scope.
-        $testRel = 'TestClass.php';
-        $nonExistingRel = 'NonExisting.php';
-        $testFile = $this->tempDir . '/' . $testRel;
-        $nonExistingFile = $this->tempDir . '/' . $nonExistingRel;
-        file_put_contents($testFile, '<?php class TestClass {}');
+        $this->writeBaseline([self::occurrenceEntry()], ['src']);
 
-        $previousCwd = getcwd();
-        chdir($this->tempDir);
+        $bytesBefore = (string) file_get_contents($this->baselinePath);
+        touch($this->baselinePath, 1_700_000_000);
+        clearstatcache();
+        $mtimeBefore = filemtime($this->baselinePath);
 
-        try {
-            $violations = [
-                new Violation(
-                    location: new Location(RelativePath::fromString($testRel), 1),
-                    symbolPath: SymbolPath::forFile(RelativePath::fromString($testRel)),
-                    ruleName: 'code-smell.goto',
-                    violationCode: 'code-smell.goto',
-                    message: 'Test violation',
-                    severity: Severity::Warning,
-                ),
-                new Violation(
-                    location: new Location(RelativePath::fromString($nonExistingRel), 1),
-                    symbolPath: SymbolPath::forFile(RelativePath::fromString($nonExistingRel)),
-                    ruleName: 'code-smell.goto',
-                    violationCode: 'code-smell.goto',
-                    message: 'Test violation',
-                    severity: Severity::Warning,
-                ),
-            ];
+        $tester = $this->execute([]);
 
-            $declarations = StubChannelDeclarationRegistry::withDefaults();
-            $baselineGenerator = new BaselineGenerator($declarations, new FixedClock());
-            $baselineWriter = new BaselineWriter();
-            $baselinePath = $this->tempDir . '/baseline.json';
+        clearstatcache();
 
-            $baseline = $baselineGenerator->generate($violations, ['.'])->baseline;
-            $baselineWriter->write($baseline, $baselinePath, AbsolutePath::fromString($this->tempDir));
-
-            $command = new BaselineCleanupCommand(
-                new BaselineLoader(new BaselineEntryParser($declarations)),
-                $baselineWriter,
-                $this->makeProvider(),
-            );
-
-            $application = new Application();
-            $application->addCommand($command);
-
-            $commandTester = new CommandTester($command);
-            $commandTester->execute([
-                'baseline' => $baselinePath,
-            ]);
-
-            self::assertSame(0, $commandTester->getStatusCode());
-            $output = $commandTester->getDisplay();
-            self::assertStringContainsString('Removed 1 stale entries from 1 symbols', $output);
-
-            $loader = new BaselineLoader(new BaselineEntryParser($declarations));
-            $cleanedBaseline = $loader->load($baselinePath);
-            self::assertSame(1, $cleanedBaseline->count());
-            self::assertContains('file:' . $testRel, $cleanedBaseline->symbolKeys());
-            self::assertNotContains('file:' . $nonExistingRel, $cleanedBaseline->symbolKeys());
-        } finally {
-            if ($previousCwd !== false) {
-                chdir($previousCwd);
-            }
-        }
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('could be removed', $tester->getDisplay());
+        self::assertStringContainsString('nothing reported for this identity', $tester->getDisplay());
+        self::assertSame($bytesBefore, file_get_contents($this->baselinePath));
+        self::assertSame($mtimeBefore, filemtime($this->baselinePath));
     }
 
+    /**
+     * Two entries on one symbol and one channel, differing only in the edge
+     * they forbid, plus an unrelated neighbour. Removing one leaves the other
+     * two — which is only possible because the selector digests the edge too.
+     */
     #[Test]
-    public function itReportsNoStaleEntriesWhenBaselineIsClean(): void
+    public function itRemovesOnlyTheNamedEntryEvenWhenTwoDifferOnlyByEdge(): void
     {
-        $testRel = 'TestClass.php';
-        $testFile = $this->tempDir . '/' . $testRel;
-        file_put_contents($testFile, '<?php class TestClass {}');
+        $doomed = self::edgeIdentity('class:App\\Db\\Connection');
+        $sibling = self::edgeIdentity('class:App\\Db\\Statement');
 
-        $previousCwd = getcwd();
-        chdir($this->tempDir);
-
-        try {
-            $violations = [
-                new Violation(
-                    location: new Location(RelativePath::fromString($testRel), 1),
-                    symbolPath: SymbolPath::forFile(RelativePath::fromString($testRel)),
-                    ruleName: 'code-smell.goto',
-                    violationCode: 'code-smell.goto',
-                    message: 'Test violation',
-                    severity: Severity::Warning,
-                ),
-            ];
-
-            $declarations = StubChannelDeclarationRegistry::withDefaults();
-            $baselineGenerator = new BaselineGenerator($declarations, new FixedClock());
-            $baselineWriter = new BaselineWriter();
-            $baselinePath = $this->tempDir . '/baseline.json';
-
-            $baseline = $baselineGenerator->generate($violations, ['.'])->baseline;
-            $baselineWriter->write($baseline, $baselinePath, AbsolutePath::fromString($this->tempDir));
-
-            $command = new BaselineCleanupCommand(
-                new BaselineLoader(new BaselineEntryParser($declarations)),
-                $baselineWriter,
-                $this->makeProvider(),
-            );
-
-            $application = new Application();
-            $application->addCommand($command);
-
-            $commandTester = new CommandTester($command);
-            $commandTester->execute([
-                'baseline' => $baselinePath,
-            ]);
-
-            self::assertSame(0, $commandTester->getStatusCode());
-            $output = $commandTester->getDisplay();
-            self::assertStringContainsString('No stale entries found', $output);
-        } finally {
-            if ($previousCwd !== false) {
-                chdir($previousCwd);
-            }
-        }
-    }
-
-    #[Test]
-    public function itFailsWhenBaselineFileDoesNotExist(): void
-    {
-        $baselinePath = $this->tempDir . '/non-existing-baseline.json';
-
-        $command = new BaselineCleanupCommand(
-            new BaselineLoader(new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults())),
-            new BaselineWriter(),
-            $this->makeProvider(),
+        $this->writeBaseline(
+            [
+                new BaselineEntry($doomed, null, 1),
+                new BaselineEntry($sibling, null, 1),
+                self::occurrenceEntry(),
+            ],
+            ['src'],
         );
 
-        $application = new Application();
-        $application->addCommand($command);
+        $tester = $this->execute(['--remove' => [$doomed->selector()->value]]);
 
-        $commandTester = new CommandTester($command);
-        $commandTester->execute([
-            'baseline' => $baselinePath,
-        ]);
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
 
-        // Assert failure
-        self::assertSame(1, $commandTester->getStatusCode());
-        $output = $commandTester->getDisplay();
-        self::assertStringContainsString('Baseline file not found', $output);
+        $targets = self::edgeTargetsInFile($this->baselinePath);
+        self::assertSame(['class:App\\Db\\Statement'], $targets);
+        self::assertCount(2, self::allEntries($this->baselinePath));
     }
 
     #[Test]
-    public function itShowsVerboseOutputWithRemovedSymbols(): void
+    public function itReportsASelectorThatMatchesNothingAndWritesNothing(): void
     {
-        $nonExistingRel = 'NonExisting.php';
+        $this->writeBaseline([self::occurrenceEntry()], ['src']);
 
-        $previousCwd = getcwd();
-        chdir($this->tempDir);
+        $bytesBefore = (string) file_get_contents($this->baselinePath);
+        $tester = $this->execute(['--remove' => ['0123456789ab']]);
 
-        $violations = [
-            new Violation(
-                location: new Location(RelativePath::fromString($nonExistingRel), 1),
-                symbolPath: SymbolPath::forFile(RelativePath::fromString($nonExistingRel)),
-                ruleName: 'code-smell.goto',
-                violationCode: 'code-smell.goto',
-                message: 'Test violation',
-                severity: Severity::Warning,
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('No entry with selector 0123456789ab', $tester->getDisplay());
+        self::assertSame($bytesBefore, file_get_contents($this->baselinePath));
+    }
+
+    #[Test]
+    public function itRefusesAValueThatIsNotASelectorAtAll(): void
+    {
+        $this->writeBaseline([self::occurrenceEntry()], ['src']);
+
+        $bytesBefore = (string) file_get_contents($this->baselinePath);
+        $tester = $this->execute(['--remove' => ['file:src/Legacy.php']]);
+
+        self::assertSame(Command::INVALID, $tester->getStatusCode());
+        self::assertSame($bytesBefore, file_get_contents($this->baselinePath));
+    }
+
+    /**
+     * The same guard `baseline:update` carries, on the command where the
+     * hazard is worst: a narrower run makes every identity outside it look
+     * absent, so the rest of the file would be offered up for removal.
+     */
+    #[Test]
+    public function itRefusesARunThatDoesNotCoverTheRecordedScope(): void
+    {
+        $this->writeBaseline([self::occurrenceEntry()], ['src', 'tests']);
+
+        $tester = $this->execute([], ['src']);
+
+        self::assertSame(Command::FAILURE, $tester->getStatusCode());
+        self::assertStringContainsString('does not cover tests', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itAllowsARunWiderThanTheRecordedScope(): void
+    {
+        $this->writeBaseline([self::occurrenceEntry()], ['src/Domain']);
+
+        $tester = $this->execute([], ['src']);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itWritesANarrowedRunUnderForce(): void
+    {
+        $entry = self::occurrenceEntry();
+        $this->writeBaseline([$entry], ['src', 'tests']);
+
+        $tester = $this->execute(['--force' => true, '--remove' => [$entry->selector()->value]], ['src']);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertSame([], self::allEntries($this->baselinePath));
+    }
+
+    /**
+     * A candidate the run *did* report is not listed: staleness is about the
+     * identity being absent from the measured set, not about the file being
+     * old.
+     */
+    #[Test]
+    public function itDoesNotOfferAnEntryTheRunStillReports(): void
+    {
+        $this->writeBaseline([self::occurrenceEntry()], ['src']);
+
+        $tester = $this->execute([], ['src'], [self::gotoFinding()]);
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('No entry is a removal candidate', $tester->getDisplay());
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     * @param list<string> $runScope
+     * @param list<Violation> $measured
+     */
+    private function execute(array $options, array $runScope = ['src'], array $measured = []): CommandTester
+    {
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+
+        $command = new BaselineCleanupCommand(
+            new StubBaselineRun($measured, $runScope, AbsolutePath::fromString($this->tempDir)),
+            new BaselineLoader(new BaselineEntryParser($declarations)),
+            new BaselineCleaner(new FixedClock('2026-09-01T00:00:00+00:00')),
+            new BaselineWriter(),
+            $declarations,
+        );
+
+        $tester = new CommandTester($command);
+        $tester->execute(['baseline' => $this->baselinePath, 'paths' => $runScope, ...$options]);
+
+        return $tester;
+    }
+
+    /**
+     * @param list<BaselineEntry> $entries
+     * @param list<string> $scope
+     */
+    private function writeBaseline(array $entries, array $scope): void
+    {
+        (new BaselineWriter())->write(
+            new Baseline(
+                generated: (new FixedClock())->now(),
+                scope: $scope,
+                entries: $entries,
             ),
-        ];
+            $this->baselinePath,
+            AbsolutePath::fromString($this->tempDir),
+        );
+    }
 
-        try {
-            $declarations = StubChannelDeclarationRegistry::withDefaults();
-            $baselineGenerator = new BaselineGenerator($declarations, new FixedClock());
-            $baselineWriter = new BaselineWriter();
-            $baselinePath = $this->tempDir . '/baseline.json';
+    private static function edgeIdentity(string $target): BaselineIdentity
+    {
+        return new BaselineIdentity(
+            SymbolPath::forClass('App\\Web', 'Controller')->toCanonical(),
+            ViolationChannel::fromKey(self::EDGE_CHANNEL),
+            new BaselineEdge($target, DependencyType::New_),
+        );
+    }
 
-            $baseline = $baselineGenerator->generate($violations, ['.'])->baseline;
-            $baselineWriter->write($baseline, $baselinePath, AbsolutePath::fromString($this->tempDir));
+    private static function occurrenceEntry(): BaselineEntry
+    {
+        return new BaselineEntry(
+            new BaselineIdentity(
+                SymbolPath::forFile(RelativePath::fromString('src/Legacy.php'))->toCanonical(),
+                ViolationChannel::fromKey(self::OCCURRENCE_CHANNEL),
+            ),
+            null,
+            3,
+        );
+    }
 
-            $command = new BaselineCleanupCommand(
-                new BaselineLoader(new BaselineEntryParser($declarations)),
-                $baselineWriter,
-                $this->makeProvider(),
-            );
+    private static function gotoFinding(): Violation
+    {
+        return new Violation(
+            location: new Location(RelativePath::fromString('src/Legacy.php'), 3),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Legacy.php')),
+            ruleName: 'code-smell.goto',
+            violationCode: 'code-smell.goto',
+            message: 'finding',
+            severity: Severity::Warning,
+        );
+    }
 
-            $application = new Application();
-            $application->addCommand($command);
+    /**
+     * @return list<string>
+     */
+    private static function edgeTargetsInFile(string $path): array
+    {
+        $targets = [];
 
-            $commandTester = new CommandTester($command);
-            $commandTester->execute(
-                ['baseline' => $baselinePath],
-                ['verbosity' => OutputInterface::VERBOSITY_VERBOSE],
-            );
-
-            self::assertSame(0, $commandTester->getStatusCode());
-            $output = $commandTester->getDisplay();
-            self::assertStringContainsString('Removed symbols:', $output);
-            self::assertStringContainsString('NonExisting.php', $output);
-        } finally {
-            if ($previousCwd !== false) {
-                chdir($previousCwd);
+        foreach (self::allEntries($path) as $entry) {
+            if (isset($entry['edge']['target']) && \is_string($entry['edge']['target'])) {
+                $targets[] = $entry['edge']['target'];
             }
         }
-    }
 
-    #[Test]
-    public function itHandlesPortableRelativePathsInBaseline(): void
-    {
-        // Create a file structure simulating a project
-        $projectDir = $this->tempDir . '/project';
-        mkdir($projectDir . '/src', 0777, true);
-        $existingFile = $projectDir . '/src/Existing.php';
-        file_put_contents($existingFile, '<?php class Existing {}');
-
-        // Write a baseline with relative file: paths (portable format)
-        $baselinePath = $projectDir . '/baseline.json';
-        $json = json_encode([
-            'version' => 10,
-            'generated' => '2025-12-08T10:00:00+00:00',
-            'scope' => ['src'],
-            'entries' => [
-                'file:src/Existing.php' => [
-                    ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 1],
-                ],
-                'file:src/Removed.php' => [
-                    ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 1],
-                ],
-            ],
-        ], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
-        file_put_contents($baselinePath, $json);
-
-        // Run cleanup from the project directory
-        $originalDir = getcwd();
-        chdir($projectDir);
-
-        try {
-            $declarations = StubChannelDeclarationRegistry::withDefaults();
-            $command = new BaselineCleanupCommand(
-                new BaselineLoader(new BaselineEntryParser($declarations)),
-                new BaselineWriter(),
-                $this->makeProvider(),
-            );
-
-            $application = new Application();
-            $application->addCommand($command);
-
-            $commandTester = new CommandTester($command);
-            $commandTester->execute(['baseline' => $baselinePath]);
-
-            self::assertSame(0, $commandTester->getStatusCode());
-            self::assertStringContainsString('Removed 1 stale entries', $commandTester->getDisplay());
-
-            // Verify the cleaned baseline still has relative paths
-            $data = json_decode((string) file_get_contents($baselinePath), true);
-            self::assertArrayHasKey('file:src/Existing.php', $data['entries']);
-            self::assertArrayNotHasKey('file:src/Removed.php', $data['entries']);
-        } finally {
-            chdir((string) $originalDir);
-        }
+        return $targets;
     }
 
     /**
-     * An inert entry is removed by the same predicate as a valid one, so it
-     * has to be reported by the same numbers. Counting only valid removals
-     * told the user "Removed 0 stale entries" and "1 entries (was 1)" over a
-     * file that had just lost a line — every figure saying nothing happened.
+     * @return list<array<string, mixed>>
      */
-    #[Test]
-    public function itCountsInertEntriesItRemovesAndReportsTheWholeFileSize(): void
+    private static function allEntries(string $path): array
     {
-        $projectDir = $this->tempDir . '/project';
-        mkdir($projectDir . '/src', 0777, true);
-        file_put_contents($projectDir . '/src/Existing.php', '<?php class Existing {}');
+        /** @var array{entries: array<string, list<array<string, mixed>>>} $data */
+        $data = json_decode((string) file_get_contents($path), true, flags: \JSON_THROW_ON_ERROR);
 
-        $baselinePath = $projectDir . '/baseline.json';
-        file_put_contents($baselinePath, (string) json_encode([
-            'version' => 10,
-            'generated' => '2025-12-08T10:00:00+00:00',
-            'scope' => ['src'],
-            'entries' => [
-                'file:src/Existing.php' => [
-                    ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 1],
-                ],
-                // Loads inert — no rule declares this channel — and its file
-                // is gone, so cleanup drops it.
-                'file:src/Gone.php' => [
-                    ['channel' => 'no-such-rule#no-such-code', 'count' => 3],
-                ],
-            ],
-        ], \JSON_THROW_ON_ERROR));
-
-        $originalDir = getcwd();
-        chdir($projectDir);
-
-        try {
-            $declarations = StubChannelDeclarationRegistry::withDefaults();
-            $command = new BaselineCleanupCommand(
-                new BaselineLoader(new BaselineEntryParser($declarations)),
-                new BaselineWriter(),
-                $this->makeProvider(),
-            );
-
-            $commandTester = new CommandTester($command);
-            $commandTester->execute(['baseline' => $baselinePath]);
-
-            $output = $commandTester->getDisplay();
-            self::assertSame(0, $commandTester->getStatusCode());
-            self::assertStringContainsString('Removed 1 stale entries from 1 symbols', $output);
-            self::assertStringContainsString('Baseline updated: 1 entries (was 2)', $output);
-
-            /** @var array{entries: array<string, mixed>} $data */
-            $data = json_decode((string) file_get_contents($baselinePath), true, 512, \JSON_THROW_ON_ERROR);
-            self::assertArrayNotHasKey('file:src/Gone.php', $data['entries']);
-        } finally {
-            chdir((string) $originalDir);
-        }
-    }
-
-    /**
-     * The converse: an inert entry whose file is still there is neither
-     * removed nor counted, and the command reports nothing to do.
-     */
-    #[Test]
-    public function itLeavesAnInertEntryAloneWhenItsFileStillExists(): void
-    {
-        $projectDir = $this->tempDir . '/project';
-        mkdir($projectDir . '/src', 0777, true);
-        file_put_contents($projectDir . '/src/Existing.php', '<?php class Existing {}');
-
-        $baselinePath = $projectDir . '/baseline.json';
-        file_put_contents($baselinePath, (string) json_encode([
-            'version' => 10,
-            'generated' => '2025-12-08T10:00:00+00:00',
-            'scope' => ['src'],
-            'entries' => [
-                'file:src/Existing.php' => [
-                    ['channel' => 'no-such-rule#no-such-code', 'count' => 3],
-                ],
-            ],
-        ], \JSON_THROW_ON_ERROR));
-
-        $originalDir = getcwd();
-        chdir($projectDir);
-
-        try {
-            $declarations = StubChannelDeclarationRegistry::withDefaults();
-            $command = new BaselineCleanupCommand(
-                new BaselineLoader(new BaselineEntryParser($declarations)),
-                new BaselineWriter(),
-                $this->makeProvider(),
-            );
-
-            $commandTester = new CommandTester($command);
-            $commandTester->execute(['baseline' => $baselinePath]);
-
-            self::assertSame(0, $commandTester->getStatusCode());
-            self::assertStringContainsString('No stale entries found', $commandTester->getDisplay());
-        } finally {
-            chdir((string) $originalDir);
-        }
-    }
-
-    private function makeProvider(): ConfigurationHolder
-    {
-        $holder = new ConfigurationHolder();
-        $holder->setConfiguration(new AnalysisConfiguration(
-            projectRoot: AbsolutePath::fromString($this->tempDir),
-        ));
-
-        return $holder;
-    }
-
-    /**
-     * Recursively remove a directory.
-     */
-    private function removeDirectory(string $dir): void
-    {
-        if (!is_dir($dir)) {
-            return;
+        $entries = [];
+        foreach ($data['entries'] as $forSymbol) {
+            foreach ($forSymbol as $entry) {
+                $entries[] = $entry;
+            }
         }
 
-        $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
-        foreach ($files as $file) {
-            $path = $dir . '/' . $file;
-            is_dir($path) ? $this->removeDirectory($path) : unlink($path);
-        }
-        rmdir($dir);
+        return $entries;
     }
 }

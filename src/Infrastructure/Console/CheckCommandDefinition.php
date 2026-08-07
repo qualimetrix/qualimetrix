@@ -162,6 +162,15 @@ final class CheckCommandDefinition
             );
     }
 
+    /**
+     * `check` reads a baseline; it never writes one.
+     *
+     * Capture lives in `bin/qmx baseline:generate`, which is why there is no
+     * `--generate-baseline` here and deliberately no alias for it: a command
+     * whose job is to report can quietly write the file that decides what it
+     * reports, and the two runs a user then has — one that captures, one that
+     * checks — are the two the ceiling exists to keep identical.
+     */
     private static function addBaselineOptions(Command $command): void
     {
         $command
@@ -170,12 +179,6 @@ final class CheckCommandDefinition
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Path to baseline file for filtering known violations',
-            )
-            ->addOption(
-                'generate-baseline',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Generate baseline file with current violations',
             )
             ->addOption(
                 'show-resolved',
