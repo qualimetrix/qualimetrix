@@ -1,0 +1,22 @@
+{
+  "version": "1.0.0",
+  "symbols": [
+    {
+      "type": "class",
+      "name": "Vendor\\Alpha\\Handler",
+      "metrics": {"classLoc": 20, "mi.avg": 80, "mi.min": 70, "noc": 0}
+    },
+    {
+      "type": "class",
+      "name": "Vendor\\Beta\\Handler",
+      "metrics": {"classLoc": 25, "mi.avg": 75, "mi.min": 60, "noc": 1}
+    },
+    {
+      "type": "method",
+      "name": "Vendor\\Alpha\\Handler::run",
+      "metrics": {"ccn": 2, "mi": 80, "methodStatementCount": 4}
+    }
+  ],
+  "coverage": {"discovered": 2, "analyzed": 2, "generatedExcluded": 0, "failed": 0, "complete": true, "failures": []},
+  "summary": {"filesAnalyzed": 2, "filesSkipped": 0}
+}

@@ -38,7 +38,7 @@ if ($baselineContent === false) {
 }
 
 $baselines = json_decode($baselineContent, true);
-if (!$baselines || !isset($baselines['projects'])) {
+if (!is_array($baselines) || !isset($baselines['projects']) || !is_array($baselines['projects'])) {
     fprintf(STDERR, "ERROR: Invalid baseline file format\n");
     exit(2);
 }
@@ -55,6 +55,7 @@ foreach ($projects as $id => $config) {
 
     if (!is_dir($path)) {
         fprintf(STDERR, "SKIP: %s (path not found: %s)\n", $id, $config['path']);
+        $failures[] = sprintf('%s: benchmark path not found', $id);
 
         continue;
     }
@@ -69,7 +70,7 @@ foreach ($projects as $id => $config) {
         escapeshellarg($path),
     );
 
-    if (!empty($config['disable_rules'])) {
+    if (isset($config['disable_rules']) && $config['disable_rules'] !== []) {
         foreach ($config['disable_rules'] as $rule) {
             $cmd .= ' --disable-rule=' . escapeshellarg($rule);
         }
@@ -77,10 +78,20 @@ foreach ($projects as $id => $config) {
 
     $cmd .= ' 2>/dev/null';
 
-    $json = shell_exec($cmd);
+    $output = [];
+    $exitCode = 0;
+    exec($cmd, $output, $exitCode);
+    $json = implode("\n", $output);
     $elapsed = round(microtime(true) - $start, 1);
 
-    if (!$json) {
+    if ($exitCode > 2) {
+        fprintf(STDERR, "FAILED (analysis exit code %d, %.1fs)\n", $exitCode, $elapsed);
+        $failures[] = sprintf('%s: analysis exited with code %d', $id, $exitCode);
+
+        continue;
+    }
+
+    if ($json === '') {
         fprintf(STDERR, "FAILED (no output, %.1fs)\n", $elapsed);
         $failures[] = sprintf('%s: analysis produced no output', $id);
 
@@ -88,9 +99,16 @@ foreach ($projects as $id => $config) {
     }
 
     $data = json_decode($json, true);
-    if (!$data || !isset($data['symbols'])) {
+    if (!is_array($data) || !isset($data['symbols']) || !is_array($data['symbols'])) {
         fprintf(STDERR, "FAILED (invalid JSON, %.1fs)\n", $elapsed);
         $failures[] = sprintf('%s: invalid JSON output', $id);
+
+        continue;
+    }
+
+    if (($data['coverage']['complete'] ?? null) !== true) {
+        fprintf(STDERR, "FAILED (analysis coverage incomplete or missing, %.1fs)\n", $elapsed);
+        $failures[] = sprintf('%s: analysis coverage is not complete', $id);
 
         continue;
     }
@@ -178,21 +196,9 @@ if (count($results) > 0) {
     }
 }
 
-// Update baselines if requested (runs regardless of pass/fail)
-if ($updateBaselines && count($results) > 0) {
-    $totalProjects = count($projects);
-    $analyzedProjects = count($results);
-
-    if ($analyzedProjects < $totalProjects) {
-        fprintf(
-            STDERR,
-            "\nWARNING: updating baselines with only %d/%d projects analyzed. "
-            . "Missing projects retain old baselines.\n",
-            $analyzedProjects,
-            $totalProjects,
-        );
-    }
-
+// Baseline replacement is atomic at the project-set level: a partial corpus
+// must never ratchet only the projects that happened to finish.
+if ($updateBaselines && $failures === [] && count($results) === count($projects)) {
     fprintf(STDERR, "\nUpdating baselines...\n");
     $margin = 10;
 
@@ -206,7 +212,11 @@ if ($updateBaselines && count($results) > 0) {
     }
 
     $baselines['updated_at'] = date('Y-m-d');
-    file_put_contents($baselineFile, json_encode($baselines, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
+    $encodedBaselines = json_encode($baselines, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    if ($encodedBaselines === false || file_put_contents($baselineFile, $encodedBaselines . "\n") === false) {
+        fprintf(STDERR, "ERROR: Cannot write baseline file: %s\n", $baselineFile);
+        exit(2);
+    }
     fprintf(STDERR, "Baselines updated in: %s\n", $baselineFile);
     exit(0);
 }

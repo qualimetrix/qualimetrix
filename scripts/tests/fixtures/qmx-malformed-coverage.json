@@ -1,0 +1,8 @@
+{
+  "version": "1.0.0",
+  "symbols": [
+    {"type": "class", "name": "Fixture\\Example", "metrics": {"classLoc": 5}}
+  ],
+  "coverage": {"complete": "yes"},
+  "summary": {"filesAnalyzed": 1, "filesSkipped": 0}
+}

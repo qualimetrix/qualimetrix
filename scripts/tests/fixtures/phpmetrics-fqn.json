@@ -1,0 +1,14 @@
+{
+  "Vendor\\Alpha\\Handler": {
+    "_type": "Hal\\Metric\\ClassMetric",
+    "name": "Vendor\\Alpha\\Handler",
+    "loc": 20,
+    "mi": 80
+  },
+  "Vendor\\Beta\\Handler": {
+    "_type": "Hal\\Metric\\ClassMetric",
+    "name": "Vendor\\Beta\\Handler",
+    "loc": 25,
+    "mi": 75
+  }
+}

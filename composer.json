@@ -73,6 +73,10 @@
         "test:coverage": "phpunit --coverage-html coverage",
         "phpstan": "phpstan analyse --memory-limit=512M",
         "test:js": "cd src/Reporting/Template && npm test",
+        "test:cross-tool": [
+            "python3 --version",
+            "python3 -m unittest discover -s scripts/tests -p 'test_*.py'"
+        ],
         "build:js": "cd src/Reporting/Template && npm run build",
         "cs-check": "php-cs-fixer fix --dry-run --diff",
         "cs-fix": "php-cs-fixer fix",
@@ -84,6 +88,7 @@
             "@check-leaks",
             "@cs-check",
             "@test",
+            "@test:cross-tool",
             "@phpstan",
             "@selfcheck"
         ]
@@ -94,6 +99,7 @@
         "test:coverage": "Run PHPUnit tests with HTML coverage report",
         "phpstan": "Run PHPStan static analysis (level 8)",
         "test:js": "Run JS tests for HTML report (vitest)",
+        "test:cross-tool": "Run deterministic cross-tool methodology tests (Python 3, no external analyzers)",
         "build:js": "Rebuild HTML report JS bundle (vite)",
         "cs-check": "Check code style without fixing",
         "check-leaks": "Fail if tracked files contain developer home paths or private project names",
@@ -101,7 +107,7 @@
         "benchmark:check": "Run benchmark regression check for health score formulas",
         "benchmark:update": "Update benchmark baselines with current scores (±10 margin)",
         "selfcheck": "Run Qualimetrix on its own source code",
-        "check": "Run all checks: cs-check, tests, phpstan, selfcheck (selfcheck enforces architecture via qmx.yaml)"
+        "check": "Run all checks: leaks, code style, PHP/Python tests, phpstan, selfcheck (selfcheck enforces architecture via qmx.yaml)"
     },
     "config": {
         "sort-packages": true,
