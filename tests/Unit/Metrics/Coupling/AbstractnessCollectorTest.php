@@ -7,11 +7,15 @@ namespace Qualimetrix\Tests\Unit\Metrics\Coupling;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Aggregator\AggregationHelper;
+use Qualimetrix\Analysis\Aggregator\MetricAggregator;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\Coupling\AbstractnessCollector;
+use Qualimetrix\Metrics\Size\ClassCountCollector;
 
 #[CoversClass(AbstractnessCollector::class)]
 final class AbstractnessCollectorTest extends TestCase
@@ -68,6 +72,54 @@ final class AbstractnessCollectorTest extends TestCase
 
         $result = $repository->get($nsPath);
         self::assertEqualsWithDelta(0.278, $result->get('abstractness'), 0.001);
+    }
+
+    #[Test]
+    public function itCalculatesOneSixthFromExplicitNamespaceCountTotals(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $namespace = 'App\\Domain';
+        $file = RelativePath::fromString('src/Domain/Types.php');
+
+        $repository->add(
+            SymbolPath::forFile($file),
+            MetricBag::fromArray([
+                'classCount' => 6,
+                'abstractClassCount' => 1,
+                'interfaceCount' => 0,
+                'traitCount' => 0,
+                'enumCount' => 0,
+            ]),
+            $file,
+            1,
+        );
+        $repository->add(SymbolPath::forClass($namespace, 'Concrete'), new MetricBag(), $file, 2);
+        $repository->add(
+            SymbolPath::forNamespace($namespace),
+            MetricBag::fromArray([
+                'classCount' => 6,
+                'classCount.count' => 6,
+                'abstractClassCount' => 1,
+                'abstractClassCount.count' => 6,
+                'interfaceCount' => 0,
+                'interfaceCount.count' => 6,
+                'traitCount' => 0,
+                'traitCount.count' => 6,
+                'enumCount' => 0,
+                'enumCount.count' => 6,
+            ]),
+            $file,
+            1,
+        );
+
+        (new MetricAggregator(AggregationHelper::collectDefinitions([
+            new ClassCountCollector(),
+        ])))->aggregate($repository);
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
+
+        self::assertSame(6, $repository->get(SymbolPath::forNamespace($namespace))->get('classCount.sum'));
+        self::assertSame(1, $repository->get(SymbolPath::forNamespace($namespace))->get('abstractClassCount.sum'));
+        self::assertEqualsWithDelta(1 / 6, $repository->get(SymbolPath::forNamespace($namespace))->get('abstractness'), 0.000001);
     }
 
     #[Test]

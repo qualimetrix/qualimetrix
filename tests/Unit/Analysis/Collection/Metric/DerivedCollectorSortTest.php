@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Analysis\Collector;
+namespace Qualimetrix\Tests\Unit\Analysis\Collection\Metric;
 
+use LogicException;
 use PhpParser\NodeVisitorAbstract;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
@@ -16,26 +17,18 @@ use Qualimetrix\Core\Metric\MetricCollectorInterface;
 use SplFileInfo;
 
 /**
- * Regression test: CompositeCollector::applyDerivedCollectors() does not
- * topologically sort derived collectors based on requires()/provides().
+ * Regression coverage for the derived-collector execution contract.
  *
- * Unlike GlobalCollectorSorter (which sorts GlobalContextCollectors),
- * CompositeCollector iterates derived collectors in insertion order.
- * If collector A requires metrics from collector B but is registered first,
- * A will receive empty/missing input.
- *
- * @see GlobalCollectorSorter for the correct topological sort implementation
+ * CompositeCollector sorts derived collectors by their named `requires()`
+ * dependencies and merges every output into the next collector's input.
  */
 #[CoversClass(CompositeCollector::class)]
 #[Group('regression')]
 final class DerivedCollectorSortTest extends TestCase
 {
     #[Test]
-    public function derivedCollectorsCannotSeeEachOthersOutputsEvenInCorrectOrder(): void
+    public function itAccumulatesOutputsForDependentDerivedCollectors(): void
     {
-        // BUG: Each derived collector receives only the BASE metrics (indexed by FQN),
-        // not the accumulated result from previous derived collectors.
-        // So even in "correct" order (B first, A second), A cannot see B's output.
         $baseCollector = $this->createBaseCollector(
             (new MetricBag())->with('raw:App\Service::method', 10),
         );
@@ -56,31 +49,19 @@ final class DerivedCollectorSortTest extends TestCase
                 (new MetricBag())->with('final', ($bag->get('intermediate') ?? 0) + 1),
         );
 
-        // Even in correct order: B first, then A
+        // B runs before A, and A receives B's accumulated output.
         $composite = new CompositeCollector([$baseCollector], [$collectorB, $collectorA]);
         $result = $composite->collect(new SplFileInfo(__FILE__), []);
 
         self::assertSame(10, $result->metrics->get('raw:App\Service::method'));
         self::assertSame(20, $result->metrics->get('intermediate:App\Service::method'));
 
-        // BUG: A receives only base metrics {raw: 10}, NOT {raw: 10, intermediate: 20}.
-        // applyDerivedCollectors() passes $methodMetrics (from indexMetricsByFqn) to ALL
-        // derived collectors, without updating it with results from previous collectors.
-        // Expected: 21 (intermediate=20 + 1), Actual: 1 (intermediate=null -> 0 + 1)
-        self::assertSame(
-            21,
-            $result->metrics->get('final:App\Service::method'),
-            'BUG: Derived collector A cannot see output from B even in correct order. '
-            . 'applyDerivedCollectors() passes only base metrics to each derived collector, '
-            . 'not the accumulated result from previous ones.',
-        );
+        self::assertSame(21, $result->metrics->get('final:App\Service::method'));
     }
 
     #[Test]
-    public function derivedCollectorsInWrongOrderShouldStillWork(): void
+    public function itSortsDependentDerivedCollectorsBeforeCalculation(): void
     {
-        // BUG: When A (depends on B) is registered BEFORE B,
-        // A runs first and gets empty 'intermediate' metric.
         $baseCollector = $this->createBaseCollector(
             (new MetricBag())->with('raw:App\Service::method', 10),
         );
@@ -101,31 +82,17 @@ final class DerivedCollectorSortTest extends TestCase
                 (new MetricBag())->with('final', ($bag->get('intermediate') ?? 0) + 1),
         );
 
-        // Wrong order: A first, then B
+        // Registration order is intentionally reverse dependency order.
         $composite = new CompositeCollector([$baseCollector], [$collectorA, $collectorB]);
         $result = $composite->collect(new SplFileInfo(__FILE__), []);
 
-        // Base metric should always be correct
         self::assertSame(10, $result->metrics->get('raw:App\Service::method'));
-
-        // B should compute correctly regardless of order
         self::assertSame(20, $result->metrics->get('intermediate:App\Service::method'));
-
-        // BUG: A runs before B, so 'intermediate' is not yet in the FQN-indexed bag.
-        // A receives a MetricBag with only 'raw' => 10, no 'intermediate'.
-        // Result: final = 0 + 1 = 1 instead of expected 20 + 1 = 21
-        self::assertSame(
-            21,
-            $result->metrics->get('final:App\Service::method'),
-            'BUG: Derived collector A runs before B (no topological sort). '
-            . 'A gets intermediate=null, computes final=1 instead of 21. '
-            . 'CompositeCollector::applyDerivedCollectors() should sort by requires()/provides() '
-            . 'like GlobalCollectorSorter does for global collectors.',
-        );
+        self::assertSame(21, $result->metrics->get('final:App\Service::method'));
     }
 
     #[Test]
-    public function threeCollectorChainInReverseOrder(): void
+    public function itSortsAThreeCollectorChainRegisteredInReverseOrder(): void
     {
         // Chain: C -> B -> A (C depends on B, B depends on A)
         // Registered in reverse: C, B, A
@@ -157,61 +124,42 @@ final class DerivedCollectorSortTest extends TestCase
                 (new MetricBag())->with('step_c_result', ($bag->get('step_b_result') ?? 0) * 2),
         );
 
-        // Reverse order: C, B, A
+        // Reverse order: C, B, A. The dependency graph determines execution.
         $composite = new CompositeCollector([$baseCollector], [$collectorC, $collectorB, $collectorA]);
         $result = $composite->collect(new SplFileInfo(__FILE__), []);
 
-        // Expected chain: input=5 -> A: 5*10=50 -> B: 50+100=150 -> C: 150*2=300
         self::assertSame(50, $result->metrics->get('step_a_result:test'));
-
-        // BUG: Without topological sort, B and C get wrong inputs
-        self::assertSame(
-            150,
-            $result->metrics->get('step_b_result:test'),
-            'BUG: step-b runs before step-a, gets step_a_result=null, computes 0+100=100 instead of 150',
-        );
-        self::assertSame(
-            300,
-            $result->metrics->get('step_c_result:test'),
-            'BUG: step-c runs before step-b, gets step_b_result=null, computes 0*2=0 instead of 300',
-        );
+        self::assertSame(150, $result->metrics->get('step_b_result:test'));
+        self::assertSame(300, $result->metrics->get('step_c_result:test'));
     }
 
     #[Test]
-    public function applyDerivedCollectorsDoesNotCallRequires(): void
+    public function itRejectsCyclicDerivedCollectorDependencies(): void
     {
-        // This test verifies that requires() is never called during applyDerivedCollectors.
-        // The derived collectors iterate in insertion order with no dependency analysis.
         $baseCollector = $this->createBaseCollector(
             (new MetricBag())->with('value:fqn', 1),
         );
 
-        $requiresCallCount = 0;
-
-        $derived = self::createStub(DerivedCollectorInterface::class);
-        $derived->method('getName')->willReturn('test-derived');
-        $derived->method('provides')->willReturn(['derived_value']);
-        $derived->method('getMetricDefinitions')->willReturn([]);
-        $derived->method('calculate')->willReturn(
-            (new MetricBag())->with('derived_value', 42),
+        $collectorA = $this->createDerivedCollector(
+            name: 'collector-a',
+            requires: ['collector-b'],
+            provides: ['a'],
+            calculate: static fn(MetricBag $bag): MetricBag => new MetricBag(),
         );
-        $derived->method('requires')->willReturnCallback(function () use (&$requiresCallCount): array {
-            $requiresCallCount++;
 
-            return [];
-        });
+        $collectorB = $this->createDerivedCollector(
+            name: 'collector-b',
+            requires: ['collector-a'],
+            provides: ['b'],
+            calculate: static fn(MetricBag $bag): MetricBag => new MetricBag(),
+        );
 
-        $composite = new CompositeCollector([$baseCollector], [$derived]);
+        $composite = new CompositeCollector([$baseCollector], [$collectorA, $collectorB]);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessageMatches('/Cyclic dependency.*collector-a.*collector-b|Cyclic dependency.*collector-b.*collector-a/');
+
         $composite->collect(new SplFileInfo(__FILE__), []);
-
-        // BUG: CompositeCollector never calls requires() on derived collectors.
-        // It should use requires() to determine execution order, like GlobalCollectorSorter does.
-        self::assertSame(
-            0,
-            $requiresCallCount,
-            'BUG CONFIRMED: CompositeCollector::applyDerivedCollectors() '
-            . 'never calls requires() on derived collectors — no dependency resolution',
-        );
     }
 
     /**

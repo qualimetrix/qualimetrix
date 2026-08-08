@@ -45,6 +45,7 @@ Core/
 │   ├── RuleLevel.php                      # Rule level enum
 │   ├── RuleOptionKey.php                  # Common option key constants (enabled, warning, error, threshold)
 │   ├── ShorthandOptionKeysInterface.php   # Options that accept a bare-value shorthand (e.g. `threshold: 10`)
+│   ├── AdditionalOptionKeysInterface.php  # Options that accept other top-level configuration keys
 │   ├── RuleMatcher.php                    # Prefix matching utility
 │   ├── RuleSelector.php                   # Channel-aware only/disable selection for producer rules and findings
 │   ├── RuleChannelRegistryInterface.php   # Producer rule -> emitted channels contract
@@ -461,6 +462,15 @@ Interface for options that support `@qmx-threshold` overrides. Implemented by op
 
 **Methods:**
 - `withOverride(int|float|null $warning, int|float|null $error): static` — returns a copy with overridden thresholds (null keeps original)
+
+### AdditionalOptionKeysInterface
+
+Declares top-level configuration keys that an Options class consumes in `fromArray()` but
+which are neither constructor parameters nor threshold shorthands. `RuleOptionsFactory`
+validates keys before creating the Options instance, so such classes return their canonical
+kebab-case keys from `getAdditionalOptionKeys(): list<string>` to keep valid configuration
+from producing an unknown-option warning. For bare threshold-style keys, use
+`ShorthandOptionKeysInterface` instead; an Options class may implement both contracts.
 
 ### RuleLevel (Enum)
 

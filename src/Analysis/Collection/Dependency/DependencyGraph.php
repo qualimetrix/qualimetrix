@@ -15,6 +15,8 @@ use Qualimetrix\Core\Util\StringSet;
  * Provides efficient lookups via pre-built indexes using canonical string keys.
  * The public API accepts/returns SymbolPath, but internally uses toCanonical()
  * as hash map keys for performance.
+ *
+ * @qmx-ignore health.cohesion -- Lookup methods expose independent indexes of one dependency graph.
  */
 final class DependencyGraph implements DependencyGraphInterface
 {

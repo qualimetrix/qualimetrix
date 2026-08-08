@@ -19,6 +19,7 @@ use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
+use Qualimetrix\Metrics\Size\ClassCountCollector;
 use Qualimetrix\Metrics\Size\LocCollector;
 
 #[CoversClass(ClassToNamespaceAggregator::class)]
@@ -85,6 +86,69 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         self::assertSame(15, $namespace->get('loc.avg'));
         self::assertSame(2, $namespace->get('loc.count'));
     }
+
+    #[Test]
+    public function itKeepsExplicitCountTotalsExactAcrossTheNamespaceTree(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $namespace = 'App\\Domain\\Leaf';
+        $file = RelativePath::fromString('src/Domain/Leaf.php');
+
+        $repository->add(
+            SymbolPath::forFile($file),
+            MetricBag::fromArray([
+                'classCount' => 6,
+                'abstractClassCount' => 1,
+                'interfaceCount' => 1,
+                'traitCount' => 1,
+                'enumCount' => 1,
+            ]),
+            $file,
+            1,
+        );
+
+        for ($i = 1; $i <= 6; ++$i) {
+            $repository->add(
+                SymbolPath::forClass($namespace, "Class{$i}"),
+                new MetricBag(),
+                $file,
+                $i + 1,
+            );
+        }
+
+        $repository->add(
+            SymbolPath::forNamespace($namespace),
+            MetricBag::fromArray([
+                'classCount' => 6,
+                'classCount.count' => 6,
+                'abstractClassCount' => 1,
+                'abstractClassCount.count' => 6,
+                'interfaceCount' => 1,
+                'interfaceCount.count' => 6,
+                'traitCount' => 1,
+                'traitCount.count' => 6,
+                'enumCount' => 1,
+                'enumCount.count' => 6,
+            ]),
+            $file,
+            1,
+        );
+
+        (new MetricAggregator(AggregationHelper::collectDefinitions([
+            new ClassCountCollector(),
+        ])))->aggregate($repository);
+
+        foreach ([SymbolPath::forNamespace($namespace), SymbolPath::forNamespace('App\\Domain')] as $path) {
+            $metrics = $repository->get($path);
+
+            self::assertSame(6, $metrics->get('classCount.sum'));
+            self::assertSame(1, $metrics->get('abstractClassCount.sum'));
+            self::assertSame(1, $metrics->get('interfaceCount.sum'));
+            self::assertSame(1, $metrics->get('traitCount.sum'));
+            self::assertSame(1, $metrics->get('enumCount.sum'));
+        }
+    }
+
     #[Test]
     public function itAggregatesProceduralFileLocToNamespace(): void
     {

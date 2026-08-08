@@ -554,6 +554,11 @@ rules:
     warning: 20
     error: 20
 
-  # Health is not a gate until its calibration is re-established.
+  # Health debt is ratcheted in qmx-baseline.json; new regressions fail selfcheck.
   computed.health:
-    enabled: false
+    enabled: true
+    exclude_namespace_channels:
+      health.cohesion:
+        # Coupling collectors expose independent graph calculations; shared-field
+        # cohesion is structurally inapplicable to this namespace-level category.
+        - Qualimetrix\Metrics\Coupling

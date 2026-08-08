@@ -460,6 +460,64 @@ class SimpleClass {
         self::assertMatchesRegularExpression('/Complexity|Cohesion|Coupling|Maintainability|Overall/i', $output);
     }
 
+    #[Test]
+    public function itAppliesSymbolHealthSuppressionWithoutHidingSiblingDimensions(): void
+    {
+        $testFile = $this->tempDir . '/PoorHealth.php';
+        file_put_contents($testFile, <<<'PHP'
+<?php
+
+namespace App;
+
+/**
+ * @qmx-ignore health.cohesion -- Independent projections are intentional.
+ */
+final class PoorHealth
+{
+    private $one;
+    private $two;
+    private $three;
+    private $four;
+    private $five;
+    private $six;
+
+    public function one() { return $this->one; }
+    public function two() { return $this->two; }
+    public function three() { return $this->three; }
+    public function four() { return $this->four; }
+    public function five() { return $this->five; }
+    public function six() { return $this->six; }
+}
+PHP);
+        $configPath = $this->tempDir . '/qmx.yaml';
+        file_put_contents($configPath, <<<'YAML'
+rules:
+  computed.health:
+    enabled: true
+YAML);
+
+        $commandTester = $this->createCommandTester();
+        $commandTester->execute([
+            'paths' => [$this->tempDir],
+            '--config' => $configPath,
+            '--format' => 'json',
+            '--workers' => 0,
+            '--no-cache' => true,
+            '--no-progress' => true,
+            '--only-rule' => ['computed.health'],
+        ]);
+
+        /** @var array{violations: list<array{symbol: string, code: string}>} $report */
+        $report = json_decode(self::extractJsonObject($commandTester->getDisplay()), true, 512, \JSON_THROW_ON_ERROR);
+        $classCodes = array_column(array_values(array_filter(
+            $report['violations'],
+            static fn(array $violation): bool => $violation['symbol'] === 'App\\PoorHealth',
+        )), 'code');
+
+        self::assertNotContains('health.cohesion', $classCodes);
+        self::assertContains('health.typing', $classCodes);
+    }
+
     /**
      * Creates a CommandTester for CheckCommand from DI container.
      */

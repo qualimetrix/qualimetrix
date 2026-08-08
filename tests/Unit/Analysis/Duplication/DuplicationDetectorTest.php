@@ -216,6 +216,37 @@ PHP;
     }
 
     #[Test]
+    public function itRetainsDistantFirstAndAllSubsequentDuplicateOccurrences(): void
+    {
+        $duplicate = <<<'PHP'
+function sharedBlock($items) {
+    $result = [];
+    foreach ($items as $item) {
+        $result[] = $item->transform();
+    }
+    return $result;
+}
+PHP;
+        $filler = implode("\n", array_map(
+            static fn(int $i): string => "function unrelated{$i}() { return {$i}; }",
+            range(1, 400),
+        ));
+
+        $file = $this->createFile('distant_occurrences.php', "<?php\n{$duplicate}\n{$filler}\n{$duplicate}\n{$duplicate}");
+
+        $blocks = $this->createDetector(minTokens: 20, minLines: 3)->detect([$file]);
+
+        self::assertNotEmpty($blocks);
+        self::assertGreaterThanOrEqual(2, \count($blocks));
+
+        $allLocations = array_merge(...array_map(static fn(DuplicateBlock $block): array => $block->locations, $blocks));
+        $startLines = array_unique(array_map(static fn(DuplicateLocation $location): int => $location->startLine, $allLocations));
+
+        self::assertContains(2, $startLines);
+        self::assertGreaterThanOrEqual(3, \count($startLines));
+    }
+
+    #[Test]
     public function itDoesNotReportSameFileSelfDuplication(): void
     {
         // Create a file with a large repetitive array where different

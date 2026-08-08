@@ -11,6 +11,8 @@ use Qualimetrix\Core\Path\RelativePath;
  *
  * Built once by ClassRankResolver::buildIndex(), used for O(1) resolution
  * of namespace-level and file-level violations.
+ *
+ * @qmx-ignore health.cohesion -- Lookup methods expose independent indexes of one rank snapshot.
  */
 final readonly class ClassRankIndex
 {

@@ -10,6 +10,9 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Qualimetrix\Analysis\Aggregator\AggregationHelper;
+use Qualimetrix\Analysis\Aggregator\MetricAggregator;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
@@ -20,6 +23,7 @@ use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Metrics\Size\ClassCountCollector;
 use Qualimetrix\Rules\Coupling\DistanceOptions;
 use Qualimetrix\Rules\Coupling\DistanceRule;
 
@@ -411,6 +415,47 @@ final class DistanceRuleTest extends TestCase
         $context = new AnalysisContext($repository);
         $violations = $rule->analyze($context);
 
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
+    }
+
+    #[Test]
+    public function itDoesNotLoseOneClassAtTheMinimumAfterNamespaceAggregation(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $namespace = 'App\\Service';
+        $file = RelativePath::fromString('src/Service/One.php');
+
+        $repository->add(SymbolPath::forFile($file), MetricBag::fromArray(['classCount' => 1]), $file, 1);
+        $repository->add(SymbolPath::forClass($namespace, 'One'), new MetricBag(), $file, 2);
+        $repository->add(
+            SymbolPath::forNamespace($namespace),
+            MetricBag::fromArray([
+                'classCount' => 1,
+                'classCount.count' => 6,
+            ]),
+            $file,
+            1,
+        );
+
+        (new MetricAggregator(AggregationHelper::collectDefinitions([
+            new ClassCountCollector(),
+        ])))->aggregate($repository);
+        $repository->add(
+            SymbolPath::forNamespace($namespace),
+            MetricBag::fromArray([
+                'distance' => 0.6,
+                'abstractness' => 0.1,
+                'instability' => 0.3,
+            ]),
+            $file,
+            1,
+        );
+
+        $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 1));
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertSame(1, $repository->get(SymbolPath::forNamespace($namespace))->get('classCount.sum'));
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
     }

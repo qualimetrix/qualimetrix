@@ -86,6 +86,10 @@ use Qualimetrix\Rules\AbstractRule;
  *             reason="The rule is the natural cohesion boundary for the architecture-rule surface (one rule, four cohesive diagnostic channels sharing the same registry walk). LCOM is inflated by parallel diagnostic builders — splitting would not improve structure."
  */
 #[CliAlias('layer-violation', 'enabled')]
+#[CliAlias('layer-violation-severity', 'severity')]
+#[CliAlias('layer-violation-unreachable-layer-severity', 'unreachable_layer_severity')]
+#[CliAlias('layer-violation-potential-shadow-severity', 'potential_shadow_severity')]
+#[CliAlias('layer-violation-empty-template-severity', 'empty_template_severity')]
 final class LayerViolationRule extends AbstractRule
 {
     public const string NAME = 'architecture.layer-violation';

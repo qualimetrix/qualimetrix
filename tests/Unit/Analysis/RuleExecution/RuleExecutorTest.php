@@ -608,6 +608,117 @@ final class RuleExecutorTest extends TestCase
         self::assertSame($v2, $violations[0]);
     }
 
+    #[Test]
+    public function itChannelNamespaceExclusionLeavesSiblingViolationCodesActive(): void
+    {
+        $cohesion = $this->createViolationWithNamespace(
+            'computed.health',
+            'App\\Metrics',
+            'health.cohesion',
+        );
+        $coupling = $this->createViolationWithNamespace(
+            'computed.health',
+            'App\\Metrics',
+            'health.coupling',
+        );
+        $rule = $this->createRule('computed.health', [$cohesion, $coupling]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setChannelExclusions(
+            'computed.health',
+            'health.cohesion',
+            ['App\\Metrics'],
+        );
+
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
+        $executor = new RuleExecutor(
+            [$rule],
+            $this->createConfiguredProvider(),
+            $registry,
+            $this->computedRuleSelector(),
+        );
+
+        $violations = $executor->execute($this->createMinimalContext());
+
+        self::assertSame([$coupling], $violations);
+        self::assertSame(
+            [$cohesion],
+            $executor->getRuleExclusionStats()->excludedViolations,
+        );
+    }
+
+    #[Test]
+    public function itChannelNamespaceExclusionDoesNotHideClassFindingsInThatNamespace(): void
+    {
+        $namespaceCohesion = $this->createViolationWithNamespace(
+            'computed.health',
+            'App\\Metrics',
+            'health.cohesion',
+        );
+        $classCohesion = new Violation(
+            location: new Location(RelativePath::fromString('src/Metrics/Collector.php'), 10),
+            symbolPath: SymbolPath::forClass('App\\Metrics', 'Collector'),
+            ruleName: 'computed.health',
+            violationCode: 'health.cohesion',
+            message: 'Class cohesion health is low',
+            severity: Severity::Warning,
+        );
+        $rule = $this->createRule('computed.health', [$namespaceCohesion, $classCohesion]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setChannelExclusions(
+            'computed.health',
+            'health.cohesion',
+            ['App\\Metrics'],
+        );
+
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
+        $executor = new RuleExecutor(
+            [$rule],
+            $this->createConfiguredProvider(),
+            $registry,
+            $this->computedRuleSelector(),
+        );
+
+        self::assertSame([$classCohesion], $executor->execute($this->createMinimalContext()));
+    }
+
+    #[Test]
+    public function itChannelNamespaceWildcardDoesNotHideProjectFindings(): void
+    {
+        $namespaceCohesion = $this->createViolationWithNamespace(
+            'computed.health',
+            'App\\Metrics',
+            'health.cohesion',
+        );
+        $projectCohesion = new Violation(
+            location: Location::none(),
+            symbolPath: SymbolPath::forProject(),
+            ruleName: 'computed.health',
+            violationCode: 'health.cohesion',
+            message: 'Project cohesion health is low',
+            severity: Severity::Warning,
+        );
+        $rule = $this->createRule('computed.health', [$namespaceCohesion, $projectCohesion]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setChannelExclusions('computed.health', 'health', ['*']);
+
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
+        $executor = new RuleExecutor(
+            [$rule],
+            $this->createConfiguredProvider(),
+            $registry,
+            $this->computedRuleSelector(),
+        );
+
+        self::assertSame([$projectCohesion], $executor->execute($this->createMinimalContext()));
+        self::assertSame(
+            [$namespaceCohesion],
+            $executor->getRuleExclusionStats()->excludedViolations,
+        );
+    }
+
     // --- RuleExclusionCaptureHolder toggle tests ---
 
     #[Test]
@@ -741,8 +852,11 @@ final class RuleExecutorTest extends TestCase
         );
     }
 
-    private function createViolationWithNamespace(string $ruleName, string $namespace): Violation
-    {
+    private function createViolationWithNamespace(
+        string $ruleName,
+        string $namespace,
+        ?string $violationCode = null,
+    ): Violation {
         return new Violation(
             location: new Location(
                 file: RelativePath::fromString('test/file.php'),
@@ -750,7 +864,7 @@ final class RuleExecutorTest extends TestCase
             ),
             symbolPath: SymbolPath::forNamespace($namespace),
             ruleName: $ruleName,
-            violationCode: $ruleName,
+            violationCode: $violationCode ?? $ruleName,
             message: "Violation from $ruleName in $namespace",
             severity: Severity::Warning,
         );

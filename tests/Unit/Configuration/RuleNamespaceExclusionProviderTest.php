@@ -115,4 +115,62 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
         self::assertTrue($this->provider->isExcluded('rule1', 'App\\Tests\\Unit'));
         self::assertFalse($this->provider->isExcluded('rule1', 'App\\Service'));
     }
+
+    #[Test]
+    public function itScopesNamespaceExclusionToTheViolationCode(): void
+    {
+        $this->provider->setChannelExclusions(
+            'computed.health',
+            'health.cohesion',
+            ['App\\Metrics'],
+        );
+
+        self::assertTrue($this->provider->isChannelExcluded(
+            'computed.health',
+            'health.cohesion',
+            'App\\Metrics\\Coupling',
+        ));
+        self::assertFalse($this->provider->isChannelExcluded(
+            'computed.health',
+            'health.coupling',
+            'App\\Metrics\\Coupling',
+        ));
+        self::assertFalse($this->provider->isChannelExcluded(
+            'other.producer',
+            'health.cohesion',
+            'App\\Metrics\\Coupling',
+        ));
+    }
+
+    #[Test]
+    public function itUsesViolationCodePrefixSemanticsForChannelExclusions(): void
+    {
+        $this->provider->setChannelExclusions('computed.health', 'health', ['App\\Metrics']);
+
+        self::assertTrue($this->provider->isChannelExcluded(
+            'computed.health',
+            'health.cohesion',
+            'App\\Metrics',
+        ));
+        self::assertFalse($this->provider->isChannelExcluded(
+            'computed.health',
+            'computed.risk',
+            'App\\Metrics',
+        ));
+    }
+
+    #[Test]
+    public function itClearsChannelExclusionsOnReset(): void
+    {
+        $this->provider->setChannelExclusions('computed.health', 'health.cohesion', ['App\\Metrics']);
+
+        $this->provider->reset();
+
+        self::assertSame([], $this->provider->getChannelExclusions('computed.health'));
+        self::assertFalse($this->provider->isChannelExcluded(
+            'computed.health',
+            'health.cohesion',
+            'App\\Metrics',
+        ));
+    }
 }

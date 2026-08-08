@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Coupling;
 
 use InvalidArgumentException;
+use Qualimetrix\Core\Rule\AdditionalOptionKeysInterface;
 use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
 use Qualimetrix\Core\Rule\RuleLevel;
@@ -18,7 +19,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  *
  * Supports class and namespace levels for CBO thresholds.
  */
-final readonly class CboOptions implements HierarchicalRuleOptionsInterface, ShorthandOptionKeysInterface
+final readonly class CboOptions implements HierarchicalRuleOptionsInterface, ShorthandOptionKeysInterface, AdditionalOptionKeysInterface
 {
     public function __construct(
         public ClassCboOptions $class = new ClassCboOptions(),
@@ -105,6 +106,14 @@ final readonly class CboOptions implements HierarchicalRuleOptionsInterface, Sho
     public static function getShorthandOptionKeys(): array
     {
         return ['threshold'];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function getAdditionalOptionKeys(): array
+    {
+        return ['scope'];
     }
 
     public function isEnabled(): bool

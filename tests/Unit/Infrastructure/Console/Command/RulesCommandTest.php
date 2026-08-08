@@ -7,6 +7,9 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Console\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
+use Qualimetrix\Architecture\Rules\LayerViolationOptions;
+use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
@@ -110,6 +113,29 @@ final class RulesCommandTest extends TestCase
 
         self::assertStringContainsString('--cyclomatic-warning', $display);
         self::assertStringContainsString('complexity.cyclomatic:warning_threshold', $display);
+    }
+
+    #[Test]
+    public function itDisplaysAllLayerViolationSeverityAliases(): void
+    {
+        $rule = new LayerViolationRule(
+            new LayerViolationOptions(),
+            self::createStub(ArchitectureProcessorInterface::class),
+        );
+
+        $tester = new CommandTester(new RulesCommand([$rule]));
+        $tester->execute([]);
+
+        $display = $tester->getDisplay();
+
+        self::assertStringContainsString('--layer-violation-severity', $display);
+        self::assertStringContainsString('architecture.layer-violation:severity', $display);
+        self::assertStringContainsString('--layer-violation-unreachable-layer-severity', $display);
+        self::assertStringContainsString('architecture.layer-violation:unreachable_layer_severity', $display);
+        self::assertStringContainsString('--layer-violation-potential-shadow-severity', $display);
+        self::assertStringContainsString('architecture.layer-violation:potential_shadow_severity', $display);
+        self::assertStringContainsString('--layer-violation-empty-template-severity', $display);
+        self::assertStringContainsString('architecture.layer-violation:empty_template_severity', $display);
     }
 
     #[Test]

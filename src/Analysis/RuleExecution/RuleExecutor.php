@@ -59,7 +59,6 @@ final class RuleExecutor implements RuleExecutorInterface
         /** @var list<Violation> $excludedViolations */
         $excludedViolations = [];
 
-        $namespaceExclusion = $this->ruleOptionsRegistry->getExclusionProvider();
         $pathExclusion = $this->ruleOptionsRegistry->getPathExclusionProvider();
 
         // Capturing full Violation objects (as opposed to just counting them) is
@@ -80,11 +79,7 @@ final class RuleExecutor implements RuleExecutorInterface
             // Filter violations from excluded namespaces (per-rule)
             $kept = [];
             foreach ($ruleViolations as $violation) {
-                if (
-                    $violation->symbolPath->namespace !== null
-                    && $violation->symbolPath->namespace !== ''
-                    && $namespaceExclusion->isExcluded($ruleName, $violation->symbolPath->namespace)
-                ) {
+                if ($this->isNamespaceExcluded($ruleName, $violation)) {
                     $namespaceExclusionCounts[$ruleName] = ($namespaceExclusionCounts[$ruleName] ?? 0) + 1;
                     if ($captureExcludedViolations) {
                         $excludedViolations[] = $violation;
@@ -140,6 +135,22 @@ final class RuleExecutor implements RuleExecutorInterface
         );
 
         return $violations;
+    }
+
+    private function isNamespaceExcluded(string $ruleName, Violation $violation): bool
+    {
+        $namespace = $violation->symbolPath->namespace;
+        if ($namespace === null || $namespace === '') {
+            return false;
+        }
+
+        $provider = $this->ruleOptionsRegistry->getExclusionProvider();
+        if ($provider->isExcluded($ruleName, $namespace)) {
+            return true;
+        }
+
+        return $violation->symbolPath->getType()->value === 'namespace'
+            && $provider->isChannelExcluded($ruleName, $violation->violationCode, $namespace);
     }
 
     public function getRuleExclusionStats(): RuleExclusionStats

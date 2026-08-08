@@ -346,7 +346,7 @@ The removed `--generate-baseline` and `--baseline-ignore-stale` options have no 
 ### `--show-suppressed`
 
 Show violations that were suppressed by `@qmx-ignore` tags, and violations suppressed by a
-per-rule `exclude_namespaces` / `exclude_paths` entry in `qmx.yaml` (see
+per-rule `exclude_namespaces` / `exclude_namespace_channels` / `exclude_paths` entry in `qmx.yaml` (see
 [Rules](../getting-started/configuration.md#rules)):
 
 ```bash
@@ -354,8 +354,8 @@ bin/qmx check src/ --show-suppressed
 ```
 
 Independently of `--show-suppressed`, running with `-v` prints a per-rule count of how many
-violations were suppressed this way — split into `exclude_namespaces` and `exclude_paths`, each
-broken down by rule name. Unlike `@qmx-ignore`, this suppression is otherwise silent: nothing in
+violations were suppressed this way. The namespace bucket includes both namespace options and
+is separate from `exclude_paths`; each is broken down by rule name. Unlike `@qmx-ignore`, this suppression is otherwise silent: nothing in
 the default output indicates it happened.
 
 ### `--no-suppression-annotations`
@@ -556,10 +556,13 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:method.warning=15
 bin/qmx check src/ --rule-opt=complexity.cyclomatic:method.error=30
 ```
 
+`exclude_namespace_channels` is configured in YAML, not through `--rule-opt`: each selector
+requires a non-empty list of namespace patterns, while `--rule-opt` carries scalar values.
+
 <!-- llms:skip-begin -->
 ### Rule-specific shortcut flags
 
-Many rules have dedicated CLI flags for quick threshold adjustments:
+Many rules have dedicated CLI flags for quick rule-option configuration:
 
 === "Complexity"
 
@@ -661,10 +664,15 @@ Many rules have dedicated CLI flags for quick threshold adjustments:
 
 === "Architecture"
 
-| Flag                 | Rule                             | Option       |
-| -------------------- | -------------------------------- | ------------ |
-| `--circular-deps`    | architecture.circular-dependency | enabled      |
-| `--max-cycle-size=N` | architecture.circular-dependency | maxCycleSize |
+| Flag                                                    | Rule                             | Option                     |
+| ------------------------------------------------------- | -------------------------------- | -------------------------- |
+| `--circular-deps`                                       | architecture.circular-dependency | enabled                    |
+| `--max-cycle-size=N`                                    | architecture.circular-dependency | maxCycleSize               |
+| `--layer-violation`                                     | architecture.layer-violation     | enabled                    |
+| `--layer-violation-severity=SEVERITY`                   | architecture.layer-violation     | severity                   |
+| `--layer-violation-unreachable-layer-severity=SEVERITY` | architecture.layer-violation     | unreachable_layer_severity |
+| `--layer-violation-potential-shadow-severity=SEVERITY`  | architecture.layer-violation     | potential_shadow_severity  |
+| `--layer-violation-empty-template-severity=SEVERITY`    | architecture.layer-violation     | empty_template_severity    |
 
 ---
 

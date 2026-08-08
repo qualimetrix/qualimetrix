@@ -337,6 +337,19 @@ Equivalent via CLI: `--rule-opt=coupling.instability:threshold=0.5`.
 
 Checks Coupling Between Objects (CBO) — the number of classes a given class depends on.
 
+**Scope:** Set the recognized top-level `scope` option to `application` to check
+`cbo_app` (excluding configured framework dependencies); `all` is the default and checks
+`cbo`. Scope applies to the class level, while namespace configuration remains nested.
+
+```yaml
+rules:
+  coupling.cbo:
+    scope: application
+    class:
+      warning: 15
+      error: 20
+```
+
 **CLI:**
 ```bash
 --cbo-warning=... --cbo-error=...
@@ -482,7 +495,11 @@ rules:
     severity: error
 ```
 
-**CLI:** `--layer-violation` (toggles `enabled`).
+**CLI:** `--layer-violation` toggles `enabled`. The diagnostic severities are also
+available as `--layer-violation-severity=SEVERITY`,
+`--layer-violation-unreachable-layer-severity=SEVERITY`,
+`--layer-violation-potential-shadow-severity=SEVERITY`, and
+`--layer-violation-empty-template-severity=SEVERITY`.
 
 **Membership semantics** (Phase 2 surface):
 
@@ -711,6 +728,17 @@ rules:
 
 **CLI:** `--long-parameter-list-warning=4 --long-parameter-list-error=6 --long-parameter-list-vo-warning=8 --long-parameter-list-vo-error=12`
 
+**Local thresholds:** An `@qmx-threshold` annotation on a qualifying VO constructor
+overrides that constructor's `vo-warning` / `vo-error` pair, using the annotation's
+standard `warning` and `error` keys. It does not change the regular-method thresholds.
+
+```php
+/**
+ * @qmx-threshold code-smell.long-parameter-list warning=10 error=14 -- Wide transport payload
+ */
+public function __construct(/* promoted properties */) {}
+```
+
 ---
 
 ## Unreachable Code Rule
@@ -874,9 +902,11 @@ rules:
 
 These options are available for **any** rule and are handled at framework level by `RuleExecutor`:
 
-| Option               | Type           | Description                                             |
-| -------------------- | -------------- | ------------------------------------------------------- |
-| `exclude_namespaces` | `list<string>` | Namespaces to exclude from violations (prefix matching) |
+| Option                       | Type                                  | Description                                                      |
+| ---------------------------- | ------------------------------------- | ---------------------------------------------------------------- |
+| `exclude_namespaces`         | `list<string>`                        | Producer-wide namespace prefix/glob exclusions                   |
+| `exclude_namespace_channels` | `map<string, non-empty list<string>>` | Namespace-aggregate exclusions keyed by `violationCode` selector |
+| `exclude_paths`              | `list<string>`                        | Producer-wide path prefix/glob exclusions                        |
 
 ```yaml
 rules:
@@ -884,13 +914,26 @@ rules:
     exclude_namespaces: [App\Tests, App\Legacy]
   coupling.cbo:
     exclude_namespaces: [App\Tests]
+  computed.health:
+    exclude_namespace_channels:
+      health.cohesion:
+        - Qualimetrix\Metrics\Coupling
 ```
 
-Violations with `symbolPath->namespace` matching any prefix are filtered out by `RuleExecutor`.
-File-level violations (namespace = null) and global namespace violations (namespace = '') are never filtered.
+`exclude_namespaces` keeps its existing producer-wide behavior: every violation whose
+non-empty `symbolPath->namespace` matches is removed, including class and namespace findings.
+`exclude_namespace_channels` is narrower. Each non-empty map key selects a `violationCode`
+using `RuleMatcher` semantics: exact (`health.cohesion`) or dot-boundary prefix (`health`
+matches `health.cohesion`, while `health.cohe` does not). Its value must be a non-empty
+list of namespace prefixes/globs. A match removes only aggregate Namespace violations;
+class findings in the same namespace and sibling channels such as `health.coupling` remain.
+File-level violations (namespace = null) and global namespace violations (namespace = '')
+are never filtered by either namespace option.
 
-The option is extracted by `RuleOptionsFactory` and stored in `RuleNamespaceExclusionProvider`,
-so it does not leak into `Options::fromArray()`.
+All three options are extracted by `RuleOptionsFactory`, so they do not leak into
+`Options::fromArray()`. The two namespace forms are stored in
+`RuleNamespaceExclusionProvider`; channel-scoped removals contribute to the same
+namespace-exclusion reporting bucket as legacy `exclude_namespaces` removals.
 
 ---
 
@@ -1000,6 +1043,11 @@ their rationale as a code comment on the declaring rule (never by analogy):
      `threshold` (or `warning`/`error`) is parsed once via `ThresholdParser::parse()`
      and applied uniformly to every nested level, instead of routing through the
      nested `class:`/`namespace:` sub-configs.
+   - If `fromArray()` accepts any other top-level key that is neither a constructor
+     parameter nor a threshold shorthand (for example, CBO's `scope`), implement
+     `Core\Rule\AdditionalOptionKeysInterface` and return its canonical kebab-case
+     spelling from `getAdditionalOptionKeys()`. This keeps factory validation strict
+     while recognizing the documented option.
 5. In `analyze()`, use `$this->getEffectiveSeverity()` instead of `$options->getSeverity()` to support `@qmx-threshold` overrides
 6. Write unit tests
 7. Add value hints to `src/Reporting/Template/src/hints.js` — range-based interpretations for the HTML report

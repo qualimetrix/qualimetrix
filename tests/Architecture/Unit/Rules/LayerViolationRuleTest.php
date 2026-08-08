@@ -56,7 +56,13 @@ final class LayerViolationRuleTest extends TestCase
         self::assertSame(RuleCategory::Architecture, $rule->getCategory());
         self::assertSame([], $rule->requires());
         self::assertSame(LayerViolationOptions::class, LayerViolationRule::getOptionsClass());
-        self::assertSame(['layer-violation' => 'enabled'], CliAliasReader::read(LayerViolationRule::class));
+        self::assertSame([
+            'layer-violation' => 'enabled',
+            'layer-violation-severity' => 'severity',
+            'layer-violation-unreachable-layer-severity' => 'unreachable_layer_severity',
+            'layer-violation-potential-shadow-severity' => 'potential_shadow_severity',
+            'layer-violation-empty-template-severity' => 'empty_template_severity',
+        ], CliAliasReader::read(LayerViolationRule::class));
         self::assertStringContainsString('layer', strtolower($rule->getDescription()));
     }
 

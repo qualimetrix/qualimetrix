@@ -128,4 +128,22 @@ final readonly class LongParameterListOptions implements RuleOptionsInterface, T
             voError: $this->voError,
         );
     }
+
+    /**
+     * Returns a copy with overridden thresholds for the VO-constructor branch.
+     *
+     * `@qmx-threshold` only carries one warning/error pair. This method keeps
+     * the regular-method pair intact while projecting that pair onto the VO
+     * thresholds at the VO-specific call site.
+     */
+    public function withVoOverride(int|float|null $warning, int|float|null $error): static
+    {
+        return new static(
+            enabled: $this->enabled,
+            warning: $this->warning,
+            error: $this->error,
+            voWarning: $warning !== null ? (int) $warning : $this->voWarning,
+            voError: $error !== null ? (int) $error : $this->voError,
+        );
+    }
 }

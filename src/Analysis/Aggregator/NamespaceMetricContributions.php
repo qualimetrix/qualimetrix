@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Aggregator;
 
+use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Metric\SymbolLevel;
@@ -219,28 +221,50 @@ final class NamespaceMetricContributions
             $bag = $repository->get($info->symbolPath);
 
             foreach ($definitions as $definition) {
-                if ($definition->collectedAt !== SymbolLevel::File) {
-                    continue;
+                if ($definition->collectedAt === SymbolLevel::File
+                    && self::appendExplicitNamespaceContributions($bag, $definition, $targetLevel, $values)
+                ) {
+                    $provided[$definition->name] = true;
                 }
-
-                $total = $bag->get($definition->name);
-
-                if ($total === null) {
-                    continue;
-                }
-
-                $count = (int) ($bag->get($definition->name . '.count') ?? 1);
-                $perContribution = $count > 0 ? $total / $count : $total;
-
-                for ($i = 0; $i < max(1, $count); ++$i) {
-                    $values[$definition->name][] = $perContribution;
-                }
-
-                $provided[$definition->name] = true;
             }
         }
 
         return $provided;
+    }
+
+    /**
+     * @param array<string, list<int|float>> $values
+     */
+    private static function appendExplicitNamespaceContributions(
+        MetricBag $bag,
+        MetricDefinition $definition,
+        SymbolLevel $targetLevel,
+        array &$values,
+    ): bool {
+        $total = $bag->get($definition->name);
+
+        if ($total === null) {
+            return false;
+        }
+
+        // A sum-only aggregation needs the namespace total once, not a
+        // synthetic value per contributing file. Splitting an integer total
+        // such as 1 across six contributions creates repeating fractions whose
+        // sum can be 0.999..., corrupting count metrics after an integer cast.
+        if ($definition->getStrategiesForLevel($targetLevel) === [AggregationStrategy::Sum]) {
+            $values[$definition->name][] = $total;
+
+            return true;
+        }
+
+        $count = (int) ($bag->get($definition->name . '.count') ?? 1);
+        $perContribution = $count > 0 ? $total / $count : $total;
+
+        for ($i = 0; $i < max(1, $count); ++$i) {
+            $values[$definition->name][] = $perContribution;
+        }
+
+        return true;
     }
 
     /**

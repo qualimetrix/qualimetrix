@@ -31,6 +31,8 @@ use SplFileInfo;
  * otherwise conservatively estimated as DIT = 1.
  *
  * Anonymous classes are ignored.
+ *
+ * @qmx-ignore health.cohesion -- Visitor-backed collector methods are intentionally independent protocol operations.
  */
 final class InheritanceDepthCollector extends AbstractCollector implements ClassMetricsProviderInterface
 {
