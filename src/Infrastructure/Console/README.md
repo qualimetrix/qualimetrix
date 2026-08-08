@@ -171,13 +171,13 @@ anything on a run without `--baseline`.
 
 ### Rules
 
-| Option                 | Description                                         |
-| ---------------------- | --------------------------------------------------- |
-| `--cyclomatic-warning` | Cyclomatic complexity warning threshold             |
-| `--cyclomatic-error`   | Cyclomatic complexity error threshold               |
-| `--disable-rule`       | Disable a rule or group (prefix match)              |
-| `--only-rule`          | Run only the specified rule or group (prefix match) |
-| `--rule-opt`           | Rule option `RULE:OPTION=VALUE`                     |
+| Option                 | Description                                                             |
+| ---------------------- | ----------------------------------------------------------------------- |
+| `--cyclomatic-warning` | Cyclomatic complexity warning threshold                                 |
+| `--cyclomatic-error`   | Cyclomatic complexity error threshold                                   |
+| `--disable-rule`       | Disable a rule or group (prefix match)                                  |
+| `--only-rule`          | Run only the specified producer, group, violation code, or full channel |
+| `--rule-opt`           | Rule option `RULE:OPTION=VALUE`                                         |
 
 Full list of options available via `bin/qmx check --help`.
 

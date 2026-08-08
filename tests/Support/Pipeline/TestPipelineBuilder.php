@@ -20,6 +20,8 @@ use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Rule\InMemoryRuleChannelRegistry;
+use Qualimetrix\Core\Rule\RuleSelector;
 
 /**
  * Fluent builder for {@see AnalysisPipeline} instances in tests.
@@ -66,6 +68,8 @@ final class TestPipelineBuilder
     private ?LoggerInterface $logger = null;
 
     private ?ProfilerHolder $profilerHolder = null;
+
+    private ?RuleSelector $ruleSelector = null;
 
     private function __construct() {}
 
@@ -162,6 +166,13 @@ final class TestPipelineBuilder
         return $this;
     }
 
+    public function withRuleSelector(RuleSelector $ruleSelector): self
+    {
+        $this->ruleSelector = $ruleSelector;
+
+        return $this;
+    }
+
     public function build(): AnalysisPipeline
     {
         return new AnalysisPipeline(
@@ -185,6 +196,7 @@ final class TestPipelineBuilder
             graphBuilder: $this->graphBuilder,
             logger: $this->logger ?? new NullLogger(),
             profilerHolder: $this->profilerHolder,
+            ruleSelector: $this->ruleSelector ?? new RuleSelector(new InMemoryRuleChannelRegistry()),
         );
     }
 

@@ -136,6 +136,21 @@ final class BaselineMeasuredSetSeamTest extends TestCase
         self::assertStringNotContainsString('cannot be applied', $cleanup->getDisplay());
     }
 
+    #[Test]
+    public function itSelectsComputedFindingsByProducerCodeAndFullChannelAcrossLifecycleCommands(): void
+    {
+        foreach (['computed.health', 'health.complexity', self::COMPUTED_CHANNEL] as $selector) {
+            $check = $this->runCheck(['--only-rule' => [$selector]]);
+
+            self::assertStringContainsString('health.complexity', $check->getDisplay());
+            self::assertStringNotContainsString('does not match any registered rule', $check->getDisplay());
+        }
+
+        $this->runGenerate(['--only-rule' => ['health.complexity']]);
+
+        self::assertContains(self::COMPUTED_CHANNEL, self::capturedChannels($this->baselinePath));
+    }
+
     /**
      * @param array<string, mixed> $options
      */
@@ -149,12 +164,16 @@ final class BaselineMeasuredSetSeamTest extends TestCase
         ]);
     }
 
-    private function runGenerate(): void
+    /**
+     * @param array<string, mixed> $options
+     */
+    private function runGenerate(array $options = []): void
     {
         $tester = $this->execute(BaselineGenerateCommand::class, [
             'baseline' => $this->baselinePath,
             'paths' => [$this->tempDir],
             '--config' => $this->configPath,
+            ...$options,
         ]);
 
         self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());

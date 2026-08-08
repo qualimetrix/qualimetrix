@@ -16,13 +16,16 @@ use Qualimetrix\Configuration\RulePathExclusionProvider;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\RuleExclusionCaptureHolder;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Core\Violation\ViolationChannel;
 
 #[CoversClass(RuleExecutor::class)]
 final class RuleExecutorTest extends TestCase
@@ -386,6 +389,36 @@ final class RuleExecutorTest extends TestCase
         $activeRules = $executor->getActiveRules();
 
         self::assertCount(2, $activeRules);
+    }
+
+    #[Test]
+    public function itKeepsComputedFindingsWhenOnlyTheProducerRuleIsSelected(): void
+    {
+        $finding = $this->createViolation('computed.health', violationCode: 'health.complexity');
+        $rule = $this->createRule('computed.health', [$finding]);
+        $executor = new RuleExecutor(
+            [$rule],
+            $this->createConfiguredProvider(new AnalysisConfiguration(onlyRules: ['computed.health'])),
+            ruleSelector: $this->computedRuleSelector(),
+        );
+
+        self::assertSame([$finding], $executor->execute($this->createMinimalContext()));
+    }
+
+    #[Test]
+    public function itRunsTheComputedProducerWhenOnlyItsViolationCodeIsSelected(): void
+    {
+        $complexity = $this->createViolation('computed.health', violationCode: 'health.complexity');
+        $cohesion = $this->createViolation('computed.health', violationCode: 'health.cohesion');
+        $rule = $this->createRule('computed.health', [$complexity, $cohesion]);
+        $executor = new RuleExecutor(
+            [$rule],
+            $this->createConfiguredProvider(new AnalysisConfiguration(onlyRules: ['health.complexity'])),
+            ruleSelector: $this->computedRuleSelector(),
+        );
+
+        self::assertSame([$complexity], $executor->execute($this->createMinimalContext()));
+        self::assertSame([$rule], $executor->getActiveRules());
     }
 
     // --- Hierarchical rules tests ---
@@ -803,5 +836,22 @@ final class RuleExecutorTest extends TestCase
             message: "Violation from $ruleName in $file",
             severity: Severity::Warning,
         );
+    }
+
+    private function computedRuleSelector(): RuleSelector
+    {
+        return new RuleSelector(new class implements RuleChannelRegistryInterface {
+            public function channelsProducedBy(string $producerRuleName): array
+            {
+                if ($producerRuleName !== 'computed.health') {
+                    return [];
+                }
+
+                return [
+                    new ViolationChannel('computed.health', 'health.complexity'),
+                    new ViolationChannel('computed.health', 'health.cohesion'),
+                ];
+            }
+        });
     }
 }

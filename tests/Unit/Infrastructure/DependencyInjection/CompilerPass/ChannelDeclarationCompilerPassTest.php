@@ -8,6 +8,7 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -18,6 +19,7 @@ use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
 use Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry;
+use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
 use Qualimetrix\Rules\CodeSmell\GotoRule;
 use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Qualimetrix\Rules\Maintainability\MaintainabilityRule;
@@ -32,6 +34,8 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $container = new ContainerBuilder();
         $container->register(ChannelDeclarationRegistry::class)
             ->setArguments(['$staticDeclarations' => []]);
+        $container->register(RuleChannelRegistry::class)
+            ->setArguments(['$staticChannelKeysByProducer' => [], '$computedMetricRuleName' => '']);
         $container->register(GotoRule::class)
             ->setClass(GotoRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
@@ -66,6 +70,14 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             ChannelDeclaration::magnitude(WorseDirection::Lower),
             $declarations['maintainability.index#maintainability.index'],
         );
+        self::assertSame(
+            [
+                'code-smell.goto' => ['code-smell.goto#code-smell.goto'],
+                'maintainability.index' => ['maintainability.index#maintainability.index'],
+            ],
+            $container->getDefinition(RuleChannelRegistry::class)
+                ->getArgument('$staticChannelKeysByProducer'),
+        );
     }
 
     #[Test]
@@ -84,6 +96,29 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
             ->getArgument('$staticDeclarations');
 
         self::assertArrayHasKey('complexity.cyclomatic#complexity.cyclomatic.method', $declarations);
+    }
+
+    #[Test]
+    public function itAttributesDiagnosticChannelsToTheirProducerRule(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register(ChannelDeclarationRegistry::class)
+            ->setArguments(['$staticDeclarations' => []]);
+        $container->register(RuleChannelRegistry::class)
+            ->setArguments(['$staticChannelKeysByProducer' => [], '$computedMetricRuleName' => '']);
+        $container->register(LayerViolationRule::class)
+            ->setClass(LayerViolationRule::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+
+        $channelsByProducer = $container->getDefinition(RuleChannelRegistry::class)
+            ->getArgument('$staticChannelKeysByProducer');
+
+        self::assertContains(
+            'architecture.coverage#architecture.coverage',
+            $channelsByProducer[LayerViolationRule::NAME],
+        );
     }
 
     #[Test]

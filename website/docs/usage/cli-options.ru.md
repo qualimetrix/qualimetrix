@@ -493,7 +493,10 @@ bin/qmx check src/ --profile=profile.json --profile-format=chrome-tracing
 
 ### `--disable-rule`
 
-Отключить конкретное правило или целую группу по префиксу. Можно указывать несколько раз:
+Отключить правило-производитель, целую группу или отдельный канал нарушения по префиксу.
+Для каналов действуют те же формы, что у `--only-rule`: короткое имя или полный
+`ruleName#violationCode`. Отключение одного канала не останавливает производителя,
+чтобы остальные его каналы продолжали попадать в отчёт. Опцию можно указывать несколько раз:
 
 ```bash
 # Отключить одно правило
@@ -504,6 +507,9 @@ bin/qmx check src/ --disable-rule=complexity
 
 # Отключить несколько
 bin/qmx check src/ --disable-rule=complexity --disable-rule=design.lcom
+
+# Отключить только один канал computed finding
+bin/qmx check src/ --disable-rule=health.complexity
 ```
 
 !!! tip "Оптимизация памяти"
@@ -511,7 +517,10 @@ bin/qmx check src/ --disable-rule=complexity --disable-rule=design.lcom
 
 ### `--only-rule`
 
-Запустить только указанные правила или группы. Можно указывать несколько раз:
+Запустить только подходящие правила-производители или каналы нарушений. Селектор без `#`
+по префиксу сопоставляется с именем производителя, `ruleName` канала или `violationCode`.
+Для однозначного полного канала используйте `ruleName#violationCode`. Опцию можно
+указывать несколько раз:
 
 ```bash
 # Запустить только правила сложности
@@ -519,6 +528,10 @@ bin/qmx check src/ --only-rule=complexity
 
 # Запустить два конкретных правила
 bin/qmx check src/ --only-rule=complexity.cyclomatic --only-rule=size.method-count
+
+# Выбрать один канал, который создаёт правило computed.health
+bin/qmx check src/ --only-rule=health.complexity
+bin/qmx check src/ --only-rule=computed.health#health.complexity
 ```
 
 ### `--rule-opt`

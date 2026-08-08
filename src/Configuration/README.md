@@ -647,12 +647,12 @@ Examples:
 
 ### Rule Management
 
-| Option                   | Description                                                             |
-| ------------------------ | ----------------------------------------------------------------------- |
-| `--disable-rule=RULE`    | Disable a rule or category                                              |
-| `--only-rule=RULE`       | Run only the specified rule or category                                 |
-| `--exclude-path=PATTERN` | Suppress violations for files matching path prefix or glob (repeatable) |
-| `--config=PATH`          | Path to config file                                                     |
+| Option                    | Description                                                             |
+| ------------------------- | ----------------------------------------------------------------------- |
+| `--disable-rule=SELECTOR` | Disable a producer, group, violation code, or full channel              |
+| `--only-rule=SELECTOR`    | Run only the selected producer, group, violation code, or full channel  |
+| `--exclude-path=PATTERN`  | Suppress violations for files matching path prefix or glob (repeatable) |
+| `--config=PATH`           | Path to config file                                                     |
 
 **`--exclude-path`** supports both prefix matching (e.g., `src/Entity`) and glob patterns (e.g., `src/Metrics/*Visitor.php`).
 CLI patterns are **merged** with `exclude_paths` from the config file, not overridden.
@@ -662,12 +662,16 @@ Namespace-level and aggregated violations are not affected, as they have no spec
 #### Prefix Matching
 
 Rule names use `group.rule-name` format (kebab-case). The `--disable-rule` and `--only-rule`
-options support prefix matching — specifying a group prefix targets all rules in that group:
+options are channel-aware: a bare prefix can target a producer rule, a channel `ruleName`,
+or a `violationCode`; `ruleName#violationCode` targets a full channel. Specifying a group
+prefix still targets every matching producer/channel:
 
 ```bash
 bin/qmx check src/ --disable-rule=code-smell         # Disable all code-smell.* rules
 bin/qmx check src/ --only-rule=complexity             # Run only complexity.* rules
 bin/qmx check src/ --disable-rule=coupling.instability  # Disable a specific rule
+bin/qmx check src/ --only-rule=health.complexity       # Run computed.health, keep this channel
+bin/qmx check src/ --only-rule=computed.health#health.complexity  # Explicit full channel
 ```
 
 ```yaml

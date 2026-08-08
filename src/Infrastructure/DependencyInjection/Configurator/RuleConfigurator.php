@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Configuration\KnownRuleNamesProviderInterface;
+use Qualimetrix\Core\Rule\RuleChannelRegistryInterface;
+use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry;
 use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
+use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Configures rules and rule registry.
@@ -29,6 +33,7 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
         $this->registerRules($container);
         $this->registerRuleRegistry($container);
         $this->registerChannelDeclarationRegistry($container);
+        $this->registerRuleChannelSelection($container);
     }
 
     /**
@@ -104,5 +109,20 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
 
         $container->setAlias(ChannelDeclarationRegistryInterface::class, ChannelDeclarationRegistry::class)
             ->setPublic(true);
+    }
+
+    private function registerRuleChannelSelection(ContainerBuilder $container): void
+    {
+        $container->register(RuleChannelRegistry::class)
+            ->setArguments([
+                '$staticChannelKeysByProducer' => [],
+                '$computedMetricRuleName' => '',
+            ]);
+        $container->setAlias(RuleChannelRegistryInterface::class, RuleChannelRegistry::class);
+
+        $container->register(RuleSelector::class)
+            ->setArguments([
+                new Reference(RuleChannelRegistryInterface::class),
+            ]);
     }
 }

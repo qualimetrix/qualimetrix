@@ -7,8 +7,10 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 use LogicException;
 use Qualimetrix\Core\Rule\ChannelDeclarationReader;
 use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Rule\RuleNameReader;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry;
+use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
 use Qualimetrix\Rules\ComputedMetric\ComputedMetricRule;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -52,6 +54,8 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
 
         /** @var array<string, ChannelDeclaration> $declarations */
         $declarations = [];
+        /** @var array<string, list<string>> $channelKeysByProducer */
+        $channelKeysByProducer = [];
 
         foreach ($container->findTaggedServiceIds(RuleRegistryCompilerPass::TAG) as $id => $tags) {
             $serviceDefinition = $container->getDefinition($id);
@@ -80,7 +84,13 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                 ));
             }
 
-            foreach (ChannelDeclarationReader::read($class) as $key => $declaration) {
+            $ruleDeclarations = ChannelDeclarationReader::read($class);
+            if ($ruleDeclarations === []) {
+                continue;
+            }
+
+            $producerRuleName = RuleNameReader::read($class);
+            foreach ($ruleDeclarations as $key => $declaration) {
                 if (isset($declarations[$key])) {
                     throw new LogicException(\sprintf(
                         'Duplicate channel declaration for "%s" — declared by more than one rule class (last seen: %s).',
@@ -90,10 +100,17 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                 }
 
                 $declarations[$key] = $declaration;
+                $channelKeysByProducer[$producerRuleName][] = $key;
             }
         }
 
         $definition->setArgument('$staticDeclarations', $declarations);
         $definition->setArgument('$computedMetricRuleName', ComputedMetricRule::NAME);
+
+        if ($container->hasDefinition(RuleChannelRegistry::class)) {
+            $container->getDefinition(RuleChannelRegistry::class)
+                ->setArgument('$staticChannelKeysByProducer', $channelKeysByProducer)
+                ->setArgument('$computedMetricRuleName', ComputedMetricRule::NAME);
+        }
     }
 }

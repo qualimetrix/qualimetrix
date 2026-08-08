@@ -495,7 +495,9 @@ Available formats: `json`, `chrome-tracing`.
 
 ### `--disable-rule`
 
-Disable a specific rule or an entire group by prefix. Can be repeated:
+Disable a producer rule, an entire group, or a finding channel by prefix. Channel selectors
+use the same bare-name or explicit `ruleName#violationCode` forms as `--only-rule`. Disabling
+one channel keeps its producer active so that other channels can still be reported. Can be repeated:
 
 ```bash
 # Disable one rule
@@ -506,6 +508,9 @@ bin/qmx check src/ --disable-rule=complexity
 
 # Disable multiple
 bin/qmx check src/ --disable-rule=complexity --disable-rule=design.lcom
+
+# Disable only one computed finding channel
+bin/qmx check src/ --disable-rule=health.complexity
 ```
 
 !!! tip "Memory optimization"
@@ -513,7 +518,9 @@ bin/qmx check src/ --disable-rule=complexity --disable-rule=design.lcom
 
 ### `--only-rule`
 
-Run only the specified rules or groups. Can be repeated:
+Run only matching producer rules or finding channels. A bare selector matches a producer
+name, channel `ruleName`, or `violationCode` by prefix. Use
+`ruleName#violationCode` for an explicit full channel. Can be repeated:
 
 ```bash
 # Run only complexity rules
@@ -521,6 +528,10 @@ bin/qmx check src/ --only-rule=complexity
 
 # Run two specific rules
 bin/qmx check src/ --only-rule=complexity.cyclomatic --only-rule=size.method-count
+
+# Select one channel emitted by the computed.health producer
+bin/qmx check src/ --only-rule=health.complexity
+bin/qmx check src/ --only-rule=computed.health#health.complexity
 ```
 
 ### `--rule-opt`

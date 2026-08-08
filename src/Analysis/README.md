@@ -187,6 +187,14 @@ individual `Violation` objects are retained only when
 `RuntimeConfigurator`) — holding onto every suppressed violation regardless of whether
 `--show-suppressed` was passed would waste memory on codebases with wide per-rule exclusions.
 
+Rule selection is channel-aware. `Core\Rule\RuleSelector` first decides whether a
+producer must run from the producer-to-channel registry, then filters each finding while
+the producer identity is still available. This is required for computed metrics
+(`computed.health#health.*`) and Architecture diagnostics such as
+`architecture.layer-violation` producing `architecture.coverage#architecture.coverage`.
+The same selector guards Architecture preparation, circular-dependency detection, and
+duplication detection, so prerequisite work and rule execution cannot disagree.
+
 **Phase 5: Result**
 Building and returning `AnalysisResult`.
 

@@ -30,6 +30,7 @@ use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
@@ -289,6 +290,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ConfigurationPipeline::class),
                 new Reference(RuntimeConfigurator::class),
                 new Reference(ResultPresenter::class),
+                new Reference(RuleSelector::class),
                 new Reference(DelegatingLogger::class),
             ])
             ->setPublic(true);
