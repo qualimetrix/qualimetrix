@@ -107,6 +107,16 @@ and [Baseline](../src/Baseline/README.md) for the lifecycle and file contract.
 
 For full details (CompilerPasses, exclude patterns, autowiring constraints for rules), see [CLAUDE.md § Symfony DI](../CLAUDE.md#7-symfony-di-automatic-service-registration).
 
+### 7. Analysis Coverage and Verdict
+
+Every discovered PHP file ends in exactly one state: analyzed, intentionally
+excluded as generated, or failed during parsing/processing. Generated exclusions
+keep a run complete; failures make it incomplete. `check` still renders the
+selected report for diagnosis but exits 4 and marks policy results as
+non-authoritative. Artifact-producing consumers such as baseline lifecycle
+commands and `graph:export` refuse incomplete input. See
+[ADR 0018](adr/0018-analysis-coverage-verdict-and-output-projection.md).
+
 ---
 
 ## Architectural Invariants

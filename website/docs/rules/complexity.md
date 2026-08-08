@@ -319,15 +319,22 @@ Qualimetrix follows Nejmeh (1988) with PHP-specific extensions:
 - **Boolean operators in conditions:** Each `&&`/`||` in a condition adds 1 to that condition's path count. For example, `if ($a && $b || $c)` contributes 4 paths (base 2 + 2 operators).
 - **Ternary:** Contributes 2 base paths plus any complexity in sub-expressions.
 - **`??` (null coalescing):** Treated as +1 additional path, similar to a ternary.
-- **PHP-specific extensions:** `match`, `foreach`, `??`, and `?->` are all handled as path-generating constructs.
+- **PHP-specific extensions:** `match`, `foreach`, `??`, and `?->` are all handled as path-generating constructs. Expression-bearing `for`, `foreach`, `switch`, and `echo` slots are traversed through transparent AST wrappers.
 
 **`match` expressions:** Qualimetrix uses an **additive** approach, consistent with Nejmeh's original formula for `switch`:
 
 ```
-NPath(match) = 1 + sum of NPath(each arm body)
+NPath(match) = NPath(subject) + sum(NPath(arm conditions) + max(1, NPath(arm body)))
 ```
 
-Some other tools (notably pdepend) use a multiplicative approach for `match`, which can produce extreme values (millions) for methods with large `match` expressions. Qualimetrix's additive approach yields practical, actionable values.
+Every arm contributes at least one path, so a simple `match` agrees with the
+equivalent `switch`. Nullsafe method/property access contributes its conditional
+short-circuit path, and nested ternaries or boolean operators are retained even
+inside wrapper expressions. Some other tools (notably pdepend) use a
+multiplicative approach for `match`, which can produce extreme values (millions)
+for methods with large `match` expressions. Qualimetrix's additive approach
+yields practical, actionable values. Values for these constructs change from
+earlier Qualimetrix releases and may require threshold/baseline recalibration.
 
 <!-- llms:skip-end -->
 

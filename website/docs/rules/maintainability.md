@@ -15,7 +15,7 @@ The Maintainability Index (MI) is a composite score that combines three factors:
 
 - **Halstead Volume** -- how much "information" is in the code (based on the number of operators and operands)
 - **Cyclomatic Complexity** -- how many independent paths through the code exist
-- **Lines of Code** -- the physical size of the method
+- **Method statement count** -- the formatting-independent semantic size of the method
 
 These three factors are combined into a single number. The original formula produces values on a 0--171 scale, though in practice most code falls between 0 and 100.
 
@@ -135,7 +135,7 @@ This method has high complexity, many lines, and many operators/operands, all of
 3. **Use value objects.** Replace arrays with typed objects to reduce the number of raw operations.
 
 !!! tip
-    The `minLoc` option (default: 10) filters out trivially small methods. Simple getters and setters would produce extreme MI scores that are meaningless. Adjust this if you get too many false positives on small methods.
+    The `minStatements` option (default: 10) filters out trivially small methods. Simple getters and setters would produce extreme MI scores that are meaningless. Adjust this if you get too many false positives on small methods.
 
 <!-- llms:skip-end -->
 
@@ -152,7 +152,7 @@ Where:
 
 - **V** = Halstead Volume (a measure of information content based on operators and operands)
 - **CCN** = Cyclomatic Complexity ([CCN2+ variant](complexity.md#implementation-notes))
-- **LOC** = Logical Lines of Code (LLOC -- statement count, not physical line count)
+- **LOC input** = `methodStatementCount`, a formatting-independent count of executable and control-flow statements
 
 The raw MI value (0-171 scale) is normalized to a **0-100 scale**: `max(0, MI x 100 / 171)`.
 
@@ -160,8 +160,8 @@ The raw MI value (0-171 scale) is normalized to a **0-100 scale**: `max(0, MI x 
 
 **Health score mapping:** The `health.maintainability` dimension uses a penalty-based formula that considers MI average (base quality), MI 5th percentile (main differentiator for outlier methods), and MI minimum (extreme outliers). This multi-term approach produces good discrimination across projects — from well-maintained libraries (score ~95) to complex frameworks (score ~48). See [Health Scores](../reference/health-scores.md) for details and customization options.
 
-!!! note "LOC input"
-    Qualimetrix uses LLOC (logical lines -- the number of statements) for the MI formula, which aligns with the original Oman-Hagemeister paper. Some tools use physical LOC (including blank lines and comments) or ELOC (executable lines), which produces different results. LLOC gives the most stable and meaningful values because it is not affected by formatting or comment density.
+!!! info "Deviation from original spec: statement-count input"
+    Qualimetrix uses the dedicated `methodStatementCount` metric for the formula's size term. It counts semantic executable/control-flow statements, not physical lines or the old Halstead-owned `methodLoc`. This keeps MI stable across formatting changes but changes existing MI values, aggregates, health scores, and baselines.
 
 !!! info "Halstead Volume: semantic approach"
     Halstead Volume (the V in the formula) uses a **semantic interpretation** of Halstead's methodology (1977). Qualimetrix counts only elements that carry semantic meaning (arithmetic, logical, comparison operators; variables, literals, constants) and excludes syntactic delimiters (`;`, `()`, `{}`, `,`). The original Halstead paper counted all tokens, but was designed for languages (Fortran, PL/I) with minimal syntactic noise. Tools that count all tokens (e.g., pdepend) report significantly higher Volume/Difficulty/Effort values. This does not affect relative comparisons between methods within the same project.
@@ -170,13 +170,13 @@ The raw MI value (0-171 scale) is normalized to a **0-100 scale**: `max(0, MI x 
 
 ### Configuration
 
-| Option         | Default | Description                                  |
-| -------------- | ------- | -------------------------------------------- |
-| `enabled`      | `true`  | Enable or disable this rule                  |
-| `warning`      | `40.0`  | Score below this triggers a warning          |
-| `error`        | `20.0`  | Score below this triggers an error           |
-| `excludeTests` | `true`  | Skip test files                              |
-| `minLoc`       | `10`    | Skip methods with fewer lines (avoids noise) |
+| Option          | Default | Description                                       |
+| --------------- | ------- | ------------------------------------------------- |
+| `enabled`       | `true`  | Enable or disable this rule                       |
+| `warning`       | `40.0`  | Score below this triggers a warning               |
+| `error`         | `20.0`  | Score below this triggers an error                |
+| `excludeTests`  | `true`  | Skip test files                                   |
+| `minStatements` | `10`    | Skip methods with fewer statements (avoids noise) |
 
 ```yaml
 # qmx.yaml
@@ -185,10 +185,10 @@ rules:
     warning: 40
     error: 20
     exclude_tests: true
-    min_loc: 10
+    min_statements: 10
 ```
 
 ```bash
 bin/qmx check src/ --rule-opt="maintainability.index:warning=35"
-bin/qmx check src/ --rule-opt="maintainability.index:min_loc=15"
+bin/qmx check src/ --rule-opt="maintainability.index:min_statements=15"
 ```

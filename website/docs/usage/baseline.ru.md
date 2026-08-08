@@ -80,11 +80,19 @@ bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 ### Объяснение границы
 
 ```bash
-bin/qmx baseline:explain 'method:App\\OrderService::calculate' src/ --baseline=baseline.json
-bin/qmx baseline:explain 'method:App\\OrderService::calculate' src/ --channel='complexity.cyclomatic#complexity.cyclomatic.method'
+bin/qmx baseline:explain 'method:App\OrderService::calculate' src/ --baseline=baseline.json
+bin/qmx baseline:explain 'method:App\OrderService::calculate' src/ --channel='complexity.cyclomatic#complexity.cyclomatic.method'
 ```
 
 `baseline:explain <symbol> [<paths>...]` показывает принятую величину, текущее нарушение, порог из конфигурации и override `@qmx-threshold`. Используй `--baseline=BASELINE`, чтобы включить принятую величину, и `--channel=CHANNEL`, чтобы сузить ответ.
+
+Символ, отсутствующий и в текущем анализе, и в baseline, считается неверным input,
+а не чистым результатом. Baseline-only символ остаётся объяснимым и помечается как отсутствующий
+в текущей области или результате.
+
+Все lifecycle-команды требуют полного анализа. Ошибка parsing или processing
+возвращает код 4 до интерпретации, классификации, создания или изменения baseline.
+`--force` не снимает этот инвариант; существующий файл остаётся побайтово неизменным.
 
 ## Stale, inert и resolved-записи
 

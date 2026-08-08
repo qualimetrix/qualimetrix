@@ -262,13 +262,13 @@ For CI pipelines or AI-assisted architecture reviews, the JSON output provides s
 
 ```bash
 # Step 1: Overview scan
-bin/qmx check src/ --format=json --workers=0
+bin/qmx check src/ --format=json --workers=1
 
 # Step 2: Deep dive into a specific namespace
-bin/qmx check src/ --namespace=App\\Domain --format=json --workers=0
+bin/qmx check src/ --namespace=App\\Domain --format=json --workers=1
 
 # Step 3: Raw metrics for custom analysis
-bin/qmx check src/ --format=metrics --workers=0
+bin/qmx check src/ --format=metrics --workers=1
 ```
 
 ### Most Useful JSON Fields

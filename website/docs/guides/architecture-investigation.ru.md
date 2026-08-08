@@ -262,13 +262,13 @@ TCC (Tight Class Cohesion) измеряет, какая доля пар мето
 
 ```bash
 # Шаг 1: Обзорное сканирование
-bin/qmx check src/ --format=json --workers=0
+bin/qmx check src/ --format=json --workers=1
 
 # Шаг 2: Глубокое погружение в конкретное пространство имён
-bin/qmx check src/ --namespace=App\\Domain --format=json --workers=0
+bin/qmx check src/ --namespace=App\\Domain --format=json --workers=1
 
 # Шаг 3: Сырые метрики для индивидуального анализа
-bin/qmx check src/ --format=metrics --workers=0
+bin/qmx check src/ --format=metrics --workers=1
 ```
 
 ### Наиболее полезные поля JSON
