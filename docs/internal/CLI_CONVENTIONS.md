@@ -113,7 +113,11 @@ Options that apply to any rule, not tied to a specific one:
 --rule-opt=<rule:opt=val>  # generic rule option override
 ```
 
-These use the rule's full NAME (`complexity.cyclomatic`, `design.lcom`) or group prefix (`complexity`, `design`).
+The selection options are channel-aware. A bare selector may use the producer
+rule's full `NAME` (`complexity.cyclomatic`), a group prefix (`complexity`), a
+channel `ruleName`, or a `violationCode`; `ruleName#violationCode` is the
+explicit full-channel form. `--rule-opt` still accepts producer rule names
+only, because options configure the producer rather than an emitted channel.
 
 ### Rule option key casing: canon vs. accepted input
 

@@ -94,6 +94,7 @@ Infrastructure/
 │   ├── RuleRegistryInterface.php
 │   ├── RuleRegistry.php
 │   ├── ChannelDeclarationRegistry.php     # Implements Core\Violation\ChannelDeclarationRegistryInterface: (ruleName, violationCode) -> ChannelDeclaration
+│   ├── RuleChannelRegistry.php             # Implements Core\Rule\RuleChannelRegistryInterface: producer rule -> emitted channels
 │   └── Exception/
 │       └── ConflictingCliAliasException.php
 └── Console/                          # -> See Console/README.md
@@ -228,9 +229,12 @@ Rules and their Options are made lazy via `->setLazy(true)`:
   method via `Core\Rule\ChannelDeclarationReader` (reflection, no instantiation — a rule
   with no such method is untouched)
 - Each rule already returns full channel keys (`ruleName#violationCode`), so this pass
-  does no pairing of its own — it only assembles the map and injects it into
+  does no pairing of its own — it assembles the declaration map and injects it into
   `ChannelDeclarationRegistry`, along with `ComputedMetricRule::NAME` as the
   run-time family discriminator
+- Preserves which registered rule class produced each static channel and injects that
+  topology into `RuleChannelRegistry`; the registry adds configured computed channels
+  at run time for channel-aware `--only-rule` / `--disable-rule` selection
 - Fails the container build on a channel declared by more than one rule class
 
 **FormatterCompilerPass:**

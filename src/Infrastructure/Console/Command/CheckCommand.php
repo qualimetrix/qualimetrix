@@ -13,6 +13,7 @@ use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Console\FilteredInputDefinition;
@@ -51,6 +52,7 @@ final class CheckCommand extends Command
         private readonly ConfigurationPipeline $configurationPipeline,
         private readonly RuntimeConfigurator $runtimeConfigurator,
         private readonly ResultPresenter $resultPresenter,
+        private readonly RuleSelector $ruleSelector,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct();
@@ -389,15 +391,17 @@ final class CheckCommand extends Command
             }
         }
 
-        $checkNames = [
+        $selectorNames = [
             ...$resolved->analysis->onlyRules,
             ...$resolved->analysis->disabledRules,
+        ];
+        $ruleOptionNames = [
             ...array_keys($resolved->ruleOptions),
             ...$cliRuleNames,
         ];
 
-        foreach ($checkNames as $name) {
-            if ($this->matchesKnownRule($name, $knownNames)) {
+        foreach ($selectorNames as $name) {
+            if ($this->ruleSelector->matchesKnown($name, $knownNames)) {
                 continue;
             }
 
@@ -406,21 +410,16 @@ final class CheckCommand extends Command
                 \sprintf('Warning: rule "%s" does not match any registered rule', $name),
             );
         }
-    }
 
-    /**
-     * Checks if a rule name matches any known rule via exact, prefix, or reverse prefix match.
-     *
-     * @param list<string> $knownNames
-     */
-    private function matchesKnownRule(string $name, array $knownNames): bool
-    {
-        foreach ($knownNames as $known) {
-            if ($name === $known || str_starts_with($known, $name . '.') || str_starts_with($name, $known . '.')) {
-                return true;
+        foreach ($ruleOptionNames as $name) {
+            if ($this->ruleSelector->matchesKnownProducer($name, $knownNames)) {
+                continue;
             }
-        }
 
-        return false;
+            $this->writeWarning(
+                $output,
+                \sprintf('Warning: rule "%s" does not match any registered rule', $name),
+            );
+        }
     }
 }

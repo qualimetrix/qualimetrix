@@ -8,7 +8,9 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Core\Violation\RuleExclusionCaptureHolder;
 use Qualimetrix\Core\Violation\Violation;
 use Traversable;
@@ -24,6 +26,8 @@ final class RuleExecutor implements RuleExecutorInterface
     /** @var list<RuleInterface> */
     private readonly array $allRules;
 
+    private readonly RuleSelector $ruleSelector;
+
     private RuleExclusionStats $lastExclusionStats;
 
     /**
@@ -33,11 +37,13 @@ final class RuleExecutor implements RuleExecutorInterface
         iterable $rules,
         private readonly ConfigurationProviderInterface $configurationProvider,
         private readonly RuleOptionsRegistry $ruleOptionsRegistry = new RuleOptionsRegistry(),
+        ?RuleSelector $ruleSelector = null,
     ) {
         $this->allRules = $rules instanceof Traversable
             ? iterator_to_array($rules, false)
             : array_values($rules);
         $this->lastExclusionStats = new RuleExclusionStats();
+        $this->ruleSelector = $ruleSelector ?? new RuleSelector(new InMemoryRuleChannelRegistry());
     }
 
     public function execute(AnalysisContext $context): array
@@ -110,6 +116,20 @@ final class RuleExecutor implements RuleExecutorInterface
             }
             $ruleViolations = $kept;
 
+            // Apply rule selectors while the producing rule is still known.
+            // A violation's channel ruleName may differ from its producer's
+            // NAME, so flattening first would discard information required by
+            // producer-level selectors such as `computed.health`.
+            $ruleViolations = array_values(array_filter(
+                $ruleViolations,
+                fn(Violation $violation): bool => $this->ruleSelector->isChannelEnabled(
+                    $ruleName,
+                    $violation->channel(),
+                    $config->onlyRules,
+                    $config->disabledRules,
+                ),
+            ));
+
             $violations = [...$violations, ...$ruleViolations];
         }
 
@@ -119,11 +139,7 @@ final class RuleExecutor implements RuleExecutorInterface
             excludedViolations: $excludedViolations,
         );
 
-        // Filter violations by violationCode
-        return array_values(array_filter(
-            $violations,
-            static fn($v) => $config->isViolationCodeEnabled($v->violationCode),
-        ));
+        return $violations;
     }
 
     public function getRuleExclusionStats(): RuleExclusionStats
@@ -138,7 +154,11 @@ final class RuleExecutor implements RuleExecutorInterface
         return array_values(
             array_filter(
                 $this->allRules,
-                static fn(RuleInterface $rule): bool => $config->isRuleEnabled($rule->getName()),
+                fn(RuleInterface $rule): bool => $this->ruleSelector->isProducerEnabled(
+                    $rule->getName(),
+                    $config->onlyRules,
+                    $config->disabledRules,
+                ),
             ),
         );
     }

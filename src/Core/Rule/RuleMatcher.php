@@ -49,8 +49,8 @@ final class RuleMatcher
     /**
      * Checks if subject is a prefix of any pattern (reverse prefix match).
      *
-     * Used by isRuleEnabled: if onlyRules=['complexity.method'],
-     * the rule 'complexity' should still run so its violations can be filtered.
+     * Used when a more specific rule/channel selector must be compared with a
+     * broader registered producer name.
      *
      * @param list<string> $patterns
      */

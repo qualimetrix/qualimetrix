@@ -30,10 +30,13 @@ use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Rule\RuleChannelRegistryInterface;
+use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\CodeSmell\BooleanArgumentRule;
 use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Qualimetrix\Tests\Support\Pipeline\TestPipelineBuilder;
@@ -471,6 +474,54 @@ final class AnalysisPipelineTest extends TestCase
                 logger: $this->logger,
             ))
             ->withArchitectureProcessor($processor)
+            ->withLogger($this->logger)
+            ->build();
+
+        $processor->bind(ArchitectureConfiguration::empty());
+
+        $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
+    }
+
+    #[Test]
+    public function itPreparesTheArchitectureProducerWhenOnlyADiagnosticChannelIsSelected(): void
+    {
+        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
+        $this->collectionOrchestrator->method('collect')->willReturn(
+            new CollectionPhaseOutput(new CollectionResult(0, 0), []),
+        );
+
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
+        $configProvider->method('getConfiguration')->willReturn(
+            new AnalysisConfiguration(onlyRules: ['architecture.coverage']),
+        );
+        $configProvider->method('getRuleOptions')->willReturn([]);
+
+        $processor = $this->createMock(ArchitectureProcessorInterface::class);
+        $processor->expects(self::once())->method('bind');
+        $processor->expects(self::once())->method('prepare');
+
+        $channelRegistry = new class implements RuleChannelRegistryInterface {
+            public function channelsProducedBy(string $producerRuleName): array
+            {
+                return $producerRuleName === LayerViolationRule::NAME
+                    ? [new ViolationChannel('architecture.coverage', 'architecture.coverage')]
+                    : [];
+            }
+        };
+
+        $pipeline = TestPipelineBuilder::create()
+            ->withDefaultDiscovery($this->defaultDiscovery)
+            ->withCollectionOrchestrator($this->collectionOrchestrator)
+            ->withRuleExecutor($this->ruleExecutor)
+            ->withConfigurationProvider($configProvider)
+            ->withMetricEnricher(new MetricEnricher(
+                compositeCollector: $this->compositeCollector,
+                globalCollectorRunner: $this->globalCollectorRunner,
+                configurationProvider: $configProvider,
+                logger: $this->logger,
+            ))
+            ->withArchitectureProcessor($processor)
+            ->withRuleSelector(new RuleSelector($channelRegistry))
             ->withLogger($this->logger)
             ->build();
 

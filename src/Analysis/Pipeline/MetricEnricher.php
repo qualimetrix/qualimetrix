@@ -19,6 +19,8 @@ use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Rule\InMemoryRuleChannelRegistry;
+use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Metrics\ComputedMetric\ComputedMetricEvaluator;
 use Qualimetrix\Rules\Duplication\CodeDuplicationRule;
 use SplFileInfo;
@@ -50,6 +52,7 @@ final class MetricEnricher
         private readonly ?ProfilerHolder $profilerHolder = null,
         private readonly ?Duplication\DuplicationDetectorInterface $duplicationDetector = null,
         private readonly ?ComputedMetricEvaluator $computedMetricEvaluator = null,
+        private readonly RuleSelector $ruleSelector = new RuleSelector(new InMemoryRuleChannelRegistry()),
     ) {
         // Collect ALL definitions from regular collectors, derived collectors, AND global collectors
         $regularDefinitions = AggregationHelper::collectDefinitions($this->compositeCollector->getCollectors());
@@ -136,7 +139,11 @@ final class MetricEnricher
 
         // Phase 3.7: Detect circular dependencies
         $cycles = [];
-        if ($config->isRuleEnabled(CircularDependencyRule::NAME)) {
+        if ($this->ruleSelector->isProducerEnabled(
+            CircularDependencyRule::NAME,
+            $config->onlyRules,
+            $config->disabledRules,
+        )) {
             $profiler?->start('cycles', 'pipeline');
             $cycles = (new CircularDependencyDetector())->detect($graph);
             $profiler?->stop('cycles');
@@ -144,7 +151,11 @@ final class MetricEnricher
 
         // Phase 3.8: Detect code duplication
         $duplicateBlocks = [];
-        if ($this->duplicationDetector !== null && $config->isRuleEnabled(CodeDuplicationRule::NAME)) {
+        if ($this->duplicationDetector !== null && $this->ruleSelector->isProducerEnabled(
+            CodeDuplicationRule::NAME,
+            $config->onlyRules,
+            $config->disabledRules,
+        )) {
             $profiler?->start('duplication', 'pipeline');
             $duplicateBlocks = $this->duplicationDetector->detect($files);
             $profiler?->stop('duplication');

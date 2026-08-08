@@ -34,6 +34,7 @@ use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Infrastructure\Console\Progress\DelegatingProgressReporter;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
@@ -114,6 +115,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 '$rules' => [], // Will be set by RuleCompilerPass
                 '$configurationProvider' => new Reference(ConfigurationProviderInterface::class),
                 '$ruleOptionsRegistry' => new Reference(RuleOptionsRegistry::class),
+                '$ruleSelector' => new Reference(RuleSelector::class),
             ]);
         $container->setAlias(RuleExecutorInterface::class, RuleExecutor::class);
 
@@ -137,6 +139,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(ProfilerHolder::class),
                 new Reference(DuplicationDetector::class),
                 new Reference(ComputedMetricEvaluator::class),
+                new Reference(RuleSelector::class),
             ]);
 
         // AnalysisPipeline - main orchestrator
@@ -155,6 +158,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(DependencyGraphBuilder::class),
                 new Reference(DelegatingLogger::class),
                 new Reference(ProfilerHolder::class),
+                new Reference(RuleSelector::class),
             ])
             ->setPublic(true);
         $container->setAlias(AnalysisPipelineInterface::class, AnalysisPipeline::class)

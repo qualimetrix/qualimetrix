@@ -8,7 +8,6 @@ use InvalidArgumentException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Rule\RuleMatcher;
 use Qualimetrix\Core\Violation\Severity;
 use RuntimeException;
 
@@ -232,47 +231,6 @@ final readonly class AnalysisConfiguration
                 : $this->frameworkNamespaces,
             memoryLimit: self::getMemoryLimit($overrides, ConfigSchema::MEMORY_LIMIT) ?? $this->memoryLimit,
         );
-    }
-
-    /**
-     * Checks if a rule should be executed based on disabled_rules and only_rules settings.
-     *
-     * Uses prefix matching: 'complexity' matches 'complexity.cyclomatic', 'complexity.npath', etc.
-     * Also enables rules when onlyRules contain more specific patterns (e.g., 'complexity.method'
-     * enables rule 'complexity' so that its violations can be filtered by violationCode).
-     */
-    public function isRuleEnabled(string $ruleName): bool
-    {
-        if (RuleMatcher::anyMatches($this->disabledRules, $ruleName)) {
-            return false;
-        }
-
-        if ($this->onlyRules === []) {
-            return true;
-        }
-
-        // Check both directions: pattern matches ruleName OR ruleName is prefix of pattern
-        return RuleMatcher::anyMatches($this->onlyRules, $ruleName)
-            || RuleMatcher::anyReverseMatches($this->onlyRules, $ruleName);
-    }
-
-    /**
-     * Checks if a violation code should be included in results.
-     *
-     * Uses prefix matching: 'complexity' matches 'complexity.cyclomatic.method', etc.
-     * This is used to filter individual violations after rule execution.
-     */
-    public function isViolationCodeEnabled(string $violationCode): bool
-    {
-        if (RuleMatcher::anyMatches($this->disabledRules, $violationCode)) {
-            return false;
-        }
-
-        if ($this->onlyRules === []) {
-            return true;
-        }
-
-        return RuleMatcher::anyMatches($this->onlyRules, $violationCode);
     }
 
     private static function cwdAsAbsolutePath(): AbsolutePath

@@ -44,6 +44,9 @@ Core/
 │   ├── RuleOptionKey.php                  # Common option key constants (enabled, warning, error, threshold)
 │   ├── ShorthandOptionKeysInterface.php   # Options that accept a bare-value shorthand (e.g. `threshold: 10`)
 │   ├── RuleMatcher.php                    # Prefix matching utility
+│   ├── RuleSelector.php                   # Channel-aware only/disable selection for producer rules and findings
+│   ├── RuleChannelRegistryInterface.php   # Producer rule -> emitted channels contract
+│   ├── InMemoryRuleChannelRegistry.php    # Immutable declarations for isolated composition roots and tests
 │   ├── RuleNameReader.php                 # Reads the NAME constant (reflection, no instantiation)
 │   ├── CliAliasReader.php                 # Reads #[CliAlias] attributes (reflection, no instantiation)
 │   ├── ChannelDeclarationReader.php       # Reads the optional channelDeclarations() method (reflection, no instantiation)
@@ -477,6 +480,23 @@ Utility for prefix matching of rule names and violation codes.
 - `matches(string $pattern, string $subject): bool` — exact or prefix match
 - `anyMatches(array $patterns, string $subject): bool` — any pattern matches subject
 - `anyReverseMatches(array $patterns, string $subject): bool` — subject is prefix of any pattern
+
+### RuleSelector
+
+The single selection policy used by rule execution, expensive prerequisite phases, and CLI
+selector validation. It distinguishes a registered **producer rule** from the full
+`ViolationChannel` values that producer emits; their names need not share a prefix.
+
+A bare selector can address the producer name, a channel's `ruleName`, or its
+`violationCode`. The explicit `ruleName#violationCode` form addresses both channel
+components. `--only-rule=computed.health` therefore selects every channel produced by
+that rule, while `--only-rule=health.complexity` selects only that computed channel and
+still starts its `computed.health` producer.
+
+`RuleChannelRegistryInterface::channelsProducedBy()` supplies the producer relationship.
+Its Infrastructure implementation combines compiler-collected static declarations with
+the run-time computed metric definitions. `InMemoryRuleChannelRegistry` provides the
+same explicit contract where a composition root already owns the complete declaration map.
 
 ### RuleCategory (Enum)
 

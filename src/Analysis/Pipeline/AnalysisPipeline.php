@@ -24,7 +24,9 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
+use Qualimetrix\Core\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Core\Rule\RuleMatcher;
+use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
@@ -59,6 +61,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         ?DependencyGraphBuilder $graphBuilder = null,
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly ?ProfilerHolder $profilerHolder = null,
+        private readonly RuleSelector $ruleSelector = new RuleSelector(new InMemoryRuleChannelRegistry()),
     ) {
         $this->graphBuilder = $graphBuilder ?? new DependencyGraphBuilder();
     }
@@ -147,7 +150,11 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         // prepare(). Production wiring (RuntimeConfigurator) binds before this
         // pipeline runs. Tests that construct AnalysisPipeline directly must
         // provide an already-bound processor — TestPipelineBuilder handles this.
-        if ($config->isRuleEnabled(LayerViolationRule::NAME)) {
+        if ($this->ruleSelector->isProducerEnabled(
+            LayerViolationRule::NAME,
+            $config->onlyRules,
+            $config->disabledRules,
+        )) {
             $profiler?->start('architecture-prepare', 'pipeline');
             $classSet = new ClassSet(self::collectClassPaths($repository), new ClassContextFactory());
             $this->architectureProcessor->prepare($graph, $classSet);
