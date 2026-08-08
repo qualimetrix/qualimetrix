@@ -73,10 +73,10 @@ run_benchmark() {
 
     case "$tool" in
         "qmx-seq")
-            "$PROJECT_ROOT/bin/qmx" analyze "$path" --workers=0 --format=json > /dev/null 2>&1
+            "$PROJECT_ROOT/bin/qmx" check "$path" --workers=0 --format=json > /dev/null 2>&1
             ;;
         "qmx-par")
-            "$PROJECT_ROOT/bin/qmx" analyze "$path" --workers=4 --format=json > /dev/null 2>&1
+            "$PROJECT_ROOT/bin/qmx" check "$path" --workers=4 --format=json > /dev/null 2>&1
             ;;
         "phpmd")
             "$COMPOSER_BIN/phpmd" "$path" text cleancode,codesize,design --ignore-violations-on-exit > /dev/null 2>&1

@@ -19,7 +19,7 @@ COMPOSER_BIN = Path.home() / ".composer/vendor/bin"
 
 def run_qmx(file_path: Path) -> Dict[str, Any]:
     """Run Qualimetrix and extract metrics."""
-    cmd = [str(PROJECT_ROOT / "bin/qmx"), "analyze", str(file_path), "--format=json"]
+    cmd = [str(PROJECT_ROOT / "bin/qmx"), "check", str(file_path), "--format=json"]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
         # Qualimetrix outputs to stderr on violations

@@ -47,7 +47,7 @@ Console/
 
 ### CheckCommand
 
-**Name:** `check` (alias: `analyze` — deprecated)
+**Name:** `check`
 
 **Dependencies (via constructor):**
 - `RuleRegistryInterface` — for CLI option discovery
