@@ -156,6 +156,29 @@ class CrossToolComparisonTest(unittest.TestCase):
         self.assertEqual("contextual", MODULE.agreement_verdict(contextual))
         self.assertEqual("unsupported", MODULE.agreement_verdict(unsupported))
 
+    def test_class_loc_external_rows_are_contextual_and_cannot_report_agreement(self):
+        pdepend = self.spec("classLoc", "pdepend", "loc")
+        phpmetrics = self.spec("classLoc", "phpmetrics", "loc")
+
+        self.assertEqual(MODULE.CONTEXTUAL, pdepend.classification)
+        self.assertIn("non-attributed named classes", pdepend.rationale)
+        self.assertEqual(MODULE.CONTEXTUAL, phpmetrics.classification)
+        self.assertIn("pretty-printed AST", phpmetrics.rationale)
+
+        for spec in (pdepend, phpmetrics):
+            comparison = MODULE.MetricComparison(spec, "fixture")
+            comparison.add_pair("Example", 10, 10)
+            self.assertEqual(MODULE.CONTEXTUAL, MODULE.agreement_verdict(comparison))
+
+    def test_noc_is_the_only_globally_comparable_row(self):
+        comparable = [
+            (spec.qmx_key, spec.other_tool, spec.other_key)
+            for spec in MODULE.COMPARISON_SPECS
+            if spec.classification == MODULE.COMPARABLE
+        ]
+
+        self.assertEqual([("noc", "pdepend", "nocc")], comparable)
+
 
 if __name__ == "__main__":
     unittest.main()
