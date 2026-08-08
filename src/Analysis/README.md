@@ -33,6 +33,9 @@ Analysis/
 │   ├── AnalysisFailure.php              # One failed discovered file
 │   ├── AnalysisFailureKind.php          # Parse or processing failure category
 │   ├── IncompleteAnalysisException.php  # Typed refusal for artifact-producing consumers
+│   ├── DependencyGraphAnalyzerInterface.php # Complete discovery-to-graph contract
+│   ├── DependencyGraphAnalyzer.php       # Graph-only analysis orchestration with terminal-state coverage
+│   ├── DependencyGraphAnalysisResult.php # Graph plus canonical coverage result
 │   ├── MetricEnricher.php               # Enrichment phases (aggregation, global collectors, computed metrics, cycles, duplication)
 │   └── EnrichmentResult.php             # VO: cycles and duplicate blocks from the enrichment phase
 │
@@ -60,9 +63,6 @@ Analysis/
 │   │
 │   ├── Dependency/
 │   │   ├── DependencyGraph.php          # Dependency graph
-│   │   ├── DependencyGraphAnalyzerInterface.php # Complete discovery-to-graph contract
-│   │   ├── DependencyGraphAnalyzer.php  # Graph construction with file terminal states
-│   │   ├── DependencyGraphAnalysisResult.php # Graph plus coverage
 │   │   ├── DependencyGraphBuilder.php
 │   │   ├── DependencyVisitor.php        # AST visitor (delegates to handlers)
 │   │   ├── DependencyResolver.php       # Resolves class dependencies
@@ -409,6 +409,14 @@ Value object representing the dependency graph between classes.
 ### DependencyGraphBuilder
 
 Builds the graph from collected dependencies: grouping by classes -> building the graph.
+
+### DependencyGraphAnalyzer
+
+`Pipeline/DependencyGraphAnalyzer` is the graph-only orchestration path used by
+graph export. It owns discovery, parsing, traversal, graph construction, and the
+canonical terminal-state coverage result. Graph primitives, visitors, and the
+builder remain under `Collection/Dependency/` because they are collection-time
+dependency mechanics rather than orchestration.
 
 ### DependencyVisitor (Decomposed)
 
