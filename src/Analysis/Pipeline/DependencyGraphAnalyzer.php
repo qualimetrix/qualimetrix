@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Collection\Dependency;
+namespace Qualimetrix\Analysis\Pipeline;
 
 use PhpParser\NodeTraverser;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Analysis\Pipeline\AnalysisCoverage;
-use Qualimetrix\Analysis\Pipeline\AnalysisFailure;
-use Qualimetrix\Analysis\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Exception\ParseException;

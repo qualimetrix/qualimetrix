@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Collection\Dependency;
+namespace Qualimetrix\Analysis\Pipeline;
 
 use Qualimetrix\Core\Path\AbsolutePath;
 

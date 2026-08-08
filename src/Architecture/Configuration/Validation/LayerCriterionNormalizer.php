@@ -27,13 +27,6 @@ use Qualimetrix\Configuration\Exception\ConfigLoadException;
  * The semantic check (suffix shape, FQN shape, etc.) is supplied by the
  * caller-specific helper ({@see normalizeSuffixList},
  * {@see normalizeFqnList}, {@see normalizePatternList}).
- *
- * @qmx-ignore health.cohesion Stateless utility — the four public
- *                              normalizers are intentionally independent
- *                              entry points that wrap one shared private
- *                              {@code normalizeStringList} workhorse.
- *                              Low cohesion is the natural shape of a
- *                              function bag, not a defect.
  */
 final class LayerCriterionNormalizer
 {

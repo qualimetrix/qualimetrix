@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Analysis\Collection\Dependency;
+namespace Qualimetrix\Tests\Unit\Analysis\Pipeline;
 
 use PhpParser\Node;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphAnalysisResult;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphAnalyzer;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
 use Qualimetrix\Analysis\Pipeline\AnalysisFailureKind;
+use Qualimetrix\Analysis\Pipeline\DependencyGraphAnalysisResult;
+use Qualimetrix\Analysis\Pipeline\DependencyGraphAnalyzer;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Path\AbsolutePath;

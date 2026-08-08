@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+- `DependencyGraphAnalyzerInterface`, `DependencyGraphAnalyzer`, and `DependencyGraphAnalysisResult` moved from `Qualimetrix\Analysis\Collection\Dependency` to `Qualimetrix\Analysis\Pipeline`. Update imports and fully qualified type references to the new namespace; their constructor and method contracts are unchanged, and no compatibility aliases are provided.
+
 ## [0.24.0] - 2026-08-08
 
 ### Changed

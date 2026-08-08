@@ -38,9 +38,10 @@ jobs:
           fi
           bash scripts/check-private-leaks.sh --commits "$range"
 
-  # Example: Using the local GitHub Action
+  # Smoke test for the local Action. It renders warnings, but it is not the
+  # warning-ratchet gate.
   analyze-with-action:
-    name: Analyze with Action
+    name: Action smoke test
     runs-on: ubuntu-latest
 
     strategy:
@@ -56,7 +57,8 @@ jobs:
         uses: ./
         with:
           paths: 'src/'
-          # No baseline needed - using proper qmx.yaml configuration instead
+          # Keep known residual debt out of the Action smoke-test output.
+          baseline: 'qmx-baseline.json'
           format: 'text'
           php-version: ${{ matrix.php-version }}
 
@@ -77,9 +79,10 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-  # Full validation: cs-check + PHPUnit + PHPStan + selfcheck.
-  # `composer check` ends with `bin/qmx check src/`, so this job subsumes
-  # the previous "Self-Analysis (Direct)" step.
+  # Full validation: cs-check + PHPUnit + PHPStan + selfcheck. This is the exact
+  # warning-ratchet gate: `composer selfcheck` runs qmx with `--fail-on=warning`.
+  # `composer check` ends with that selfcheck, so this job subsumes the previous
+  # "Self-Analysis (Direct)" step.
   check:
     name: Full validation (composer check)
     runs-on: ubuntu-latest

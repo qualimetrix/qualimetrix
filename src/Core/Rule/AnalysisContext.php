@@ -12,9 +12,6 @@ use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 
-/**
- * @qmx-threshold code-smell.constructor-overinjection warning=10 — AnalysisContext is an immutable bag of independent analysis artefacts (metrics, graph, cycles, duplicates, namespace tree, suppressions); bundling them would couple unrelated phases and obscure their optional nature.
- */
 final readonly class AnalysisContext
 {
     /**

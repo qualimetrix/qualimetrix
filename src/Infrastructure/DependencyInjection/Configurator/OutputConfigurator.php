@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphAnalyzer;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Pipeline\DependencyGraphAnalyzer;
+use Qualimetrix\Analysis\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Baseline\BaselineCleaner;
 use Qualimetrix\Baseline\BaselineGenerator;

@@ -551,7 +551,12 @@ Run `bin/qmx check src/` after modifying metric collection or aggregation logic 
 
 ### Dogfooding: Violation Management Strategy
 
-We analyze ourselves with `bin/qmx check src/` using `qmx.yaml` at the repository root. No baseline file — every exclusion is explicit and justified.
+We analyze ourselves with `bin/qmx check src/` using `qmx.yaml` and the
+versioned root `qmx-baseline.json`. That file is a v10 ratchet snapshot for
+residual, currently accepted warnings only; it is not a suppress-mode or legacy
+baseline. Direct hard gates remain outside the baseline and are declared in
+`qmx.yaml`. `composer selfcheck` applies the ratchet with `--fail-on=warning`,
+so any new warning fails the build.
 
 **Decision framework** (in priority order):
 
@@ -570,7 +575,12 @@ We analyze ourselves with `bin/qmx check src/` using `qmx.yaml` at the repositor
 - Every inline tag must include a reason explaining **why** the exception is acceptable
 - Prefer `qmx.yaml` configuration over inline tags when the exclusion applies to a category (e.g., all visitors, all DI configurators)
 - Prefer `@qmx-threshold` over `@qmx-ignore` — keeping the rule active with adjusted limits is better than silencing it
-- Do not use a baseline file for dogfooding — we are not a legacy project
+- Prefer direct thresholds, scoped configuration exclusions, and justified
+  point suppressions over adding findings to the ratchet. Baseline lifecycle
+  and recalibration must be explicit and reviewed: regenerate
+  `qmx-baseline.json` only after an intentional change to accepted residual
+  debt, and review the resulting v10 snapshot diff
+- Never use suppress-mode or legacy baselines for dogfooding
 
 ---
 

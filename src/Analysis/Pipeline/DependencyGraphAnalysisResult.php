@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Collection\Dependency;
+namespace Qualimetrix\Analysis\Pipeline;
 
-use Qualimetrix\Analysis\Pipeline\AnalysisCoverage;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 
 /** Dependency graph and the terminal state of every discovered input file. */

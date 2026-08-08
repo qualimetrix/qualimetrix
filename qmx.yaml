@@ -1,7 +1,7 @@
 # Qualimetrix — project configuration (dogfooding)
 #
 # We analyze ourselves with our own tool. This config tunes thresholds
-# and excludes known architectural hotspots instead of using a baseline.
+# and documents structural exceptions; qmx-baseline.json ratchets residual debt.
 #
 # Decision framework for violations:
 # 1. Real issue? → Fix the code
@@ -311,6 +311,7 @@ rules:
   # or a template that expands to nothing is always a typo in `patterns:` —
   # exactly the failure the diagnostics exist to catch. Fail the build on it.
   architecture.layer-violation:
+    severity: error
     unreachable_layer_severity: error
     potential_shadow_severity: error
     empty_template_severity: error
@@ -325,7 +326,6 @@ rules:
       - Qualimetrix\Core\Metric
       - Qualimetrix\Core\Rule
       - Qualimetrix\Core\Path
-      - Qualimetrix\Rules\Support
       # `Qualimetrix\Rules` used to be listed here. Being a prefix match, it silenced
       # all 85 classes of the domain to hide exactly one violation — AbstractRule
       # (CBO 39), whose coupling really is structural (it aggregates the deps of every
@@ -336,6 +336,7 @@ rules:
       # `src/Metrics/*Trait.php` was listed here too and matched no violation — removed.
       - src/Metrics/*Visitor.php
       - src/Rules/AbstractRule.php
+      - src/Rules/Support/ThresholdParser.php
       # DI configurators wire all services (coupling is their job)
       - src/Infrastructure/DependencyInjection
       # Infrastructure console commands and pipeline orchestrators need many deps
@@ -446,12 +447,10 @@ rules:
   complexity.wmc:
     exclude_paths:
       - src/Metrics/*Visitor.php
-      - src/Metrics/*Trait.php
 
   complexity.cognitive:
     exclude_paths:
       - src/Metrics/*Visitor.php
-      - src/Metrics/*Trait.php
 
   # --- Code Smells ---
 
@@ -489,30 +488,31 @@ rules:
     exclude_paths:
       - src/Reporting/Report.php
       - src/Reporting/FormatterContext.php
-      - src/Reporting/Health
-      - src/Analysis/Collection
-      - src/Analysis/Pipeline
-      - src/Infrastructure/Console
-      - src/Infrastructure/Parallel
-    exclude_namespaces:
-      - Qualimetrix\Core
+      - src/Reporting/Health/WorstOffender.php
+      - src/Analysis/Collection/CollectedFileData.php
+      - src/Analysis/Collection/Dependency/DependencyGraph.php
+      - src/Analysis/Collection/FileProcessingResult.php
+      - src/Analysis/Pipeline/AnalysisPipeline.php
+      - src/Analysis/Pipeline/MetricEnricher.php
+      - src/Infrastructure/Console/Command/CheckCommand.php
+      - src/Infrastructure/Console/ResultPresenter.php
+      - src/Infrastructure/Parallel/Strategy/StrategySelector.php
+      - src/Core/Profiler/Span.php
+      - src/Core/Violation/Violation.php
 
   code-smell.constructor-overinjection:
     exclude_paths:
       - src/Reporting/Report.php
       - src/Reporting/FormatterContext.php
-      - src/Reporting/Formatter/Summary
 
-  # Cache operations use @ for intentional error suppression and empty catch
-  # for "best effort" cache invalidation.
-  # Empty catch blocks are flagged as warnings (default is error).
-  # The one in CachedFileParser is intentional (best-effort caching).
-  code-smell.empty-catch:
-    exclude_paths:
-      - src/Infrastructure/Ast
+  code-smell.unreachable-code:
+    warning: 1
+    error: 1
 
   # MethodCountMetrics tracks many per-class counts (each is a separate property)
   size.property-count:
+    warning: 15
+    error: 15
     exclude_paths:
       - src/Metrics/Structure/MethodCountMetrics.php
 
@@ -521,16 +521,23 @@ rules:
   # AbstractRule and AbstractCollector have many children — this is by design
   # (one rule/collector per metric category).
   design.noc:
-    exclude_namespaces:
-      - Qualimetrix\Rules
-      - Qualimetrix\Metrics
+    warning: 10
+    error: 10
+    exclude_paths:
+      - src/Rules/AbstractRule.php
+      - src/Metrics/AbstractCollector.php
 
   design.lcom:
     warning: 5
+    error: 5
     exclude_paths:
       - src/Reporting/Health
       # Derived metric collectors are thin wrappers (low cohesion by nature)
       - src/Metrics/Coupling/*Collector.php
+
+  design.inheritance:
+    warning: 4
+    error: 4
 
   design.god-class:
     exclude_paths:
@@ -541,32 +548,12 @@ rules:
   # --- Maintainability ---
   maintainability.index:
     warning: 35
+    error: 35
+
+  size.method-count:
+    warning: 20
     error: 20
 
-  # --- Health scores ---
-  # Suppress health violations for namespaces with known structural reasons.
-  # `Qualimetrix\Rules\Support` used to head this list — it was the worst namespace in
-  # the project (health 42.2, one class: ThresholdParser). After that class was
-  # refactored its health is 89.6, so the entry became a no-op and was removed
-  # (verified: zero delta). That is the outcome the dogfooding policy asks for —
-  # the exclusion disappears because the code improved, not because the rule was muted.
+  # Health is not a gate until its calibration is re-established.
   computed.health:
-    exclude_namespaces:
-      - Qualimetrix\Metrics\Halstead
-      - Qualimetrix\Core\Violation
-      - Qualimetrix\Metrics\Coupling
-      - Qualimetrix\Metrics\Structure
-      - Qualimetrix\Infrastructure\DependencyInjection\Configurator
-      - Qualimetrix\Reporting\Impact
-    exclude_paths:
-      - src/Analysis/Collection/Dependency/DependencyGraph.php
-
-# Health score thresholds: calibrated for a static analysis tool codebase.
-# Cohesion/maintainability are naturally lower in visitor-heavy, config-heavy projects.
-computed_metrics:
-  health.cohesion:
-    warning: 35
-    error: 20
-  health.maintainability:
-    warning: 40
-    error: 20
+    enabled: false
