@@ -58,6 +58,7 @@ __pycache__/
 # Demo/example files
 examples/
 *.json
+!/qmx-baseline.json
 !/docs/internal/benchmark-baselines.json
 !/tests/Fixtures/**/*.json
 !/scripts/tests/fixtures/*.json

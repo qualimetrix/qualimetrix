@@ -84,8 +84,6 @@ use Qualimetrix\Rules\AbstractRule;
  *
  * @qmx-ignore design.god-class
  *             reason="The rule is the natural cohesion boundary for the architecture-rule surface (one rule, four cohesive diagnostic channels sharing the same registry walk). LCOM is inflated by parallel diagnostic builders — splitting would not improve structure."
- * @qmx-ignore health.cohesion
- *             reason="Class-level cohesion score is dominated by the multiple diagnostic builders sharing the same registry/options. Splitting would not materially improve the structure (see `@qmx-ignore design.god-class` above)."
  */
 #[CliAlias('layer-violation', 'enabled')]
 final class LayerViolationRule extends AbstractRule

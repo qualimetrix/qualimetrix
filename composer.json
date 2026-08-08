@@ -82,7 +82,7 @@
         "cs-fix": "php-cs-fixer fix",
         "benchmark:check": "php scripts/benchmark-regression.php",
         "benchmark:update": "php scripts/benchmark-regression.php --update-baselines",
-        "selfcheck": "php bin/qmx check src/ --memory-limit=512M",
+        "selfcheck": "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M",
         "check-leaks": "bash scripts/check-private-leaks.sh",
         "check": [
             "@check-leaks",
