@@ -276,9 +276,10 @@ Decorator for `FileParserInterface`.
 - `CacheKeyGenerator $keyGenerator`
 
 **Algorithm of parse():**
-1. Key generation
-2. Cache hit -> return from cache
-3. Cache miss -> parse via `$inner`, save
+1. Read source bytes once from the original file.
+2. Generate the cache key from those bytes.
+3. Cache hit -> return from cache.
+4. Cache miss -> parse those same bytes via `$inner` while retaining the original file for diagnostics, save.
 
 ### FileParserFactory
 

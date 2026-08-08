@@ -94,6 +94,15 @@ final class DependencyGraphAnalyzerTest extends TestCase
 
                 return $this->delegate->parse($file);
             }
+
+            public function parseContent(SplFileInfo $file, string $content): array
+            {
+                if ($file->getPathname() === $this->processingFailure) {
+                    throw new RuntimeException('Synthetic processing failure');
+                }
+
+                return $this->delegate->parseContent($file, $content);
+            }
         };
 
         $result = $this->createAnalyzer($parser)->analyze(
@@ -130,6 +139,12 @@ final class DependencyGraphAnalyzerTest extends TestCase
                     throw new RuntimeException('Unable to read test fixture');
                 }
 
+                return $this->parseContent($file, $content);
+            }
+
+            /** @return list<Node> */
+            public function parseContent(SplFileInfo $file, string $content): array
+            {
                 try {
                     return array_values((new ParserFactory())->createForNewestSupportedVersion()->parse($content) ?? []);
                 } catch (Throwable $e) {

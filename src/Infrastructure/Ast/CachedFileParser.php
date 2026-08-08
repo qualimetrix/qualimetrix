@@ -36,11 +36,24 @@ final class CachedFileParser implements FileParserInterface
      */
     public function parse(SplFileInfo $file): array
     {
-        $key = $this->keyGenerator->generate($file);
+        $content = @file_get_contents($file->getPathname());
 
-        // Empty key means file doesn't exist or can't be read
-        if ($key === '') {
+        if ($content === false) {
             return $this->inner->parse($file);
+        }
+
+        return $this->parseContent($file, $content);
+    }
+
+    /**
+     * @return Node[]
+     */
+    public function parseContent(SplFileInfo $file, string $content): array
+    {
+        $key = $this->keyGenerator->generateForContent($content);
+
+        if ($key === '') {
+            return $this->inner->parseContent($file, $content);
         }
 
         // Try cache first
@@ -51,8 +64,8 @@ final class CachedFileParser implements FileParserInterface
             return $cached;
         }
 
-        // Parse and cache
-        $ast = $this->inner->parse($file);
+        // Parse and cache the same immutable bytes used for the key.
+        $ast = $this->inner->parseContent($file, $content);
 
         // Cache failure should not break parsing - caching is best-effort
         try {
