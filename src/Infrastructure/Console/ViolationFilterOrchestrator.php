@@ -269,8 +269,9 @@ final readonly class ViolationFilterOrchestrator
     }
 
     /**
-     * Reports violations suppressed by per-rule `exclude_namespaces` / `exclude_paths`
-     * (any rule, set via `rules: {<rule-name>: {...}}` in `qmx.yaml` —
+     * Reports violations suppressed by per-rule `exclude_namespaces`,
+     * `exclude_namespace_channels`, or `exclude_paths` (any rule, set via
+     * `rules: {<rule-name>: {...}}` in `qmx.yaml` —
      * {@see RuleExclusionStats}). Unlike the global exclusion filters above, this
      * mechanism runs inside {@see RuleExecutorInterface::execute()}, before the
      * violations even reach {@see ViolationFilterPipeline}, so it needs its own
@@ -283,7 +284,7 @@ final readonly class ViolationFilterOrchestrator
         if ($input->getOption('show-suppressed') === true && $stats->excludedViolations !== []) {
             $output->writeln('');
             $output->writeln(\sprintf(
-                '<info>%d violation(s) suppressed by per-rule exclude_namespaces/exclude_paths:</info>',
+                '<info>%d violation(s) suppressed by per-rule exclude_namespaces/exclude_namespace_channels/exclude_paths:</info>',
                 \count($stats->excludedViolations),
             ));
 
@@ -296,7 +297,10 @@ final readonly class ViolationFilterOrchestrator
 
         $breakdowns = [
             'exclude_paths' => [$stats->totalPathExclusions(), $stats->pathExclusionsByRule],
-            'exclude_namespaces' => [$stats->totalNamespaceExclusions(), $stats->namespaceExclusionsByRule],
+            'exclude_namespaces/exclude_namespace_channels' => [
+                $stats->totalNamespaceExclusions(),
+                $stats->namespaceExclusionsByRule,
+            ],
         ];
 
         foreach ($breakdowns as $option => [$total, $byRule]) {

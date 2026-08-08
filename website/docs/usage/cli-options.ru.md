@@ -343,7 +343,7 @@ bin/qmx baseline:explain  <symbol> [<paths>...] [--baseline=BASELINE] [--channel
 ### `--show-suppressed`
 
 Показать нарушения, подавленные тегами `@qmx-ignore`, а также нарушения, подавленные записью
-`exclude_namespaces` / `exclude_paths` на уровне правила в `qmx.yaml` (см.
+`exclude_namespaces` / `exclude_namespace_channels` / `exclude_paths` на уровне правила в `qmx.yaml` (см.
 [«Правила»](../getting-started/configuration.ru.md#правила-rules)):
 
 ```bash
@@ -351,8 +351,8 @@ bin/qmx check src/ --show-suppressed
 ```
 
 Независимо от `--show-suppressed`, запуск с `-v` печатает разбивку по правилам — сколько
-нарушений подавлено таким образом: отдельно для `exclude_namespaces` и `exclude_paths`, с
-разбивкой по имени правила. В отличие от `@qmx-ignore`, в остальном это подавление проходит
+нарушений подавлено таким образом. Namespace-бакет включает обе опции неймспейсов и выводится
+отдельно от `exclude_paths`; каждый бакет разбит по имени правила. В отличие от `@qmx-ignore`, в остальном это подавление проходит
 незаметно — ничто в стандартном выводе не сигнализирует о том, что оно произошло.
 
 ### `--no-suppression-annotations`
@@ -555,10 +555,13 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:method.warning=15
 bin/qmx check src/ --rule-opt=complexity.cyclomatic:method.error=30
 ```
 
+`exclude_namespace_channels` настраивается в YAML, а не через `--rule-opt`: каждому селектору
+нужен непустой список паттернов неймспейсов, тогда как `--rule-opt` передаёт скалярные значения.
+
 <!-- llms:skip-begin -->
 ### Быстрые флаги для правил
 
-Для многих правил доступны специальные CLI-флаги для быстрой настройки пороговых значений:
+Для многих правил доступны специальные CLI-флаги для быстрой настройки опций:
 
 === "Сложность"
 
@@ -660,10 +663,15 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:method.error=30
 
 === "Архитектура"
 
-| Флаг                 | Правило                          | Опция        |
-| -------------------- | -------------------------------- | ------------ |
-| `--circular-deps`    | architecture.circular-dependency | enabled      |
-| `--max-cycle-size=N` | architecture.circular-dependency | maxCycleSize |
+| Флаг                                                    | Правило                          | Опция                      |
+| ------------------------------------------------------- | -------------------------------- | -------------------------- |
+| `--circular-deps`                                       | architecture.circular-dependency | enabled                    |
+| `--max-cycle-size=N`                                    | architecture.circular-dependency | maxCycleSize               |
+| `--layer-violation`                                     | architecture.layer-violation     | enabled                    |
+| `--layer-violation-severity=SEVERITY`                   | architecture.layer-violation     | severity                   |
+| `--layer-violation-unreachable-layer-severity=SEVERITY` | architecture.layer-violation     | unreachable_layer_severity |
+| `--layer-violation-potential-shadow-severity=SEVERITY`  | architecture.layer-violation     | potential_shadow_severity  |
+| `--layer-violation-empty-template-severity=SEVERITY`    | architecture.layer-violation     | empty_template_severity    |
 
 ---
 

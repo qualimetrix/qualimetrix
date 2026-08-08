@@ -44,8 +44,8 @@ interface RuleExecutorInterface
     public function getTotalRulesCount(): int;
 
     /**
-     * Returns per-rule `exclude_namespaces` / `exclude_paths` suppression stats
-     * from the most recent {@see execute()} call.
+     * Returns per-rule `exclude_namespaces`, `exclude_namespace_channels`, and
+     * `exclude_paths` suppression stats from the most recent {@see execute()} call.
      *
      * Empty stats before the first call.
      */

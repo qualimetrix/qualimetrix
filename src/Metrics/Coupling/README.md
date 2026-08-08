@@ -62,9 +62,13 @@ When no `framework-namespaces` are configured, `cbo_app` = `cbo` and `ce_framewo
 **CBO rule scope:** The `coupling.cbo` rule supports a `scope` option:
 
 ```yaml
-coupling.cbo:
-  scope: application  # 'all' (default, uses CBO) | 'application' (uses CBO_APP)
+rules:
+  coupling.cbo:
+    scope: application  # 'all' (default, uses cbo) | 'application' (uses cbo_app)
 ```
+
+`scope` is a recognized rule-level option. It selects the class-level CBO metric;
+namespace CBO configuration remains under `namespace:`.
 
 ---
 
@@ -81,6 +85,10 @@ coupling.cbo:
 ```
 A = (abstractClassCount + interfaceCount) / (classCount + enumCount + traitCount + interfaceCount)
 ```
+
+The count inputs are exact discrete namespace sums. They are not fractionally distributed
+over source contributors, so a namespace with one abstract class or interface and five
+concrete types still computes as `1 / 6` rather than losing the abstraction in aggregation.
 
 ### Interpretation
 

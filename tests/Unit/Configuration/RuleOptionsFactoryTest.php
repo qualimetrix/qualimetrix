@@ -1022,6 +1022,119 @@ final class RuleOptionsFactoryTest extends TestCase
     }
 
     #[Test]
+    public function itExtractsViolationCodeScopedNamespaceExclusions(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'computed.health' => [
+                'exclude_namespace_channels' => [
+                    'health.cohesion' => ['App\\Metrics'],
+                    'health.typing' => ['App\\Generated'],
+                ],
+            ],
+        ]);
+
+        $this->factory->create('computed.health', TestRuleOptions::class);
+
+        self::assertSame(
+            [
+                'health.cohesion' => ['App\\Metrics'],
+                'health.typing' => ['App\\Generated'],
+            ],
+            $this->registry->getExclusionProvider()->getChannelExclusions('computed.health'),
+        );
+    }
+
+    #[Test]
+    public function itRejectsEmptyViolationCodeScopedNamespaceExclusions(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'computed.health' => [
+                'exclude_namespace_channels' => ['health.cohesion' => []],
+            ],
+        ]);
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('exclude_namespace_channels.health.cohesion');
+
+        $this->factory->create('computed.health', TestRuleOptions::class);
+    }
+
+    #[Test]
+    public function itRejectsEmptyNamespacePatternsInChannelExclusions(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'computed.health' => [
+                'exclude_namespace_channels' => ['health.cohesion' => ['']],
+            ],
+        ]);
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('must contain only non-empty strings');
+
+        $this->factory->create('computed.health', TestRuleOptions::class);
+    }
+
+    #[Test]
+    public function itRejectsNonListChannelNamespaceExclusions(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'computed.health' => [
+                'exclude_namespace_channels' => ['health.cohesion' => 'App\\Metrics'],
+            ],
+        ]);
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('must be a non-empty list of strings');
+
+        $this->factory->create('computed.health', TestRuleOptions::class);
+    }
+
+    #[Test]
+    public function itRejectsEmptyViolationCodeSelectorsInNamespaceChannelExclusions(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'computed.health' => [
+                'exclude_namespace_channels' => ['' => ['App\\Metrics']],
+            ],
+        ]);
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('empty or non-string violation-code selector');
+
+        $this->factory->create('computed.health', TestRuleOptions::class);
+    }
+
+    #[Test]
+    public function itRejectsChannelMapsUnderLegacyExcludeNamespaces(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'computed.health' => [
+                'exclude_namespaces' => ['health.cohesion' => ['App\\Metrics']],
+            ],
+        ]);
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('use "exclude_namespace_channels"');
+
+        $this->factory->create('computed.health', TestRuleOptions::class);
+    }
+
+    #[Test]
+    public function itRejectsNonStringLegacyNamespaceExclusions(): void
+    {
+        $this->registry->setConfigFileOptions([
+            'computed.health' => [
+                'exclude_namespaces' => ['App\\Metrics', 42],
+            ],
+        ]);
+
+        self::expectException(InvalidArgumentException::class);
+        self::expectExceptionMessage('must contain only non-empty strings');
+
+        $this->factory->create('computed.health', TestRuleOptions::class);
+    }
+
+    #[Test]
     public function createRemovesExcludeNamespacesFromOptionsBeforeFromArray(): void
     {
         $this->registry->setConfigFileOptions([

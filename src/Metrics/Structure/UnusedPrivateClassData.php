@@ -8,6 +8,8 @@ namespace Qualimetrix\Metrics\Structure;
  * Internal data structure for tracking private member declarations and usages within a class.
  *
  * Used by UnusedPrivateVisitor to compute unused private members.
+ *
+ * @qmx-ignore health.cohesion -- Member-kind views are independent projections of one tracking record.
  */
 final class UnusedPrivateClassData
 {

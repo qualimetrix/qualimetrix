@@ -185,6 +185,35 @@ final class SuppressionFilterTest extends TestCase
     }
 
     #[Test]
+    public function itHealthDimensionSuppressionLeavesSiblingChannelsActive(): void
+    {
+        $filter = new SuppressionFilter();
+        $filter->setSuppressions('src/Foo.php', [
+            new Suppression('health.cohesion', 'Structurally inapplicable', 10, SuppressionType::Symbol, endLine: 50),
+        ]);
+
+        $cohesion = new Violation(
+            location: new Location(RelativePath::fromString('src/Foo.php'), 20),
+            symbolPath: SymbolPath::forClass('App', 'Foo'),
+            ruleName: 'computed.health',
+            violationCode: 'health.cohesion',
+            message: 'Cohesion health is low',
+            severity: Severity::Error,
+        );
+        $coupling = new Violation(
+            location: new Location(RelativePath::fromString('src/Foo.php'), 20),
+            symbolPath: SymbolPath::forClass('App', 'Foo'),
+            ruleName: 'computed.health',
+            violationCode: 'health.coupling',
+            message: 'Coupling health is low',
+            severity: Severity::Error,
+        );
+
+        self::assertFalse($filter->shouldInclude($cohesion));
+        self::assertTrue($filter->shouldInclude($coupling));
+    }
+
+    #[Test]
     public function itMultipleSuppressionsForSameFile(): void
     {
         $filter = new SuppressionFilter();

@@ -7,6 +7,7 @@ namespace Qualimetrix\Configuration;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Core\Rule\AdditionalOptionKeysInterface;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
@@ -73,7 +74,7 @@ final class RuleOptionsFactory
         $userConfig = $this->deepMerge($normalizedFileOptions, $cliRuleOptions, $ruleName);
 
         // 3. Extract and store framework-level keys (exclude_namespaces,
-        // exclude_paths) BEFORE deciding whether $userConfig counts as
+        // exclude_namespace_channels, exclude_paths) BEFORE deciding whether $userConfig counts as
         // "empty" below. These keys are consumed by the framework — they
         // never reach Options::fromArray() — so a rule configured with
         // ONLY these keys (e.g. `{ exclude_namespaces: [App\Tests] }` and
@@ -138,21 +139,15 @@ final class RuleOptionsFactory
      */
     private function extractExcludeNamespaces(string $ruleName, array &$merged): void
     {
-        $raw = $merged['excludeNamespaces'] ?? $merged['exclude_namespaces'] ?? null;
-
-        unset($merged['excludeNamespaces'], $merged['exclude_namespaces']);
-
-        if (\is_string($raw)) {
-            $prefixes = [$raw];
-        } elseif (\is_array($raw)) {
-            $prefixes = array_values($raw);
-        } else {
-            return;
-        }
-
-        if ($prefixes !== []) {
-            $this->registry->getExclusionProvider()->setExclusions($ruleName, $prefixes);
-        }
+        $provider = $this->registry->getExclusionProvider();
+        $provider->configureExclusions(
+            $ruleName,
+            $this->takeAliasedOption($merged, 'excludeNamespaces', 'exclude_namespaces'),
+        );
+        $provider->configureChannelExclusions(
+            $ruleName,
+            $this->takeAliasedOption($merged, 'excludeNamespaceChannels', 'exclude_namespace_channels'),
+        );
     }
 
     /**
@@ -165,9 +160,7 @@ final class RuleOptionsFactory
      */
     private function extractExcludePaths(string $ruleName, array &$merged): void
     {
-        $raw = $merged['excludePaths'] ?? $merged['exclude_paths'] ?? null;
-
-        unset($merged['excludePaths'], $merged['exclude_paths']);
+        $raw = $this->takeAliasedOption($merged, 'excludePaths', 'exclude_paths');
 
         if (\is_string($raw)) {
             $patterns = [$raw];
@@ -180,6 +173,20 @@ final class RuleOptionsFactory
         if ($patterns !== []) {
             $this->registry->getPathExclusionProvider()->setExclusions($ruleName, $patterns);
         }
+    }
+
+    /**
+     * Reads and removes one option exposed under camelCase and snake_case aliases.
+     *
+     * @param array<string, mixed> $options
+     */
+    private function takeAliasedOption(array &$options, string $camelKey, string $snakeKey): mixed
+    {
+        $value = $options[$camelKey] ?? $options[$snakeKey] ?? null;
+
+        unset($options[$camelKey], $options[$snakeKey]);
+
+        return $value;
     }
 
     /**
@@ -322,8 +329,9 @@ final class RuleOptionsFactory
      * Warns about unknown option keys in rule configuration.
      *
      * Compares merged config keys against known constructor parameters, plus
-     * any extra shorthand keys the Options class declares via
-     * {@see ShorthandOptionKeysInterface}. Framework-level keys
+     * any extra keys the Options class declares via
+     * {@see ShorthandOptionKeysInterface} or
+     * {@see AdditionalOptionKeysInterface}. Framework-level keys
      * (excludeNamespaces, excludePaths) are excluded since they are
      * extracted before fromArray().
      *
@@ -352,9 +360,16 @@ final class RuleOptionsFactory
     private function warnAboutUnknownKeys(array $merged, array $defaults, string $ruleName, string $optionsClass): void
     {
         // Framework-level keys that are valid but not in the options constructor
-        static $frameworkKeys = ['excludeNamespaces', 'exclude_namespaces', 'excludePaths', 'exclude_paths'];
+        static $frameworkKeys = [
+            'excludeNamespaces',
+            'exclude_namespaces',
+            'excludeNamespaceChannels',
+            'exclude_namespace_channels',
+            'excludePaths',
+            'exclude_paths',
+        ];
 
-        $shorthandKeys = $this->shorthandOptionKeysFor($optionsClass);
+        $acceptedExtraKeys = $this->acceptedExtraOptionKeysFor($optionsClass);
 
         // Build known keys in both snake_case and camelCase forms
         $knownKeys = [...$frameworkKeys];
@@ -367,15 +382,15 @@ final class RuleOptionsFactory
             }
         }
 
-        foreach ($shorthandKeys as $shorthandKey) {
+        foreach ($acceptedExtraKeys as $acceptedExtraKey) {
             // Declared keys are canonical kebab-case; $merged keys are always
             // camelCase by the time they reach here (normalizeKeys()/
             // RuleOptionsParser::normalizeOptionName() already ran), so both
             // spellings must be accepted.
-            $knownKeys[] = $shorthandKey;
-            $camelShorthandKey = lcfirst(str_replace(['_', '-'], '', ucwords($shorthandKey, '_-')));
-            if ($camelShorthandKey !== $shorthandKey) {
-                $knownKeys[] = $camelShorthandKey;
+            $knownKeys[] = $acceptedExtraKey;
+            $camelAcceptedExtraKey = lcfirst(str_replace(['_', '-'], '', ucwords($acceptedExtraKey, '_-')));
+            if ($camelAcceptedExtraKey !== $acceptedExtraKey) {
+                $knownKeys[] = $camelAcceptedExtraKey;
             }
         }
 
@@ -386,7 +401,7 @@ final class RuleOptionsFactory
 
             $availableOptions = [
                 ...array_map($this->toCanonicalDisplayName(...), array_keys($defaults)),
-                ...$shorthandKeys,
+                ...$acceptedExtraKeys,
             ];
 
             $this->logger->warning(\sprintf(
@@ -399,22 +414,28 @@ final class RuleOptionsFactory
     }
 
     /**
-     * Returns the extra shorthand keys declared by an Options class via
-     * {@see ShorthandOptionKeysInterface}, or an empty list if it doesn't
-     * implement that interface (i.e. it accepts no shorthand beyond its
-     * constructor parameters).
+     * Returns every top-level key accepted beyond constructor parameters.
+     *
+     * Threshold shorthand and non-threshold options remain separate contracts,
+     * while the factory consumes their declarations through one cohesive seam.
      *
      * @param class-string<RuleOptionsInterface> $optionsClass
      *
      * @return list<string>
      */
-    private function shorthandOptionKeysFor(string $optionsClass): array
+    private function acceptedExtraOptionKeysFor(string $optionsClass): array
     {
-        if (!is_a($optionsClass, ShorthandOptionKeysInterface::class, true)) {
-            return [];
+        $keys = [];
+
+        if (is_a($optionsClass, ShorthandOptionKeysInterface::class, true)) {
+            $keys = $optionsClass::getShorthandOptionKeys();
         }
 
-        return $optionsClass::getShorthandOptionKeys();
+        if (is_a($optionsClass, AdditionalOptionKeysInterface::class, true)) {
+            $keys = [...$keys, ...$optionsClass::getAdditionalOptionKeys()];
+        }
+
+        return $keys;
     }
 
     /**

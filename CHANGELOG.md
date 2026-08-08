@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Added shortcut CLI flags for `architecture.layer-violation` diagnostic severities and corrected computed-metric reference examples to use the registered `metrics` output format.
+- Added universal per-rule `exclude_namespace_channels` configuration for suppressing selected namespace-aggregate violation channels without hiding class findings or sibling channels.
+
+### Fixed
+- Made duplicate-code candidate discovery use bounded memory before exact verification, without dropping real duplicate candidates.
+- Preserved exact discrete namespace sums so abstractness and count-gated rules do not lose a class through fractional aggregation.
+- Applied local `@qmx-threshold` overrides to Value Object constructor limits and recognize the top-level CBO `scope` option without a false unknown-option warning.
+
 ### Breaking
 - `DependencyGraphAnalyzerInterface`, `DependencyGraphAnalyzer`, and `DependencyGraphAnalysisResult` moved from `Qualimetrix\Analysis\Collection\Dependency` to `Qualimetrix\Analysis\Pipeline`. Update imports and fully qualified type references to the new namespace; their constructor and method contracts are unchanged, and no compatibility aliases are provided.
 

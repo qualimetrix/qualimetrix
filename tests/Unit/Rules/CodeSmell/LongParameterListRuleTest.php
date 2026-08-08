@@ -15,6 +15,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -658,5 +659,92 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(5, $options->error);
         self::assertSame(10, $options->voWarning);
         self::assertSame(10, $options->voError);
+    }
+
+    #[DataProvider('voLocalThresholdOverrideCases')]
+    #[Test]
+    public function itAppliesLocalThresholdOverridesToVoConstructorThresholds(
+        int $parameterCount,
+        ?Severity $expectedSeverity,
+        ?int $expectedThreshold,
+    ): void {
+        $file = RelativePath::fromString('src/Dto/UserDto.php');
+        $symbolInfo = new SymbolInfo(
+            SymbolPath::forMethod('App\\Dto', 'UserDto', '__construct'),
+            $file,
+            10,
+        );
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$symbolInfo] : []);
+        $repository->method('get')->willReturn(
+            (new MetricBag())
+                ->with('parameterCount', $parameterCount)
+                ->with('isVoConstructor', 1),
+        );
+        $context = new AnalysisContext(
+            metrics: $repository,
+            thresholdOverrides: [
+                $file->value() => [
+                    new ThresholdOverride('code-smell.long-parameter-list', 5, 7, 1, 20),
+                ],
+            ],
+        );
+
+        $violations = (new LongParameterListRule(
+            new LongParameterListOptions(warning: 3, error: 4, voWarning: 8, voError: 12),
+        ))->analyze($context);
+
+        if ($expectedSeverity === null) {
+            self::assertSame([], $violations);
+
+            return;
+        }
+
+        self::assertCount(1, $violations);
+        self::assertSame($expectedSeverity, $violations[0]->severity);
+        self::assertSame($expectedThreshold, $violations[0]->threshold);
+    }
+
+    /**
+     * @return iterable<string, array{int, ?Severity, ?int}>
+     */
+    public static function voLocalThresholdOverrideCases(): iterable
+    {
+        yield 'below local warning' => [4, null, null];
+        yield 'at local warning' => [5, Severity::Warning, 5];
+        yield 'at local error' => [7, Severity::Error, 7];
+    }
+
+    #[Test]
+    public function itKeepsRegularThresholdOverridesOnTheRegularBranch(): void
+    {
+        $file = RelativePath::fromString('src/Service/UserService.php');
+        $symbolInfo = new SymbolInfo(
+            SymbolPath::forMethod('App\\Service', 'UserService', 'create'),
+            $file,
+            10,
+        );
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$symbolInfo] : []);
+        $repository->method('get')->willReturn((new MetricBag())->with('parameterCount', 5));
+        $context = new AnalysisContext(
+            metrics: $repository,
+            thresholdOverrides: [
+                $file->value() => [
+                    new ThresholdOverride('code-smell.long-parameter-list', 5, 7, 1, 20),
+                ],
+            ],
+        );
+
+        $violations = (new LongParameterListRule(
+            new LongParameterListOptions(warning: 3, error: 4, voWarning: 8, voError: 12),
+        ))->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertSame(5, $violations[0]->threshold);
+        self::assertStringStartsWith('Method has 5 parameters', $violations[0]->message);
     }
 }

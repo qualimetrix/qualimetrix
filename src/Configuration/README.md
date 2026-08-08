@@ -30,7 +30,7 @@ Configuration/
 ├── RuleOptionsFactory.php         # Factory for creating rule options
 ├── RuleOptionThresholdModeResolver.php  # Evicts threshold vs warning/error mode conflicts across a merge boundary
 ├── RuleOptionsRegistry.php        # Mutable storage for rule options (config file, CLI)
-├── RuleNamespaceExclusionProvider.php  # Per-rule namespace exclusion storage
+├── RuleNamespaceExclusionProvider.php  # Producer-wide and channel-scoped namespace exclusions
 ├── RuleOptionsParser.php          # CLI options parser for rules
 ├── RuleOptionsParserFactory.php   # Factory for creating RuleOptionsParser with CLI aliases
 ├── ConfigurationProviderInterface.php  # Interface for runtime config access
@@ -291,7 +291,8 @@ Creates rule options with priority handling.
 3. If the user configured nothing at all for the rule, fall back to the full
    constructor-defaults array; otherwise pass through only the keys the user
    actually set
-4. Extract `exclude_namespaces`/`exclude_paths` → `RuleNamespaceExclusionProvider`/`RulePathExclusionProvider` (framework-level filtering)
+4. Extract `exclude_namespaces` / `exclude_namespace_channels` / `exclude_paths` →
+   `RuleNamespaceExclusionProvider` / `RulePathExclusionProvider` (framework-level filtering)
 5. Warn about unknown option keys
 6. Validate numeric fields
 7. Create the instance via `$optionsClass::fromArray($merged)`
@@ -341,13 +342,18 @@ configuration error.
 
 ### RuleNamespaceExclusionProvider
 
-Stores per-rule namespace exclusions extracted by `RuleOptionsFactory::create()`.
-Consumed by `RuleExecutor` to filter violations at framework level.
+Stores producer-wide `exclude_namespaces` plus namespace-aggregate exclusions keyed by
+`violationCode` selector from `exclude_namespace_channels`. Selectors use `RuleMatcher`
+semantics: exact match or dot-boundary prefix. Namespace values use `NamespaceMatcher`
+prefix/glob matching. Consumed by `RuleExecutor` at framework level.
 
 **Methods:**
 - `setExclusions(string $ruleName, list<string> $prefixes): void`
 - `isExcluded(string $ruleName, string $namespace): bool` — prefix matching
 - `getExclusions(string $ruleName): list<string>`
+- `setChannelExclusions(string $ruleName, string $selector, list<string> $patterns): void`
+- `isChannelExcluded(string $ruleName, string $violationCode, string $namespace): bool`
+- `getChannelExclusions(string $ruleName): array<string, list<string>>`
 - `reset(): void`
 
 ---
@@ -390,6 +396,13 @@ rules:
   maintainability.index:
     warning: 50
     error: 25
+
+  # Suppress one namespace-aggregate channel without hiding class findings
+  # or other channels emitted by computed.health.
+  computed.health:
+    exclude_namespace_channels:
+      health.cohesion:
+        - Qualimetrix\Metrics\Coupling
 
   design.lcom:
     warning: 2
@@ -551,86 +564,90 @@ Custom preset files use the same YAML format as `qmx.yaml`. Specify a file path
 
 ### Short Aliases
 
-| Option                                  | Rule                                 | Field                 |
-| --------------------------------------- | ------------------------------------ | --------------------- |
-| `--circular-deps`                       | architecture.circular-dependency     | enabled               |
-| `--max-cycle-size=N`                    | architecture.circular-dependency     | maxCycleSize          |
-| `--layer-violation`                     | architecture.layer-violation         | enabled               |
-| `--constructor-overinjection-warning=N` | code-smell.constructor-overinjection | warning               |
-| `--constructor-overinjection-error=N`   | code-smell.constructor-overinjection | error                 |
-| `--long-parameter-list-warning=N`       | code-smell.long-parameter-list       | warning               |
-| `--long-parameter-list-error=N`         | code-smell.long-parameter-list       | error                 |
-| `--long-parameter-list-vo-warning=N`    | code-smell.long-parameter-list       | vo-warning            |
-| `--long-parameter-list-vo-error=N`      | code-smell.long-parameter-list       | vo-error              |
-| `--unreachable-code-warning=N`          | code-smell.unreachable-code          | warning               |
-| `--unreachable-code-error=N`            | code-smell.unreachable-code          | error                 |
-| `--cognitive-warning=N`                 | complexity.cognitive                 | method.warning        |
-| `--cognitive-error=N`                   | complexity.cognitive                 | method.error          |
-| `--cognitive-class-warning=N`           | complexity.cognitive                 | class.max_warning     |
-| `--cognitive-class-error=N`             | complexity.cognitive                 | class.max_error       |
-| `--cyclomatic-warning=N`                | complexity.cyclomatic                | method.warning        |
-| `--cyclomatic-error=N`                  | complexity.cyclomatic                | method.error          |
-| `--cyclomatic-class-warning=N`          | complexity.cyclomatic                | class.max_warning     |
-| `--cyclomatic-class-error=N`            | complexity.cyclomatic                | class.max_error       |
-| `--npath-warning=N`                     | complexity.npath                     | method.warning        |
-| `--npath-error=N`                       | complexity.npath                     | method.error          |
-| `--npath-class-warning=N`               | complexity.npath                     | class.max_warning     |
-| `--npath-class-error=N`                 | complexity.npath                     | class.max_error       |
-| `--wmc-warning=N`                       | complexity.wmc                       | warning               |
-| `--wmc-error=N`                         | complexity.wmc                       | error                 |
-| `--wmc-exclude-data-classes=N`          | complexity.wmc                       | excludeDataClasses    |
-| `--cbo-warning=N`                       | coupling.cbo                         | class.warning         |
-| `--cbo-error=N`                         | coupling.cbo                         | class.error           |
-| `--cbo-ns-warning=N`                    | coupling.cbo                         | namespace.warning     |
-| `--cbo-ns-error=N`                      | coupling.cbo                         | namespace.error       |
-| `--class-rank-warning=N`                | coupling.class-rank                  | warning               |
-| `--class-rank-error=N`                  | coupling.class-rank                  | error                 |
-| `--distance-warning=N`                  | coupling.distance                    | max_distance_warning  |
-| `--distance-error=N`                    | coupling.distance                    | max_distance_error    |
-| `--instability-class-warning=N`         | coupling.instability                 | class.max_warning     |
-| `--instability-class-error=N`           | coupling.instability                 | class.max_error       |
-| `--instability-ns-warning=N`            | coupling.instability                 | namespace.max_warning |
-| `--instability-ns-error=N`              | coupling.instability                 | namespace.max_error   |
-| `--data-class-woc-threshold=N`          | design.data-class                    | wocThreshold          |
-| `--data-class-wmc-threshold=N`          | design.data-class                    | wmcThreshold          |
-| `--data-class-min-methods=N`            | design.data-class                    | minMethods            |
-| `--data-class-exclude-readonly=N`       | design.data-class                    | excludeReadonly       |
-| `--data-class-exclude-promoted-only=N`  | design.data-class                    | excludePromotedOnly   |
-| `--data-class-exclude-exceptions=N`     | design.data-class                    | excludeExceptions     |
-| `--god-class-wmc-threshold=N`           | design.god-class                     | wmcThreshold          |
-| `--god-class-lcom-threshold=N`          | design.god-class                     | lcomThreshold         |
-| `--god-class-tcc-threshold=N`           | design.god-class                     | tccThreshold          |
-| `--god-class-class-loc-threshold=N`     | design.god-class                     | classLocThreshold     |
-| `--god-class-min-criteria=N`            | design.god-class                     | minCriteria           |
-| `--god-class-min-methods=N`             | design.god-class                     | minMethods            |
-| `--god-class-exclude-readonly=N`        | design.god-class                     | excludeReadonly       |
-| `--dit-warning=N`                       | design.inheritance                   | warning               |
-| `--dit-error=N`                         | design.inheritance                   | error                 |
-| `--lcom-warning=N`                      | design.lcom                          | warning               |
-| `--lcom-error=N`                        | design.lcom                          | error                 |
-| `--lcom-exclude-readonly=N`             | design.lcom                          | excludeReadonly       |
-| `--lcom-min-methods=N`                  | design.lcom                          | minMethods            |
-| `--lcom-exclude-methods=V`              | design.lcom                          | excludeMethods        |
-| `--noc-warning=N`                       | design.noc                           | warning               |
-| `--noc-error=N`                         | design.noc                           | error                 |
-| `--type-coverage-param-warning=N`       | design.type-coverage                 | param_warning         |
-| `--type-coverage-param-error=N`         | design.type-coverage                 | param_error           |
-| `--type-coverage-return-warning=N`      | design.type-coverage                 | return_warning        |
-| `--type-coverage-return-error=N`        | design.type-coverage                 | return_error          |
-| `--type-coverage-property-warning=N`    | design.type-coverage                 | property_warning      |
-| `--type-coverage-property-error=N`      | design.type-coverage                 | property_error        |
-| `--mi-warning=N`                        | maintainability.index                | warning               |
-| `--mi-error=N`                          | maintainability.index                | error                 |
-| `--mi-exclude-tests=N`                  | maintainability.index                | excludeTests          |
-| `--mi-min-statements=N`                 | maintainability.index                | minStatements         |
-| `--class-count-warning=N`               | size.class-count                     | warning               |
-| `--class-count-error=N`                 | size.class-count                     | error                 |
-| `--method-count-warning=N`              | size.method-count                    | warning               |
-| `--method-count-error=N`                | size.method-count                    | error                 |
-| `--property-count-warning=N`            | size.property-count                  | warning               |
-| `--property-count-error=N`              | size.property-count                  | error                 |
-| `--property-exclude-readonly=N`         | size.property-count                  | excludeReadonly       |
-| `--property-exclude-promoted-only=N`    | size.property-count                  | excludePromotedOnly   |
+| Option                                                  | Rule                                 | Field                      |
+| ------------------------------------------------------- | ------------------------------------ | -------------------------- |
+| `--circular-deps`                                       | architecture.circular-dependency     | enabled                    |
+| `--max-cycle-size=N`                                    | architecture.circular-dependency     | maxCycleSize               |
+| `--layer-violation`                                     | architecture.layer-violation         | enabled                    |
+| `--layer-violation-severity=SEVERITY`                   | architecture.layer-violation         | severity                   |
+| `--layer-violation-unreachable-layer-severity=SEVERITY` | architecture.layer-violation         | unreachable_layer_severity |
+| `--layer-violation-potential-shadow-severity=SEVERITY`  | architecture.layer-violation         | potential_shadow_severity  |
+| `--layer-violation-empty-template-severity=SEVERITY`    | architecture.layer-violation         | empty_template_severity    |
+| `--constructor-overinjection-warning=N`                 | code-smell.constructor-overinjection | warning                    |
+| `--constructor-overinjection-error=N`                   | code-smell.constructor-overinjection | error                      |
+| `--long-parameter-list-warning=N`                       | code-smell.long-parameter-list       | warning                    |
+| `--long-parameter-list-error=N`                         | code-smell.long-parameter-list       | error                      |
+| `--long-parameter-list-vo-warning=N`                    | code-smell.long-parameter-list       | vo-warning                 |
+| `--long-parameter-list-vo-error=N`                      | code-smell.long-parameter-list       | vo-error                   |
+| `--unreachable-code-warning=N`                          | code-smell.unreachable-code          | warning                    |
+| `--unreachable-code-error=N`                            | code-smell.unreachable-code          | error                      |
+| `--cognitive-warning=N`                                 | complexity.cognitive                 | method.warning             |
+| `--cognitive-error=N`                                   | complexity.cognitive                 | method.error               |
+| `--cognitive-class-warning=N`                           | complexity.cognitive                 | class.max_warning          |
+| `--cognitive-class-error=N`                             | complexity.cognitive                 | class.max_error            |
+| `--cyclomatic-warning=N`                                | complexity.cyclomatic                | method.warning             |
+| `--cyclomatic-error=N`                                  | complexity.cyclomatic                | method.error               |
+| `--cyclomatic-class-warning=N`                          | complexity.cyclomatic                | class.max_warning          |
+| `--cyclomatic-class-error=N`                            | complexity.cyclomatic                | class.max_error            |
+| `--npath-warning=N`                                     | complexity.npath                     | method.warning             |
+| `--npath-error=N`                                       | complexity.npath                     | method.error               |
+| `--npath-class-warning=N`                               | complexity.npath                     | class.max_warning          |
+| `--npath-class-error=N`                                 | complexity.npath                     | class.max_error            |
+| `--wmc-warning=N`                                       | complexity.wmc                       | warning                    |
+| `--wmc-error=N`                                         | complexity.wmc                       | error                      |
+| `--wmc-exclude-data-classes=N`                          | complexity.wmc                       | excludeDataClasses         |
+| `--cbo-warning=N`                                       | coupling.cbo                         | class.warning              |
+| `--cbo-error=N`                                         | coupling.cbo                         | class.error                |
+| `--cbo-ns-warning=N`                                    | coupling.cbo                         | namespace.warning          |
+| `--cbo-ns-error=N`                                      | coupling.cbo                         | namespace.error            |
+| `--class-rank-warning=N`                                | coupling.class-rank                  | warning                    |
+| `--class-rank-error=N`                                  | coupling.class-rank                  | error                      |
+| `--distance-warning=N`                                  | coupling.distance                    | max_distance_warning       |
+| `--distance-error=N`                                    | coupling.distance                    | max_distance_error         |
+| `--instability-class-warning=N`                         | coupling.instability                 | class.max_warning          |
+| `--instability-class-error=N`                           | coupling.instability                 | class.max_error            |
+| `--instability-ns-warning=N`                            | coupling.instability                 | namespace.max_warning      |
+| `--instability-ns-error=N`                              | coupling.instability                 | namespace.max_error        |
+| `--data-class-woc-threshold=N`                          | design.data-class                    | wocThreshold               |
+| `--data-class-wmc-threshold=N`                          | design.data-class                    | wmcThreshold               |
+| `--data-class-min-methods=N`                            | design.data-class                    | minMethods                 |
+| `--data-class-exclude-readonly=N`                       | design.data-class                    | excludeReadonly            |
+| `--data-class-exclude-promoted-only=N`                  | design.data-class                    | excludePromotedOnly        |
+| `--data-class-exclude-exceptions=N`                     | design.data-class                    | excludeExceptions          |
+| `--god-class-wmc-threshold=N`                           | design.god-class                     | wmcThreshold               |
+| `--god-class-lcom-threshold=N`                          | design.god-class                     | lcomThreshold              |
+| `--god-class-tcc-threshold=N`                           | design.god-class                     | tccThreshold               |
+| `--god-class-class-loc-threshold=N`                     | design.god-class                     | classLocThreshold          |
+| `--god-class-min-criteria=N`                            | design.god-class                     | minCriteria                |
+| `--god-class-min-methods=N`                             | design.god-class                     | minMethods                 |
+| `--god-class-exclude-readonly=N`                        | design.god-class                     | excludeReadonly            |
+| `--dit-warning=N`                                       | design.inheritance                   | warning                    |
+| `--dit-error=N`                                         | design.inheritance                   | error                      |
+| `--lcom-warning=N`                                      | design.lcom                          | warning                    |
+| `--lcom-error=N`                                        | design.lcom                          | error                      |
+| `--lcom-exclude-readonly=N`                             | design.lcom                          | excludeReadonly            |
+| `--lcom-min-methods=N`                                  | design.lcom                          | minMethods                 |
+| `--lcom-exclude-methods=V`                              | design.lcom                          | excludeMethods             |
+| `--noc-warning=N`                                       | design.noc                           | warning                    |
+| `--noc-error=N`                                         | design.noc                           | error                      |
+| `--type-coverage-param-warning=N`                       | design.type-coverage                 | param_warning              |
+| `--type-coverage-param-error=N`                         | design.type-coverage                 | param_error                |
+| `--type-coverage-return-warning=N`                      | design.type-coverage                 | return_warning             |
+| `--type-coverage-return-error=N`                        | design.type-coverage                 | return_error               |
+| `--type-coverage-property-warning=N`                    | design.type-coverage                 | property_warning           |
+| `--type-coverage-property-error=N`                      | design.type-coverage                 | property_error             |
+| `--mi-warning=N`                                        | maintainability.index                | warning                    |
+| `--mi-error=N`                                          | maintainability.index                | error                      |
+| `--mi-exclude-tests=N`                                  | maintainability.index                | excludeTests               |
+| `--mi-min-statements=N`                                 | maintainability.index                | minStatements              |
+| `--class-count-warning=N`                               | size.class-count                     | warning                    |
+| `--class-count-error=N`                                 | size.class-count                     | error                      |
+| `--method-count-warning=N`                              | size.method-count                    | warning                    |
+| `--method-count-error=N`                                | size.method-count                    | error                      |
+| `--property-count-warning=N`                            | size.property-count                  | warning                    |
+| `--property-count-error=N`                              | size.property-count                  | error                      |
+| `--property-exclude-readonly=N`                         | size.property-count                  | excludeReadonly            |
+| `--property-exclude-promoted-only=N`                    | size.property-count                  | excludePromotedOnly        |
 
 ### Unified Format
 

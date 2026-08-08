@@ -108,8 +108,9 @@ Analysis/
 │   ├── DataDeclarationTagger.php        # Flags tokens inside const/property-array data declarations
 │   ├── ContentHintExtractor.php         # Extracts a short content preview for a duplicate block
 │   ├── PackedPosition.php               # Bit-packing helper for (fileIdx, tokenOffset) positions
-│   ├── HashIndexBuilder.php             # Pass 1: streams files, builds + prunes the rolling-hash index
-│   ├── HashIndexBuildResult.php         # VO: pass 1 output (pruned hash index + file paths)
+│   ├── SaturatingCandidateFilter.php    # Fixed-size two-bit candidate pre-filter for rolling hashes
+│   ├── HashIndexBuilder.php             # Bounded pre-pass, then exact candidate-position index
+│   ├── HashIndexBuildResult.php         # VO: exact candidate index + file paths
 │   ├── RetokenizedFiles.php             # VO: pass 2 output (tokens/sources of files with hash matches)
 │   ├── DuplicateSearchRequest.php       # VO: bundles pass-2 inputs for DuplicateBlockFinder::find()
 │   ├── DuplicateBlockFinder.php         # Verifies matches, extends blocks, applies data/self-dup filters
@@ -187,16 +188,20 @@ Finding PHP files via `FileDiscoveryInterface`.
 - Executing all rules via `RuleExecutor`
 - Applying filters (Baseline, Suppression)
 
-`RuleExecutor` also applies **per-rule** `exclude_namespaces` / `exclude_paths` — extracted for
-any rule name by `RuleOptionsFactory` (`Qualimetrix\Configuration`), regardless of whether that
-rule's Options class declares such a field. This is distinct from the global
+`RuleExecutor` also applies the **per-rule** `exclude_namespaces`,
+`exclude_namespace_channels`, and `exclude_paths` options — extracted for any rule name by
+`RuleOptionsFactory` (`Qualimetrix\Configuration`), regardless of whether that rule's Options
+class declares such a field. `exclude_namespaces` remains producer-wide. The channel-scoped
+form first matches `Violation::violationCode` by exact or dot-boundary prefix and then filters
+only namespace-aggregate `SymbolPath`s matching its namespace prefix/glob list; class findings
+and sibling channels remain. This is distinct from the global
 `exclude_namespaces` / `exclude_paths` filters applied later in
 `ViolationFilterPipeline` (`Qualimetrix\Infrastructure\Console`): it runs immediately after each
 rule's `analyze()` call and is *not* exempted for `architecture.*` rules the way the global
 filter is. Suppressed counts and the suppressed violations themselves are exposed via
 `RuleExecutor::getRuleExclusionStats(): RuleExclusionStats`, consumed by
-`ViolationFilterOrchestrator` for `-v` / `--show-suppressed` output — without this, the
-suppression left no trace in the CLI output. The per-rule counts are always collected, but the
+`ViolationFilterOrchestrator` for `-v` / `--show-suppressed` output. Channel-scoped removals are
+included in the namespace-exclusion count. The per-rule counts are always collected, but the
 individual `Violation` objects are retained only when
 `Core\Violation\RuleExclusionCaptureHolder` is enabled (set from `--show-suppressed` by
 `RuntimeConfigurator`) — holding onto every suppressed violation regardless of whether
@@ -384,8 +389,19 @@ File-collected metrics may expose explicit namespace-owned contributions through
 `NamespaceMetricProviderInterface`. Namespace aggregation prefers those contributions;
 project aggregation deliberately reads physical file bags, so a multi-namespace file
 is counted once at project level.
+For a metric whose namespace strategy is exactly `Sum`, one explicit namespace total is
+contributed once rather than split across source contributors. This preserves discrete
+values such as class counts for downstream abstractness calculations and count gates.
 This ownership split is specified by
 [ADR 0019](../../docs/adr/0019-namespace-metric-ownership-and-attribution.md).
+
+### Duplication candidate discovery
+
+Duplication detection makes a bounded-memory pre-pass over rolling token hashes. Its
+fixed-size saturating filter retains no positions: hash collisions can only add candidates.
+A second full pass rebuilds every position for those candidates, then token comparison in
+`DuplicateBlockFinder` verifies equality. Consequently a true repeated hash is never lost,
+while first-pass memory is independent of the number of token windows.
 
 **Naming convention:** `{metric}.{strategy}` (e.g.: `ccn.sum`, `ccn.avg`, `loc.sum`)
 

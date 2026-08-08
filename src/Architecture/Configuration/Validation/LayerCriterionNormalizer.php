@@ -27,6 +27,8 @@ use Qualimetrix\Configuration\Exception\ConfigLoadException;
  * The semantic check (suffix shape, FQN shape, etc.) is supplied by the
  * caller-specific helper ({@see normalizeSuffixList},
  * {@see normalizeFqnList}, {@see normalizePatternList}).
+ *
+ * @qmx-ignore health.cohesion -- Stateless validation operations share no instance fields by design.
  */
 final class LayerCriterionNormalizer
 {

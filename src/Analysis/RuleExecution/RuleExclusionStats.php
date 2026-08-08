@@ -7,8 +7,9 @@ namespace Qualimetrix\Analysis\RuleExecution;
 use Qualimetrix\Core\Violation\Violation;
 
 /**
- * Counts and captures violations suppressed by per-rule `exclude_namespaces` /
- * `exclude_paths` (configured under `rules: {<rule-name>: {...}}` in `qmx.yaml`).
+ * Counts and captures violations suppressed by per-rule `exclude_namespaces`,
+ * `exclude_namespace_channels`, or `exclude_paths` (configured under
+ * `rules: {<rule-name>: {...}}` in `qmx.yaml`).
  *
  * This mechanism is distinct from the global `exclude_namespaces` / `exclude_paths`
  * filters ({@see \Qualimetrix\Core\Violation\Filter\NamespaceExclusionFilter},
@@ -23,9 +24,10 @@ use Qualimetrix\Core\Violation\Violation;
 final readonly class RuleExclusionStats
 {
     /**
-     * @param array<string, int> $namespaceExclusionsByRule Rule name => suppressed violation count
+     * @param array<string, int> $namespaceExclusionsByRule Rule name => violations suppressed by
+     *                                                      `exclude_namespaces` or `exclude_namespace_channels`
      * @param array<string, int> $pathExclusionsByRule Rule name => suppressed violation count
-     * @param list<Violation> $excludedViolations All violations dropped by either mechanism, in encounter order.
+     * @param list<Violation> $excludedViolations All violations dropped by any per-rule exclusion, in encounter order.
      *                                            Populated only when {@see \Qualimetrix\Core\Violation\RuleExclusionCaptureHolder} is enabled (set by
      *                                            `RuntimeConfigurator` from `--show-suppressed`) — the counts above are always collected, but retaining
      *                                            every dropped `Violation` object is opt-in to avoid the memory cost when nothing will display them.

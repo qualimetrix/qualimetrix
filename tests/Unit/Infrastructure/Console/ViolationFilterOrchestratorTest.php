@@ -38,7 +38,8 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Verifies that per-rule `exclude_namespaces` / `exclude_paths` suppression
+ * Verifies that per-rule `exclude_namespaces`, `exclude_namespace_channels`,
+ * and `exclude_paths` suppression
  * (RuleExecutor::getRuleExclusionStats()) is surfaced by the orchestrator's
  * `-v` and `--show-suppressed` output, mirroring the existing global-filter
  * reporting (path/namespace exclusion counters).
@@ -91,7 +92,10 @@ final class ViolationFilterOrchestratorTest extends TestCase
         );
 
         $display = $output->fetch();
-        self::assertStringContainsString('2 violation(s) suppressed by per-rule exclude_namespaces', $display);
+        self::assertStringContainsString(
+            '2 violation(s) suppressed by per-rule exclude_namespaces/exclude_namespace_channels',
+            $display,
+        );
         self::assertStringContainsString('complexity.cyclomatic: 2', $display);
     }
 
@@ -160,7 +164,10 @@ final class ViolationFilterOrchestratorTest extends TestCase
         );
 
         $display = $output->fetch();
-        self::assertStringContainsString('1 violation(s) suppressed by per-rule exclude_namespaces/exclude_paths', $display);
+        self::assertStringContainsString(
+            '1 violation(s) suppressed by per-rule exclude_namespaces/exclude_namespace_channels/exclude_paths',
+            $display,
+        );
         self::assertStringContainsString('src/Service/UserService.php', $display);
         self::assertStringContainsString('CCN too high', $display);
         self::assertStringContainsString('[complexity.cyclomatic]', $display);

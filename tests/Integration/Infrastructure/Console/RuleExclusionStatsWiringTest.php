@@ -16,7 +16,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 /**
  * Regression guard for the assumption behind `--show-suppressed` reporting
- * per-rule `exclude_namespaces` / `exclude_paths` suppressions
+ * per-rule `exclude_namespaces`, `exclude_namespace_channels`, and `exclude_paths` suppressions
  * ({@see RuleExclusionStats}): {@see ViolationFilterOrchestrator} reads
  * {@see RuleExecutorInterface::getRuleExclusionStats()} and implicitly relies
  * on the container handing it the *same shared instance* that
@@ -130,7 +130,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
         // output — proving the shared-instance assumption holds end-to-end,
         // not just in isolation.
         self::assertStringContainsString(
-            '1 violation(s) suppressed by per-rule exclude_namespaces/exclude_paths',
+            '1 violation(s) suppressed by per-rule exclude_namespaces/exclude_namespace_channels/exclude_paths',
             $diagnostics,
         );
         self::assertStringContainsString('LongParams.php', $diagnostics);

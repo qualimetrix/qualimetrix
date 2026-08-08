@@ -117,6 +117,10 @@ Aggregated metrics are named: `{metric}.{strategy}`
 - `mi.avg`, `mi.min` (average/minimum Maintainability Index)
 - `lcom.avg`, `lcom.max` (average/maximum LCOM)
 
+When a file supplies an explicit namespace total for a metric with only the `Sum`
+strategy, that total is added once rather than distributed among contributors. Integer
+counts therefore remain exact for dependent metrics and rule gates.
+
 ---
 
 ## Collector Contract

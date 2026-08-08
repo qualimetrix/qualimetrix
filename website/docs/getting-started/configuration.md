@@ -202,8 +202,30 @@ rules:
 
 This is useful when certain namespaces (e.g., tests, generated code, legacy modules) should not trigger violations for a specific rule, while still being analyzed for metrics.
 
+**Exclude selected namespace-aggregate channels from a rule:**
+
+Use `exclude_namespace_channels` when one violation channel is structurally inapplicable to
+part of the namespace tree, but class findings and the producer's other channels must remain:
+
+```yaml
+rules:
+  computed.health:
+    exclude_namespace_channels:
+      health.cohesion:
+        - App\Metrics\Coupling
+        - App\Generated\*
+```
+
+The option is a non-empty map from `violationCode` selector to a non-empty list of namespace
+prefixes or globs. A selector matches either exactly or at a dot boundary: `health` matches
+`health.cohesion`, while `health.cohe` does not; exact `health.cohesion` also leaves sibling
+`health.coupling` untouched.
+Only aggregate Namespace violations are removed. Class-level `health.cohesion` findings in
+the same namespace and sibling channels remain. The existing `exclude_namespaces` option is
+unchanged and stays producer-wide across class and namespace findings.
+
 !!! info "Works for every rule, including `architecture.*`"
-    `exclude_namespaces` and `exclude_paths` are extracted and applied at the framework level for
+    `exclude_namespaces`, `exclude_namespace_channels`, and `exclude_paths` are extracted and applied at the framework level for
     **any** rule name, regardless of whether that rule's Options class declares such a field —
     this is deliberately not opt-in per rule. That includes `architecture.layer-violation` and
     `architecture.circular-dependency`, which are exempt from the *global* `exclude_namespaces`
@@ -226,9 +248,10 @@ rules:
 
 This works alongside `exclude_namespaces` -- both filters are applied. Unlike the global `exclude_paths`, per-rule `exclude_paths` only affects the specific rule, not all rules.
 
-**Visibility:** unlike `@qmx-ignore`, this suppression happens silently by default — nothing in
+**Visibility:** unlike `@qmx-ignore`, these suppressions happen silently by default — nothing in
 the default output hints that violations were dropped. Run with `-v` to see a per-rule breakdown
-of how many violations were suppressed this way (split by `exclude_namespaces` vs. `exclude_paths`),
+of how many violations were suppressed this way (the namespace bucket combines
+`exclude_namespaces` and `exclude_namespace_channels`, separately from `exclude_paths`),
 and add `--show-suppressed` to also list each suppressed violation, alongside `@qmx-ignore`
 suppressions.
 

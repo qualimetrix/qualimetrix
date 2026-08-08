@@ -11,10 +11,11 @@ use SplFileInfo;
 /**
  * Detects code duplication across PHP files using token-stream hashing (Rabin-Karp).
  *
- * Algorithm (memory-optimized two-pass), one phase per collaborator:
- * 1. {@see HashIndexBuilder} streams files one-by-one: tokenize, compute
- *    rolling hashes, discard tokens immediately, then prune hashes with a
- *    single occurrence (typically ~75%)
+ * Algorithm (memory-bounded candidate pre-pass plus exact verification):
+ * 1. {@see HashIndexBuilder} streams files one-by-one into a fixed-size,
+ *    saturating candidate filter, then makes a second full stream to retain
+ *    all positions for its candidates. Collisions can add candidates but
+ *    cannot remove a real repeated hash.
  * 2. {@see retokenizeNeeded()} re-tokenizes only the files that participate
  *    in a hash match
  * 3. {@see DuplicateBlockFinder} verifies token matches, extends blocks,

@@ -128,25 +128,7 @@ final class LongParameterListRule extends AbstractRule
 
         // VO constructors use relaxed thresholds since many promoted properties is valid design
         if ($isVoConstructor) {
-            $severity = $options->getVoSeverity($parameterCountValue);
-
-            if ($severity === null) {
-                return null;
-            }
-
-            $threshold = $severity === Severity::Error ? $options->voError : $options->voWarning;
-
-            return new Violation(
-                location: new Location($symbolInfo->file, $symbolInfo->line),
-                symbolPath: $symbolInfo->symbolPath,
-                ruleName: $this->getName(),
-                violationCode: self::NAME,
-                message: \sprintf('VO constructor has %d promoted parameters, exceeds threshold of %d. Consider splitting the value object', $parameterCountValue, $threshold),
-                severity: $severity,
-                metricValue: $parameterCountValue,
-                recommendation: \sprintf('Parameters: %d (VO threshold: %d) — consider splitting the value object', $parameterCountValue, $threshold),
-                threshold: $threshold,
-            );
+            return $this->checkVoConstructor($symbolInfo, $parameterCountValue, $context, $options);
         }
 
         /** @var LongParameterListOptions $effectiveOptions */
@@ -169,6 +151,37 @@ final class LongParameterListRule extends AbstractRule
             severity: $severity,
             metricValue: $parameterCountValue,
             recommendation: \sprintf('Parameters: %d (threshold: %d) — consider introducing a parameter object', $parameterCountValue, $threshold),
+            threshold: $threshold,
+        );
+    }
+
+    private function checkVoConstructor(
+        SymbolInfo $symbolInfo,
+        int $parameterCount,
+        AnalysisContext $context,
+        LongParameterListOptions $options,
+    ): ?Violation {
+        $override = $context->getThresholdOverride($this->getName(), $symbolInfo->file, $symbolInfo->line ?? 1);
+        $effectiveOptions = $override === null
+            ? $options
+            : $options->withVoOverride($override->warning, $override->error);
+        $severity = $effectiveOptions->getVoSeverity($parameterCount);
+
+        if ($severity === null) {
+            return null;
+        }
+
+        $threshold = $severity === Severity::Error ? $effectiveOptions->voError : $effectiveOptions->voWarning;
+
+        return new Violation(
+            location: new Location($symbolInfo->file, $symbolInfo->line),
+            symbolPath: $symbolInfo->symbolPath,
+            ruleName: $this->getName(),
+            violationCode: self::NAME,
+            message: \sprintf('VO constructor has %d promoted parameters, exceeds threshold of %d. Consider splitting the value object', $parameterCount, $threshold),
+            severity: $severity,
+            metricValue: $parameterCount,
+            recommendation: \sprintf('Parameters: %d (VO threshold: %d) — consider splitting the value object', $parameterCount, $threshold),
             threshold: $threshold,
         );
     }

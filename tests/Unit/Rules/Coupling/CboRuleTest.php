@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Configuration\RuleOptionsFactory;
+use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
@@ -28,6 +30,7 @@ use Qualimetrix\Rules\Coupling\CboOptions;
 use Qualimetrix\Rules\Coupling\CboRule;
 use Qualimetrix\Rules\Coupling\ClassCboOptions;
 use Qualimetrix\Rules\Coupling\NamespaceCboOptions;
+use Qualimetrix\Tests\Support\Logger\RecordingLogger;
 
 #[CoversClass(CboRule::class)]
 #[CoversClass(CboOptions::class)]
@@ -951,6 +954,44 @@ final class CboRuleTest extends TestCase
     }
 
     // Scope tests
+
+    #[Test]
+    public function itAppliesTopLevelApplicationScopeThroughTheFactoryWithoutAnUnknownOptionWarning(): void
+    {
+        $registry = new RuleOptionsRegistry();
+        $logger = new RecordingLogger();
+        $factory = new RuleOptionsFactory($registry, $logger);
+        $registry->setConfigFileOptions([
+            'coupling.cbo' => [
+                'scope' => 'application',
+                'class' => ['warning' => 5, 'error' => 10],
+            ],
+        ]);
+
+        /** @var CboOptions $options */
+        $options = $factory->create('coupling.cbo', CboOptions::class);
+        $rule = new CboRule($options);
+
+        $symbolPath = SymbolPath::forClass('App\\Service', 'UserService');
+        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $metricBag = (new MetricBag())
+            ->with('cbo', 30)
+            ->with('cbo_app', 7)
+            ->with('ca', 5)
+            ->with('ce', 25)
+            ->with('ce_framework', 23);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('get')->willReturn($metricBag);
+
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, new AnalysisContext($repository));
+
+        self::assertSame([], $logger->records);
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertSame(7.0, $violations[0]->metricValue);
+        self::assertStringContainsString('CBO_APP: 7', $violations[0]->message);
+    }
 
     #[Test]
     public function itUsesCboAppMetricForApplicationScope(): void

@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
@@ -95,6 +97,43 @@ final class DocumentationConsistencyTest extends TestCase
     }
 
     /**
+     * Every LayerViolationRule CLI alias must appear as its own option in both
+     * language variants of the website CLI reference. Matching the complete
+     * inline-code token prevents `--layer-violation-severity` from falsely
+     * satisfying the primary `--layer-violation` alias.
+     */
+    #[Test]
+    public function itDocumentsLayerViolationCliAliasesInWebsiteCliReferences(): void
+    {
+        $layerViolationAliases = array_filter(
+            $this->collectAllCliAliases(),
+            static fn(array $alias): bool => $alias['rule'] === 'architecture.layer-violation',
+        );
+        self::assertNotEmpty($layerViolationAliases, 'No CLI aliases discovered for architecture.layer-violation.');
+
+        foreach ([
+            'website/docs/usage/cli-options.md',
+            'website/docs/usage/cli-options.ru.md',
+        ] as $path) {
+            $content = $this->readFile($path);
+            $missing = [];
+
+            foreach (array_keys($layerViolationAliases) as $alias) {
+                $pattern = '/`--' . preg_quote($alias, '/') . '(?:=[^`]*)?`/';
+                if (preg_match($pattern, $content) !== 1) {
+                    $missing[] = '--' . $alias;
+                }
+            }
+
+            self::assertSame(
+                [],
+                $missing,
+                "LayerViolationRule CLI aliases missing from {$path}:\n" . implode("\n", $missing),
+            );
+        }
+    }
+
+    /**
      * YAML examples in README.md must parse and reference existing rule names.
      */
     #[Test]
@@ -171,6 +210,36 @@ final class DocumentationConsistencyTest extends TestCase
             'Compact rule catalog in website/docs/rules/index.md drifted from src/Rules/. '
             . 'Update the <!-- llms-only ... --> block to match.',
         );
+    }
+
+    /**
+     * Health-score documentation must only demonstrate format names that the
+     * running formatter registry exposes. This keeps both language variants
+     * coupled to the actual CLI output surface rather than to a stale list.
+     */
+    #[Test]
+    public function itUsesRegisteredFormattersInHealthScoreDocumentation(): void
+    {
+        $container = (new ContainerFactory())->create();
+        $formatterRegistry = $container->get(FormatterRegistryInterface::class);
+        self::assertInstanceOf(FormatterRegistryInterface::class, $formatterRegistry);
+
+        foreach ([
+            'website/docs/reference/health-scores.md',
+            'website/docs/reference/health-scores.ru.md',
+        ] as $path) {
+            $content = $this->readFile($path);
+            preg_match_all('/--format=([a-z][a-z-]*)/', $content, $matches);
+
+            self::assertNotEmpty($matches[1], "No --format examples found in {$path}.");
+
+            foreach (array_unique($matches[1]) as $formatterName) {
+                self::assertTrue(
+                    $formatterRegistry->has($formatterName),
+                    "{$path} references unregistered formatter '{$formatterName}'.",
+                );
+            }
+        }
     }
 
     /**
