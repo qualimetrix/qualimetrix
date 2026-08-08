@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-08-08
+
 ### Changed
 - Baselines now use version 10 reported-magnitude ceilings: an accepted live group can fail only when its count or reported magnitude worsens, while a stale or inapplicable entry is reported without disabling the remaining baseline. Create files with `bin/qmx baseline:generate <baseline> <paths...>` and maintain them with `baseline:update` or explicitly selected `baseline:cleanup --remove` entries.
+- Every output format now carries an explicit analysis-coverage verdict, including zero-file and generated-only runs. Parse or processing failures make policy results non-authoritative and return exit code 4; JSON/metrics expose a structured `coverage` object, SARIF uses invocation notifications, CI formats emit native failure records, and human/HTML reports show an explicit warning.
+- Namespace LOC and structural metrics are attributed to every namespace block in multi-namespace files, while project totals continue to count each physical file exactly once. Git report scoping likewise indexes every namespace declaration in a changed file.
 
 ### Breaking
 - `AnalysisConfiguration::isRuleEnabled()` and `isViolationCodeEnabled()` were removed because configuration no longer owns selection semantics. Inject `RuleSelector` and pass the producer name plus `ViolationChannel`; this preserves channels whose producer name, channel `ruleName`, and `violationCode` differ.
@@ -19,12 +23,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `Cycle data:` JSON trailer of an `architecture.circular-dependency` recommendation now lists fully qualified class names in its `cycle` array, where it used to list bare class names. The trailer exists to be machine-read, and a bare name does not identify a class. The keys and the shape of the object are unchanged; consumers matching on a short name must match on the fully qualified name or its trailing segment. Baseline entries are unaffected — they are not keyed by the recommendation.
 - Baseline entries for `architecture.circular-dependency` must be regenerated. Cycles are now keyed by the canonically smallest class of the cycle, so any recorded entry whose key was a different member no longer matches and the cycle is reported as new. For a v5 file run `bin/qmx baseline:migrate <baseline> <paths...>`; for a v10 file, review the capture and replace it with `bin/qmx baseline:generate <baseline> <paths...> --force`. Entries for other rules are unaffected.
 - `@qmx-threshold` accepts only a non-negative numeric shorthand or the generic `warning=N` / `error=N` keys (one or both, in either order). Arbitrary YAML / `--rule-opt` option names and trailing prose that were accidentally accepted by substring matching are now rejected; put an optional non-empty reason after `--` or an em dash (`—`). Prefix and wildcard rule patterns remain supported but skip per-rule validator checks, so exact rule names are recommended.
+- Incomplete analysis no longer succeeds or returns a warning/error policy code: `check`, baseline lifecycle commands, and `graph:export` return exit code 4. Baseline writers and graph export refuse partial artifacts even with `--force`; existing destinations remain byte-identical.
+- Maintainability Index now consumes the Size metric `methodStatementCount`; the Halstead-owned `methodLoc` / `halstead.methodLoc` metric was removed. Rename `minLoc` to `minStatements`, YAML and `--rule-opt` key `min_loc` to `min_statements`, and CLI alias `--mi-min-loc` to `--mi-min-statements`. No compatibility aliases remain. MI values, aggregates, health scores, thresholds, and baselines may shift.
+- NPath now retains nested expression contributions through AST wrappers, counts every `match` arm, nullsafe access, and expression-bearing `for`, `foreach`, `switch`, and `echo` slots. Existing NPath values, thresholds, and baselines may shift.
 
 ### Fixed
 - `--only-rule` now selects the full finding channel instead of assuming a rule name prefixes its `violationCode`. `--only-rule=computed.health`, `--only-rule=health.complexity`, and `--only-rule=computed.health#health.complexity` now all run the `computed.health` producer and retain the intended findings; Architecture diagnostic channels such as `architecture.coverage` and baseline lifecycle commands use the same selection contract. Valid channel selectors no longer trigger the false "does not match any registered rule" warning.
 - `architecture.circular-dependency` now identifies a cycle by its smallest member instead of by whichever member the graph traversal happened to reach first. The reported symbol, the displayed cycle path and the order of reported cycles used to depend on file discovery order, so adding an unrelated file could re-key an existing cycle: its baseline entry looked resolved and the same cycle reappeared as a new violation.
 - `architecture.circular-dependency` no longer renders every member of a cycle by its bare class name. Members of the same cycle that share a class name now carry the shortest trailing namespace suffix that tells them apart, so a cycle between `App\Billing\Service` and `App\Orders\Service` reads `Billing\Service → Orders\Service → Billing\Service` instead of the useless `Service → Service → Service`. Members whose short name is unique in the cycle are unchanged. This also changes the GitLab Code Quality fingerprint of an affected violation, so one such cycle will be reported as resolved and re-raised once.
 - `@qmx-threshold` parsing now validates the entire value expression instead of accepting `warning=` or `error=` substrings hidden inside unsupported syntax. The documentation now also reflects the actual scope rule: a class override applies to evaluations inside the class, including its methods, while the smallest matching source span wins.
+- Rules that share one Options class now receive producer-specific Options instances; configuring one code-smell or security rule no longer silently configures another rule that reuses the same immutable class.
+- Unknown `--only-rule` / `--disable-rule` selectors and unknown rule-option owners now fail closed as input errors (exit 3) before a report payload is written instead of warning and continuing with an unintended rule set.
+- `check` diagnostics are routed to stderr, keeping stdout valid for the selected report format even on configuration/input errors, deprecations, logging, and output-file notices.
+- `baseline:explain` now rejects a symbol absent from both the current analysis and baseline, while labelling baseline-only symbols explicitly instead of presenting a misspelling as a clean result.
 
 
 ## [0.23.0] - 2026-07-29
@@ -428,7 +439,8 @@ Initial release.
 [0.9.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/qualimetrix/qualimetrix/compare/v0.7.0...v0.7.1
-[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.23.0...HEAD
+[Unreleased]: https://github.com/qualimetrix/qualimetrix/compare/v0.24.0...HEAD
+[0.24.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.23.0...v0.24.0
 [0.23.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/qualimetrix/qualimetrix/compare/v0.20.1...v0.21.0
