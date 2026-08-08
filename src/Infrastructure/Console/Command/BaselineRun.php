@@ -6,6 +6,7 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
+use Qualimetrix\Analysis\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Baseline\RunScope;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
@@ -15,6 +16,7 @@ use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
+use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -43,6 +45,7 @@ final readonly class BaselineRun implements BaselineRunInterface
         private RuntimeConfigurator $runtimeConfigurator,
         private MeasuredViolationSet $measuredViolationSet,
         private ConfigurationProviderInterface $configurationProvider,
+        private RuleInputValidator $ruleInputValidator,
     ) {}
 
     public function measure(InputInterface $input, OutputInterface $output): BaselineRunContext
@@ -54,6 +57,7 @@ final readonly class BaselineRun implements BaselineRunInterface
         // it the analysis below runs under defaults that `check` never uses,
         // and the two would measure different sets on the same project.
         $this->runtimeConfigurator->configure($resolved, $input, $output);
+        $this->ruleInputValidator->validate($resolved, $input);
 
         $cwd = AbsolutePath::fromString((string) getcwd());
         $paths = array_map(
@@ -64,6 +68,16 @@ final readonly class BaselineRun implements BaselineRunInterface
         $this->assertPathsExist($paths);
 
         $run = $this->measuredViolationSet->runForPaths($paths, new FinderFileDiscovery($resolved->paths->excludes));
+
+        // A partial measured set is not evidence about what disappeared or
+        // improved. Stop before deriving a claimed scope or letting any
+        // lifecycle command interpret, report candidates from, or mutate a
+        // baseline. --force only overrides the recorded-scope guard; it must
+        // never turn analysis failure into accepted state.
+        if (!$run->result->coverage->isComplete()) {
+            throw new IncompleteAnalysisException($run->result->coverage);
+        }
+
         $projectRoot = $this->configurationProvider->getConfiguration()->projectRoot;
 
         return new BaselineRunContext($run, RunScope::record($paths, $projectRoot), $projectRoot);

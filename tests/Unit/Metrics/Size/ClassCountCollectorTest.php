@@ -58,6 +58,35 @@ final class ClassCountCollectorTest extends TestCase
     }
 
     #[Test]
+    public function itProvidesZeroStructuralMetricsForAStatementOnlyGlobalFile(): void
+    {
+        $code = <<<'PHP'
+<?php
+declare(strict_types=1);
+
+require __DIR__ . '/functions.php';
+PHP;
+
+        $this->collectMetrics($code);
+        $namespaces = $this->collector->getNamespacesWithMetrics();
+
+        self::assertCount(1, $namespaces);
+        self::assertSame('', $namespaces[0]->namespace);
+        self::assertSame(2, $namespaces[0]->line);
+        self::assertSame(
+            [
+                'classCount' => 0,
+                'abstractClassCount' => 0,
+                'interfaceCount' => 0,
+                'traitCount' => 0,
+                'enumCount' => 0,
+                'functionCount' => 0,
+            ],
+            $namespaces[0]->metrics->all(),
+        );
+    }
+
+    #[Test]
     public function itCountsSingleClass(): void
     {
         $code = <<<'PHP'
@@ -416,6 +445,39 @@ PHP;
         self::assertSame(1, $metrics->get('classCount'));
         self::assertSame(1, $metrics->get('interfaceCount'));
         self::assertSame(2, $metrics->get('functionCount'));
+    }
+
+    #[Test]
+    public function itProvidesCountsForEveryNamespaceBlockIncludingEmptyOnes(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace One {
+    class Concrete {}
+    abstract class Base {}
+    function helper(): void {}
+}
+namespace Two {
+    interface Contract {}
+    trait Behavior {}
+    enum State { case Ready; }
+}
+namespace Empty {}
+PHP;
+
+        $this->collectMetrics($code);
+        $byNamespace = [];
+        foreach ($this->collector->getNamespacesWithMetrics() as $namespaceMetrics) {
+            $byNamespace[$namespaceMetrics->namespace] = $namespaceMetrics->metrics;
+        }
+
+        self::assertSame(2, $byNamespace['One']->get('classCount'));
+        self::assertSame(1, $byNamespace['One']->get('abstractClassCount'));
+        self::assertSame(1, $byNamespace['One']->get('functionCount'));
+        self::assertSame(1, $byNamespace['Two']->get('interfaceCount'));
+        self::assertSame(1, $byNamespace['Two']->get('traitCount'));
+        self::assertSame(1, $byNamespace['Two']->get('enumCount'));
+        self::assertSame(0, $byNamespace['Empty']->get('classCount'));
     }
 
     #[Test]

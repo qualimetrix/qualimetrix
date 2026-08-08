@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Baseline\BaselineConflictException;
 use Qualimetrix\Baseline\RunScope;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
@@ -33,10 +34,15 @@ abstract class BaselineCommand extends Command
      */
     protected const int EXIT_INVALID_INPUT = self::INVALID;
 
+    /** Analysis/tool failure, distinct from policy and input/configuration outcomes. */
+    protected const int EXIT_ANALYSIS_INCOMPLETE = 4;
+
     final protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             return $this->doExecute($input, $output);
+        } catch (IncompleteAnalysisException $e) {
+            return $this->fail($output, $e->getMessage(), $e, self::EXIT_ANALYSIS_INCOMPLETE);
         } catch (ConfigLoadException $e) {
             return $this->fail($output, \sprintf('Configuration error: %s', $e->getMessage()), $e);
         } catch (BaselineConflictException $e) {
@@ -67,7 +73,7 @@ abstract class BaselineCommand extends Command
      * worth most. {@see CheckCommand::execute()} makes the same trade for the
      * same reason, and this keeps the two commands answering `-v` alike.
      */
-    private function fail(OutputInterface $output, string $message, Throwable $e): int
+    private function fail(OutputInterface $output, string $message, Throwable $e, int $exitCode = self::FAILURE): int
     {
         $output->writeln(\sprintf('<error>%s</error>', $message));
 
@@ -77,7 +83,7 @@ abstract class BaselineCommand extends Command
             $output->writeln($e->getTraceAsString());
         }
 
-        return self::FAILURE;
+        return $exitCode;
     }
 
     /**

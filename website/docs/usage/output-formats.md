@@ -1,6 +1,7 @@
 # Output Formats
 
-Qualimetrix supports 10 output formats. Choose the one that fits your workflow.
+Qualimetrix supports 11 output formats (including the deprecated
+`text-verbose`). Choose the one that fits your workflow.
 
 ```bash
 bin/qmx check src/ --format=<format>
@@ -117,7 +118,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 
 **When to use:** Custom scripts, dashboards, programmatic processing.
 
-**Top-level keys:** `meta`, `summary`, `health`, `worstNamespaces`, `worstClasses`, `violations`, `violationsMeta`, `violationGroups`.
+**Top-level keys:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `violations`, `violationsMeta`, `violationGroups`.
 
 <!-- llms:skip-begin -->
 **Example output:**
@@ -253,7 +254,7 @@ Raw metric values for every symbol (file, class, method, namespace). Unlike `jso
 
 **When to use:** Custom dashboards, trend analysis, data science pipelines, or building your own quality gates on raw metrics.
 
-**Top-level keys:** `version`, `package`, `timestamp`, `symbols[]` (each with `type`: file/class/method/namespace, `name`, `file`, `line`, `metrics: {...}`), `summary`.
+**Top-level keys:** `version`, `package`, `timestamp`, `symbols[]` (each with `type`: file/class/method/namespace, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`.
 
 <!-- llms:skip-begin -->
 **Example output (abbreviated):**
@@ -568,6 +569,32 @@ xdg-open report.html  # Linux
 
 ---
 
+## Analysis coverage in every format
+
+Every discovered PHP file is classified as analyzed, intentionally excluded as
+generated, or failed during parsing/processing. Generated exclusions are a
+complete run; any failure makes the analysis incomplete and the policy result
+non-authoritative. Zero discovered files still pass through the selected
+formatter instead of being replaced with command prose.
+
+| Format         | Coverage representation                                                                                        |
+| -------------- | -------------------------------------------------------------------------------------------------------------- |
+| `summary`      | Human coverage sentence after the header                                                                       |
+| `text`         | Human coverage sentence after the violation summary                                                            |
+| `text-verbose` | Same projection as `text --detail`                                                                             |
+| `health`       | Human coverage sentence after the header                                                                       |
+| `json`         | Top-level `coverage` object: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `failed`, `failures[]` |
+| `metrics`      | The same top-level `coverage` object as `json`                                                                 |
+| `sarif`        | `runs[0].invocations[0].executionSuccessful`; failures in `toolExecutionNotifications[]`                       |
+| `gitlab`       | One blocker issue per failed file with `check_name: analysis.<kind>`; a complete empty run is `[]`             |
+| `checkstyle`   | Failed files are errors under synthetic file `[analysis]`, with source `qmx.analysis.<kind>`                   |
+| `github`       | One `::error` annotation per failed file; complete zero-finding runs emit no annotation                        |
+| `html`         | Embedded `coverage` data; incomplete runs also show a visible warning banner                                   |
+
+For `json` and `metrics`, each `failures[]` item has `path`, `kind` (`parse` or
+`processing`), and `message`. Human formats distinguish no discovered files,
+generated-only input, complete analysis, and incomplete analysis.
+
 ## Comparison table
 
 | Format         | Readable    | Machine   | Grouping                     | CI Integration             |
@@ -588,14 +615,15 @@ xdg-open report.html  # Linux
 
 All formats use the same exit codes:
 
-| Exit code | Meaning                               |
-| --------- | ------------------------------------- |
-| 0         | No violations                         |
-| 1         | At least one warning (but no errors)  |
-| 2         | At least one error-severity violation |
-| 3         | Configuration or input error          |
+| Exit code | Meaning                                                 |
+| --------- | ------------------------------------------------------- |
+| 0         | No violations                                           |
+| 1         | At least one warning (but no errors)                    |
+| 2         | At least one error-severity violation                   |
+| 3         | Configuration or input error                            |
+| 4         | Analysis incomplete; policy result is not authoritative |
 
-By default (`--fail-on=error`), warnings no longer cause exit code 1 — only errors trigger a non-zero exit. Use `--fail-on=warning` for the stricter behavior where warnings also fail.
+By default (`--fail-on=error`), warnings no longer cause exit code 1 — only errors trigger a non-zero exit. Use `--fail-on=warning` for the stricter behavior where warnings also fail. Exit 4 takes precedence over warning/error policy codes.
 
 !!! note
-    All diagnostic warnings (e.g., configuration notices, deprecation messages) are written to **stderr**, not stdout. This means you can safely pipe the analysis output to a file or another tool without interference: `bin/qmx check src/ --format=json > results.json`.
+    All `check` diagnostics outside the selected report payload (configuration notices and errors, deprecation messages, logging, and output-file notices) are written to **stderr**, not stdout. This means you can safely pipe the analysis output to a file or another tool without interference: `bin/qmx check src/ --format=json > results.json`.

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Pipeline;
 
+use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
+use Qualimetrix\Analysis\Collection\CollectionResult;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Discovery\GeneratedFileFilter;
 use Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory;
@@ -20,6 +23,7 @@ use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -35,6 +39,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use SplFileInfo;
 
 /**
  * Main analysis pipeline orchestrator.
@@ -84,26 +89,20 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
 
         // Phase 1: Discovery
         $profiler?->start('discovery', 'pipeline');
-        // preserve_keys=false: discover() yields AbsolutePath as the key (object — invalid array key);
-        // we only need the SplFileInfo values for downstream phases.
-        $files = iterator_to_array($discovery->discover($pathList), false);
-
-        // Filter out @generated files unless explicitly included
         $config = $this->configurationProvider->getConfiguration();
-        $generatedSkipped = 0;
-        if (!$config->includeGenerated) {
-            $originalCount = \count($files);
-            $generatedFilter = new GeneratedFileFilter();
-            $files = $generatedFilter->filter($files);
-            $generatedSkipped = $originalCount - \count($files);
-        }
+        [$files, $generatedExcludedFiles, $discoveredCount] = self::discoverAnalysisFiles(
+            $discovery,
+            $pathList,
+            $config->projectRoot,
+            $config->includeGenerated,
+        );
 
         $profiler?->stop('discovery');
 
-        $this->logger->info('Discovered files', ['count' => \count($files)]);
+        $this->logger->info('Discovered files', ['count' => $discoveredCount]);
 
-        if ($generatedSkipped > 0) {
-            $this->logger->info('Skipped @generated files', ['count' => $generatedSkipped]);
+        if ($generatedExcludedFiles !== []) {
+            $this->logger->info('Skipped @generated files', ['count' => \count($generatedExcludedFiles)]);
         }
 
         // Phase 2: Collection (metrics + dependencies in single AST traversal)
@@ -209,26 +208,132 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
 
         // Build result
         $duration = microtime(true) - $startTime;
+        $eligiblePaths = array_map(
+            static fn(SplFileInfo $file): RelativePath => PathFactory::bestEffortRelative(
+                $file->getPathname(),
+                $config->projectRoot,
+            ),
+            $files,
+        );
+        $coverage = self::buildCoverage($eligiblePaths, $generatedExcludedFiles, $collectionResult);
 
         $this->logger->info('Analysis complete', [
             'total_duration' => \sprintf('%.2fs', $duration),
             'violations' => \count($violations),
             'files_analyzed' => $collectionResult->filesAnalyzed,
-            'files_skipped' => $collectionResult->filesSkipped,
+            'files_skipped' => $coverage->skippedFilesCount(),
         ]);
 
         $profiler?->stop('analysis');
 
         return new AnalysisResult(
             violations: $violations,
-            filesAnalyzed: $collectionResult->filesAnalyzed,
-            filesSkipped: $collectionResult->filesSkipped,
             duration: $duration,
             metrics: $repository,
+            coverage: $coverage,
             suppressions: $collectionResult->suppressions,
             namespaceTree: $enrichmentResult->namespaceTree,
             thresholdOverrides: $collectionResult->thresholdOverrides,
         );
+    }
+
+    /**
+     * Discovers unique paths and assigns generated files their terminal state.
+     *
+     * @param list<AbsolutePath> $paths
+     *
+     * @return array{list<SplFileInfo>, list<RelativePath>, int}
+     */
+    private static function discoverAnalysisFiles(
+        FileDiscoveryInterface $discovery,
+        array $paths,
+        AbsolutePath $projectRoot,
+        bool $includeGenerated,
+    ): array {
+        // preserve_keys=false: discover() yields AbsolutePath as the key (object — invalid array key).
+        $discoveredFiles = iterator_to_array($discovery->discover($paths), false);
+
+        // Overlapping requested roots may yield the same path more than once.
+        $filesByPath = [];
+        foreach ($discoveredFiles as $file) {
+            $relativePath = PathFactory::bestEffortRelative($file->getPathname(), $projectRoot);
+            $filesByPath[$relativePath->value()] = $file;
+        }
+
+        if ($includeGenerated) {
+            return [array_values($filesByPath), [], \count($filesByPath)];
+        }
+
+        $files = [];
+        $generatedExcludedFiles = [];
+        $generatedFilter = new GeneratedFileFilter();
+        foreach ($filesByPath as $relativePath => $file) {
+            if ($generatedFilter->isGenerated($file)) {
+                $generatedExcludedFiles[] = RelativePath::fromString($relativePath);
+            } else {
+                $files[] = $file;
+            }
+        }
+
+        return [$files, $generatedExcludedFiles, \count($filesByPath)];
+    }
+
+    /**
+     * @param list<RelativePath> $eligiblePaths
+     * @param list<RelativePath> $generatedExcludedFiles
+     */
+    private static function buildCoverage(
+        array $eligiblePaths,
+        array $generatedExcludedFiles,
+        CollectionResult $collectionResult,
+    ): AnalysisCoverage {
+        $failures = array_map(
+            static function ($failure): AnalysisFailure {
+                $processingFailure = $failure->processingFailure();
+
+                return new AnalysisFailure(
+                    $failure->filePath,
+                    match ($processingFailure->kind) {
+                        FileProcessingFailureKind::Parse => AnalysisFailureKind::Parse,
+                        FileProcessingFailureKind::Processing => AnalysisFailureKind::Processing,
+                    },
+                    $processingFailure->message,
+                );
+            },
+            $collectionResult->failures,
+        );
+
+        $coverage = new AnalysisCoverage(
+            $collectionResult->analyzedFiles,
+            $generatedExcludedFiles,
+            $failures,
+        );
+
+        self::assertCoverageMatchesDiscovery($coverage, $eligiblePaths);
+
+        return $coverage;
+    }
+
+    /** @param list<RelativePath> $eligiblePaths */
+    private static function assertCoverageMatchesDiscovery(
+        AnalysisCoverage $coverage,
+        array $eligiblePaths,
+    ): void {
+        $expected = array_map(static fn(RelativePath $path): string => $path->value(), $eligiblePaths);
+        sort($expected);
+
+        $actual = array_map(
+            static fn(RelativePath $path): string => $path->value(),
+            $coverage->analyzedFiles,
+        );
+        foreach ($coverage->failures as $failure) {
+            $actual[] = $failure->path->value();
+        }
+        sort($actual);
+
+        if ($actual !== $expected) {
+            throw new LogicException('Collection terminal states do not match the discovered analysis paths');
+        }
     }
 
     /**

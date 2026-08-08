@@ -34,7 +34,7 @@ final class BaselineLifecycleTest extends TestCase
             $entries = self::entries($project->baselinePath);
             self::assertSame([1], array_column($entries, 'count'));
 
-            $checked = $project->check($paths, ['--baseline' => $project->baselinePath]);
+            $checked = $project->checkWithSeparatedDiagnostics($paths, ['--baseline' => $project->baselinePath]);
             self::assertSame(Command::SUCCESS, $checked->getStatusCode(), $checked->getDisplay());
             self::assertStringContainsString('No violations found', $checked->getDisplay());
         } finally {
@@ -69,9 +69,9 @@ final class BaselineLifecycleTest extends TestCase
                 PHP,
             );
 
-            $checked = $project->check($paths, ['--baseline' => $project->baselinePath]);
+            $checked = $project->checkWithSeparatedDiagnostics($paths, ['--baseline' => $project->baselinePath]);
             self::assertSame(Command::SUCCESS, $checked->getStatusCode(), $checked->getDisplay());
-            self::assertStringContainsString('baseline entries did not appear in this run', $checked->getDisplay());
+            self::assertStringContainsString('baseline entries did not appear in this run', $checked->getErrorOutput());
             self::assertStringContainsString('1 violation (1 warning)', $checked->getDisplay());
         } finally {
             $project->remove();

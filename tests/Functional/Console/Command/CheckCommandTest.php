@@ -145,12 +145,12 @@ class ComplexClass {
             'paths' => [$nonExistentPath],
             '--format' => 'text',
             '--no-progress' => true,
-        ]);
+        ], ['capture_stderr_separately' => true]);
 
         // Assert config/input error (exit code 3)
         self::assertSame(3, $commandTester->getStatusCode());
-        $output = $commandTester->getDisplay();
-        self::assertStringContainsString('does not exist', $output);
+        self::assertSame('', $commandTester->getDisplay());
+        self::assertStringContainsString('does not exist', $commandTester->getErrorOutput());
     }
 
     #[Test]

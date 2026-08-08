@@ -1,6 +1,6 @@
 {
     "version": 1,
-    "updated_at": "2026-03-29",
+    "updated_at": "2026-08-08",
     "description": "Expected health score ranges for benchmark projects. Used by scripts\/benchmark-regression.php to detect formula regressions.",
     "projects": {
         "flysystem": {
@@ -36,20 +36,20 @@
                     92
                 ],
                 "health.cohesion": [
-                    66,
-                    87
+                    68,
+                    89
                 ],
                 "health.coupling": [
                     58,
                     79
                 ],
                 "health.maintainability": [
-                    68,
-                    89
+                    79,
+                    100
                 ],
                 "health.overall": [
-                    69,
-                    90
+                    71,
+                    92
                 ]
             }
         },
@@ -57,8 +57,8 @@
             "path": "benchmarks\/vendor\/symfony\/dependency-injection",
             "expectations": {
                 "health.complexity": [
-                    49,
-                    70
+                    48,
+                    69
                 ],
                 "health.cohesion": [
                     66,
@@ -69,12 +69,12 @@
                     64
                 ],
                 "health.maintainability": [
-                    50,
-                    71
+                    58,
+                    79
                 ],
                 "health.overall": [
-                    55,
-                    76
+                    57,
+                    78
                 ]
             }
         },
@@ -94,12 +94,12 @@
                     92
                 ],
                 "health.maintainability": [
-                    72,
-                    93
+                    81,
+                    100
                 ],
                 "health.overall": [
-                    73,
-                    94
+                    75,
+                    96
                 ]
             }
         },
@@ -111,20 +111,20 @@
                     89
                 ],
                 "health.cohesion": [
-                    65,
-                    86
+                    66,
+                    87
                 ],
                 "health.coupling": [
                     71,
                     92
                 ],
                 "health.maintainability": [
-                    65,
-                    86
+                    75,
+                    96
                 ],
                 "health.overall": [
-                    69,
-                    90
+                    72,
+                    93
                 ]
             }
         },
@@ -137,19 +137,19 @@
                 ],
                 "health.cohesion": [
                     56,
-                    76
+                    77
                 ],
                 "health.coupling": [
                     71,
                     92
                 ],
                 "health.maintainability": [
-                    59,
-                    80
+                    69,
+                    90
                 ],
                 "health.overall": [
-                    65,
-                    86
+                    67,
+                    88
                 ]
             }
         },
@@ -157,24 +157,24 @@
             "path": "benchmarks\/vendor\/phpunit\/phpunit\/src",
             "expectations": {
                 "health.complexity": [
-                    79,
+                    78,
                     99
                 ],
                 "health.cohesion": [
-                    63,
-                    84
+                    64,
+                    85
                 ],
                 "health.coupling": [
                     49,
                     70
                 ],
                 "health.maintainability": [
-                    83,
+                    87,
                     100
                 ],
                 "health.overall": [
                     72,
-                    92
+                    93
                 ]
             }
         },
@@ -189,20 +189,20 @@
                     100
                 ],
                 "health.cohesion": [
-                    45,
-                    66
+                    50,
+                    71
                 ],
                 "health.coupling": [
                     34,
                     55
                 ],
                 "health.maintainability": [
-                    84,
+                    90,
                     100
                 ],
                 "health.overall": [
-                    64,
-                    85
+                    66,
+                    87
                 ]
             }
         },
@@ -222,12 +222,12 @@
                     70
                 ],
                 "health.maintainability": [
-                    59,
-                    80
+                    72,
+                    93
                 ],
                 "health.overall": [
-                    65,
-                    86
+                    68,
+                    89
                 ]
             }
         },
@@ -239,20 +239,20 @@
                     100
                 ],
                 "health.cohesion": [
-                    56,
-                    77
+                    59,
+                    80
                 ],
                 "health.coupling": [
                     52,
-                    73
+                    72
                 ],
                 "health.maintainability": [
-                    74,
-                    95
+                    90,
+                    100
                 ],
                 "health.overall": [
-                    70,
-                    91
+                    73,
+                    94
                 ]
             }
         },
@@ -272,12 +272,12 @@
                     46
                 ],
                 "health.maintainability": [
-                    50,
-                    71
+                    58,
+                    79
                 ],
                 "health.overall": [
-                    50,
-                    71
+                    52,
+                    72
                 ]
             }
         },
@@ -297,12 +297,12 @@
                     71
                 ],
                 "health.maintainability": [
-                    65,
-                    86
+                    81,
+                    100
                 ],
                 "health.overall": [
-                    68,
-                    89
+                    71,
+                    92
                 ]
             }
         },
@@ -322,12 +322,12 @@
                     100
                 ],
                 "health.maintainability": [
-                    61,
-                    82
+                    73,
+                    94
                 ],
                 "health.overall": [
-                    70,
-                    91
+                    73,
+                    93
                 ]
             }
         },
@@ -339,20 +339,20 @@
                     96
                 ],
                 "health.cohesion": [
-                    57,
-                    78
+                    58,
+                    79
                 ],
                 "health.coupling": [
                     45,
                     66
                 ],
                 "health.maintainability": [
-                    78,
-                    99
+                    87,
+                    100
                 ],
                 "health.overall": [
-                    59,
-                    80
+                    61,
+                    82
                 ]
             }
         },
@@ -360,24 +360,24 @@
             "path": "src",
             "expectations": {
                 "health.complexity": [
-                    74,
-                    95
+                    75,
+                    96
                 ],
                 "health.cohesion": [
-                    58,
-                    79
+                    67,
+                    88
                 ],
                 "health.coupling": [
-                    43,
-                    64
+                    37,
+                    58
                 ],
                 "health.maintainability": [
-                    63,
-                    84
+                    77,
+                    98
                 ],
                 "health.overall": [
-                    64,
-                    85
+                    68,
+                    89
                 ]
             }
         }

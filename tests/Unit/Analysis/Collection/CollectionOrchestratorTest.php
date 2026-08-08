@@ -10,6 +10,7 @@ use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Collection\CollectionOrchestrator;
+use Qualimetrix\Analysis\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
@@ -26,6 +27,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Progress\ProgressReporter;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
+use RuntimeException;
 use SplFileInfo;
 
 #[CoversClass(CollectionOrchestrator::class)]
@@ -337,6 +339,40 @@ final class CollectionOrchestratorTest extends TestCase
 
         self::assertSame(2, $result->result->filesAnalyzed);
         self::assertSame(2, $result->result->filesSkipped);
+    }
+
+    #[Test]
+    public function itConvertsUnexpectedSequentialExceptionsToTypedPerFileFailures(): void
+    {
+        $files = [new SplFileInfo('/tmp/broken.php')];
+        $processor = self::createStub(FileProcessorInterface::class);
+        $processor->method('process')->willThrowException(new RuntimeException('collector crashed'));
+
+        $strategy = self::createStub(ExecutionStrategyInterface::class);
+        $strategy->method('execute')->willReturnCallback(
+            static fn(array $input, callable $callback): array => array_map($callback, $input),
+        );
+        $selector = self::createStub(StrategySelectorInterface::class);
+        $selector->method('select')->willReturn($strategy);
+
+        $orchestrator = new CollectionOrchestrator(
+            $processor,
+            $selector,
+            $this->derivedMetricExtractor,
+            $this->progress,
+            $this->logger,
+        );
+
+        $output = $orchestrator->collect(
+            $files,
+            new InMemoryMetricRepository(),
+            AbsolutePath::fromString('/tmp'),
+        );
+
+        self::assertSame(0, $output->result->filesAnalyzed);
+        self::assertSame(1, $output->result->filesSkipped);
+        self::assertSame(FileProcessingFailureKind::Processing, $output->result->failures[0]->processingFailure()->kind);
+        self::assertSame('broken.php', $output->result->failures[0]->filePath->value());
     }
 
     #[Test]

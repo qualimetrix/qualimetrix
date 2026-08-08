@@ -18,7 +18,7 @@ use Qualimetrix\Core\Metric\SymbolLevel;
  * MI is computed from:
  * - Halstead Volume (from halstead collector)
  * - Cyclomatic Complexity (from cyclomatic-complexity collector)
- * - Lines of Code (from halstead collector's methodLoc, or estimated)
+ * - Method statement count (from method-statement-count collector)
  *
  * Formula: MI = 171 - 5.2×ln(V) - 0.23×CCN - 16.2×ln(LOC)
  * Normalized to 0-100 scale.
@@ -44,7 +44,7 @@ final class MaintainabilityIndexCollector implements DerivedCollectorInterface, 
      */
     public function requires(): array
     {
-        return ['halstead', 'cyclomatic-complexity'];
+        return ['halstead', 'cyclomatic-complexity', 'method-statement-count'];
     }
 
     /**
@@ -65,21 +65,19 @@ final class MaintainabilityIndexCollector implements DerivedCollectorInterface, 
             return new MetricBag();
         }
 
-        $ccn = $sourceBag->get(MetricName::COMPLEXITY_CCN) ?? 1;
-
-        // Get method LOC - use real value from HalsteadVisitor if available
-        $methodLoc = $sourceBag->get(MetricName::HALSTEAD_METHOD_LOC);
-        if ($methodLoc !== null && $methodLoc > 0) {
-            $loc = (float) $methodLoc;
-        } else {
-            // Fallback to estimate if methodLoc is not available
-            $loc = $this->estimateLoc($volume, $ccn);
+        $statementCount = $sourceBag->get(MetricName::SIZE_METHOD_STATEMENT_COUNT);
+        if ($statementCount === null) {
+            return new MetricBag();
         }
+
+        $ccn = $sourceBag->get(MetricName::COMPLEXITY_CCN) ?? 1;
 
         $mi = $this->calculator->calculate(
             halsteadVolume: (float) $volume,
             cyclomaticComplexity: $ccn,
-            linesOfCode: $loc,
+            // The raw metric preserves an empty method's zero. Only the
+            // logarithm boundary is clamped because ln(0) is undefined.
+            linesOfCode: max(1.0, (float) $statementCount),
         );
 
         return (new MetricBag())->with(MetricName::MAINTAINABILITY_MI, $mi);
@@ -114,29 +112,4 @@ final class MaintainabilityIndexCollector implements DerivedCollectorInterface, 
         ];
     }
 
-    /**
-     * Estimates LOC from Halstead Volume and CCN.
-     *
-     * This is a rough estimate. In a complete implementation,
-     * actual LOC would be measured by the LOC collector.
-     *
-     * Heuristic: Volume correlates with LOC, CCN adds branching overhead.
-     */
-    private function estimateLoc(float|int $volume, float|int $ccn): float
-    {
-        if ($volume <= 0) {
-            // Empty method
-            return 1.0;
-        }
-
-        // Rough estimate: Volume ~ LOC * log2(vocabulary)
-        // For typical code, vocabulary ~ 10-50, so log2 ~ 3-6
-        // We use a simplified estimate
-        $baseLoc = $volume / 5.0;
-
-        // Add some lines for control flow structures
-        $controlFlowLines = max(0, ($ccn - 1) * 2);
-
-        return max(1.0, $baseLoc + $controlFlowLines);
-    }
 }

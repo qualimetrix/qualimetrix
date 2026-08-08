@@ -48,6 +48,10 @@ final class GitScopeResolver
             ? new GitClient($projectRoot, $this->logger)
             : null;
 
+        if ($gitClient !== null) {
+            $gitClient->validateScope($reportScope->ref);
+        }
+
         $fileDiscovery = new FinderFileDiscovery($resolved->paths->excludes);
 
         return new GitScopeResolution(

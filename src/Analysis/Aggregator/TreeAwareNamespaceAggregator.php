@@ -51,8 +51,8 @@ final class TreeAwareNamespaceAggregator implements AggregationPhaseInterface
         usort($parentNamespaces, static fn(string $a, string $b): int => substr_count($b, '\\') <=> substr_count($a, '\\'));
 
         // Build maps once before the loop
-        $fileToNamespace = AggregationHelper::buildFileToNamespaceMap($repository);
-        $fileSymbolsMap = AggregationHelper::buildNamespaceToFileSymbolsMap($repository, $fileToNamespace);
+        $fileToNamespace = NamespaceMetricContributions::mapFilesToNamespaces($repository);
+        $fileSymbolsMap = NamespaceMetricContributions::mapNamespacesToFileSymbols($repository, $fileToNamespace);
 
         foreach ($parentNamespaces as $parentNs) {
             // Collect from ALL namespaces in the subtree (leaves + intermediate parents
@@ -79,11 +79,12 @@ final class TreeAwareNamespaceAggregator implements AggregationPhaseInterface
                 continue;
             }
 
-            $metricValues = AggregationHelper::collectNamespaceMetricValues(
+            $metricValues = NamespaceMetricContributions::collectValues(
                 $repository,
                 $allSymbolInfos,
                 $allFileSymbols,
                 $namespaceDefinitions,
+                SymbolLevel::Namespace_,
             );
 
             $bag = AggregationHelper::applyAggregations(

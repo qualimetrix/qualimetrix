@@ -45,6 +45,8 @@ final class HalsteadCollectorTest extends TestCase
         self::assertContains('halstead.effort', $provides);
         self::assertContains('halstead.bugs', $provides);
         self::assertContains('halstead.time', $provides);
+        self::assertNotContains('methodLoc', $provides);
+        self::assertNotContains('methodStatementCount', $provides);
     }
 
     #[Test]
@@ -587,6 +589,8 @@ PHP;
         self::assertSame('Test', $method1->class);
         self::assertSame('method1', $method1->method);
         self::assertNotNull($method1->metrics->get('halstead.volume'));
+        self::assertFalse($method1->metrics->has('methodLoc'));
+        self::assertFalse($method1->metrics->has('methodStatementCount'));
     }
 
     #[Test]

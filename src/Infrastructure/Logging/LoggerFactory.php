@@ -10,6 +10,7 @@ use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
 use Stringable;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
+use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -42,7 +43,7 @@ final class LoggerFactory
         if (!$output->isQuiet()) {
             $logOutput = $output instanceof ConsoleOutputInterface
                 ? $output->getErrorOutput()
-                : $output;
+                : new NullOutput();
             $consoleLevel = match (true) {
                 $output->isDebug() => LogLevel::DEBUG,
                 $output->isVeryVerbose() => LogLevel::DEBUG,
@@ -67,7 +68,7 @@ final class LoggerFactory
 
         // Composite logger for multiple outputs
         return new class ($loggers) extends AbstractLogger {
-            /** @param list<LoggerInterface> $loggers */
+            /** @param list<\Psr\Log\LoggerInterface> $loggers */
             public function __construct(private readonly array $loggers) {}
 
             public function log($level, string|Stringable $message, array $context = []): void

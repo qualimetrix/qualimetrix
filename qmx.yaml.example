@@ -42,7 +42,7 @@
 # General Settings
 # -----------------------------------------------------------------------------
 
-# Output format: summary, text, json, checkstyle, sarif, gitlab, health, html
+# Output format: summary, text, text-verbose, json, metrics, checkstyle, sarif, gitlab, github, health, html
 # Docs: https://qualimetrix.github.io/qualimetrix/reference/output-formats/
 # format: summary              # default: summary
 
@@ -220,7 +220,7 @@
   #   warning: 40                # default: 40
   #   error: 20
   #   exclude_tests: true
-  #   min_loc: 10
+  #   min_statements: 10
 
   # — Coupling —
   # Docs: https://qualimetrix.github.io/qualimetrix/metrics/coupling/

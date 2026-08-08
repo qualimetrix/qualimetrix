@@ -124,7 +124,7 @@ bin/qmx check src/ --format=json
 bin/qmx check src/ --format=sarif
 ```
 
-Доступные форматы: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`.
+Доступные форматы: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`.
 
 Подробности о каждом формате смотрите в разделе [Форматы вывода](output-formats.md).
 
@@ -329,6 +329,11 @@ bin/qmx baseline:explain  <symbol> [<paths>...] [--baseline=BASELINE] [--channel
 - `baseline:cleanup` по умолчанию выводит кандидатов и удаляет только повторяемые селекторы `--remove=REMOVE`. Его `--force` также снимает проверку области.
 - `baseline:explain` показывает порог из конфигурации, принятую величину baseline и override из исходника для канонического символа; `--channel=CHANNEL` сужает ответ.
 
+Все lifecycle-команды отказываются интерпретировать или записывать baseline при
+неполном анализе и завершаются с кодом 4. `--force` снимает только ограничения
+файла/области; он не делает частичный набор измерений допустимым. Существующий
+файл остаётся побайтово неизменным, а `baseline:generate` не создаёт отсутствующий файл.
+
 Удалённые опции `--generate-baseline` и `--baseline-ignore-stale` не имеют алиасов. Используй вместо них `baseline:generate` и явный `baseline:cleanup --remove`.
 
 ---
@@ -403,7 +408,10 @@ bin/qmx check src/ --report=git:main..HEAD --report-strict
 Управление параллельной обработкой. По умолчанию: автоопределение по количеству CPU.
 
 ```bash
-# Отключить параллельную обработку (однопоточный режим)
+# Отключить параллельную обработку (один процесс)
+bin/qmx check src/ --workers=1
+
+# Автоопределение числа воркеров
 bin/qmx check src/ --workers=0
 
 # Использовать ровно 4 воркера
@@ -411,7 +419,7 @@ bin/qmx check src/ --workers=4
 ```
 
 !!! tip "Совет"
-    Используйте `--workers=0` для отладки или в окружениях, которые не поддерживают `ext-parallel`.
+    Используйте `--workers=1` для отладки или в однопроцессном окружении. `--workers=0` означает автоопределение, а не sequential-режим.
 
 ### `--memory-limit`
 
@@ -534,6 +542,10 @@ bin/qmx check src/ --only-rule=health.complexity
 bin/qmx check src/ --only-rule=computed.health#health.complexity
 ```
 
+Селектор должен совпасть с зарегистрированным producer, группой или выводимым каналом.
+Неизвестный селектор завершается с кодом 3 до записи report-payload в stdout. Аналогично,
+владелец перед `:` в `--rule-opt=RULE:OPTION=VALUE` должен быть точным producer-rule, а не группой или каналом.
+
 ### `--rule-opt`
 
 Переопределить опции правил из командной строки. Формат: `rule-name:option=value`. Можно указывать несколько раз:
@@ -614,12 +626,12 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:method.error=30
 
 === "Сопровождаемость"
 
-| Флаг                 | Правило               | Опция        |
-| -------------------- | --------------------- | ------------ |
-| `--mi-warning=N`     | maintainability.index | warning      |
-| `--mi-error=N`       | maintainability.index | error        |
-| `--mi-min-loc=N`     | maintainability.index | minLoc       |
-| `--mi-exclude-tests` | maintainability.index | excludeTests |
+| Флаг                    | Правило               | Опция         |
+| ----------------------- | --------------------- | ------------- |
+| `--mi-warning=N`        | maintainability.index | warning       |
+| `--mi-error=N`          | maintainability.index | error         |
+| `--mi-min-statements=N` | maintainability.index | minStatements |
+| `--mi-exclude-tests`    | maintainability.index | excludeTests  |
 
 === "Запахи кода"
 
@@ -679,9 +691,6 @@ bin/qmx graph:export src/ -o graph.dot
 # Экспорт в формате JSON (агрегированный список смежности с метаданными)
 bin/qmx graph:export src/ --format=json -o graph.json
 
-# Экспорт в формате Mermaid
-bin/qmx graph:export src/ --format=mermaid -o graph.md
-
 # Фильтрация по пространству имён
 bin/qmx graph:export src/ --namespace=App\\Service --namespace=App\\Repository
 
@@ -698,11 +707,15 @@ bin/qmx graph:export src/ --no-clusters
 | Опция                    | Описание                                                       |
 | ------------------------ | -------------------------------------------------------------- |
 | `-o`, `--output=FILE`    | Выходной файл (по умолчанию: stdout)                           |
-| `-f`, `--format=FORMAT`  | `dot` (по умолчанию), `json` или `mermaid`                     |
+| `-f`, `--format=FORMAT`  | `dot` (по умолчанию) или `json`                                |
 | `-d`, `--direction=DIR`  | Направление графа: `LR`, `TB`, `RL`, `BT` (по умолчанию: `LR`) |
 | `--no-clusters`          | Не группировать узлы по пространствам имён                     |
 | `--namespace=NS`         | Включить только указанные пространства имён (можно повторять)  |
 | `--exclude-namespace=NS` | Исключить указанные пространства имён (можно повторять)        |
+
+Если хотя бы один обнаруженный файл не удалось разобрать или обработать,
+`graph:export` завершается с кодом 4 и не выводит частичный граф. Команда не создаёт
+отсутствующий output-файл и побайтово сохраняет существующий.
 
 ### hook:install
 

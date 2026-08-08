@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metrics>
+  <package name="Vendor\Alpha">
+    <class name="Handler" loc="20" />
+    <class name="Vendor\Alpha\Handler" loc="21" />
+  </package>
+</metrics>

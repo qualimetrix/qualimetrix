@@ -100,7 +100,7 @@ This gives accurate metrics while only showing relevant violations.
 
 ## --report-strict
 
-By default, when using `--diff` or `--report`, Qualimetrix also shows violations from parent namespaces of the changed files. This is useful because adding a class to a namespace can push it over size limits.
+By default, when using `--report`, Qualimetrix also shows violations from parent namespaces of the changed files. This is useful because adding a class to a namespace can push it over size limits.
 
 If you want to see only violations from the changed files themselves:
 

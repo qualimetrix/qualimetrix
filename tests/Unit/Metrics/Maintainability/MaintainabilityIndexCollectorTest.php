@@ -43,6 +43,7 @@ final class MaintainabilityIndexCollectorTest extends TestCase
 
         self::assertContains('halstead', $requires);
         self::assertContains('cyclomatic-complexity', $requires);
+        self::assertContains('method-statement-count', $requires);
     }
 
     #[Test]
@@ -50,7 +51,8 @@ final class MaintainabilityIndexCollectorTest extends TestCase
     {
         $sourceBag = (new MetricBag())
             ->with('halstead.volume', 100.0)
-            ->with('ccn', 5);
+            ->with('ccn', 5)
+            ->with('methodStatementCount', 20);
 
         $result = $this->collector->calculate($sourceBag);
 
@@ -66,7 +68,8 @@ final class MaintainabilityIndexCollectorTest extends TestCase
     {
         $sourceBag = (new MetricBag())
             ->with('halstead.volume', 0.0)
-            ->with('ccn', 1);
+            ->with('ccn', 1)
+            ->with('methodStatementCount', 0);
 
         $result = $this->collector->calculate($sourceBag);
 
@@ -91,7 +94,8 @@ final class MaintainabilityIndexCollectorTest extends TestCase
     {
         $sourceBag = (new MetricBag())
             ->with('halstead.volume', 500.0)
-            ->with('ccn', 20);
+            ->with('ccn', 20)
+            ->with('methodStatementCount', 40);
 
         $result = $this->collector->calculate($sourceBag);
 
@@ -101,7 +105,7 @@ final class MaintainabilityIndexCollectorTest extends TestCase
     }
 
     #[Test]
-    public function itCalculatesWithKnownValuesAndMethodLoc(): void
+    public function itCalculatesWithKnownValuesAndStatementCount(): void
     {
         // Hand-calculate MI for known inputs:
         // Volume=8.0 (simple `return $a + $b`), CCN=1, LOC=1
@@ -112,7 +116,7 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         $sourceBag = (new MetricBag())
             ->with('halstead.volume', 8.0)
             ->with('ccn', 1)
-            ->with('methodLoc', 1);
+            ->with('methodStatementCount', 1);
 
         $result = $this->collector->calculate($sourceBag);
 
@@ -131,12 +135,38 @@ final class MaintainabilityIndexCollectorTest extends TestCase
         $sourceBag = (new MetricBag())
             ->with('halstead.volume', 100.0)
             ->with('ccn', 5)
-            ->with('methodLoc', 20);
+            ->with('methodStatementCount', 20);
 
         $result = $this->collector->calculate($sourceBag);
 
         self::assertTrue($result->has('mi'));
         self::assertEqualsWithDelta(56.94, $result->get('mi'), 0.2);
+    }
+
+    #[Test]
+    public function itSkipsCalculationWithoutStatementCount(): void
+    {
+        $sourceBag = (new MetricBag())
+            ->with('halstead.volume', 100.0)
+            ->with('ccn', 5);
+
+        self::assertFalse($this->collector->calculate($sourceBag)->has('mi'));
+    }
+
+    #[Test]
+    public function itClampsOnlyTheLogarithmInputForAnEmptyMethod(): void
+    {
+        $empty = (new MetricBag())
+            ->with('halstead.volume', 8.0)
+            ->with('ccn', 1)
+            ->with('methodStatementCount', 0);
+        $oneStatement = $empty->with('methodStatementCount', 1);
+
+        self::assertSame(0, $empty->get('methodStatementCount'));
+        self::assertSame(
+            $this->collector->calculate($oneStatement)->get('mi'),
+            $this->collector->calculate($empty)->get('mi'),
+        );
     }
 
     #[Test]

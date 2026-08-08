@@ -40,6 +40,7 @@ final readonly class Report
         public array $topIssues = [],
         public ?NamespaceTree $namespaceTree = null,
         public int $infoCount = 0,
+        public ?ReportCoverage $coverage = null,
     ) {}
 
     /**

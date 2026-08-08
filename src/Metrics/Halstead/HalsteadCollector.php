@@ -96,7 +96,6 @@ final class HalsteadCollector extends AbstractCollector implements MethodMetrics
             MetricName::HALSTEAD_EFFORT,
             MetricName::HALSTEAD_BUGS,
             MetricName::HALSTEAD_TIME,
-            MetricName::HALSTEAD_METHOD_LOC,
         ];
     }
 
@@ -120,8 +119,7 @@ final class HalsteadCollector extends AbstractCollector implements MethodMetrics
                 ->with(MetricName::HALSTEAD_DIFFICULTY . ':' . $fqn, $metrics->get('halstead.difficulty') ?? 0.0)
                 ->with(MetricName::HALSTEAD_EFFORT . ':' . $fqn, $metrics->get('halstead.effort') ?? 0.0)
                 ->with(MetricName::HALSTEAD_BUGS . ':' . $fqn, $metrics->get('halstead.bugs') ?? 0.0)
-                ->with(MetricName::HALSTEAD_TIME . ':' . $fqn, $metrics->get('halstead.time') ?? 0.0)
-                ->with(MetricName::HALSTEAD_METHOD_LOC . ':' . $fqn, $metrics->get(MetricName::HALSTEAD_METHOD_LOC) ?? 0);
+                ->with(MetricName::HALSTEAD_TIME . ':' . $fqn, $metrics->get(MetricName::HALSTEAD_TIME) ?? 0.0);
         }
 
         return $bag;

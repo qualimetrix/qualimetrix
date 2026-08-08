@@ -45,6 +45,16 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
             ];
         }
 
+        foreach ($report->coverage === null ? [] : $report->coverage->failures as $failure) {
+            $issues[] = [
+                'description' => \sprintf('Analysis failed for %s: %s', $failure->path, $failure->message),
+                'check_name' => 'analysis.' . $failure->kind,
+                'fingerprint' => md5('analysis|' . $failure->kind . '|' . $failure->path),
+                'severity' => 'blocker',
+                'location' => ['path' => $failure->path, 'lines' => ['begin' => 1]],
+            ];
+        }
+
         return json_encode($issues, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
     }
 

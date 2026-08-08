@@ -1,6 +1,7 @@
 # Форматы вывода
 
-Qualimetrix поддерживает 10 форматов вывода. Выбирайте тот, который подходит для вашего рабочего процесса.
+Qualimetrix поддерживает 11 форматов вывода (включая устаревший
+`text-verbose`). Выбирайте тот, который подходит для вашего рабочего процесса.
 
 ```bash
 bin/qmx check src/ --format=<формат>
@@ -117,7 +118,7 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
 
 **Когда использовать:** Пользовательские скрипты, дашборды, программная обработка.
 
-**Ключи верхнего уровня:** `meta`, `summary`, `health`, `worstNamespaces`, `worstClasses`, `violations`, `violationsMeta`, `violationGroups`.
+**Ключи верхнего уровня:** `meta`, `summary`, `coverage`, `health`, `worstNamespaces`, `worstClasses`, `violations`, `violationsMeta`, `violationGroups`.
 
 <!-- llms:skip-begin -->
 **Пример вывода:**
@@ -253,7 +254,7 @@ bin/qmx check src/ --format=json --no-progress > report.json
 
 **Когда использовать:** Пользовательские дашборды, анализ трендов, пайплайны data science или создание собственных критериев качества на основе сырых метрик.
 
-**Ключи верхнего уровня:** `version`, `package`, `timestamp`, `symbols[]` (каждый с `type`: file/class/method/namespace, `name`, `file`, `line`, `metrics: {...}`), `summary`.
+**Ключи верхнего уровня:** `version`, `package`, `timestamp`, `symbols[]` (каждый с `type`: file/class/method/namespace, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`.
 
 <!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**
@@ -568,6 +569,32 @@ xdg-open report.html  # Linux
 
 ---
 
+## Покрытие анализа во всех форматах
+
+Каждый обнаруженный PHP-файл классифицируется как проанализированный,
+намеренно исключённый generated-файл или файл с ошибкой parsing/processing.
+Generated-исключения не делают анализ неполным; любая ошибка делает
+политический результат неавторитетным. Нуль найденных файлов всё равно
+проходит через выбранный форматтер.
+
+| Формат         | Представление coverage                                                                                               |
+| -------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `summary`      | Текстовая строка coverage после заголовка                                                                            |
+| `text`         | Текстовая строка coverage после сводки нарушений                                                                     |
+| `text-verbose` | Та же проекция, что и у `text --detail`                                                                              |
+| `health`       | Текстовая строка coverage после заголовка                                                                            |
+| `json`         | Объект `coverage` верхнего уровня: `complete`, `discovered`, `analyzed`, `generatedExcluded`, `failed`, `failures[]` |
+| `metrics`      | Тот же объект `coverage` верхнего уровня, что и в `json`                                                             |
+| `sarif`        | `runs[0].invocations[0].executionSuccessful`; ошибки в `toolExecutionNotifications[]`                                |
+| `gitlab`       | По blocker-issue на каждый сбой с `check_name: analysis.<kind>`; пустой полный прогон даёт `[]`                      |
+| `checkstyle`   | Сбои как errors в синтетическом файле `[analysis]`, source — `qmx.analysis.<kind>`                                   |
+| `github`       | По одной `::error`-аннотации на каждый сбой; полный прогон без нарушений не даёт аннотаций                           |
+| `html`         | Встроенные данные `coverage`; при неполном анализе также виден warning-banner                                        |
+
+В `json` и `metrics` каждый элемент `failures[]` содержит `path`, `kind` (`parse` или
+`processing`) и `message`. Текстовые форматы различают нуль найденных файлов,
+только generated-файлы, полный и неполный анализ.
+
 ## Сравнительная таблица
 
 | Формат         | Читаемость    | Машинный    | Группировка                    | Интеграция с CI            |
@@ -594,8 +621,9 @@ xdg-open report.html  # Linux
 | 1          | Есть предупреждения (при `--fail-on=warning`)                   |
 | 2          | Есть хотя бы одно нарушение уровня error                        |
 | 3          | Ошибка конфигурации или входных данных                          |
+| 4          | Анализ неполон; политический результат неавторитетен            |
 
-По умолчанию `--fail-on=error`: предупреждения отображаются, но не приводят к ненулевому коду выхода. Используйте `--fail-on=warning`, чтобы предупреждения тоже вызывали код выхода 1.
+По умолчанию `--fail-on=error`: предупреждения отображаются, но не приводят к ненулевому коду выхода. Используйте `--fail-on=warning`, чтобы предупреждения тоже вызывали код выхода 1. Код 4 имеет приоритет над policy-кодами warning/error.
 
 !!! note "Примечание"
-    Все диагностические предупреждения (уведомления о конфигурации, сообщения об устаревших функциях) выводятся в **stderr**, а не в stdout. Это позволяет безопасно перенаправлять вывод анализа в файл или другой инструмент: `bin/qmx check src/ --format=json > results.json`.
+    Все диагностические сообщения `check` вне выбранного report-payload (уведомления и ошибки конфигурации, deprecation, logging и сообщения о записи файла) выводятся в **stderr**, а не в stdout. Это позволяет безопасно перенаправлять вывод анализа в файл или другой инструмент: `bin/qmx check src/ --format=json > results.json`.

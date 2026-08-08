@@ -124,7 +124,7 @@ bin/qmx check src/ --format=json
 bin/qmx check src/ --format=sarif
 ```
 
-Available formats: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`.
+Available formats: `summary`, `text`, `text-verbose`, `json`, `metrics`, `checkstyle`, `sarif`, `gitlab`, `github`, `health`, `html`.
 
 See [Output Formats](output-formats.md) for details on each format.
 
@@ -332,6 +332,11 @@ All five commands accept `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=D
 - `baseline:cleanup` lists candidates by default and removes only repeated `--remove=REMOVE` selectors. Its `--force` also overrides the scope guard.
 - `baseline:explain` shows the configured threshold, accepted baseline level, and source override for a canonical symbol; `--channel=CHANNEL` narrows the answer.
 
+All lifecycle commands refuse incomplete analysis with exit 4 before interpreting
+or writing a baseline. `--force` overrides file/scope guards only; it cannot make
+a partial measured set acceptable. Existing destinations remain byte-identical,
+and `baseline:generate` does not create a missing destination.
+
 The removed `--generate-baseline` and `--baseline-ignore-stale` options have no aliases. Use `baseline:generate` and explicit `baseline:cleanup --remove` instead.
 
 ---
@@ -406,6 +411,9 @@ Control parallel processing. Default: auto-detect based on CPU count.
 
 ```bash
 # Disable parallel processing (single-threaded)
+bin/qmx check src/ --workers=1
+
+# Auto-detect worker count
 bin/qmx check src/ --workers=0
 
 # Use exactly 4 workers
@@ -413,7 +421,7 @@ bin/qmx check src/ --workers=4
 ```
 
 !!! tip
-    Use `--workers=0` for debugging or when running in environments that do not support `ext-parallel`.
+    Use `--workers=1` for debugging or single-process environments. `--workers=0` means auto-detect, not sequential execution.
 
 ### `--memory-limit`
 
@@ -534,6 +542,11 @@ bin/qmx check src/ --only-rule=health.complexity
 bin/qmx check src/ --only-rule=computed.health#health.complexity
 ```
 
+Selectors must match a registered producer, group, or emitted channel. Unknown
+selectors fail closed with exit 3 before stdout receives a report payload.
+Likewise, the owner before `:` in `--rule-opt=RULE:OPTION=VALUE` must be an exact
+producer rule, not a group or channel.
+
 ### `--rule-opt`
 
 Override rule options from the command line. Format: `rule-name:option=value`. Can be repeated:
@@ -614,12 +627,12 @@ Many rules have dedicated CLI flags for quick threshold adjustments:
 
 === "Maintainability"
 
-| Flag                 | Rule                  | Option       |
-| -------------------- | --------------------- | ------------ |
-| `--mi-warning=N`     | maintainability.index | warning      |
-| `--mi-error=N`       | maintainability.index | error        |
-| `--mi-min-loc=N`     | maintainability.index | minLoc       |
-| `--mi-exclude-tests` | maintainability.index | excludeTests |
+| Flag                    | Rule                  | Option        |
+| ----------------------- | --------------------- | ------------- |
+| `--mi-warning=N`        | maintainability.index | warning       |
+| `--mi-error=N`          | maintainability.index | error         |
+| `--mi-min-statements=N` | maintainability.index | minStatements |
+| `--mi-exclude-tests`    | maintainability.index | excludeTests  |
 
 === "Code Smell"
 
@@ -679,9 +692,6 @@ bin/qmx graph:export src/ -o graph.dot
 # Export as JSON (aggregated adjacency list with metadata)
 bin/qmx graph:export src/ --format=json -o graph.json
 
-# Export as Mermaid
-bin/qmx graph:export src/ --format=mermaid -o graph.md
-
 # Filter by namespace
 bin/qmx graph:export src/ --namespace=App\\Service --namespace=App\\Repository
 
@@ -698,11 +708,15 @@ bin/qmx graph:export src/ --no-clusters
 | Option                   | Description                                             |
 | ------------------------ | ------------------------------------------------------- |
 | `-o`, `--output=FILE`    | Output file (default: stdout)                           |
-| `-f`, `--format=FORMAT`  | `dot` (default), `json`, or `mermaid`                   |
+| `-f`, `--format=FORMAT`  | `dot` (default) or `json`                               |
 | `-d`, `--direction=DIR`  | Graph direction: `LR`, `TB`, `RL`, `BT` (default: `LR`) |
 | `--no-clusters`          | Do not group nodes by namespace                         |
 | `--namespace=NS`         | Include only these namespaces (repeatable)              |
 | `--exclude-namespace=NS` | Exclude these namespaces (repeatable)                   |
+
+If any discovered file fails parsing or processing, `graph:export` exits 4 and
+emits no partial graph. It does not create a missing output file and preserves
+an existing destination byte-for-byte.
 
 ### hook:install
 

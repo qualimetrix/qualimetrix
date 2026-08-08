@@ -3,11 +3,19 @@
 **Analysis date:** 2026-03-14 (automated cross-tool validation update)
 **Tools:** Qualimetrix (dev), phpmd 2.15.0, phpmetrics 2.9.1, pdepend 2.16.2
 
+> **Status of metric-agreement evidence (2026-08-08): untrusted and stale.** The
+> March cross-tool run used short class names, stale Qualimetrix class keys,
+> unchecked subprocess results, and implicit comparison of different metric
+> contracts. Its percentages and raw `cross-tool-comparison.json` artifact, if
+> present in a local checkout, must not be cited as validation. The repaired
+> script reports FQN/value coverage and separates comparable, contextual, and
+> unsupported rows. No replacement live run has been performed yet.
+
 ---
 
 ## Executive Summary
 
-Qualimetrix is **9-39x faster** than competitors on large codebases (sequential and parallel respectively) and has the deepest set of OOP metrics. Automated cross-tool validation on 4 benchmark projects (5138 methods, 846 classes) confirms:
+Qualimetrix was measured as **9-39x faster** than competitors on the historical benchmark environment (sequential and parallel respectively) and has a broad set of OOP metrics. The former automated metric-agreement claims below are retained only as an audit trail and are **not trusted evidence**:
 
 - **NOC**: 99.8% exact match with pdepend
 - **NPath**: 95.1% exact match with pdepend
@@ -89,13 +97,15 @@ Phase breakdown (profiler, no cache):
 
 ---
 
-## 2. Metric Accuracy: Automated Cross-Tool Validation
+## 2. Historical Metric Accuracy Run (Untrusted)
 
-Automated comparison on 4 benchmark projects: monolog, nikic/php-parser, symfony/console, doctrine/orm. Total: 5138 methods, 846 classes compared.
+The March comparison attempted to cover 4 benchmark projects: monolog, nikic/php-parser, symfony/console, doctrine/orm. Its reported totals and percentages are invalidated by the methodology defects listed at the top of this document.
 
-Script: `scripts/cross-tool-comparison.py`. Raw data: `docs/internal/cross-tool-comparison.json`.
+Repaired script: `scripts/cross-tool-comparison.py`. The historical local `docs/internal/cross-tool-comparison.json`, where present, uses the untrusted v1 methodology. A trustworthy replacement must be produced by a new explicit live run and reviewed before this section is updated.
 
-### 2.1 Summary Table
+### 2.1 Withdrawn Summary Table
+
+The table is preserved to show what was previously claimed. Every percentage is stale and untrusted; classifications were also not enforced by the old script.
 
 | Metric              | Tool pair                           | Compared | Exact (±1%) | Close (±10%) | Divergent (>10%) | Classification      |
 | ------------------- | ----------------------------------- | -------: | ----------: | -----------: | ---------------: | ------------------- |
@@ -207,27 +217,27 @@ Impact: DIT divergence dropped from **26.8% → 14.5%** (remaining = standard PH
 
 ## 4. Feature Comparison
 
-| Feature                                       | Qualimetrix | phpmd                  | phpmetrics | pdepend      |
-| --------------------------------------------- | :---------: | :--------------------: | :--------: | :----------: |
-| Parallel processing                           | ✅          | ❌                     | ❌         | ❌           |
-| Baseline (ignore known issues)                | ✅          | ✅                     | ❌         | ❌           |
-| Git integration (--diff/--analyze=git:staged) | ✅          | ❌                     | ✅         | ❌           |
-| Inline suppression (@qmx-ignore)              | ✅          | ✅ (@SuppressWarnings) | ❌         | ❌           |
-| SARIF output                                  | ✅          | ✅                     | ❌         | ❌           |
-| GitLab Code Quality                           | ✅          | ❌                     | ❌         | ❌           |
-| Checkstyle output                             | ✅          | ✅                     | ❌         | ❌           |
-| JSON output                                   | ✅          | ✅                     | ✅         | ❌           |
-| HTML reports                                  | ❌          | ✅                     | ✅         | ❌           |
-| Graph visualization                           | ✅ (DOT)    | ❌                     | ✅ (HTML)  | ✅ (SVG)     |
-| AST caching                                   | ✅          | ✅                     | ❌         | ❌           |
-| Analysis rules with thresholds                | ✅          | ✅                     | ❌         | ❌           |
-| Custom rules                                  | Planned     | ✅                     | ❌         | ❌           |
-| PHP 8.4 support                               | ✅          | ⚠️ (deprecated)        | ✅         | ⚠️ (crashes) |
-| Raw metric export                             | ✅ (JSON)   | ❌                     | ✅ (JSON)  | ✅ (XML)     |
-| Code duplication                              | ✅          | ❌                     | ❌         | ❌           |
-| Security rules                                | ✅*         | ❌                     | ❌         | ❌           |
-| Dead code detection                           | ✅**        | ✅ (unused params)     | ❌         | ❌           |
-| Type coverage metrics                         | ✅          | ❌                     | ❌         | ❌           |
+| Feature                                 | Qualimetrix | phpmd                  | phpmetrics | pdepend      |
+| --------------------------------------- | :---------: | :--------------------: | :--------: | :----------: |
+| Parallel processing                     | ✅          | ❌                     | ❌         | ❌           |
+| Baseline (ignore known issues)          | ✅          | ✅                     | ❌         | ❌           |
+| Git integration (`--report=git:staged`) | ✅          | ❌                     | ✅         | ❌           |
+| Inline suppression (@qmx-ignore)        | ✅          | ✅ (@SuppressWarnings) | ❌         | ❌           |
+| SARIF output                            | ✅          | ✅                     | ❌         | ❌           |
+| GitLab Code Quality                     | ✅          | ❌                     | ❌         | ❌           |
+| Checkstyle output                       | ✅          | ✅                     | ❌         | ❌           |
+| JSON output                             | ✅          | ✅                     | ✅         | ❌           |
+| HTML reports                            | ❌          | ✅                     | ✅         | ❌           |
+| Graph visualization                     | ✅ (DOT)    | ❌                     | ✅ (HTML)  | ✅ (SVG)     |
+| AST caching                             | ✅          | ✅                     | ❌         | ❌           |
+| Analysis rules with thresholds          | ✅          | ✅                     | ❌         | ❌           |
+| Custom rules                            | Planned     | ✅                     | ❌         | ❌           |
+| PHP 8.4 support                         | ✅          | ⚠️ (deprecated)        | ✅         | ⚠️ (crashes) |
+| Raw metric export                       | ✅ (JSON)   | ❌                     | ✅ (JSON)  | ✅ (XML)     |
+| Code duplication                        | ✅          | ❌                     | ❌         | ❌           |
+| Security rules                          | ✅*         | ❌                     | ❌         | ❌           |
+| Dead code detection                     | ✅**        | ✅ (unused params)     | ❌         | ❌           |
+| Type coverage metrics                   | ✅          | ❌                     | ❌         | ❌           |
 
 \* Qualimetrix has pattern-based security rules: SQL injection, XSS, command injection, hardcoded credentials, sensitive parameter detection. No taint analysis (leave to Psalm/SonarQube).
 \** Unreachable code detection and unused private members (methods, properties, constants). Unused variables TBD.
@@ -271,10 +281,12 @@ Qualimetrix stops DIT counting at standard PHP classes (Exception, DateTime, etc
 - **Method:** Cold cache (no AST cache), sequential tool execution, `time` via Python `time.time()`
 - **Note:** Each tool ran after the previous completed (no concurrent benchmarks). Disk pagecache was not explicitly purged between runs.
 
-## Appendix C: Cross-Tool Validation (2026-03-14)
+## Appendix C: Withdrawn Cross-Tool Validation (2026-03-14)
+
+This appendix describes the invalidated v1 run. It is not current validation evidence.
 
 **Script:** `scripts/cross-tool-comparison.py`
-**Raw data:** `docs/internal/cross-tool-comparison.json`
+**Raw data:** local `docs/internal/cross-tool-comparison.json` when present (**untrusted v1; do not cite**)
 
 **Benchmark projects:**
 - monolog/monolog — 121 classes, 669 methods

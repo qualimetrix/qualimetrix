@@ -80,11 +80,20 @@ Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candid
 ### Explain a boundary
 
 ```bash
-bin/qmx baseline:explain 'method:App\\OrderService::calculate' src/ --baseline=baseline.json
-bin/qmx baseline:explain 'method:App\\OrderService::calculate' src/ --channel='complexity.cyclomatic#complexity.cyclomatic.method'
+bin/qmx baseline:explain 'method:App\OrderService::calculate' src/ --baseline=baseline.json
+bin/qmx baseline:explain 'method:App\OrderService::calculate' src/ --channel='complexity.cyclomatic#complexity.cyclomatic.method'
 ```
 
 `baseline:explain <symbol> [<paths>...]` shows the accepted level, what fires now, the configured threshold, and any `@qmx-threshold` override. Use `--baseline=BASELINE` to include accepted levels and `--channel=CHANNEL` to restrict the answer.
+
+A symbol absent from both the current analysis and the baseline is invalid input,
+not a clean result. A baseline-only symbol remains explainable and is labelled as
+absent from the current scope or result.
+
+All lifecycle commands require complete analysis. A parse or processing failure
+returns exit 4 before any baseline is interpreted, classified, created, or
+mutated. `--force` does not override this invariant; existing destinations remain
+byte-identical.
 
 ## Stale, inert, and resolved entries
 

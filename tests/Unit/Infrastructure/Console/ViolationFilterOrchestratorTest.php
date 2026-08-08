@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\RuleExecution\RuleExclusionStats;
@@ -33,6 +34,7 @@ use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -65,7 +67,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $orchestrator->filterAndReport(
             $this->createAnalysisResult(),
             $this->createInput(),
-            $output,
+            self::diagnosticConsole($output),
             $this->createScopeResolution(),
         );
 
@@ -84,7 +86,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $orchestrator->filterAndReport(
             $this->createAnalysisResult(),
             $this->createInput(),
-            $output,
+            self::diagnosticConsole($output),
             $this->createScopeResolution(),
         );
 
@@ -105,7 +107,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $orchestrator->filterAndReport(
             $this->createAnalysisResult(),
             $this->createInput(),
-            $output,
+            self::diagnosticConsole($output),
             $this->createScopeResolution(),
         );
 
@@ -124,7 +126,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $orchestrator->filterAndReport(
             $this->createAnalysisResult(),
             $this->createInput(),
-            $output,
+            self::diagnosticConsole($output),
             $this->createScopeResolution(),
         );
 
@@ -153,7 +155,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $orchestrator->filterAndReport(
             $this->createAnalysisResult(),
             $this->createInput(['--show-suppressed' => true]),
-            $output,
+            self::diagnosticConsole($output),
             $this->createScopeResolution(),
         );
 
@@ -186,7 +188,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $orchestrator->filterAndReport(
             $this->createAnalysisResult(),
             $this->createInput(),
-            $output,
+            self::diagnosticConsole($output),
             $this->createScopeResolution(),
         );
 
@@ -217,7 +219,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $result = $this->createOrchestrator(new RuleExclusionStats())->filterAndReport(
             $this->createAnalysisResult([$stillFiring]),
             $this->createInput(['--baseline' => $baselinePath]),
-            $output,
+            self::diagnosticConsole($output),
             $this->createScopeResolution(),
         );
 
@@ -252,7 +254,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $this->createOrchestrator(new RuleExclusionStats())->filterAndReport(
             $this->createAnalysisResult([$stillFiring]),
             $this->createInput(['--baseline' => $baselinePath, '--show-resolved' => true]),
-            $output,
+            self::diagnosticConsole($output),
             $this->createScopeResolution(),
         );
 
@@ -313,6 +315,14 @@ final class ViolationFilterOrchestratorTest extends TestCase
         return new ViolationFilterOrchestrator($pipeline, $ruleExecutor);
     }
 
+    private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput
+    {
+        $output = new ConsoleOutput($diagnostics->getVerbosity(), false);
+        $output->setErrorOutput($diagnostics);
+
+        return $output;
+    }
+
     /**
      * @param array<string, mixed> $options
      */
@@ -340,10 +350,9 @@ final class ViolationFilterOrchestratorTest extends TestCase
 
         return new AnalysisResult(
             violations: $violations,
-            filesAnalyzed: 1,
-            filesSkipped: 0,
             duration: 0.1,
             metrics: $repository,
+            coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
         );
     }
 

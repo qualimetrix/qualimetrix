@@ -1,0 +1,2 @@
+Cache cleared.
+{"version":"1.0.0","symbols":[],"summary":{"filesAnalyzed":1,"filesSkipped":0}}

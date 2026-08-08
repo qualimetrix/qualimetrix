@@ -25,16 +25,24 @@ final class LocVisitor extends NodeVisitorAbstract implements ResettableVisitorI
      */
     private array $classRanges = [];
 
+    /** @var array<string, list<array{startLine: int, endLine: int}>> */
+    private array $namespaceRanges = [];
+
     public function reset(): void
     {
         $this->currentNamespace = null;
         $this->classRanges = [];
+        $this->namespaceRanges = [];
     }
 
     public function enterNode(Node $node): ?int
     {
         if ($node instanceof Namespace_) {
             $this->currentNamespace = $node->name?->toString() ?? '';
+            $this->namespaceRanges[$this->currentNamespace][] = [
+                'startLine' => $node->getStartLine(),
+                'endLine' => $node->getEndLine(),
+            ];
 
             return null;
         }
@@ -69,6 +77,14 @@ final class LocVisitor extends NodeVisitorAbstract implements ResettableVisitorI
     public function getClassRanges(): array
     {
         return $this->classRanges;
+    }
+
+    /**
+     * @return array<string, list<array{startLine: int, endLine: int}>>
+     */
+    public function getNamespaceRanges(): array
+    {
+        return $this->namespaceRanges;
     }
 
     private function buildClassFqn(string $className): string

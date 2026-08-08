@@ -338,6 +338,36 @@ PHP;
     }
 
     #[Test]
+    public function itProvidesExactSourceSpanMetricsForEveryNamespaceBlock(): void
+    {
+        $code = <<<'PHP'
+<?php
+namespace One {
+// comment
+class A {}
+}
+namespace Two {
+
+function run(): void {}
+}
+namespace Empty {}
+PHP;
+
+        $fileMetrics = $this->collectMetrics($code);
+        $byNamespace = [];
+        foreach ($this->collector->getNamespacesWithMetrics() as $namespaceMetrics) {
+            $byNamespace[$namespaceMetrics->namespace] = $namespaceMetrics->metrics;
+        }
+
+        self::assertSame(10, $fileMetrics->get('loc'));
+        self::assertSame(4, $byNamespace['One']->get('loc'));
+        self::assertSame(1, $byNamespace['One']->get('cloc'));
+        self::assertSame(4, $byNamespace['Two']->get('loc'));
+        self::assertSame(3, $byNamespace['Two']->get('lloc'));
+        self::assertSame(1, $byNamespace['Empty']->get('loc'));
+    }
+
+    #[Test]
     public function itResetsState(): void
     {
         // LocCollector doesn't have state to reset, but we test it doesn't break

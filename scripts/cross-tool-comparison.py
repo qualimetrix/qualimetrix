@@ -1,22 +1,14 @@
 #!/usr/bin/env python3
-"""
-Cross-tool metric validation: Qualimetrix vs pdepend vs phpmetrics.
+"""Fail-closed, FQN-aware cross-tool metric comparison.
 
-Runs all three tools on benchmark projects and compares metric values
-at method-level and class-level granularity.
+The live run is intentionally separate from the deterministic fixture suite::
 
-Usage:
-    python3 scripts/cross-tool-comparison.py [--projects=monolog,php-parser,...] [--json=output.json]
+    composer test:cross-tool
+    python3 scripts/cross-tool-comparison.py --json=/tmp/qmx-comparison.json
 
-Projects (default: monolog, php-parser, symfony-console, doctrine-orm):
-    monolog          — small, clean OOP
-    php-parser       — medium, complex algorithms
-    symfony-console  — medium, framework component
-    doctrine-orm     — large, complex domain
-
-Requirements:
-    pdepend 2.16.2+  — ~/.composer/vendor/bin/pdepend
-    phpmetrics 2.9.1 — ~/.composer/vendor/bin/phpmetrics
+The comparison is evidence, not an oracle.  Every metric pair is classified as
+``comparable``, ``contextual`` (similar label, different contract), or
+``unsupported``.  Agreement verdicts are emitted only for comparable pairs.
 """
 
 import argparse
@@ -28,9 +20,10 @@ import sys
 import tempfile
 import xml.etree.ElementTree as ET
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Optional
+
 
 PROJECT_ROOT = Path(__file__).parent.parent
 COMPOSER_BIN = Path.home() / ".composer/vendor/bin"
@@ -43,666 +36,470 @@ PROJECTS = {
     "doctrine-orm": BENCHMARK_VENDOR / "doctrine/orm/src",
 }
 
-# Metric comparison definitions
-# (qmx_key, pdepend_attr, phpmetrics_key, level, description)
-METHOD_METRICS = [
-    ("ccn", ["ccn", "ccn2"], None, "Cyclomatic Complexity"),
-    ("npath", ["npath"], None, "NPath Complexity"),
-    ("halstead.volume", ["hv"], None, "Halstead Volume"),
-    ("halstead.difficulty", ["hd"], None, "Halstead Difficulty"),
-    ("halstead.effort", ["he"], None, "Halstead Effort"),
-    ("halstead.bugs", ["hb"], None, "Halstead Bugs"),
-    ("mi", ["mi"], None, "Maintainability Index"),
+COMPARABLE = "comparable"
+CONTEXTUAL = "contextual"
+UNSUPPORTED = "unsupported"
+
+
+class ComparisonError(RuntimeError):
+    """The run cannot produce trustworthy comparison evidence."""
+
+
+@dataclass(frozen=True)
+class ComparisonSpec:
+    qmx_key: str
+    other_tool: str
+    other_key: Optional[str]
+    level: str
+    description: str
+    classification: str
+    rationale: str
+
+    @property
+    def tool_pair(self) -> str:
+        key = self.other_key if self.other_key is not None else "unsupported"
+        return f"Qualimetrix vs {self.other_tool}({key})"
+
+
+# This table is deliberately explicit. A new row requires a decision about
+# semantic equivalence; sharing a familiar metric name is not enough.
+COMPARISON_SPECS = [
+    ComparisonSpec("ccn", "pdepend", "ccn", "method", "Cyclomatic Complexity", CONTEXTUAL,
+                   "PDepend CCN and Qualimetrix CCN2+ count different decisions."),
+    ComparisonSpec("ccn", "pdepend", "ccn2", "method", "Cyclomatic Complexity", CONTEXTUAL,
+                   "Qualimetrix extends CCN2 for modern PHP constructs."),
+    ComparisonSpec("npath", "pdepend", "npath", "method", "NPath Complexity", CONTEXTUAL,
+                   "Expression and match semantics differ between implementations."),
+    ComparisonSpec("halstead.volume", "pdepend", "hv", "method", "Halstead Volume", CONTEXTUAL,
+                   "The operator vocabularies intentionally differ."),
+    ComparisonSpec("halstead.difficulty", "pdepend", "hd", "method", "Halstead Difficulty", CONTEXTUAL,
+                   "The operator vocabularies intentionally differ."),
+    ComparisonSpec("halstead.effort", "pdepend", "he", "method", "Halstead Effort", CONTEXTUAL,
+                   "The operator vocabularies intentionally differ."),
+    ComparisonSpec("halstead.bugs", "pdepend", "hb", "method", "Halstead Bugs", CONTEXTUAL,
+                   "The operator vocabularies intentionally differ."),
+    ComparisonSpec("mi", "pdepend", "mi", "method", "Maintainability Index", CONTEXTUAL,
+                   "Formula inputs and normalization are not identical."),
+    ComparisonSpec("methodStatementCount", "pdepend", "lloc", "method", "Method statements / LLOC", CONTEXTUAL,
+                   "Statement count is not the same contract as logical lines of code."),
+    ComparisonSpec("cognitive", "pdepend", None, "method", "Cognitive Complexity", UNSUPPORTED,
+                   "PDepend does not report a corresponding method metric."),
+    ComparisonSpec("wmc", "pdepend", "wmc", "class", "Weighted Methods per Class", CONTEXTUAL,
+                   "The CCN variant propagates into WMC."),
+    ComparisonSpec("wmc", "phpmetrics", "wmc", "class", "Weighted Methods per Class", CONTEXTUAL,
+                   "The CCN variant propagates into WMC."),
+    ComparisonSpec("dit", "pdepend", "dit", "class", "Depth of Inheritance Tree", CONTEXTUAL,
+                   "External-runtime inheritance boundaries differ."),
+    ComparisonSpec("noc", "pdepend", "nocc", "class", "Number of Children", COMPARABLE,
+                   "Both count direct project children."),
+    ComparisonSpec("cbo", "pdepend", "cbo", "class", "Coupling Between Objects", CONTEXTUAL,
+                   "Dependency-type coverage differs substantially."),
+    ComparisonSpec("ca", "pdepend", "ca", "class", "Afferent Coupling", CONTEXTUAL,
+                   "PDepend omits some declaration kinds and references."),
+    ComparisonSpec("ce", "pdepend", "ce", "class", "Efferent Coupling", CONTEXTUAL,
+                   "Dependency-type coverage differs substantially."),
+    ComparisonSpec("ca", "phpmetrics", "afferentCoupling", "class", "Afferent Coupling", CONTEXTUAL,
+                   "The dependency graphs have different edge contracts."),
+    ComparisonSpec("ce", "phpmetrics", "efferentCoupling", "class", "Efferent Coupling", CONTEXTUAL,
+                   "The dependency graphs have different edge contracts."),
+    ComparisonSpec("classLoc", "pdepend", "loc", "class", "Class physical LOC", COMPARABLE,
+                   "Both report physical source span for the class."),
+    ComparisonSpec("classLoc", "phpmetrics", "loc", "class", "Class physical LOC", COMPARABLE,
+                   "Both report physical source span for the class."),
+    ComparisonSpec("instability", "phpmetrics", "instability", "class", "Instability", CONTEXTUAL,
+                   "Different Ca/Ce graphs feed the ratio."),
+    ComparisonSpec("classRank", "phpmetrics", "pageRank", "class", "ClassRank / PageRank", CONTEXTUAL,
+                   "The algorithms and dependency graphs differ."),
+    ComparisonSpec("lcom", "phpmetrics", "lcom", "class", "LCOM", CONTEXTUAL,
+                   "Qualimetrix uses LCOM4; phpmetrics uses another LCOM variant."),
+    ComparisonSpec("mi.avg", "phpmetrics", "mi", "class", "Average Maintainability Index", CONTEXTUAL,
+                   "Class aggregation, formula inputs, and normalization differ."),
+    ComparisonSpec("mi.min", "phpmetrics", None, "class", "Minimum method MI", UNSUPPORTED,
+                   "phpmetrics has no class field for minimum method MI."),
 ]
 
-CLASS_METRICS = [
-    ("wmc", ["wmc"], "wmc", "Weighted Methods per Class"),
-    ("dit", ["dit"], None, "Depth of Inheritance Tree"),
-    ("noc", ["nocc"], None, "Number of Children"),
-    ("cbo", ["cbo"], None, "Coupling Between Objects"),
-    ("ca", ["ca"], "afferentCoupling", "Afferent Coupling"),
-    ("ce", ["ce"], "efferentCoupling", "Efferent Coupling"),
-    ("loc", ["loc"], "loc", "Lines of Code"),
-    ("lloc", ["lloc"], "lloc", "Logical Lines of Code"),
-    ("instability", [], "instability", "Instability"),
-    ("classRank", [], "pageRank", "ClassRank / PageRank"),
-    ("lcom", [], "lcom", "LCOM"),
-    ("mi", [], "mi", "Maintainability Index (class-level)"),
-]
 
-
-def safe_float(val: Any) -> Optional[float]:
-    """Convert value to float, returning None for non-numeric."""
-    if val is None:
+def safe_float(value: Any) -> Optional[float]:
+    if value is None:
         return None
     try:
-        f = float(val)
-        if math.isnan(f) or math.isinf(f):
-            return None
-        return f
-    except (ValueError, TypeError):
+        number = float(value)
+    except (TypeError, ValueError):
         return None
+    return number if math.isfinite(number) else None
 
 
-# --- Tool runners ---
+def canonical_fqn(name: str) -> str:
+    return name.strip().lstrip("\\")
+
+
+def insert_unique(target: dict, key: str, value: dict, tool: str, level: str) -> None:
+    if not key:
+        raise ComparisonError(f"{tool} emitted an empty {level} identity")
+    if key in target:
+        raise ComparisonError(f"{tool} emitted duplicate {level} identity: {key}")
+    target[key] = value
+
+
+def require_complete_qmx_coverage(data: dict) -> None:
+    """Enforce the MetricsJsonFormatter top-level coverage contract."""
+    if "coverage" not in data:
+        raise ComparisonError("Qualimetrix artifact has no coverage contract")
+    coverage = data["coverage"]
+    if not isinstance(coverage, dict) or coverage.get("complete") is not True:
+        raise ComparisonError("Qualimetrix reports missing or incomplete analysis coverage")
+
+
+def parse_qmx_artifact(raw: str) -> tuple[dict, dict]:
+    """Parse and index the complete MetricsJsonFormatter stdout document."""
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as error:
+        raise ComparisonError(f"Qualimetrix stdout is not one JSON document: {error}") from error
+    if not isinstance(data, dict) or not isinstance(data.get("symbols"), list):
+        raise ComparisonError("Qualimetrix artifact must contain a symbols array")
+    summary = data.get("summary")
+    if not isinstance(summary, dict) or not isinstance(summary.get("filesAnalyzed"), int):
+        raise ComparisonError("Qualimetrix artifact has no complete summary")
+    require_complete_qmx_coverage(data)
+
+    classes: dict[str, dict] = {}
+    methods: dict[str, dict] = {}
+    for symbol in data["symbols"]:
+        if not isinstance(symbol, dict) or not isinstance(symbol.get("metrics"), dict):
+            raise ComparisonError("Qualimetrix emitted a malformed symbol")
+        name = canonical_fqn(str(symbol.get("name", "")))
+        if symbol.get("type") == "class":
+            insert_unique(classes, name, symbol["metrics"], "Qualimetrix", "class")
+        elif symbol.get("type") == "method":
+            insert_unique(methods, name, symbol["metrics"], "Qualimetrix", "method")
+    if not classes and not methods:
+        raise ComparisonError("Qualimetrix artifact contains no class or method metrics")
+    indexed = {"classes": classes, "methods": methods, "collisions": {"classes": 0, "methods": 0}}
+    return data, indexed
+
+
+def parse_qmx_json(raw: str) -> dict:
+    """Parse a complete Qualimetrix artifact and return its symbol index."""
+    _, indexed = parse_qmx_artifact(raw)
+    return indexed
+
+
+def pdepend_class_fqn(package_name: str, class_name: str) -> str:
+    class_name = canonical_fqn(class_name)
+    package_name = canonical_fqn(package_name)
+    if "\\" in class_name or not package_name or package_name in {"default", "+global"}:
+        return class_name
+    return f"{package_name}\\{class_name}"
+
+
+def parse_pdepend_xml(path: Path) -> dict:
+    try:
+        root = ET.parse(path).getroot()
+    except (ET.ParseError, OSError) as error:
+        raise ComparisonError(f"PDepend artifact is not valid XML: {error}") from error
+    classes: dict[str, dict] = {}
+    methods: dict[str, dict] = {}
+    for package in root.findall(".//package"):
+        package_name = package.get("name", "")
+        for tag in ("class", "interface", "trait"):
+            for cls in package.findall(tag):
+                class_name = cls.get("name")
+                if not class_name:
+                    raise ComparisonError("PDepend emitted a class without a name")
+                fqn = pdepend_class_fqn(package_name, class_name)
+                insert_unique(classes, fqn, dict(cls.attrib), "PDepend", "class")
+                for method in cls.findall("method"):
+                    method_name = method.get("name")
+                    if not method_name:
+                        raise ComparisonError(f"PDepend emitted an unnamed method in {fqn}")
+                    insert_unique(methods, f"{fqn}::{method_name}", dict(method.attrib), "PDepend", "method")
+    if not classes:
+        raise ComparisonError("PDepend artifact contains no class-like symbols")
+    return {"classes": classes, "methods": methods, "collisions": {"classes": 0, "methods": 0}}
+
+
+def parse_phpmetrics_json(path: Path) -> dict:
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError) as error:
+        raise ComparisonError(f"phpmetrics artifact is not valid JSON: {error}") from error
+    if not isinstance(data, dict):
+        raise ComparisonError("phpmetrics artifact must be a JSON object")
+    classes: dict[str, dict] = {}
+    for artifact_key, entry in data.items():
+        if not isinstance(entry, dict) or "ClassMetric" not in str(entry.get("_type", "")):
+            continue
+        fqn = canonical_fqn(str(entry.get("name") or artifact_key))
+        insert_unique(classes, fqn, entry, "phpmetrics", "class")
+    if not classes:
+        raise ComparisonError("phpmetrics artifact contains no class metrics")
+    return {"classes": classes, "methods": {}, "collisions": {"classes": 0, "methods": 0}}
+
+
+def execute(cmd: list[str], tool: str, valid_codes: set[int], artifact: Optional[Path] = None) -> subprocess.CompletedProcess:
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600,
+                                env={**os.environ, "PHP_CS_FIXER_IGNORE_ENV": "1"})
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise ComparisonError(f"{tool} process failed: {error}") from error
+    if result.returncode not in valid_codes:
+        raise ComparisonError(
+            f"{tool} exited with {result.returncode}; stderr: {result.stderr.strip()[:500]}"
+        )
+    if artifact is not None and (not artifact.is_file() or artifact.stat().st_size == 0):
+        raise ComparisonError(f"{tool} did not produce the required artifact: {artifact}")
+    return result
+
 
 def run_qmx(project_path: Path) -> dict:
-    """Run Qualimetrix and return {classes: {name: metrics}, methods: {name: metrics}}."""
-    cmd = [
-        "php", "-d", "memory_limit=2G",
-        str(PROJECT_ROOT / "bin/qmx"), "check", str(project_path),
-        "--format=metrics", "--workers=1",
-        "--disable-rule=duplication.code-duplication",
-        "--disable-rule=architecture.circular-dependency",
-    ]
-
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-    stdout = result.stdout.strip()
-
-    if not stdout:
-        raise RuntimeError(f"Qualimetrix produced no output. stderr: {result.stderr[:500]}")
-
-    data = json.loads(stdout)
-    classes = {}
-    methods = {}
-
-    for symbol in data.get("symbols", []):
-        sym_type = symbol.get("type")
-        name = symbol.get("name", "")
-        metrics = symbol.get("metrics", {})
-
-        if sym_type == "class":
-            short_name = name.rsplit("\\", 1)[-1] if "\\" in name else name
-            classes[short_name] = metrics
-        elif sym_type == "method":
-            # Format: Namespace\Class::method
-            if "::" in name:
-                fqcn, method_name = name.rsplit("::", 1)
-                class_short = fqcn.rsplit("\\", 1)[-1] if "\\" in fqcn else fqcn
-                key = f"{class_short}::{method_name}"
-                methods[key] = metrics
-            else:
-                # Functions
-                methods[name] = metrics
-
-    return {"classes": classes, "methods": methods}
+    cmd = ["php", "-d", "memory_limit=2G", str(PROJECT_ROOT / "bin/qmx"), "check", str(project_path),
+           "--format=metrics", "--workers=1", "--disable-rule=duplication.code-duplication",
+           "--disable-rule=architecture.circular-dependency"]
+    result = execute(cmd, "Qualimetrix", {0, 1, 2, 4})
+    document, data = parse_qmx_artifact(result.stdout)
+    if result.returncode == 4:
+        # Exit 4 normally means incomplete analysis. Keep the artifact usable
+        # only when the canonical structured contract explicitly says otherwise.
+        require_complete_qmx_coverage(document)
+    return data
 
 
 def run_pdepend(project_path: Path) -> dict:
-    """Run pdepend and return {classes: {name: metrics}, methods: {name: metrics}}."""
-    with tempfile.NamedTemporaryFile(suffix=".xml", delete=False) as f:
-        summary_file = f.name
-
-    cmd = [
-        str(COMPOSER_BIN / "pdepend"),
-        f"--summary-xml={summary_file}",
-        str(project_path),
-    ]
-
+    with tempfile.NamedTemporaryFile(suffix=".xml", delete=False) as handle:
+        artifact = Path(handle.name)
     try:
-        subprocess.run(
-            cmd, capture_output=True, text=True, timeout=600,
-            env={**os.environ, "PHP_CS_FIXER_IGNORE_ENV": "1"},
-        )
-
-        tree = ET.parse(summary_file)
-        root = tree.getroot()
-
-        classes = {}
-        methods = {}
-
-        for pkg in root.findall(".//package"):
-            for cls in pkg.findall("class"):
-                class_name = cls.get("name")
-                if not class_name:
-                    continue
-                classes[class_name] = dict(cls.attrib)
-
-                for method in cls.findall("method"):
-                    method_name = method.get("name")
-                    if method_name:
-                        key = f"{class_name}::{method_name}"
-                        methods[key] = dict(method.attrib)
-
-            # Also check interfaces and traits
-            for tag in ("interface", "trait"):
-                for cls in pkg.findall(tag):
-                    class_name = cls.get("name")
-                    if not class_name:
-                        continue
-                    classes[class_name] = dict(cls.attrib)
-                    for method in cls.findall("method"):
-                        method_name = method.get("name")
-                        if method_name:
-                            key = f"{class_name}::{method_name}"
-                            methods[key] = dict(method.attrib)
-
-        return {"classes": classes, "methods": methods}
+        execute([str(COMPOSER_BIN / "pdepend"), f"--summary-xml={artifact}", str(project_path)],
+                "PDepend", {0}, artifact)
+        return parse_pdepend_xml(artifact)
     finally:
-        if os.path.exists(summary_file):
-            os.unlink(summary_file)
+        artifact.unlink(missing_ok=True)
 
 
 def run_phpmetrics(project_path: Path) -> dict:
-    """Run phpmetrics and return {classes: {name: metrics}}.
-
-    phpmetrics 2.9.x outputs a flat JSON dict where keys are FQN class names
-    and values are metric dicts (with _type=Hal\\Metric\\ClassMetric for classes).
-    """
-    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
-        json_file = f.name
-
-    cmd = [
-        str(COMPOSER_BIN / "phpmetrics"),
-        f"--report-json={json_file}",
-        str(project_path),
-    ]
-
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as handle:
+        artifact = Path(handle.name)
     try:
-        subprocess.run(cmd, capture_output=True, text=True, timeout=600)
-
-        with open(json_file) as f:
-            data = json.load(f)
-
-        classes = {}
-
-        # phpmetrics 2.9.x: flat dict with FQN keys
-        if isinstance(data, dict):
-            for fqn, entry in data.items():
-                if not isinstance(entry, dict):
-                    continue
-                # Skip namespace entries (shorter dicts) and non-class entries
-                entry_type = entry.get("_type", "")
-                if "ClassMetric" not in entry_type:
-                    continue
-                name = entry.get("name", fqn)
-                short_name = name.rsplit("\\", 1)[-1] if "\\" in name else name
-                if short_name:
-                    classes[short_name] = entry
-
-        return {"classes": classes}
+        execute([str(COMPOSER_BIN / "phpmetrics"), f"--report-json={artifact}", str(project_path)],
+                "phpmetrics", {0}, artifact)
+        return parse_phpmetrics_json(artifact)
     finally:
-        if os.path.exists(json_file):
-            os.unlink(json_file)
+        artifact.unlink(missing_ok=True)
 
-
-# --- Comparison engine ---
 
 @dataclass
 class Divergence:
     symbol: str
-    metric: str
     qmx_value: float
-    other_tool: str
-    other_key: str
     other_value: float
-    pct_diff: float  # percentage difference relative to max(abs(a),abs(b))
+    pct_diff: float
 
 
 @dataclass
 class MetricComparison:
-    metric_name: str
-    description: str
-    level: str  # "method" or "class"
-    tool_pair: str  # e.g. "Qualimetrix vs pdepend(ccn2)"
-    total_compared: int = 0
-    exact_match: int = 0  # delta < 1%
-    close_match: int = 0  # delta 1-10%
-    divergent: int = 0    # delta > 10%
-    top_divergences: list = field(default_factory=list)
+    spec: ComparisonSpec
+    project: str
+    qmx_symbols: int = 0
+    other_symbols: int = 0
+    symbol_intersection: int = 0
+    qmx_only_symbols: int = 0
+    other_only_symbols: int = 0
+    qmx_values: int = 0
+    other_values: int = 0
+    paired_values: int = 0
+    missing_qmx_values: int = 0
+    missing_other_values: int = 0
+    qmx_zero_values: int = 0
+    other_zero_values: int = 0
+    both_zero_pairs: int = 0
+    exact_match: int = 0
+    close_match: int = 0
+    divergent: int = 0
+    collisions: int = 0
+    top_divergences: list[Divergence] = field(default_factory=list)
 
-    def add(self, symbol: str, qmx_val: float, other_val: float,
-            other_tool: str, other_key: str):
-        self.total_compared += 1
-
-        # Percentage diff relative to max absolute value
-        max_abs = max(abs(qmx_val), abs(other_val))
-        if max_abs < 0.001:
-            # Both essentially zero
+    def add_pair(self, symbol: str, qmx_value: float, other_value: float) -> None:
+        self.paired_values += 1
+        self.both_zero_pairs += int(qmx_value == 0 and other_value == 0)
+        if qmx_value == other_value:
             self.exact_match += 1
             return
-
-        pct_diff = abs(qmx_val - other_val) / max_abs * 100
-
-        if pct_diff < 1:
-            self.exact_match += 1
-        elif pct_diff < 10:
+        scale = max(abs(qmx_value), abs(other_value))
+        pct_diff = 100.0 if scale == 0 else abs(qmx_value - other_value) / scale * 100
+        if pct_diff < 10:
             self.close_match += 1
         else:
             self.divergent += 1
+        self.top_divergences.append(Divergence(symbol, qmx_value, other_value, round(pct_diff, 1)))
 
-        if pct_diff >= 5:
-            self.top_divergences.append(Divergence(
-                symbol=symbol,
-                metric=self.metric_name,
-                qmx_value=qmx_val,
-                other_tool=other_tool,
-                other_key=other_key,
-                other_value=other_val,
-                pct_diff=round(pct_diff, 1),
-            ))
-
-    def sort_divergences(self, limit: int = 20):
-        self.top_divergences.sort(key=lambda d: d.pct_diff, reverse=True)
-        self.top_divergences = self.top_divergences[:limit]
+    def trim(self, top_n: int) -> None:
+        self.top_divergences.sort(key=lambda item: (-item.pct_diff, item.symbol))
+        self.top_divergences = self.top_divergences[:top_n]
 
 
-def compare_method_metrics(
-    qmx: dict, pdepend: dict, project_id: str,
-) -> list[MetricComparison]:
-    """Compare method-level metrics between Qualimetrix and pdepend."""
-    results = []
+def compare_spec(spec: ComparisonSpec, qmx: dict, other: dict, project: str, top_n: int) -> MetricComparison:
+    comparison = MetricComparison(spec=spec, project=project)
+    level_key = "classes" if spec.level == "class" else "methods"
+    qmx_symbols = qmx[level_key]
+    other_symbols = other[level_key]
+    comparison.qmx_symbols = len(qmx_symbols)
+    comparison.other_symbols = len(other_symbols)
+    comparison.collisions = qmx["collisions"][level_key] + other["collisions"][level_key]
+    if spec.other_key is None:
+        qmx_numeric_values = [safe_float(metrics.get(spec.qmx_key)) for metrics in qmx_symbols.values()]
+        comparison.qmx_values = sum(value is not None for value in qmx_numeric_values)
+        comparison.qmx_zero_values = sum(value == 0 for value in qmx_numeric_values if value is not None)
+        return comparison
 
-    qmx_methods = qmx.get("methods", {})
-    pdepend_methods = pdepend.get("methods", {})
-
-    # Find common method keys
-    common_keys = set(qmx_methods.keys()) & set(pdepend_methods.keys())
-
-    for qmx_key, pdepend_attrs, _, description in METHOD_METRICS:
-        for pd_attr in pdepend_attrs:
-            comp = MetricComparison(
-                metric_name=qmx_key,
-                description=description,
-                level="method",
-                tool_pair=f"Qualimetrix vs pdepend({pd_attr})",
-            )
-
-            for method_key in sorted(common_keys):
-                qmx_val = safe_float(qmx_methods[method_key].get(qmx_key))
-                pd_val = safe_float(pdepend_methods[method_key].get(pd_attr))
-
-                if qmx_val is not None and pd_val is not None:
-                    comp.add(
-                        f"{project_id}::{method_key}",
-                        qmx_val, pd_val,
-                        "pdepend", pd_attr,
-                    )
-
-            comp.sort_divergences()
-            if comp.total_compared > 0:
-                results.append(comp)
-
-    return results
+    intersection = set(qmx_symbols) & set(other_symbols)
+    comparison.symbol_intersection = len(intersection)
+    comparison.qmx_only_symbols = len(set(qmx_symbols) - set(other_symbols))
+    comparison.other_only_symbols = len(set(other_symbols) - set(qmx_symbols))
+    qmx_numeric_values = [safe_float(metrics.get(spec.qmx_key)) for metrics in qmx_symbols.values()]
+    other_numeric_values = [safe_float(metrics.get(spec.other_key)) for metrics in other_symbols.values()]
+    comparison.qmx_values = sum(value is not None for value in qmx_numeric_values)
+    comparison.other_values = sum(value is not None for value in other_numeric_values)
+    comparison.qmx_zero_values = sum(value == 0 for value in qmx_numeric_values if value is not None)
+    comparison.other_zero_values = sum(value == 0 for value in other_numeric_values if value is not None)
+    for symbol in sorted(intersection):
+        qmx_value = safe_float(qmx_symbols[symbol].get(spec.qmx_key))
+        other_value = safe_float(other_symbols[symbol].get(spec.other_key))
+        if qmx_value is None:
+            comparison.missing_qmx_values += 1
+        if other_value is None:
+            comparison.missing_other_values += 1
+        if qmx_value is not None and other_value is not None:
+            comparison.add_pair(f"{project}::{symbol}", qmx_value, other_value)
+    comparison.trim(top_n)
+    return comparison
 
 
-def compare_class_metrics(
-    qmx: dict, pdepend: dict, phpmetrics: dict, project_id: str,
-) -> list[MetricComparison]:
-    """Compare class-level metrics between Qualimetrix, pdepend, and phpmetrics."""
-    results = []
-
-    qmx_classes = qmx.get("classes", {})
-    pdepend_classes = pdepend.get("classes", {})
-    phpmetrics_classes = phpmetrics.get("classes", {})
-
-    for qmx_key, pdepend_attrs, pm_key, description in CLASS_METRICS:
-        # Qualimetrix vs pdepend
-        common_pd = set(qmx_classes.keys()) & set(pdepend_classes.keys())
-        for pd_attr in pdepend_attrs:
-            comp = MetricComparison(
-                metric_name=qmx_key,
-                description=description,
-                level="class",
-                tool_pair=f"Qualimetrix vs pdepend({pd_attr})",
-            )
-
-            for cls_key in sorted(common_pd):
-                qmx_val = safe_float(qmx_classes[cls_key].get(qmx_key))
-                pd_val = safe_float(pdepend_classes[cls_key].get(pd_attr))
-
-                if qmx_val is not None and pd_val is not None:
-                    comp.add(
-                        f"{project_id}::{cls_key}",
-                        qmx_val, pd_val,
-                        "pdepend", pd_attr,
-                    )
-
-            comp.sort_divergences()
-            if comp.total_compared > 0:
-                results.append(comp)
-
-        # Qualimetrix vs phpmetrics
-        if pm_key:
-            common_pm = set(qmx_classes.keys()) & set(phpmetrics_classes.keys())
-            comp = MetricComparison(
-                metric_name=qmx_key,
-                description=description,
-                level="class",
-                tool_pair=f"Qualimetrix vs phpmetrics({pm_key})",
-            )
-
-            for cls_key in sorted(common_pm):
-                qmx_val = safe_float(qmx_classes[cls_key].get(qmx_key))
-                pm_val = safe_float(phpmetrics_classes[cls_key].get(pm_key))
-
-                if qmx_val is not None and pm_val is not None:
-                    comp.add(
-                        f"{project_id}::{cls_key}",
-                        qmx_val, pm_val,
-                        "phpmetrics", pm_key,
-                    )
-
-            comp.sort_divergences()
-            if comp.total_compared > 0:
-                results.append(comp)
-
-    return results
+def compare_project(project: str, qmx: dict, pdepend: dict, phpmetrics: dict, top_n: int) -> list[MetricComparison]:
+    tools = {"pdepend": pdepend, "phpmetrics": phpmetrics}
+    return [compare_spec(spec, qmx, tools[spec.other_tool], project, top_n) for spec in COMPARISON_SPECS]
 
 
-# --- Reporting ---
-
-def print_report(all_comparisons: list[MetricComparison]) -> None:
-    """Print human-readable comparison report."""
-    # Group by (metric_name, tool_pair)
-    grouped: dict[str, list[MetricComparison]] = defaultdict(list)
-    for comp in all_comparisons:
-        key = f"{comp.metric_name}|{comp.tool_pair}"
-        grouped[key].append(comp)
-
-    for key in sorted(grouped.keys()):
-        comps = grouped[key]
-        metric_name = comps[0].metric_name
-        tool_pair = comps[0].tool_pair
-        level = comps[0].level
-        description = comps[0].description
-
-        # Aggregate across projects
-        total = sum(c.total_compared for c in comps)
-        exact = sum(c.exact_match for c in comps)
-        close = sum(c.close_match for c in comps)
-        divergent = sum(c.divergent for c in comps)
-
-        if total == 0:
-            continue
-
-        exact_pct = exact / total * 100
-        close_pct = close / total * 100
-        div_pct = divergent / total * 100
-
-        # Status indicator
-        if div_pct > 20:
-            status = "!!!"
-        elif div_pct > 5:
-            status = "!!"
-        elif div_pct > 0:
-            status = "!"
-        else:
-            status = "OK"
-
-        print(f"\n{'='*80}")
-        print(f"[{status}] {description} ({metric_name}, {level}-level)")
-        print(f"    {tool_pair}")
-        print(f"{'='*80}")
-        print(f"  Total compared: {total}")
-        print(f"  Exact match (±1%):  {exact:>5d} ({exact_pct:5.1f}%)")
-        print(f"  Close match (±10%): {close:>5d} ({close_pct:5.1f}%)")
-        print(f"  Divergent (>10%):   {divergent:>5d} ({div_pct:5.1f}%)")
-
-        # Collect all divergences across projects
-        all_divs = []
-        for comp in comps:
-            all_divs.extend(comp.top_divergences)
-        all_divs.sort(key=lambda d: d.pct_diff, reverse=True)
-
-        if all_divs:
-            print(f"\n  Top divergences:")
-            for d in all_divs[:15]:
-                sign = "+" if d.qmx_value > d.other_value else "-"
-                print(
-                    f"    {d.symbol}: "
-                    f"Qualimetrix={fmt_val(d.qmx_value)}, "
-                    f"{d.other_tool}({d.other_key})={fmt_val(d.other_value)} "
-                    f"({sign}{d.pct_diff}%)"
-                )
+def aggregate_comparisons(comparisons: list[MetricComparison], top_n: int) -> list[MetricComparison]:
+    grouped: dict[ComparisonSpec, list[MetricComparison]] = defaultdict(list)
+    for comparison in comparisons:
+        grouped[comparison.spec].append(comparison)
+    totals = []
+    numeric_fields = [field_name for field_name in MetricComparison.__dataclass_fields__
+                      if field_name not in {"spec", "project", "top_divergences"}]
+    for spec in COMPARISON_SPECS:
+        aggregate = MetricComparison(spec=spec, project="all")
+        for item in grouped.get(spec, []):
+            for field_name in numeric_fields:
+                setattr(aggregate, field_name, getattr(aggregate, field_name) + getattr(item, field_name))
+            aggregate.top_divergences.extend(item.top_divergences)
+        aggregate.trim(top_n)
+        totals.append(aggregate)
+    return totals
 
 
-def fmt_val(v: float) -> str:
-    """Format a metric value for display."""
-    if abs(v) >= 1000:
-        return f"{v:,.0f}"
-    elif abs(v) >= 10:
-        return f"{v:.1f}"
-    elif abs(v) >= 1:
-        return f"{v:.2f}"
-    else:
-        return f"{v:.4f}"
+def agreement_verdict(comparison: MetricComparison) -> str:
+    if comparison.spec.classification != COMPARABLE:
+        return comparison.spec.classification
+    if comparison.paired_values == 0:
+        return "insufficient-data"
+    divergence_pct = comparison.divergent / comparison.paired_values * 100
+    return "agreement" if divergence_pct <= 5 else "investigate"
 
 
-def print_summary_table(all_comparisons: list[MetricComparison]) -> None:
-    """Print summary table of all metrics."""
-    # Group by (metric_name, tool_pair)
-    grouped: dict[str, list[MetricComparison]] = defaultdict(list)
-    for comp in all_comparisons:
-        key = f"{comp.metric_name}|{comp.tool_pair}"
-        grouped[key].append(comp)
-
-    print(f"\n{'='*80}")
-    print("SUMMARY TABLE")
-    print(f"{'='*80}")
-    print(f"{'Metric':<22} {'Tool pair':<30} {'Total':>6} {'Exact':>7} {'Close':>7} {'Divg':>7} {'Divg%':>6}")
-    print("-" * 86)
-
-    for key in sorted(grouped.keys()):
-        comps = grouped[key]
-        metric_name = comps[0].metric_name
-        tool_pair = comps[0].tool_pair
-
-        total = sum(c.total_compared for c in comps)
-        exact = sum(c.exact_match for c in comps)
-        close = sum(c.close_match for c in comps)
-        divergent = sum(c.divergent for c in comps)
-
-        if total == 0:
-            continue
-
-        div_pct = divergent / total * 100
-
-        # Marker for high divergence
-        marker = " !!!" if div_pct > 20 else " !!" if div_pct > 5 else ""
-
-        print(
-            f"{metric_name:<22} {tool_pair:<30} {total:>6} "
-            f"{exact:>7} {close:>7} {divergent:>7} {div_pct:>5.1f}%{marker}"
-        )
+def comparison_to_dict(comparison: MetricComparison) -> dict:
+    data = {name: getattr(comparison, name) for name in MetricComparison.__dataclass_fields__
+            if name not in {"spec", "top_divergences"}}
+    data.update({
+        "metric": comparison.spec.qmx_key,
+        "description": comparison.spec.description,
+        "level": comparison.spec.level,
+        "tool_pair": comparison.spec.tool_pair,
+        "classification": comparison.spec.classification,
+        "rationale": comparison.spec.rationale,
+        "verdict": agreement_verdict(comparison),
+        "top_divergences": [asdict(item) for item in comparison.top_divergences],
+    })
+    return data
 
 
-def build_json_report(
-    all_comparisons: list[MetricComparison],
-    project_stats: dict,
-) -> dict:
-    """Build JSON report for further analysis."""
-    metrics = []
-    for comp in all_comparisons:
-        divs = [
-            {
-                "symbol": d.symbol,
-                "qmx": d.qmx_value,
-                "other_tool": d.other_tool,
-                "other_key": d.other_key,
-                "other_value": d.other_value,
-                "pct_diff": d.pct_diff,
-            }
-            for d in comp.top_divergences
-        ]
-        metrics.append({
-            "metric": comp.metric_name,
-            "description": comp.description,
-            "level": comp.level,
-            "tool_pair": comp.tool_pair,
-            "total_compared": comp.total_compared,
-            "exact_match": comp.exact_match,
-            "close_match": comp.close_match,
-            "divergent": comp.divergent,
-            "exact_pct": round(comp.exact_match / comp.total_compared * 100, 1) if comp.total_compared else 0,
-            "divergent_pct": round(comp.divergent / comp.total_compared * 100, 1) if comp.total_compared else 0,
-            "top_divergences": divs,
-        })
-
+def build_json_report(comparisons: list[MetricComparison], project_stats: dict, top_n: int) -> dict:
     return {
-        "version": "1.0",
+        "version": "2.0",
+        "top_n": top_n,
         "projects": project_stats,
-        "comparisons": metrics,
+        "comparisons": [comparison_to_dict(item) for item in comparisons],
+        "aggregate": [comparison_to_dict(item) for item in aggregate_comparisons(comparisons, top_n)],
     }
 
 
-# --- Main ---
+def print_summary(comparisons: list[MetricComparison], top_n: int) -> None:
+    print("\nMETRIC CONTRACT AND COVERAGE SUMMARY")
+    print(f"{'Metric':<22} {'Pair':<34} {'Class':<11} {'Symbols':>9} {'Values':>9} {'Verdict':<17}")
+    print("-" * 108)
+    for item in aggregate_comparisons(comparisons, top_n):
+        symbol_coverage = f"{item.symbol_intersection}/{item.qmx_symbols}"
+        value_coverage = f"{item.paired_values}/{item.symbol_intersection}"
+        print(f"{item.spec.qmx_key:<22} {item.spec.tool_pair:<34} {item.spec.classification:<11} "
+              f"{symbol_coverage:>9} {value_coverage:>9} {agreement_verdict(item):<17}")
+        print(f"  unmatched qmx/other={item.qmx_only_symbols}/{item.other_only_symbols}; "
+              f"missing values qmx/other={item.missing_qmx_values}/{item.missing_other_values}; "
+              f"zeros qmx/other/both={item.qmx_zero_values}/{item.other_zero_values}/{item.both_zero_pairs}; "
+              f"collisions={item.collisions}")
+        if item.spec.classification != COMPARABLE:
+            print(f"  context: {item.spec.rationale}")
+        for divergence in item.top_divergences:
+            print(f"  divergence {divergence.symbol}: qmx={divergence.qmx_value:g}, "
+                  f"other={divergence.other_value:g}, delta={divergence.pct_diff:.1f}%")
 
-def main():
+
+def main() -> int:
     parser = argparse.ArgumentParser(description="Cross-tool metric validation")
-    parser.add_argument(
-        "--projects", type=str, default=None,
-        help="Comma-separated project IDs (default: all 4)",
-    )
-    parser.add_argument(
-        "--json", type=str, default=None,
-        help="Save JSON report to file",
-    )
-    parser.add_argument(
-        "--top-n", type=int, default=15,
-        help="Number of top divergences to show per metric (default: 15)",
-    )
-
+    parser.add_argument("--projects", default=None, help="Comma-separated benchmark project IDs")
+    parser.add_argument("--json", default=None, help="Write the structured report to this path")
+    parser.add_argument("--top-n", type=int, default=15, help="Divergences retained per project and aggregate")
     args = parser.parse_args()
+    if args.top_n < 0:
+        parser.error("--top-n must be non-negative")
 
-    project_ids = list(PROJECTS.keys())
+    project_ids = list(PROJECTS)
     if args.projects:
-        project_ids = [p.strip() for p in args.projects.split(",")]
-        for pid in project_ids:
-            if pid not in PROJECTS:
-                print(f"Unknown project: {pid}. Available: {', '.join(PROJECTS.keys())}")
-                sys.exit(1)
+        project_ids = [project.strip() for project in args.projects.split(",") if project.strip()]
+    unknown = sorted(set(project_ids) - set(PROJECTS))
+    if unknown:
+        raise ComparisonError(f"Unknown project(s): {', '.join(unknown)}")
+    for tool in ("pdepend", "phpmetrics"):
+        if not (COMPOSER_BIN / tool).is_file():
+            raise ComparisonError(f"Required tool not found: {COMPOSER_BIN / tool}")
 
-    # Verify tools exist
-    for tool in ["pdepend", "phpmetrics"]:
-        tool_path = COMPOSER_BIN / tool
-        if not tool_path.exists():
-            print(f"Tool not found: {tool_path}")
-            sys.exit(1)
-
-    all_comparisons: list[MetricComparison] = []
+    comparisons: list[MetricComparison] = []
     project_stats = {}
-
-    for pid in project_ids:
-        project_path = PROJECTS[pid]
-        if not project_path.exists():
-            print(f"\nSKIP: {pid} (path not found: {project_path})")
-            continue
-
-        print(f"\n{'#'*80}")
-        print(f"# Project: {pid}")
-        print(f"# Path: {project_path}")
-        print(f"{'#'*80}")
-
-        # Run tools
-        print(f"\n  Running Qualimetrix...", end="", flush=True)
-        try:
-            qmx_data = run_qmx(project_path)
-            print(f" OK ({len(qmx_data['classes'])} classes, {len(qmx_data['methods'])} methods)")
-        except Exception as e:
-            print(f" FAILED: {e}")
-            continue
-
-        print(f"  Running pdepend...", end="", flush=True)
-        try:
-            pdepend_data = run_pdepend(project_path)
-            print(f" OK ({len(pdepend_data['classes'])} classes, {len(pdepend_data['methods'])} methods)")
-        except Exception as e:
-            print(f" FAILED: {e}")
-            pdepend_data = {"classes": {}, "methods": {}}
-
-        print(f"  Running phpmetrics...", end="", flush=True)
-        try:
-            phpmetrics_data = run_phpmetrics(project_path)
-            print(f" OK ({len(phpmetrics_data['classes'])} classes)")
-        except Exception as e:
-            print(f" FAILED: {e}")
-            phpmetrics_data = {"classes": {}}
-
-        # Symbol matching stats
-        qmx_classes = set(qmx_data["classes"].keys())
-        pd_classes = set(pdepend_data["classes"].keys())
-        pm_classes = set(phpmetrics_data["classes"].keys())
-
-        qmx_methods = set(qmx_data["methods"].keys())
-        pd_methods = set(pdepend_data["methods"].keys())
-
-        print(f"\n  Symbol matching:")
-        print(f"    Classes — Qualimetrix: {len(qmx_classes)}, pdepend: {len(pd_classes)}, "
-              f"phpmetrics: {len(pm_classes)}")
-        print(f"    Classes matched — Qualimetrix∩pd: {len(qmx_classes & pd_classes)}, "
-              f"Qualimetrix∩pm: {len(qmx_classes & pm_classes)}")
-        print(f"    Methods — Qualimetrix: {len(qmx_methods)}, pdepend: {len(pd_methods)}")
-        print(f"    Methods matched — Qualimetrix∩pd: {len(qmx_methods & pd_methods)}")
-
-        project_stats[pid] = {
-            "qmx_classes": len(qmx_classes),
-            "pdepend_classes": len(pd_classes),
-            "phpmetrics_classes": len(pm_classes),
-            "matched_classes_pd": len(qmx_classes & pd_classes),
-            "matched_classes_pm": len(qmx_classes & pm_classes),
-            "qmx_methods": len(qmx_methods),
-            "pdepend_methods": len(pd_methods),
-            "matched_methods_pd": len(qmx_methods & pd_methods),
+    for project in project_ids:
+        path = PROJECTS[project]
+        if not path.is_dir():
+            raise ComparisonError(f"Required benchmark project is absent: {project} ({path})")
+        print(f"Running {project}...", flush=True)
+        qmx = run_qmx(path)
+        pdepend = run_pdepend(path)
+        phpmetrics = run_phpmetrics(path)
+        project_comparisons = compare_project(project, qmx, pdepend, phpmetrics, args.top_n)
+        comparisons.extend(project_comparisons)
+        project_stats[project] = {
+            "qmx_classes": len(qmx["classes"]),
+            "pdepend_classes": len(pdepend["classes"]),
+            "phpmetrics_classes": len(phpmetrics["classes"]),
+            "qmx_methods": len(qmx["methods"]),
+            "pdepend_methods": len(pdepend["methods"]),
         }
 
-        # Compare method-level
-        method_comps = compare_method_metrics(qmx_data, pdepend_data, pid)
-        all_comparisons.extend(method_comps)
-
-        # Compare class-level
-        class_comps = compare_class_metrics(
-            qmx_data, pdepend_data, phpmetrics_data, pid,
-        )
-        all_comparisons.extend(class_comps)
-
-    # Print reports
-    print_summary_table(all_comparisons)
-    print_report(all_comparisons)
-
-    # Save JSON if requested
+    print_summary(comparisons, args.top_n)
     if args.json:
-        report = build_json_report(all_comparisons, project_stats)
-        json_path = Path(args.json)
-        json_path.write_text(json.dumps(report, indent=2, ensure_ascii=False))
-        print(f"\nJSON report saved to: {json_path}")
-
-    # Print overall assessment
-    print(f"\n{'='*80}")
-    print("OVERALL ASSESSMENT")
-    print(f"{'='*80}")
-
-    # Group and aggregate
-    grouped: dict[str, list[MetricComparison]] = defaultdict(list)
-    for comp in all_comparisons:
-        key = f"{comp.metric_name}|{comp.tool_pair}"
-        grouped[key].append(comp)
-
-    issues = []
-    good = []
-    for key in sorted(grouped.keys()):
-        comps = grouped[key]
-        total = sum(c.total_compared for c in comps)
-        divergent = sum(c.divergent for c in comps)
-        if total == 0:
-            continue
-        div_pct = divergent / total * 100
-        name = f"{comps[0].metric_name} [{comps[0].tool_pair}]"
-        if div_pct > 5:
-            issues.append((name, div_pct, total, divergent))
-        else:
-            good.append((name, div_pct, total))
-
-    if good:
-        print("\n  GOOD (divergence <= 5%):")
-        for name, pct, total in good:
-            print(f"    {name}: {pct:.1f}% divergent ({total} compared)")
-
-    if issues:
-        print("\n  NEEDS INVESTIGATION (divergence > 5%):")
-        for name, pct, total, div_count in sorted(issues, key=lambda x: -x[1]):
-            print(f"    {name}: {pct:.1f}% divergent ({div_count}/{total})")
+        Path(args.json).write_text(json.dumps(build_json_report(comparisons, project_stats, args.top_n), indent=2) + "\n")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        sys.exit(main())
+    except ComparisonError as error:
+        print(f"Cross-tool comparison failed: {error}", file=sys.stderr)
+        sys.exit(1)

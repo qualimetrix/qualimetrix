@@ -492,6 +492,36 @@ PHP;
         self::assertTrue($filter->shouldInclude($violation));
     }
 
+    #[Test]
+    public function itIndexesEveryNamespaceBlockInAChangedFile(): void
+    {
+        $this->initGitRepo();
+        $content = <<<'PHP'
+<?php
+namespace One { class A {} }
+namespace Two\Nested { class B {} }
+PHP;
+        $this->createPhpFileWithContent('src/Multi.php', $content);
+        $this->exec('git add src/Multi.php');
+
+        $filter = new GitScopeFilter(
+            new GitClient(AbsolutePath::fromString($this->tempDir)),
+            new GitScope('staged'),
+            $this->projectRoot,
+        );
+
+        foreach (['One', 'Two\\Nested', 'Two'] as $namespace) {
+            self::assertTrue($filter->shouldInclude(new Violation(
+                location: new Location(RelativePath::fromString('other.php'), null),
+                symbolPath: SymbolPath::forNamespace($namespace),
+                ruleName: 'size',
+                violationCode: 'size',
+                message: 'Namespace issue',
+                severity: Severity::Warning,
+            )));
+        }
+    }
+
     private function initGitRepo(): void
     {
         $this->exec('git init');

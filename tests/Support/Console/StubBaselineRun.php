@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Support\Console;
 
 use Closure;
+use Qualimetrix\Analysis\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Baseline\RunScope;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRunContext;
@@ -64,10 +66,9 @@ final readonly class StubBaselineRun implements BaselineRunInterface
 
         $result = new AnalysisResult(
             violations: $this->violations,
-            filesAnalyzed: 1,
-            filesSkipped: 0,
             duration: 0.0,
             metrics: $this->metrics ?? new InMemoryMetricRepository(),
+            coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
             thresholdOverrides: $this->thresholdOverrides,
         );
 

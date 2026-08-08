@@ -54,7 +54,6 @@ final class MetricName
     public const string HALSTEAD_EFFORT = 'halstead.effort';
     public const string HALSTEAD_BUGS = 'halstead.bugs';
     public const string HALSTEAD_TIME = 'halstead.time';
-    public const string HALSTEAD_METHOD_LOC = 'methodLoc';
 
     // -- Maintainability -----------------------------------------------------
 
@@ -83,6 +82,7 @@ final class MetricName
     public const string SIZE_LOC = 'loc';
     public const string SIZE_LLOC = 'lloc';
     public const string SIZE_CLOC = 'cloc';
+    public const string SIZE_METHOD_STATEMENT_COUNT = 'methodStatementCount';
 
     // -- RFC (Response for a Class) ------------------------------------------
 

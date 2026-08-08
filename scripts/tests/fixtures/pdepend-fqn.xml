@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metrics>
+  <package name="Vendor\Alpha">
+    <class name="Handler" loc="20" nocc="0">
+      <method name="run" ccn="2" ccn2="2" mi="80" lloc="4" />
+    </class>
+  </package>
+  <package name="Vendor\Beta">
+    <class name="Handler" loc="25" nocc="1" />
+  </package>
+</metrics>

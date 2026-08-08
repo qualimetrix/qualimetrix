@@ -79,8 +79,7 @@ final class GitScopeFilter implements ViolationFilterInterface
             // differ when the project sits in a git subdirectory).
             $fullPath = $this->projectRoot->joinRelative($file->path);
             if ($fullPath->isFile()) {
-                $namespace = $this->extractNamespace($fullPath);
-                if ($namespace !== null) {
+                foreach ($this->extractNamespaces($fullPath) as $namespace) {
                     // Add all parent namespaces
                     $parts = explode('\\', $namespace);
                     while ($parts !== []) {
@@ -94,22 +93,43 @@ final class GitScopeFilter implements ViolationFilterInterface
     }
 
     /**
-     * Extracts namespace from a PHP file without full parsing.
+     * Extracts all declared namespaces from a PHP file without full parsing.
      *
-     * Reads the file at its absolute path and looks for the namespace declaration.
+     * @return list<string>
      */
-    private function extractNamespace(AbsolutePath $filePath): ?string
+    private function extractNamespaces(AbsolutePath $filePath): array
     {
         $content = file_get_contents($filePath->value());
 
         if ($content === false) {
-            return null;
+            return [];
         }
 
-        if (preg_match('/^namespace\s+([^;{]+)[;{]/m', $content, $matches) === 1) {
-            return trim($matches[1]);
+        $namespaces = [];
+        $tokens = token_get_all($content);
+        $count = \count($tokens);
+
+        for ($i = 0; $i < $count; ++$i) {
+            if (!\is_array($tokens[$i]) || $tokens[$i][0] !== \T_NAMESPACE) {
+                continue;
+            }
+
+            $namespace = '';
+            for (++$i; $i < $count; ++$i) {
+                $token = $tokens[$i];
+                if ($token === ';' || $token === '{') {
+                    break;
+                }
+                if (\is_array($token) && \in_array($token[0], [\T_STRING, \T_NAME_QUALIFIED, \T_NS_SEPARATOR], true)) {
+                    $namespace .= $token[1];
+                }
+            }
+
+            if ($namespace !== '') {
+                $namespaces[$namespace] = true;
+            }
         }
 
-        return null;
+        return array_keys($namespaces);
     }
 }

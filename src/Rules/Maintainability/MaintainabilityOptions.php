@@ -30,7 +30,7 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface, Thr
         public float $warning = 40.0,
         public float $error = 20.0,
         public bool $excludeTests = true,
-        public int $minLoc = 10,
+        public int $minStatements = 10,
     ) {}
 
     /**
@@ -49,7 +49,7 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface, Thr
             warning: (float) $thresholds['warning'],
             error: (float) $thresholds['error'],
             excludeTests: (bool) ($config['exclude_tests'] ?? $config['excludeTests'] ?? true),
-            minLoc: (int) ($config['min_loc'] ?? $config['minLoc'] ?? 10),
+            minStatements: (int) ($config['min_statements'] ?? $config['minStatements'] ?? 10),
         );
     }
 
@@ -94,7 +94,7 @@ final readonly class MaintainabilityOptions implements RuleOptionsInterface, Thr
             warning: $warning !== null ? (float) $warning : $this->warning,
             error: $error !== null ? (float) $error : $this->error,
             excludeTests: $this->excludeTests,
-            minLoc: $this->minLoc,
+            minStatements: $this->minStatements,
         );
     }
 

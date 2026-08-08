@@ -13,11 +13,12 @@ use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
 use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
+use Qualimetrix\Infrastructure\Console\DiagnosticOutput;
 use Qualimetrix\Infrastructure\Console\FilteredInputDefinition;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
+use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\ScopeWarningChecker;
 use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
@@ -52,8 +53,9 @@ final class CheckCommand extends Command
         private readonly ConfigurationPipeline $configurationPipeline,
         private readonly RuntimeConfigurator $runtimeConfigurator,
         private readonly ResultPresenter $resultPresenter,
-        private readonly RuleSelector $ruleSelector,
         private readonly LoggerInterface $logger,
+        private readonly RuleInputValidator $ruleInputValidator,
+        private readonly DiagnosticOutput $diagnosticOutput,
     ) {
         parent::__construct();
     }
@@ -111,7 +113,7 @@ final class CheckCommand extends Command
         try {
             return $this->doExecute($input, $output);
         } catch (ConflictingCliAliasException $e) {
-            $output->writeln(\sprintf(
+            $this->diagnosticOutput->write($output, \sprintf(
                 '<error>CLI alias conflict: "%s" is used by both "%s" and "%s" rules</error>',
                 $e->alias,
                 $e->firstRule,
@@ -120,7 +122,7 @@ final class CheckCommand extends Command
 
             return self::EXIT_CONFIG_ERROR;
         } catch (ConfigLoadException $e) {
-            $output->writeln(\sprintf(
+            $this->diagnosticOutput->write($output, \sprintf(
                 '<error>Configuration error: %s</error>',
                 $e->getMessage(),
             ));
@@ -131,26 +133,26 @@ final class CheckCommand extends Command
             // (typo'd templates, ceiling exceeded, name collisions). Surface them
             // with the same framing and exit code as ConfigLoadException so the
             // user sees them as configuration errors, not internal crashes.
-            $output->writeln(\sprintf(
+            $this->diagnosticOutput->write($output, \sprintf(
                 '<error>Architecture configuration error: %s</error>',
                 $e->getMessage(),
             ));
 
             return self::EXIT_CONFIG_ERROR;
         } catch (InvalidArgumentException $e) {
-            $output->writeln(\sprintf('<error>%s</error>', $e->getMessage()));
+            $this->diagnosticOutput->write($output, \sprintf('<error>%s</error>', $e->getMessage()));
 
             return self::EXIT_CONFIG_ERROR;
         } catch (Throwable $e) {
-            $output->writeln(\sprintf(
+            $this->diagnosticOutput->write($output, \sprintf(
                 '<error>Unexpected error: %s</error>',
                 $e->getMessage(),
             ));
 
             if ($output->isVerbose()) {
-                $output->writeln('');
-                $output->writeln('<comment>Stack trace:</comment>');
-                $output->writeln($e->getTraceAsString());
+                $this->diagnosticOutput->write($output, '');
+                $this->diagnosticOutput->write($output, '<comment>Stack trace:</comment>');
+                $this->diagnosticOutput->write($output, $e->getTraceAsString());
             }
 
             return self::FAILURE;
@@ -170,10 +172,11 @@ final class CheckCommand extends Command
         // Configure runtime using resolved config
         $this->runtimeConfigurator->configure($resolved, $input, $output);
 
+        $this->ruleInputValidator->validate($resolved, $input);
+
         $this->clearCacheIfRequested($input, $output);
 
         $this->validateWorkersOption($input);
-        $this->warnAboutUnknownRules($resolved, $input, $output);
         $this->warnAboutConflictingRuleFilters($resolved, $output);
         $this->logConfigSources($resolved, $output);
 
@@ -182,7 +185,7 @@ final class CheckCommand extends Command
         $pathErrors = $this->validatePaths($scopeResolution->paths);
         if ($pathErrors !== []) {
             foreach ($pathErrors as $error) {
-                $output->writeln(\sprintf('<error>%s</error>', $error));
+                $this->diagnosticOutput->write($output, \sprintf('<error>%s</error>', $error));
             }
 
             return self::EXIT_CONFIG_ERROR;
@@ -193,16 +196,6 @@ final class CheckCommand extends Command
         $this->warnAboutPartialScope($scopeResolution->paths, $projectRoot, $output);
 
         $result = $this->runAnalysis($scopeResolution->paths, $scopeResolution->fileDiscovery);
-
-        if ($result->filesAnalyzed === 0) {
-            if ($result->filesSkipped > 0) {
-                $output->writeln(\sprintf('<comment>All %d PHP file(s) were skipped due to parse errors.</comment>', $result->filesSkipped));
-            } else {
-                $output->writeln('<comment>No PHP files found in the given paths.</comment>');
-            }
-
-            return self::SUCCESS;
-        }
 
         $filterResult = $this->violationFilterOrchestrator->filterAndReport($result, $input, $output, $scopeResolution);
         $filteredViolations = $filterResult->violations;
@@ -254,7 +247,7 @@ final class CheckCommand extends Command
         if ($input->getOption('clear-cache') === true) {
             $cache = $this->cacheFactory->create();
             $cache->clear();
-            $output->writeln('<info>Cache cleared.</info>');
+            $this->diagnosticOutput->write($output, '<info>Cache cleared.</info>');
         }
     }
 
@@ -364,62 +357,10 @@ final class CheckCommand extends Command
             return;
         }
 
-        $output->writeln(\sprintf(
+        $this->diagnosticOutput->write($output, \sprintf(
             '<info>Configuration loaded from: %s</info>',
             implode(', ', $resolved->appliedSources),
         ));
     }
 
-    /**
-     * Warns about unknown rule names in --only-rule, --disable-rule, --rule-opt, and config rules.
-     */
-    private function warnAboutUnknownRules(ResolvedConfiguration $resolved, InputInterface $input, OutputInterface $output): void
-    {
-        $knownNames = array_map(
-            fn(string $class): string => $class::NAME,
-            $this->ruleRegistry->getClasses(),
-        );
-
-        // Extract rule names from --rule-opt=RULE:KEY=VALUE
-        $cliRuleNames = [];
-        /** @var list<string> $ruleOpts */
-        $ruleOpts = $input->getOption('rule-opt');
-        foreach ($ruleOpts as $opt) {
-            $colonPos = strpos($opt, ':');
-            if ($colonPos !== false) {
-                $cliRuleNames[] = substr($opt, 0, $colonPos);
-            }
-        }
-
-        $selectorNames = [
-            ...$resolved->analysis->onlyRules,
-            ...$resolved->analysis->disabledRules,
-        ];
-        $ruleOptionNames = [
-            ...array_keys($resolved->ruleOptions),
-            ...$cliRuleNames,
-        ];
-
-        foreach ($selectorNames as $name) {
-            if ($this->ruleSelector->matchesKnown($name, $knownNames)) {
-                continue;
-            }
-
-            $this->writeWarning(
-                $output,
-                \sprintf('Warning: rule "%s" does not match any registered rule', $name),
-            );
-        }
-
-        foreach ($ruleOptionNames as $name) {
-            if ($this->ruleSelector->matchesKnownProducer($name, $knownNames)) {
-                continue;
-            }
-
-            $this->writeWarning(
-                $output,
-                \sprintf('Warning: rule "%s" does not match any registered rule', $name),
-            );
-        }
-    }
 }

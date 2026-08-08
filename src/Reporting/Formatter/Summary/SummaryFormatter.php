@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\Formatter\Summary;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
+use Qualimetrix\Reporting\Formatter\Support\CoverageNarrator;
 use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -39,6 +40,10 @@ final class SummaryFormatter implements FormatterInterface
         $lines = [];
 
         $this->renderHeader($report, $context, $color, $lines);
+        if ($report->coverage !== null) {
+            $lines[] = CoverageNarrator::describe($report->coverage);
+            $lines[] = '';
+        }
 
         $this->healthBarRenderer->render($report, $context, $color, $terminalWidth, $ascii, $lines);
         $this->offenderListRenderer->renderWorstNamespaces($report, $color, $context, $lines);

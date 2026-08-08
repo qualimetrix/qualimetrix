@@ -122,6 +122,27 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         self::assertEqualsWithDelta(0.2, $projectMetrics->get('distance.avg'), 0.001);
     }
 
+    #[Test]
+    public function itKeepsFileCollectedProjectTotalsPhysical(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $file = RelativePath::fromString('src/Multi.php');
+        $repository->add(SymbolPath::forFile($file), MetricBag::fromArray(['loc' => 20]), $file, 1);
+        $repository->add(SymbolPath::forNamespace('One'), MetricBag::fromArray(['loc' => 8, 'loc.count' => 1]), $file, 2);
+        $repository->add(SymbolPath::forNamespace('Two'), MetricBag::fromArray(['loc' => 9, 'loc.count' => 1]), $file, 10);
+
+        $definitions = [new MetricDefinition('loc', SymbolLevel::File, [
+            SymbolLevel::Project->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
+        ])];
+
+        (new NamespaceToProjectAggregator(new NamespaceTree(['One', 'Two'])))
+            ->aggregate($repository, $definitions);
+
+        $project = $repository->get(SymbolPath::forProject());
+        self::assertSame(20, $project->get('loc.sum'));
+        self::assertSame(20, $project->get('loc.avg'));
+    }
+
     private function addMethodsWithMi(
         InMemoryMetricRepository $repository,
         string $namespace,

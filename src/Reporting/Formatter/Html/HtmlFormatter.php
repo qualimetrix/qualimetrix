@@ -29,6 +29,7 @@ final class HtmlFormatter implements FormatterInterface
         $builder = new HtmlTreeBuilder($this->debtCalculator);
         $data = $builder->build($report, $context, $context->scopedReporting);
         $data['hints'] = $this->hintProvider->exportForHtml();
+        $data['coverage'] = $report->coverage?->toArray();
 
         $json = json_encode(
             $data,
@@ -42,11 +43,22 @@ final class HtmlFormatter implements FormatterInterface
         $d3Js = $this->readFile($templateDir . '/dist/d3.min.js');
         $appJs = $this->readFile($templateDir . '/dist/report.min.js');
 
-        return str_replace(
+        $rendered = str_replace(
             ['__CSS__', '__DATA__', '__D3_JS__', '__APP_JS__'],
             [$css, $json, $d3Js, $appJs],
             $html,
         );
+
+        if ($report->coverage !== null && !$report->coverage->isComplete()) {
+            $banner = \sprintf(
+                '<div role="alert" data-qmx-coverage="incomplete" style="padding:12px;background:#7f1d1d;color:#fff">Analysis incomplete: %d of %d discovered PHP file(s) failed. Policy results are not authoritative.</div>',
+                $report->coverage->failed,
+                $report->coverage->discovered,
+            );
+            $rendered = str_replace('<body>', '<body>' . $banner, $rendered);
+        }
+
+        return $rendered;
     }
 
     public function getName(): string

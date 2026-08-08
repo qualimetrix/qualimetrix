@@ -75,6 +75,7 @@ final readonly class SummaryEnricher
             topIssues: $topIssues,
             namespaceTree: $tree,
             infoCount: $report->infoCount,
+            coverage: $report->coverage,
         );
     }
 

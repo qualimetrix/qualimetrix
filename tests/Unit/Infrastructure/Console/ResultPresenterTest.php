@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Configuration\AnalysisConfiguration;
@@ -35,6 +36,7 @@ use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\Impact\ClassRankResolver;
 use Qualimetrix\Reporting\Impact\ImpactCalculator;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[CoversClass(ResultPresenter::class)]
@@ -117,10 +119,9 @@ final class ResultPresenterTest extends TestCase
 
         $analysisResult = new AnalysisResult(
             violations: [],
-            filesAnalyzed: 0,
-            filesSkipped: 0,
             duration: 0.0,
             metrics: new InMemoryMetricRepository(),
+            coverage: new AnalysisCoverage([], [], []),
             suppressions: [],
         );
 
@@ -148,10 +149,12 @@ final class ResultPresenterTest extends TestCase
             },
         );
 
-        $output = $this->createMock(OutputInterface::class);
+        $output = self::createStub(ConsoleOutputInterface::class);
+        $errorOutput = $this->createMock(OutputInterface::class);
+        $output->method('getErrorOutput')->willReturn($errorOutput);
 
         // Should output an error message, not a success message
-        $output->expects(self::once())
+        $errorOutput->expects(self::once())
             ->method('writeln')
             ->with(
                 self::stringContains('Failed to write profile data'),
@@ -182,9 +185,11 @@ final class ResultPresenterTest extends TestCase
             },
         );
 
-        $output = $this->createMock(OutputInterface::class);
+        $output = self::createStub(ConsoleOutputInterface::class);
+        $errorOutput = $this->createMock(OutputInterface::class);
+        $output->method('getErrorOutput')->willReturn($errorOutput);
 
-        $output->expects(self::once())
+        $errorOutput->expects(self::once())
             ->method('writeln')
             ->with(
                 self::stringContains('Profile exported to'),
@@ -430,10 +435,9 @@ final class ResultPresenterTest extends TestCase
 
         $analysisResult = new AnalysisResult(
             violations: $violations,
-            filesAnalyzed: 1,
-            filesSkipped: 0,
             duration: 0.1,
             metrics: new InMemoryMetricRepository(),
+            coverage: new AnalysisCoverage([RelativePath::fromString('src/UserService.php')], [], []),
             suppressions: [],
         );
 
@@ -485,10 +489,9 @@ final class ResultPresenterTest extends TestCase
 
         $analysisResult = new AnalysisResult(
             violations: [],
-            filesAnalyzed: 0,
-            filesSkipped: 0,
             duration: 0.0,
             metrics: new InMemoryMetricRepository(),
+            coverage: new AnalysisCoverage([], [], []),
             suppressions: [],
         );
 

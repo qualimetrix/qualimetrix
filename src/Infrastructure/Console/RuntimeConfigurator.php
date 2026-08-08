@@ -5,27 +5,15 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Psr\Log\LogLevel;
-use Qualimetrix\Analysis\Lifecycle\AnalysisLifecycleHookInterface;
 use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
-use Qualimetrix\Configuration\RuleOptionsParserFactory;
-use Qualimetrix\Configuration\RuleOptionsRegistry;
-use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
-use Qualimetrix\Core\Coupling\FrameworkNamespaces;
-use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
-use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Progress\NullProgressReporter;
-use Qualimetrix\Core\Violation\RuleExclusionCaptureHolder;
-use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Qualimetrix\Infrastructure\Profiler\Profiler;
-use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -35,21 +23,13 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 final class RuntimeConfigurator
 {
-    /**
-     * @param iterable<AnalysisLifecycleHookInterface> $lifecycleHooks
-     */
     public function __construct(
         private readonly LoggerFactory $loggerFactory,
         private readonly LoggerHolder $loggerHolder,
         private readonly ProgressReporterHolder $progressReporterHolder,
         private readonly ProfilerHolder $profilerHolder,
-        private readonly ConfigurationProviderInterface $configurationProvider,
-        private readonly RuleOptionsRegistry $ruleOptionsRegistry,
-        private readonly RuleRegistryInterface $ruleRegistry,
-        private readonly CacheFactory $cacheFactory,
-        private readonly ComputedMetricsConfigResolver $computedMetricsResolver,
-        private readonly FrameworkNamespacesHolder $frameworkNamespacesHolder,
-        private readonly iterable $lifecycleHooks,
+        private readonly AnalysisRuntimeConfigurator $analysisRuntimeConfigurator,
+        private readonly DiagnosticOutput $diagnosticOutput = new DiagnosticOutput(),
     ) {}
 
     /**
@@ -60,12 +40,7 @@ final class RuntimeConfigurator
         InputInterface $input,
         OutputInterface $output,
     ): void {
-        // Reset memoized state from previous run to prevent leaking
-        $this->ruleOptionsRegistry->resetRuntimeState();
-        $this->cacheFactory->reset();
-        ComputedMetricDefinitionHolder::reset();
-        CollectorConfigHolder::reset();
-        $this->frameworkNamespacesHolder->reset();
+        $this->analysisRuntimeConfigurator->resetRunState();
 
         $this->configureLogger($input, $output);
 
@@ -78,57 +53,7 @@ final class RuntimeConfigurator
         $this->configureMemoryLimit($resolved->analysis, $output);
         $this->configureProgressReporter($input, $output);
         $this->configureProfiler($input);
-        $this->configureRuleExclusionCapture($input);
-
-        // Create RuleOptionsParser for CLI rule options
-        $ruleOptionsParserFactory = new RuleOptionsParserFactory();
-        $ruleOptionsParser = $ruleOptionsParserFactory->createFromClasses($this->ruleRegistry->getClasses());
-        $cliParser = new CliOptionsParser($ruleOptionsParser);
-
-        // Parse rule options from CLI
-        $cliRuleOptions = $cliParser->parseRuleOptions($input);
-
-        // Set config file and CLI options separately in the registry,
-        // preserving the 3-layer merge: defaults → config file → CLI
-        $this->ruleOptionsRegistry->setConfigFileOptions($resolved->ruleOptions);
-        foreach ($cliRuleOptions as $ruleName => $options) {
-            $this->ruleOptionsRegistry->setCliOptions($ruleName, $options);
-        }
-
-        // For ConfigurationHolder, provide the merged view
-        $ruleOptions = array_replace_recursive($resolved->ruleOptions, $cliRuleOptions);
-
-        // Configure runtime providers
-        $this->configureRuntime($resolved->analysis, $ruleOptions);
-
-        // Extract collector-level config from rule options
-        $this->configureCollectors($ruleOptions);
-
-        // Set framework namespaces for CBO_APP/CE_FRAMEWORK metrics
-        if ($resolved->analysis->frameworkNamespaces !== []) {
-            $this->frameworkNamespacesHolder->set(
-                new FrameworkNamespaces($resolved->analysis->frameworkNamespaces),
-            );
-        }
-
-        // Apply feature-side lifecycle hooks (e.g. Architecture binds the
-        // resolved layer policy to its processor so the rules pipeline sees
-        // the user's configuration once AnalysisPipeline calls prepare()
-        // — ADR 0008). Slice configurators register their own hooks; the
-        // runtime configurator stays feature-agnostic.
-        foreach ($this->lifecycleHooks as $hook) {
-            $hook->applyResolvedConfiguration($resolved);
-        }
-
-        // Resolve computed metrics definitions and store in holder. The resolver internally
-        // applies exclude-health rewriting (merging in `health.*` metrics disabled via
-        // `enabled: false`) before validation, so both disable paths share the same
-        // semantics: removal + weight renormalization in `health.overall`.
-        $definitions = $this->computedMetricsResolver->resolve(
-            $resolved->computedMetrics,
-            $resolved->analysis->excludeHealth,
-        );
-        ComputedMetricDefinitionHolder::setDefinitions($definitions);
+        $this->analysisRuntimeConfigurator->configure($resolved, $input);
     }
 
     /**
@@ -146,7 +71,7 @@ final class RuntimeConfigurator
         $result = ini_set('memory_limit', $config->memoryLimit);
 
         if ($result === false) {
-            $output->writeln(\sprintf(
+            $this->diagnosticOutput->write($output, \sprintf(
                 '<comment>Warning: failed to set memory_limit to %s. ini_set() may be disabled.</comment>',
                 $config->memoryLimit,
             ));
@@ -271,64 +196,4 @@ final class RuntimeConfigurator
         $this->profilerHolder->set(new Profiler()); // @phpstan-ignore staticMethod.dynamicCall
     }
 
-    /**
-     * Configures {@see RuleExclusionCaptureHolder} from `--show-suppressed`.
-     *
-     * Must run before {@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline::analyze()}
-     * calls {@see \Qualimetrix\Analysis\RuleExecution\RuleExecutor::execute()} — that is
-     * the only point deciding whether to retain excluded `Violation` objects for this
-     * run. Defensive about option presence like {@see self::configureProfiler()}:
-     * commands other than `check` that reuse this configurator don't expose
-     * `--show-suppressed`, and should keep the safe (disabled) default.
-     */
-    private function configureRuleExclusionCapture(InputInterface $input): void
-    {
-        $capture = $input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true;
-
-        RuleExclusionCaptureHolder::set($capture);
-    }
-
-    /**
-     * Extracts collector-level configuration from rule options.
-     *
-     * Some rule options affect metric calculation (not just thresholds),
-     * so they must reach collectors via CollectorConfigHolder.
-     *
-     * @param array<string, array<string, mixed>> $ruleOptions
-     */
-    private function configureCollectors(array $ruleOptions): void
-    {
-        $lcomConfig = $ruleOptions['design.lcom'] ?? [];
-        $excludeKey = $lcomConfig['exclude_methods'] ?? $lcomConfig['excludeMethods'] ?? null;
-
-        if ($excludeKey !== null) {
-            $excludeMethods = match (true) {
-                \is_string($excludeKey) && str_contains($excludeKey, ',') => array_map('trim', explode(',', $excludeKey)),
-                \is_string($excludeKey) => [$excludeKey],
-                \is_array($excludeKey) => array_values($excludeKey),
-                default => [],
-            };
-
-            if ($excludeMethods !== []) {
-                CollectorConfigHolder::set(
-                    CollectorConfigHolder::LCOM_EXCLUDE_METHODS,
-                    $excludeMethods,
-                );
-            }
-        }
-    }
-
-    /**
-     * Configure runtime providers with merged configuration.
-     *
-     * This must be called BEFORE rules are accessed (they are lazy-loaded).
-     *
-     * @param array<string, array<string, mixed>> $ruleOptions
-     */
-    private function configureRuntime(AnalysisConfiguration $config, array $ruleOptions): void
-    {
-        // Update ConfigurationHolder with merged config
-        $this->configurationProvider->setConfiguration($config);
-        $this->configurationProvider->setRuleOptions($ruleOptions);
-    }
 }

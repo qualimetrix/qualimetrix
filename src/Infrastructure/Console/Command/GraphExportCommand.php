@@ -5,19 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
-use PhpParser\NodeTraverser;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Collection\Dependency\Export\DotExporter;
 use Qualimetrix\Analysis\Collection\Dependency\Export\DotExporterOptions;
 use Qualimetrix\Analysis\Collection\Dependency\Export\GraphExporterInterface;
 use Qualimetrix\Analysis\Collection\Dependency\Export\JsonGraphExporter;
-use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Core\Dependency\Dependency;
-use Qualimetrix\Core\Exception\ParseException;
+use Qualimetrix\Analysis\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
@@ -26,6 +21,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
@@ -34,11 +30,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class GraphExportCommand extends Command
 {
+    private const int EXIT_ANALYSIS_INCOMPLETE = 4;
+
     public function __construct(
-        private readonly FileDiscoveryInterface $fileDiscovery,
-        private readonly FileParserInterface $fileParser,
-        private readonly DependencyVisitor $dependencyVisitor,
-        private readonly DependencyGraphBuilder $graphBuilder,
+        private readonly DependencyGraphAnalyzerInterface $analyzer,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
         parent::__construct();
@@ -107,61 +102,33 @@ final class GraphExportCommand extends Command
             'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $paths),
         ]);
 
-        // Discover files
-        $files = iterator_to_array($this->fileDiscovery->discover($paths), false);
+        $result = $this->analyzer->analyze($paths, $cwd);
         $this->logger->info('Discovered files', [
-            'count' => \count($files),
+            'count' => $result->coverage->discoveredFiles(),
         ]);
 
-        if ($files === []) {
+        if ($result->coverage->discoveredFiles() === 0) {
             $output->writeln('<error>No files found to analyze</error>');
 
             return self::FAILURE;
         }
 
-        // Collect dependencies from all files
-        $filesProcessed = 0;
-        $filesSkipped = 0;
-        /** @var list<Dependency> $allDependencies */
-        $allDependencies = [];
-
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor($this->dependencyVisitor);
-
-        foreach ($files as $file) {
-            try {
-                $ast = $this->fileParser->parse($file);
-                $this->dependencyVisitor->setFile(
-                    PathFactory::bestEffortRelative($file->getPathname(), $cwd),
-                );
-                $traverser->traverse($ast);
-
-                foreach ($this->dependencyVisitor->getDependencies() as $dependency) {
-                    $allDependencies[] = $dependency;
-                }
-                $filesProcessed++;
-            } catch (ParseException $e) {
-                $this->logger->warning('Failed to parse file', [
-                    'file' => $file->getPathname(),
-                    'error' => $e->getMessage(),
-                ]);
-                $filesSkipped++;
-            }
-        }
-
         $this->logger->info('Dependency collection completed', [
-            'processed' => $filesProcessed,
-            'skipped' => $filesSkipped,
-            'dependencies' => \count($allDependencies),
+            'processed' => $result->coverage->analyzedFilesCount(),
+            'skipped' => $result->coverage->skippedFilesCount(),
+            'dependencies' => \count($result->graph->getAllDependencies()),
         ]);
 
-        // Build dependency graph
-        $graph = $this->graphBuilder->build($allDependencies);
+        if (!$result->coverage->isComplete()) {
+            $this->writeIncompleteAnalysis($output, new IncompleteAnalysisException($result->coverage));
+
+            return self::EXIT_ANALYSIS_INCOMPLETE;
+        }
 
         $this->logger->info('Dependency graph built', [
-            'classes' => \count($graph->getAllClasses()),
-            'namespaces' => \count($graph->getAllNamespaces()),
-            'dependencies' => \count($graph->getAllDependencies()),
+            'classes' => \count($result->graph->getAllClasses()),
+            'namespaces' => \count($result->graph->getAllNamespaces()),
+            'dependencies' => \count($result->graph->getAllDependencies()),
         ]);
 
         // Create exporter with options
@@ -181,7 +148,7 @@ final class GraphExportCommand extends Command
         $exporter = $this->getExporter($format, $options);
 
         // Export graph
-        $content = $exporter->export($graph);
+        $content = $exporter->export($result->graph);
 
         // Output
         /** @var string|null $outputFile */
@@ -199,6 +166,21 @@ final class GraphExportCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    private function writeIncompleteAnalysis(OutputInterface $output, IncompleteAnalysisException $exception): void
+    {
+        $diagnostic = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+        $diagnostic->writeln(\sprintf('<error>%s</error>', $exception->getMessage()));
+
+        foreach ($exception->coverage->failures as $failure) {
+            $diagnostic->writeln(\sprintf(
+                '<error>[%s] %s: %s</error>',
+                $failure->kind->value,
+                $failure->path->value(),
+                $failure->message,
+            ));
+        }
     }
 
     private function getExporter(string $format, DotExporterOptions $options): GraphExporterInterface

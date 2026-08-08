@@ -11,6 +11,8 @@ use Qualimetrix\Analysis\Collection\Strategy\StrategySelectorInterface;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Progress\NullProgressReporter;
 use Qualimetrix\Core\Progress\ProgressReporter;
@@ -19,6 +21,7 @@ use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
+use Throwable;
 
 /**
  * Orchestrates the collection phase.
@@ -42,7 +45,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         AbsolutePath $projectRoot,
     ): CollectionPhaseOutput {
         if ($files === []) {
-            return new CollectionPhaseOutput(new CollectionResult(0, 0), []);
+            return new CollectionPhaseOutput(new CollectionResult([], []), []);
         }
 
         // Lifts projectRoot into the sequential FileProcessor instance. The
@@ -62,15 +65,17 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         $profiler->start('collection.execute_strategy', 'collection');
         $results = $this->strategySelector->select()->execute(
             $files,
-            fn(SplFileInfo $file): FileProcessingResult => $this->fileProcessor->process($file),
+            fn(SplFileInfo $file): FileProcessingResult => $this->processSafely($file, $projectRoot),
             true, // Allow parallelization
         );
         $profiler->stop('collection.execute_strategy');
 
         // Register results in repository and collect dependencies
         $profiler->start('collection.register_results', 'collection');
-        $filesAnalyzed = 0;
-        $filesSkipped = 0;
+        /** @var list<RelativePath> $analyzedFiles */
+        $analyzedFiles = [];
+        /** @var list<FileProcessingResult> $failures */
+        $failures = [];
         /** @var list<Dependency> $allDependencies */
         $allDependencies = [];
         /** @var array<string, list<Suppression>> $allSuppressions */
@@ -84,35 +89,36 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
             $filePathKey = $result->filePath->value();
             $this->progress->setMessage('Registering ' . basename($filePathKey));
 
-            if ($result->success) {
+            if ($result->isSuccessful()) {
                 $this->registerResult($result, $repository);
-                $filesAnalyzed++;
+                $analyzedFiles[] = $result->filePath;
+                $data = $result->collectedData();
 
                 // Collect dependencies from result
-                foreach ($result->dependencies as $dependency) {
+                foreach ($data->dependencies as $dependency) {
                     $allDependencies[] = $dependency;
                 }
 
                 // Collect suppressions from result
-                if ($result->suppressions !== []) {
-                    $allSuppressions[$filePathKey] = $result->suppressions;
+                if ($data->suppressions !== []) {
+                    $allSuppressions[$filePathKey] = $data->suppressions;
                 }
 
                 // Collect threshold overrides from result
-                if ($result->thresholdOverrides !== []) {
-                    $allThresholdOverrides[$filePathKey] = $result->thresholdOverrides;
+                if ($data->thresholdOverrides !== []) {
+                    $allThresholdOverrides[$filePathKey] = $data->thresholdOverrides;
                 }
 
                 // Collect threshold diagnostics from result
-                if ($result->thresholdDiagnostics !== []) {
-                    $allThresholdDiagnostics[$filePathKey] = $result->thresholdDiagnostics;
+                if ($data->thresholdDiagnostics !== []) {
+                    $allThresholdDiagnostics[$filePathKey] = $data->thresholdDiagnostics;
                 }
             } else {
                 $this->logger->warning('Failed to process file', [
                     'file' => $filePathKey,
-                    'error' => $result->error,
+                    'error' => $result->processingFailure()->message,
                 ]);
-                $filesSkipped++;
+                $failures[] = $result;
             }
 
             $this->progress->advance();
@@ -122,9 +128,28 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         $this->progress->finish();
 
         return new CollectionPhaseOutput(
-            new CollectionResult($filesAnalyzed, $filesSkipped, $allSuppressions, $allThresholdOverrides, $allThresholdDiagnostics),
+            new CollectionResult(
+                $analyzedFiles,
+                $failures,
+                $allSuppressions,
+                $allThresholdOverrides,
+                $allThresholdDiagnostics,
+            ),
             $allDependencies,
         );
+    }
+
+    private function processSafely(SplFileInfo $file, AbsolutePath $projectRoot): FileProcessingResult
+    {
+        try {
+            return $this->fileProcessor->process($file);
+        } catch (Throwable $exception) {
+            return FileProcessingResult::failure(
+                PathFactory::bestEffortRelative($file->getPathname(), $projectRoot),
+                $exception->getMessage(),
+                FileProcessingFailureKind::Processing,
+            );
+        }
     }
 
     /**
@@ -134,16 +159,15 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         FileProcessingResult $result,
         MetricRepositoryInterface $repository,
     ): void {
-        // Guaranteed non-null for successful results
-        \assert($result->fileBag !== null);
+        $data = $result->collectedData();
 
         // Store file-level metrics
         $filePath = $result->filePath;
         $fileSymbol = SymbolPath::forFile($filePath);
-        $repository->add($fileSymbol, $result->fileBag, $filePath, 1);
+        $repository->add($fileSymbol, $data->fileBag, $filePath, 1);
 
         // Register method-level metrics
-        foreach ($result->methodMetrics as $methodData) {
+        foreach ($data->methodMetrics as $methodData) {
             $repository->add(
                 $methodData['symbolPath'],
                 $methodData['metrics'],
@@ -153,7 +177,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         }
 
         // Register class-level metrics
-        foreach ($result->classMetrics as $classData) {
+        foreach ($data->classMetrics as $classData) {
             $repository->add(
                 $classData['symbolPath'],
                 $classData['metrics'],
@@ -162,7 +186,26 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
             );
         }
 
+        // Register source-owned namespace contributions before aggregation.
+        foreach ($data->namespaceMetrics as $namespaceData) {
+            $contribution = new \Qualimetrix\Core\Metric\MetricBag();
+            $existing = $repository->get($namespaceData['symbolPath']);
+
+            foreach ($namespaceData['metrics']->all() as $name => $value) {
+                $contribution = $contribution
+                    ->with($name, ($existing->get($name) ?? 0) + $value)
+                    ->with($name . '.count', ($existing->get($name . '.count') ?? 0) + 1);
+            }
+
+            $repository->add(
+                $namespaceData['symbolPath'],
+                $contribution,
+                $filePath,
+                $namespaceData['line'],
+            );
+        }
+
         // Extract derived metrics (like MI) from file bag and add to method symbols
-        $this->derivedMetricExtractor->extract($repository, $result->fileBag, $filePath);
+        $this->derivedMetricExtractor->extract($repository, $data->fileBag, $filePath);
     }
 }

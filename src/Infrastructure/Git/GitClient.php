@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Git;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Git\Exception\UnresolvedGitReferenceException;
 use RuntimeException;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
@@ -60,6 +61,8 @@ final class GitClient
      */
     public function getChangedFiles(string $scope): array
     {
+        $this->validateScope($scope);
+
         return match (true) {
             $scope === 'staged' => $this->getStagedFiles(),
             $scope === 'HEAD' => $this->getUncommittedFiles(),
@@ -67,6 +70,50 @@ final class GitClient
             str_contains($scope, '..') => $this->getTwoDotDiff($scope),
             default => $this->getDiffFrom($scope),
         };
+    }
+
+    public function validateScope(string $scope): void
+    {
+        if ($scope === 'staged' || $scope === 'HEAD') {
+            return;
+        }
+
+        $separator = str_contains($scope, '...') ? '...' : (str_contains($scope, '..') ? '..' : null);
+        $references = $separator === null ? [$scope] : explode($separator, $scope);
+        if ($separator === null) {
+            $references[] = 'HEAD';
+        }
+
+        foreach ($references as $reference) {
+            $this->assertCommitReference($reference);
+        }
+    }
+
+    private function assertCommitReference(string $reference): void
+    {
+        if ($reference === '') {
+            throw new UnresolvedGitReferenceException($reference);
+        }
+
+        $process = new Process(
+            ['git', 'rev-parse', '--verify', '--quiet', $reference . '^{commit}'],
+            $this->projectRoot->value(),
+        );
+        $process->run();
+
+        if ($process->isSuccessful()) {
+            return;
+        }
+
+        if ($process->getExitCode() === 1) {
+            throw new UnresolvedGitReferenceException($reference);
+        }
+
+        throw new RuntimeException(\sprintf(
+            'Git command failed while resolving "%s": %s',
+            $reference,
+            trim($process->getErrorOutput()),
+        ));
     }
 
     /**

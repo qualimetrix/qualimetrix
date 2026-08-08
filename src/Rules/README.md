@@ -245,13 +245,13 @@ Checks the number of properties in a class (default: 15/20).
 **Name:** `maintainability.index` | **Category:** Maintainability | **Type:** Simple
 
 Checks Maintainability Index of methods (default: 40/20).
-MI = 171 - 5.2xln(HV) - 0.23xCCN - 16.2xln(LOC)
+MI = 171 - 5.2xln(HV) - 0.23xCCN - 16.2xln(statement count)
 
 **Filters (RFC-008):**
 - `excludeTests: true` — exclude test files
-- `minLoc: 10` — minimum LOC for checking
+- `minStatements: 10` — minimum statement count for checking
 
-**CLI:** `--mi-warning=40 --mi-error=20 --mi-exclude-tests --mi-min-loc=10`
+**CLI:** `--mi-warning=40 --mi-error=20 --mi-exclude-tests --mi-min-statements=10`
 
 ---
 
@@ -1110,7 +1110,7 @@ rules:
     exclude_data_classes: false  # opt-in
   maintainability.index:
     exclude_tests: true
-    min_loc: 10
+    min_statements: 10
 ```
 
 ---

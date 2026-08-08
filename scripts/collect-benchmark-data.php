@@ -75,6 +75,7 @@ $results = [
     'qmx_version' => $qmxVersion !== '' ? $qmxVersion : 'unknown',
     'projects' => [],
 ];
+$failures = [];
 
 foreach ($projects as $project) {
     $path = $project['path'];
@@ -82,6 +83,7 @@ foreach ($projects as $project) {
 
     if (!is_dir($path)) {
         fprintf(STDERR, "SKIP: %s (path not found: %s)\n", $id, $path);
+        $failures[] = sprintf('%s: benchmark path not found', $id);
         continue;
     }
 
@@ -94,17 +96,34 @@ foreach ($projects as $project) {
         escapeshellarg($path),
     );
 
-    $json = shell_exec($cmd);
+    $output = [];
+    $exitCode = 0;
+    exec($cmd, $output, $exitCode);
+    $json = implode("\n", $output);
     $elapsed = round(microtime(true) - $start, 1);
 
-    if ($json === null || $json === false || trim($json) === '') {
+    if ($exitCode > 2) {
+        fprintf(STDERR, "FAILED (analysis exit code %d)\n", $exitCode);
+        $failures[] = sprintf('%s: analysis exited with code %d', $id, $exitCode);
+        continue;
+    }
+
+    if (trim($json) === '') {
         fprintf(STDERR, "FAILED (no output)\n");
+        $failures[] = sprintf('%s: analysis produced no output', $id);
         continue;
     }
 
     $data = json_decode($json, true);
-    if (!is_array($data) || !isset($data['symbols'])) {
+    if (!is_array($data) || !isset($data['symbols']) || !is_array($data['symbols'])) {
         fprintf(STDERR, "FAILED (invalid JSON)\n");
+        $failures[] = sprintf('%s: invalid JSON output', $id);
+        continue;
+    }
+
+    if (($data['coverage']['complete'] ?? null) !== true) {
+        fprintf(STDERR, "FAILED (analysis coverage incomplete or missing)\n");
+        $failures[] = sprintf('%s: analysis coverage is not complete', $id);
         continue;
     }
 
@@ -201,8 +220,20 @@ foreach ($projects as $project) {
     fprintf(STDERR, "OK (%ds, %d ns, %d classes)\n", $elapsed, count($namespaces), count($classes));
 }
 
-// Write output
-file_put_contents($outputFile, json_encode($results, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+if ($failures !== [] || count($results['projects']) !== count($projects)) {
+    fprintf(STDERR, "\nCollection aborted: %d benchmark project(s) were skipped or failed.\n", count($failures));
+    foreach ($failures as $failure) {
+        fprintf(STDERR, "  - %s\n", $failure);
+    }
+    exit(1);
+}
+
+// Write output only after every configured project produced an authoritative artifact.
+$encodedResults = json_encode($results, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+if ($encodedResults === false || file_put_contents($outputFile, $encodedResults) === false) {
+    fprintf(STDERR, "ERROR: Cannot write output file: %s\n", $outputFile);
+    exit(2);
+}
 fprintf(STDERR, "\nOutput written to: %s\n", $outputFile);
 
 // Print summary table

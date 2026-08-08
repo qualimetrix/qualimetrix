@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Complexity;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
@@ -453,9 +454,56 @@ PHP;
 
         $metrics = $this->collectMetrics($code);
 
-        // NPath = cond(0) + arm1(0) + arm2(0) + default(0) = 0; max(1, 0) = 1
-        // return max(1, 1) = 1
-        self::assertSame(1, $metrics->get('npath:App\Test::grade'));
+        // NPath = subject(0) + max(1, arm1) + max(1, arm2) + max(1, default) = 3
+        self::assertSame(3, $metrics->get('npath:App\Test::grade'));
+    }
+
+    /**
+     * @return iterable<string, array{string, int}>
+     */
+    public static function provideExpressionBearingStatements(): iterable
+    {
+        yield 'echo expressions' => ['echo $flag ? 1 : 0;', 2];
+        yield 'for init condition and loop expressions' => [
+            'for ($i = ($init ? 1 : 0); $left && $right; $i += ($step ?? 1)) {}',
+            6,
+        ];
+        yield 'foreach iterable key and value expressions' => [
+            'foreach (($choose ? $first : $second) as ${$key ? "a" : "b"} => ${$value ? "a" : "b"}) {}',
+            8,
+        ];
+        yield 'switch subject and case conditions' => [
+            'switch ($subject ? 1 : 0) {'
+            . 'case ($condition ? 1 : 0): return 1;'
+            . 'default: return 2;'
+            . '}',
+            6,
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('provideExpressionBearingStatements')]
+    public function itIncludesEveryExpressionBearingStatementSlot(string $body, int $expected): void
+    {
+        $metrics = $this->collectFunctionMetrics("<?php function f() { {$body} }");
+
+        self::assertSame($expected, $metrics->get('npath:f'));
+    }
+
+    #[Test]
+    public function itKeepsSimpleMatchAndEquivalentSwitchAligned(): void
+    {
+        $match = $this->collectFunctionMetrics(
+            '<?php function f($value) { return match ($value) {'
+            . '1 => "one", 2 => "two", default => "other", }; }',
+        );
+        $switch = $this->collectFunctionMetrics(
+            '<?php function f($value) { switch ($value) {'
+            . 'case 1: return "one"; case 2: return "two"; default: return "other"; } }',
+        );
+
+        self::assertSame(3, $match->get('npath:f'));
+        self::assertSame($match->get('npath:f'), $switch->get('npath:f'));
     }
 
     #[Test]

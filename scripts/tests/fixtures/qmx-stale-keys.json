@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "symbols": [
+    {
+      "type": "class",
+      "name": "Vendor\\Alpha\\Handler",
+      "metrics": {"loc": 20, "lloc": 10, "mi": 80}
+    }
+  ],
+  "coverage": {"discovered": 1, "analyzed": 1, "generatedExcluded": 0, "failed": 0, "complete": true, "failures": []},
+  "summary": {"filesAnalyzed": 1, "filesSkipped": 0}
+}

@@ -78,7 +78,8 @@ final class GoldenFileAggregationTest extends TestCase
             ['GoldenMetrics\App\Service', 'UserService', '__construct', 1, 0, 1],
             ['GoldenMetrics\App\Service', 'UserService', 'getUser', 2, 1, 2],
             ['GoldenMetrics\App\Service', 'UserService', 'createUser', 4, 4, 8],
-            ['GoldenMetrics\App\Service', 'UserService', 'listUsers', 5, 5, 4],
+            // foreach wrapper: body if=4 (|| + ?? + assignment + skip), plus loop exit path = 5.
+            ['GoldenMetrics\App\Service', 'UserService', 'listUsers', 5, 5, 5],
             ['GoldenMetrics\App\Service', 'OrderService', '__construct', 1, 0, 1],
             ['GoldenMetrics\App\Service', 'OrderService', 'placeOrder', 3, 2, 4],
             ['GoldenMetrics\App\Service', 'OrderService', 'cancelOrder', 2, 1, 2],
@@ -113,6 +114,35 @@ final class GoldenFileAggregationTest extends TestCase
             self::assertSame(0, $metrics->get('cognitive'), "UserRepositoryInterface::{$ifaceMethod} cognitive");
             self::assertSame(1, $metrics->get('npath'), "UserRepositoryInterface::{$ifaceMethod} npath");
         }
+    }
+
+    #[Test]
+    public function itVerifiesMethodStatementCountsAndMaintainabilityIndex(): void
+    {
+        $cases = [
+            ['GoldenMetrics\App\Repository', 'UserRepository', 'findById', 3, 77.3835],
+            ['GoldenMetrics\App\Service', 'UserService', 'createUser', 11, 60.1192],
+            ['GoldenMetrics\App\Repository', 'UserRepositoryInterface', 'findById', 0, 100.0],
+        ];
+
+        foreach ($cases as [$namespace, $class, $method, $statementCount, $mi]) {
+            $metrics = self::$repository->get(SymbolPath::forMethod($namespace, $class, $method));
+            $label = "{$class}::{$method}";
+
+            self::assertSame($statementCount, $metrics->get('methodStatementCount'), "{$label} statement count");
+            self::assertEqualsWithDelta($mi, $metrics->get('mi'), 0.0001, "{$label} MI");
+        }
+
+        $function = self::$repository->get(
+            SymbolPath::forGlobalFunction('GoldenMetrics\App\Repository', 'findFirstMatch'),
+        );
+        self::assertSame(6, $function->get('methodStatementCount'), 'findFirstMatch statement count');
+        self::assertEqualsWithDelta(69.5784, $function->get('mi'), 0.0001, 'findFirstMatch MI');
+
+        $project = self::$repository->get(SymbolPath::forProject());
+        self::assertSame(75, $project->get('methodStatementCount.sum'), 'project statement count sum');
+        self::assertEqualsWithDelta(3.5714, $project->get('methodStatementCount.avg'), 0.0001, 'project statement count average');
+        self::assertSame(11, $project->get('methodStatementCount.max'), 'project maximum method statement count');
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -333,7 +363,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(8, $m->get(AggregationMeta::SYMBOL_METHOD_COUNT), 'Repository symbolMethodCount');
         self::assertSame(2, $m->get(AggregationMeta::SYMBOL_CLASS_COUNT), 'Repository symbolClassCount');
         self::assertEqualsWithDelta(0.5, $m->get('abstractness'), 0.01, 'Repository abstractness');
-        self::assertSame(129, $m->get('loc.sum'), 'Repository loc.sum');
+        self::assertSame(114, $m->get('loc.sum'), 'Repository loc.sum = namespace spans 71 + 19 + 24');
 
         // GoldenMetrics\App\Service\Auth
         $m = self::$repository->get(SymbolPath::forNamespace('GoldenMetrics\App\Service\Auth'));
@@ -341,7 +371,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(3, $m->get('ccn.max'), 'Auth ccn.max');
         self::assertSame(5, $m->get(AggregationMeta::SYMBOL_METHOD_COUNT), 'Auth symbolMethodCount');
         self::assertSame(2, $m->get(AggregationMeta::SYMBOL_CLASS_COUNT), 'Auth symbolClassCount');
-        self::assertSame(133, $m->get('loc.sum'), 'Auth loc.sum');
+        self::assertSame(123.0, $m->get('loc.sum'), 'Auth loc.sum = namespace spans 57 + 66');
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -358,7 +388,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertEqualsWithDelta(2.4167, $m->get('ccn.avg'), 0.01, 'Service ccn.avg');
         self::assertSame(12, $m->get(AggregationMeta::SYMBOL_METHOD_COUNT), 'Service symbolMethodCount');
         self::assertSame(4, $m->get(AggregationMeta::SYMBOL_CLASS_COUNT), 'Service symbolClassCount');
-        self::assertSame(301, $m->get('loc.sum'), 'Service loc.sum');
+        self::assertSame(281.0, $m->get('loc.sum'), 'Service loc.sum = own spans 95 + 63 + Auth spans 57 + 66');
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -375,7 +405,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertEqualsWithDelta(2.2, $m->get('ccn.avg'), 0.01, 'App ccn.avg');
         self::assertSame(20, $m->get(AggregationMeta::SYMBOL_METHOD_COUNT), 'App symbolMethodCount');
         self::assertSame(7, $m->get(AggregationMeta::SYMBOL_CLASS_COUNT), 'App symbolClassCount');
-        self::assertSame(453, $m->get('loc.sum'), 'App loc.sum');
+        self::assertSame(413.0, $m->get('loc.sum'), 'App loc.sum = Repository 114 + Service 281 + ValueObject 18');
     }
 
     #[Test]
@@ -409,7 +439,7 @@ final class GoldenFileAggregationTest extends TestCase
         self::assertSame(46, $m->get('ccn.sum'), 'project ccn.sum');
         self::assertSame(5, $m->get('ccn.max'), 'project ccn.max');
         self::assertEqualsWithDelta(2.1905, $m->get('ccn.avg'), 0.01, 'project ccn.avg');
-        self::assertSame(482, $m->get('loc.sum'), 'project loc.sum');
+        self::assertSame(482, $m->get('loc.sum'), 'project loc.sum counts each physical file once');
         self::assertSame(7, $m->get('classCount.sum'), 'project classCount.sum (excludes interfaces)');
         self::assertSame(1, $m->get('interfaceCount.sum'), 'project interfaceCount.sum');
         self::assertSame(21, $m->get(AggregationMeta::SYMBOL_METHOD_COUNT), 'project symbolMethodCount');

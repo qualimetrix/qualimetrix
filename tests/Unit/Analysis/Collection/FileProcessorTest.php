@@ -14,6 +14,7 @@ use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
+use Qualimetrix\Analysis\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Collection\FileProcessor;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Qualimetrix\Core\Ast\FileParserInterface;
@@ -24,6 +25,8 @@ use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
 use Qualimetrix\Core\Metric\MethodWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Metric\NamespaceMetricProviderInterface;
+use Qualimetrix\Core\Metric\NamespaceWithMetrics;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Suppression\SuppressionType;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -82,10 +85,9 @@ final class FileProcessorTest extends TestCase
         $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
 
-        self::assertTrue($result->success);
+        self::assertTrue($result->isSuccessful());
         self::assertSame('test.php', $result->filePath->value());
-        self::assertSame(50, $result->fileBag?->get('loc'));
-        self::assertNull($result->error);
+        self::assertSame(50, $result->collectedData()->fileBag->get('loc'));
     }
 
     #[Test]
@@ -102,10 +104,10 @@ final class FileProcessorTest extends TestCase
         $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
 
-        self::assertFalse($result->success);
+        self::assertFalse($result->isSuccessful());
+        self::assertSame(FileProcessingFailureKind::Parse, $result->processingFailure()->kind);
         self::assertSame('invalid.php', $result->filePath->value());
-        self::assertNull($result->fileBag);
-        self::assertStringContainsString('Syntax error', $result->error ?? '');
+        self::assertStringContainsString('Syntax error', $result->processingFailure()->message);
     }
 
     #[Test]
@@ -134,11 +136,11 @@ final class FileProcessorTest extends TestCase
         $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
 
-        self::assertTrue($result->success);
-        self::assertCount(1, $result->methodMetrics);
-        self::assertArrayHasKey('App::Service::calculate', $result->methodMetrics);
-        self::assertSame(5, $result->methodMetrics['App::Service::calculate']['metrics']->get('ccn'));
-        self::assertSame(15, $result->methodMetrics['App::Service::calculate']['line']);
+        self::assertTrue($result->isSuccessful());
+        self::assertCount(1, $result->collectedData()->methodMetrics);
+        self::assertArrayHasKey('App::Service::calculate', $result->collectedData()->methodMetrics);
+        self::assertSame(5, $result->collectedData()->methodMetrics['App::Service::calculate']['metrics']->get('ccn'));
+        self::assertSame(15, $result->collectedData()->methodMetrics['App::Service::calculate']['line']);
     }
 
     #[Test]
@@ -165,10 +167,25 @@ final class FileProcessorTest extends TestCase
         $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
 
-        self::assertTrue($result->success);
-        self::assertCount(1, $result->classMetrics);
-        self::assertArrayHasKey('App::Service', $result->classMetrics);
-        self::assertSame(25, $result->classMetrics['App::Service']['metrics']->get('wmc'));
+        self::assertTrue($result->isSuccessful());
+        self::assertCount(1, $result->collectedData()->classMetrics);
+        self::assertArrayHasKey('App::Service', $result->collectedData()->classMetrics);
+        self::assertSame(25, $result->collectedData()->classMetrics['App::Service']['metrics']->get('wmc'));
+    }
+
+    #[Test]
+    public function itExtractsNamespaceMetricsFromCollectors(): void
+    {
+        $file = new SplFileInfo('/tmp/test.php');
+        $this->parser->method('parse')->willReturn([]);
+        $namespace = new NamespaceWithMetrics('App', 3, MetricBag::fromArray(['loc' => 8]));
+        $collector = $this->createMockCollectorWithNamespaceMetrics([$namespace]);
+
+        $result = $this->makeProcessor(new CompositeCollector([$collector]))->process($file);
+
+        self::assertTrue($result->isSuccessful());
+        self::assertSame(8, $result->collectedData()->namespaceMetrics['ns:App']['metrics']->get('loc'));
+        self::assertSame(3, $result->collectedData()->namespaceMetrics['ns:App']['line']);
     }
 
     #[Test]
@@ -190,8 +207,8 @@ final class FileProcessorTest extends TestCase
         $result = $processor->process($file);
 
         // With empty AST, no dependencies should be collected
-        self::assertTrue($result->success);
-        self::assertCount(0, $result->dependencies);
+        self::assertTrue($result->isSuccessful());
+        self::assertCount(0, $result->collectedData()->dependencies);
     }
 
     #[Test]
@@ -217,8 +234,8 @@ final class FileProcessorTest extends TestCase
         $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
 
-        self::assertTrue($result->success);
-        self::assertCount(0, $result->methodMetrics); // Closures skipped
+        self::assertTrue($result->isSuccessful());
+        self::assertCount(0, $result->collectedData()->methodMetrics); // Closures skipped
     }
 
     #[Test]
@@ -249,11 +266,11 @@ final class FileProcessorTest extends TestCase
         $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
 
-        self::assertTrue($result->success);
-        self::assertNotEmpty($result->suppressions);
+        self::assertTrue($result->isSuccessful());
+        self::assertNotEmpty($result->collectedData()->suppressions);
 
         $nextLineSuppressions = array_filter(
-            $result->suppressions,
+            $result->collectedData()->suppressions,
             static fn($s) => $s->type === SuppressionType::NextLine && $s->rule === 'code-smell.exit',
         );
         self::assertCount(1, $nextLineSuppressions);
@@ -283,18 +300,18 @@ final class FileProcessorTest extends TestCase
         $processor = $this->makeProcessor(new CompositeCollector([]));
         $result = $processor->process($file);
 
-        self::assertTrue($result->success);
-        self::assertSame([], $result->thresholdDiagnostics);
-        self::assertCount(2, $result->thresholdOverrides);
+        self::assertTrue($result->isSuccessful());
+        self::assertSame([], $result->collectedData()->thresholdDiagnostics);
+        self::assertCount(2, $result->collectedData()->thresholdOverrides);
 
-        $classOverride = $result->thresholdOverrides[0];
+        $classOverride = $result->collectedData()->thresholdOverrides[0];
         self::assertSame('complexity.cyclomatic', $classOverride->rulePattern);
         self::assertSame(20, $classOverride->warning);
         self::assertSame(30, $classOverride->error);
         self::assertSame(4, $classOverride->line);
         self::assertSame(20, $classOverride->endLine);
 
-        $methodOverride = $result->thresholdOverrides[1];
+        $methodOverride = $result->collectedData()->thresholdOverrides[1];
         self::assertSame('complexity.cyclomatic', $methodOverride->rulePattern);
         self::assertSame(40, $methodOverride->warning);
         self::assertSame(50, $methodOverride->error);
@@ -394,5 +411,49 @@ final class FileProcessorTest extends TestCase
         };
 
         return $collector;
+    }
+
+    /**
+     * @param list<NamespaceWithMetrics> $namespaces
+     */
+    private function createMockCollectorWithNamespaceMetrics(
+        array $namespaces,
+    ): MetricCollectorInterface&NamespaceMetricProviderInterface {
+        return new class ($namespaces) implements MetricCollectorInterface, NamespaceMetricProviderInterface {
+            /** @param list<NamespaceWithMetrics> $namespaces */
+            public function __construct(private readonly array $namespaces) {}
+
+            public function getName(): string
+            {
+                return 'test-namespace-collector';
+            }
+
+            public function provides(): array
+            {
+                return ['loc'];
+            }
+
+            public function getMetricDefinitions(): array
+            {
+                return [];
+            }
+
+            public function getVisitor(): NodeVisitorAbstract
+            {
+                return new class extends NodeVisitorAbstract {};
+            }
+
+            public function collect(SplFileInfo $file, array $ast): MetricBag
+            {
+                return new MetricBag();
+            }
+
+            public function reset(): void {}
+
+            public function getNamespacesWithMetrics(): array
+            {
+                return $this->namespaces;
+            }
+        };
     }
 }

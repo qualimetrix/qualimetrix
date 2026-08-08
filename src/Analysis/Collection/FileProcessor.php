@@ -15,6 +15,7 @@ use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
 use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\NamespaceMetricProviderInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Suppression\Suppression;
@@ -73,6 +74,7 @@ final class FileProcessor implements FileProcessorInterface
             // 3. Extract method/class metrics
             $methodMetrics = $this->extractMethodMetrics();
             $classMetrics = $this->extractClassMetrics();
+            $namespaceMetrics = $this->extractNamespaceMetrics();
 
             // 4. Extract suppression tags from AST nodes
             $suppressions = $this->extractSuppressions($ast);
@@ -91,6 +93,7 @@ final class FileProcessor implements FileProcessorInterface
                 fileBag: $output->metrics,
                 methodMetrics: $methodMetrics,
                 classMetrics: $classMetrics,
+                namespaceMetrics: $namespaceMetrics,
                 dependencies: $output->dependencies,
                 suppressions: $suppressions,
                 thresholdOverrides: $thresholdOverrides,
@@ -100,6 +103,7 @@ final class FileProcessor implements FileProcessorInterface
             return FileProcessingResult::failure(
                 filePath: $relativePath,
                 error: $e->getMessage(),
+                kind: FileProcessingFailureKind::Parse,
             );
         }
     }
@@ -175,6 +179,39 @@ final class FileProcessor implements FileProcessorInterface
         }
 
         return $classMetrics;
+    }
+
+    /**
+     * @return array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}>
+     */
+    private function extractNamespaceMetrics(): array
+    {
+        $namespaceMetrics = [];
+
+        foreach ($this->collector->getCollectors() as $collector) {
+            if (!$collector instanceof NamespaceMetricProviderInterface) {
+                continue;
+            }
+
+            foreach ($collector->getNamespacesWithMetrics() as $namespaceWithMetrics) {
+                $symbolPath = $namespaceWithMetrics->getSymbolPath();
+                $key = $symbolPath->toCanonical();
+
+                if (isset($namespaceMetrics[$key])) {
+                    $namespaceMetrics[$key]['metrics'] = $namespaceMetrics[$key]['metrics']->merge(
+                        $namespaceWithMetrics->metrics,
+                    );
+                } else {
+                    $namespaceMetrics[$key] = [
+                        'symbolPath' => $symbolPath,
+                        'metrics' => $namespaceWithMetrics->metrics,
+                        'line' => $namespaceWithMetrics->line,
+                    ];
+                }
+            }
+        }
+
+        return $namespaceMetrics;
     }
 
     /**

@@ -208,6 +208,38 @@ final class BaselineCleanerTest extends TestCase
     }
 
     #[Test]
+    public function itClassifiesEachSelectorValueOnlyOnceInFirstOccurrenceOrder(): void
+    {
+        $removedEntry = new BaselineEntry(new BaselineIdentity('method:App\Foo::gone', self::gotoChannel()), null, 1);
+        $removed = $removedEntry->selector();
+        $notFound = EntrySelector::fromString('000000000000');
+        $ambiguous = EntrySelector::fromString('aaaaaaaaaaaa');
+        $first = self::inertEntry('file:one.php', InertEntryReason::Malformed, $ambiguous);
+        $second = self::inertEntry('file:two.php', InertEntryReason::Malformed, $ambiguous);
+        $baseline = new Baseline(
+            generated: new DateTimeImmutable(),
+            scope: ['src'],
+            entries: [$removedEntry],
+            inertEntries: [$first, $second],
+        );
+
+        $result = $this->cleaner()->remove($baseline, [
+            $notFound,
+            $removed,
+            $ambiguous,
+            $removed,
+            $notFound,
+            $ambiguous,
+        ]);
+
+        self::assertSame([$removed], $result->removed);
+        self::assertSame([$notFound], $result->notFound);
+        self::assertSame([$ambiguous], $result->ambiguous);
+        self::assertSame([], $result->baseline->entries);
+        self::assertSame([$first, $second], $result->baseline->inertEntries);
+    }
+
+    #[Test]
     public function itLeavesTheBaselineEntriesUnchangedWhenGivenNoSelectors(): void
     {
         $entry = new BaselineEntry(new BaselineIdentity('method:App\Foo::bar', self::gotoChannel()), null, 1);
