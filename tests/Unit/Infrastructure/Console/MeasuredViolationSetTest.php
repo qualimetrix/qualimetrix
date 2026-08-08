@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Console;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
@@ -165,10 +166,9 @@ final class MeasuredViolationSetTest extends TestCase
         $analyzer = self::createStub(AnalysisPipelineInterface::class);
         $analyzer->method('analyze')->willReturn(new AnalysisResult(
             violations: $violations,
-            filesAnalyzed: 1,
-            filesSkipped: 0,
             duration: 0.1,
             metrics: self::createStub(MetricRepositoryInterface::class),
+            coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
             suppressions: $suppressions,
         ));
 

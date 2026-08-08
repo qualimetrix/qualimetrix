@@ -10,8 +10,20 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Configuration\RuleOptionsFactory;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
+use Qualimetrix\Rules\CodeSmell\CodeSmellOptions;
+use Qualimetrix\Rules\CodeSmell\CountInLoopRule;
+use Qualimetrix\Rules\CodeSmell\DebugCodeRule;
+use Qualimetrix\Rules\CodeSmell\EmptyCatchRule;
+use Qualimetrix\Rules\CodeSmell\EvalRule;
+use Qualimetrix\Rules\CodeSmell\ExitRule;
+use Qualimetrix\Rules\CodeSmell\GotoRule;
+use Qualimetrix\Rules\CodeSmell\SuperglobalsRule;
 use Qualimetrix\Rules\Complexity\ComplexityOptions;
 use Qualimetrix\Rules\Complexity\ComplexityRule;
+use Qualimetrix\Rules\Security\CommandInjectionRule;
+use Qualimetrix\Rules\Security\SecurityPatternOptions;
+use Qualimetrix\Rules\Security\SqlInjectionRule;
+use Qualimetrix\Rules\Security\XssRule;
 use Qualimetrix\Rules\Size\ClassCountRule;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -31,11 +43,12 @@ final class RuleOptionsCompilerPassTest extends TestCase
         $pass = new RuleOptionsCompilerPass();
         $pass->process($container);
 
-        // Options service should be registered
-        self::assertTrue($container->hasDefinition(ComplexityOptions::class));
+        $optionsReference = $container->getDefinition(ComplexityRule::class)->getArgument('$options');
+        self::assertInstanceOf(Reference::class, $optionsReference);
 
         // Options should use RuleOptionsFactory::create as factory
-        $optionsDef = $container->getDefinition(ComplexityOptions::class);
+        $optionsDef = $container->getDefinition((string) $optionsReference);
+        self::assertSame(ComplexityOptions::class, $optionsDef->getClass());
         $factory = $optionsDef->getFactory();
         self::assertIsArray($factory);
         self::assertInstanceOf(Reference::class, $factory[0]);
@@ -63,7 +76,10 @@ final class RuleOptionsCompilerPassTest extends TestCase
         $optionsRef = $ruleDef->getArgument('$options');
 
         self::assertInstanceOf(Reference::class, $optionsRef);
-        self::assertSame(ComplexityOptions::class, (string) $optionsRef);
+        self::assertSame(
+            self::optionsServiceId(ComplexityRule::NAME, ComplexityOptions::class),
+            (string) $optionsRef,
+        );
     }
 
     #[Test]
@@ -78,7 +94,9 @@ final class RuleOptionsCompilerPassTest extends TestCase
         $pass->process($container);
 
         // No Options registered since factory is missing
-        self::assertFalse($container->hasDefinition(ComplexityOptions::class));
+        self::assertFalse($container->hasDefinition(
+            self::optionsServiceId(ComplexityRule::NAME, ComplexityOptions::class),
+        ));
     }
 
     #[Test]
@@ -123,13 +141,59 @@ final class RuleOptionsCompilerPassTest extends TestCase
     }
 
     #[Test]
+    public function keepsSharedOptionsIdentitySeparateForEveryProducer(): void
+    {
+        $container = new ContainerBuilder();
+        $container->register(RuleOptionsFactory::class)->setSynthetic(true);
+
+        $producers = [
+            CountInLoopRule::class => CodeSmellOptions::class,
+            DebugCodeRule::class => CodeSmellOptions::class,
+            EmptyCatchRule::class => CodeSmellOptions::class,
+            EvalRule::class => CodeSmellOptions::class,
+            ExitRule::class => CodeSmellOptions::class,
+            GotoRule::class => CodeSmellOptions::class,
+            SuperglobalsRule::class => CodeSmellOptions::class,
+            CommandInjectionRule::class => SecurityPatternOptions::class,
+            SqlInjectionRule::class => SecurityPatternOptions::class,
+            XssRule::class => SecurityPatternOptions::class,
+        ];
+
+        foreach ($producers as $ruleClass => $optionsClass) {
+            $container->register($ruleClass)
+                ->setClass($ruleClass)
+                ->addTag(RuleCompilerPass::TAG);
+        }
+
+        (new RuleOptionsCompilerPass())->process($container);
+
+        $optionsServiceIds = [];
+        foreach ($producers as $ruleClass => $optionsClass) {
+            $optionsReference = $container->getDefinition($ruleClass)->getArgument('$options');
+            self::assertInstanceOf(Reference::class, $optionsReference);
+
+            $optionsServiceId = (string) $optionsReference;
+            $optionsServiceIds[] = $optionsServiceId;
+            self::assertSame(self::optionsServiceId($ruleClass::NAME, $optionsClass), $optionsServiceId);
+
+            $optionsDefinition = $container->getDefinition($optionsServiceId);
+            self::assertSame($optionsClass, $optionsDefinition->getClass());
+            self::assertSame([$ruleClass::NAME, $optionsClass], $optionsDefinition->getArguments());
+        }
+
+        self::assertCount(10, array_unique($optionsServiceIds));
+    }
+
+    #[Test]
     public function doesNotReRegisterExistingOptionsService(): void
     {
         $container = new ContainerBuilder();
         $container->register(RuleOptionsFactory::class)->setSynthetic(true);
 
-        // Pre-register Options with a custom factory
-        $container->register(ComplexityOptions::class)
+        $optionsServiceId = self::optionsServiceId(ComplexityRule::NAME, ComplexityOptions::class);
+
+        // Pre-register this producer's Options with a custom factory
+        $container->register($optionsServiceId, ComplexityOptions::class)
             ->setFactory([new Reference(RuleOptionsFactory::class), 'create'])
             ->setArguments(['custom.name', ComplexityOptions::class]);
 
@@ -141,7 +205,15 @@ final class RuleOptionsCompilerPassTest extends TestCase
         $pass->process($container);
 
         // Should keep the existing definition (with 'custom.name')
-        $optionsDef = $container->getDefinition(ComplexityOptions::class);
+        $optionsDef = $container->getDefinition($optionsServiceId);
         self::assertSame('custom.name', $optionsDef->getArgument(0));
+    }
+
+    /**
+     * @param class-string $optionsClass
+     */
+    private static function optionsServiceId(string $ruleName, string $optionsClass): string
+    {
+        return $ruleName . '.options.' . $optionsClass;
     }
 }

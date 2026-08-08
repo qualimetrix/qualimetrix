@@ -99,7 +99,58 @@ final readonly class BoundaryExplanationService
             );
         }
 
-        return new BoundaryExplanation($symbolKey, $boundaries);
+        return new BoundaryExplanation(
+            $symbolKey,
+            $boundaries,
+            self::statusFor($symbolKey, $baseline, $measuredViolations, $symbolLocations),
+        );
+    }
+
+    /** @param list<Violation> $measuredViolations */
+    private static function statusFor(
+        string $symbolKey,
+        ?Baseline $baseline,
+        array $measuredViolations,
+        ?MetricRepositoryInterface $symbolLocations,
+    ): BoundaryExplanationStatus {
+        foreach ($measuredViolations as $violation) {
+            if ($violation->symbolPath->toCanonical() === $symbolKey) {
+                return BoundaryExplanationStatus::Current;
+            }
+        }
+
+        if ($symbolLocations !== null && self::repositoryContains($symbolKey, $symbolLocations)) {
+            return BoundaryExplanationStatus::Current;
+        }
+
+        if ($baseline !== null) {
+            foreach ($baseline->entries as $entry) {
+                if ($entry->identity->symbolKey === $symbolKey) {
+                    return BoundaryExplanationStatus::BaselineOnly;
+                }
+            }
+
+            foreach ($baseline->inertEntries as $entry) {
+                if ($entry->symbolKey === $symbolKey) {
+                    return BoundaryExplanationStatus::BaselineOnly;
+                }
+            }
+        }
+
+        return BoundaryExplanationStatus::Unknown;
+    }
+
+    private static function repositoryContains(string $symbolKey, MetricRepositoryInterface $repository): bool
+    {
+        foreach (SymbolType::cases() as $type) {
+            foreach ($repository->all($type) as $info) {
+                if ($info->symbolPath->toCanonical() === $symbolKey) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

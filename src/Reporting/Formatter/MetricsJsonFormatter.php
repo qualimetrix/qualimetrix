@@ -73,6 +73,7 @@ final class MetricsJsonFormatter implements FormatterInterface
             'package' => self::PACKAGE,
             'timestamp' => gmdate('c'),
             'symbols' => $symbols,
+            'coverage' => $report->coverage?->toArray(),
             'summary' => [
                 'filesAnalyzed' => $report->filesAnalyzed,
                 'filesSkipped' => $report->filesSkipped,

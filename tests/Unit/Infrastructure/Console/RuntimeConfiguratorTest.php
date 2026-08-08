@@ -29,6 +29,7 @@ use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Violation\RuleExclusionCaptureHolder;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
+use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
@@ -36,9 +37,11 @@ use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[CoversClass(RuntimeConfigurator::class)]
+#[CoversClass(AnalysisRuntimeConfigurator::class)]
 #[CoversClass(HealthFormulaExcluder::class)]
 #[CoversClass(DeferredWarning::class)]
 final class RuntimeConfiguratorTest extends TestCase
@@ -62,6 +65,8 @@ final class RuntimeConfiguratorTest extends TestCase
     protected function tearDown(): void
     {
         RuleExclusionCaptureHolder::reset();
+        ComputedMetricDefinitionHolder::reset();
+        CollectorConfigHolder::reset();
     }
 
     /**
@@ -91,16 +96,18 @@ final class RuntimeConfiguratorTest extends TestCase
             $loggerHolder,
             new ProgressReporterHolder(),
             new ProfilerHolder(),
-            $configProvider,
-            $this->ruleOptionsRegistry,
-            $ruleRegistry,
-            new CacheFactory($configProvider),
-            new ComputedMetricsConfigResolver(
-                new ComputedMetricFormulaValidator(),
-                new HealthFormulaExcluder(),
+            new AnalysisRuntimeConfigurator(
+                $configProvider,
+                $this->ruleOptionsRegistry,
+                $ruleRegistry,
+                new CacheFactory($configProvider),
+                new ComputedMetricsConfigResolver(
+                    new ComputedMetricFormulaValidator(),
+                    new HealthFormulaExcluder(),
+                ),
+                $this->frameworkNamespacesHolder,
+                [new ArchitectureLifecycleHook($this->architectureProcessor)],
             ),
-            $this->frameworkNamespacesHolder,
-            [new ArchitectureLifecycleHook($this->architectureProcessor)],
         );
     }
 
@@ -686,7 +693,7 @@ final class RuntimeConfiguratorTest extends TestCase
         // in the holder during pipeline resolution.
 
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, true);
-        $loggerHolder = $this->buildConfiguratorWithBufferedOutput($output);
+        $loggerHolder = $this->buildConfiguratorWithBufferedOutput();
 
         $resolved = new ResolvedConfiguration(
             paths: PathsConfiguration::defaults(),
@@ -698,7 +705,7 @@ final class RuntimeConfiguratorTest extends TestCase
             architecture: ArchitectureConfiguration::empty(),
         );
 
-        $this->configurator->configure($resolved, $this->createCliInput([]), $output);
+        $this->configurator->configure($resolved, $this->createCliInput([]), self::diagnosticConsole($output));
 
         // The buffered ConsoleLogger emits warnings at VERBOSITY_NORMAL with a
         // <comment> tag, so plain text should be visible regardless of decoration.
@@ -715,7 +722,7 @@ final class RuntimeConfiguratorTest extends TestCase
     public function emptyDeferredWarningsListProducesNoLogOutput(): void
     {
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, true);
-        $this->buildConfiguratorWithBufferedOutput($output);
+        $this->buildConfiguratorWithBufferedOutput();
 
         $resolved = new ResolvedConfiguration(
             paths: PathsConfiguration::defaults(),
@@ -724,7 +731,7 @@ final class RuntimeConfiguratorTest extends TestCase
             architecture: ArchitectureConfiguration::empty(),
         );
 
-        $this->configurator->configure($resolved, $this->createCliInput([]), $output);
+        $this->configurator->configure($resolved, $this->createCliInput([]), self::diagnosticConsole($output));
 
         $rendered = $output->fetch();
         self::assertSame('', $rendered, 'No warnings should be logged when deferredWarnings is empty');
@@ -739,7 +746,7 @@ final class RuntimeConfiguratorTest extends TestCase
         // distinct prefixes prove the level was preserved when drained.
 
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, true);
-        $this->buildConfiguratorWithBufferedOutput($output);
+        $this->buildConfiguratorWithBufferedOutput();
 
         $resolved = new ResolvedConfiguration(
             paths: PathsConfiguration::defaults(),
@@ -752,7 +759,7 @@ final class RuntimeConfiguratorTest extends TestCase
             architecture: ArchitectureConfiguration::empty(),
         );
 
-        $this->configurator->configure($resolved, $this->createCliInput([]), $output);
+        $this->configurator->configure($resolved, $this->createCliInput([]), self::diagnosticConsole($output));
 
         $rendered = $output->fetch();
         self::assertStringContainsString('[WARNING]', $rendered);
@@ -765,7 +772,7 @@ final class RuntimeConfiguratorTest extends TestCase
      * Wires the test configurator with a BufferedOutput-friendly LoggerFactory
      * and returns the LoggerHolder so the test can inspect it after configure().
      */
-    private function buildConfiguratorWithBufferedOutput(BufferedOutput $output): LoggerHolder
+    private function buildConfiguratorWithBufferedOutput(): LoggerHolder
     {
         // The real LoggerFactory honors verbosity, so a VERBOSITY_NORMAL
         // BufferedOutput will produce a ConsoleLogger that writes warnings to
@@ -781,19 +788,29 @@ final class RuntimeConfiguratorTest extends TestCase
             $loggerHolder,
             new ProgressReporterHolder(),
             new ProfilerHolder(),
-            $this->configProvider,
-            $this->ruleOptionsRegistry,
-            $ruleRegistry,
-            new CacheFactory($this->configProvider),
-            new ComputedMetricsConfigResolver(
-                new ComputedMetricFormulaValidator(),
-                new HealthFormulaExcluder(),
+            new AnalysisRuntimeConfigurator(
+                $this->configProvider,
+                $this->ruleOptionsRegistry,
+                $ruleRegistry,
+                new CacheFactory($this->configProvider),
+                new ComputedMetricsConfigResolver(
+                    new ComputedMetricFormulaValidator(),
+                    new HealthFormulaExcluder(),
+                ),
+                $this->frameworkNamespacesHolder,
+                [new ArchitectureLifecycleHook($this->architectureProcessor)],
             ),
-            $this->frameworkNamespacesHolder,
-            [new ArchitectureLifecycleHook($this->architectureProcessor)],
         );
 
         return $loggerHolder;
+    }
+
+    private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput
+    {
+        $output = new ConsoleOutput($diagnostics->getVerbosity(), false);
+        $output->setErrorOutput($diagnostics);
+
+        return $output;
     }
 
     private function createOutput(): OutputInterface

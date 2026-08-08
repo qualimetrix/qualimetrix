@@ -114,8 +114,15 @@ final readonly class BaselineCleaner
         $removed = [];
         $notFound = [];
         $ambiguous = [];
+        /** @var array<string, true> $seenSelectors */
+        $seenSelectors = [];
 
         foreach ($selectors as $selector) {
+            if (isset($seenSelectors[$selector->value])) {
+                continue;
+            }
+
+            $seenSelectors[$selector->value] = true;
             $matches = $baseline->findBySelector($selector);
 
             if ($matches === []) {

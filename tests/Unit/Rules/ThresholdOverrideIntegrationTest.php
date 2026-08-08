@@ -256,20 +256,20 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         self::assertSame(10, $lplOverridden->voWarning, 'LPL: voWarning must be preserved');
         self::assertSame(16, $lplOverridden->voError, 'LPL: voError must be preserved');
 
-        // MaintainabilityOptions — has excludeTests, minLoc
+        // MaintainabilityOptions — has excludeTests, minStatements
         $mi = new MaintainabilityOptions(
             enabled: false,
             warning: 50.0,
             error: 25.0,
             excludeTests: false,
-            minLoc: 20,
+            minStatements: 20,
         );
         $miOverridden = $mi->withOverride(45.0, 15.0);
         self::assertFalse($miOverridden->enabled, 'MI: enabled must be preserved');
         self::assertSame(45.0, $miOverridden->warning);
         self::assertSame(15.0, $miOverridden->error);
         self::assertFalse($miOverridden->excludeTests, 'MI: excludeTests must be preserved');
-        self::assertSame(20, $miOverridden->minLoc, 'MI: minLoc must be preserved');
+        self::assertSame(20, $miOverridden->minStatements, 'MI: minStatements must be preserved');
 
         // ClassCboOptions — has scope
         $cbo = new ClassCboOptions(

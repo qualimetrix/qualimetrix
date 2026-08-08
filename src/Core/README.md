@@ -25,6 +25,8 @@ Core/
 │   ├── MethodWithMetrics.php
 │   ├── ClassMetricsProviderInterface.php  # Provider for class-level metrics
 │   ├── ClassWithMetrics.php               # VO for class with metrics
+│   ├── NamespaceMetricProviderInterface.php # Provider for namespace-owned contributions
+│   ├── NamespaceWithMetrics.php            # VO for namespace source metrics
 │   ├── DerivedCollectorInterface.php      # Derived (composite) collectors
 │   ├── GlobalContextCollectorInterface.php # Cross-file collectors
 │   ├── AggregationMeta.php                # Constants for aggregation-injected counters
@@ -200,6 +202,12 @@ Analogous to `MethodMetricsProviderInterface` but for class-level data. Allows e
 - `getClassesWithMetrics(): list<ClassWithMetrics>` — returns class metrics after AST traversal
 
 **Usage:** Implemented by collectors that gather class-level metrics (e.g., TccLccCollector, RfcCollector).
+
+### NamespaceMetricProviderInterface
+
+Optional interface for collectors that can attribute file-collected metrics to
+individual namespace source blocks. `NamespaceWithMetrics` carries the namespace,
+source line, and contribution bag through sequential and parallel collection.
 
 ### MethodWithMetrics
 

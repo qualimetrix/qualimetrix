@@ -9,6 +9,7 @@ use Amp\Parallel\Worker\Execution;
 use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Collection\Strategy\ExecutionStrategyInterface;
 use Qualimetrix\Analysis\Collection\Strategy\ParallelCapableInterface;
@@ -381,6 +382,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
                 $results[] = FileProcessingResult::failure(
                     $this->relativePathFor($file),
                     $e->getMessage(),
+                    FileProcessingFailureKind::Processing,
                 );
             }
         }

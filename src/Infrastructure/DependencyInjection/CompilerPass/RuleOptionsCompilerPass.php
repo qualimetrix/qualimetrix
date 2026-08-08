@@ -20,7 +20,7 @@ use Symfony\Component\DependencyInjection\Reference;
  *
  * For each tagged Rule, this pass:
  * 1. Calls Rule::getOptionsClass() to get the Options class
- * 2. Registers the Options class with RuleOptionsFactory::create() as factory
+ * 2. Registers producer-specific Options with RuleOptionsFactory::create() as factory
  * 3. Binds the Options to the Rule via setArgument('$options', ...)
  *
  * This allows Rules to be auto-registered via registerClasses() without
@@ -57,21 +57,34 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface
             // Get rule NAME constant for factory
             $ruleName = $ruleClass::NAME;
 
-            // Register Options service if not already registered
-            if (!$container->hasDefinition($optionsClass)) {
-                $container->register($optionsClass)
+            // Options configuration is keyed by producer rule name. The service identity
+            // must therefore include both the producer and the Options class: multiple
+            // rules may intentionally reuse the same immutable Options implementation
+            // while still requiring independently configured instances.
+            $optionsServiceId = $this->optionsServiceId($ruleName, $optionsClass);
+
+            if (!$container->hasDefinition($optionsServiceId)) {
+                $container->register($optionsServiceId, $optionsClass)
                     ->setFactory([new Reference(RuleOptionsFactory::class), 'create'])
                     ->setArguments([$ruleName, $optionsClass]);
                 // Note: Options are NOT lazy - they're simple value objects
             }
 
             // Bind Options to Rule
-            $ruleDefinition->setArgument('$options', new Reference($optionsClass));
+            $ruleDefinition->setArgument('$options', new Reference($optionsServiceId));
 
             // Resolve additional constructor dependencies (rules have autowiring disabled,
             // so we must manually bind typed parameters beyond $options)
             $this->resolveExtraDependencies($container, $ruleDefinition, $ruleClass);
         }
+    }
+
+    /**
+     * @param class-string<RuleOptionsInterface> $optionsClass
+     */
+    private function optionsServiceId(string $ruleName, string $optionsClass): string
+    {
+        return $ruleName . '.options.' . $optionsClass;
     }
 
     /**

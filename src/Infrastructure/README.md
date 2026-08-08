@@ -45,7 +45,8 @@ Infrastructure/
 │   ├── ChangeStatus.php
 │   ├── GitScopeFilter.php
 │   ├── GitScopeResolver.php          # Resolves git scope from CLI options
-│   └── GitScopeResolution.php        # Resolution result VO
+│   ├── GitScopeResolution.php        # Resolution result VO
+│   └── Exception/UnresolvedGitReferenceException.php # Invalid git revision input
 ├── Logging/                          # -> See Logging/README.md
 │   ├── LoggerFactory.php
 │   ├── LoggerHolder.php
@@ -109,8 +110,10 @@ Infrastructure/
     ├── ViolationFilterResult.php      # Filter result VO: reported findings, the measured set, per-stage removals, stale entries
     ├── GitScopeFilterConfig.php       # Git scope filter config VO
     ├── RuntimeConfigurator.php        # Runtime DI configuration; also sets Core\Violation\RuleExclusionCaptureHolder from --show-suppressed
+    ├── DiagnosticOutput.php          # Routes human diagnostics to stderr without polluting report payloads
+    ├── RuleInputValidator.php        # Fails closed on unknown selectors and option owners
     ├── ResultPresenter.php            # Output presentation
-    ├── ExitCodeResolver.php           # Determines CLI exit code from violations
+    ├── ExitCodeResolver.php           # Determines policy codes and incomplete-analysis exit 4
     ├── ScopeWarningChecker.php        # Warns when analysis paths don't cover all composer.json autoload entries
     ├── ProfilePresenter.php           # Handles profiling output: summary to stderr or export to file
     ├── FormatterContextFactory.php    # Creates FormatterContext from CLI input options
@@ -209,8 +212,12 @@ Rules and their Options are made lazy via `->setLazy(true)`:
 - Injects into `GlobalCollectorRunner`
 
 **RuleOptionsCompilerPass:**
-- Registers Options for each rule via `RuleOptionsFactory::create()`
+- Registers producer-specific Options for each rule via `RuleOptionsFactory::create()`
 - Injects Options into the rule constructor
+
+The service identity contains both producer name and Options class. Rules may
+share an immutable Options implementation, but their configured instances must
+remain independent because configuration is keyed by producer rule name.
 
 **RuleCompilerPass:**
 - Collects services with tag `qmx.rule`

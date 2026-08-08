@@ -22,5 +22,6 @@ final readonly class BoundaryExplanation
     public function __construct(
         public string $symbolKey,
         public array $boundaries,
+        public BoundaryExplanationStatus $status,
     ) {}
 }

@@ -51,6 +51,7 @@ Parses strings in format `git:staged`, `git:main..HEAD` into a `GitScope` object
 **Behavior:**
 - Filters violations, showing only those related to changed files
 - By default includes parent namespace violations (if a class is changed, namespace violations are shown too)
+- Indexes every namespace declaration in a changed PHP file, including multiple bracketed blocks
 - `--report-strict` mode disables parent namespace violation display
 
 ## Use Cases

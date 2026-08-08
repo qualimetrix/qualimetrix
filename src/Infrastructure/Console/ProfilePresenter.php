@@ -17,6 +17,7 @@ final class ProfilePresenter
     public function __construct(
         private readonly ProfilerHolder $profilerHolder,
         private readonly ProfileSummaryRenderer $profileRenderer = new ProfileSummaryRenderer(),
+        private readonly DiagnosticOutput $diagnosticOutput = new DiagnosticOutput(),
     ) {}
 
     /**
@@ -24,6 +25,7 @@ final class ProfilePresenter
      */
     public function present(InputInterface $input, OutputInterface $output): void
     {
+        $output = $this->diagnosticOutput->stream($output);
         $profiler = $this->profilerHolder->get(); // @phpstan-ignore staticMethod.dynamicCall
 
         if (!$profiler->isEnabled()) {

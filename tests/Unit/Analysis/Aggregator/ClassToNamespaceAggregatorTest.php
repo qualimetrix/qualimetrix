@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Aggregator\AggregationHelper;
 use Qualimetrix\Analysis\Aggregator\ClassToNamespaceAggregator;
 use Qualimetrix\Analysis\Aggregator\MetricAggregator;
+use Qualimetrix\Analysis\Aggregator\NamespaceMetricContributions;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
@@ -22,8 +23,68 @@ use Qualimetrix\Metrics\Size\LocCollector;
 
 #[CoversClass(ClassToNamespaceAggregator::class)]
 #[CoversClass(AggregationHelper::class)]
+#[CoversClass(NamespaceMetricContributions::class)]
 final class ClassToNamespaceAggregatorTest extends TestCase
 {
+    #[Test]
+    public function itUsesExplicitNamespaceContributionsInsteadOfCopyingTheWholeFileBag(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $file = RelativePath::fromString('src/Multi.php');
+        $repository->add(SymbolPath::forFile($file), MetricBag::fromArray([
+            'loc' => 20,
+            'classCount' => 2,
+        ]), $file, 1);
+        $repository->add(SymbolPath::forNamespace('One'), MetricBag::fromArray([
+            'loc' => 8,
+            'loc.count' => 1,
+            'classCount' => 1,
+            'classCount.count' => 1,
+        ]), $file, 2);
+        $repository->add(SymbolPath::forNamespace('Two'), MetricBag::fromArray([
+            'loc' => 9,
+            'loc.count' => 1,
+            'classCount' => 1,
+            'classCount.count' => 1,
+        ]), $file, 10);
+
+        $definitions = [
+            new MetricDefinition('loc', SymbolLevel::File, [
+                SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
+            ]),
+            new MetricDefinition('classCount', SymbolLevel::File, [
+                SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+            ]),
+        ];
+
+        (new ClassToNamespaceAggregator())->aggregate($repository, $definitions);
+
+        self::assertSame(8, $repository->get(SymbolPath::forNamespace('One'))->get('loc.sum'));
+        self::assertSame(9, $repository->get(SymbolPath::forNamespace('Two'))->get('loc.sum'));
+        self::assertSame(1, $repository->get(SymbolPath::forNamespace('One'))->get('classCount.sum'));
+        self::assertSame(1, $repository->get(SymbolPath::forNamespace('Two'))->get('classCount.sum'));
+    }
+
+    #[Test]
+    public function itPreservesNamespaceAverageAcrossMultiplePhysicalFileContributions(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $file = RelativePath::fromString('src/A.php');
+        $repository->add(SymbolPath::forNamespace('App'), MetricBag::fromArray([
+            'loc' => 30,
+            'loc.count' => 2,
+        ]), $file, 2);
+        $definitions = [new MetricDefinition('loc', SymbolLevel::File, [
+            SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
+        ])];
+
+        (new ClassToNamespaceAggregator())->aggregate($repository, $definitions);
+
+        $namespace = $repository->get(SymbolPath::forNamespace('App'));
+        self::assertSame(30, $namespace->get('loc.sum'));
+        self::assertSame(15, $namespace->get('loc.avg'));
+        self::assertSame(2, $namespace->get('loc.count'));
+    }
     #[Test]
     public function itAggregatesProceduralFileLocToNamespace(): void
     {

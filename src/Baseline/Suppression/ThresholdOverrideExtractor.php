@@ -78,11 +78,16 @@ final readonly class ThresholdOverrideExtractor
         /** @var array<string, true> $seenRules track rule patterns to detect duplicates */
         $seenRules = [];
 
-        if (preg_match_all(self::PATTERN, $text, $matches, \PREG_SET_ORDER) !== 0) {
+        $flags = \PREG_SET_ORDER | \PREG_OFFSET_CAPTURE | \PREG_UNMATCHED_AS_NULL;
+        if (preg_match_all(self::PATTERN, $text, $matches, $flags) !== 0) {
             foreach ($matches as $match) {
-                $rulePattern = $match[1];
-                $valueString = self::cleanTrailingDocblock($match[2] ?? '');
-                $line = $docComment->getStartLine();
+                $rulePattern = $match[1][0];
+                if (!\is_string($rulePattern)) {
+                    continue;
+                }
+
+                $valueString = self::cleanTrailingDocblock($match[2][0] ?? '');
+                $line = self::lineAtOffset($text, $docComment->getStartLine(), $match[0][1]);
 
                 $parsed = self::parseValues($valueString);
                 if ($parsed === null) {
@@ -286,6 +291,15 @@ final readonly class ThresholdOverrideExtractor
      */
     private static function stripBacktickRegions(string $text): string
     {
-        return preg_replace('/`[^`]*`/', '', $text) ?? $text;
+        return preg_replace_callback(
+            '/`[^`]*`/',
+            static fn(array $match): string => preg_replace('/[^\r\n]/', ' ', $match[0]) ?? $match[0],
+            $text,
+        ) ?? $text;
+    }
+
+    private static function lineAtOffset(string $text, int $startLine, int $offset): int
+    {
+        return $startLine + substr_count(substr($text, 0, $offset), "\n");
     }
 }

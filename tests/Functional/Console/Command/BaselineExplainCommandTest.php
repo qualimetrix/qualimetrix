@@ -202,6 +202,39 @@ final class BaselineExplainCommandTest extends TestCase
         self::assertStringContainsString('is not a valid channel key', $tester->getDisplay());
     }
 
+    #[Test]
+    public function itRejectsAnUnknownSymbolEvenWhenAChannelWasExplicitlyRequested(): void
+    {
+        $tester = $this->execute(
+            [],
+            ['--channel' => self::CCN_CHANNEL],
+            symbol: SymbolPath::forMethod('App', 'Missing', 'method'),
+        );
+
+        self::assertSame(Command::INVALID, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Unknown symbol', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itExplainsThatABaselineOnlySymbolIsAbsentFromTheCurrentRun(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
+        $this->writeBaseline([
+            new BaselineEntry(self::identity($symbol, self::CCN_CHANNEL), [25.0], 1),
+        ]);
+
+        $tester = $this->execute(
+            [],
+            ['--baseline' => $this->baselinePath, '--channel' => self::CCN_CHANNEL],
+            symbol: $symbol,
+        );
+
+        self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
+        self::assertStringContainsString('Baseline only', $tester->getDisplay());
+        self::assertStringContainsString('absent from the current analysis scope or result', $tester->getDisplay());
+        self::assertStringContainsString('accepted 25; now nothing reported', $tester->getDisplay());
+    }
+
     /**
      * The case ADR 0017 gives as the reason `$symbolLocations` exists: an
      * `@qmx-threshold` that raised the limit is normally *why* the rule no

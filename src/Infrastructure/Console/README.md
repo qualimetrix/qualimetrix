@@ -23,6 +23,9 @@ Console/
 ├── ViolationFilterResult.php
 ├── GitScopeFilterConfig.php
 ├── RuntimeConfigurator.php
+├── AnalysisRuntimeConfigurator.php  # Per-run rule, collector, computed-metric, and feature state
+├── DiagnosticOutput.php              # Human diagnostics routed to stderr
+├── RuleInputValidator.php            # Fail-closed selector/option-owner validation
 ├── ResultPresenter.php
 ├── CheckCommandDefinition.php
 ├── FilteredInputDefinition.php      # InputDefinition that hides rule-specific options from --help
@@ -60,12 +63,18 @@ Console/
 
 **Exit codes:**
 
-| Code | Description                      |
-| ---- | -------------------------------- |
-| 0    | No violations                    |
-| 1    | Warnings present (but no errors) |
-| 2    | Errors present                   |
-| 3    | Configuration or input error     |
+| Code | Description                                             |
+| ---- | ------------------------------------------------------- |
+| 0    | No violations                                           |
+| 1    | Warnings present (but no errors)                        |
+| 2    | Errors present                                          |
+| 3    | Configuration or input error                            |
+| 4    | Analysis incomplete; policy result is not authoritative |
+
+Unknown `--only-rule` / `--disable-rule` selectors and unknown rule-option
+owners are input errors (exit 3). On incomplete analysis, the selected report is
+still rendered for diagnosis and exit 4 takes precedence over violation policy.
+Non-payload diagnostics from `check` are written to stderr.
 
 ### BaselineCleanupCommand
 
@@ -90,6 +99,9 @@ Export dependency graph in DOT or JSON format.
 **Output formats:**
 - **DOT** (Graphviz) — circular dependencies highlighted in red, clustering by namespace
 - **JSON** — structured graph data for programmatic consumption
+
+The command refuses partial analysis with exit 4. It writes no stdout artifact,
+does not create a missing destination, and preserves an existing destination.
 
 ### Hook Commands
 
@@ -241,7 +253,7 @@ bin/qmx hook:uninstall
 ## Definition of Done
 
 - `CheckCommand` works with all options
-- Exit codes are correct (0/1/2)
+- Exit codes are correct (0/1/2 policy, 3 input/configuration, 4 incomplete analysis)
 - Progress bar works for large projects
 - Git integration via --report option
 - Baseline management via options

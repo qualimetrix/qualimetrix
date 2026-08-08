@@ -7,6 +7,9 @@ namespace Qualimetrix\Tests\Unit\Analysis\Pipeline;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Pipeline\AnalysisCoverage;
+use Qualimetrix\Analysis\Pipeline\AnalysisFailure;
+use Qualimetrix\Analysis\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\MetricBag;
@@ -128,7 +131,7 @@ final class AnalysisResultTest extends TestCase
 
         $result2 = $this->createResult([
             $this->createViolation(Severity::Warning, 'file2.php'),
-        ], filesAnalyzed: 3, filesSkipped: 2, duration: 2.0);
+        ], filesAnalyzed: 3, filesSkipped: 2, duration: 2.0, coveragePrefix: 'other');
 
         $merged = $result1->merge($result2);
 
@@ -159,8 +162,8 @@ final class AnalysisResultTest extends TestCase
             20,
         );
 
-        $result1 = new AnalysisResult([], 5, 0, 1.0, $repo1);
-        $result2 = new AnalysisResult([], 3, 0, 2.0, $repo2);
+        $result1 = new AnalysisResult([], 1.0, $repo1, self::coverage(5));
+        $result2 = new AnalysisResult([], 2.0, $repo2, self::coverage(3, prefix: 'other'));
 
         $merged = $result1->merge($result2);
 
@@ -244,19 +247,17 @@ final class AnalysisResultTest extends TestCase
 
         $result1 = new AnalysisResult(
             violations: [],
-            filesAnalyzed: 1,
-            filesSkipped: 0,
             duration: 0.1,
             metrics: self::createStub(MetricRepositoryInterface::class),
+            coverage: self::coverage(1),
             suppressions: ['shared.php' => [$suppression1], 'only1.php' => [$suppression2]],
         );
 
         $result2 = new AnalysisResult(
             violations: [],
-            filesAnalyzed: 1,
-            filesSkipped: 0,
             duration: 0.1,
             metrics: self::createStub(MetricRepositoryInterface::class),
+            coverage: self::coverage(1, prefix: 'other'),
             suppressions: ['shared.php' => [$suppression3], 'only2.php' => [$suppression2]],
         );
 
@@ -281,19 +282,17 @@ final class AnalysisResultTest extends TestCase
 
         $result1 = new AnalysisResult(
             violations: [],
-            filesAnalyzed: 1,
-            filesSkipped: 0,
             duration: 0.1,
             metrics: self::createStub(MetricRepositoryInterface::class),
+            coverage: self::coverage(1),
             thresholdOverrides: ['shared.php' => [$override1], 'only1.php' => [$override2]],
         );
 
         $result2 = new AnalysisResult(
             violations: [],
-            filesAnalyzed: 1,
-            filesSkipped: 0,
             duration: 0.1,
             metrics: self::createStub(MetricRepositoryInterface::class),
+            coverage: self::coverage(1, prefix: 'other'),
             thresholdOverrides: ['shared.php' => [$override3], 'only2.php' => [$override2]],
         );
 
@@ -326,14 +325,36 @@ final class AnalysisResultTest extends TestCase
         int $filesAnalyzed = 1,
         int $filesSkipped = 0,
         float $duration = 0.1,
+        string $coveragePrefix = 'result',
     ): AnalysisResult {
         return new AnalysisResult(
             violations: $violations,
-            filesAnalyzed: $filesAnalyzed,
-            filesSkipped: $filesSkipped,
             duration: $duration,
             metrics: self::createStub(MetricRepositoryInterface::class),
+            coverage: self::coverage($filesAnalyzed, $filesSkipped, $coveragePrefix),
         );
+    }
+
+    private static function coverage(
+        int $analyzed,
+        int $failed = 0,
+        string $prefix = 'result',
+    ): AnalysisCoverage {
+        $analyzedFiles = [];
+        for ($index = 0; $index < $analyzed; $index++) {
+            $analyzedFiles[] = RelativePath::fromString($prefix . '/analyzed-' . $index . '.php');
+        }
+
+        $failures = [];
+        for ($index = 0; $index < $failed; $index++) {
+            $failures[] = new AnalysisFailure(
+                RelativePath::fromString($prefix . '/failed-' . $index . '.php'),
+                AnalysisFailureKind::Processing,
+                'Fixture processing failure',
+            );
+        }
+
+        return new AnalysisCoverage($analyzedFiles, [], $failures);
     }
 
     private function createViolation(

@@ -10,6 +10,7 @@ use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
 final class LoggerFactoryTest extends TestCase
@@ -46,7 +47,7 @@ final class LoggerFactoryTest extends TestCase
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
 
-        $logger = $factory->create($output);
+        $logger = $factory->create(self::diagnosticConsole($output));
 
         // At default verbosity, warnings should be visible
         $logger->warning('Test warning');
@@ -65,7 +66,7 @@ final class LoggerFactoryTest extends TestCase
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_QUIET);
 
-        $logger = $factory->create($output);
+        $logger = $factory->create(self::diagnosticConsole($output));
 
         self::assertInstanceOf(NullLogger::class, $logger);
     }
@@ -76,7 +77,7 @@ final class LoggerFactoryTest extends TestCase
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
 
-        $logger = $factory->create($output);
+        $logger = $factory->create(self::diagnosticConsole($output));
 
         // Logger should log to output
         $logger->info('Test message');
@@ -91,7 +92,7 @@ final class LoggerFactoryTest extends TestCase
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL);
         $logFile = $this->tempDir . '/test.log';
 
-        $logger = $factory->create($output, $logFile);
+        $logger = $factory->create(self::diagnosticConsole($output), $logFile);
 
         $logger->info('Test');
 
@@ -108,7 +109,7 @@ final class LoggerFactoryTest extends TestCase
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
         $logFile = $this->tempDir . '/test.log';
 
-        $logger = $factory->create($output, $logFile);
+        $logger = $factory->create(self::diagnosticConsole($output), $logFile);
 
         $logger->info('Test message');
 
@@ -128,7 +129,7 @@ final class LoggerFactoryTest extends TestCase
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
 
-        $logger = $factory->create($output, null, LogLevel::WARNING);
+        $logger = $factory->create(self::diagnosticConsole($output), null, LogLevel::WARNING);
 
         $logger->info('Info message');
         $logger->warning('Warning message');
@@ -146,7 +147,7 @@ final class LoggerFactoryTest extends TestCase
         $logFile = $this->tempDir . '/test.log';
 
         // File logger should respect the configured log level
-        $logger = $factory->create($output, $logFile, LogLevel::INFO);
+        $logger = $factory->create(self::diagnosticConsole($output), $logFile, LogLevel::INFO);
 
         $logger->debug('Debug message');
         $logger->info('Info message');
@@ -164,11 +165,19 @@ final class LoggerFactoryTest extends TestCase
         $factory = new LoggerFactory();
         $output = new BufferedOutput(OutputInterface::VERBOSITY_VERBOSE);
 
-        $logger = $factory->create($output, '');
+        $logger = $factory->create(self::diagnosticConsole($output), '');
 
         // Should only create console logger
         $logger->info('Test');
         $content = $output->fetch();
         self::assertStringContainsString('Test', $content);
+    }
+
+    private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput
+    {
+        $output = new ConsoleOutput($diagnostics->getVerbosity(), false);
+        $output->setErrorOutput($diagnostics);
+
+        return $output;
     }
 }

@@ -49,7 +49,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame('complexity.cyclomatic', $overrides[0]->rulePattern);
         self::assertSame(15, $overrides[0]->warning);
         self::assertSame(15, $overrides[0]->error);
-        self::assertSame(10, $overrides[0]->line);
+        self::assertSame(11, $overrides[0]->line);
         self::assertSame(50, $overrides[0]->endLine);
     }
 
@@ -305,7 +305,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertSame('complexity.cyclomatic', $overrides[0]->rulePattern);
         self::assertSame(20, $overrides[0]->warning);
         self::assertSame(20, $overrides[0]->error);
-        self::assertSame(20, $overrides[0]->line);
+        self::assertSame(21, $overrides[0]->line);
         self::assertSame(40, $overrides[0]->endLine);
     }
 
@@ -352,7 +352,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
 
         self::assertCount(0, $result->overrides);
         self::assertCount(1, $result->diagnostics);
-        self::assertSame(10, $result->diagnostics[0]->line);
+        self::assertSame(11, $result->diagnostics[0]->line);
         self::assertStringContainsString('invalid syntax', $result->diagnostics[0]->message);
         self::assertStringContainsString('complexity.cyclomatic', $result->diagnostics[0]->message);
         self::assertStringContainsString('not-a-number', $result->diagnostics[0]->message);
@@ -465,7 +465,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
 
         self::assertCount(0, $result->overrides);
         self::assertCount(1, $result->diagnostics);
-        self::assertSame(10, $result->diagnostics[0]->line);
+        self::assertSame(11, $result->diagnostics[0]->line);
         self::assertStringContainsString('warning threshold (25) must not exceed error threshold (10)', $result->diagnostics[0]->message);
     }
 
@@ -601,6 +601,59 @@ final class ThresholdOverrideExtractorTest extends TestCase
         self::assertCount(2, $result->diagnostics);
         self::assertStringContainsString('must not exceed', $result->diagnostics[0]->message);
         self::assertStringContainsString('invalid syntax', $result->diagnostics[1]->message);
+    }
+
+    #[Test]
+    public function itReportsTheExactTagLineForEveryDiagnosticBranch(): void
+    {
+        $node = $this->createClassNodeWithDoc(
+            <<<'DOC'
+            /**
+             * @qmx-threshold complexity.cyclomatic not-a-number
+             * @qmx-threshold coupling.cbo warning=30 error=10
+             * @qmx-threshold complexity.cyclomatic 15
+             * @qmx-threshold complexity.cyclomatic 20
+             */
+            DOC,
+            30,
+            50,
+        );
+
+        $result = $this->extractor->extractWithDiagnostics($node);
+
+        self::assertSame([31, 32, 34], array_map(
+            static fn($diagnostic): int => $diagnostic->line,
+            $result->diagnostics,
+        ));
+        self::assertSame(33, $result->overrides[0]->line);
+    }
+
+    #[Test]
+    public function itCountsCrLfLineEndingsOncePerPhysicalLine(): void
+    {
+        $node = $this->createClassNodeWithDoc(
+            "/**\r\n * context\r\n * @qmx-threshold complexity.cyclomatic invalid\r\n */",
+            40,
+            50,
+        );
+
+        $result = $this->extractor->extractWithDiagnostics($node);
+
+        self::assertSame(42, $result->diagnostics[0]->line);
+    }
+
+    #[Test]
+    public function itKeepsASingleLineTagOnTheDocblockStartLine(): void
+    {
+        $node = $this->createClassNodeWithDoc(
+            '/** @qmx-threshold complexity.cyclomatic invalid */',
+            50,
+            50,
+        );
+
+        $result = $this->extractor->extractWithDiagnostics($node);
+
+        self::assertSame(50, $result->diagnostics[0]->line);
     }
 
     #[Test]

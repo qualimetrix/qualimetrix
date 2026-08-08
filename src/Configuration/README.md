@@ -622,7 +622,7 @@ Custom preset files use the same YAML format as `qmx.yaml`. Specify a file path
 | `--mi-warning=N`                        | maintainability.index                | warning               |
 | `--mi-error=N`                          | maintainability.index                | error                 |
 | `--mi-exclude-tests=N`                  | maintainability.index                | excludeTests          |
-| `--mi-min-loc=N`                        | maintainability.index                | minLoc                |
+| `--mi-min-statements=N`                 | maintainability.index                | minStatements         |
 | `--class-count-warning=N`               | size.class-count                     | warning               |
 | `--class-count-error=N`                 | size.class-count                     | error                 |
 | `--method-count-warning=N`              | size.method-count                    | warning               |

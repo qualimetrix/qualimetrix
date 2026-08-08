@@ -7,6 +7,7 @@ namespace Qualimetrix\Reporting\Formatter\Health;
 use Qualimetrix\Core\Version;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
+use Qualimetrix\Reporting\Formatter\Support\CoverageNarrator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\DecompositionItem;
@@ -38,6 +39,10 @@ final class HealthTextFormatter implements FormatterInterface
         $lines = [];
 
         $this->renderHeader($report, $context, $color, $lines);
+        if ($report->coverage !== null) {
+            $lines[] = CoverageNarrator::describe($report->coverage);
+            $lines[] = '';
+        }
 
         $healthScores = $this->healthScoreResolver->resolve($report, $context);
 

@@ -9,6 +9,7 @@ use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\BoundaryExplanation;
 use Qualimetrix\Baseline\BoundaryExplanationService;
+use Qualimetrix\Baseline\BoundaryExplanationStatus;
 use Qualimetrix\Baseline\EffectiveBoundary;
 use Qualimetrix\Baseline\EffectiveBoundaryBaselineSource;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
@@ -114,6 +115,15 @@ final class BaselineExplainCommand extends BaselineCommand
             $context->result()->metrics,
         );
 
+        if ($explanation->status === BoundaryExplanationStatus::Unknown) {
+            $output->writeln(\sprintf(
+                '<error>Unknown symbol "%s": it is absent from both the current analysis and the baseline.</error>',
+                $symbolKey,
+            ));
+
+            return self::EXIT_INVALID_INPUT;
+        }
+
         self::render($explanation, $output);
 
         return self::SUCCESS;
@@ -151,9 +161,15 @@ final class BaselineExplainCommand extends BaselineCommand
     {
         $output->writeln(\sprintf('Symbol: <info>%s</info>', $explanation->symbolKey));
 
+        if ($explanation->status === BoundaryExplanationStatus::BaselineOnly) {
+            $output->writeln('  <comment>Baseline only: this symbol is absent from the current analysis scope or result.</comment>');
+        }
+
         if ($explanation->boundaries === []) {
             $output->writeln('');
-            $output->writeln('  <comment>Nothing reports on this symbol and no baseline entry names it.</comment>');
+            $output->writeln($explanation->status === BoundaryExplanationStatus::BaselineOnly
+                ? '  <comment>The baseline names this symbol, but no entry forms an applicable boundary.</comment>'
+                : '  <comment>Nothing currently reports on this measured symbol.</comment>');
 
             return;
         }

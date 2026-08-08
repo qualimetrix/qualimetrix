@@ -117,7 +117,7 @@ final class ChannelCoverageTest extends TestCase
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
-        $metricBag = (new MetricBag())->with('mi', 10.0)->with('methodLoc', 50);
+        $metricBag = (new MetricBag())->with('mi', 10.0)->with('methodStatementCount', 50);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$methodInfo]);
@@ -309,7 +309,7 @@ final class ChannelCoverageTest extends TestCase
         $collectionOrchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $collectionOrchestrator->method('collect')->willReturn(
             new CollectionPhaseOutput(
-                new CollectionResult(1, 0, thresholdOverrides: [
+                new CollectionResult([], [], thresholdOverrides: [
                     'src/Foo.php' => [
                         new ThresholdOverride('code-smell.boolean-argument', 50.0, 100.0, 10, 50),
                     ],
@@ -364,7 +364,7 @@ final class ChannelCoverageTest extends TestCase
         $collectionOrchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $collectionOrchestrator->method('collect')->willReturn(
             new CollectionPhaseOutput(
-                new CollectionResult(1, 0, thresholdDiagnostics: [
+                new CollectionResult([], [], thresholdDiagnostics: [
                     'src/Foo.php' => [
                         new ThresholdDiagnostic(
                             line: 10,

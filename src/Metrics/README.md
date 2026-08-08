@@ -25,6 +25,7 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 | **Size**                                                             |                 |                  |                                                                                                                                                                                   |
 | `loc`, `lloc`, `cloc`                                                | Size            | File             | Lines of Code (total, logical, comments)                                                                                                                                          |
 | `classLoc`                                                           | Size            | Class            | Physical lines of code per class (endLine - startLine + 1)                                                                                                                        |
+| `methodStatementCount`                                               | Size            | Method           | Formatting-independent executable/control-flow statement count used by Maintainability Index                                                                                      |
 | `classCount`, `interfaceCount`, `traitCount`, `enumCount`            | Size            | File             | Number of classes/interfaces/traits/enums                                                                                                                                         |
 | `abstractClassCount`                                                 | Size            | File             | Number of abstract classes                                                                                                                                                        |
 | `functionCount`                                                      | Size            | File             | Number of standalone functions                                                                                                                                                    |
@@ -131,6 +132,7 @@ Aggregated metrics are named: `{metric}.{strategy}`
 **Optional interfaces:**
 - `MethodMetricsProviderInterface` — provides method-level metrics
 - `ClassMetricsProviderInterface` — provides class-level metrics
+- `NamespaceMetricProviderInterface` — provides source-owned namespace contributions for file metrics
 - `DerivedCollectorInterface` — derived metrics (require other collectors)
 - `GlobalContextCollectorInterface` — use global context (dependency graph)
 

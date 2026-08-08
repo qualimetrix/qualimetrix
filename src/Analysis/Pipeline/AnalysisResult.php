@@ -14,6 +14,15 @@ use Qualimetrix\Core\Violation\Violation;
 
 final readonly class AnalysisResult
 {
+    /** Canonical source of truth for discovered-file terminal states. */
+    public AnalysisCoverage $coverage;
+
+    /** Compatibility accessor derived from {@see $coverage}. */
+    public int $filesAnalyzed;
+
+    /** Compatibility accessor derived from {@see $coverage}; includes intentional generated exclusions. */
+    public int $filesSkipped;
+
     /**
      * @param list<Violation> $violations
      * @param array<string, list<Suppression>> $suppressions Per-file suppression tags
@@ -29,14 +38,17 @@ final readonly class AnalysisResult
      */
     public function __construct(
         public array $violations,
-        public int $filesAnalyzed,
-        public int $filesSkipped,
         public float $duration,
         public MetricRepositoryInterface $metrics,
+        AnalysisCoverage $coverage,
         public array $suppressions = [],
         public ?NamespaceTree $namespaceTree = null,
         public array $thresholdOverrides = [],
-    ) {}
+    ) {
+        $this->coverage = $coverage;
+        $this->filesAnalyzed = $this->coverage->analyzedFilesCount();
+        $this->filesSkipped = $this->coverage->skippedFilesCount();
+    }
 
     public function hasErrors(): bool
     {
@@ -116,10 +128,9 @@ final readonly class AnalysisResult
 
         return new self(
             violations: [...$this->violations, ...$other->violations],
-            filesAnalyzed: $this->filesAnalyzed + $other->filesAnalyzed,
-            filesSkipped: $this->filesSkipped + $other->filesSkipped,
             duration: max($this->duration, $other->duration),
             metrics: $mergedMetrics,
+            coverage: $this->coverage->merge($other->coverage),
             suppressions: $mergedSuppressions,
             namespaceTree: $this->namespaceTree ?? $other->namespaceTree,
             thresholdOverrides: $mergedThresholdOverrides,

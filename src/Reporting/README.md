@@ -29,6 +29,8 @@ Reporting is responsible for formatting analysis results for user output. It sup
 Reporting/
 ├── Report.php                              # Report aggregate (with health scores, worst offenders, tech debt)
 ├── ReportBuilder.php                       # Builder for creating reports
+├── ReportCoverage.php                      # Reporting-safe coverage projection
+├── CoverageFailure.php                     # One projected parse/processing failure
 ├── FormatterContext.php                    # Context passed to formatters (color, grouping, filters, options)
 ├── GroupBy.php                             # Grouping mode enum (None, File, Rule, Severity)
 ├── Health/                                 # Health scoring module
@@ -65,7 +67,8 @@ Reporting/
     │   ├── AnsiColor.php                  # Lightweight ANSI color wrapper
     │   ├── ViolationSorter.php            # Sorting/grouping utility for violations
     │   ├── DetailedViolationRenderer.php  # Detailed violation output (--detail mode)
-    │   └── AcceptedLevelNarrator.php      # "accepted at 25, now 31" fragment for a measured breach
+    │   ├── AcceptedLevelNarrator.php      # "accepted at 25, now 31" fragment for a measured breach
+    │   └── CoverageNarrator.php           # Complete/empty/incomplete human coverage summary
     ├── Summary/
     │   ├── SummaryFormatter.php           # Default: health overview + worst offenders + hints
     │   ├── HealthBarRenderer.php          # Renders ANSI health bars for console output
@@ -364,6 +367,7 @@ Files: 1 analyzed, 0 skipped | Errors: 1 | Warnings: 1 | Time: 0.23s
 | SARIF        | `sarif`        | SARIF 2.1.0 for static analysis                               | GitHub, VS Code, JetBrains |
 | GitLab       | `gitlab`       | Code Climate JSON for GitLab MR                               | GitLab CI                  |
 | Metrics      | `metrics`      | Raw metric values for all symbols                             | Dashboards, cross-tool     |
+| GitHub       | `github`       | GitHub Actions workflow-command annotations                   | GitHub Actions             |
 | Health       | `health`       | Text table of health dimensions with scores and decomposition | CLI                        |
 | Html         | `html`         | Interactive treemap report with D3.js                         | Browser, CI artifacts      |
 
@@ -384,7 +388,7 @@ Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includ
 }
 ```
 
-**Options:** `--format-opt=violations=all|0|N` (default: 50), `--format-opt=top=N` (default: 10 offenders). `--detail` shows violations (default limit: 200, `--detail=all` for unlimited). `--namespace`/`--class` filters violations and worst offenders. Partial analysis: `health` is `null`.
+**Options:** `--format-opt=violations=all|0|N` (default: 50), `--format-opt=top=N` (default: 10 offenders). `--detail` shows violations (default limit: 200, `--detail=all` for unlimited). `--namespace`/`--class` filters violations and worst offenders. `coverage` always states whether the result is complete; policy and health results from an incomplete run are not authoritative.
 
 **`acceptedLevel`:** `null` unless the violation is a measured baseline breach (see [Accepted level](#accepted-level-baseline-breach) below), in which case it is `{ "shape": "magnitude" | "occurrence", "describe": "25", "count": 1 }`. For a `magnitude` channel, the current value is the sibling `metricValue` field — not duplicated here.
 
@@ -554,7 +558,13 @@ $report->worstClasses     // list<WorstOffender> — worst classes by health
 $report->techDebtMinutes  // int — total remediation time
 $report->debtPer1kLoc     // ?float — debt density (minutes per 1K LOC)
 $report->topIssues        // list<RankedIssue> — top violations by impact score
+$report->coverage         // ?ReportCoverage — discovered/analyzed/generated/failed verdict
 ```
+
+`ReportCoverage` is the Reporting-layer projection of the pipeline's canonical
+coverage state. Every formatter must preserve a useful payload for zero files and
+must make incomplete analysis machine-detectable; see
+[ADR 0018](../../docs/adr/0018-analysis-coverage-verdict-and-output-projection.md).
 
 ## Accepted level (baseline breach)
 

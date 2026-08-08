@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Functional\Console\Command;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphAnalyzer;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
@@ -49,10 +51,7 @@ final class GraphExportCommandTest extends TestCase
 
         // Create command
         $command = new GraphExportCommand(
-            new FinderFileDiscovery([]),
-            new PhpFileParser(),
-            new DependencyVisitor(new DependencyResolver()),
-            new DependencyGraphBuilder(),
+            $this->createAnalyzer(),
             new NullLogger(),
         );
 
@@ -89,10 +88,7 @@ final class GraphExportCommandTest extends TestCase
 
         // Create command
         $command = new GraphExportCommand(
-            new FinderFileDiscovery([]),
-            new PhpFileParser(),
-            new DependencyVisitor(new DependencyResolver()),
-            new DependencyGraphBuilder(),
+            $this->createAnalyzer(),
             new NullLogger(),
         );
 
@@ -124,10 +120,7 @@ final class GraphExportCommandTest extends TestCase
 
         // Create command
         $command = new GraphExportCommand(
-            new FinderFileDiscovery([]),
-            new PhpFileParser(),
-            new DependencyVisitor(new DependencyResolver()),
-            new DependencyGraphBuilder(),
+            $this->createAnalyzer(),
             new NullLogger(),
         );
 
@@ -158,10 +151,7 @@ final class GraphExportCommandTest extends TestCase
 
         // Create command
         $command = new GraphExportCommand(
-            new FinderFileDiscovery([]),
-            new PhpFileParser(),
-            new DependencyVisitor(new DependencyResolver()),
-            new DependencyGraphBuilder(),
+            $this->createAnalyzer(),
             new NullLogger(),
         );
 
@@ -196,10 +186,7 @@ final class GraphExportCommandTest extends TestCase
 
         // Create command
         $command = new GraphExportCommand(
-            new FinderFileDiscovery([]),
-            new PhpFileParser(),
-            new DependencyVisitor(new DependencyResolver()),
-            new DependencyGraphBuilder(),
+            $this->createAnalyzer(),
             new NullLogger(),
         );
 
@@ -231,10 +218,7 @@ final class GraphExportCommandTest extends TestCase
 
         // Create command
         $command = new GraphExportCommand(
-            new FinderFileDiscovery([]),
-            new PhpFileParser(),
-            new DependencyVisitor(new DependencyResolver()),
-            new DependencyGraphBuilder(),
+            $this->createAnalyzer(),
             new NullLogger(),
         );
 
@@ -255,6 +239,96 @@ final class GraphExportCommandTest extends TestCase
         self::assertStringNotContainsString('subgraph cluster_', $output);
     }
 
+    #[Test]
+    public function itExportsDependencyGraphAsJsonToStdout(): void
+    {
+        file_put_contents(
+            $this->tempDir . '/Service.php',
+            '<?php namespace App; final class Service { public function use(Model $model): void {} }',
+        );
+
+        $tester = $this->createCommandTester();
+        $tester->execute(['paths' => [$this->tempDir], '--format' => 'json']);
+
+        self::assertSame(0, $tester->getStatusCode());
+        self::assertJson($tester->getDisplay());
+        self::assertStringContainsString('App\\\\Service', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itExportsDependencyGraphAsJsonToFile(): void
+    {
+        file_put_contents(
+            $this->tempDir . '/Service.php',
+            '<?php namespace App; final class Service { public function use(Model $model): void {} }',
+        );
+        $destination = $this->tempDir . '/graph.json';
+
+        $tester = $this->createCommandTester();
+        $tester->execute([
+            'paths' => [$this->tempDir],
+            '--format' => 'json',
+            '--output' => $destination,
+        ]);
+
+        self::assertSame(0, $tester->getStatusCode());
+        self::assertFileExists($destination);
+        self::assertJson((string) file_get_contents($destination));
+    }
+
+    /** @return iterable<string, array{string, bool}> */
+    public static function provideIncompleteExportCases(): iterable
+    {
+        yield 'DOT stdout' => ['dot', false];
+        yield 'JSON stdout' => ['json', false];
+        yield 'DOT output file' => ['dot', true];
+        yield 'JSON output file' => ['json', true];
+    }
+
+    #[Test]
+    #[DataProvider('provideIncompleteExportCases')]
+    public function itRefusesAllFailedAnalysisWithoutCreatingAnArtifact(string $format, bool $toFile): void
+    {
+        file_put_contents($this->tempDir . '/Broken.php', '<?php broken syntax');
+        $destination = $this->tempDir . '/graph.' . $format;
+        $arguments = ['paths' => [$this->tempDir], '--format' => $format];
+        if ($toFile) {
+            $arguments['--output'] = $destination;
+        }
+
+        $tester = $this->createCommandTester();
+        $tester->execute($arguments, ['capture_stderr_separately' => true]);
+
+        self::assertSame(4, $tester->getStatusCode());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('Analysis incomplete: 1 of 1', $tester->getErrorOutput());
+        self::assertStringContainsString('Broken.php:', $tester->getErrorOutput());
+        self::assertFileDoesNotExist($destination);
+    }
+
+    #[Test]
+    public function itPreservesExistingOutputBytesOnPartialAnalysis(): void
+    {
+        file_put_contents(
+            $this->tempDir . '/Good.php',
+            '<?php namespace App; final class Good { public function use(Model $model): void {} }',
+        );
+        file_put_contents($this->tempDir . '/Broken.php', '<?php broken syntax');
+        $destination = $this->tempDir . '/graph.json';
+        file_put_contents($destination, "existing bytes\n");
+
+        $tester = $this->createCommandTester();
+        $tester->execute([
+            'paths' => [$this->tempDir],
+            '--format' => 'json',
+            '--output' => $destination,
+        ], ['capture_stderr_separately' => true]);
+
+        self::assertSame(4, $tester->getStatusCode());
+        self::assertSame("existing bytes\n", file_get_contents($destination));
+        self::assertStringContainsString('Analysis incomplete: 1 of 2', $tester->getErrorOutput());
+    }
+
     /**
      * Recursively remove a directory.
      */
@@ -270,5 +344,24 @@ final class GraphExportCommandTest extends TestCase
             is_dir($path) ? $this->removeDirectory($path) : unlink($path);
         }
         rmdir($dir);
+    }
+
+    private function createAnalyzer(): DependencyGraphAnalyzer
+    {
+        return new DependencyGraphAnalyzer(
+            new FinderFileDiscovery([]),
+            new PhpFileParser(),
+            new DependencyVisitor(new DependencyResolver()),
+            new DependencyGraphBuilder(),
+        );
+    }
+
+    private function createCommandTester(): CommandTester
+    {
+        $command = new GraphExportCommand($this->createAnalyzer(), new NullLogger());
+        $application = new Application();
+        $application->addCommand($command);
+
+        return new CommandTester($command);
     }
 }

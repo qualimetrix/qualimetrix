@@ -143,11 +143,12 @@ final class CheckCommandPathInputTest extends TestCase
             'paths' => [$this->tempDir . '/no-such-directory'],
             '--format' => 'text',
             '--no-progress' => true,
-        ]);
+        ], ['capture_stderr_separately' => true]);
 
         // CheckCommand::EXIT_CONFIG_ERROR
         self::assertSame(3, $tester->getStatusCode());
-        self::assertStringContainsString('does not exist', $tester->getDisplay());
+        self::assertSame('', $tester->getDisplay());
+        self::assertStringContainsString('does not exist', $tester->getErrorOutput());
     }
 
     private function createCommandTester(): CommandTester

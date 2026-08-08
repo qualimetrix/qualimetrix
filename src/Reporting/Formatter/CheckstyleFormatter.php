@@ -35,6 +35,20 @@ final class CheckstyleFormatter implements FormatterInterface
 
         $this->writeFiles($xml, $report->violations, $context);
 
+        if ($report->coverage !== null && !$report->coverage->isComplete()) {
+            $xml->startElement('file');
+            $xml->writeAttribute('name', '[analysis]');
+            foreach ($report->coverage->failures as $failure) {
+                $xml->startElement('error');
+                $xml->writeAttribute('line', '1');
+                $xml->writeAttribute('severity', 'error');
+                $xml->writeAttribute('message', \sprintf('%s: %s', $failure->path, $failure->message));
+                $xml->writeAttribute('source', 'qmx.analysis.' . $failure->kind);
+                $xml->endElement();
+            }
+            $xml->endElement();
+        }
+
         $xml->endElement(); // checkstyle
         $xml->endDocument();
 

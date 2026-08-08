@@ -29,6 +29,7 @@ final readonly class ViolationFilterOrchestrator
     public function __construct(
         private ViolationFilterPipeline $violationFilterPipeline,
         private RuleExecutorInterface $ruleExecutor,
+        private DiagnosticOutput $diagnosticOutput = new DiagnosticOutput(),
     ) {}
 
     /**
@@ -40,6 +41,7 @@ final readonly class ViolationFilterOrchestrator
         OutputInterface $output,
         GitScopeResolution $scopeResolution,
     ): ViolationFilterResult {
+        $output = $this->diagnosticOutput->stream($output);
         $this->violationFilterPipeline->loadSuppressions($result->suppressions);
 
         $filterResult = $this->violationFilterPipeline->filter(

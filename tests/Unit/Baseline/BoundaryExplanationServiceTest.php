@@ -13,6 +13,9 @@ use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEntry;
 use Qualimetrix\Baseline\BaselineIdentity;
 use Qualimetrix\Baseline\BoundaryExplanationService;
+use Qualimetrix\Baseline\BoundaryExplanationStatus;
+use Qualimetrix\Baseline\InertBaselineEntry;
+use Qualimetrix\Baseline\InertEntryReason;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
@@ -33,6 +36,54 @@ final class BoundaryExplanationServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->service = new BoundaryExplanationService();
+    }
+
+    #[Test]
+    public function itClassifiesCurrentBaselineOnlyAndUnknownSymbolsExplicitly(): void
+    {
+        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+        $baseline = $this->baselineWithEntry($channel, magnitudes: [25], count: 1);
+        $currentRepository = $this->repositoryLocating(
+            SymbolPath::forMethod('App', 'Foo', 'bar'),
+            'src/Foo.php',
+            14,
+        );
+
+        $current = $this->service->explain(
+            self::SYMBOL_KEY,
+            $channel,
+            $baseline,
+            [],
+            [],
+            [],
+            $currentRepository,
+        );
+        $baselineOnly = $this->service->explain(self::SYMBOL_KEY, $channel, $baseline, [], [], []);
+        $inertBaselineOnly = $this->service->explain(
+            self::SYMBOL_KEY,
+            $channel,
+            new Baseline(
+                generated: new DateTimeImmutable(),
+                scope: ['src'],
+                entries: [],
+                inertEntries: [InertBaselineEntry::forRaw(
+                    self::SYMBOL_KEY,
+                    $channel->toKey(),
+                    InertEntryReason::Malformed,
+                    'test fixture',
+                    'garbage',
+                )],
+            ),
+            [],
+            [],
+            [],
+        );
+        $unknown = $this->service->explain('method:App\Missing::method', $channel, $baseline, [], [], [], $currentRepository);
+
+        self::assertSame(BoundaryExplanationStatus::Current, $current->status);
+        self::assertSame(BoundaryExplanationStatus::BaselineOnly, $baselineOnly->status);
+        self::assertSame(BoundaryExplanationStatus::BaselineOnly, $inertBaselineOnly->status);
+        self::assertSame(BoundaryExplanationStatus::Unknown, $unknown->status);
     }
 
     /**

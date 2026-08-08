@@ -8,10 +8,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\CollectedFileData;
+use Qualimetrix\Analysis\Collection\FileProcessingFailure;
+use Qualimetrix\Analysis\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Collection\FileProcessingResult;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTask;
 use ReflectionProperty;
 
@@ -26,6 +30,8 @@ use ReflectionProperty;
  */
 #[CoversClass(FileProcessingTask::class)]
 #[CoversClass(FileProcessingResult::class)]
+#[CoversClass(CollectedFileData::class)]
+#[CoversClass(FileProcessingFailure::class)]
 final class FileProcessingResultWireFormatTest extends TestCase
 {
     #[Test]
@@ -72,14 +78,22 @@ final class FileProcessingResultWireFormatTest extends TestCase
         $result = FileProcessingResult::success(
             filePath: RelativePath::fromString('src/X.php'),
             fileBag: MetricBag::fromArray(['loc' => 7]),
+            namespaceMetrics: [
+                'namespace:One' => [
+                    'symbolPath' => SymbolPath::forNamespace('One'),
+                    'metrics' => MetricBag::fromArray(['loc' => 3]),
+                    'line' => 2,
+                ],
+            ],
         );
 
         $restored = unserialize(serialize($result));
 
         self::assertInstanceOf(FileProcessingResult::class, $restored);
-        self::assertTrue($restored->success);
+        self::assertTrue($restored->isSuccessful());
         self::assertSame('src/X.php', $restored->filePath->value());
-        self::assertSame(7, $restored->fileBag?->get('loc'));
+        self::assertSame(7, $restored->collectedData()->fileBag->get('loc'));
+        self::assertSame(3, $restored->collectedData()->namespaceMetrics['namespace:One']['metrics']->get('loc'));
     }
 
     #[Test]
@@ -88,14 +102,16 @@ final class FileProcessingResultWireFormatTest extends TestCase
         $result = FileProcessingResult::failure(
             filePath: RelativePath::fromString('src/Bad.php'),
             error: 'parse error',
+            kind: FileProcessingFailureKind::Processing,
         );
 
         $restored = unserialize(serialize($result));
 
         self::assertInstanceOf(FileProcessingResult::class, $restored);
-        self::assertFalse($restored->success);
+        self::assertFalse($restored->isSuccessful());
         self::assertSame('src/Bad.php', $restored->filePath->value());
-        self::assertSame('parse error', $restored->error);
+        self::assertSame('parse error', $restored->processingFailure()->message);
+        self::assertSame(FileProcessingFailureKind::Processing, $restored->processingFailure()->kind);
     }
 
     #[Test]
@@ -114,6 +130,6 @@ final class FileProcessingResultWireFormatTest extends TestCase
 
         self::assertInstanceOf(FileProcessingResult::class, $restored);
         self::assertSame('src/X.php', $restored->filePath->value());
-        self::assertSame(42, $restored->fileBag?->get('loc'));
+        self::assertSame(42, $restored->collectedData()->fileBag->get('loc'));
     }
 }

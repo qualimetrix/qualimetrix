@@ -4,98 +4,79 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Collection;
 
-use Qualimetrix\Core\Dependency\Dependency;
+use LogicException;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Suppression\Suppression;
-use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
-use Qualimetrix\Core\Suppression\ThresholdOverride;
-use Qualimetrix\Core\Symbol\SymbolPath;
 
-/**
- * Result of processing a single file.
- *
- * Serializable structure for passing between processes in parallel collection.
- * Contains either successful metrics or error information.
- */
-final class FileProcessingResult
+/** Serializable terminal state of processing one file. */
+final readonly class FileProcessingResult
 {
-    /**
-     * @param RelativePath $filePath Project-relative path to the processed file
-     * @param bool $success Whether processing succeeded
-     * @param MetricBag|null $fileBag File-level metrics (null on failure)
-     * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $methodMetrics
-     * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $classMetrics
-     * @param string|null $error Error message (null on success)
-     * @param list<Dependency> $dependencies Dependencies collected from the file
-     * @param list<Suppression> $suppressions Suppression tags extracted from the file
-     * @param list<ThresholdOverride> $thresholdOverrides Threshold overrides extracted from the file
-     * @param list<ThresholdDiagnostic> $thresholdDiagnostics Diagnostics for invalid `@qmx-threshold` annotations
-     */
     private function __construct(
-        public readonly RelativePath $filePath,
-        public readonly bool $success,
-        public readonly ?MetricBag $fileBag,
-        public readonly array $methodMetrics,
-        public readonly array $classMetrics,
-        public readonly ?string $error,
-        public readonly array $dependencies = [],
-        public readonly array $suppressions = [],
-        public readonly array $thresholdOverrides = [],
-        public readonly array $thresholdDiagnostics = [],
-    ) {}
+        public RelativePath $filePath,
+        private ?CollectedFileData $data,
+        private ?FileProcessingFailure $failure,
+    ) {
+        if (($this->data === null) === ($this->failure === null)) {
+            throw new LogicException('File processing result must contain exactly one terminal state');
+        }
+    }
 
     /**
-     * Creates a successful result.
-     *
-     * @param RelativePath $filePath Project-relative path to the processed file
-     * @param MetricBag $fileBag File-level metrics
-     * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $methodMetrics
-     * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $classMetrics
-     * @param list<Dependency> $dependencies Dependencies collected from the file
-     * @param list<Suppression> $suppressions Suppression tags extracted from the file
-     * @param list<ThresholdOverride> $thresholdOverrides Threshold overrides extracted from the file
-     * @param list<ThresholdDiagnostic> $thresholdDiagnostics Diagnostics for invalid `@qmx-threshold` annotations
+     * @param array<string, array{symbolPath: \Qualimetrix\Core\Symbol\SymbolPath, metrics: MetricBag, line: int}> $methodMetrics
+     * @param array<string, array{symbolPath: \Qualimetrix\Core\Symbol\SymbolPath, metrics: MetricBag, line: int}> $classMetrics
+     * @param array<string, array{symbolPath: \Qualimetrix\Core\Symbol\SymbolPath, metrics: MetricBag, line: int}> $namespaceMetrics
+     * @param list<\Qualimetrix\Core\Dependency\Dependency> $dependencies
+     * @param list<\Qualimetrix\Core\Suppression\Suppression> $suppressions
+     * @param list<\Qualimetrix\Core\Suppression\ThresholdOverride> $thresholdOverrides
+     * @param list<\Qualimetrix\Core\Suppression\ThresholdDiagnostic> $thresholdDiagnostics
      */
     public static function success(
         RelativePath $filePath,
         MetricBag $fileBag,
         array $methodMetrics = [],
         array $classMetrics = [],
+        array $namespaceMetrics = [],
         array $dependencies = [],
         array $suppressions = [],
         array $thresholdOverrides = [],
         array $thresholdDiagnostics = [],
     ): self {
         return new self(
-            filePath: $filePath,
-            success: true,
-            fileBag: $fileBag,
-            methodMetrics: $methodMetrics,
-            classMetrics: $classMetrics,
-            error: null,
-            dependencies: $dependencies,
-            suppressions: $suppressions,
-            thresholdOverrides: $thresholdOverrides,
-            thresholdDiagnostics: $thresholdDiagnostics,
+            $filePath,
+            new CollectedFileData(
+                $fileBag,
+                $methodMetrics,
+                $classMetrics,
+                $namespaceMetrics,
+                $dependencies,
+                $suppressions,
+                $thresholdOverrides,
+                $thresholdDiagnostics,
+            ),
+            null,
         );
     }
 
-    /**
-     * Creates a failure result.
-     *
-     * @param RelativePath $filePath Project-relative path to the file that failed
-     * @param string $error Error message
-     */
-    public static function failure(RelativePath $filePath, string $error): self
+    public static function failure(
+        RelativePath $filePath,
+        string $error,
+        FileProcessingFailureKind $kind = FileProcessingFailureKind::Processing,
+    ): self {
+        return new self($filePath, null, new FileProcessingFailure($kind, $error));
+    }
+
+    public function isSuccessful(): bool
     {
-        return new self(
-            filePath: $filePath,
-            success: false,
-            fileBag: null,
-            methodMetrics: [],
-            classMetrics: [],
-            error: $error,
-        );
+        return $this->data !== null;
+    }
+
+    public function collectedData(): CollectedFileData
+    {
+        return $this->data ?? throw new LogicException('Failed file processing has no collected data');
+    }
+
+    public function processingFailure(): FileProcessingFailure
+    {
+        return $this->failure ?? throw new LogicException('Successful file processing has no failure');
     }
 }

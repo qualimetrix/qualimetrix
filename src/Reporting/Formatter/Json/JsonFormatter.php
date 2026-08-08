@@ -54,6 +54,7 @@ final class JsonFormatter implements FormatterInterface
                 'timestamp' => gmdate('c'),
             ],
             'summary' => $this->buildSummary($report, $filteredViolations, $isDrillDown),
+            'coverage' => $report->coverage?->toArray(),
             'health' => $this->healthSection->format($report, $context),
             'worstNamespaces' => $this->offenderSection->formatNamespaces(
                 $report->worstNamespaces,

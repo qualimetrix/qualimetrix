@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Collection;
 
+use LogicException;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
@@ -18,20 +20,38 @@ use Qualimetrix\Core\Suppression\ThresholdOverride;
  */
 final readonly class CollectionResult
 {
+    public int $filesAnalyzed;
+
+    public int $filesSkipped;
+
     /**
-     * @param int $filesAnalyzed Number of files successfully analyzed
-     * @param int $filesSkipped Number of files skipped due to errors
+     * @param list<RelativePath> $analyzedFiles Successfully analyzed paths
+     * @param list<FileProcessingResult> $failures Failed results with typed causes
      * @param array<string, list<Suppression>> $suppressions Per-file suppression tags (file => suppressions)
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides Per-file threshold overrides (file => overrides)
      * @param array<string, list<ThresholdDiagnostic>> $thresholdDiagnostics Per-file diagnostics for invalid `@qmx-threshold` annotations
      */
     public function __construct(
-        public int $filesAnalyzed,
-        public int $filesSkipped,
+        public array $analyzedFiles,
+        public array $failures,
         public array $suppressions = [],
         public array $thresholdOverrides = [],
         public array $thresholdDiagnostics = [],
-    ) {}
+    ) {
+        $terminalPaths = [];
+        foreach ($this->analyzedFiles as $path) {
+            self::claimPath($terminalPaths, $path, 'analyzed');
+        }
+        foreach ($this->failures as $failure) {
+            if ($failure->isSuccessful()) {
+                throw new LogicException('Collection failure list contains a successful result');
+            }
+            self::claimPath($terminalPaths, $failure->filePath, 'failure');
+        }
+
+        $this->filesAnalyzed = \count($this->analyzedFiles);
+        $this->filesSkipped = \count($this->failures);
+    }
 
     /**
      * Returns total number of files processed (analyzed + skipped).
@@ -47,5 +67,21 @@ final readonly class CollectionResult
     public function hasErrors(): bool
     {
         return $this->filesSkipped > 0;
+    }
+
+    /** @param array<string, string> $claimed */
+    private static function claimPath(array &$claimed, RelativePath $path, string $state): void
+    {
+        $value = $path->value();
+        if (isset($claimed[$value])) {
+            throw new LogicException(\sprintf(
+                'Collection path "%s" has multiple terminal states: %s and %s',
+                $value,
+                $claimed[$value],
+                $state,
+            ));
+        }
+
+        $claimed[$value] = $state;
     }
 }

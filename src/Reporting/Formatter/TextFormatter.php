@@ -11,6 +11,7 @@ use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Debt\DebtCalculator;
 use Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
+use Qualimetrix\Reporting\Formatter\Support\CoverageNarrator;
 use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
 use Qualimetrix\Reporting\Formatter\Support\ViolationSorter;
 use Qualimetrix\Reporting\FormatterContext;
@@ -71,6 +72,9 @@ final class TextFormatter implements FormatterInterface
             $lines[] = '';
         }
         $lines[] = $this->formatSummary($report, $color);
+        if ($report->coverage !== null) {
+            $lines[] = CoverageNarrator::describe($report->coverage);
+        }
 
         // Technical debt line (dimmed to visually distinguish from summary)
         $debt = $this->debtCalculator->calculate($report->violations);
@@ -106,6 +110,9 @@ final class TextFormatter implements FormatterInterface
 
         // Summary line
         $lines[] = $this->formatSummary($report, $color);
+        if ($report->coverage !== null) {
+            $lines[] = CoverageNarrator::describe($report->coverage);
+        }
 
         return implode("\n", $lines) . "\n";
     }

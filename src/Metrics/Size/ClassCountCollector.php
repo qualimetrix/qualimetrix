@@ -10,6 +10,8 @@ use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Metric\NamespaceMetricProviderInterface;
+use Qualimetrix\Core\Metric\NamespaceWithMetrics;
 use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
@@ -28,7 +30,7 @@ use SplFileInfo;
  * Anonymous classes are ignored.
  * Only standalone functions are counted (not class methods).
  */
-final class ClassCountCollector extends AbstractCollector
+final class ClassCountCollector extends AbstractCollector implements NamespaceMetricProviderInterface
 {
     private const NAME = 'class-count';
 
@@ -71,6 +73,31 @@ final class ClassCountCollector extends AbstractCollector
             ->with(MetricName::SIZE_TRAIT_COUNT, $this->visitor->getTraitCount())
             ->with(MetricName::SIZE_ENUM_COUNT, $this->visitor->getEnumCount())
             ->with(MetricName::SIZE_FUNCTION_COUNT, $this->visitor->getFunctionCount());
+    }
+
+    /**
+     * @return list<NamespaceWithMetrics>
+     */
+    public function getNamespacesWithMetrics(): array
+    {
+        \assert($this->visitor instanceof ClassCountVisitor);
+        $result = [];
+
+        foreach ($this->visitor->getNamespaceCounts() as $namespace => $counts) {
+            $result[] = new NamespaceWithMetrics(
+                namespace: $namespace,
+                line: $counts['line'],
+                metrics: (new MetricBag())
+                    ->with(MetricName::SIZE_CLASS_COUNT, $counts['classCount'])
+                    ->with(MetricName::SIZE_ABSTRACT_CLASS_COUNT, $counts['abstractClassCount'])
+                    ->with(MetricName::SIZE_INTERFACE_COUNT, $counts['interfaceCount'])
+                    ->with(MetricName::SIZE_TRAIT_COUNT, $counts['traitCount'])
+                    ->with(MetricName::SIZE_ENUM_COUNT, $counts['enumCount'])
+                    ->with(MetricName::SIZE_FUNCTION_COUNT, $counts['functionCount']),
+            );
+        }
+
+        return $result;
     }
 
     /**

@@ -29,8 +29,8 @@ final class ClassToNamespaceAggregator implements AggregationPhaseInterface
         }
 
         $profiler->start('aggregation.to_namespaces.build_map', 'aggregation');
-        $fileToNamespace = AggregationHelper::buildFileToNamespaceMap($repository);
-        $namespaceToFileSymbols = AggregationHelper::buildNamespaceToFileSymbolsMap($repository, $fileToNamespace);
+        $fileToNamespace = NamespaceMetricContributions::mapFilesToNamespaces($repository);
+        $namespaceToFileSymbols = NamespaceMetricContributions::mapNamespacesToFileSymbols($repository, $fileToNamespace);
         $profiler->stop('aggregation.to_namespaces.build_map');
 
         $profiler->start('aggregation.to_namespaces.process', 'aggregation');
@@ -43,11 +43,12 @@ final class ClassToNamespaceAggregator implements AggregationPhaseInterface
 
             $fileSymbols = $namespaceToFileSymbols[$namespace] ?? [];
 
-            $metricValues = AggregationHelper::collectNamespaceMetricValues(
+            $metricValues = NamespaceMetricContributions::collectValues(
                 $repository,
                 $symbolInfos,
                 $fileSymbols,
                 $namespaceDefinitions,
+                SymbolLevel::Namespace_,
             );
 
             $namespaceBag = AggregationHelper::applyAggregations(

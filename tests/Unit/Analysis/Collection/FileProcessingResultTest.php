@@ -7,12 +7,17 @@ namespace Qualimetrix\Tests\Unit\Analysis\Collection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\CollectedFileData;
+use Qualimetrix\Analysis\Collection\FileProcessingFailure;
+use Qualimetrix\Analysis\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Collection\FileProcessingResult;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(FileProcessingResult::class)]
+#[CoversClass(CollectedFileData::class)]
+#[CoversClass(FileProcessingFailure::class)]
 final class FileProcessingResultTest extends TestCase
 {
     #[Test]
@@ -26,12 +31,11 @@ final class FileProcessingResultTest extends TestCase
             fileBag: $fileBag,
         );
 
-        self::assertTrue($result->success);
+        self::assertTrue($result->isSuccessful());
         self::assertSame('path/to/file.php', $result->filePath->value());
-        self::assertSame($fileBag, $result->fileBag);
-        self::assertSame([], $result->methodMetrics);
-        self::assertSame([], $result->classMetrics);
-        self::assertNull($result->error);
+        self::assertSame($fileBag, $result->collectedData()->fileBag);
+        self::assertSame([], $result->collectedData()->methodMetrics);
+        self::assertSame([], $result->collectedData()->classMetrics);
     }
 
     #[Test]
@@ -55,12 +59,12 @@ final class FileProcessingResultTest extends TestCase
             methodMetrics: $methodMetrics,
         );
 
-        self::assertTrue($result->success);
-        self::assertCount(1, $result->methodMetrics);
-        self::assertArrayHasKey('App::Service::doSomething', $result->methodMetrics);
-        self::assertSame($symbolPath, $result->methodMetrics['App::Service::doSomething']['symbolPath']);
-        self::assertSame($methodBag, $result->methodMetrics['App::Service::doSomething']['metrics']);
-        self::assertSame(10, $result->methodMetrics['App::Service::doSomething']['line']);
+        self::assertTrue($result->isSuccessful());
+        self::assertCount(1, $result->collectedData()->methodMetrics);
+        self::assertArrayHasKey('App::Service::doSomething', $result->collectedData()->methodMetrics);
+        self::assertSame($symbolPath, $result->collectedData()->methodMetrics['App::Service::doSomething']['symbolPath']);
+        self::assertSame($methodBag, $result->collectedData()->methodMetrics['App::Service::doSomething']['metrics']);
+        self::assertSame(10, $result->collectedData()->methodMetrics['App::Service::doSomething']['line']);
     }
 
     #[Test]
@@ -84,9 +88,9 @@ final class FileProcessingResultTest extends TestCase
             classMetrics: $classMetrics,
         );
 
-        self::assertTrue($result->success);
-        self::assertCount(1, $result->classMetrics);
-        self::assertArrayHasKey('App::Service', $result->classMetrics);
+        self::assertTrue($result->isSuccessful());
+        self::assertCount(1, $result->collectedData()->classMetrics);
+        self::assertArrayHasKey('App::Service', $result->collectedData()->classMetrics);
     }
 
     #[Test]
@@ -95,13 +99,12 @@ final class FileProcessingResultTest extends TestCase
         $result = FileProcessingResult::failure(
             filePath: RelativePath::fromString('path/to/invalid.php'),
             error: 'Syntax error on line 10',
+            kind: FileProcessingFailureKind::Parse,
         );
 
-        self::assertFalse($result->success);
+        self::assertFalse($result->isSuccessful());
         self::assertSame('path/to/invalid.php', $result->filePath->value());
-        self::assertNull($result->fileBag);
-        self::assertSame([], $result->methodMetrics);
-        self::assertSame([], $result->classMetrics);
-        self::assertSame('Syntax error on line 10', $result->error);
+        self::assertSame('Syntax error on line 10', $result->processingFailure()->message);
+        self::assertSame(FileProcessingFailureKind::Parse, $result->processingFailure()->kind);
     }
 }

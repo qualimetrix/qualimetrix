@@ -29,7 +29,7 @@ use Qualimetrix\Rules\AbstractRule;
 #[CliAlias('mi-warning', 'warning')]
 #[CliAlias('mi-error', 'error')]
 #[CliAlias('mi-exclude-tests', 'excludeTests')]
-#[CliAlias('mi-min-loc', 'minLoc')]
+#[CliAlias('mi-min-statements', 'minStatements')]
 final class MaintainabilityRule extends AbstractRule
 {
     public const string NAME = 'maintainability.index';
@@ -54,7 +54,7 @@ final class MaintainabilityRule extends AbstractRule
      */
     public function requires(): array
     {
-        return [MetricName::MAINTAINABILITY_MI, MetricName::HALSTEAD_METHOD_LOC];
+        return [MetricName::MAINTAINABILITY_MI, MetricName::SIZE_METHOD_STATEMENT_COUNT];
     }
 
     /**
@@ -76,9 +76,9 @@ final class MaintainabilityRule extends AbstractRule
 
             $metrics = $context->metrics->get($methodInfo->symbolPath);
 
-            // Skip methods with too few LOC
-            $methodLoc = (int) ($metrics->get(MetricName::HALSTEAD_METHOD_LOC) ?? 0);
-            if ($methodLoc < $this->options->minLoc) {
+            // Skip methods with too few statements.
+            $statementCount = (int) ($metrics->get(MetricName::SIZE_METHOD_STATEMENT_COUNT) ?? 0);
+            if ($statementCount < $this->options->minStatements) {
                 continue;
             }
 

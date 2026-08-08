@@ -23,11 +23,20 @@ final class GithubActionsFormatter implements FormatterInterface
 {
     public function format(Report $report, FormatterContext $context): string
     {
-        if ($report->isEmpty()) {
+        if ($report->isEmpty() && ($report->coverage === null || $report->coverage->isComplete())) {
             return '';
         }
 
         $lines = [];
+
+        foreach ($report->coverage === null ? [] : $report->coverage->failures as $failure) {
+            $lines[] = \sprintf(
+                '::error file=%s,line=1,title=analysis.%s::%s',
+                $this->escapeProperty($failure->path),
+                $this->escapeProperty($failure->kind),
+                $this->escapeData($failure->message),
+            );
+        }
 
         foreach ($report->violations as $violation) {
             $lines[] = $this->formatViolation($violation, $context);

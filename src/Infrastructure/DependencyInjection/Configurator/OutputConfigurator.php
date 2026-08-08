@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphAnalyzer;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
@@ -33,6 +35,7 @@ use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
+use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
@@ -47,12 +50,14 @@ use Qualimetrix\Infrastructure\Console\Command\HookInstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookStatusCommand;
 use Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
+use Qualimetrix\Infrastructure\Console\DiagnosticOutput;
 use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
+use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
 use Qualimetrix\Infrastructure\Console\ViolationFilterPipeline;
@@ -196,6 +201,17 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(MeasuredViolationSet::class),
             ]);
 
+        $container->register(AnalysisRuntimeConfigurator::class)
+            ->setArguments([
+                new Reference(ConfigurationProviderInterface::class),
+                new Reference(RuleOptionsRegistry::class),
+                new Reference(RuleRegistryInterface::class),
+                new Reference(CacheFactory::class),
+                new Reference(ComputedMetricsConfigResolver::class),
+                new Reference(FrameworkNamespacesHolder::class),
+                new TaggedIteratorArgument('qmx.analysis.lifecycle_hook'),
+            ]);
+
         // RuntimeConfigurator for runtime service configuration. Public so the
         // deferred-warning integration test can retrieve it from the compiled
         // container and exercise the production drain path end-to-end.
@@ -212,13 +228,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(LoggerHolder::class),
                 new Reference(ProgressReporterHolder::class),
                 new Reference(ProfilerHolder::class),
-                new Reference(ConfigurationProviderInterface::class),
-                new Reference(RuleOptionsRegistry::class),
-                new Reference(RuleRegistryInterface::class),
-                new Reference(CacheFactory::class),
-                new Reference(ComputedMetricsConfigResolver::class),
-                new Reference(FrameworkNamespacesHolder::class),
-                new TaggedIteratorArgument('qmx.analysis.lifecycle_hook'),
+                new Reference(AnalysisRuntimeConfigurator::class),
+                new Reference(DiagnosticOutput::class),
             ]);
 
         // HealthFormulaExcluder for exclude-health formula rebuilding
@@ -238,11 +249,19 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // ProfileSummaryRenderer (stateless, no dependencies)
         $container->register(ProfileSummaryRenderer::class);
 
+        $container->register(DiagnosticOutput::class);
+        $container->register(RuleInputValidator::class)
+            ->setArguments([
+                new Reference(RuleRegistryInterface::class),
+                new Reference(RuleSelector::class),
+            ]);
+
         // ProfilePresenter for profiling output
         $container->register(ProfilePresenter::class)
             ->setArguments([
                 new Reference(ProfilerHolder::class),
                 new Reference(ProfileSummaryRenderer::class),
+                new Reference(DiagnosticOutput::class),
             ]);
 
         // FormatterContextFactory (uses projectRoot for basePath)
@@ -271,6 +290,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ExitCodeResolver::class),
                 new Reference(ViolationFilter::class),
                 new Reference(FormatterContextFactory::class),
+                new Reference(DiagnosticOutput::class),
             ]);
 
         // ViolationFilterOrchestrator
@@ -278,6 +298,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(ViolationFilterPipeline::class),
                 new Reference(RuleExecutorInterface::class),
+                new Reference(DiagnosticOutput::class),
             ]);
 
         // CheckCommand with all dependencies injected
@@ -290,8 +311,9 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(ConfigurationPipeline::class),
                 new Reference(RuntimeConfigurator::class),
                 new Reference(ResultPresenter::class),
-                new Reference(RuleSelector::class),
                 new Reference(DelegatingLogger::class),
+                new Reference(RuleInputValidator::class),
+                new Reference(DiagnosticOutput::class),
             ])
             ->setPublic(true);
 
@@ -329,14 +351,19 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ])
             ->setPublic(true);
 
-        // GraphExportCommand
-        // Note: DependencyGraphBuilder is already registered in AnalysisConfigurator
-        $container->register(GraphExportCommand::class)
+        $container->register(DependencyGraphAnalyzer::class)
             ->setArguments([
                 new Reference(FileDiscoveryInterface::class),
                 new Reference(FileParserInterface::class),
                 new Reference(DependencyVisitor::class),
                 new Reference(DependencyGraphBuilder::class),
+            ]);
+        $container->setAlias(DependencyGraphAnalyzerInterface::class, DependencyGraphAnalyzer::class);
+
+        // GraphExportCommand
+        $container->register(GraphExportCommand::class)
+            ->setArguments([
+                new Reference(DependencyGraphAnalyzerInterface::class),
                 new Reference(DelegatingLogger::class),
             ])
             ->setPublic(true);
@@ -358,6 +385,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(RuntimeConfigurator::class),
                 new Reference(MeasuredViolationSet::class),
                 new Reference(ConfigurationProviderInterface::class),
+                new Reference(RuleInputValidator::class),
             ]);
 
         $container->setAlias(BaselineRunInterface::class, BaselineRun::class);

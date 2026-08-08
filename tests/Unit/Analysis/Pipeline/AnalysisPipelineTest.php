@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Analysis\Pipeline;
 
 use ArrayIterator;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\Stub;
@@ -14,9 +15,12 @@ use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Collection\CollectionResult;
+use Qualimetrix\Analysis\Collection\FileProcessingFailureKind;
+use Qualimetrix\Analysis\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Duplication\DuplicationDetectorInterface;
+use Qualimetrix\Analysis\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Pipeline\MetricEnricher;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
@@ -29,6 +33,7 @@ use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Core\Rule\RuleSelector;
@@ -72,7 +77,7 @@ final class AnalysisPipelineTest extends TestCase
     public function itHandlesEmptyFileList(): void
     {
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult([], []), []));
 
         $pipeline = $this->createPipeline();
 
@@ -100,7 +105,7 @@ final class AnalysisPipelineTest extends TestCase
                 $files,
                 self::isInstanceOf(MetricRepositoryInterface::class),
             )
-            ->willReturn(new CollectionPhaseOutput(new CollectionResult(2, 0), []));
+            ->willReturn(new CollectionPhaseOutput(new CollectionResult(self::relativePaths($files), []), []));
 
         $pipeline = $this->createPipeline(collectionOrchestrator: $collectionOrchestrator);
 
@@ -118,7 +123,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $defaultDiscovery = $this->createMock(FileDiscoveryInterface::class);
         $defaultDiscovery->expects(self::never())->method('discover');
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult([], []), []));
 
         $pipeline = $this->createPipeline(defaultDiscovery: $defaultDiscovery);
 
@@ -142,7 +147,7 @@ final class AnalysisPipelineTest extends TestCase
                 $files,
                 self::isInstanceOf(MetricRepositoryInterface::class),
             )
-            ->willReturn(new CollectionPhaseOutput(new CollectionResult(1, 0), $dependencies));
+            ->willReturn(new CollectionPhaseOutput(new CollectionResult(self::relativePaths($files), []), $dependencies));
 
         $pipeline = $this->createPipeline(collectionOrchestrator: $collectionOrchestrator);
 
@@ -154,8 +159,21 @@ final class AnalysisPipelineTest extends TestCase
     #[Test]
     public function itReturnsResultWithCorrectMetadata(): void
     {
-        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(5, 2), []));
+        $root = (new AnalysisConfiguration())->projectRoot;
+        $files = array_map(
+            static fn(int $index): SplFileInfo => new SplFileInfo($root->value() . '/File' . $index . '.php'),
+            range(0, 6),
+        );
+        $terminalPaths = self::relativePaths($files);
+        $failures = [
+            FileProcessingResult::failure($terminalPaths[5], 'failure 5'),
+            FileProcessingResult::failure($terminalPaths[6], 'failure 6'),
+        ];
+
+        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator($files));
+        $this->collectionOrchestrator->method('collect')->willReturn(
+            new CollectionPhaseOutput(new CollectionResult(\array_slice($terminalPaths, 0, 5), $failures), []),
+        );
 
         $pipeline = $this->createPipeline();
 
@@ -165,6 +183,85 @@ final class AnalysisPipelineTest extends TestCase
         self::assertSame(2, $result->filesSkipped);
         self::assertGreaterThan(0, $result->duration);
         self::assertInstanceOf(MetricRepositoryInterface::class, $result->metrics); // @phpstan-ignore staticMethod.alreadyNarrowedType
+    }
+
+    #[Test]
+    public function itKeepsGeneratedExclusionsAsCompleteCoverage(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'qmx-generated-');
+        self::assertNotFalse($path);
+        file_put_contents($path, "<?php\n/** @generated */\nfinal class Generated {}\n");
+
+        try {
+            $this->defaultDiscovery->method('discover')->willReturn(
+                new ArrayIterator([new SplFileInfo($path)]),
+            );
+            $this->collectionOrchestrator->method('collect')->willReturn(
+                new CollectionPhaseOutput(new CollectionResult([], []), []),
+            );
+
+            $result = $this->createPipeline()->analyze(AbsolutePath::fromString(sys_get_temp_dir()));
+
+            self::assertSame(1, $result->coverage->discoveredFiles());
+            self::assertSame(1, $result->coverage->generatedExcludedFilesCount());
+            self::assertSame(0, $result->coverage->failedFilesCount());
+            self::assertTrue($result->coverage->isComplete());
+            self::assertSame(1, $result->filesSkipped);
+        } finally {
+            unlink($path);
+        }
+    }
+
+    #[Test]
+    public function itCarriesTypedCollectionFailuresIntoCanonicalCoverage(): void
+    {
+        $root = (string) getcwd();
+        $files = [new SplFileInfo($root . '/Good.php'), new SplFileInfo($root . '/Broken.php')];
+        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator($files));
+
+        $goodPath = RelativePath::fromString('Good.php');
+        $failure = FileProcessingResult::failure(
+            RelativePath::fromString('Broken.php'),
+            'worker crashed',
+            FileProcessingFailureKind::Processing,
+        );
+        $this->collectionOrchestrator->method('collect')->willReturn(
+            new CollectionPhaseOutput(
+                new CollectionResult(
+                    [$goodPath],
+                    [$failure],
+                ),
+                [],
+            ),
+        );
+
+        $result = $this->createPipeline()->analyze(AbsolutePath::fromString($root));
+
+        self::assertFalse($result->coverage->isComplete());
+        self::assertSame(2, $result->coverage->discoveredFiles());
+        self::assertSame('Broken.php', $result->coverage->failures[0]->path->value());
+        self::assertSame(AnalysisFailureKind::Processing, $result->coverage->failures[0]->kind);
+        self::assertSame('worker crashed', $result->coverage->failures[0]->message);
+    }
+
+    #[Test]
+    public function itRejectsTerminalPathsThatDoNotMatchDiscovery(): void
+    {
+        $root = (new AnalysisConfiguration())->projectRoot;
+        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([
+            new SplFileInfo($root->value() . '/ActuallyDiscovered.php'),
+        ]));
+        $this->collectionOrchestrator->method('collect')->willReturn(
+            new CollectionPhaseOutput(
+                new CollectionResult([RelativePath::fromString('Synthetic.php')], []),
+                [],
+            ),
+        );
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('terminal states do not match');
+
+        $this->createPipeline()->analyze($root);
     }
 
     /**
@@ -189,7 +286,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $this->collectionOrchestrator->method('collect')->willReturn(
             new CollectionPhaseOutput(
-                new CollectionResult(1, 0, thresholdOverrides: $overrides),
+                new CollectionResult([], [], thresholdOverrides: $overrides),
                 [],
             ),
         );
@@ -204,7 +301,7 @@ final class AnalysisPipelineTest extends TestCase
     public function itExecutesRulesAfterCollection(): void
     {
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult([], []), []));
 
         $ruleExecutor = $this->createMock(RuleExecutorInterface::class);
         $ruleExecutor->expects(self::once())->method('execute')->willReturn([]);
@@ -218,7 +315,7 @@ final class AnalysisPipelineTest extends TestCase
     public function itLogsAnalysisPhases(): void
     {
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult([], []), []));
 
         $logger = $this->createMock(LoggerInterface::class);
         // Expect multiple log calls for different phases
@@ -243,7 +340,7 @@ final class AnalysisPipelineTest extends TestCase
             ->method('discover')
             ->with($paths)
             ->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult([], []), []));
 
         $pipeline = $this->createPipeline(defaultDiscovery: $defaultDiscovery);
 
@@ -274,7 +371,7 @@ final class AnalysisPipelineTest extends TestCase
                 }),
                 self::isInstanceOf(MetricRepositoryInterface::class),
             )
-            ->willReturn(new CollectionPhaseOutput(new CollectionResult(2, 0), []));
+            ->willReturn(new CollectionPhaseOutput(new CollectionResult(self::relativePaths([$file1, $file2]), []), []));
 
         $pipeline = $this->createPipeline(collectionOrchestrator: $collectionOrchestrator);
         $pipeline->analyze([
@@ -287,7 +384,7 @@ final class AnalysisPipelineTest extends TestCase
     public function itSkipsDuplicationDetectionWhenRuleDisabled(): void
     {
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult([], []), []));
 
         $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn(
@@ -322,7 +419,7 @@ final class AnalysisPipelineTest extends TestCase
     public function itSkipsCircularDependencyDetectionWhenRuleDisabled(): void
     {
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult(0, 0), []));
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput(new CollectionResult([], []), []));
 
         $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn(
@@ -350,7 +447,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $this->collectionOrchestrator->method('collect')->willReturn(
             new CollectionPhaseOutput(
-                new CollectionResult(1, 0, thresholdOverrides: $overrides),
+                new CollectionResult([], [], thresholdOverrides: $overrides),
                 [],
             ),
         );
@@ -388,7 +485,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $this->collectionOrchestrator->method('collect')->willReturn(
             new CollectionPhaseOutput(
-                new CollectionResult(1, 0, thresholdOverrides: $overrides),
+                new CollectionResult([], [], thresholdOverrides: $overrides),
                 [],
             ),
         );
@@ -410,7 +507,7 @@ final class AnalysisPipelineTest extends TestCase
     {
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
         $this->collectionOrchestrator->method('collect')->willReturn(
-            new CollectionPhaseOutput(new CollectionResult(0, 0), []),
+            new CollectionPhaseOutput(new CollectionResult([], []), []),
         );
 
         $configProvider = self::createStub(ConfigurationProviderInterface::class);
@@ -453,7 +550,7 @@ final class AnalysisPipelineTest extends TestCase
     {
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
         $this->collectionOrchestrator->method('collect')->willReturn(
-            new CollectionPhaseOutput(new CollectionResult(0, 0), []),
+            new CollectionPhaseOutput(new CollectionResult([], []), []),
         );
 
         // Default AnalysisConfiguration leaves disabledRules empty, so the
@@ -487,7 +584,7 @@ final class AnalysisPipelineTest extends TestCase
     {
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
         $this->collectionOrchestrator->method('collect')->willReturn(
-            new CollectionPhaseOutput(new CollectionResult(0, 0), []),
+            new CollectionPhaseOutput(new CollectionResult([], []), []),
         );
 
         $configProvider = self::createStub(ConfigurationProviderInterface::class);
@@ -543,7 +640,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $this->collectionOrchestrator->method('collect')->willReturn(
             new CollectionPhaseOutput(
-                new CollectionResult(1, 0, thresholdOverrides: $overrides),
+                new CollectionResult([], [], thresholdOverrides: $overrides),
                 [],
             ),
         );
@@ -583,5 +680,23 @@ final class AnalysisPipelineTest extends TestCase
             ->withMetricEnricher($metricEnricher)
             ->withLogger($resolvedLogger)
             ->build();
+    }
+
+    /**
+     * @param list<SplFileInfo> $files
+     *
+     * @return list<RelativePath>
+     */
+    private static function relativePaths(array $files): array
+    {
+        $projectRoot = (new AnalysisConfiguration())->projectRoot;
+
+        return array_map(
+            static fn(SplFileInfo $file): RelativePath => PathFactory::bestEffortRelative(
+                $file->getPathname(),
+                $projectRoot,
+            ),
+            $files,
+        );
     }
 }

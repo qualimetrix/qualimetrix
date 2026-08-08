@@ -54,6 +54,7 @@ Baseline/
 ├── EffectiveBoundary.php        # VO: one identity's boundary — baseline source, configured threshold, annotation, each independently nullable
 ├── EffectiveBoundaryBaselineSource.php # VO: the baseline half of an EffectiveBoundary — the accepted level plus what the measured set currently compares against it
 ├── BoundaryExplanation.php      # VO: every boundary bearing on one symbol — what the command prints
+├── BoundaryExplanationStatus.php # Current, baseline-only, or unknown symbol classification
 │
 ├── Filter/
 │   ├── BaselineCeilingStage.php # ViolationFilterStageInterface: applies entries as ceilings over groups
@@ -162,6 +163,14 @@ parsing, the scope-guard refusal message, and writing the result through
 `BaselineWriter`.
 
 ### The scope guard
+
+Before the recorded-scope guard is even constructed, `BaselineRun` requires
+the analysis coverage to be complete. A parse or processing failure stops all
+lifecycle commands with the dedicated analysis-failure outcome: no requested
+path is recorded as proven coverage, no baseline is interpreted, no cleanup
+candidate is reported, and no destination is created or mutated. `--force`
+does not override this invariant; it applies only to the narrower recorded-
+scope check below.
 
 `RunScope` owns both halves of the guard: the **portable form** a run records
 and the **coverage predicate** every reader of that form applies. They are one
@@ -286,6 +295,13 @@ package's "read-only against the measured set" shape: `baseline:explain`
 gives it the loaded baseline, the run's violations, and configuration read
 by its own command (thresholds, annotations), and it answers with one
 `EffectiveBoundary` per relevant identity — never touching a file itself.
+
+The explanation also classifies the requested symbol explicitly. `Current`
+means the run measured the symbol (whether or not a rule currently fires),
+`BaselineOnly` means only the baseline still names it, and `Unknown` means
+neither source does. The command rejects `Unknown` as input instead of
+presenting a misspelling as a clean symbol; `BaselineOnly` remains explainable
+and is labelled as absent from the current scope or result.
 
 It also takes the run's `MetricRepositoryInterface` (optional, last argument),
 and only to locate a symbol that reports no violation. Matching an

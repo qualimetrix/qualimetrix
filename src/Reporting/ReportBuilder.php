@@ -25,6 +25,7 @@ final class ReportBuilder
     private float $duration = 0.0;
     private ?MetricRepositoryInterface $metrics = null;
     private ?NamespaceTree $namespaceTree = null;
+    private ?ReportCoverage $coverage = null;
 
     /**
      * Creates a new builder instance.
@@ -126,6 +127,13 @@ final class ReportBuilder
         return $this;
     }
 
+    public function coverage(ReportCoverage $coverage): self
+    {
+        $this->coverage = $coverage;
+
+        return $this;
+    }
+
     /**
      * Builds the Report instance.
      */
@@ -153,6 +161,7 @@ final class ReportBuilder
             metrics: $this->metrics,
             namespaceTree: $this->namespaceTree,
             infoCount: $infoCount,
+            coverage: $this->coverage,
         );
     }
 }

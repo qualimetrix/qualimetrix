@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Rules\Maintainability;
 
 use InvalidArgumentException;
+use PhpParser\NodeTraverser;
+use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -18,6 +20,9 @@ use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Metrics\Halstead\HalsteadCollector;
+use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
+use Qualimetrix\Metrics\Size\MethodStatementCountCollector;
 use Qualimetrix\Rules\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Rules\Maintainability\MaintainabilityRule;
 
@@ -57,7 +62,7 @@ final class MaintainabilityRuleTest extends TestCase
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
-        self::assertSame(['mi', 'methodLoc'], $rule->requires());
+        self::assertSame(['mi', 'methodStatementCount'], $rule->requires());
     }
 
     #[Test]
@@ -118,7 +123,7 @@ final class MaintainabilityRuleTest extends TestCase
         // MI of 30 is below warning threshold (40) but above error (20)
         $metricBag = (new MetricBag())
             ->with('mi', 30.0)
-            ->with('methodLoc', 15);
+            ->with('methodStatementCount', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -147,7 +152,7 @@ final class MaintainabilityRuleTest extends TestCase
         // MI of 15 is below error threshold (20) - very poor maintainability
         $metricBag = (new MetricBag())
             ->with('mi', 15.0)
-            ->with('methodLoc', 20);
+            ->with('methodStatementCount', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -174,7 +179,7 @@ final class MaintainabilityRuleTest extends TestCase
         // MI of 90 is good (above warning threshold 65)
         $metricBag = (new MetricBag())
             ->with('mi', 90.0)
-            ->with('methodLoc', 12);
+            ->with('methodStatementCount', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -198,7 +203,7 @@ final class MaintainabilityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('mi', 25.67)
-            ->with('methodLoc', 15);
+            ->with('methodStatementCount', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -291,7 +296,7 @@ final class MaintainabilityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('mi', $mi)
-            ->with('methodLoc', 15);
+            ->with('methodStatementCount', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -331,11 +336,11 @@ final class MaintainabilityRuleTest extends TestCase
         self::assertArrayHasKey('mi-warning', $aliases);
         self::assertArrayHasKey('mi-error', $aliases);
         self::assertArrayHasKey('mi-exclude-tests', $aliases);
-        self::assertArrayHasKey('mi-min-loc', $aliases);
+        self::assertArrayHasKey('mi-min-statements', $aliases);
         self::assertSame('warning', $aliases['mi-warning']);
         self::assertSame('error', $aliases['mi-error']);
         self::assertSame('excludeTests', $aliases['mi-exclude-tests']);
-        self::assertSame('minLoc', $aliases['mi-min-loc']);
+        self::assertSame('minStatements', $aliases['mi-min-statements']);
     }
 
     #[Test]
@@ -343,11 +348,11 @@ final class MaintainabilityRuleTest extends TestCase
     {
         $options = MaintainabilityOptions::fromArray([
             'exclude_tests' => false,
-            'min_loc' => 20,
+            'min_statements' => 20,
         ]);
 
         self::assertFalse($options->excludeTests);
-        self::assertSame(20, $options->minLoc);
+        self::assertSame(20, $options->minStatements);
     }
 
     #[Test]
@@ -355,11 +360,11 @@ final class MaintainabilityRuleTest extends TestCase
     {
         $options = MaintainabilityOptions::fromArray([
             'excludeTests' => false,
-            'minLoc' => 15,
+            'minStatements' => 15,
         ]);
 
         self::assertFalse($options->excludeTests);
-        self::assertSame(15, $options->minLoc);
+        self::assertSame(15, $options->minStatements);
     }
 
     #[Test]
@@ -374,7 +379,7 @@ final class MaintainabilityRuleTest extends TestCase
 
         $metricBag = (new MetricBag())
             ->with('mi', 15.0)
-            ->with('methodLoc', 20);
+            ->with('methodStatementCount', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -399,7 +404,7 @@ final class MaintainabilityRuleTest extends TestCase
         // Low MI that would normally trigger a violation
         $metricBag = (new MetricBag())
             ->with('mi', 15.0)
-            ->with('methodLoc', 20);
+            ->with('methodStatementCount', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -425,7 +430,7 @@ final class MaintainabilityRuleTest extends TestCase
         // Low MI that would trigger a violation
         $metricBag = (new MetricBag())
             ->with('mi', 15.0)
-            ->with('methodLoc', 20);
+            ->with('methodStatementCount', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -442,17 +447,17 @@ final class MaintainabilityRuleTest extends TestCase
     }
 
     #[Test]
-    public function itSkipsMethodsWithLowLoc(): void
+    public function itSkipsMethodsWithTooFewStatements(): void
     {
-        $rule = new MaintainabilityRule(new MaintainabilityOptions(minLoc: 15));
+        $rule = new MaintainabilityRule(new MaintainabilityOptions(minStatements: 15));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        // Low MI and low LOC (below minLoc threshold)
+        // Low MI and too few statements.
         $metricBag = (new MetricBag())
             ->with('mi', 15.0)
-            ->with('methodLoc', 10);
+            ->with('methodStatementCount', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -463,22 +468,22 @@ final class MaintainabilityRuleTest extends TestCase
         $context = new AnalysisContext($repository);
         $violations = $rule->analyze($context);
 
-        // Should be skipped because methodLoc < minLoc
+        // Should be skipped because methodStatementCount < minStatements.
         self::assertCount(0, $violations);
     }
 
     #[Test]
-    public function itIncludesMethodsWithSufficientLoc(): void
+    public function itIncludesMethodsWithSufficientStatements(): void
     {
-        $rule = new MaintainabilityRule(new MaintainabilityOptions(minLoc: 15));
+        $rule = new MaintainabilityRule(new MaintainabilityOptions(minStatements: 15));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
         $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
-        // Low MI and sufficient LOC (above minLoc threshold)
+        // Low MI and enough statements.
         $metricBag = (new MetricBag())
             ->with('mi', 15.0)
-            ->with('methodLoc', 20);
+            ->with('methodStatementCount', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -492,5 +497,80 @@ final class MaintainabilityRuleTest extends TestCase
         // Should NOT be skipped
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
+    }
+
+    #[Test]
+    public function itKeepsMiAndEligibilityStableAcrossFormatting(): void
+    {
+        $oneLine = '<?php class Example { public function run(bool $ready): int { if ($ready) { return 1; } return 0; } }';
+        $multiLine = <<<'PHP'
+<?php
+
+class Example
+{
+    public function run(
+        bool $ready,
+    ): int {
+        if (
+            $ready
+        ) {
+            return
+                1;
+        }
+
+        return
+            0;
+    }
+}
+PHP;
+
+        $oneLineMetrics = $this->calculateMaintainabilityMetrics($oneLine);
+        $multiLineMetrics = $this->calculateMaintainabilityMetrics($multiLine);
+
+        self::assertSame(
+            $oneLineMetrics->get('methodStatementCount'),
+            $multiLineMetrics->get('methodStatementCount'),
+        );
+        self::assertSame($oneLineMetrics->get('mi'), $multiLineMetrics->get('mi'));
+
+        $rule = new MaintainabilityRule(new MaintainabilityOptions(
+            warning: 101.0,
+            error: 0.0,
+            excludeTests: false,
+            minStatements: 3,
+        ));
+        $symbol = SymbolPath::forMethod('', 'Example', 'run');
+        $method = new SymbolInfo($symbol, RelativePath::fromString('src/Example.php'), 1);
+        $eligibility = [];
+
+        foreach ([$oneLineMetrics, $multiLineMetrics] as $metrics) {
+            $repository = self::createStub(MetricRepositoryInterface::class);
+            $repository->method('all')->willReturn([$method]);
+            $repository->method('get')->willReturn($metrics);
+            $eligibility[] = \count($rule->analyze(new AnalysisContext($repository)));
+        }
+
+        self::assertSame([1, 1], $eligibility);
+    }
+
+    private function calculateMaintainabilityMetrics(string $code): MetricBag
+    {
+        $ast = (new ParserFactory())->createForNewestSupportedVersion()->parse($code);
+        self::assertNotNull($ast);
+
+        $halstead = new HalsteadCollector();
+        $statements = new MethodStatementCountCollector();
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($halstead->getVisitor());
+        $traverser->addVisitor($statements->getVisitor());
+        $traverser->traverse($ast);
+
+        $halsteadMetrics = $halstead->getMethodsWithMetrics()[0]->metrics;
+        $statementMetrics = $statements->getMethodsWithMetrics()[0]->metrics;
+        $source = $halsteadMetrics
+            ->merge($statementMetrics)
+            ->with('ccn', 2);
+
+        return $source->merge((new MaintainabilityIndexCollector())->calculate($source));
     }
 }

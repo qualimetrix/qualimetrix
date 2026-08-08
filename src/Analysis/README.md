@@ -26,6 +26,13 @@ Analysis/
 │   ├── AnalysisPipelineInterface.php    # Pipeline contract
 │   ├── AnalysisPipeline.php             # Main orchestrator
 │   ├── AnalysisResult.php               # Analysis result
+│   ├── AnalysisCoverage.php             # Canonical discovered-file terminal states
+│   ├── AnalysisFailure.php              # Typed path/kind/message failure
+│   ├── AnalysisFailureKind.php           # Parse and processing failure categories
+│   ├── AnalysisCoverage.php             # Discovered-file terminal states and completeness
+│   ├── AnalysisFailure.php              # One failed discovered file
+│   ├── AnalysisFailureKind.php          # Parse or processing failure category
+│   ├── IncompleteAnalysisException.php  # Typed refusal for artifact-producing consumers
 │   ├── MetricEnricher.php               # Enrichment phases (aggregation, global collectors, computed metrics, cycles, duplication)
 │   └── EnrichmentResult.php             # VO: cycles and duplicate blocks from the enrichment phase
 │
@@ -40,7 +47,11 @@ Analysis/
 │   ├── CollectionResult.php             # Collection phase result
 │   ├── FileProcessorInterface.php       # File processor contract
 │   ├── FileProcessor.php                # Single file processing
-│   ├── FileProcessingResult.php         # Single file result
+│   ├── FileProcessingResult.php         # Single file terminal state
+│   ├── CollectedFileData.php             # Successful metrics/dependencies/annotations payload
+│   ├── FileProcessingFailure.php         # Typed collection failure payload
+│   ├── FileProcessingFailureKind.php     # Parse and processing failure categories
+│   ├── FileProcessingFailureKind.php    # Parse or processing failure on the collection wire
 │   │
 │   ├── Metric/
 │   │   ├── CompositeCollector.php       # Combines visitors (unified AST traversal)
@@ -49,6 +60,9 @@ Analysis/
 │   │
 │   ├── Dependency/
 │   │   ├── DependencyGraph.php          # Dependency graph
+│   │   ├── DependencyGraphAnalyzerInterface.php # Complete discovery-to-graph contract
+│   │   ├── DependencyGraphAnalyzer.php  # Graph construction with file terminal states
+│   │   ├── DependencyGraphAnalysisResult.php # Graph plus coverage
 │   │   ├── DependencyGraphBuilder.php
 │   │   ├── DependencyVisitor.php        # AST visitor (delegates to handlers)
 │   │   ├── DependencyResolver.php       # Resolves class dependencies
@@ -79,7 +93,8 @@ Analysis/
 │
 ├── Aggregator/                          # Decomposed metric aggregation
 │   ├── AggregationPhaseInterface.php    # Phase contract
-│   ├── AggregationHelper.php            # Static helper methods
+│   ├── AggregationHelper.php            # Generic aggregation arithmetic
+│   ├── NamespaceMetricContributions.php # Namespace ownership and file mapping
 │   ├── MethodToClassAggregator.php      # Method → Class phase
 │   ├── ClassToNamespaceAggregator.php   # Class → Namespace phase
 │   ├── NamespaceToProjectAggregator.php # Namespace → Project phase
@@ -220,14 +235,21 @@ Analysis result.
 
 **Fields:**
 - `violations: array<Violation>`
-- `filesAnalyzed: int`
-- `filesSkipped: int`
+- `coverage: AnalysisCoverage` — canonical per-path terminal states and completeness verdict
+- `filesAnalyzed: int` — derived from canonical coverage
+- `filesSkipped: int` — derived from canonical coverage (generated exclusions + failures)
 - `duration: float`
 - `metrics: MetricRepositoryInterface`
 
 **Methods:**
 - `hasErrors(): bool`, `hasWarnings(): bool`
 - `getExitCode(): int` — 0/1/2
+
+`AnalysisResult` requires an `AnalysisCoverage`; aggregate counters cannot be
+supplied independently. Likewise, `CollectionResult` requires the exact
+successful paths and typed failed results and derives its counters from those
+terminal states. The pipeline compares their union with the discovered eligible
+paths and fails fast when the sets differ.
 
 ---
 
@@ -276,10 +298,21 @@ Processing a single PHP file: parsing, collecting metrics AND dependencies, memo
 **Algorithm:**
 1. Parsing AST (with caching)
 2. Collecting metrics AND dependencies via `CompositeCollector` (unified AST traversal)
-3. Memory cleanup: `unset($ast)` + `gc_collect_cycles()`
-4. Returning `FileProcessingResult`
+3. Extracting method, class, and namespace-owned metric contributions
+4. Memory cleanup: `unset($ast)` + `gc_collect_cycles()`
+5. Returning `FileProcessingResult`
 
 Parse exceptions are caught and returned as `FileProcessingResult::failure()`.
+Successful results carry a cohesive `CollectedFileData` payload. Unexpected
+sequential and parallel worker exceptions both become typed `processing`
+failures, while parser exceptions are typed `parse` failures.
+
+`AnalysisCoverage` is the canonical run verdict. It assigns every discovered
+path exactly one terminal state: analyzed, intentionally generated-excluded, or
+failed (`parse` / `processing`). Intentional exclusions preserve completeness;
+failures do not. Reporting projects this contract into `ReportCoverage`, while
+artifact writers reject incomplete runs with `IncompleteAnalysisException`
+([ADR 0018](../../docs/adr/0018-analysis-coverage-verdict-and-output-projection.md)).
 
 ---
 
@@ -345,7 +378,14 @@ The aggregator has been decomposed into individual phases, each implementing `Ag
 - **ClassToNamespaceAggregator** — applies strategies from `aggregations[Namespace_]`. For method-collected metrics (CCN, Cognitive, NPath, MI), namespace-level aggregation reads raw method-level values directly (not class-level sums), so `.max`/`.avg`/`.p95` reflect per-method statistics
 - **NamespaceToProjectAggregator** — aggregates across all namespaces; handles both class-collected metrics (promoted from namespace via `aggregations[Project_]`) and namespace-collected metrics (e.g., `distance`, `abstractness`, `ce.p95`) that already exist at namespace level and are aggregated directly to project level
 
-`MetricAggregator` is now a thin orchestrator that runs these phases in order. `AggregationHelper` provides shared static helper methods (extracted and refactored for reuse across phases) used by the aggregation phases.
+`MetricAggregator` is now a thin orchestrator that runs these phases in order. `AggregationHelper` provides generic aggregation arithmetic, while `NamespaceMetricContributions` resolves namespace-owned values and their physical-file mapping.
+
+File-collected metrics may expose explicit namespace-owned contributions through
+`NamespaceMetricProviderInterface`. Namespace aggregation prefers those contributions;
+project aggregation deliberately reads physical file bags, so a multi-namespace file
+is counted once at project level.
+This ownership split is specified by
+[ADR 0019](../../docs/adr/0019-namespace-metric-ownership-and-attribution.md).
 
 **Naming convention:** `{metric}.{strategy}` (e.g.: `ccn.sum`, `ccn.avg`, `loc.sum`)
 

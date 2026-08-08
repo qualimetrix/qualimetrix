@@ -9,10 +9,12 @@ use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\CoverageFailure;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Reporting\ReportCoverage;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -30,6 +32,7 @@ final class ResultPresenter
         private readonly ExitCodeResolver $exitCodeResolver,
         private readonly ViolationFilter $violationFilter,
         private readonly FormatterContextFactory $formatterContextFactory,
+        private readonly DiagnosticOutput $diagnosticOutput = new DiagnosticOutput(),
     ) {}
 
     /**
@@ -55,8 +58,9 @@ final class ResultPresenter
         /** @var string $format */
 
         // Deprecation warning for text-verbose (stderr only, not in formatted output)
-        if ($format === 'text-verbose' && $output instanceof \Symfony\Component\Console\Output\ConsoleOutput) {
-            $output->getErrorOutput()->writeln(
+        if ($format === 'text-verbose') {
+            $this->diagnosticOutput->write(
+                $output,
                 '<comment>Warning: --format=text-verbose is deprecated. Use --format=text --detail instead.</comment>',
             );
         }
@@ -68,6 +72,21 @@ final class ResultPresenter
         $filteredViolations = $this->violationFilter->filterViolations($violations, $context);
 
         // Build and output report with filtered violations
+        $coverage = new ReportCoverage(
+            discovered: $analysisResult->coverage->discoveredFiles(),
+            analyzed: $analysisResult->coverage->analyzedFilesCount(),
+            generatedExcluded: $analysisResult->coverage->generatedExcludedFilesCount(),
+            failed: $analysisResult->coverage->failedFilesCount(),
+            failures: array_map(
+                fn($failure): CoverageFailure => new CoverageFailure(
+                    $failure->path->value(),
+                    $failure->kind->value,
+                    $this->relativizeFailureMessage($failure->message),
+                ),
+                $analysisResult->coverage->failures,
+            ),
+        );
+
         $report = ReportBuilder::create()
             ->addViolations($filteredViolations)
             ->filesAnalyzed($analysisResult->filesAnalyzed)
@@ -75,6 +94,7 @@ final class ResultPresenter
             ->duration($analysisResult->duration)
             ->metrics($analysisResult->metrics)
             ->namespaceTree($analysisResult->namespaceTree)
+            ->coverage($coverage)
             ->build();
         $report = $this->summaryEnricher->enrich($report);
         $formattedOutput = $formatter->format($report, $context);
@@ -83,7 +103,18 @@ final class ResultPresenter
 
         $profiler->stop('reporting');
 
-        return $this->exitCodeResolver->resolve($violations);
+        return $this->exitCodeResolver->resolve($violations, $coverage);
+    }
+
+    private function relativizeFailureMessage(string $message): string
+    {
+        if (!$this->configurationProvider->hasConfiguration()) {
+            return $message;
+        }
+
+        $root = rtrim($this->configurationProvider->getConfiguration()->projectRoot->value(), '/') . '/';
+
+        return str_replace($root, '', $message);
     }
 
     /**
@@ -112,18 +143,18 @@ final class ResultPresenter
             $writeResult = @file_put_contents($tmpFile, $formattedOutput);
 
             if ($writeResult === false) {
-                $output->writeln(
+                $this->diagnosticOutput->write(
+                    $output,
                     \sprintf('<error>Failed to write output to %s</error>', $outputPath),
-                    OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
                 );
 
                 return;
             }
 
             if (!rename($tmpFile, $outputPath)) {
-                $output->writeln(
+                $this->diagnosticOutput->write(
+                    $output,
                     \sprintf('<error>Failed to rename temporary file to %s</error>', $outputPath),
-                    OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
                 );
                 if (file_exists($tmpFile)) {
                     unlink($tmpFile);
@@ -132,9 +163,9 @@ final class ResultPresenter
                 return;
             }
 
-            $output->writeln(
+            $this->diagnosticOutput->write(
+                $output,
                 \sprintf('<info>Report written to %s</info>', $outputPath),
-                OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
             );
 
             return;
@@ -142,9 +173,9 @@ final class ResultPresenter
 
         // TTY warning for HTML output to stdout
         if ($format === 'html' && $this->isOutputTty($output)) {
-            $output->writeln(
+            $this->diagnosticOutput->write(
+                $output,
                 '<comment>HTML output is best saved to a file. Use --output=report.html</comment>',
-                OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL,
             );
         }
 

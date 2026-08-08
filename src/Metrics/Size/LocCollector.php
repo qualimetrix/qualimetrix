@@ -12,6 +12,8 @@ use Qualimetrix\Core\Metric\ClassWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Metric\NamespaceMetricProviderInterface;
+use Qualimetrix\Core\Metric\NamespaceWithMetrics;
 use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
@@ -29,9 +31,12 @@ use SplFileInfo;
  * counts as LLOC but NOT as CLOC. Only lines where ALL tokens are
  * comments/whitespace count as CLOC.
  */
-final class LocCollector extends AbstractCollector implements ClassMetricsProviderInterface
+final class LocCollector extends AbstractCollector implements ClassMetricsProviderInterface, NamespaceMetricProviderInterface
 {
     private const NAME = 'loc';
+
+    /** @var list<NamespaceWithMetrics> */
+    private array $namespaceMetrics = [];
 
     public function __construct()
     {
@@ -78,6 +83,7 @@ final class LocCollector extends AbstractCollector implements ClassMetricsProvid
         }
 
         $metrics = $this->calculateMetrics($content);
+        $this->namespaceMetrics = $this->calculateNamespaceMetrics($content);
 
         $bag = (new MetricBag())
             ->with(MetricName::SIZE_LOC, $metrics['loc'])
@@ -93,6 +99,20 @@ final class LocCollector extends AbstractCollector implements ClassMetricsProvid
         }
 
         return $bag;
+    }
+
+    /**
+     * @return list<NamespaceWithMetrics>
+     */
+    public function getNamespacesWithMetrics(): array
+    {
+        return $this->namespaceMetrics;
+    }
+
+    public function reset(): void
+    {
+        parent::reset();
+        $this->namespaceMetrics = [];
     }
 
     /**
@@ -124,7 +144,7 @@ final class LocCollector extends AbstractCollector implements ClassMetricsProvid
     /**
      * @return array{loc: int, lloc: int, cloc: int}
      */
-    private function calculateMetrics(string $content): array
+    private function calculateMetrics(string $content, int $startLine = 1, ?int $endLine = null): array
     {
         // Handle empty content
         if ($content === '') {
@@ -132,7 +152,10 @@ final class LocCollector extends AbstractCollector implements ClassMetricsProvid
         }
 
         $lines = explode("\n", $content);
-        $loc = \count($lines);
+        $endLine ??= \count($lines);
+        $startLine = max(1, $startLine);
+        $endLine = min(\count($lines), $endLine);
+        $loc = max(0, $endLine - $startLine + 1);
 
         // Track which lines contain comment tokens
         /** @var array<int, true> */
@@ -190,16 +213,14 @@ final class LocCollector extends AbstractCollector implements ClassMetricsProvid
         // Lines with both code and comments (inline comments) are code lines, not CLOC.
         // Lines that are non-empty and not marked as either code or comment must have
         // single-character code tokens (braces, semicolons, etc.) — they are code lines.
+        // LLOC = LOC - empty lines - pure comment lines
+        $emptyCount = $this->countLinesInRange($emptyLines, $startLine, $endLine);
         $pureCommentLineCount = 0;
-
         foreach ($commentLines as $line => $_) {
-            if (!isset($codeLines[$line])) {
+            if ($line >= $startLine && $line <= $endLine && !isset($codeLines[$line])) {
                 ++$pureCommentLineCount;
             }
         }
-
-        // LLOC = LOC - empty lines - pure comment lines
-        $emptyCount = \count($emptyLines);
         $lloc = $loc - $emptyCount - $pureCommentLineCount;
 
         return [
@@ -207,6 +228,59 @@ final class LocCollector extends AbstractCollector implements ClassMetricsProvid
             'lloc' => max(0, $lloc),
             'cloc' => $pureCommentLineCount,
         ];
+    }
+
+    /**
+     * @return list<NamespaceWithMetrics>
+     */
+    private function calculateNamespaceMetrics(string $content): array
+    {
+        \assert($this->visitor instanceof LocVisitor);
+        $rangesByNamespace = $this->visitor->getNamespaceRanges();
+
+        if ($rangesByNamespace === []) {
+            $metrics = $this->calculateMetrics($content);
+
+            return [new NamespaceWithMetrics(
+                namespace: '',
+                line: 1,
+                metrics: MetricBag::fromArray($metrics),
+            )];
+        }
+
+        $result = [];
+        foreach ($rangesByNamespace as $namespace => $ranges) {
+            $totals = ['loc' => 0, 'lloc' => 0, 'cloc' => 0];
+            foreach ($ranges as $range) {
+                $metrics = $this->calculateMetrics($content, $range['startLine'], $range['endLine']);
+                foreach ($totals as $name => $value) {
+                    $totals[$name] = $value + $metrics[$name];
+                }
+            }
+
+            $result[] = new NamespaceWithMetrics(
+                namespace: $namespace,
+                line: $ranges[0]['startLine'],
+                metrics: MetricBag::fromArray($totals),
+            );
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param array<int, true> $lines
+     */
+    private function countLinesInRange(array $lines, int $startLine, int $endLine): int
+    {
+        $count = 0;
+        foreach ($lines as $line => $_) {
+            if ($line >= $startLine && $line <= $endLine) {
+                ++$count;
+            }
+        }
+
+        return $count;
     }
 
     /**

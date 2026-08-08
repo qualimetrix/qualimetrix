@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\RuleExecution\RuleExclusionStats;
@@ -33,6 +34,7 @@ use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Output\ConsoleOutput;
 
 /**
  * Covers the three reporting facts P4-D2 adds on top of the existing stale
@@ -87,7 +89,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         $result = $this->createOrchestrator()->filterAndReport(
             $this->createAnalysisResult($survivors),
             $this->createInput(['--baseline' => $baselinePath, '--show-resolved' => true]),
-            $output,
+            self::diagnosticConsole($output),
             $this->createScopeResolution(['src']),
         );
 
@@ -118,7 +120,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         $result = $this->createOrchestrator()->filterAndReport(
             $this->createAnalysisResult(),
             $this->createInput(['--baseline' => $baselinePath]),
-            $output,
+            self::diagnosticConsole($output),
             $this->createScopeResolution(['src']),
         );
 
@@ -146,7 +148,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         $result = $this->createOrchestrator()->filterAndReport(
             $this->createAnalysisResult(),
             $this->createInput(['--baseline' => $baselinePath]),
-            $output,
+            self::diagnosticConsole($output),
             $this->createScopeResolution(['src']),
         );
 
@@ -171,7 +173,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         $this->createOrchestrator()->filterAndReport(
             $this->createAnalysisResult(),
             $this->createInput(['--baseline' => $baselinePath]),
-            $output,
+            self::diagnosticConsole($output),
             $this->createScopeResolution(['src', 'tests']),
         );
 
@@ -195,7 +197,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         $this->createOrchestrator()->filterAndReport(
             $this->createAnalysisResult(),
             $this->createInput(['--baseline' => $baselinePath]),
-            $output,
+            self::diagnosticConsole($output),
             new GitScopeResolution(
                 paths: [$projectRoot],
                 fileDiscovery: self::createStub(FileDiscoveryInterface::class),
@@ -220,7 +222,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         $this->createOrchestrator()->filterAndReport(
             $this->createAnalysisResult([self::gotoViolation('src/Legacy/bootstrap.php')]),
             $this->createInput(),
-            $output,
+            self::diagnosticConsole($output),
             $this->createScopeResolution(['src']),
         );
 
@@ -285,6 +287,14 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         return new ViolationFilterOrchestrator($pipeline, $ruleExecutor);
     }
 
+    private static function diagnosticConsole(BufferedOutput $diagnostics): ConsoleOutput
+    {
+        $output = new ConsoleOutput($diagnostics->getVerbosity(), false);
+        $output->setErrorOutput($diagnostics);
+
+        return $output;
+    }
+
     /**
      * @param array<string, mixed> $options
      */
@@ -312,10 +322,9 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
 
         return new AnalysisResult(
             violations: $violations,
-            filesAnalyzed: 1,
-            filesSkipped: 0,
             duration: 0.1,
             metrics: $repository,
+            coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
         );
     }
 

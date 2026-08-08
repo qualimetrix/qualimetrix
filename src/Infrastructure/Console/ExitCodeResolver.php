@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Reporting\ReportCoverage;
 
 /**
  * Determines process exit code based on violation severities and failOn configuration.
@@ -31,8 +32,11 @@ final readonly class ExitCodeResolver
      *
      * @param list<Violation> $violations
      */
-    public function resolve(array $violations): int
+    public function resolve(array $violations, ?ReportCoverage $coverage = null): int
     {
+        if ($coverage !== null && !$coverage->isComplete()) {
+            return 4;
+        }
         $failOn = $this->configurationProvider->hasConfiguration()
             ? $this->configurationProvider->getConfiguration()->failOn
             : null;

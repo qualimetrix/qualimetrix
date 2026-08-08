@@ -48,6 +48,20 @@ final class SarifFormatter implements FormatterInterface
             'results' => $this->formatResults($report->violations, $context, $ruleIndexMap),
         ];
 
+        if ($report->coverage !== null) {
+            $run['invocations'] = [[
+                'executionSuccessful' => $report->coverage->isComplete(),
+                'toolExecutionNotifications' => array_map(
+                    static fn($failure): array => [
+                        'level' => 'error',
+                        'message' => ['text' => \sprintf('%s: %s', $failure->path, $failure->message)],
+                        'descriptor' => ['id' => 'QMX-ANALYSIS-' . strtoupper($failure->kind)],
+                    ],
+                    $report->coverage->failures,
+                ),
+            ]];
+        }
+
         // Add originalUriBaseIds when basePath is provided
         if ($context->basePath !== '') {
             $run['originalUriBaseIds'] = [

@@ -4,11 +4,28 @@ Size metrics measure the amount of code, classes, and structural elements.
 
 ---
 
+## Method Statement Count
+
+**Collector:** `MethodStatementCountCollector`
+**Provides:** `methodStatementCount`
+**Level:** Method/function/closure, aggregated to class, namespace, and project
+
+Counts executable statements plus control-flow statements and clauses. Container
+statements and their contents are both counted; nested callable bodies belong to
+their own symbol and are excluded from the enclosing callable. Arrow functions
+own one synthetic statement. Declarations, empty statements, comments, and blank
+lines are excluded, so the metric is independent of formatting.
+
+Maintainability Index uses this metric as its method-size input. See
+[ADR 0020](../../../docs/adr/0020-method-size-and-npath-semantics.md).
+
+---
+
 ## LOC (Lines of Code)
 
 **Collector:** `LocCollector`
 **Provides:** `loc`, `lloc`, `cloc`
-**Level:** File
+**Level:** File (physical project totals) and namespace source spans
 
 ### Metrics
 
@@ -32,6 +49,12 @@ Size metrics measure the amount of code, classes, and structural elements.
 - Single-line comments: `//`
 - Multi-line comments: `/* ... */`
 - DocBlocks: `/** ... */`
+
+For files with namespace declarations, namespace LOC/LLOC/CLOC use each
+`Namespace_` AST node's inclusive source span. Declarations before the first
+namespace remain file-owned, so project totals always describe the physical file
+exactly once. A file without namespace declarations contributes its full span to
+the global namespace.
 
 ### Example
 
@@ -60,7 +83,7 @@ class Calculator  // LLOC +1
 
 **Collector:** `ClassCountCollector`
 **Provides:** `classCount`, `interfaceCount`, `traitCount`, `enumCount`
-**Level:** File
+**Level:** File totals with namespace-owned structural contributions
 
 ### Metrics
 
@@ -79,6 +102,10 @@ class Calculator  // LLOC +1
 
 **What is NOT counted:**
 - Anonymous classes: `new class { }`
+
+Each namespace block contributes its own six structural counts, including zero
+counts for empty blocks. The physical file bag retains the whole-file totals used
+at project level.
 
 ### Example
 

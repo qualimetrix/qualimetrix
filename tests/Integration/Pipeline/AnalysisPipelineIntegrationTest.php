@@ -30,6 +30,7 @@ use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleInterface;
@@ -320,7 +321,12 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                     }
                 }
 
-                return new CollectionPhaseOutput(new CollectionResult(1, 0), $dependencies);
+                return new CollectionPhaseOutput(new CollectionResult([
+                    PathFactory::bestEffortRelative(
+                        $files[0]->getPathname(),
+                        $this->configurationProvider->getConfiguration()->projectRoot,
+                    ),
+                ], []), $dependencies);
             },
         );
 
@@ -368,7 +374,12 @@ final class AnalysisPipelineIntegrationTest extends TestCase
                     }
                 }
 
-                return new CollectionPhaseOutput(new CollectionResult(1, 0), $dependencies);
+                return new CollectionPhaseOutput(new CollectionResult([
+                    PathFactory::bestEffortRelative(
+                        $files[0]->getPathname(),
+                        $this->configurationProvider->getConfiguration()->projectRoot,
+                    ),
+                ], []), $dependencies);
             },
         );
 

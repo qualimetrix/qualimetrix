@@ -110,6 +110,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
             YAML,
         );
 
+        $diagnostics = '';
         $display = $this->runCheck([
             'paths' => [$this->tempDir],
             '--config' => $configPath,
@@ -117,7 +118,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
             '--no-progress' => true,
             '--show-suppressed' => true,
             '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
-        ], $exitCode);
+        ], $exitCode, $diagnostics);
 
         // The only violation this fixture could produce is excluded — the
         // report itself must be clean.
@@ -130,10 +131,10 @@ final class RuleExclusionStatsWiringTest extends TestCase
         // not just in isolation.
         self::assertStringContainsString(
             '1 violation(s) suppressed by per-rule exclude_namespaces/exclude_paths',
-            $display,
+            $diagnostics,
         );
-        self::assertStringContainsString('LongParams.php', $display);
-        self::assertStringContainsString('code-smell.long-parameter-list', $display);
+        self::assertStringContainsString('LongParams.php', $diagnostics);
+        self::assertStringContainsString('code-smell.long-parameter-list', $diagnostics);
     }
 
     #[Test]
@@ -164,24 +165,26 @@ final class RuleExclusionStatsWiringTest extends TestCase
             YAML,
         );
 
+        $diagnostics = '';
         $display = $this->runCheck([
             'paths' => [$this->tempDir],
             '--config' => $configPath,
             '--format' => 'text',
             '--no-progress' => true,
             '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
-        ], $exitCode);
+        ], $exitCode, $diagnostics);
 
         self::assertSame(0, $exitCode, $display);
-        self::assertStringNotContainsString('suppressed by per-rule exclude_namespaces', $display);
+        self::assertStringNotContainsString('suppressed by per-rule exclude_namespaces', $diagnostics);
     }
 
     /**
      * @param array<string, mixed> $input
      *
      * @param-out int $exitCode
+     * @param-out string $diagnostics
      */
-    private function runCheck(array $input, ?int &$exitCode): string
+    private function runCheck(array $input, ?int &$exitCode, string &$diagnostics): string
     {
         $container = (new ContainerFactory())->create();
 
@@ -189,7 +192,8 @@ final class RuleExclusionStatsWiringTest extends TestCase
         \assert($command instanceof CheckCommand);
 
         $tester = new CommandTester($command);
-        $exitCode = $tester->execute($input);
+        $exitCode = $tester->execute($input, ['capture_stderr_separately' => true]);
+        $diagnostics = $tester->getErrorOutput();
 
         return $tester->getDisplay();
     }

@@ -85,6 +85,20 @@ final class BaselineCliFixture
      * @param list<string> $paths
      * @param array<string, mixed> $options
      */
+    public function checkWithSeparatedDiagnostics(array $paths, array $options = []): CommandTester
+    {
+        return $this->execute(CheckCommand::class, [
+            'paths' => $paths,
+            '--config' => $this->root . '/qmx.yaml',
+            '--no-progress' => true,
+            ...$options,
+        ], ['capture_stderr_separately' => true]);
+    }
+
+    /**
+     * @param list<string> $paths
+     * @param array<string, mixed> $options
+     */
     public function cleanup(array $paths, array $options = []): CommandTester
     {
         return $this->execute(BaselineCleanupCommand::class, [
@@ -98,13 +112,14 @@ final class BaselineCliFixture
     /**
      * @param class-string<Command> $commandClass
      * @param array<string, mixed> $input
+     * @param array<string, mixed> $testerOptions
      */
-    private function execute(string $commandClass, array $input): CommandTester
+    private function execute(string $commandClass, array $input, array $testerOptions = []): CommandTester
     {
         /** @var Command $command */
         $command = (new ContainerFactory())->create()->get($commandClass);
         $tester = new CommandTester($command);
-        $tester->execute($input);
+        $tester->execute($input, $testerOptions);
 
         return $tester;
     }
