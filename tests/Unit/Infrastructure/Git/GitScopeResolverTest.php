@@ -38,7 +38,9 @@ final class GitScopeResolverTest extends TestCase
             new InputOption('report', null, InputOption::VALUE_REQUIRED),
         ]);
 
-        $input = new ArrayInput(['--report' => 'git:main..HEAD'], $definition);
+        // HEAD is a branch-independent scope: this wiring test must also pass
+        // in detached CI checkouts where no local main branch exists.
+        $input = new ArrayInput(['--report' => 'git:HEAD'], $definition);
 
         $resolver = new GitScopeResolver();
         $result = $resolver->resolve($input, $resolved);
@@ -89,7 +91,9 @@ final class GitScopeResolverTest extends TestCase
             new InputOption('report', null, InputOption::VALUE_REQUIRED),
         ]);
 
-        $input = new ArrayInput(['--report' => 'git:main..HEAD'], $definition);
+        // Keep this wiring assertion independent from local branch names.
+        // Missing-reference rejection is covered by direct GitClient/CLI tests.
+        $input = new ArrayInput(['--report' => 'git:HEAD'], $definition);
 
         $resolver = new GitScopeResolver();
         $result = $resolver->resolve($input, $resolved);
