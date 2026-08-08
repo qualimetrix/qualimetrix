@@ -83,14 +83,31 @@ final class CacheKeyGeneratorVOTest extends TestCase
     }
 
     #[Test]
+    public function itProducesSameKeyForDifferentRealFilesWithSameContents(): void
+    {
+        $fileA = $this->tempDir . '/a.php';
+        $fileB = $this->tempDir . '/b.php';
+        $contents = '<?php class Shared {}';
+        file_put_contents($fileA, $contents);
+        file_put_contents($fileB, $contents);
+
+        $generator = new CacheKeyGenerator();
+
+        self::assertSame(
+            $generator->generate(new SplFileInfo($fileA)),
+            $generator->generate(new SplFileInfo($fileB)),
+        );
+    }
+
+    #[Test]
     public function itHandlesUnresolvableFileGracefully(): void
     {
         $generator = new CacheKeyGenerator();
         $missing = new SplFileInfo($this->tempDir . '/missing.php');
 
-        // Should not throw — cache key generator is tolerant of broken paths
+        // A missing file cannot be content-hashed, so callers must bypass cache.
         $key = $generator->generate($missing);
 
-        self::assertNotEmpty($key);
+        self::assertSame('', $key);
     }
 }

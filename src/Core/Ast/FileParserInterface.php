@@ -19,4 +19,15 @@ interface FileParserInterface
      * @return Node[]
      */
     public function parse(SplFileInfo $file): array;
+
+    /**
+     * Parse source bytes that were already read from the original file.
+     *
+     * Implementations must use $file for diagnostics and source identity.
+     *
+     * @throws ParseException
+     *
+     * @return Node[]
+     */
+    public function parseContent(SplFileInfo $file, string $content): array;
 }

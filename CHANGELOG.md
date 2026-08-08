@@ -12,11 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added universal per-rule `exclude_namespace_channels` configuration for suppressing selected namespace-aggregate violation channels without hiding class findings or sibling channels.
 
 ### Fixed
+- AST cache invalidation now fingerprints file contents, so a same-size rewrite with a preserved timestamp cannot reuse stale analysis results.
 - Made duplicate-code candidate discovery use bounded memory before exact verification, without dropping real duplicate candidates.
 - Preserved exact discrete namespace sums so abstractness and count-gated rules do not lose a class through fractional aggregation.
 - Applied local `@qmx-threshold` overrides to Value Object constructor limits and recognize the top-level CBO `scope` option without a false unknown-option warning.
 
 ### Breaking
+
+- `FileParserInterface` now requires `parseContent(SplFileInfo $file, string $content): array`. Implementations must parse the supplied bytes while using `$file` as diagnostic source identity.
 - `DependencyGraphAnalyzerInterface`, `DependencyGraphAnalyzer`, and `DependencyGraphAnalysisResult` moved from `Qualimetrix\Analysis\Collection\Dependency` to `Qualimetrix\Analysis\Pipeline`. Update imports and fully qualified type references to the new namespace; their constructor and method contracts are unchanged, and no compatibility aliases are provided.
 
 ## [0.24.0] - 2026-08-08

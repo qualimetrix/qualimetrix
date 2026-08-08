@@ -43,19 +43,32 @@ final class CacheKeyGeneratorTest extends TestCase
     }
 
     #[Test]
-    public function itGeneratesDifferentKeyWhenFileChanges(): void
+    public function itGeneratesTheSameKeyForAlreadyReadContent(): void
+    {
+        $file = new SplFileInfo($this->tempFile);
+        $content = file_get_contents($this->tempFile);
+        self::assertNotFalse($content);
+
+        self::assertSame(
+            $this->generator->generate($file),
+            $this->generator->generateForContent($content),
+        );
+    }
+
+    #[Test]
+    public function itGeneratesSameKeyWhenOnlyMtimeChanges(): void
     {
         $file = new SplFileInfo($this->tempFile);
         $key1 = $this->generator->generate($file);
 
-        // Touch the file to change mtime
+        // A metadata-only timestamp change must not invalidate the AST cache.
         sleep(1);
         touch($this->tempFile);
         clearstatcache(true, $this->tempFile);
 
         $key2 = $this->generator->generate(new SplFileInfo($this->tempFile));
 
-        self::assertNotSame($key1, $key2);
+        self::assertSame($key1, $key2);
     }
 
     #[Test]
@@ -74,28 +87,44 @@ final class CacheKeyGeneratorTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsValidKeyForNonExistentFile(): void
+    public function itGeneratesDifferentKeyForSameSizeContentWithRestoredMtime(): void
+    {
+        $firstContent = '<?php class First {}';
+        $secondContent = '<?php class Other {}';
+        self::assertSame(\strlen($firstContent), \strlen($secondContent));
+
+        file_put_contents($this->tempFile, $firstContent);
+        $originalMtime = filemtime($this->tempFile);
+        self::assertNotFalse($originalMtime);
+        $key1 = $this->generator->generate(new SplFileInfo($this->tempFile));
+
+        file_put_contents($this->tempFile, $secondContent);
+        touch($this->tempFile, $originalMtime);
+        clearstatcache(true, $this->tempFile);
+
+        $key2 = $this->generator->generate(new SplFileInfo($this->tempFile));
+
+        self::assertNotSame($key1, $key2);
+    }
+
+    #[Test]
+    public function itReturnsEmptyKeyForNonExistentFile(): void
     {
         $file = new SplFileInfo('/non/existent/file.php');
 
         $key = $this->generator->generate($file);
 
-        // Should produce a valid hash, not an empty string
-        self::assertNotEmpty($key);
-        // xxh128 produces 32 hex characters
-        self::assertSame(32, \strlen($key));
+        self::assertSame('', $key);
     }
 
     #[Test]
-    public function itReturnsDifferentKeysForDifferentNonExistentFiles(): void
+    public function itReturnsEmptyKeyForNonFileTarget(): void
     {
-        $file1 = new SplFileInfo('/non/existent/file1.php');
-        $file2 = new SplFileInfo('/non/existent/file2.php');
+        $directory = new SplFileInfo(\dirname($this->tempFile));
 
-        $key1 = $this->generator->generate($file1);
-        $key2 = $this->generator->generate($file2);
+        $key = $this->generator->generate($directory);
 
-        self::assertNotSame($key1, $key2);
+        self::assertSame('', $key);
     }
 
     #[Test]

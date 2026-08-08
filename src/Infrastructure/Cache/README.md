@@ -13,10 +13,10 @@ Parsing PHP into AST is the most expensive operation. Caching avoids repeated pa
 
 ## Cache Levels
 
-| Level       | What is cached | Key depends on                           | When invalidated               |
-| ----------- | -------------- | ---------------------------------------- | ------------------------------ |
-| **AST**     | Parse result   | file + mtime + size + php-parser version | File change, php-parser update |
-| **Metrics** | File MetricBag | AST key + collectors                     | File change, qmx update        |
+| Level       | What is cached | Key depends on                                   | When invalidated                  |
+| ----------- | -------------- | ------------------------------------------------ | --------------------------------- |
+| **AST**     | Parse result   | content hash + cache schema + php-parser version | Content change, php-parser update |
+| **Metrics** | File MetricBag | AST key + collectors                             | File change, qmx update           |
 
 **Priority:** AST caching is primary (80%+ of time). MetricBag caching is an additional optimization for incremental runs.
 
@@ -41,16 +41,19 @@ Generates cache key for a file.
 
 **Key components:**
 
-| Component      | Purpose                      |
-| -------------- | ---------------------------- |
-| `realpath`     | Absolute file path           |
-| `mtime`        | Modification time            |
-| `size`         | File size                    |
-| `cacheVersion` | php-parser version (for AST) |
+| Component      | Purpose                                                                                      |
+| -------------- | -------------------------------------------------------------------------------------------- |
+| `contentHash`  | Detects every source-content change, including same-size rewrites with a preserved timestamp |
+| cache schema   | Keeps entries from incompatible key layouts separate                                         |
+| `cacheVersion` | php-parser version (for AST)                                                                 |
 
 **Hashing:** `xxh128` (fast non-cryptographic hash)
 
 **Important:** For the AST cache, the qmx version is NOT included in the key — the AST does not depend on the tool version.
+
+If the file cannot be resolved or hashed, key generation returns an empty key and
+the parser bypasses the cache for that file rather than risking reuse of an
+unverified AST.
 
 ### FileCache
 
@@ -102,11 +105,12 @@ Lazy cache creation based on runtime configuration.
 
 ### Automatic Invalidation
 
-| Event              | Result                                  |
-| ------------------ | --------------------------------------- |
-| File changed       | New mtime/size -> new key -> cache miss |
-| php-parser updated | New cacheVersion -> all keys are new    |
-| PHP updated        | New cacheVersion                        |
+| Event                | Result                                    |
+| -------------------- | ----------------------------------------- |
+| File content changed | New content hash -> new key -> cache miss |
+| Only mtime changed   | Same content hash -> cache hit            |
+| php-parser updated   | New cacheVersion -> all keys are new      |
+| PHP updated          | New cacheVersion                          |
 
 ### Manual Invalidation
 
@@ -114,7 +118,8 @@ Lazy cache creation based on runtime configuration.
 
 ### Orphan Entries
 
-When a file is deleted/moved, old entries remain in the cache but are not used.
+When a file is deleted, its entry can remain in the cache until cleanup. A moved
+file with unchanged content can safely reuse the same AST entry.
 
 **Cleanup strategies:**
 1. `--clear-cache` — removes everything
@@ -133,9 +138,10 @@ Decorator for `FileParserInterface`.
 - `CacheKeyGenerator $keyGenerator`
 
 **Algorithm of parse():**
-1. Key generation
-2. Cache hit -> return from cache
-3. Cache miss -> parse via `$inner`, save
+1. Read source bytes once from the original file.
+2. Generate the cache key from those bytes.
+3. Cache hit -> return from cache.
+4. Cache miss -> parse those same bytes via `$inner` while retaining the original file for diagnostics, save.
 
 ### FileParserFactory
 
@@ -154,7 +160,7 @@ Factory with runtime configuration awareness.
 
 1. **CI/CD:** Cache `.qmx-cache` between builds
 2. **Git:** Add `.qmx-cache/` to `.gitignore`
-3. **Large changes:** Use `--clear-cache` after refactoring
+3. **Large changes:** Content changes invalidate automatically; use `--clear-cache` only to reclaim space
 
 ## CLI Options
 
@@ -181,7 +187,8 @@ bin/qmx check src/ --cache-dir=/tmp/qmx-cache
 
 - Cache miss -> parsing and saving
 - Cache hit -> reading without parsing
-- File changed -> cache miss
+- File content changed -> cache miss, including same-size rewrites with a restored mtime
+- Metadata-only mtime change -> cache hit
 - `--clear-cache` clears the cache
 - `--no-cache` disables caching
 - FileParserFactory returns the correct implementation

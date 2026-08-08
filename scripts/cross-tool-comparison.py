@@ -102,10 +102,12 @@ COMPARISON_SPECS = [
                    "The dependency graphs have different edge contracts."),
     ComparisonSpec("ce", "phpmetrics", "efferentCoupling", "class", "Efferent Coupling", CONTEXTUAL,
                    "The dependency graphs have different edge contracts."),
-    ComparisonSpec("classLoc", "pdepend", "loc", "class", "Class physical LOC", COMPARABLE,
-                   "Both report physical source span for the class."),
-    ComparisonSpec("classLoc", "phpmetrics", "loc", "class", "Class physical LOC", COMPARABLE,
-                   "Both report physical source span for the class."),
+    ComparisonSpec("classLoc", "pdepend", "loc", "class", "Class physical LOC", CONTEXTUAL,
+                   "Equality is limited to non-attributed named classes because PDepend excludes "
+                   "class attributes from its source span while Qualimetrix includes them."),
+    ComparisonSpec("classLoc", "phpmetrics", "loc", "class", "Class physical LOC", CONTEXTUAL,
+                   "phpmetrics counts lines from a pretty-printed AST rather than the original "
+                   "physical source span."),
     ComparisonSpec("instability", "phpmetrics", "instability", "class", "Instability", CONTEXTUAL,
                    "Different Ca/Ce graphs feed the ratio."),
     ComparisonSpec("classRank", "phpmetrics", "pageRank", "class", "ClassRank / PageRank", CONTEXTUAL,

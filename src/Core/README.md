@@ -957,6 +957,7 @@ Epsilon is a tolerance band around the allowance, never a shift of it: inside th
 
 **Methods:**
 - `parse(SplFileInfo $file): array<Node>` — parse PHP file into AST
+- `parseContent(SplFileInfo $file, string $content): array<Node>` — parse an already-read source snapshot while retaining the original file for diagnostics
 - Throws: `ParseException`
 
 ### NamespaceDetectorInterface

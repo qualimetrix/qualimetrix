@@ -61,6 +61,17 @@ final class PhpFileParser implements FileParserInterface
             throw new ParseException($absolutePath, 'Failed to read file contents');
         }
 
+        return $this->parseContent($file, $content);
+    }
+
+    /**
+     * @return Node[]
+     */
+    public function parseContent(SplFileInfo $file, string $content): array
+    {
+        $filePath = $file->getPathname();
+        $absolutePath = $this->resolveAbsolutePath($file);
+
         $this->logger->debug('Parsing file', [
             'file' => $filePath,
             'size' => \strlen($content),

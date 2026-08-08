@@ -12,6 +12,8 @@ use SplFileInfo;
  */
 final class CacheKeyGenerator
 {
+    private const string KEY_SCHEMA_VERSION = 'ast-cache-v2';
+
     private readonly string $cacheVersion;
 
     public function __construct()
@@ -28,33 +30,33 @@ final class CacheKeyGenerator
      * Generate a unique cache key for a file.
      *
      * Key components:
-     * - realpath: absolute path to file
-     * - mtime: modification time
-     * - size: file size
+     * - content hash: invalidates the cache for every source change
      * - cacheVersion: PHP + php-parser version
      */
     public function generate(SplFileInfo $file): string
     {
         $realPath = $file->getRealPath();
 
-        if ($realPath === false) {
-            // File doesn't exist: use pathname with prefix and skip stat-dependent fields
-            $data = \sprintf(
-                'unresolved:%s|%s',
-                $file->getPathname(),
-                $this->cacheVersion,
-            );
-
-            return hash('xxh128', $data);
+        if ($realPath === false || !is_file($realPath) || !is_readable($realPath)) {
+            return '';
         }
 
-        $data = \sprintf(
-            '%s|%d|%d|%s',
-            $realPath,
-            $file->getMTime(),
-            $file->getSize(),
-            $this->cacheVersion,
-        );
+        $content = @file_get_contents($realPath);
+
+        if ($content === false) {
+            return '';
+        }
+
+        return $this->generateForContent($content);
+    }
+
+    /**
+     * Generate a cache key for source bytes that were already read.
+     */
+    public function generateForContent(string $content): string
+    {
+        $contentHash = hash('xxh128', $content);
+        $data = \sprintf('%s|%s|%s', self::KEY_SCHEMA_VERSION, $contentHash, $this->cacheVersion);
 
         return hash('xxh128', $data);
     }

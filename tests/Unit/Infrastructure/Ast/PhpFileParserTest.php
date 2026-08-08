@@ -116,6 +116,20 @@ final class PhpFileParserTest extends TestCase
     }
 
     #[Test]
+    public function itPreservesOriginalFileIdentityForProvidedInvalidContent(): void
+    {
+        $filePath = $this->fixturesPath . '/nonexistent.php';
+
+        try {
+            $this->parser->parseContent(new SplFileInfo($filePath), '<?php function broken( {');
+            self::fail('Expected ParseException');
+        } catch (ParseException $exception) {
+            self::assertSame($filePath, $exception->filePath->value());
+            self::assertStringContainsString($filePath, $exception->getMessage());
+        }
+    }
+
+    #[Test]
     public function itAllowsCustomParserInjection(): void
     {
         // Test that a custom parser can be injected (for testing purposes)
