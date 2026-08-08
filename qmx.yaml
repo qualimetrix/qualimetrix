@@ -62,7 +62,17 @@ architecture:
     - name: architecture-rules
       patterns: ['Qualimetrix\Architecture\Rules\**']
 
-    # ── Metrics — per-category template layer (Phase 2 direction 2)
+    # ── Metrics — explicit cross-category primitives + category template
+    # These three implementation primitives are shared by multiple metric
+    # subjects. Keep the set exact: a broad Qualimetrix\Metrics\** pattern
+    # would mask a future category class placed in the root by mistake.
+    - name: metrics-foundation
+      patterns:
+        - 'Qualimetrix\Metrics\AbstractCollector'
+        - 'Qualimetrix\Metrics\ResettableVisitorInterface'
+        - 'Qualimetrix\Metrics\VisitorMethodTrackingTrait'
+
+    # Per-category template layer (Phase 2 direction 2).
     # Each metric category (Complexity, Coupling, CodeSmell, ...) is
     # independent; per-category layer visibility catches cross-category
     # coupling that a single flat `metrics` layer would mask.
@@ -175,9 +185,11 @@ architecture:
       - architecture-domain
       - architecture-processing
 
-    # ── Domain leaves: each metric category and Rules/Reporting/
-    # Baseline depend on Core only (parity with former deptrac) ────
-    'metrics-*': [core]
+    # ── Domain leaves: the metric foundation depends only on Core; each
+    # metric category additionally consumes those shared primitives.
+    # Rules/Reporting/Baseline depend on Core only. ─────────────────
+    metrics-foundation: [core]
+    'metrics-*': [core, metrics-foundation]
     rules:       [core]
     reporting:   [core]
     baseline:    [core]

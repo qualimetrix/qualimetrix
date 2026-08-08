@@ -23,6 +23,7 @@ use Qualimetrix\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Configuration\Preset\PresetResolver;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -60,6 +61,7 @@ final class DogfoodingTopologyTest extends TestCase
             'architecture-configuration',
             'architecture-processing',
             'architecture-rules',
+            'metrics-foundation',
             'metrics-{Category}',
             'rules',
             'reporting',
@@ -117,6 +119,54 @@ final class DogfoodingTopologyTest extends TestCase
         self::assertNotContains('infrastructure', $declared);
         self::assertNotContains('metrics', $declared);
         self::assertNotContains('architecture', $declared);
+    }
+
+    #[Test]
+    public function itKeepsTheExactRootMetricPrimitivesInsideTheFoundationLayer(): void
+    {
+        $repoRoot = realpath(__DIR__ . '/../../..');
+        self::assertIsString($repoRoot, 'Could not resolve repository root.');
+
+        $rootFiles = glob($repoRoot . '/src/Metrics/*.php');
+        self::assertIsArray($rootFiles);
+
+        $rootFileNames = array_map(basename(...), $rootFiles);
+        sort($rootFileNames);
+
+        self::assertSame(
+            [
+                'AbstractCollector.php',
+                'ResettableVisitorInterface.php',
+                'VisitorMethodTrackingTrait.php',
+            ],
+            $rootFileNames,
+            'Every class directly under src/Metrics/ must be an explicitly reviewed cross-category primitive. '
+                . 'Move category-specific code into its subject directory or add a deliberate foundation contract.',
+        );
+
+        $registry = $this->loadProjectArchitecture()->registry();
+        foreach (['AbstractCollector', 'ResettableVisitorInterface', 'VisitorMethodTrackingTrait'] as $type) {
+            self::assertSame(
+                'metrics-foundation',
+                $registry->resolveLayer(SymbolPath::forClass('Qualimetrix\\Metrics', $type)),
+                "Qualimetrix\\Metrics\\{$type} must be covered by the explicit metrics-foundation layer.",
+            );
+        }
+    }
+
+    #[Test]
+    public function metricCategoriesMayDependOnFoundationButFoundationMustNotDependOnCategories(): void
+    {
+        $policy = $this->loadProjectArchitecture()->policy();
+
+        self::assertTrue(
+            $policy->isAllowed('metrics-Complexity', 'metrics-foundation'),
+            'Metric categories share the explicitly reviewed cross-category implementation primitives.',
+        );
+        self::assertFalse(
+            $policy->isAllowed('metrics-foundation', 'metrics-Complexity'),
+            'The metric foundation must remain independent of every concrete metric category.',
+        );
     }
 
     /**
