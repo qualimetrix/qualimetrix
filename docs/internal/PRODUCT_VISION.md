@@ -27,7 +27,8 @@ else the tool does is in service of that, or is evidence for it.
 ## 2. What Qualimetrix Is
 
 Qualimetrix is a local-first structural quality control system for PHP projects developed by humans
-and AI agents. It works with two kinds of statement, and the difference between them is load-bearing:
+and AI agents. It works with two kinds of statement, and the difference between them matters
+everywhere else in this document:
 
 - **Declared contracts** — architectural layers and their permitted relations, forbidden
   dependencies, explicit policy. Binary and checkable: a breach is a fact, not an opinion.
@@ -71,29 +72,26 @@ through a different surface.
 
 **Architecture owner (human) — the primary beneficiary.** Decides which dependencies are permitted,
 which boundaries must hold, what degradation is unacceptable, which exceptions are deliberate, and
-what blocks a merge. Owns the policy and every contested case. Every other role operates inside the
-intent this role expresses.
+what blocks a merge. Every other role works inside the intent this one expresses.
 
 **AI agent — the primary producer of change, and the primary machine consumer of feedback.** Explores
-an unfamiliar project, evaluates its own change before proposing it, receives a compact machine
-result, understands *why* something is a violation, corrects the code, and re-verifies without a
-human in the loop. Feedback must be stable enough to act on and precise enough not to be acted on
-wrongly.
+an unfamiliar project, evaluates its own change before proposing it, understands *why* something is a
+violation, corrects the code, and re-verifies without a human. Feedback must be stable enough to act
+on and precise enough not to be acted on wrongly.
 
-**CI — the independent enforcement contour.** Assumes nothing was checked. Applies the same policy to
-the pushed result, deterministically, from committed inputs only.
+**CI — the independent check.** Assumes nothing was checked. Applies the same policy to the pushed
+result, deterministically, from committed inputs only.
 
 **Human developer / reviewer — the same loop by hand.** Writes code directly, and reviews what the
-agent produced. Needs the identical evidence in a form a person can read at review time, including
-what the agent changed about the *policy* itself.
+agent produced. Needs the same evidence in a form a person can read at review time, including what
+the agent changed about the *policy* itself.
 
 Secondary scenarios — PR review, onboarding into an unfamiliar codebase, consulting audit — reuse the
 same loop and the same analysis result. They do not justify an independent product direction.
 
-These are functions, not headcount. On the current horizon every human role is the same person,
-wearing a different hat at a different moment — which is an argument for keeping the roles distinct
-in the product, not for collapsing them: the moment of declaring intent and the moment of reviewing
-what an agent did with it need different evidence even when the same person lives both.
+These are functions, not headcount: today one person holds all the human roles. That is a reason to
+keep them distinct rather than merge them — declaring intent and reviewing what an agent did with it
+need different evidence, whoever is doing both.
 
 ---
 
@@ -125,7 +123,7 @@ Two consequences that are easy to lose:
   reporting convenience.
 - The health-score subsystem — aggregate scores, ranked hotspots, debt estimates, exploratory
   reports — is evidence serving Inspect and Explain: global orientation and first signals about where
-  to look. It is not an independent product contour. It orients; the loop is what controls.
+  to look. It orients; the loop is what controls.
 
 ---
 
@@ -139,12 +137,14 @@ Two consequences that are easy to lose:
    - **comparison status** — against the accepted state: new, worsened, unchanged, resolved, or not
      comparable.
 
-   They are independent, not a single ladder: a complexity measurement past a threshold the project
-   itself set on that class is a measurement *and* a declared limit *and* possibly a regression. Each
-   dimension carries its own consequence — a declared limit is not "usually" true and no preset may
-   dial it down; a calibrated default is expected to be adapted to the project; an accepted state may
-   only be re-accepted deliberately. A surface that flattens all of this into one undifferentiated
-   "violation" leaves an agent no way to tell what it may argue with.
+   The dimensions are independent: a complexity value past a threshold the project itself set on that
+   class is a measurement *and* a declared limit *and* possibly a regression. Each one carries its own
+   consequence — a declared limit is not "usually" true and no preset may dial it down; a calibrated
+   default is expected to be adapted to the project; an accepted state may only be re-accepted
+   deliberately. A comparison also has to be valid to mean anything: same metric, same scope, same
+   semantics, and evidence that is missing or incomparable is reported as such rather than quietly
+   becoming an improvement. A surface that flattens all of this into one undifferentiated "violation"
+   leaves an agent no way to tell what it may argue with.
 
 2. **Relaxing policy is a reviewable event, not a fix.** Widening an exclusion, raising a threshold,
    suppressing a finding, or re-accepting the current state is the one move that makes every check
@@ -154,11 +154,11 @@ Two consequences that are easy to lose:
 
 3. **Silence is not proof.** An absence of findings means the declared policy found nothing to say —
    which is not the same as the code having been checked. Code outside every declared boundary is the
-   one bypass that leaves no artefact at all: no policy edit, no suppression, no accepted entry,
-   nothing for a reviewer to see. So enforcement carries an explicit coverage posture: what the
-   declared policy does *not* reach is itself reportable, first-party gaps are distinguished from
-   third-party ones (a project can never classify its dependencies, and drowning the former in the
-   latter is the same as reporting neither), and a project may make its own uncovered code blocking.
+   one bypass that leaves nothing behind: no policy edit, no suppression, no accepted entry, nothing
+   for a reviewer to see. So enforcement states what it covers. What the declared policy does not
+   reach is itself reportable. Own code outside the boundaries is reported apart from third-party
+   code — a project can never classify its dependencies, and burying the first in the second reports
+   neither — and a project may make its own uncovered code fail the build.
 4. **Enforcement is reproducible from committed inputs.** The state a verdict is based on — declared
    policy, accepted baselines, ratchet limits — lives in the repository and is reviewed like code.
    Local caches, home-directory history, and machine-specific state may make a human faster; they may
@@ -181,21 +181,19 @@ Two consequences that are easy to lose:
    deviation documented. Changing a formula is a release event: the corpus is re-measured and the
    shift is explained. A human discounts an implausible number from experience; an agent has no such
    intuition, so the numbers have to be right.
-8. **Compare like with like.** A regression verdict compares compatible observations — same metric,
-   scope, threshold, and contract semantics. Missing, incomparable, or partial evidence is reported
-   as such and never silently becomes an improvement or a regression.
-9. **Distinguish "your code failed" from "the analysis failed".** A configuration error, an
+8. **Distinguish "your code failed" from "the analysis failed".** A configuration error, an
    unparseable input, or incomplete coverage is a different outcome from a policy breach, and is
    signalled differently everywhere. Conflating them teaches an agent to fix code in response to a
    broken tool.
-10. **Summary first, details on demand — in standard vocabulary.** The default answer fits one screen
+9. **Summary first, details on demand — in standard vocabulary.** The default answer fits one screen
    and states where the problems are; depth is available on request, down to the individual finding.
    Established metric names are used as-is, paired with plain-language meaning — not for newcomers'
    sake alone, but because a human reviewing an agent's work reads the same output under time
    pressure.
-11. **Local-first, and fast enough to sit in the loop.** Full value from a project-local run with no
-    service, account, or network. Analysis is fast enough to run on every change an agent makes, not
-    only nightly — an enforcement contour slower than the change rate stops being enforcement.
+10. **Local-first.** Full value from a project-local run, with no service, account, or network.
+
+11. **Fast enough to sit in the loop.** Analysis runs on every change an agent makes, not only
+    nightly. A check slower than the rate of change stops being a check and becomes a report.
 
 ---
 
@@ -214,18 +212,17 @@ Two consequences that are easy to lose:
 - **Not a test-coverage tool.** Coverage may be consumed as an input; it is not produced.
 - **Not a runtime profiler.** The internal profiler measures Qualimetrix, never the analysed program.
 - **Not a hosted service, management dashboard, or account-based platform.** Local CLI, project
-  files, and CI are the product; nothing essential may require a hosted component. Self-contained
-  local interactive reports are inside the shape — it is the server, the account and the
-  organisation-wide rollup that are not.
+  files, and CI are the product; nothing essential may require a hosted component. A self-contained
+  local interactive report is in scope — the server, the account, and the organisation-wide rollup
+  are not.
 
 ---
 
 ## 8. Horizons
 
 A horizon is not a queue of capabilities. It says what counts as validation, what may be sacrificed to
-get there, and what would end it. Reading horizons as phases — "that feature belongs to a later one"
-— is a mistake: the deferral rule below applies to an item's *justification*, never to how
-product-grade it is.
+get there, and what would end it. Do not read horizons as phases and defer a feature because it
+"belongs to a later one": what defers an item is its *justification*, not how polished it is.
 
 **Now — dogfooding.**
 
@@ -250,29 +247,20 @@ deliberately not driving the roadmap yet.
 
 ---
 
-## 9. Established Direction vs Target Capability
+## 9. What Is Not Built Yet
 
-A vision may describe unbuilt capability, but it must not let a target read as shipped. What lies
-outside the product entirely is §7; how far each of these has progressed, and in what order, is
-[PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md). This section states only whether something is inside the
-product's shape and whether it is settled.
+Everything above is written as the target state. Three parts of it are not built, and this section
+exists so that none of them reads as shipped. How far each has progressed belongs to
+[PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md), not here.
 
-**Established direction** — enforcing declared architectural boundaries; structural metrics and rule
-findings; explainable scoring, continuously validated against the benchmark corpus, with
-summary-to-detail investigation; gradual adoption on a legacy codebase without fixing it first; and
-accepted-state ceilings on comparable finding groups, where a new group stays visible, an accepted one
-is suppressed, and growth past what was accepted becomes a blocking breach.
-
-**Target capability** — a first-class delta model: new, worsened, unchanged, resolved and
-incomparable exposed consistently through the one shared analysis result, rather than reconstructed
-from what survived filtering. Also target: surfacing changes to the enforcement inputs themselves —
-policy, suppressions, accepted state — separately from code findings, so that repository review policy
-can require independent approval for them.
-
-Historical trend data is a target too, but human-facing only: it helps a person see where the project
-is heading and is never an input to a verdict (§6.4).
-
-**Outside the shape while local-first holds** — cross-project or organisation-wide aggregation.
+- **A first-class delta model** — new, worsened, unchanged, resolved and incomparable exposed
+  consistently through the one shared analysis result, instead of reconstructed from what survived
+  filtering. Accepted-state ceilings already work on comparable finding groups; this is the general
+  form of them.
+- **Enforcement-input changes surfaced separately** — policy, suppressions, and accepted state told
+  apart from code findings, so that repository review rules can require separate approval for them.
+- **Historical trend data**, human-facing only: it helps a person see where the project is heading
+  and is never an input to a verdict (§6.4).
 
 ---
 
@@ -293,32 +281,18 @@ is heading and is never an input to a verdict (§6.4).
 
 ## 11. Success Criteria
 
-**Containment** — the criterion that matters most.
+The principles in §6 say what the product must do. These say how we would know it worked — they are
+the claims worth measuring, not restating.
 
-- A change that breaks a declared boundary cannot land silently, whoever or whatever produced it.
-- Relaxing a policy is visible as a policy change at review time; it never appears merely as a green
-  build.
-- A CI verdict is reproducible from committed inputs alone.
-
-**Trust.**
-
-- Every score, ranking, and verdict is explainable from documented inputs.
-- Incomplete or incomparable evidence is reported explicitly, never silently rounded to a conclusion.
-- False-positive and suppression patterns are tracked per rule; a rule that is widely excluded is
-  treated as a defect.
-
-**Feedback fitness.**
-
-- An agent can go from a finding to a change that satisfies the stated contract, and re-verify it,
-  without a human and without re-deriving the analysis. Correctness beyond the observed contract is
-  outside what the product claims.
-- The machine contract is compact, versioned, and bounded — it fits the context an agent actually has.
-- A human reviewing that agent's work reaches the same understanding from the same result.
-
-**Operational fitness.**
-
-- Fast enough to run on every change, on projects of the intended scale.
-- Useful on an unconfigured project on the first run.
+- **Nothing lands silently.** A change that breaks a declared boundary is stopped, whoever produced
+  it, and the only way past it is a policy change a reviewer can see.
+- **An agent closes the loop alone.** From a finding to a change that satisfies the stated contract,
+  and back to a verified result — no human, no re-deriving the analysis. Correctness beyond the
+  observed contract is outside what the product claims.
+- **The machine contract fits the context an agent actually has.** Compact, versioned, and bounded.
+- **A rule that is widely excluded is treated as a defect.** False positives and suppressions are
+  tracked per rule, so the question is answered with data rather than impressions.
+- **The tool is useful on an unconfigured project, on the first run, at the scale it is meant for.**
 
 ---
 
