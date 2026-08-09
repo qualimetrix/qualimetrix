@@ -75,7 +75,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
     /** @var array<string, HalsteadMetrics> FQN => metrics */
     private array $metrics = [];
 
-    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> */
+    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, sourceLine: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> */
     private array $methodInfos = [];
 
     /** @var list<array{fqn: string, operators: array<string, int>, operands: array<string, int>}> */
@@ -171,7 +171,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
 
         if ($node instanceof Stmt\ClassMethod) {
             $fqn = $this->buildMethodFqn($node->name->toString());
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), CallableKind::Method, null);
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $node->getStartLine(), CallableKind::Method, null);
 
             return null;
         }
@@ -186,6 +186,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
                 $this->buildMethodFqn($name),
                 $name,
                 $node->getStartFilePos(),
+                $node->getStartLine(),
                 CallableKind::PropertyHook,
                 null,
             );
@@ -196,7 +197,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
         // Start of a function
         if ($node instanceof Stmt\Function_) {
             $fqn = $this->buildFunctionFqn($node->name->toString());
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), CallableKind::Function, null);
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $node->getStartLine(), CallableKind::Function, null);
 
             return null;
         }
@@ -205,7 +206,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
-            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), CallableKind::AnonymousCallable, 'closure');
+            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), $node->getStartLine(), CallableKind::AnonymousCallable, 'closure');
 
             return null;
         }
@@ -214,7 +215,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
-            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), CallableKind::AnonymousCallable, 'arrow');
+            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), $node->getStartLine(), CallableKind::AnonymousCallable, 'arrow');
 
             return null;
         }
@@ -279,6 +280,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
         string $fqn,
         string $methodName,
         int $startFilePos,
+        int $sourceLine,
         CallableKind $kind,
         ?string $anonymousSyntax,
     ): void {
@@ -296,6 +298,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             'class' => $this->currentClass,
             'method' => $methodName,
             'startFilePos' => $startFilePos,
+            'sourceLine' => $sourceLine,
             'kind' => $kind,
             'anonymousSyntax' => $anonymousSyntax,
             'classStartFilePos' => $this->currentClassStartFilePos,

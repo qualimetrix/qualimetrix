@@ -73,7 +73,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
     /** @var array<string, list<array{type: string, line: int, points: int}>> FQN => increments */
     private array $increments = [];
 
-    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
+    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, sourceLine: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
     private array $methodInfos = [];
 
     /** @var list<array{fqn: string, depth: int, nestingLevel: int, nodeStack: list<Node>}> Stack of nested methods/functions */
@@ -193,7 +193,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
 
         if ($node instanceof ClassMethod) {
             $fqn = $this->buildMethodFqn($node->name->toString());
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), CallableKind::Method, null);
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $node->getStartLine(), CallableKind::Method, null);
 
             return null;
         }
@@ -208,6 +208,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
                 $this->buildMethodFqn($name),
                 $name,
                 $node->getStartFilePos(),
+                $node->getStartLine(),
                 CallableKind::PropertyHook,
                 null,
             );
@@ -218,7 +219,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
         // Start of a function
         if ($node instanceof Function_) {
             $fqn = $this->buildFunctionFqn($node->name->toString());
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), CallableKind::Function, null);
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $node->getStartLine(), CallableKind::Function, null);
 
             return null;
         }
@@ -244,6 +245,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
                 $fqn,
                 $closureName,
                 $node->getStartFilePos(),
+                $node->getStartLine(),
                 CallableKind::AnonymousCallable,
                 $node instanceof Closure ? 'closure' : 'arrow',
             );
@@ -335,6 +337,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
         string $fqn,
         string $methodName,
         int $startFilePos,
+        int $sourceLine,
         CallableKind $kind,
         ?string $anonymousSyntax,
     ): void {
@@ -357,6 +360,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             'class' => $this->currentClass,
             'method' => $methodName,
             'startFilePos' => $startFilePos,
+            'sourceLine' => $sourceLine,
             'kind' => $kind,
             'anonymousSyntax' => $anonymousSyntax,
             'classStartFilePos' => $this->currentClassStartFilePos,

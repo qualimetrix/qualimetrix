@@ -126,6 +126,16 @@ final class FileProcessor implements FileProcessorInterface
 
                     if (isset($callables[$key])) {
                         $existing = $callables[$key];
+                        if ($existing->sourceLine !== null
+                            && $callable->sourceLine !== null
+                            && $existing->sourceLine !== $callable->sourceLine
+                        ) {
+                            throw new LogicException(\sprintf(
+                                'Callable collectors disagree on source line for %s',
+                                $key,
+                            ));
+                        }
+
                         $callables[$key] = new \Qualimetrix\Core\Metric\CallableWithMetrics(
                             $existing->declarationPath,
                             $existing->kind,
@@ -133,6 +143,7 @@ final class FileProcessor implements FileProcessorInterface
                             $existing->lexicalClassContext,
                             $existing->classAggregationOwner,
                             $existing->metrics->merge($callable->metrics),
+                            $existing->sourceLine ?? $callable->sourceLine,
                         );
                     } else {
                         $callables[$key] = $callable;

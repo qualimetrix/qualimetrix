@@ -36,7 +36,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
     /** @var array<string, bool> Method/function FQN => is VO constructor */
     private array $voConstructors = [];
 
-    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
+    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, sourceLine: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
     private array $methodInfos = [];
 
     private ?string $currentNamespace = null;
@@ -156,6 +156,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
                 'class' => $this->currentClass,
                 'method' => $node->name->toString(),
                 'startFilePos' => $node->getStartFilePos(),
+                'sourceLine' => $node->getStartLine(),
                 'kind' => CallableKind::Method,
                 'anonymousSyntax' => null,
                 'classStartFilePos' => $this->currentClassStartFilePos,
@@ -186,6 +187,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
                 'class' => $this->currentClass,
                 'method' => $name,
                 'startFilePos' => $node->getStartFilePos(),
+                'sourceLine' => $node->getStartLine(),
                 'kind' => CallableKind::PropertyHook,
                 'anonymousSyntax' => null,
                 'classStartFilePos' => $this->currentClassStartFilePos,
@@ -205,6 +207,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
                 'class' => null,
                 'method' => $node->name->toString(),
                 'startFilePos' => $node->getStartFilePos(),
+                'sourceLine' => $node->getStartLine(),
                 'kind' => CallableKind::Function,
                 'anonymousSyntax' => null,
                 'classStartFilePos' => null,
@@ -225,6 +228,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
                 'class' => $this->currentClass,
                 'method' => $name,
                 'startFilePos' => $node->getStartFilePos(),
+                'sourceLine' => $node->getStartLine(),
                 'kind' => CallableKind::AnonymousCallable,
                 'anonymousSyntax' => $node instanceof Closure ? 'closure' : 'arrow',
                 'classStartFilePos' => $this->currentClassStartFilePos,

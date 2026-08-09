@@ -159,8 +159,8 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
 
     public function addSubject(MetricSubject $subject, MetricBag $metrics, ?RelativePath $file, ?int $line): void
     {
-        // Aggregated/logical symbols have no source declaration. Keep an
-        // unknown location as null; Location explicitly rejects synthetic 0.
+        // Keep an unknown location as null; Location explicitly rejects
+        // synthetic 0.
         $line = $line === 0 ? null : $line;
         $canonical = $subject->toCanonical();
 
@@ -178,48 +178,61 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
                 );
             }
 
+        } else {
+            $this->subjectMetrics[$canonical] = $metrics;
+            $this->subjectInfos[$canonical] = new SymbolInfo($subject, $file, $line);
+        }
+
+        $declaration = $subject->declarationPath();
+        if ($declaration?->logical->getType() === SymbolType::Class_) {
+            // Exact class facts remain addressable by DeclarationPath. Their
+            // logical projection is the separate class-facing view used by
+            // aggregation, graph construction, and legacy SymbolPath reads.
+            // Do not index the declaration itself: it would count alongside
+            // its projection during namespace aggregation.
+            $this->addLogicalClassProjection(new LogicalClassPath($declaration->logical), $metrics);
+
             return;
         }
 
-        $this->subjectMetrics[$canonical] = $metrics;
-        $info = new SymbolInfo($subject, $file, $line);
-        $this->subjectInfos[$canonical] = $info;
-
-        $symbol = $subject->toSymbolPath();
-        $namespace = $symbol->namespace;
-        if ($namespace !== null && $symbol->getType() !== SymbolType::Project) {
-            $this->byNamespace[$namespace][] = $info;
-            $this->namespaceSet[$namespace] = true;
-        }
+        $this->indexNamespaceInfo($this->subjectInfos[$canonical]);
     }
 
     public function addCallable(CallableWithMetrics $callable): void
     {
         $subject = MetricSubject::declaration($callable->declarationPath);
         $canonical = $subject->toCanonical();
-
-        if (isset($this->subjectMetrics[$canonical])) {
-            $this->subjectMetrics[$canonical] = $this->subjectMetrics[$canonical]->merge($callable->metrics);
-
-            return;
-        }
-
-        $this->subjectMetrics[$canonical] = $callable->metrics;
-        $this->subjectInfos[$canonical] = new SymbolInfo(
+        $info = new SymbolInfo(
             $subject,
             $callable->declarationPath->file,
-            $callable->sourceLine ?? $callable->declarationPath->startFilePos,
+            $callable->sourceLine,
             $callable->kind,
             $callable->classAggregationOwner,
         );
+
+        if (isset($this->subjectMetrics[$canonical])) {
+            $this->subjectMetrics[$canonical] = $this->subjectMetrics[$canonical]->merge($callable->metrics);
+            $existing = $this->subjectInfos[$canonical];
+            $this->subjectInfos[$canonical] = self::mergeSubjectInfo($existing, $info);
+            $this->replaceNamespaceInfo($existing, $this->subjectInfos[$canonical]);
+        } else {
+            $this->subjectMetrics[$canonical] = $callable->metrics;
+            $this->subjectInfos[$canonical] = $info;
+        }
+
         $logicalCanonical = $callable->declarationPath->logical->toCanonical();
         $this->declarationsByLogical[$logicalCanonical] ??= [];
-        $this->declarationsByLogical[$logicalCanonical][] = $canonical;
+        if (!\in_array($canonical, $this->declarationsByLogical[$logicalCanonical], true)) {
+            $this->declarationsByLogical[$logicalCanonical][] = $canonical;
+        }
 
         $namespace = $callable->declarationPath->logical->namespace;
         if ($namespace !== null) {
-            $this->byNamespace[$namespace][] = $this->subjectInfos[$canonical];
-            $this->namespaceSet[$namespace] = true;
+            $this->indexNamespaceInfo($this->subjectInfos[$canonical]);
+        }
+
+        if ($callable->classAggregationOwner !== null) {
+            $this->addLogicalClassProjection($callable->classAggregationOwner, new MetricBag());
         }
     }
 
@@ -352,16 +365,10 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
                 $merged->subjectMetrics[$canonical] = $merged->subjectMetrics[$canonical]->merge(
                     $other->subjectMetrics[$canonical],
                 );
-                $existing = $merged->subjectInfos[$canonical];
-                if ($info->line !== null && $info->line > 0 && ($existing->line === null || $existing->line === 0)) {
-                    $merged->subjectInfos[$canonical] = new SymbolInfo(
-                        $existing->subject ?? $existing->symbolPath,
-                        $existing->file,
-                        $info->line,
-                        $existing->callableKind,
-                        $existing->classAggregationOwner,
-                    );
-                }
+                $merged->subjectInfos[$canonical] = self::mergeSubjectInfo(
+                    $merged->subjectInfos[$canonical],
+                    $info,
+                );
             } else {
                 $merged->subjectInfos[$canonical] = $info;
                 $merged->subjectMetrics[$canonical] = $other->subjectMetrics[$canonical];
@@ -376,16 +383,124 @@ final class InMemoryMetricRepository implements MetricRepositoryInterface
     private function rebuildTypedIndexes(): void
     {
         $this->declarationsByLogical = [];
+        $this->byNamespace = [];
+        $this->namespaceSet = [];
+
+        foreach ($this->symbolInfos as $info) {
+            $this->indexNamespaceInfo($info);
+        }
+
         foreach ($this->subjectInfos as $canonical => $info) {
             $declaration = $info->subject?->declarationPath();
             if ($declaration !== null && $info->callableKind !== null) {
                 $this->declarationsByLogical[$declaration->logical->toCanonical()][] = $canonical;
-                $namespace = $declaration->logical->namespace;
-                if ($namespace !== null && !\in_array($info, $this->byNamespace[$namespace] ?? [], true)) {
-                    $this->byNamespace[$namespace][] = $info;
-                    $this->namespaceSet[$namespace] = true;
+            }
+
+            if ($declaration?->logical->getType() !== SymbolType::Class_) {
+                $this->indexNamespaceInfo($info);
+            }
+        }
+    }
+
+    private function indexNamespaceInfo(SymbolInfo $info): void
+    {
+        $symbol = $info->symbolPath;
+        $namespace = $symbol->namespace;
+        if ($namespace === null || $symbol->getType() === SymbolType::Project) {
+            return;
+        }
+
+        $canonical = $info->subject?->toCanonical() ?? $symbol->toCanonical();
+        foreach ($this->byNamespace[$namespace] ?? [] as $existing) {
+            $existingCanonical = $existing->subject?->toCanonical() ?? $existing->symbolPath->toCanonical();
+            if ($existingCanonical === $canonical) {
+                return;
+            }
+        }
+
+        $this->byNamespace[$namespace][] = $info;
+        $this->namespaceSet[$namespace] = true;
+    }
+
+    private function replaceNamespaceInfo(SymbolInfo $old, SymbolInfo $new): void
+    {
+        $canonical = $old->subject?->toCanonical() ?? $old->symbolPath->toCanonical();
+        foreach ($this->byNamespace as &$infos) {
+            foreach ($infos as $index => $existing) {
+                $existingCanonical = $existing->subject?->toCanonical() ?? $existing->symbolPath->toCanonical();
+                if ($existingCanonical === $canonical) {
+                    $infos[$index] = $new;
+
+                    return;
                 }
             }
         }
+        unset($infos);
+    }
+
+    private static function mergeSubjectInfo(SymbolInfo $left, SymbolInfo $right): SymbolInfo
+    {
+        $leftTyped = $left->callableKind !== null;
+        $rightTyped = $right->callableKind !== null;
+
+        if (!$leftTyped && !$rightTyped) {
+            $line = $left->line;
+            if (($line === null || $line === 0) && $right->line !== null && $right->line > 0) {
+                $line = $right->line;
+            }
+
+            return new SymbolInfo(
+                $left->subject ?? $left->symbolPath,
+                $left->file ?? $right->file,
+                $line,
+            );
+        }
+
+        if (!$leftTyped) {
+            return $right;
+        }
+
+        if (!$rightTyped) {
+            return $left;
+        }
+
+        if ($left->callableKind !== $right->callableKind
+            || !self::sameLogicalClass($left->classAggregationOwner, $right->classAggregationOwner)
+            || !self::sameFile($left->file, $right->file)
+            || !self::sameSourceLine($left->line, $right->line)
+        ) {
+            throw new InvalidArgumentException(\sprintf(
+                'Conflicting callable metadata for %s',
+                $left->subject?->toCanonical() ?? $left->symbolPath->toCanonical(),
+            ));
+        }
+
+        return new SymbolInfo(
+            $left->subject ?? $left->symbolPath,
+            $left->file,
+            $left->line ?? $right->line,
+            $left->callableKind,
+            $left->classAggregationOwner,
+        );
+    }
+
+    private static function sameLogicalClass(?LogicalClassPath $left, ?LogicalClassPath $right): bool
+    {
+        return $left?->toCanonical() === $right?->toCanonical();
+    }
+
+    private static function sameFile(?RelativePath $left, ?RelativePath $right): bool
+    {
+        return $left?->value() === $right?->value();
+    }
+
+    private static function sameSourceLine(?int $left, ?int $right): bool
+    {
+        return $left === null || $right === null || $left === $right;
+    }
+
+    private function addLogicalClassProjection(LogicalClassPath $path, MetricBag $metrics): void
+    {
+        $this->addSubject(MetricSubject::logicalClass($path), $metrics, null, null);
     }
 }

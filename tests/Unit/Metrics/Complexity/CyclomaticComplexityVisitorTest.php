@@ -9,6 +9,7 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\Complexity\CyclomaticComplexityVisitor;
 
@@ -74,6 +75,34 @@ PHP;
         sort($anonymousSyntaxes);
         self::assertSame(['arrow', 'closure'], $anonymousSyntaxes);
         self::assertNull($byKind['anonymous-callable'][0]->classAggregationOwner);
+
+        self::assertSame(4, $byKind['function'][0]->sourceLine);
+        self::assertSame(9, $hook->sourceLine);
+        self::assertSame(12, $method->sourceLine);
+
+        $anonymousBySyntax = [];
+        foreach ($byKind['anonymous-callable'] as $anonymousCallable) {
+            $anonymousBySyntax[$anonymousCallable->anonymousSyntax] = $anonymousCallable;
+        }
+        self::assertSame(14, $anonymousBySyntax['closure']->sourceLine);
+        self::assertSame(15, $anonymousBySyntax['arrow']->sourceLine);
+
+        $repository = new InMemoryMetricRepository();
+        foreach ($callables as $collectedCallable) {
+            $repository->addCallable($collectedCallable);
+        }
+
+        $linesByDeclaration = [];
+        foreach ($repository->allCallables() as $info) {
+            $linesByDeclaration[$info->subject?->toCanonical() ?? ''] = $info->line;
+        }
+        foreach ($callables as $collectedCallable) {
+            self::assertSame(
+                $collectedCallable->sourceLine,
+                $linesByDeclaration[$collectedCallable->declarationPath->toCanonical()],
+            );
+            self::assertNotSame($collectedCallable->declarationPath->startFilePos, $collectedCallable->sourceLine);
+        }
     }
 
     #[Test]

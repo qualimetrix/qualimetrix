@@ -13,13 +13,18 @@ use Qualimetrix\Analysis\Aggregator\ClassToNamespaceAggregator;
 use Qualimetrix\Analysis\Aggregator\NamespaceToProjectAggregator;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\AggregationMeta;
+use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\CallableWithMetrics;
+use Qualimetrix\Core\Metric\ClassWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
@@ -235,6 +240,52 @@ final class GlobalFunctionAggregationTest extends TestCase
         // 1 method + 1 function = 2 callables
         self::assertSame(2, $namespaceBag->get(AggregationMeta::SYMBOL_METHOD_COUNT));
     }
+
+    #[Test]
+    public function itProjectsDuplicateClassDeclarationsToOneLogicalClassWithoutLosingExactFacts(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $class = SymbolPath::forClass('App\\Service', 'Duplicate');
+
+        $first = new ClassWithMetrics(
+            new DeclarationPath($class, RelativePath::fromString('src/Service/First.php'), 10),
+            3,
+            MetricBag::fromArray(['firstProviderMetric' => 7]),
+        );
+        $second = new ClassWithMetrics(
+            new DeclarationPath($class, RelativePath::fromString('src/Service/Second.php'), 20),
+            5,
+            MetricBag::fromArray(['secondProviderMetric' => 11]),
+        );
+
+        $repository->addSubject($first->subject, $first->metrics, $first->declarationPath->file, $first->line);
+        $repository->addSubject($second->subject, $second->metrics, $second->declarationPath->file, $second->line);
+
+        self::assertSame(7, $repository->getSubject(MetricSubject::declaration($first->declarationPath))->get('firstProviderMetric'));
+        self::assertSame(11, $repository->getSubject(MetricSubject::declaration($second->declarationPath))->get('secondProviderMetric'));
+        self::assertCount(2, iterator_to_array($repository->allDeclarations(), false));
+
+        $logicalClasses = iterator_to_array($repository->allLogicalClasses(), false);
+        self::assertCount(1, $logicalClasses);
+        self::assertSame($class->toCanonical(), $logicalClasses[0]->symbolPath->toCanonical());
+        self::assertCount(1, iterator_to_array($repository->all(SymbolType::Class_), false));
+
+        $definitions = [
+            new MetricDefinition('firstProviderMetric', SymbolLevel::Class_, [
+                SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+            ]),
+            new MetricDefinition('secondProviderMetric', SymbolLevel::Class_, [
+                SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+            ]),
+        ];
+        (new ClassToNamespaceAggregator())->aggregate($repository, $definitions);
+
+        $namespace = $repository->get(SymbolPath::forNamespace('App\\Service'));
+        self::assertSame(7, $namespace->get('firstProviderMetric.sum'));
+        self::assertSame(11, $namespace->get('secondProviderMetric.sum'));
+        self::assertSame(1, $namespace->get(AggregationMeta::SYMBOL_CLASS_COUNT));
+    }
+
     private function addCallable(InMemoryMetricRepository $repository, SymbolPath $symbol, MetricBag $metrics, RelativePath $file, int $startFilePos): void
     {
         $owner = $symbol->getType() === SymbolType::Method ? new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')) : null;

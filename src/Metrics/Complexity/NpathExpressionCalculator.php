@@ -21,8 +21,10 @@ use PhpParser\Node\Stmt\Class_;
  *
  * Leaves contribute zero. Transparent expression wrappers contribute the sum
  * of their expression-bearing children. Path-producing expressions add their
- * own branch contribution. Nested callable and anonymous-class bodies belong
- * to separate analysis scopes and are deliberately opaque.
+ * own branch contribution. A nullsafe access contributes one branch here; the
+ * enclosing callable statement contributes its base path in the visitor.
+ * Nested callable and anonymous-class bodies belong to separate analysis
+ * scopes and are deliberately opaque.
  */
 final class NpathExpressionCalculator
 {
@@ -30,26 +32,42 @@ final class NpathExpressionCalculator
 
     public function calculate(Expr $expr): int
     {
+        $contributions = $this->calculateContributions($expr);
+
+        return $this->saturatingAdd($contributions['ordinary'], $contributions['nullsafe']);
+    }
+
+    /**
+     * Separates non-nullsafe expression paths from nullsafe branch paths.
+     *
+     * The visitor uses this at callable-expression boundaries to add exactly
+     * one statement base while keeping the public {@see calculate()} total
+     * contribution unchanged for structural formulas.
+     *
+     * @return array{ordinary: int, nullsafe: int}
+     */
+    public function calculateContributions(Expr $expr): array
+    {
         return match (true) {
-            $expr instanceof Closure, $expr instanceof ArrowFunction => 0,
-            $expr instanceof Ternary => $this->calculateTernary($expr),
+            $expr instanceof Closure, $expr instanceof ArrowFunction => $this->emptyContributions(),
+            $expr instanceof Ternary => $this->calculateTernaryContributions($expr),
             $expr instanceof BinaryOp\BooleanAnd,
             $expr instanceof BinaryOp\LogicalAnd,
             $expr instanceof BinaryOp\BooleanOr,
             $expr instanceof BinaryOp\LogicalOr,
-            $expr instanceof BinaryOp\Coalesce => $this->saturatingAdd(
-                1,
-                $this->calculate($expr->left),
-                $this->calculate($expr->right),
+            $expr instanceof BinaryOp\Coalesce => $this->addContributions(
+                $this->ordinaryContribution(1),
+                $this->calculateContributions($expr->left),
+                $this->calculateContributions($expr->right),
             ),
-            $expr instanceof Match_ => $this->calculateMatch($expr),
+            $expr instanceof Match_ => $this->calculateMatchContributions($expr),
             $expr instanceof NullsafeMethodCall,
-            $expr instanceof NullsafePropertyFetch => $this->saturatingAdd(
-                1,
-                $this->calculateTransparentChildren($expr),
+            $expr instanceof NullsafePropertyFetch => $this->addContributions(
+                $this->nullsafeContribution(1),
+                $this->calculateTransparentChildrenContributions($expr),
             ),
-            $expr instanceof New_ => $this->calculateNew($expr),
-            default => $this->calculateTransparentChildren($expr),
+            $expr instanceof New_ => $this->calculateNewContributions($expr),
+            default => $this->calculateTransparentChildrenContributions($expr),
         };
     }
 
@@ -85,78 +103,129 @@ final class NpathExpressionCalculator
         return $left * $right;
     }
 
-    private function calculateTernary(Ternary $ternary): int
+    /** @return array{ordinary: int, nullsafe: int} */
+    private function calculateTernaryContributions(Ternary $ternary): array
     {
-        return $this->saturatingAdd(
-            2,
-            $this->calculate($ternary->cond),
-            $ternary->if !== null ? $this->calculate($ternary->if) : 0,
-            $this->calculate($ternary->else),
+        return $this->addContributions(
+            $this->ordinaryContribution(2),
+            $this->calculateContributions($ternary->cond),
+            $ternary->if !== null ? $this->calculateContributions($ternary->if) : $this->emptyContributions(),
+            $this->calculateContributions($ternary->else),
         );
     }
 
-    private function calculateMatch(Match_ $match): int
+    /** @return array{ordinary: int, nullsafe: int} */
+    private function calculateMatchContributions(Match_ $match): array
     {
-        $npath = $this->calculate($match->cond);
+        $contributions = $this->calculateContributions($match->cond);
 
         foreach ($match->arms as $arm) {
             foreach ($arm->conds ?? [] as $condition) {
-                $npath = $this->saturatingAdd($npath, $this->calculate($condition));
+                $contributions = $this->addContributions($contributions, $this->calculateContributions($condition));
             }
 
-            $npath = $this->saturatingAdd($npath, max(1, $this->calculate($arm->body)));
+            $bodyContributions = $this->calculateContributions($arm->body);
+            if ($bodyContributions['ordinary'] === 0 && $bodyContributions['nullsafe'] === 0) {
+                $bodyContributions = $this->ordinaryContribution(1);
+            }
+
+            $contributions = $this->addContributions($contributions, $bodyContributions);
         }
 
-        return $npath;
+        return $contributions;
     }
 
-    private function calculateNew(New_ $new): int
+    /** @return array{ordinary: int, nullsafe: int} */
+    private function calculateNewContributions(New_ $new): array
     {
-        $npath = $new->class instanceof Expr ? $this->calculate($new->class) : 0;
+        $contributions = $new->class instanceof Expr
+            ? $this->calculateContributions($new->class)
+            : $this->emptyContributions();
 
         foreach ($new->args as $arg) {
-            $npath = $this->saturatingAdd($npath, $this->calculateNode($arg));
+            $contributions = $this->addContributions($contributions, $this->calculateNodeContributions($arg));
         }
 
-        return $npath;
+        return $contributions;
     }
 
-    private function calculateTransparentChildren(Node $node): int
+    /** @return array{ordinary: int, nullsafe: int} */
+    private function calculateTransparentChildrenContributions(Node $node): array
     {
-        $npath = 0;
+        $contributions = $this->emptyContributions();
         $properties = get_object_vars($node);
 
         foreach ($node->getSubNodeNames() as $name) {
-            $npath = $this->saturatingAdd($npath, $this->calculateNode($properties[$name] ?? null));
+            $contributions = $this->addContributions(
+                $contributions,
+                $this->calculateNodeContributions($properties[$name] ?? null),
+            );
         }
 
-        return $npath;
+        return $contributions;
     }
 
-    private function calculateNode(mixed $value): int
+    /** @return array{ordinary: int, nullsafe: int} */
+    private function calculateNodeContributions(mixed $value): array
     {
         if ($value instanceof Closure || $value instanceof ArrowFunction || $value instanceof Class_) {
-            return 0;
+            return $this->emptyContributions();
         }
 
         if ($value instanceof Expr) {
-            return $this->calculate($value);
+            return $this->calculateContributions($value);
         }
 
         if ($value instanceof Node) {
-            return $this->calculateTransparentChildren($value);
+            return $this->calculateTransparentChildrenContributions($value);
         }
 
         if (!\is_array($value)) {
-            return 0;
+            return $this->emptyContributions();
         }
 
-        $npath = 0;
+        $contributions = $this->emptyContributions();
 
         foreach ($value as $item) {
-            $npath = $this->saturatingAdd($npath, $this->calculateNode($item));
+            $contributions = $this->addContributions($contributions, $this->calculateNodeContributions($item));
         }
 
-        return $npath;
+        return $contributions;
+    }
+
+    /** @return array{ordinary: int, nullsafe: int} */
+    private function emptyContributions(): array
+    {
+        return ['ordinary' => 0, 'nullsafe' => 0];
+    }
+
+    /** @return array{ordinary: int, nullsafe: int} */
+    private function ordinaryContribution(int $value): array
+    {
+        return ['ordinary' => $value, 'nullsafe' => 0];
+    }
+
+    /** @return array{ordinary: int, nullsafe: int} */
+    private function nullsafeContribution(int $value): array
+    {
+        return ['ordinary' => 0, 'nullsafe' => $value];
+    }
+
+    /**
+     * @param array{ordinary: int, nullsafe: int} ...$contributions
+     *
+     * @return array{ordinary: int, nullsafe: int}
+     */
+    private function addContributions(array ...$contributions): array
+    {
+        $ordinary = 0;
+        $nullsafe = 0;
+
+        foreach ($contributions as $contribution) {
+            $ordinary = $this->saturatingAdd($ordinary, $contribution['ordinary']);
+            $nullsafe = $this->saturatingAdd($nullsafe, $contribution['nullsafe']);
+        }
+
+        return ['ordinary' => $ordinary, 'nullsafe' => $nullsafe];
     }
 }

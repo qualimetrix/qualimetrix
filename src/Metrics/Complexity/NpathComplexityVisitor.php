@@ -66,7 +66,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     /** @var array<string, list<array{type: string, line: int, factor: int}>> FQN => multiplicative factors */
     private array $factors = [];
 
-    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
+    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, sourceLine: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
     private array $methodInfos = [];
 
     /** @var list<array{fqn: string, depth: int}> Stack of nested methods/functions */
@@ -190,7 +190,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             $this->factors[$fqn] = [];
             $npath = $this->calculateSequenceNpath($node->stmts ?? [], trackFactors: true);
             $this->calculatingFqn = null;
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $npath, CallableKind::Method, null);
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $node->getStartLine(), $npath, CallableKind::Method, null);
 
             return null;
         }
@@ -204,9 +204,9 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             $fqn = $this->buildMethodFqn($name);
             $this->calculatingFqn = $fqn;
             $this->factors[$fqn] = [];
-            $npath = $node->body instanceof Expr ? max(1, $this->expressionCalculator->calculate($node->body)) : $this->calculateSequenceNpath($node->body ?? [], trackFactors: true);
+            $npath = $node->body instanceof Expr ? $this->calculateCallableExpressionNpath($node->body) : $this->calculateSequenceNpath($node->body ?? [], trackFactors: true);
             $this->calculatingFqn = null;
-            $this->startMethod($fqn, $name, $node->getStartFilePos(), $npath, CallableKind::PropertyHook, null);
+            $this->startMethod($fqn, $name, $node->getStartFilePos(), $node->getStartLine(), $npath, CallableKind::PropertyHook, null);
 
             return null;
         }
@@ -218,7 +218,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             $this->factors[$fqn] = [];
             $npath = $this->calculateSequenceNpath($node->stmts ?? [], trackFactors: true);
             $this->calculatingFqn = null;
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $npath, CallableKind::Function, null);
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $node->getStartLine(), $npath, CallableKind::Function, null);
 
             return null;
         }
@@ -231,7 +231,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             $this->factors[$fqn] = [];
             $npath = $this->calculateSequenceNpath($node->stmts ?? [], trackFactors: true);
             $this->calculatingFqn = null;
-            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), $npath, CallableKind::AnonymousCallable, 'closure');
+            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), $node->getStartLine(), $npath, CallableKind::AnonymousCallable, 'closure');
 
             return null;
         }
@@ -241,8 +241,8 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
             $this->factors[$fqn] = [];
-            $npath = max(1, $this->expressionCalculator->calculate($node->expr));
-            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), $npath, CallableKind::AnonymousCallable, 'arrow');
+            $npath = $this->calculateCallableExpressionNpath($node->expr);
+            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), $node->getStartLine(), $npath, CallableKind::AnonymousCallable, 'arrow');
 
             return null;
         }
@@ -301,6 +301,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
         string $fqn,
         string $methodName,
         int $startFilePos,
+        int $sourceLine,
         int $npath,
         CallableKind $kind,
         ?string $anonymousSyntax,
@@ -319,6 +320,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             'class' => $this->currentClass,
             'method' => $methodName,
             'startFilePos' => $startFilePos,
+            'sourceLine' => $sourceLine,
             'kind' => $kind,
             'anonymousSyntax' => $anonymousSyntax,
             'classStartFilePos' => $this->currentClassStartFilePos,
@@ -374,13 +376,43 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             $stmt instanceof Do_ => $this->calculateLoopNpath($stmt->cond, $stmt->stmts),
             $stmt instanceof Switch_ => $this->calculateSwitchNpath($stmt),
             $stmt instanceof TryCatch => $this->calculateTryCatchNpath($stmt),
-            $stmt instanceof Stmt\Expression => max(1, $this->expressionCalculator->calculate($stmt->expr)),
+            $stmt instanceof Stmt\Expression => $this->calculateCallableExpressionNpath($stmt->expr),
             $stmt instanceof Stmt\Return_ => $stmt->expr !== null
-                ? max(1, $this->expressionCalculator->calculate($stmt->expr))
+                ? $this->calculateCallableExpressionNpath($stmt->expr)
                 : 1,
-            $stmt instanceof Stmt\Echo_ => max(1, $this->calculateExpressions($stmt->exprs)),
+            $stmt instanceof Stmt\Echo_ => $this->calculateCallableExpressionsNpath($stmt->exprs),
             default => 1,
         };
+    }
+
+    /**
+     * Nullsafe accesses have zero-based expression contributions. Their
+     * enclosing callable statement supplies the missing base path exactly
+     * once, so one access has NPath 2 and a two-access chain has NPath 3.
+     */
+    private function calculateCallableExpressionNpath(Expr $expression): int
+    {
+        $contributions = $this->expressionCalculator->calculateContributions($expression);
+
+        return $this->expressionCalculator->saturatingAdd(
+            max(1, $contributions['ordinary']),
+            $contributions['nullsafe'],
+        );
+    }
+
+    /** @param array<Expr> $expressions */
+    private function calculateCallableExpressionsNpath(array $expressions): int
+    {
+        $ordinary = 0;
+        $nullsafe = 0;
+
+        foreach ($expressions as $expression) {
+            $contributions = $this->expressionCalculator->calculateContributions($expression);
+            $ordinary = $this->expressionCalculator->saturatingAdd($ordinary, $contributions['ordinary']);
+            $nullsafe = $this->expressionCalculator->saturatingAdd($nullsafe, $contributions['nullsafe']);
+        }
+
+        return $this->expressionCalculator->saturatingAdd(max(1, $ordinary), $nullsafe);
     }
 
     private function calculateIfNpath(If_ $if): int

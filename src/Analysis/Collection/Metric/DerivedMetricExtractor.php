@@ -87,7 +87,7 @@ final readonly class DerivedMetricExtractor
                     MetricSubject::declaration($callable->declarationPath),
                     $derivedBag,
                     $filePath,
-                    $callable->declarationPath->startFilePos,
+                    $callable->sourceLine,
                 );
             }
         }

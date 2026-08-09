@@ -46,7 +46,7 @@ trait VisitorMethodTrackingTrait
      * private traversal record. The record is intentionally not exposed as a
      * transport contract: old FQN maps may remain only for file-level bags.
      *
-     * @param array{namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int} $info
+     * @param array{namespace: ?string, class: ?string, method: string, startFilePos: int, sourceLine: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int} $info
      */
     private function createCallableWithMetrics(
         array $info,
@@ -80,11 +80,12 @@ trait VisitorMethodTrackingTrait
             lexicalClassContext: $lexicalClassContext,
             classAggregationOwner: $classAggregationOwner,
             metrics: $metrics,
+            sourceLine: $info['sourceLine'],
         );
     }
 
     /**
-     * @param array<string, array{namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> $infos
+     * @param array<string, array{namespace: ?string, class: ?string, method: string, startFilePos: int, sourceLine: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> $infos
      *
      * @return array<string, int|null>
      */

@@ -242,6 +242,48 @@ final class FileProcessorTest extends TestCase
     }
 
     #[Test]
+    public function itPreservesCallableSourceLineWhenCollectorPayloadsMerge(): void
+    {
+        $file = new SplFileInfo('/tmp/test.php');
+        $this->parser->method('parse')->willReturn([]);
+
+        $symbol = SymbolPath::forMethod('App', 'Service', 'run');
+        $declaration = new DeclarationPath($symbol, RelativePath::fromString('test.php'), 701);
+        $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Service'));
+        $first = new CallableWithMetrics(
+            $declaration,
+            CallableKind::Method,
+            null,
+            null,
+            $owner,
+            MetricBag::fromArray(['ccn' => 3]),
+            23,
+        );
+        $second = new CallableWithMetrics(
+            $declaration,
+            CallableKind::Method,
+            null,
+            null,
+            $owner,
+            MetricBag::fromArray(['npath' => 5]),
+            23,
+        );
+
+        $result = $this->makeProcessor(new CompositeCollector([
+            $this->createMockCollectorWithMethodMetrics([$first]),
+            $this->createMockCollectorWithMethodMetrics([$second]),
+        ]))->process($file);
+
+        self::assertTrue($result->isSuccessful());
+        self::assertCount(1, $result->collectedData()->callableMetrics);
+        $callable = $result->collectedData()->callableMetrics[0];
+        self::assertSame(23, $callable->sourceLine);
+        self::assertNotSame($callable->declarationPath->startFilePos, $callable->sourceLine);
+        self::assertSame(3, $callable->metrics->get('ccn'));
+        self::assertSame(5, $callable->metrics->get('npath'));
+    }
+
+    #[Test]
     public function itExtractsSuppressionsFromExpressionNodes(): void
     {
         $file = new SplFileInfo('/tmp/test.php');

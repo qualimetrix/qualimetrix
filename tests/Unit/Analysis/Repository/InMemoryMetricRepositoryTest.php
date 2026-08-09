@@ -15,6 +15,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -448,6 +449,195 @@ final class InMemoryMetricRepositoryTest extends TestCase
             RelativePath::fromString('Service.php'),
             10,
         );
+    }
+
+    #[Test]
+    public function itPromotesAnExactSubjectToCallableMetadataRegardlessOfInsertionOrder(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'Service', 'run');
+        $file = RelativePath::fromString('src/Service.php');
+        $declaration = new DeclarationPath($symbol, $file, 420);
+        $subject = MetricSubject::declaration($declaration);
+        $callable = new CallableWithMetrics(
+            $declaration,
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+            MetricBag::fromArray(['ccn' => 3]),
+            17,
+        );
+
+        $subjectFirst = new InMemoryMetricRepository();
+        $subjectFirst->addSubject($subject, MetricBag::fromArray(['loc' => 8]), $file, 17);
+        $subjectFirst->addCallable($callable);
+
+        $callableFirst = new InMemoryMetricRepository();
+        $callableFirst->addCallable($callable);
+        $callableFirst->addSubject($subject, MetricBag::fromArray(['loc' => 8]), $file, 17);
+
+        foreach ([$subjectFirst, $callableFirst] as $repository) {
+            $callables = iterator_to_array($repository->allCallables(), false);
+            self::assertCount(1, $callables);
+            self::assertSame(CallableKind::Method, $callables[0]->callableKind);
+            self::assertSame(17, $callables[0]->line);
+            self::assertCount(1, iterator_to_array($repository->allDeclarations(), false));
+            self::assertCount(1, iterator_to_array($repository->allLogicalClasses(), false));
+            self::assertCount(2, $repository->forNamespace('App'));
+            self::assertSame(8, $repository->getSubject($subject)->get('loc'));
+            self::assertSame(3, $repository->getSubject($subject)->get('ccn'));
+        }
+    }
+
+    #[Test]
+    public function itMergesPlainAndTypedCallableSubjectsIndependentlyOfRepositoryOrder(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'Service', 'run');
+        $file = RelativePath::fromString('src/Service.php');
+        $declaration = new DeclarationPath($symbol, $file, 420);
+        $subject = MetricSubject::declaration($declaration);
+
+        $plain = new InMemoryMetricRepository();
+        $plain->addSubject($subject, MetricBag::fromArray(['loc' => 8]), $file, 0);
+
+        $typed = new InMemoryMetricRepository();
+        $typed->addCallable(new CallableWithMetrics(
+            $declaration,
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+            MetricBag::fromArray(['ccn' => 3]),
+            17,
+        ));
+
+        foreach ([$plain->mergeWith($typed), $typed->mergeWith($plain)] as $repository) {
+            $callables = iterator_to_array($repository->allCallables(), false);
+            self::assertCount(1, $callables);
+            self::assertSame(CallableKind::Method, $callables[0]->callableKind);
+            self::assertSame(17, $callables[0]->line);
+            self::assertCount(1, iterator_to_array($repository->allLogicalClasses(), false));
+            self::assertCount(2, $repository->forNamespace('App'));
+            self::assertSame(8, $repository->getSubject($subject)->get('loc'));
+            self::assertSame(3, $repository->getSubject($subject)->get('ccn'));
+        }
+    }
+
+    #[Test]
+    public function itRejectsConflictingTypedCallableMetadata(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $symbol = SymbolPath::forMethod('App', 'Service', 'run');
+        $file = RelativePath::fromString('src/Service.php');
+        $declaration = new DeclarationPath($symbol, $file, 420);
+        $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Service'));
+
+        $repository->addCallable(new CallableWithMetrics(
+            $declaration,
+            CallableKind::Method,
+            null,
+            null,
+            $owner,
+            new MetricBag(),
+            17,
+        ));
+
+        $this->expectException(InvalidArgumentException::class);
+        $repository->addCallable(new CallableWithMetrics(
+            $declaration,
+            CallableKind::Method,
+            null,
+            null,
+            $owner,
+            new MetricBag(),
+            18,
+        ));
+    }
+
+    #[Test]
+    public function itKeepsLogicalClassProjectionsLocationFreeForExactClassDeclarationsInEitherMergeOrder(): void
+    {
+        $class = SymbolPath::forClass('App', 'Service');
+        $firstPath = new DeclarationPath($class, RelativePath::fromString('src/A.php'), 100);
+        $secondPath = new DeclarationPath($class, RelativePath::fromString('src/B.php'), 200);
+        $firstSubject = MetricSubject::declaration($firstPath);
+        $secondSubject = MetricSubject::declaration($secondPath);
+
+        $first = new InMemoryMetricRepository();
+        $first->addSubject($firstSubject, MetricBag::fromArray(['first' => 1]), $firstPath->file, 11);
+        $this->assertLocationFreeLogicalClassProjection($first);
+
+        $second = new InMemoryMetricRepository();
+        $second->addSubject($secondSubject, MetricBag::fromArray(['second' => 2]), $secondPath->file, 22);
+
+        foreach ([$first->mergeWith($second), $second->mergeWith($first)] as $repository) {
+            $declarations = iterator_to_array($repository->allDeclarations(), false);
+            self::assertCount(2, $declarations);
+            $locations = [];
+            foreach ($declarations as $declaration) {
+                $locations[$declaration->file?->value() ?? ''] = $declaration->line;
+            }
+            ksort($locations);
+            self::assertSame(['src/A.php' => 11, 'src/B.php' => 22], $locations);
+            self::assertSame(1, $repository->getSubject($firstSubject)->get('first'));
+            self::assertSame(2, $repository->getSubject($secondSubject)->get('second'));
+            $this->assertLocationFreeLogicalClassProjection($repository);
+        }
+    }
+
+    #[Test]
+    public function itKeepsCallableOnlyOwnerProjectionsLocationFreeWithoutDuplicateIndexesInEitherMergeOrder(): void
+    {
+        $method = SymbolPath::forMethod('App', 'Service', 'run');
+        $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Service'));
+        $firstCallable = new CallableWithMetrics(
+            new DeclarationPath($method, RelativePath::fromString('src/A.php'), 100),
+            CallableKind::Method,
+            null,
+            null,
+            $owner,
+            MetricBag::fromArray(['ccn' => 3]),
+            11,
+        );
+        $secondCallable = new CallableWithMetrics(
+            new DeclarationPath($method, RelativePath::fromString('src/B.php'), 200),
+            CallableKind::Method,
+            null,
+            null,
+            $owner,
+            MetricBag::fromArray(['ccn' => 5]),
+            22,
+        );
+
+        $first = new InMemoryMetricRepository();
+        $first->addCallable($firstCallable);
+        $this->assertLocationFreeLogicalClassProjection($first);
+
+        $second = new InMemoryMetricRepository();
+        $second->addCallable($secondCallable);
+
+        foreach ([$first->mergeWith($second), $second->mergeWith($first)] as $repository) {
+            $callables = iterator_to_array($repository->allCallables(), false);
+            self::assertCount(2, $callables);
+            $locations = [];
+            foreach ($callables as $callable) {
+                $locations[$callable->file?->value() ?? ''] = $callable->line;
+            }
+            ksort($locations);
+            self::assertSame(['src/A.php' => 11, 'src/B.php' => 22], $locations);
+            self::assertCount(2, iterator_to_array($repository->allDeclarations(), false));
+            self::assertCount(3, $repository->forNamespace('App'));
+            self::assertSame(['App'], $repository->getNamespaces());
+            $this->assertLocationFreeLogicalClassProjection($repository);
+        }
+    }
+
+    private function assertLocationFreeLogicalClassProjection(InMemoryMetricRepository $repository): void
+    {
+        $logicalClasses = iterator_to_array($repository->allLogicalClasses(), false);
+        self::assertCount(1, $logicalClasses);
+        self::assertNull($logicalClasses[0]->file);
+        self::assertNull($logicalClasses[0]->line);
     }
 
     private function addCallable(

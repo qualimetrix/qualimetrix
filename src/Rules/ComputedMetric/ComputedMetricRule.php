@@ -8,6 +8,7 @@ use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -208,12 +209,57 @@ final class ComputedMetricRule extends AbstractRule
                 static fn(string $ns) => [SymbolPath::forNamespace($ns), Location::none()],
                 $context->metrics->getNamespaces(),
             ),
-            SymbolType::Class_ => array_map(
-                static fn($info) => [$info->symbolPath, new Location($info->file, $info->line)],
-                iterator_to_array($context->metrics->all(SymbolType::Class_), false),
-            ),
+            SymbolType::Class_ => $this->getClassSymbolsWithPresentationLocations($context),
             default => [],
         };
+    }
+
+    /**
+     * @return list<array{SymbolPath, Location}>
+     */
+    private function getClassSymbolsWithPresentationLocations(AnalysisContext $context): array
+    {
+        /** @var array<string, list<SymbolInfo>> $declarationsByClass */
+        $declarationsByClass = [];
+        foreach ($context->metrics->allDeclarations() as $declarationInfo) {
+            $declaration = $declarationInfo->subject?->declarationPath();
+            if ($declaration?->logical->getType() !== SymbolType::Class_) {
+                continue;
+            }
+
+            $declarationsByClass[$declaration->logical->toCanonical()][] = $declarationInfo;
+        }
+
+        $symbols = [];
+        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
+            $symbols[] = [
+                $classInfo->symbolPath,
+                $this->resolveClassPresentationLocation($classInfo, $declarationsByClass),
+            ];
+        }
+
+        return $symbols;
+    }
+
+    /**
+     * @param array<string, list<SymbolInfo>> $declarationsByClass
+     */
+    private function resolveClassPresentationLocation(SymbolInfo $classInfo, array $declarationsByClass): Location
+    {
+        if ($classInfo->subject?->logicalClassPath() === null) {
+            return new Location($classInfo->file, $classInfo->line);
+        }
+
+        $declarations = $declarationsByClass[$classInfo->symbolPath->toCanonical()] ?? [];
+        if (\count($declarations) !== 1) {
+            return Location::none();
+        }
+
+        $declarationInfo = $declarations[0];
+        $declaration = $declarationInfo->subject?->declarationPath();
+        \assert($declaration !== null);
+
+        return new Location($declarationInfo->file ?? $declaration->file, $declarationInfo->line);
     }
 
     /**

@@ -80,9 +80,49 @@ final class NpathExpressionCalculatorTest extends TestCase
 
     #[Test]
     #[DataProvider('provideNullsafeChains')]
-    public function itCountsEveryNullsafeHopAndNestedArguments(string $code, int $expected): void
+    public function itKeepsNullsafeAccessesAsZeroBasedExpressionContributions(string $code, int $expected): void
     {
         self::assertSame($expected, $this->calculator->calculate($this->parseExpression($code)));
+    }
+
+    /**
+     * @return iterable<string, array{string, int, int, int}>
+     */
+    public static function provideSeparatedNullsafeContributions(): iterable
+    {
+        yield 'one root hop' => ['$service?->find()', 0, 1, 1];
+        yield 'two root hops' => ['$service?->find()?->name', 0, 2, 2];
+        yield 'ordinary call wrapper' => ['consume($service?->find())', 0, 1, 1];
+        yield 'assignment wrapper' => ['$value = $service?->find()', 0, 1, 1];
+        yield 'ordinary property wrapper' => ['$service?->find()->name', 0, 1, 1];
+        yield 'coalesce wrapper' => ['$service?->find() ?? $fallback', 1, 1, 2];
+        yield 'ternary wrapper' => ['$flag ? $service?->find() : $fallback', 2, 1, 3];
+        yield 'root nullsafe with ternary argument' => ['$service?->find($flag ? 1 : 0)', 2, 1, 3];
+        yield 'root nullsafe with coalesce argument' => ['$service?->find($fallback ?? "default")', 1, 1, 2];
+        yield 'nested arrow is opaque' => ['consume(fn () => $service?->find())', 0, 0, 0];
+        yield 'anonymous class body is opaque' => [
+            'new class { public function run(): mixed { return $service?->find(); } }',
+            0,
+            0,
+            0,
+        ];
+    }
+
+    #[Test]
+    #[DataProvider('provideSeparatedNullsafeContributions')]
+    public function itSeparatesNullsafeContributionsWithoutChangingThePublicTotal(
+        string $code,
+        int $ordinary,
+        int $nullsafe,
+        int $total,
+    ): void {
+        $expression = $this->parseExpression($code);
+
+        self::assertSame(
+            ['ordinary' => $ordinary, 'nullsafe' => $nullsafe],
+            $this->calculator->calculateContributions($expression),
+        );
+        self::assertSame($total, $this->calculator->calculate($expression));
     }
 
     #[Test]

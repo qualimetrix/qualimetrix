@@ -8,13 +8,19 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -494,6 +500,96 @@ final class ComputedMetricRuleTest extends TestCase
     }
 
     #[Test]
+    public function itUsesTheUniqueExactClassDeclarationAsTheLogicalClassPresentationLocation(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.cls',
+            formulas: ['class' => 'ccn'],
+            description: 'Class metric',
+            levels: [SymbolType::Class_],
+            inverted: false,
+            warningThreshold: 5.0,
+        );
+        $repository = new InMemoryMetricRepository();
+        $class = SymbolPath::forClass('App', 'Foo');
+        $declaration = new DeclarationPath($class, RelativePath::fromString('src/Foo.php'), 100);
+        $repository->addSubject(
+            MetricSubject::declaration($declaration),
+            MetricBag::fromArray(['health.cls' => 10.0]),
+            $declaration->file,
+            42,
+        );
+
+        $violations = $this->createRuleWithDefinitions([$definition])->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame('src/Foo.php', $violations[0]->location->pathString());
+        self::assertSame(42, $violations[0]->location->line);
+    }
+
+    #[Test]
+    public function itKeepsLogicalClassPresentationLocationNoneForDuplicateExactDeclarationsInEitherMergeOrder(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.cls',
+            formulas: ['class' => 'ccn'],
+            description: 'Class metric',
+            levels: [SymbolType::Class_],
+            inverted: false,
+            warningThreshold: 5.0,
+        );
+        $class = SymbolPath::forClass('App', 'Foo');
+        $first = $this->repositoryWithExactClassDeclaration($class, 'src/A.php', 100, 11);
+        $second = $this->repositoryWithExactClassDeclaration($class, 'src/B.php', 200, 22);
+
+        foreach ([$first->mergeWith($second), $second->mergeWith($first)] as $repository) {
+            $violations = $this->createRuleWithDefinitions([$definition])->analyze(new AnalysisContext($repository));
+
+            self::assertCount(1, $violations);
+            self::assertTrue($violations[0]->location->isNone());
+            self::assertNull($violations[0]->location->line);
+        }
+    }
+
+    #[Test]
+    public function itDoesNotUseCallableDeclarationsAsLogicalClassPresentationCandidates(): void
+    {
+        $definition = new ComputedMetricDefinition(
+            name: 'health.cls',
+            formulas: ['class' => 'ccn'],
+            description: 'Class metric',
+            levels: [SymbolType::Class_],
+            inverted: false,
+            warningThreshold: 5.0,
+        );
+        $repository = new InMemoryMetricRepository();
+        $class = SymbolPath::forClass('App', 'Foo');
+        $owner = new LogicalClassPath($class);
+        $method = SymbolPath::forMethod('App', 'Foo', 'run');
+        $callable = new CallableWithMetrics(
+            new DeclarationPath($method, RelativePath::fromString('src/Foo.php'), 100),
+            CallableKind::Method,
+            null,
+            null,
+            $owner,
+            new MetricBag(),
+            42,
+        );
+        $repository->addCallable($callable);
+        $repository->addSubject(
+            MetricSubject::logicalClass($owner),
+            MetricBag::fromArray(['health.cls' => 10.0]),
+            null,
+            null,
+        );
+
+        $violations = $this->createRuleWithDefinitions([$definition])->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertTrue($violations[0]->location->isNone());
+    }
+
+    #[Test]
     public function itRoundsMetricValueToOneDecimal(): void
     {
         $definition = new ComputedMetricDefinition(
@@ -723,5 +819,23 @@ final class ComputedMetricRuleTest extends TestCase
                 definitions: $definitions,
             ),
         );
+    }
+
+    private function repositoryWithExactClassDeclaration(
+        SymbolPath $class,
+        string $file,
+        int $startFilePos,
+        int $line,
+    ): InMemoryMetricRepository {
+        $repository = new InMemoryMetricRepository();
+        $declaration = new DeclarationPath($class, RelativePath::fromString($file), $startFilePos);
+        $repository->addSubject(
+            MetricSubject::declaration($declaration),
+            MetricBag::fromArray(['health.cls' => 10.0]),
+            $declaration->file,
+            $line,
+        );
+
+        return $repository;
     }
 }

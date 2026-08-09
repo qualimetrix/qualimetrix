@@ -40,7 +40,7 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
     /** @var array<string, int> Method/function FQN => first unreachable line number */
     private array $firstUnreachableLines = [];
 
-    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
+    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, sourceLine: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
     private array $methodInfos = [];
 
     private ?string $currentNamespace = null;
@@ -141,6 +141,7 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
                 'class' => $this->currentClass,
                 'method' => $node->name->toString(),
                 'startFilePos' => $node->getStartFilePos(),
+                'sourceLine' => $node->getStartLine(),
                 'kind' => CallableKind::Method,
                 'anonymousSyntax' => null,
                 'classStartFilePos' => $this->currentClassStartFilePos,
@@ -164,6 +165,7 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
                 'class' => $this->currentClass,
                 'method' => $name,
                 'startFilePos' => $node->getStartFilePos(),
+                'sourceLine' => $node->getStartLine(),
                 'kind' => CallableKind::PropertyHook,
                 'anonymousSyntax' => null,
                 'classStartFilePos' => $this->currentClassStartFilePos,
@@ -183,6 +185,7 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
                 'class' => null,
                 'method' => $node->name->toString(),
                 'startFilePos' => $node->getStartFilePos(),
+                'sourceLine' => $node->getStartLine(),
                 'kind' => CallableKind::Function,
                 'anonymousSyntax' => null,
                 'classStartFilePos' => null,
@@ -203,6 +206,7 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
                 'class' => $this->currentClass,
                 'method' => $name,
                 'startFilePos' => $node->getStartFilePos(),
+                'sourceLine' => $node->getStartLine(),
                 'kind' => CallableKind::AnonymousCallable,
                 'anonymousSyntax' => $node instanceof Closure ? 'closure' : 'arrow',
                 'classStartFilePos' => $this->currentClassStartFilePos,

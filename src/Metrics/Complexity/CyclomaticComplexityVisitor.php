@@ -60,7 +60,7 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
     /** @var array<string, int> Method/function FQN => complexity */
     private array $complexities = [];
 
-    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
+    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, sourceLine: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
     private array $methodInfos = [];
 
     /** @var list<array{fqn: string, depth: int}> Stack of nested methods/functions */
@@ -148,7 +148,7 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
 
         if ($node instanceof ClassMethod) {
             $fqn = $this->buildMethodFqn($node->name->toString());
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), CallableKind::Method, null);
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $node->getStartLine(), CallableKind::Method, null);
 
             return null;
         }
@@ -163,6 +163,7 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
                 $this->buildMethodFqn($name),
                 $name,
                 $node->getStartFilePos(),
+                $node->getStartLine(),
                 CallableKind::PropertyHook,
                 null,
             );
@@ -173,7 +174,7 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
         // Start of a function
         if ($node instanceof Function_) {
             $fqn = $this->buildFunctionFqn($node->name->toString());
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), CallableKind::Function, null);
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $node->getStartLine(), CallableKind::Function, null);
 
             return null;
         }
@@ -186,6 +187,7 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
                 $fqn,
                 $closureName,
                 $node->getStartFilePos(),
+                $node->getStartLine(),
                 CallableKind::AnonymousCallable,
                 $node instanceof Closure ? 'closure' : 'arrow',
             );
@@ -250,6 +252,7 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
         string $fqn,
         string $methodName,
         int $startFilePos,
+        int $sourceLine,
         CallableKind $kind,
         ?string $anonymousSyntax,
     ): void {
@@ -265,6 +268,7 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
             'class' => $this->currentClass,
             'method' => $methodName,
             'startFilePos' => $startFilePos,
+            'sourceLine' => $sourceLine,
             'kind' => $kind,
             'anonymousSyntax' => $anonymousSyntax,
             'classStartFilePos' => $this->currentClassStartFilePos,

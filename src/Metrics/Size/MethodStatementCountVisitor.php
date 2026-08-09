@@ -35,7 +35,7 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
 {
     use VisitorMethodTrackingTrait;
 
-    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int, count: int}> */
+    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, sourceLine: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int, count: int}> */
     private array $methodInfos = [];
 
     /** @var list<string> */
@@ -125,6 +125,7 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
                 $this->buildMethodFqn($node->name->toString()),
                 $node->name->toString(),
                 $node->getStartFilePos(),
+                $node->getStartLine(),
                 CallableKind::Method,
                 null,
             );
@@ -142,6 +143,7 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
                 $this->buildMethodFqn($name),
                 $name,
                 $node->getStartFilePos(),
+                $node->getStartLine(),
                 CallableKind::PropertyHook,
                 null,
             );
@@ -154,6 +156,7 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
                 $this->buildFunctionFqn($node->name->toString()),
                 $node->name->toString(),
                 $node->getStartFilePos(),
+                $node->getStartLine(),
                 CallableKind::Function,
                 null,
             );
@@ -168,6 +171,7 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
                 $this->buildClosureFqn(),
                 $name,
                 $node->getStartFilePos(),
+                $node->getStartLine(),
                 CallableKind::AnonymousCallable,
                 $node instanceof Expr\Closure ? 'closure' : 'arrow',
             );
@@ -235,6 +239,7 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
         string $fqn,
         string $method,
         int $startFilePos,
+        int $sourceLine,
         CallableKind $kind,
         ?string $anonymousSyntax,
     ): void {
@@ -246,6 +251,7 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
             'class' => $this->currentClass,
             'method' => $method,
             'startFilePos' => $startFilePos,
+            'sourceLine' => $sourceLine,
             'kind' => $kind,
             'anonymousSyntax' => $anonymousSyntax,
             'classStartFilePos' => $this->currentClassStartFilePos,
