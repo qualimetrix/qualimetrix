@@ -164,7 +164,7 @@ final class BaselineGeneratorTest extends TestCase
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'no magnitude reported',
             severity: Severity::Warning,
         );
@@ -207,8 +207,8 @@ final class BaselineGeneratorTest extends TestCase
 
         self::assertTrue($baseline->hasIdentity(BaselineIdentity::forViolation($violation)));
         self::assertTrue($baseline->hasIdentity(new BaselineIdentity(
-            'method:App\Foo::bar',
-            new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method'),
+            'callable:App\Foo::bar',
+            new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
         )));
     }
 

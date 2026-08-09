@@ -166,7 +166,7 @@ final class SuppressionFilterTest extends TestCase
             location: new Location(RelativePath::fromString('src/Foo.php'), 42),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Test message',
             severity: Severity::Warning,
         );
@@ -180,7 +180,7 @@ final class SuppressionFilterTest extends TestCase
             severity: Severity::Error,
         );
 
-        self::assertFalse($filter->shouldInclude($violation1), 'complexity.cyclomatic.method should be suppressed by complexity');
+        self::assertFalse($filter->shouldInclude($violation1), 'complexity.cyclomatic.callable should be suppressed by complexity');
         self::assertTrue($filter->shouldInclude($violation2), 'coupling.distance should not be suppressed by complexity');
     }
 

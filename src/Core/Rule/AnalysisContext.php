@@ -44,9 +44,9 @@ final readonly class AnalysisContext
     /**
      * Finds the most specific threshold override for a rule, file, and line.
      *
-     * When multiple overrides match (e.g., class-level and method-level),
+     * When multiple overrides match (e.g., class-level and callable-level),
      * selects the one with the smallest scope (endLine - line span).
-     * This ensures method-level overrides take priority over class-level ones.
+     * This ensures callable-level overrides take priority over class-level ones.
      *
      * Overrides with null endLine (unbounded scope) are treated as having
      * infinite span, so any bounded override will win over an unbounded one.

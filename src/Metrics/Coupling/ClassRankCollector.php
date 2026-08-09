@@ -113,7 +113,7 @@ final class ClassRankCollector implements GlobalContextCollectorInterface
         foreach ($projectClasses as $i => $symbolPath) {
             $seen = [];
             foreach ($graph->getClassDependencies($symbolPath) as $dep) {
-                $targetKey = $dep->target->toCanonical();
+                $targetKey = $dep->targetLogical()->toCanonical();
 
                 // Skip self-dependencies
                 if ($targetKey === $symbolPath->toCanonical()) {

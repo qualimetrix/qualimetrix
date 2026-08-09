@@ -84,7 +84,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         // StrategySelectorInterface - for lazy strategy selection
         $container->setAlias(StrategySelectorInterface::class, StrategySelector::class);
 
-        // DerivedMetricExtractor - extracts derived method-level metrics from file bags
+        // DerivedMetricExtractor - extracts derived callable-level metrics from file bags
         $container->register(DerivedMetricExtractor::class)
             ->setArguments([
                 new Reference(CompositeCollector::class),

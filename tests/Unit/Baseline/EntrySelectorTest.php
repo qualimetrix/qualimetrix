@@ -16,7 +16,7 @@ final class EntrySelectorTest extends TestCase
     #[Test]
     public function itComputesTwelveLowercaseHexCharacters(): void
     {
-        $selector = EntrySelector::forKey('method:App\Foo::bar');
+        $selector = EntrySelector::forKey('callable:App\Foo::bar');
 
         self::assertSame(12, \strlen($selector->value));
         self::assertMatchesRegularExpression('/^[0-9a-f]{12}$/', $selector->value);
@@ -73,7 +73,7 @@ final class EntrySelectorTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        EntrySelector::fromString('method:App\Foo::bar');
+        EntrySelector::fromString('callable:App\Foo::bar');
     }
 
     #[Test]
@@ -92,7 +92,7 @@ final class EntrySelectorTest extends TestCase
     #[Test]
     public function itRoundTripsThroughItsStringForm(): void
     {
-        $selector = EntrySelector::forKey('method:App\Foo::bar');
+        $selector = EntrySelector::forKey('callable:App\Foo::bar');
 
         self::assertTrue($selector->equals(EntrySelector::fromString((string) $selector)));
     }

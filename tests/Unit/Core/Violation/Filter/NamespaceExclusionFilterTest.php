@@ -91,7 +91,7 @@ final class NamespaceExclusionFilterTest extends TestCase
             location: new Location(RelativePath::fromString('src/helpers.php'), 10),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/helpers.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Test',
             severity: Severity::Warning,
         );

@@ -131,7 +131,7 @@ final class SummaryEnricherTest extends TestCase
             location: new Location(RelativePath::fromString('test.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'test',
             severity: Severity::Error,
         );
@@ -182,7 +182,7 @@ final class SummaryEnricherTest extends TestCase
             location: new Location(RelativePath::fromString('src/Payment/PaymentService.php'), 42),
             symbolPath: SymbolPath::forClass('App\\Payment', 'PaymentService'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'test',
             severity: Severity::Error,
         );
@@ -428,7 +428,7 @@ final class SummaryEnricherTest extends TestCase
             location: new Location(RelativePath::fromString('test.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'test',
             severity: Severity::Error,
         );

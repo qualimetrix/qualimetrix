@@ -325,7 +325,7 @@ PHP;
         // First definition: unreachableCode count
         $definition = $definitions[0];
         self::assertSame('unreachableCode', $definition->name);
-        self::assertSame(SymbolLevel::Method, $definition->collectedAt);
+        self::assertSame(SymbolLevel::Callable, $definition->collectedAt);
 
         // Check Class_ level aggregations
         $classStrategies = $definition->getStrategiesForLevel(SymbolLevel::Class_);
@@ -345,7 +345,7 @@ PHP;
         // Second definition: unreachableCode.firstLine (no aggregations)
         $firstLineDefinition = $definitions[1];
         self::assertSame('unreachableCode.firstLine', $firstLineDefinition->name);
-        self::assertSame(SymbolLevel::Method, $firstLineDefinition->collectedAt);
+        self::assertSame(SymbolLevel::Callable, $firstLineDefinition->collectedAt);
         self::assertEmpty($firstLineDefinition->getStrategiesForLevel(SymbolLevel::Class_));
         self::assertEmpty($firstLineDefinition->getStrategiesForLevel(SymbolLevel::Namespace_));
         self::assertEmpty($firstLineDefinition->getStrategiesForLevel(SymbolLevel::Project));

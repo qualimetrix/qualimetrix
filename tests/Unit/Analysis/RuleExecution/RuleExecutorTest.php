@@ -351,14 +351,14 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itFiltersViolationsByViolationCodeDuringExecute(): void
     {
-        $methodViolation = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic.method');
+        $methodViolation = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic.callable');
         $classViolation = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic.class');
 
         $rule = $this->createHierarchicalRule(
             'complexity.cyclomatic',
-            [RuleLevel::Method, RuleLevel::Class_],
+            [RuleLevel::Callable, RuleLevel::Class_],
             [
-                RuleLevel::Method->value => [$methodViolation],
+                RuleLevel::Callable->value => [$methodViolation],
                 RuleLevel::Class_->value => [$classViolation],
             ],
         );
@@ -426,14 +426,14 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itExecutesHierarchicalRuleWithAllLevelsEnabled(): void
     {
-        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.method', level: RuleLevel::Method);
+        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.callable', level: RuleLevel::Callable);
         $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
 
         $rule = $this->createHierarchicalRule(
             'complexity',
-            [RuleLevel::Method, RuleLevel::Class_],
+            [RuleLevel::Callable, RuleLevel::Class_],
             [
-                RuleLevel::Method->value => [$methodViolation],
+                RuleLevel::Callable->value => [$methodViolation],
                 RuleLevel::Class_->value => [$classViolation],
             ],
         );
@@ -452,14 +452,14 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itExecutesHierarchicalRuleWithSpecificViolationCodeDisabled(): void
     {
-        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.method', level: RuleLevel::Method);
+        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.callable', level: RuleLevel::Callable);
         $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
 
         $rule = $this->createHierarchicalRule(
             'complexity',
-            [RuleLevel::Method, RuleLevel::Class_],
+            [RuleLevel::Callable, RuleLevel::Class_],
             [
-                RuleLevel::Method->value => [$methodViolation],
+                RuleLevel::Callable->value => [$methodViolation],
                 RuleLevel::Class_->value => [$classViolation],
             ],
         );
@@ -482,9 +482,9 @@ final class RuleExecutorTest extends TestCase
     {
         $rule = $this->createHierarchicalRule(
             'complexity',
-            [RuleLevel::Method, RuleLevel::Class_],
+            [RuleLevel::Callable, RuleLevel::Class_],
             [
-                RuleLevel::Method->value => [$this->createViolation('complexity', violationCode: 'complexity.method')],
+                RuleLevel::Callable->value => [$this->createViolation('complexity', violationCode: 'complexity.callable')],
                 RuleLevel::Class_->value => [$this->createViolation('complexity', violationCode: 'complexity.class')],
             ],
         );
@@ -503,20 +503,20 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itAppliesOnlyRulesFilterToHierarchicalRule(): void
     {
-        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.method', level: RuleLevel::Method);
+        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.callable', level: RuleLevel::Callable);
         $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
 
         $rule = $this->createHierarchicalRule(
             'complexity',
-            [RuleLevel::Method, RuleLevel::Class_],
+            [RuleLevel::Callable, RuleLevel::Class_],
             [
-                RuleLevel::Method->value => [$methodViolation],
+                RuleLevel::Callable->value => [$methodViolation],
                 RuleLevel::Class_->value => [$classViolation],
             ],
         );
 
-        // Only enable method-level violations
-        $config = new AnalysisConfiguration(onlyRules: ['complexity.method']);
+        // Only enable callable-level violations
+        $config = new AnalysisConfiguration(onlyRules: ['complexity.callable']);
         $provider = $this->createConfiguredProvider($config);
         $executor = new RuleExecutor([$rule], $provider);
 

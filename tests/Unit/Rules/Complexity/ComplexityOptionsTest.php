@@ -18,7 +18,7 @@ final class ComplexityOptionsTest extends TestCase
         $options = ComplexityOptions::fromArray(['enabled' => false]);
 
         self::assertFalse($options->isEnabled());
-        self::assertFalse($options->method->isEnabled());
+        self::assertFalse($options->callable->isEnabled());
         self::assertFalse($options->class->isEnabled());
     }
 
@@ -48,7 +48,7 @@ final class ComplexityOptionsTest extends TestCase
     {
         $options = ComplexityOptions::fromArray([
             'enabled' => false,
-            'method' => ['warning' => 5],
+            'callable' => ['warning' => 5],
             'class' => ['max_warning' => 10],
         ]);
 

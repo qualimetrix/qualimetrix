@@ -380,22 +380,22 @@ final class LayerViolationRule extends AbstractRule
 
         $registry = $architecture->registry();
         foreach ($graph->getAllDependencies() as $dependency) {
-            $fromMatches = $registry->resolveAll($dependency->source);
-            $toMatches = $registry->resolveAll($dependency->target);
+            $fromMatches = $registry->resolveAll($dependency->sourceLogical());
+            $toMatches = $registry->resolveAll($dependency->targetLogical());
 
             $fromMatch = $fromMatches[0] ?? null;
             $toMatch = $toMatches[0] ?? null;
 
             if ($fromMatch === null) {
                 $sourceEdges++;
-                $classes[$dependency->source->toCanonical()] = $dependency->source->toString();
+                $classes[$dependency->sourceLogical()->toCanonical()] = $dependency->sourceLogical()->toString();
             } else {
                 $edgeLayerHits[$fromMatch->layerName] = ($edgeLayerHits[$fromMatch->layerName] ?? 0) + 1;
             }
 
             if ($toMatch === null) {
                 $targetEdges++;
-                $classes[$dependency->target->toCanonical()] = $dependency->target->toString();
+                $classes[$dependency->targetLogical()->toCanonical()] = $dependency->targetLogical()->toString();
             } else {
                 $edgeLayerHits[$toMatch->layerName] = ($edgeLayerHits[$toMatch->layerName] ?? 0) + 1;
             }
@@ -454,21 +454,21 @@ final class LayerViolationRule extends AbstractRule
 
         return new Violation(
             location: $dependency->location,
-            symbolPath: $dependency->source,
+            symbolPath: $dependency->sourceLogical(),
             ruleName: self::NAME,
             violationCode: self::NAME,
             message: \sprintf(
                 'Layer "%s" must not depend on layer "%s" (%s → %s, %s)%s',
                 $fromLayer,
                 $toLayer,
-                $dependency->source->toString(),
-                $dependency->target->toString(),
+                $dependency->sourceLogical()->toString(),
+                $dependency->targetLogical()->toString(),
                 $dependency->type->description(),
                 self::describeMatchTrailer($fromMatch, $toMatch),
             ),
             severity: $this->options->severity,
             recommendation: $this->buildRecommendation($dependency, $fromLayer, $toLayer, $architecture),
-            dependencyTarget: $dependency->target,
+            dependencyTarget: $dependency->targetLogical(),
             dependencyType: $dependency->type,
         );
     }
@@ -595,8 +595,8 @@ final class LayerViolationRule extends AbstractRule
             [
                 'fromLayer' => $fromLayer,
                 'toLayer' => $toLayer,
-                'source' => $dependency->source->toString(),
-                'target' => $dependency->target->toString(),
+                'source' => $dependency->sourceLogical()->toString(),
+                'target' => $dependency->targetLogical()->toString(),
                 'type' => $dependency->type->value,
             ],
             \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR,

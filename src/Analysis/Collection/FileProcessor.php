@@ -12,8 +12,8 @@ use Qualimetrix\Baseline\Suppression\SuppressionExtractor;
 use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
+use Qualimetrix\Core\Metric\CallableMetricsProviderInterface;
 use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
-use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\NamespaceMetricProviderInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -71,9 +71,9 @@ final class FileProcessor implements FileProcessorInterface
             $this->collector->reset();
             $output = $this->collector->collect($file, $ast, $relativePath);
 
-            // 3. Extract method/class metrics
-            $methodMetrics = $this->extractMethodMetrics();
-            $classMetrics = $this->extractClassMetrics();
+            // 3. Extract declaration-aware callable/class metrics
+            $callableMetrics = $this->extractCallableMetrics($relativePath);
+            $classMetrics = $this->extractClassMetrics($relativePath);
             $namespaceMetrics = $this->extractNamespaceMetrics();
 
             // 4. Extract suppression tags from AST nodes
@@ -91,7 +91,7 @@ final class FileProcessor implements FileProcessorInterface
             return FileProcessingResult::success(
                 filePath: $relativePath,
                 fileBag: $output->metrics,
-                methodMetrics: $methodMetrics,
+                callableMetrics: $callableMetrics,
                 classMetrics: $classMetrics,
                 namespaceMetrics: $namespaceMetrics,
                 dependencies: $output->dependencies,
@@ -109,58 +109,54 @@ final class FileProcessor implements FileProcessorInterface
     }
 
     /**
-     * Extracts method-level metrics from collectors.
+     * Extracts callable-level metrics from collectors without collapsing
+     * distinct declarations that share a logical FQN.
      *
-     * @return array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}>
+     * @return list<\Qualimetrix\Core\Metric\CallableWithMetrics>
      */
-    private function extractMethodMetrics(): array
+    private function extractCallableMetrics(\Qualimetrix\Core\Path\RelativePath $file): array
     {
-        $methodMetrics = [];
+        /** @var array<string, \Qualimetrix\Core\Metric\CallableWithMetrics> $callables */
+        $callables = [];
 
         foreach ($this->collector->getCollectors() as $collector) {
-            if ($collector instanceof MethodMetricsProviderInterface) {
-                foreach ($collector->getMethodsWithMetrics() as $methodWithMetrics) {
-                    $symbolPath = $methodWithMetrics->getSymbolPath();
+            if ($collector instanceof CallableMetricsProviderInterface) {
+                foreach ($collector->getCallablesWithMetrics($file) as $callable) {
+                    $key = $callable->declarationPath->toCanonical();
 
-                    // Skip closures and other symbols without stable identity
-                    if ($symbolPath === null) {
-                        continue;
-                    }
-
-                    $key = $this->symbolPathToKey($symbolPath);
-
-                    // Merge metrics if symbol already exists
-                    if (isset($methodMetrics[$key])) {
-                        $methodMetrics[$key]['metrics'] = $methodMetrics[$key]['metrics']->merge(
-                            $methodWithMetrics->metrics,
+                    if (isset($callables[$key])) {
+                        $existing = $callables[$key];
+                        $callables[$key] = new \Qualimetrix\Core\Metric\CallableWithMetrics(
+                            $existing->declarationPath,
+                            $existing->kind,
+                            $existing->anonymousSyntax,
+                            $existing->lexicalClassContext,
+                            $existing->classAggregationOwner,
+                            $existing->metrics->merge($callable->metrics),
                         );
                     } else {
-                        $methodMetrics[$key] = [
-                            'symbolPath' => $symbolPath,
-                            'metrics' => $methodWithMetrics->metrics,
-                            'line' => $methodWithMetrics->line,
-                        ];
+                        $callables[$key] = $callable;
                     }
                 }
             }
         }
 
-        return $methodMetrics;
+        return array_values($callables);
     }
 
     /**
      * Extracts class-level metrics from collectors.
      *
-     * @return array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}>
+     * @return array<string, array{subject: \Qualimetrix\Core\Symbol\MetricSubject, metrics: MetricBag, line: int}>
      */
-    private function extractClassMetrics(): array
+    private function extractClassMetrics(\Qualimetrix\Core\Path\RelativePath $file): array
     {
         $classMetrics = [];
 
         foreach ($this->collector->getCollectors() as $collector) {
             if ($collector instanceof ClassMetricsProviderInterface) {
-                foreach ($collector->getClassesWithMetrics() as $classWithMetrics) {
-                    $key = $this->symbolPathToKey($classWithMetrics->getSymbolPath());
+                foreach ($collector->getClassesWithMetrics($file) as $classWithMetrics) {
+                    $key = $classWithMetrics->subject->toCanonical();
 
                     // Merge metrics if symbol already exists
                     if (isset($classMetrics[$key])) {
@@ -169,7 +165,7 @@ final class FileProcessor implements FileProcessorInterface
                         );
                     } else {
                         $classMetrics[$key] = [
-                            'symbolPath' => $classWithMetrics->getSymbolPath(),
+                            'subject' => $classWithMetrics->subject,
                             'metrics' => $classWithMetrics->metrics,
                             'line' => $classWithMetrics->line,
                         ];
@@ -304,25 +300,4 @@ final class FileProcessor implements FileProcessorInterface
         return [$overrides, $diagnostics];
     }
 
-    /**
-     * Converts SymbolPath to unique string key.
-     */
-    private function symbolPathToKey(SymbolPath $symbolPath): string
-    {
-        $parts = [];
-
-        if ($symbolPath->namespace !== null) {
-            $parts[] = $symbolPath->namespace;
-        }
-
-        if ($symbolPath->type !== null) {
-            $parts[] = $symbolPath->type;
-        }
-
-        if ($symbolPath->member !== null) {
-            $parts[] = $symbolPath->member;
-        }
-
-        return implode('::', $parts);
-    }
 }

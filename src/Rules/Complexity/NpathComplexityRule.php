@@ -67,7 +67,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Method, RuleLevel::Class_];
+        return [RuleLevel::Callable, RuleLevel::Class_];
     }
 
     /**
@@ -85,7 +85,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
         }
 
         return match ($level) {
-            RuleLevel::Method => $this->analyzeMethodLevel($context),
+            RuleLevel::Callable => $this->analyzeMethodLevel($context),
             RuleLevel::Class_ => $this->analyzeClassLevel($context),
             default => [],
         };
@@ -133,7 +133,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME . '.method'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            (new ViolationChannel(self::NAME, self::NAME . '.callable'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
             (new ViolationChannel(self::NAME, self::NAME . '.class'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
         ];
     }
@@ -159,7 +159,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
     private function analyzeMethodLevel(AnalysisContext $context): array
     {
         \assert($this->options instanceof NpathComplexityOptions);
-        $methodOptions = $this->options->method;
+        $methodOptions = $this->options->callable;
 
         $violations = [];
 
@@ -187,11 +187,11 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
                     location: new Location($methodInfo->file, $methodInfo->line),
                     symbolPath: $methodInfo->symbolPath,
                     ruleName: $this->getName(),
-                    violationCode: self::NAME . '.method',
+                    violationCode: self::NAME . '.callable',
                     message: \sprintf('NPath complexity (execution paths) is %s (%s), exceeds threshold of %s.%s Reduce branching or extract methods', $displayValue, $categoryLabel, $threshold, $chain !== '' ? " {$chain}." : ''),
                     severity: $severity,
                     metricValue: $npathValue,
-                    level: RuleLevel::Method,
+                    level: RuleLevel::Callable,
                     recommendation: \sprintf('NPath complexity: %s (threshold: %s)%s — explosive number of execution paths', $displayValue, $threshold, $chain !== '' ? ". {$chain}" : ''),
                     threshold: (float) $threshold,
                 );

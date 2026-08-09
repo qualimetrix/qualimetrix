@@ -140,7 +140,7 @@ bin/qmx check src/ --rule-opt="coupling.cbo:scope=application"
 на верхнем уровне правила — НЕ вложенный в `class:`/`namespace:` — задаёт
 `warning`/`error` одним и тем же значением сразу **на обоих** измерениях,
 class и namespace. Это отличается от `complexity.cyclomatic`, где верхний
-`threshold` применяется только к уровню method: у CBO дефолты class и
+`threshold` применяется только к уровню callable: у CBO дефолты class и
 namespace уже совпадают (14/20), поэтому нет одного «основного» уровня,
 которому стоило бы отдавать предпочтение.
 

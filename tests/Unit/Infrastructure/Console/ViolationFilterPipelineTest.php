@@ -767,7 +767,7 @@ final class ViolationFilterPipelineTest extends TestCase
             location: new Location(RelativePath::fromString('src/helpers.php'), 10),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/helpers.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'CCN too high',
             severity: Severity::Error,
         );
@@ -916,7 +916,7 @@ final class ViolationFilterPipelineTest extends TestCase
             location: new Location(RelativePath::fromString($file), $line),
             symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: $ruleName,
-            violationCode: $ruleName === 'code-smell.goto' ? $ruleName : $ruleName . '.method',
+            violationCode: $ruleName === 'code-smell.goto' ? $ruleName : $ruleName . '.callable',
             message: 'CCN too high',
             severity: $severity,
             metricValue: $metricValue,

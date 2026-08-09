@@ -565,8 +565,8 @@ PHP;
         $traverser->addVisitor($statements->getVisitor());
         $traverser->traverse($ast);
 
-        $halsteadMetrics = $halstead->getMethodsWithMetrics()[0]->metrics;
-        $statementMetrics = $statements->getMethodsWithMetrics()[0]->metrics;
+        $halsteadMetrics = $halstead->getCallablesWithMetrics(RelativePath::fromString('src/Example.php'))[0]->metrics;
+        $statementMetrics = $statements->getCallablesWithMetrics(RelativePath::fromString('src/Example.php'))[0]->metrics;
         $source = $halsteadMetrics
             ->merge($statementMetrics)
             ->with('ccn', 2);

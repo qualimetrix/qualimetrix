@@ -30,8 +30,8 @@ final class BaselineIdentityTest extends TestCase
             ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15),
         );
 
-        self::assertSame('method:App\Foo::bar', $identity->symbolKey);
-        self::assertSame('complexity.cyclomatic#complexity.cyclomatic.method', $identity->channel->toKey());
+        self::assertSame('callable:App\Foo::bar', $identity->symbolKey);
+        self::assertSame('complexity.cyclomatic#complexity.cyclomatic.callable', $identity->channel->toKey());
         self::assertNull($identity->edge);
     }
 
@@ -117,7 +117,7 @@ final class BaselineIdentityTest extends TestCase
             location: new Location(RelativePath::fromString('src/a/Duplicated.php'), 10),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'from the first declaration',
             severity: Severity::Warning,
             metricValue: 12,
@@ -126,7 +126,7 @@ final class BaselineIdentityTest extends TestCase
             location: new Location(RelativePath::fromString('src/b/Duplicated.php'), 10),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'from the second declaration',
             severity: Severity::Warning,
             metricValue: 30,

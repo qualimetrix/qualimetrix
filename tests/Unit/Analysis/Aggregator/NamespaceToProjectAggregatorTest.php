@@ -11,11 +11,15 @@ use Qualimetrix\Analysis\Aggregator\MetricAggregator;
 use Qualimetrix\Analysis\Aggregator\NamespaceToProjectAggregator;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
 
@@ -64,7 +68,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         self::assertEqualsWithDelta(82.0, $projectMetrics->get('mi.avg'), 0.01);
         // Total method count = 20
         self::assertSame(20, $projectMetrics->get('mi.count'));
-        // Min is computed from raw method-level values = min(80..., 60..., 90...) = 60.0
+        // Min is computed from raw callable-level values = min(80..., 60..., 90...) = 60.0
         self::assertEqualsWithDelta(60.0, $projectMetrics->get('mi.min'), 0.01);
     }
 
@@ -153,12 +157,14 @@ final class NamespaceToProjectAggregatorTest extends TestCase
     ): void {
         $relFile = RelativePath::fromString($file);
         for ($i = 1; $i <= $count; $i++) {
-            $repository->add(
-                SymbolPath::forMethod($namespace, $class, "m{$i}"),
+            $repository->addCallable(new CallableWithMetrics(
+                new DeclarationPath(SymbolPath::forMethod($namespace, $class, "m{$i}"), $relFile, $i * 10),
+                CallableKind::Method,
+                null,
+                null,
+                new LogicalClassPath(SymbolPath::forClass($namespace, $class)),
                 (new MetricBag())->with('mi', $miValue),
-                $relFile,
-                $i * 10,
-            );
+            ));
         }
     }
 }

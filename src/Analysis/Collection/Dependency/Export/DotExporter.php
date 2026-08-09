@@ -83,14 +83,14 @@ final class DotExporter implements GraphExporterInterface
         $lines[] = '    // Edges';
         foreach ($graph->getAllDependencies() as $dependency) {
             // Only include edges where both nodes are in filtered set
-            if (!isset($classSet[$dependency->source->toCanonical()]) || !isset($classSet[$dependency->target->toCanonical()])) {
+            if (!isset($classSet[$dependency->sourceLogical()->toCanonical()]) || !isset($classSet[$dependency->targetLogical()->toCanonical()])) {
                 continue;
             }
 
             $lines[] = \sprintf(
                 '    "%s" -> "%s";',
-                $this->escape($dependency->source->toString()),
-                $this->escape($dependency->target->toString()),
+                $this->escape($dependency->sourceLogical()->toString()),
+                $this->escape($dependency->targetLogical()->toString()),
             );
         }
 
@@ -140,14 +140,14 @@ final class DotExporter implements GraphExporterInterface
         $lines[] = '    // Edges';
         foreach ($graph->getAllDependencies() as $dependency) {
             // Only include edges where both nodes are in filtered set
-            if (!isset($classSet[$dependency->source->toCanonical()]) || !isset($classSet[$dependency->target->toCanonical()])) {
+            if (!isset($classSet[$dependency->sourceLogical()->toCanonical()]) || !isset($classSet[$dependency->targetLogical()->toCanonical()])) {
                 continue;
             }
 
             $lines[] = \sprintf(
                 '    "%s" -> "%s";',
-                $this->escape($dependency->source->toString()),
-                $this->escape($dependency->target->toString()),
+                $this->escape($dependency->sourceLogical()->toString()),
+                $this->escape($dependency->targetLogical()->toString()),
             );
         }
 

@@ -55,7 +55,7 @@ final class NpathSaturationCeilingTest extends TestCase
         );
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
-            'complexity.npath#complexity.npath.method',
+            'complexity.npath#complexity.npath.callable',
             ChannelDeclaration::magnitude(WorseDirection::Higher),
         );
         $stage = new BaselineCeilingStage($baseline, $declarations);
@@ -85,7 +85,7 @@ final class NpathSaturationCeilingTest extends TestCase
         $repository->method('get')->willReturn($metrics);
 
         $violations = (new NpathComplexityRule(new NpathComplexityOptions()))
-            ->analyzeLevel(RuleLevel::Method, new AnalysisContext($repository));
+            ->analyzeLevel(RuleLevel::Callable, new AnalysisContext($repository));
 
         self::assertCount(1, $violations);
 

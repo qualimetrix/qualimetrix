@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Baseline;
 
 use InvalidArgumentException;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\AcceptedLevel;
@@ -403,6 +405,35 @@ final readonly class BoundaryExplanationService
             }
 
             public function add(SymbolPath $symbol, MetricBag $metrics, ?RelativePath $file, ?int $line): void {}
+
+            public function getSubject(MetricSubject $subject): MetricBag
+            {
+                return new MetricBag();
+            }
+
+            public function hasSubject(MetricSubject $subject): bool
+            {
+                return false;
+            }
+
+            public function addSubject(MetricSubject $subject, MetricBag $metrics, ?RelativePath $file, ?int $line): void {}
+
+            public function addCallable(CallableWithMetrics $callable): void {}
+
+            public function allDeclarations(): iterable
+            {
+                return [];
+            }
+
+            public function allCallables(): iterable
+            {
+                return [];
+            }
+
+            public function allLogicalClasses(): iterable
+            {
+                return [];
+            }
 
             public function addScalar(SymbolPath $symbol, string $key, int|float $value): void {}
 

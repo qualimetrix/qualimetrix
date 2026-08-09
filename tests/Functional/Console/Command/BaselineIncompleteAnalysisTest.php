@@ -99,7 +99,7 @@ final class BaselineIncompleteAnalysisTest extends TestCase
         $tester = $this->execute('baseline:explain', [
             'symbol' => 'class:Good',
             'paths' => [$coverage === 'all-failed' ? $this->tempDir . '/Broken.php' : $this->tempDir],
-            '--channel' => 'complexity.cyclomatic#complexity.cyclomatic.method',
+            '--channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable',
         ]);
 
         self::assertSame(4, $tester->getStatusCode(), $tester->getDisplay());

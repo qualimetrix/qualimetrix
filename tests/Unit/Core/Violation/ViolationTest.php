@@ -36,7 +36,7 @@ final class ViolationTest extends TestCase
         );
 
         self::assertSame(
-            'cyclomatic-complexity:method:App\Service\UserService::calculate',
+            'cyclomatic-complexity:callable:App\Service\UserService::calculate',
             $violation->getFingerprint(),
         );
     }
@@ -164,10 +164,10 @@ final class ViolationTest extends TestCase
             message: 'Method has complexity of 15',
             severity: Severity::Warning,
             metricValue: 15,
-            level: RuleLevel::Method,
+            level: RuleLevel::Callable,
         );
 
-        self::assertSame(RuleLevel::Method, $violation->level);
+        self::assertSame(RuleLevel::Callable, $violation->level);
     }
 
     #[Test]
@@ -192,7 +192,7 @@ final class ViolationTest extends TestCase
             location: new Location(RelativePath::fromString('src/test.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'complexity',
-            violationCode: 'complexity.method',
+            violationCode: 'complexity.callable',
             message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
             severity: Severity::Error,
             recommendation: 'Cyclomatic complexity: 15 (threshold: 10) — too many code paths',
@@ -211,7 +211,7 @@ final class ViolationTest extends TestCase
             location: new Location(RelativePath::fromString('src/test.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'complexity',
-            violationCode: 'complexity.method',
+            violationCode: 'complexity.callable',
             message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
             severity: Severity::Error,
         );
@@ -337,11 +337,11 @@ final class ViolationTest extends TestCase
             location: new Location(RelativePath::fromString('src/test.php'), 10),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Cyclomatic complexity is 31',
             severity: Severity::Warning,
             metricValue: 31,
-            level: RuleLevel::Method,
+            level: RuleLevel::Callable,
             relatedLocations: [new Location(RelativePath::fromString('src/other.php'), 3)],
             recommendation: 'Split the method',
             threshold: 10,

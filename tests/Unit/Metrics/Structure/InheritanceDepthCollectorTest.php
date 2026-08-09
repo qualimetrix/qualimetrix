@@ -532,6 +532,12 @@ PHP;
         self::assertSame(1, $metrics->get('dit:MyException'));
     }
 
+    #[Test]
+    public function itDeliberatelyDoesNotProvideCallableMetrics(): void
+    {
+        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

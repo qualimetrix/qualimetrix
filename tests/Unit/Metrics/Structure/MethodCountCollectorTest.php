@@ -859,6 +859,35 @@ PHP;
         self::assertSame(0, $metrics->get('woc:App\EmptyWoc'));
     }
 
+    #[Test]
+    public function itDoesNotCountPropertyHooksAsMethods(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Profile
+{
+    public string $name {
+        get => $this->name;
+        set (string $value) => $value;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->get('methodCount:App\Profile'));
+        self::assertSame(0, $metrics->get('methodCountTotal:App\Profile'));
+    }
+
+    #[Test]
+    public function itDeliberatelyDoesNotProvideCallableMetrics(): void
+    {
+        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

@@ -8,12 +8,12 @@ namespace Qualimetrix\Core\Metric;
  * Represents the hierarchical level of a code symbol in the aggregation tree.
  *
  * Hierarchy (from leaf to root):
- *   Method → Class → File → Namespace → Project
+ *   Callable → Class → File → Namespace → Project
  */
 enum SymbolLevel: string
 {
-    /** Method or function level (leaf level for metrics like CCN) */
-    case Method = 'method';
+    /** Callable level (leaf level for metrics such as CCN) */
+    case Callable = 'callable';
 
     /** Class, interface, trait, or enum level */
     case Class_ = 'class';

@@ -163,7 +163,7 @@
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       threshold: 15   # warning=15 и error=15
   size.method-count:
     threshold: 25
@@ -178,7 +178,7 @@ rules:
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       warning: 15
       error: 30
     class:

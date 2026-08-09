@@ -97,6 +97,7 @@ final class TccLccVisitor extends NodeVisitorAbstract implements ResettableVisit
                     namespace: $this->currentNamespace,
                     className: $className,
                     line: $node->getStartLine(),
+                    startFilePos: $node->getStartFilePos(),
                 );
             }
 

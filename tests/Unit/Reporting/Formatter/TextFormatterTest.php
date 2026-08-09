@@ -319,7 +319,7 @@ final class TextFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity',
-                violationCode: 'complexity.method',
+                violationCode: 'complexity.callable',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -330,7 +330,7 @@ final class TextFormatterTest extends TestCase
 
         $output = $this->formatter->format($report, $this->plainContext);
 
-        self::assertStringContainsString('[complexity.method]', $output);
+        self::assertStringContainsString('[complexity.callable]', $output);
         self::assertStringNotContainsString('[complexity]', $output);
     }
 
@@ -539,7 +539,7 @@ final class TextFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             ))
@@ -575,7 +575,7 @@ final class TextFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString("src/Foo{$i}.php"), 10),
                 symbolPath: SymbolPath::forClass('App', "Foo{$i}"),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             ));

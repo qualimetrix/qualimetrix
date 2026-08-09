@@ -105,7 +105,7 @@ final class AcceptedLevelNarratorTest extends TestCase
             location: new Location(RelativePath::fromString('src/Foo.php'), 10),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Cyclomatic complexity exceeds threshold',
             severity: Severity::Warning,
             metricValue: $metricValue,

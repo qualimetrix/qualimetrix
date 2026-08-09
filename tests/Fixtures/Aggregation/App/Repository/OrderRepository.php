@@ -7,7 +7,7 @@ namespace Fixtures\Aggregation\App\Repository;
 /**
  * OrderRepository - additional fixture for namespace-level aggregation testing
  *
- * Expected method-level metrics:
+ * Expected callable-level metrics:
  * - findByUser():     CCN=2 (1 + 1 foreach)
  * - findByStatus():   CCN=3 (1 + 1 foreach + 1 if)
  * - updateStatus():   CCN=2 (1 + 1 if)

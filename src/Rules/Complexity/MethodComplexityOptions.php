@@ -12,7 +12,7 @@ use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Support\ThresholdParser;
 
 /**
- * Options for method-level complexity checks.
+ * Options for callable-level complexity checks.
  */
 final readonly class MethodComplexityOptions implements LevelOptionsInterface, ThresholdAwareOptionsInterface
 {

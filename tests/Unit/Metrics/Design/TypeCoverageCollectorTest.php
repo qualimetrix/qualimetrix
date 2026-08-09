@@ -591,6 +591,58 @@ PHP;
     }
 
     #[Test]
+    public function itCountsEachHookParameterWithoutCountingThePropertyAgain(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Profile
+{
+    public string $name {
+        get => $this->name;
+        set (string $value) => $value;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('typeCoverage.propertyTotal:App\Profile'));
+        self::assertSame(1, $metrics->get('typeCoverage.propertyTyped:App\Profile'));
+        self::assertSame(1, $metrics->get('typeCoverage.paramTotal:App\Profile'));
+        self::assertSame(1, $metrics->get('typeCoverage.paramTyped:App\Profile'));
+        self::assertSame(0, $metrics->get('typeCoverage.returnTotal:App\Profile'));
+    }
+
+    #[Test]
+    public function itCountsPromotedPropertyHookParametersWithoutDuplicatingTheProperty(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Profile
+{
+    public function __construct(
+        public string $name {
+            set (string $value) => $value;
+        },
+    ) {}
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('typeCoverage.propertyTotal:App\Profile'));
+        self::assertSame(1, $metrics->get('typeCoverage.propertyTyped:App\Profile'));
+        self::assertSame(2, $metrics->get('typeCoverage.paramTotal:App\Profile'));
+        self::assertSame(2, $metrics->get('typeCoverage.paramTyped:App\Profile'));
+    }
+
+    #[Test]
     public function itDetectsReadonlyPromotedPropertyWithoutVisibility(): void
     {
         $code = <<<'PHP'
@@ -648,6 +700,12 @@ PHP;
         self::assertSame(3, $metrics->get('typeCoverage.propertyTotal:App\ReadonlyMixed'));
         // 2 typed properties
         self::assertSame(2, $metrics->get('typeCoverage.propertyTyped:App\ReadonlyMixed'));
+    }
+
+    #[Test]
+    public function itDeliberatelyDoesNotProvideCallableMetrics(): void
+    {
+        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
     private function collectMetrics(string $code): MetricBag

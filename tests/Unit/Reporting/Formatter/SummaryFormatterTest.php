@@ -163,7 +163,7 @@ final class SummaryFormatterTest extends TestCase
                     location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                     symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                     ruleName: 'complexity.cyclomatic',
-                    violationCode: 'complexity.cyclomatic.method',
+                    violationCode: 'complexity.cyclomatic.callable',
                     message: 'Too complex',
                     severity: Severity::Error,
                 ),
@@ -814,7 +814,7 @@ final class SummaryFormatterTest extends TestCase
                     location: new Location(RelativePath::fromString('a.php'), 1),
                     symbolPath: SymbolPath::forClass('App\Service', 'Foo'),
                     ruleName: 'complexity.cyclomatic',
-                    violationCode: 'complexity.cyclomatic.method',
+                    violationCode: 'complexity.cyclomatic.callable',
                     message: 'Msg',
                     severity: Severity::Error,
                 ),
@@ -908,7 +908,7 @@ final class SummaryFormatterTest extends TestCase
                     location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                     symbolPath: SymbolPath::forClass('App', 'Foo'),
                     ruleName: 'complexity.cyclomatic',
-                    violationCode: 'complexity.cyclomatic.method',
+                    violationCode: 'complexity.cyclomatic.callable',
                     message: 'Cyclomatic complexity is 15',
                     severity: Severity::Error,
                     recommendation: 'Cyclomatic complexity: 15 (threshold: 10) — too many code paths',
@@ -928,7 +928,7 @@ final class SummaryFormatterTest extends TestCase
         self::assertStringContainsString('Violations', $output);
         self::assertStringContainsString('src/Foo.php (1 violation)', $output);
         self::assertStringContainsString('too many code paths', $output);
-        self::assertStringContainsString('[complexity.cyclomatic.method]', $output);
+        self::assertStringContainsString('[complexity.cyclomatic.callable]', $output);
         self::assertStringContainsString('ERROR', $output);
     }
 
@@ -1148,7 +1148,7 @@ final class SummaryFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/File' . $i . '.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'Class' . $i),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Too complex #' . $i,
                 severity: Severity::Error,
                 recommendation: 'Cyclomatic complexity too high #' . $i,
@@ -1179,7 +1179,7 @@ final class SummaryFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo' . $i . '.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo' . $i),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             );

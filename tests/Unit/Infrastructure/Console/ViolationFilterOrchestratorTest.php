@@ -144,7 +144,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             symbolPath: SymbolPath::forClass('App\\Tests', 'UserServiceTest'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'CCN too high',
             severity: Severity::Warning,
         );
@@ -180,7 +180,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             symbolPath: SymbolPath::forClass('App\\Tests', 'UserServiceTest'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'CCN too high',
             severity: Severity::Warning,
         );
@@ -274,7 +274,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
             location: new Location(RelativePath::fromString($file), 10),
             symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'CCN too high',
             severity: Severity::Error,
             metricValue: 25,

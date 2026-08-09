@@ -8,6 +8,7 @@ use LogicException;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
@@ -114,7 +115,11 @@ final class CompositeCollector
 
         // Apply derived collectors
         if ($this->derivedCollectors !== []) {
-            $result = $this->applyDerivedCollectors($result);
+            if ($filePath === null) {
+                throw new LogicException('filePath is required when derived collectors are configured (CompositeCollector::collect)');
+            }
+
+            $result = $this->applyDerivedCollectors($result, $filePath);
         }
 
         // Collect dependencies
@@ -160,23 +165,22 @@ final class CompositeCollector
      * then applies derived collectors for each FQN (O(N × K)).
      * Total complexity: O(M + N × K) instead of O(N × M × K).
      */
-    private function applyDerivedCollectors(MetricBag $baseBag): MetricBag
+    private function applyDerivedCollectors(MetricBag $baseBag, RelativePath $file): MetricBag
     {
-        // Index metrics by FQN in single pass — O(M)
-        $metricsByFqn = $this->indexMetricsByFqn($baseBag);
+        // Validate the dependency graph even when this file has no callables.
+        $sortedCollectors = $this->sortDerivedCollectors($this->derivedCollectors);
+        $metricsByDeclaration = $this->callableMetricsByDeclaration($file);
 
-        if ($metricsByFqn === []) {
+        if ($metricsByDeclaration === []) {
             return $baseBag;
         }
 
-        // Sort derived collectors topologically so each can see previous outputs
-        $sortedCollectors = $this->sortDerivedCollectors($this->derivedCollectors);
-
         $result = $baseBag;
 
-        // Apply derived collectors for each FQN — O(N × K)
+        // Apply derived collectors for each exact declaration — O(N × K)
         // Accumulate results so each derived collector can see previous outputs
-        foreach ($metricsByFqn as $fqn => $workingMetrics) {
+        foreach ($metricsByDeclaration as $callable) {
+            $workingMetrics = $callable->metrics;
             foreach ($sortedCollectors as $derivedCollector) {
                 $derivedMetrics = $derivedCollector->calculate($workingMetrics);
 
@@ -184,12 +188,47 @@ final class CompositeCollector
                 $workingMetrics = $workingMetrics->merge($derivedMetrics);
 
                 foreach ($derivedMetrics->all() as $name => $value) {
-                    $result = $result->with($name . ':' . $fqn, $value);
+                    $result = $result->with($this->derivedMetricKey($name, $callable), $value);
                 }
             }
         }
 
         return $result;
+    }
+
+    /** @return array<string, CallableWithMetrics> */
+    private function callableMetricsByDeclaration(RelativePath $file): array
+    {
+        $callables = [];
+
+        foreach ($this->collectors as $collector) {
+            if (!$collector instanceof \Qualimetrix\Core\Metric\CallableMetricsProviderInterface) {
+                continue;
+            }
+
+            foreach ($collector->getCallablesWithMetrics($file) as $callable) {
+                $key = $callable->kind->value . ':' . $callable->declarationPath->toCanonical();
+                $existing = $callables[$key] ?? null;
+                $callables[$key] = $existing === null
+                    ? $callable
+                    : new CallableWithMetrics(
+                        $existing->declarationPath,
+                        $existing->kind,
+                        $existing->anonymousSyntax,
+                        $existing->lexicalClassContext,
+                        $existing->classAggregationOwner,
+                        $existing->metrics->merge($callable->metrics),
+                        $existing->sourceLine,
+                    );
+            }
+        }
+
+        return $callables;
+    }
+
+    private function derivedMetricKey(string $metricName, CallableWithMetrics $callable): string
+    {
+        return $metricName . ':' . $callable->kind->value . ':' . $callable->declarationPath->toCanonical();
     }
 
     /**
@@ -269,37 +308,4 @@ final class CompositeCollector
         return $sorted;
     }
 
-    /**
-     * Indexes all metrics by FQN in a single pass.
-     *
-     * Metric keys are in format: metricName:fqn
-     * Returns array of FQN => MetricBag with base metric names.
-     *
-     * @return array<string, MetricBag>
-     */
-    private function indexMetricsByFqn(MetricBag $bag): array
-    {
-        /** @var array<string, array<string, int|float>> $byFqn */
-        $byFqn = [];
-
-        foreach ($bag->all() as $key => $value) {
-            $colonPos = strpos($key, ':');
-            if ($colonPos === false) {
-                continue;
-            }
-
-            $metricName = substr($key, 0, $colonPos);
-            $fqn = substr($key, $colonPos + 1);
-
-            $byFqn[$fqn][$metricName] = $value;
-        }
-
-        // Convert arrays to MetricBags
-        $result = [];
-        foreach ($byFqn as $fqn => $metrics) {
-            $result[$fqn] = MetricBag::fromArray($metrics);
-        }
-
-        return $result;
-    }
 }

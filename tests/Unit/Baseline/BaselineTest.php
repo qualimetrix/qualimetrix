@@ -29,8 +29,8 @@ final class BaselineTest extends TestCase
         $baseline = new Baseline(
             generated: new DateTimeImmutable(),
             scope: ['src'],
-            entries: [self::entry('method:App\Foo::bar'), self::entry('method:App\Foo::baz')],
-            inertEntries: [self::inert('method:App\Foo::qux')],
+            entries: [self::entry('callable:App\Foo::bar'), self::entry('callable:App\Foo::baz')],
+            inertEntries: [self::inert('callable:App\Foo::qux')],
         );
 
         self::assertSame(2, $baseline->count());
@@ -39,7 +39,7 @@ final class BaselineTest extends TestCase
     #[Test]
     public function itFindsAnEntryByItsIdentity(): void
     {
-        $entry = self::entry('method:App\Foo::bar');
+        $entry = self::entry('callable:App\Foo::bar');
         $baseline = self::baselineOf($entry);
 
         self::assertTrue($baseline->hasIdentity($entry->identity));
@@ -49,10 +49,10 @@ final class BaselineTest extends TestCase
     #[Test]
     public function itDoesNotFindAnIdentityItDoesNotHold(): void
     {
-        $baseline = self::baselineOf(self::entry('method:App\Foo::bar'));
+        $baseline = self::baselineOf(self::entry('callable:App\Foo::bar'));
 
         self::assertFalse($baseline->hasIdentity(new BaselineIdentity(
-            'method:App\Foo::other',
+            'callable:App\Foo::other',
             new ViolationChannel('code-smell.goto', 'code-smell.goto'),
         )));
     }
@@ -95,7 +95,7 @@ final class BaselineTest extends TestCase
     #[Test]
     public function itFindsAnInertEntryByItsSelectorToo(): void
     {
-        $inert = self::inert('method:App\Foo::qux');
+        $inert = self::inert('callable:App\Foo::qux');
         $baseline = new Baseline(
             generated: new DateTimeImmutable(),
             scope: [],
@@ -109,7 +109,7 @@ final class BaselineTest extends TestCase
     #[Test]
     public function itFindsNothingForAStringThatIsNotASelector(): void
     {
-        $baseline = self::baselineOf(self::entry('method:App\Foo::bar'));
+        $baseline = self::baselineOf(self::entry('callable:App\Foo::bar'));
 
         self::assertSame([], $baseline->findBySelector('not-a-selector'));
     }
@@ -117,8 +117,8 @@ final class BaselineTest extends TestCase
     #[Test]
     public function itReportsEntriesWhoseIdentityDidNotAppearInTheRun(): void
     {
-        $repaired = self::entry('method:App\Foo::bar');
-        $stillFailing = self::entry('method:App\Foo::baz');
+        $repaired = self::entry('callable:App\Foo::bar');
+        $stillFailing = self::entry('callable:App\Foo::baz');
 
         $baseline = self::baselineOf($repaired, $stillFailing);
 
@@ -135,9 +135,9 @@ final class BaselineTest extends TestCase
     #[Test]
     public function itLeavesSiblingEntriesUnderOneSymbolAloneWhenOneGoesStale(): void
     {
-        $symbol = 'method:App\Foo::bar';
+        $symbol = 'callable:App\Foo::bar';
         $goto = self::entry($symbol, 'code-smell.goto', 'code-smell.goto');
-        $cyclomatic = self::entry($symbol, 'complexity.cyclomatic', 'complexity.cyclomatic.method');
+        $cyclomatic = self::entry($symbol, 'complexity.cyclomatic', 'complexity.cyclomatic.callable');
 
         $baseline = self::baselineOf($goto, $cyclomatic);
 
@@ -149,7 +149,7 @@ final class BaselineTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        self::baselineOf(self::entry('method:App\Foo::bar'), self::entry('method:App\Foo::bar'));
+        self::baselineOf(self::entry('callable:App\Foo::bar'), self::entry('callable:App\Foo::bar'));
     }
 
     #[Test]
@@ -158,12 +158,12 @@ final class BaselineTest extends TestCase
         $baseline = new Baseline(
             generated: new DateTimeImmutable(),
             scope: [],
-            entries: [self::entry('method:App\Foo::bar')],
+            entries: [self::entry('callable:App\Foo::bar')],
             inertEntries: [self::inert('file:src/Legacy.php')],
         );
 
         self::assertEqualsCanonicalizing(
-            ['method:App\Foo::bar', 'file:src/Legacy.php'],
+            ['callable:App\Foo::bar', 'file:src/Legacy.php'],
             $baseline->symbolKeys(),
         );
     }
@@ -174,7 +174,7 @@ final class BaselineTest extends TestCase
         $baseline = new Baseline(
             generated: new DateTimeImmutable(),
             scope: ['src'],
-            entries: [self::entry('method:App\Foo::bar')],
+            entries: [self::entry('callable:App\Foo::bar')],
             sourceContentHash: 'abc',
         );
 
@@ -185,7 +185,7 @@ final class BaselineTest extends TestCase
     #[Test]
     public function itDistinguishesExpectedAbsenceFromUncheckedProvenance(): void
     {
-        $unchecked = self::baselineOf(self::entry('method:App\Foo::bar'));
+        $unchecked = self::baselineOf(self::entry('callable:App\Foo::bar'));
         $expectedAbsent = $unchecked->withExpectedSourceAbsence();
         $expectedContent = $expectedAbsent->withSourceContentHash('abc');
 

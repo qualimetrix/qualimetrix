@@ -165,6 +165,7 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
                     namespace: $this->currentNamespace,
                     className: $className,
                     line: $node->getStartLine(),
+                    startFilePos: $node->getStartFilePos(),
                 );
 
                 // Track interface flag

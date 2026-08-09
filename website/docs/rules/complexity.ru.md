@@ -32,7 +32,7 @@
 <!-- llms:skip-begin -->
 ### Пороговые значения
 
-**Уровень метода** (включён по умолчанию):
+**Уровень вызываемого объекта (Callable)** (включён по умолчанию):
 
 | Уровень | Порог | Серьёзность |
 | ------- | ----- | ----------- |
@@ -107,7 +107,7 @@ Qualimetrix использует расширенный вариант цикл�
 # qmx.yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       warning: 15
       error: 25
     class:
@@ -120,14 +120,14 @@ rules:
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       threshold: 15   # warning=15, error=15 → все нарушения — ошибки
 ```
 
 ```bash
 # CLI overrides
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:method.warning=15"
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:method.error=25"
+bin/qmx check src/ --rule-opt="complexity.cyclomatic:callable.warning=15"
+bin/qmx check src/ --rule-opt="complexity.cyclomatic:callable.error=25"
 bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.max_warning=40"
 bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
 ```
@@ -163,7 +163,7 @@ bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
 <!-- llms:skip-begin -->
 ### Пороговые значения
 
-**Уровень метода** (включён по умолчанию):
+**Уровень вызываемого объекта (Callable)** (включён по умолчанию):
 
 | Уровень | Порог | Серьёзность |
 | ------- | ----- | ----------- |
@@ -218,7 +218,7 @@ function calculate(array $items): float  // когнитивная сложно�
 # qmx.yaml
 rules:
   complexity.cognitive:
-    method:
+    callable:
       warning: 20
       error: 40
     class:
@@ -230,13 +230,13 @@ rules:
 ```yaml
 rules:
   complexity.cognitive:
-    method:
+    callable:
       threshold: 20   # warning=20, error=20
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="complexity.cognitive:method.warning=20"
-bin/qmx check src/ --rule-opt="complexity.cognitive:method.error=40"
+bin/qmx check src/ --rule-opt="complexity.cognitive:callable.warning=20"
+bin/qmx check src/ --rule-opt="complexity.cognitive:callable.error=40"
 ```
 
 ---
@@ -270,7 +270,7 @@ NPath-сложность считает общее количество **уни
 <!-- llms:skip-begin -->
 ### Пороговые значения
 
-**Уровень метода** (включён по умолчанию):
+**Уровень вызываемого объекта (Callable)** (включён по умолчанию):
 
 | Уровень | Порог   | Серьёзность |
 | ------- | ------- | ----------- |
@@ -342,7 +342,7 @@ NPath(match) = NPath(subject) + sum(NPath(arm conditions) + max(1, NPath(arm bod
 # qmx.yaml
 rules:
   complexity.npath:
-    method:
+    callable:
       warning: 300
       error: 2000
     class:
@@ -354,12 +354,12 @@ rules:
 ```yaml
 rules:
   complexity.npath:
-    method:
+    callable:
       threshold: 500   # warning=500, error=500
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="complexity.npath:method.warning=300"
+bin/qmx check src/ --rule-opt="complexity.npath:callable.warning=300"
 bin/qmx check src/ --rule-opt="complexity.npath:class.enabled=true"
 ```
 

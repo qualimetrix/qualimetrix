@@ -18,7 +18,7 @@ final class RuleNameValidatorTest extends TestCase
     public function exactMatch_noException(): void
     {
         RuleNameValidator::validateRuleNames(
-            ['rules' => ['complexity.cyclomatic' => ['method' => ['warning' => 10]]]],
+            ['rules' => ['complexity.cyclomatic' => ['callable' => ['warning' => 10]]]],
             'test.yaml',
             $this->createProvider(['complexity.cyclomatic']),
             '/path/to/test.yaml',
@@ -31,7 +31,7 @@ final class RuleNameValidatorTest extends TestCase
     public function forwardPrefixMatch_noException(): void
     {
         RuleNameValidator::validateRuleNames(
-            ['rules' => ['complexity' => ['cyclomatic' => ['method' => ['warning' => 10]]]]],
+            ['rules' => ['complexity' => ['cyclomatic' => ['callable' => ['warning' => 10]]]]],
             'test.yaml',
             $this->createProvider(['complexity.cyclomatic', 'complexity.cognitive']),
             '/path/to/test.yaml',
@@ -44,7 +44,7 @@ final class RuleNameValidatorTest extends TestCase
     public function reversePrefixMatch_noException(): void
     {
         RuleNameValidator::validateRuleNames(
-            ['rules' => ['complexity.cyclomatic.method' => ['warning' => 10]]],
+            ['rules' => ['complexity.cyclomatic.callable' => ['warning' => 10]]],
             'test.yaml',
             $this->createProvider(['complexity.cyclomatic']),
             '/path/to/test.yaml',

@@ -14,6 +14,9 @@ use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
@@ -74,7 +77,7 @@ final class LcomCollector extends AbstractCollector implements ClassMetricsProvi
     /**
      * @return list<ClassWithMetrics>
      */
-    public function getClassesWithMetrics(): array
+    public function getClassesWithMetrics(RelativePath $file): array
     {
         \assert($this->visitor instanceof LcomVisitor);
 
@@ -86,8 +89,7 @@ final class LcomCollector extends AbstractCollector implements ClassMetricsProvi
             $bag = (new MetricBag())->with(MetricName::STRUCTURE_LCOM, $lcom);
 
             $result[] = new ClassWithMetrics(
-                namespace: $classData->namespace,
-                class: $classData->className,
+                declarationPath: new DeclarationPath(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos),
                 line: $classData->line,
                 metrics: $bag,
             );

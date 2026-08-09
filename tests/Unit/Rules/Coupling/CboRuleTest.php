@@ -21,6 +21,8 @@ use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -605,9 +607,9 @@ final class CboRuleTest extends TestCase
         $options = new CboOptions();
 
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('Level method is not supported by CboRule');
+        self::expectExceptionMessage('Level callable is not supported by CboRule');
 
-        $options->forLevel(RuleLevel::Method);
+        $options->forLevel(RuleLevel::Callable);
     }
 
     #[Test]
@@ -686,16 +688,16 @@ final class CboRuleTest extends TestCase
 
         // Create mock dependencies — 7 unique targets with varying occurrence counts
         $deps = [
-            new Dependency($symbolPath, SymbolPath::forClass('App\Repository', 'UserRepository'), DependencyType::TypeHint, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Repository', 'UserRepository'), DependencyType::New_, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Repository', 'UserRepository'), DependencyType::TypeHint, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Service', 'Logger'), DependencyType::TypeHint, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Service', 'Logger'), DependencyType::TypeHint, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Dto', 'UserDto'), DependencyType::New_, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Event', 'UserCreated'), DependencyType::New_, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Contract', 'EventDispatcher'), DependencyType::TypeHint, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Validator', 'EmailValidator'), DependencyType::New_, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Cache', 'CacheManager'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Repository', 'UserRepository'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Repository', 'UserRepository'), DependencyType::New_, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Repository', 'UserRepository'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Service', 'Logger'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Service', 'Logger'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Dto', 'UserDto'), DependencyType::New_, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Event', 'UserCreated'), DependencyType::New_, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Contract', 'EventDispatcher'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Validator', 'EmailValidator'), DependencyType::New_, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Cache', 'CacheManager'), DependencyType::TypeHint, $location),
         ];
 
         $graph = self::createStub(DependencyGraphInterface::class);
@@ -738,7 +740,7 @@ final class CboRuleTest extends TestCase
         $deps = [];
         $classes = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf'];
         foreach ($classes as $className) {
-            $deps[] = new Dependency(
+            $deps[] = $this->dependency(
                 $symbolPath,
                 SymbolPath::forClass('App\Deps', $className),
                 DependencyType::TypeHint,
@@ -884,7 +886,7 @@ final class CboRuleTest extends TestCase
 
         // Dependency on a global class (no namespace)
         $deps = [
-            new Dependency($symbolPath, SymbolPath::forClass('', 'stdClass'), DependencyType::New_, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('', 'stdClass'), DependencyType::New_, $location),
         ];
 
         $graph = self::createStub(DependencyGraphInterface::class);
@@ -1161,5 +1163,15 @@ final class CboRuleTest extends TestCase
         ]);
 
         self::assertSame('all', $options->class->scope);
+    }
+
+    private function dependency(SymbolPath $source, SymbolPath $target, DependencyType $type, Location $location): Dependency
+    {
+        return new Dependency(
+            new DeclarationPath($source, $location->file ?? RelativePath::fromString('test.php'), 0),
+            new LogicalClassPath($target),
+            $type,
+            $location,
+        );
     }
 }

@@ -11,7 +11,7 @@ use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 
 /**
- * Aggregates metrics from lower levels (Method, File) to higher levels (Class, Namespace, Project).
+ * Aggregates metrics from lower levels (Callable, File) to higher levels (Class, Namespace, Project).
  *
  * Uses MetricDefinitions to determine which aggregation strategies to apply.
  * No hardcoded metric names — fully generic.
@@ -23,10 +23,10 @@ final class MetricAggregator
      */
     public function __construct(private readonly array $definitions) {}
 
-    private function hasMethodLevelDefinitions(): bool
+    private function hasCallableLevelDefinitions(): bool
     {
         foreach ($this->definitions as $def) {
-            if ($def->collectedAt === SymbolLevel::Method && $def->hasAggregationsForLevel(SymbolLevel::Class_)) {
+            if ($def->collectedAt === SymbolLevel::Callable && $def->hasAggregationsForLevel(SymbolLevel::Class_)) {
                 return true;
             }
         }
@@ -47,12 +47,12 @@ final class MetricAggregator
 
         $profiler = ProfilerHolder::get();
 
-        // Skip method→class phase when no method-level definitions exist
+        // Skip callable→class phase when no callable-level definitions exist
         // (e.g., during re-aggregation of global collector metrics).
-        if ($this->hasMethodLevelDefinitions()) {
-            $profiler->start('aggregation.methods_to_classes', 'aggregation');
-            (new MethodToClassAggregator())->aggregate($repository, $this->definitions);
-            $profiler->stop('aggregation.methods_to_classes');
+        if ($this->hasCallableLevelDefinitions()) {
+            $profiler->start('aggregation.callables_to_classes', 'aggregation');
+            (new CallableToClassAggregator())->aggregate($repository, $this->definitions);
+            $profiler->stop('aggregation.callables_to_classes');
         }
 
         // Class→namespace aggregation: runs even during re-aggregation because

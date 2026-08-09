@@ -349,8 +349,8 @@ one channel agree on everything else.
   "generated": "2026-08-05T12:00:00+03:00",
   "scope": ["src"],
   "entries": {
-    "method:App\\OrderService::calculate": [
-      { "channel": "complexity.cyclomatic#complexity.cyclomatic.method",
+    "callable:App\\OrderService::calculate": [
+      { "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
         "magnitudes": [25], "count": 1 }
     ],
     "file:src/Legacy/dup.php": [

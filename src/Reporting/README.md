@@ -384,7 +384,7 @@ Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includ
   "health": { "complexity": { "score": 65, "label": "Fair", "threshold": { "warning": 50, "error": 25 }, "decomposition": [...] } },
   "worstNamespaces": [{ "symbolPath": "App\\Payment", "healthOverall": 31, "reason": "low cohesion, high complexity" }],
   "worstClasses": [{ "symbolPath": "App\\Payment\\PaymentService", "file": "src/...", "healthOverall": 28, "metrics": {...} }],
-  "violations": [{ "file": "src/...", "line": 42, "symbol": "...", "namespace": "App\\Service", "rule": "complexity.cyclomatic", "code": "complexity.cyclomatic.method", "severity": "error", "message": "...", "metricValue": 15, "threshold": 10, "acceptedLevel": null }]
+  "violations": [{ "file": "src/...", "line": 42, "symbol": "...", "namespace": "App\\Service", "rule": "complexity.cyclomatic", "code": "complexity.cyclomatic.callable", "severity": "error", "message": "...", "metricValue": 15, "threshold": 10, "acceptedLevel": null }]
 }
 ```
 

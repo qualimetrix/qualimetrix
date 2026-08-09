@@ -13,7 +13,10 @@ use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\AbstractCollector;
 use ReflectionClass;
 use ReflectionException;
@@ -81,7 +84,7 @@ final class InheritanceDepthCollector extends AbstractCollector implements Class
     /**
      * @return list<ClassWithMetrics>
      */
-    public function getClassesWithMetrics(): array
+    public function getClassesWithMetrics(RelativePath $file): array
     {
         \assert($this->visitor instanceof InheritanceDepthVisitor);
 
@@ -97,8 +100,7 @@ final class InheritanceDepthCollector extends AbstractCollector implements Class
             // NocCollector will use that information for NOC calculation
 
             $result[] = new ClassWithMetrics(
-                namespace: $info->namespace,
-                class: $info->className,
+                declarationPath: new DeclarationPath(SymbolPath::forClass($info->namespace ?? '', $info->className), $file, $info->startFilePos),
                 line: $info->line,
                 metrics: $bag,
             );

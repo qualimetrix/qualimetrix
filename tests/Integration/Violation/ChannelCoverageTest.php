@@ -143,7 +143,7 @@ final class ChannelCoverageTest extends TestCase
             ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
         $repository->method('get')->willReturn($metricBag);
 
-        $violations = $rule->analyzeLevel(RuleLevel::Method, new AnalysisContext($repository));
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, new AnalysisContext($repository));
         self::assertCount(1, $violations);
 
         self::assertDeclared($violations[0]->channel());

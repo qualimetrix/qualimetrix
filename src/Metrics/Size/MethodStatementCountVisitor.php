@@ -6,11 +6,14 @@ namespace Qualimetrix\Metrics\Size;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr;
+use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
 use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
@@ -32,7 +35,7 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
 {
     use VisitorMethodTrackingTrait;
 
-    /** @var array<string, array{namespace: ?string, class: ?string, method: string, line: int, count: int}> */
+    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int, count: int}> */
     private array $methodInfos = [];
 
     /** @var list<string> */
@@ -40,8 +43,12 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
 
     private ?string $currentNamespace = null;
     private ?string $currentClass = null;
+    private ?int $currentClassStartFilePos = null;
     private int $closureCounter = 0;
-    private int $anonymousClassDepth = 0;
+    private ?string $currentProperty = null;
+
+    /** @var list<array{?string, ?int}> */
+    private array $classContextStack = [];
 
     public function reset(): void
     {
@@ -49,28 +56,42 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
         $this->methodStack = [];
         $this->currentNamespace = null;
         $this->currentClass = null;
+        $this->currentClassStartFilePos = null;
         $this->closureCounter = 0;
-        $this->anonymousClassDepth = 0;
+        $this->currentProperty = null;
+        $this->resetCallableTraversalKeys();
+        $this->classContextStack = [];
     }
 
     /**
-     * @return list<MethodWithMetrics>
+     * @return list<CallableWithMetrics>
      */
-    public function getMethodsWithMetrics(): array
+    public function getCallablesWithMetrics(RelativePath $file): array
     {
         $result = [];
 
-        foreach ($this->methodInfos as $info) {
-            $result[] = new MethodWithMetrics(
-                namespace: $info['namespace'],
-                class: $info['class'],
-                method: $info['method'],
-                line: $info['line'],
-                metrics: (new MetricBag())->with(MetricName::SIZE_METHOD_STATEMENT_COUNT, $info['count']),
+        $ordinals = $this->callableCollisionOrdinals($this->methodInfos);
+        foreach ($this->methodInfos as $key => $info) {
+            $result[] = $this->createCallableWithMetrics(
+                $info,
+                $file,
+                (new MetricBag())->with(MetricName::SIZE_METHOD_STATEMENT_COUNT, $info['count']),
+                $ordinals[$key],
             );
         }
 
         return $result;
+    }
+
+    /** @return array<string, int> */
+    public function getStatementCounts(): array
+    {
+        $counts = [];
+        foreach ($this->methodInfos as $info) {
+            $counts[$info['logicalFqn']] = $info['count'];
+        }
+
+        return $counts;
     }
 
     public function enterNode(Node $node): ?int
@@ -79,53 +100,77 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
             $this->currentNamespace = $node->name?->toString() ?? '';
         }
 
+        if ($this->isClassLikeNode($node)) {
+            $this->classContextStack[] = [$this->currentClass, $this->currentClassStartFilePos];
+        }
+
         if ($node instanceof Stmt\Class_) {
             if ($node->name === null) {
-                ++$this->anonymousClassDepth;
+                $this->currentClass = $this->buildAnonymousClassName($node->getStartFilePos());
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             } else {
                 $this->currentClass = $node->name->toString();
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             }
         } elseif ($this->isClassLikeNode($node)) {
             $className = $this->extractClassLikeName($node);
             if ($className !== null) {
                 $this->currentClass = $className;
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             }
         }
 
         if ($node instanceof Stmt\ClassMethod) {
-            if ($this->anonymousClassDepth === 0) {
-                $this->startMethod(
-                    $this->buildMethodFqn($node->name->toString()),
-                    $node->name->toString(),
-                    $node->getStartLine(),
-                );
-            }
+            $this->startMethod(
+                $this->buildMethodFqn($node->name->toString()),
+                $node->name->toString(),
+                $node->getStartFilePos(),
+                CallableKind::Method,
+                null,
+            );
+
+            return null;
+        }
+
+        if ($node instanceof Stmt\Property && $this->currentClass !== null && \count($node->props) === 1) {
+            $this->currentProperty = $node->props[0]->name->toString();
+        }
+
+        if ($node instanceof PropertyHook && $this->currentClass !== null && $this->currentProperty !== null) {
+            $name = $this->currentProperty . '::' . $node->name->toString();
+            $this->startMethod(
+                $this->buildMethodFqn($name),
+                $name,
+                $node->getStartFilePos(),
+                CallableKind::PropertyHook,
+                null,
+            );
 
             return null;
         }
 
         if ($node instanceof Stmt\Function_) {
-            if ($this->anonymousClassDepth > 0) {
-                return null;
-            }
-
             $this->startMethod(
                 $this->buildFunctionFqn($node->name->toString()),
                 $node->name->toString(),
-                $node->getStartLine(),
+                $node->getStartFilePos(),
+                CallableKind::Function,
+                null,
             );
 
             return null;
         }
 
         if ($node instanceof Expr\Closure || $node instanceof Expr\ArrowFunction) {
-            if ($this->anonymousClassDepth > 0) {
-                return null;
-            }
-
             ++$this->closureCounter;
             $name = '{closure#' . $this->closureCounter . '}';
-            $this->startMethod($this->buildClosureFqn(), $name, $node->getStartLine());
+            $this->startMethod(
+                $this->buildClosureFqn(),
+                $name,
+                $node->getStartFilePos(),
+                CallableKind::AnonymousCallable,
+                $node instanceof Expr\Closure ? 'closure' : 'arrow',
+            );
 
             if ($node instanceof Expr\ArrowFunction) {
                 $this->incrementCurrentMethod();
@@ -134,7 +179,7 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
             return null;
         }
 
-        if ($this->anonymousClassDepth === 0 && $this->isCountedStatement($node)) {
+        if ($this->isCountedStatement($node)) {
             $this->incrementCurrentMethod();
         }
 
@@ -144,37 +189,39 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
     public function leaveNode(Node $node): ?int
     {
         if ($node instanceof Stmt\ClassMethod) {
-            if ($this->anonymousClassDepth === 0) {
+            array_pop($this->methodStack);
+
+            return null;
+        }
+
+        if ($node instanceof PropertyHook) {
+            if ($this->currentClass !== null && $this->currentProperty !== null) {
                 array_pop($this->methodStack);
             }
 
             return null;
         }
 
+        if ($node instanceof Stmt\Property) {
+            $this->currentProperty = null;
+        }
+
         if ($node instanceof Stmt\Function_) {
-            if ($this->anonymousClassDepth === 0) {
-                array_pop($this->methodStack);
-            }
+            array_pop($this->methodStack);
 
             return null;
         }
 
         if ($node instanceof Expr\Closure || $node instanceof Expr\ArrowFunction) {
-            if ($this->anonymousClassDepth === 0) {
-                array_pop($this->methodStack);
-            }
+            array_pop($this->methodStack);
 
             return null;
         }
 
         if ($node instanceof Stmt\Class_) {
-            if ($node->name === null) {
-                --$this->anonymousClassDepth;
-            } else {
-                $this->currentClass = null;
-            }
+            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
         } elseif ($this->isClassLikeNode($node)) {
-            $this->currentClass = null;
+            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
         }
 
         if ($node instanceof Stmt\Namespace_) {
@@ -184,13 +231,24 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
         return null;
     }
 
-    private function startMethod(string $fqn, string $method, int $line): void
-    {
+    private function startMethod(
+        string $fqn,
+        string $method,
+        int $startFilePos,
+        CallableKind $kind,
+        ?string $anonymousSyntax,
+    ): void {
+        $logicalFqn = $fqn;
+        $fqn = $this->createCallableTraversalKey($logicalFqn, $startFilePos);
         $this->methodInfos[$fqn] = [
+            'logicalFqn' => $logicalFqn,
             'namespace' => $this->currentNamespace,
             'class' => $this->currentClass,
             'method' => $method,
-            'line' => $line,
+            'startFilePos' => $startFilePos,
+            'kind' => $kind,
+            'anonymousSyntax' => $anonymousSyntax,
+            'classStartFilePos' => $this->currentClassStartFilePos,
             'count' => 0,
         ];
         $this->methodStack[] = $fqn;

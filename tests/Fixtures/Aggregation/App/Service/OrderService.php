@@ -9,7 +9,7 @@ use InvalidArgumentException;
 /**
  * OrderService - fixture for testing metric aggregation
  *
- * Expected method-level metrics:
+ * Expected callable-level metrics:
  * - validate():  CCN=1 (no branches, just return)
  * - process():   CCN=8 (1 + 1 if + 1 foreach + 2 if inside foreach + 1 if + 1 foreach + 1 if)
  *

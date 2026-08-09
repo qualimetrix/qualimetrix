@@ -9,8 +9,12 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Aggregator\AggregationHelper;
 use Qualimetrix\Analysis\Aggregator\MetricAggregator;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
@@ -28,7 +32,7 @@ final class WmcIntegrationTest extends TestCase
     #[Test]
     public function itMakesWmcMetricAvailableAfterAggregation(): void
     {
-        // Setup repository with method-level CCN metrics
+        // Setup repository with callable-level CCN metrics
         $repository = new InMemoryMetricRepository();
 
         $classPath = SymbolPath::forClass('App\Service', 'OrderProcessor');
@@ -37,9 +41,9 @@ final class WmcIntegrationTest extends TestCase
         $method3Path = SymbolPath::forMethod('App\Service', 'OrderProcessor', 'save');
 
         // Add method metrics: CCN values
-        $repository->add($method1Path, (new MetricBag())->with('ccn', 5), RelativePath::fromString('test.php'), 10);
-        $repository->add($method2Path, (new MetricBag())->with('ccn', 3), RelativePath::fromString('test.php'), 20);
-        $repository->add($method3Path, (new MetricBag())->with('ccn', 2), RelativePath::fromString('test.php'), 30);
+        $this->addMethod($repository, $method1Path, $classPath, 5, 100);
+        $this->addMethod($repository, $method2Path, $classPath, 3, 200);
+        $this->addMethod($repository, $method3Path, $classPath, 2, 300);
 
         // Create aggregator with CCN collector
         $collector = new CyclomaticComplexityCollector();
@@ -67,8 +71,8 @@ final class WmcIntegrationTest extends TestCase
         $method2Path = SymbolPath::forMethod('App', 'TestClass', 'method2');
 
         // Add method metrics
-        $repository->add($method1Path, (new MetricBag())->with('ccn', 7), RelativePath::fromString('test.php'), 10);
-        $repository->add($method2Path, (new MetricBag())->with('ccn', 4), RelativePath::fromString('test.php'), 20);
+        $this->addMethod($repository, $method1Path, $classPath, 7, 100);
+        $this->addMethod($repository, $method2Path, $classPath, 4, 200);
 
         // Aggregate
         $collector = new CyclomaticComplexityCollector();
@@ -114,27 +118,33 @@ final class WmcIntegrationTest extends TestCase
 
         // Class 1
         $class1Path = SymbolPath::forClass('App', 'Class1');
-        $repository->add(
-            SymbolPath::forMethod('App', 'Class1', 'method1'),
+        $repository->addCallable(new CallableWithMetrics(
+            new DeclarationPath(SymbolPath::forMethod('App', 'Class1', 'method1'), RelativePath::fromString('test1.php'), 100),
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath($class1Path),
             (new MetricBag())->with('ccn', 10),
-            RelativePath::fromString('test1.php'),
-            10,
-        );
+        ));
 
         // Class 2
         $class2Path = SymbolPath::forClass('App', 'Class2');
-        $repository->add(
-            SymbolPath::forMethod('App', 'Class2', 'methodA'),
+        $repository->addCallable(new CallableWithMetrics(
+            new DeclarationPath(SymbolPath::forMethod('App', 'Class2', 'methodA'), RelativePath::fromString('test2.php'), 100),
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath($class2Path),
             (new MetricBag())->with('ccn', 15),
-            RelativePath::fromString('test2.php'),
-            10,
-        );
-        $repository->add(
-            SymbolPath::forMethod('App', 'Class2', 'methodB'),
+        ));
+        $repository->addCallable(new CallableWithMetrics(
+            new DeclarationPath(SymbolPath::forMethod('App', 'Class2', 'methodB'), RelativePath::fromString('test2.php'), 200),
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath($class2Path),
             (new MetricBag())->with('ccn', 5),
-            RelativePath::fromString('test2.php'),
-            20,
-        );
+        ));
 
         // Aggregate
         $collector = new CyclomaticComplexityCollector();
@@ -147,5 +157,17 @@ final class WmcIntegrationTest extends TestCase
 
         self::assertSame(10, (int) $class1Bag->get('wmc'));
         self::assertSame(20, (int) $class2Bag->get('wmc')); // 15 + 5 = 20
+    }
+
+    private function addMethod(InMemoryMetricRepository $repository, SymbolPath $method, SymbolPath $class, int $ccn, int $startFilePos): void
+    {
+        $repository->addCallable(new CallableWithMetrics(
+            new DeclarationPath($method, RelativePath::fromString('test.php'), $startFilePos),
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath($class),
+            (new MetricBag())->with('ccn', $ccn),
+        ));
     }
 }

@@ -728,6 +728,107 @@ PHP;
     }
 
     #[Test]
+    public function itCountsPropertyHooksAndTheirLexicallyNestedCallableCalls(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Profile
+{
+    public string $name {
+        get => $this->repository->load();
+        set (string $value) {
+            $callback = static fn() => $this->normalizer->normalize($value);
+            $callback();
+        }
+    }
+}
+PHP;
+
+        $visitor = new RfcVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $data = $visitor->getClassesData()['Profile'];
+
+        // Two hooks are own callables; load() and normalize() are external calls.
+        self::assertSame(4, $data->getRfc());
+        self::assertSame(2, $data->getOwnMethodsCount());
+        self::assertSame(2, $data->getExternalMethodsCount());
+    }
+
+    #[Test]
+    public function itCountsPromotedPropertyHooks(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Profile
+{
+    public function __construct(
+        public string $name {
+            set (string $value) => $this->normalizer->normalize($value);
+        },
+    ) {}
+}
+PHP;
+
+        $visitor = new RfcVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $data = $visitor->getClassesData()['Profile'];
+
+        self::assertSame(3, $data->getRfc());
+        self::assertSame(2, $data->getOwnMethodsCount());
+        self::assertSame(1, $data->getExternalMethodsCount());
+    }
+
+    #[Test]
+    public function itDoesNotTreatCapturesOrCloneWithAsRfcExecution(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Captures
+{
+    public function __construct(public mixed $callback = prepare(...))
+    {
+    }
+
+    public function capture(object $service): void
+    {
+        external(...);
+        $service->run(...);
+        Factory::build(...);
+        clone($service, ['source' => $service]);
+    }
+}
+PHP;
+
+        $visitor = new RfcVisitor();
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $data = $visitor->getClassesData()['Captures'];
+
+        // M = 2; first-class callable captures and clone-with create values but
+        // do not invoke external RFC response targets.
+        self::assertSame(2, $data->getRfc());
+        self::assertSame(2, $data->getOwnMethodsCount());
+        self::assertSame(0, $data->getExternalMethodsCount());
+    }
+
+    #[Test]
     public function itClearsStateOnReset(): void
     {
         $visitor = new RfcVisitor();

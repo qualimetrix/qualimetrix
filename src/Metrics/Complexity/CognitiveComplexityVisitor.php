@@ -17,6 +17,7 @@ use PhpParser\Node\Expr\Match_;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Ternary;
+use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt\Break_;
 use PhpParser\Node\Stmt\Catch_;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -29,11 +30,14 @@ use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\Goto_;
 use PhpParser\Node\Stmt\If_;
+use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\Switch_;
 use PhpParser\Node\Stmt\While_;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
 use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
@@ -69,7 +73,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
     /** @var array<string, list<array{type: string, line: int, points: int}>> FQN => increments */
     private array $increments = [];
 
-    /** @var array<string, array{namespace: ?string, class: ?string, method: string, line: int}> FQN => method info */
+    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
     private array $methodInfos = [];
 
     /** @var list<array{fqn: string, depth: int, nestingLevel: int, nodeStack: list<Node>}> Stack of nested methods/functions */
@@ -80,10 +84,11 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
 
     private ?string $currentNamespace = null;
     private ?string $currentClass = null;
+    private ?int $currentClassStartFilePos = null;
     private int $closureCounter = 0;
-
-    /** @var int Depth of anonymous class nesting (methods inside anonymous classes are skipped) */
-    private int $anonymousClassDepth = 0;
+    private ?string $currentProperty = null;
+    /** @var list<array{?string, ?int}> */
+    private array $classContextStack = [];
 
     /** @var list<Node> Stack of ancestor nodes for tree-aware logical operator detection */
     private array $nodeStack = [];
@@ -97,8 +102,11 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
         $this->nestingLevel = 0;
         $this->currentNamespace = null;
         $this->currentClass = null;
+        $this->currentClassStartFilePos = null;
         $this->closureCounter = 0;
-        $this->anonymousClassDepth = 0;
+        $this->currentProperty = null;
+        $this->classContextStack = [];
+        $this->resetCallableTraversalKeys();
         $this->nodeStack = [];
     }
 
@@ -107,7 +115,10 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
      */
     public function getComplexities(): array
     {
-        return $this->complexities;
+        /** @var array<string, int> $projected */
+        $projected = $this->projectLogicalMetricMap($this->complexities, $this->methodInfos);
+
+        return $projected;
     }
 
     /**
@@ -117,18 +128,22 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
      */
     public function getIncrements(): array
     {
-        return $this->increments;
+        /** @var array<string, list<array{type: string, line: int, points: int}>> $projected */
+        $projected = $this->projectLogicalMetricMap($this->increments, $this->methodInfos);
+
+        return $projected;
     }
 
     /**
      * Returns structured method metrics for each analyzed method.
      *
-     * @return list<MethodWithMetrics>
+     * @return list<CallableWithMetrics>
      */
-    public function getMethodsWithMetrics(): array
+    public function getCallablesWithMetrics(RelativePath $file): array
     {
         $result = [];
 
+        $ordinals = $this->callableCollisionOrdinals($this->methodInfos);
         foreach ($this->methodInfos as $fqn => $info) {
             $metrics = (new MetricBag())->with('cognitive', $this->complexities[$fqn] ?? 0);
 
@@ -140,13 +155,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
                 ]);
             }
 
-            $result[] = new MethodWithMetrics(
-                namespace: $info['namespace'],
-                class: $info['class'],
-                method: $info['method'],
-                line: $info['line'],
-                metrics: $metrics,
-            );
+            $result[] = $this->createCallableWithMetrics($info, $file, $metrics, $ordinals[$fqn]);
         }
 
         return $result;
@@ -159,29 +168,49 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             $this->currentNamespace = $node->name?->toString() ?? '';
         }
 
+        if ($this->isClassLikeNode($node)) {
+            $this->classContextStack[] = [$this->currentClass, $this->currentClassStartFilePos];
+        }
+
         // Track class-like types (skip anonymous classes)
         if ($node instanceof Node\Stmt\Class_) {
             if ($node->name === null) {
-                // Anonymous class - increment depth to skip methods inside
-                ++$this->anonymousClassDepth;
+                $this->currentClass = $this->buildAnonymousClassName($node->getStartFilePos());
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             } else {
                 // Named class - track it
                 $this->currentClass = $node->name->toString();
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             }
         } elseif ($this->isClassLikeNode($node)) {
             // Interface, Trait, Enum (always named)
             $className = $this->extractClassLikeName($node);
             if ($className !== null) {
                 $this->currentClass = $className;
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             }
         }
 
-        // Start of a method (skip if inside anonymous class)
         if ($node instanceof ClassMethod) {
-            if ($this->anonymousClassDepth === 0) {
-                $fqn = $this->buildMethodFqn($node->name->toString());
-                $this->startMethod($fqn, $node->name->toString(), $node->getStartLine());
-            }
+            $fqn = $this->buildMethodFqn($node->name->toString());
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), CallableKind::Method, null);
+
+            return null;
+        }
+
+        if ($node instanceof Property && $this->currentClass !== null && \count($node->props) === 1) {
+            $this->currentProperty = $node->props[0]->name->toString();
+        }
+
+        if ($node instanceof PropertyHook && $this->currentClass !== null && $this->currentProperty !== null) {
+            $name = $this->currentProperty . '::' . $node->name->toString();
+            $this->startMethod(
+                $this->buildMethodFqn($name),
+                $name,
+                $node->getStartFilePos(),
+                CallableKind::PropertyHook,
+                null,
+            );
 
             return null;
         }
@@ -189,17 +218,12 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
         // Start of a function
         if ($node instanceof Function_) {
             $fqn = $this->buildFunctionFqn($node->name->toString());
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartLine());
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), CallableKind::Function, null);
 
             return null;
         }
 
-        // Start of a closure or arrow function (skip if inside anonymous class)
         if ($node instanceof Closure || $node instanceof ArrowFunction) {
-            if ($this->anonymousClassDepth > 0) {
-                return null;
-            }
-
             // Add +1 structural increment to parent method (SonarSource spec B1: lambdas)
             if ($this->methodStack !== []) {
                 $parentMethod = $this->methodStack[array_key_last($this->methodStack)];
@@ -216,7 +240,13 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
-            $this->startMethod($fqn, $closureName, $node->getStartLine());
+            $this->startMethod(
+                $fqn,
+                $closureName,
+                $node->getStartFilePos(),
+                CallableKind::AnonymousCallable,
+                $node instanceof Closure ? 'closure' : 'arrow',
+            );
 
             return null;
         }
@@ -243,6 +273,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
         // early in enterNode before the push, so they must not be popped here)
         if (!($node instanceof ClassMethod)
             && !($node instanceof Function_)
+            && !($node instanceof PropertyHook)
             && !($node instanceof Closure)
             && !($node instanceof ArrowFunction)
         ) {
@@ -256,12 +287,21 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
 
         // End of method/function
         if ($node instanceof ClassMethod) {
-            // Only end method if we started it (skip if inside anonymous class)
-            if ($this->anonymousClassDepth === 0) {
+            $this->endMethod();
+
+            return null;
+        }
+
+        if ($node instanceof PropertyHook) {
+            if ($this->currentClass !== null && $this->currentProperty !== null) {
                 $this->endMethod();
             }
 
             return null;
+        }
+
+        if ($node instanceof Property) {
+            $this->currentProperty = null;
         }
 
         if ($node instanceof Function_) {
@@ -270,27 +310,17 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
             return null;
         }
 
-        // End of closure/arrow function (skip if inside anonymous class — we didn't start it)
         if ($node instanceof Closure || $node instanceof ArrowFunction) {
-            if ($this->anonymousClassDepth === 0) {
-                $this->endMethod();
-            }
+            $this->endMethod();
 
             return null;
         }
 
         // Exit class-like scope
         if ($node instanceof Node\Stmt\Class_) {
-            if ($node->name === null) {
-                // Anonymous class - decrement depth
-                --$this->anonymousClassDepth;
-            } else {
-                // Named class - reset current class
-                $this->currentClass = null;
-            }
+            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
         } elseif ($this->isClassLikeNode($node)) {
-            // Interface, Trait, Enum
-            $this->currentClass = null;
+            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
         }
 
         // Exit namespace scope
@@ -301,8 +331,15 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
         return null;
     }
 
-    private function startMethod(string $fqn, string $methodName, int $line): void
-    {
+    private function startMethod(
+        string $fqn,
+        string $methodName,
+        int $startFilePos,
+        CallableKind $kind,
+        ?string $anonymousSyntax,
+    ): void {
+        $logicalFqn = $fqn;
+        $fqn = $this->createCallableTraversalKey($logicalFqn, $startFilePos);
         // Save current nesting level and node stack before resetting (for closures/arrow functions inside nested scopes)
         $this->methodStack[] = [
             'fqn' => $fqn,
@@ -316,9 +353,13 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
         // Store method info for later retrieval
         $this->methodInfos[$fqn] = [
             'namespace' => $this->currentNamespace,
+            'logicalFqn' => $logicalFqn,
             'class' => $this->currentClass,
             'method' => $methodName,
-            'line' => $line,
+            'startFilePos' => $startFilePos,
+            'kind' => $kind,
+            'anonymousSyntax' => $anonymousSyntax,
+            'classStartFilePos' => $this->currentClassStartFilePos,
         ];
         // Reset nesting level and node stack for new method
         $this->nestingLevel = 0;
@@ -357,11 +398,6 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
     private function countComplexity(Node $node): void
     {
         if ($this->methodStack === []) {
-            return;
-        }
-
-        // Don't count complexity inside anonymous classes
-        if ($this->anonymousClassDepth > 0) {
             return;
         }
 

@@ -9,6 +9,9 @@ use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
 use Qualimetrix\Core\Metric\ClassWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
@@ -73,7 +76,7 @@ final class UnusedPrivateCollector extends AbstractCollector implements ClassMet
     /**
      * @return list<ClassWithMetrics>
      */
-    public function getClassesWithMetrics(): array
+    public function getClassesWithMetrics(RelativePath $file): array
     {
         \assert($this->visitor instanceof UnusedPrivateVisitor);
 
@@ -83,8 +86,7 @@ final class UnusedPrivateCollector extends AbstractCollector implements ClassMet
             $bag = $this->buildClassMetricBag($classData);
 
             $result[] = new ClassWithMetrics(
-                namespace: $classData->namespace,
-                class: $classData->className,
+                declarationPath: new DeclarationPath(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos),
                 line: $classData->line,
                 metrics: $bag,
             );

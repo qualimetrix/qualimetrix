@@ -7,12 +7,13 @@ namespace Qualimetrix\Metrics\Complexity;
 use Override;
 use PhpParser\Node;
 use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableMetricsProviderInterface;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
@@ -22,7 +23,7 @@ use SplFileInfo;
  * Metric format: ccn:{FQN}
  * Example: ccn:App\Service\UserService::calculate
  */
-final class CyclomaticComplexityCollector extends AbstractCollector implements MethodMetricsProviderInterface
+final class CyclomaticComplexityCollector extends AbstractCollector implements CallableMetricsProviderInterface
 {
     private const NAME = 'cyclomatic-complexity';
 
@@ -61,13 +62,13 @@ final class CyclomaticComplexityCollector extends AbstractCollector implements M
     }
 
     /**
-     * @return list<MethodWithMetrics>
+     * @return list<CallableWithMetrics>
      */
-    public function getMethodsWithMetrics(): array
+    public function getCallablesWithMetrics(RelativePath $file): array
     {
         \assert($this->visitor instanceof CyclomaticComplexityVisitor);
 
-        return $this->visitor->getMethodsWithMetrics();
+        return $this->visitor->getCallablesWithMetrics($file);
     }
 
     /**
@@ -79,7 +80,7 @@ final class CyclomaticComplexityCollector extends AbstractCollector implements M
         return [
             new MetricDefinition(
                 name: MetricName::COMPLEXITY_CCN,
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: [
                     SymbolLevel::Class_->value => [
                         AggregationStrategy::Sum,

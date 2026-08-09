@@ -41,7 +41,7 @@ use Throwable;
  * configured `0`. Two shapes are read, and both are conventions the codebase
  * actually holds rather than assumptions about it:
  *
- * - a hierarchical rule's channel names its level (`…#complexity.cyclomatic.method`),
+ * - a hierarchical rule's channel names its level (`…#complexity.cyclomatic.callable`),
  *   so the level's own options object is asked;
  * - a multi-axis rule's channel names its axis (`…#design.type-coverage.return`),
  *   so a property named after that axis is preferred (`returnWarning`).

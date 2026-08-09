@@ -78,7 +78,7 @@ final class ComplexityRuleTest extends TestCase
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
-        self::assertSame([RuleLevel::Method, RuleLevel::Class_], $rule->getSupportedLevels());
+        self::assertSame([RuleLevel::Callable, RuleLevel::Class_], $rule->getSupportedLevels());
     }
 
     // Method-level tests
@@ -88,7 +88,7 @@ final class ComplexityRuleTest extends TestCase
     {
         $rule = new ComplexityRule(
             new ComplexityOptions(
-                method: new MethodComplexityOptions(enabled: false),
+                callable: new MethodComplexityOptions(enabled: false),
             ),
         );
 
@@ -97,7 +97,7 @@ final class ComplexityRuleTest extends TestCase
 
         $context = new AnalysisContext($repository);
 
-        self::assertSame([], $rule->analyzeLevel(RuleLevel::Method, $context));
+        self::assertSame([], $rule->analyzeLevel(RuleLevel::Callable, $context));
     }
 
     #[Test]
@@ -111,7 +111,7 @@ final class ComplexityRuleTest extends TestCase
 
         $context = new AnalysisContext($repository);
 
-        self::assertSame([], $rule->analyzeLevel(RuleLevel::Method, $context));
+        self::assertSame([], $rule->analyzeLevel(RuleLevel::Callable, $context));
     }
 
     #[Test]
@@ -131,14 +131,14 @@ final class ComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
         self::assertSame('Cyclomatic complexity is 15, exceeds threshold of 10. Consider extracting methods or simplifying conditions', $violations[0]->message);
         self::assertSame(15, $violations[0]->metricValue);
         self::assertSame('complexity.cyclomatic', $violations[0]->ruleName);
-        self::assertSame(RuleLevel::Method, $violations[0]->level);
+        self::assertSame(RuleLevel::Callable, $violations[0]->level);
         // Both CCN and cognitive are high — standard recommendation
         self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $violations[0]->recommendation);
     }
@@ -161,7 +161,7 @@ final class ComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
@@ -189,7 +189,7 @@ final class ComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $violations[0]->recommendation);
@@ -213,7 +213,7 @@ final class ComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame('Cyclomatic complexity: 15 (threshold: 10) — too many code paths', $violations[0]->recommendation);
@@ -236,7 +236,7 @@ final class ComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
@@ -346,7 +346,7 @@ final class ComplexityRuleTest extends TestCase
         $violations = $rule->analyze($context);
 
         self::assertCount(2, $violations);
-        self::assertSame(RuleLevel::Method, $violations[0]->level);
+        self::assertSame(RuleLevel::Callable, $violations[0]->level);
         self::assertSame(RuleLevel::Class_, $violations[1]->level);
     }
 
@@ -394,7 +394,7 @@ final class ComplexityRuleTest extends TestCase
     public function itComplexityOptionsFromHierarchicalArray(): void
     {
         $options = ComplexityOptions::fromArray([
-            'method' => [
+            'callable' => [
                 'warning' => 15,
                 'error' => 25,
             ],
@@ -405,8 +405,8 @@ final class ComplexityRuleTest extends TestCase
         ]);
 
         self::assertTrue($options->isEnabled());
-        self::assertTrue($options->method->isEnabled());
-        self::assertSame(15, $options->method->warning);
+        self::assertTrue($options->callable->isEnabled());
+        self::assertSame(15, $options->callable->warning);
         self::assertTrue($options->class->isEnabled());
         self::assertSame(40, $options->class->maxWarning);
     }
@@ -421,9 +421,9 @@ final class ComplexityRuleTest extends TestCase
         ]);
 
         self::assertTrue($options->isEnabled());
-        self::assertTrue($options->method->isEnabled());
-        self::assertSame(12, $options->method->warning);
-        self::assertSame(25, $options->method->error);
+        self::assertTrue($options->callable->isEnabled());
+        self::assertSame(12, $options->callable->warning);
+        self::assertSame(25, $options->callable->error);
         // Legacy format disables class level
         self::assertFalse($options->class->isEnabled());
     }
@@ -433,7 +433,7 @@ final class ComplexityRuleTest extends TestCase
     {
         $options = new ComplexityOptions();
 
-        self::assertSame($options->method, $options->forLevel(RuleLevel::Method));
+        self::assertSame($options->callable, $options->forLevel(RuleLevel::Callable));
         self::assertSame($options->class, $options->forLevel(RuleLevel::Class_));
     }
 
@@ -441,11 +441,11 @@ final class ComplexityRuleTest extends TestCase
     public function itComplexityOptionsIsLevelEnabled(): void
     {
         $options = new ComplexityOptions(
-            method: new MethodComplexityOptions(enabled: true),
+            callable: new MethodComplexityOptions(enabled: true),
             class: new ClassComplexityOptions(enabled: false),
         );
 
-        self::assertTrue($options->isLevelEnabled(RuleLevel::Method));
+        self::assertTrue($options->isLevelEnabled(RuleLevel::Callable));
         self::assertFalse($options->isLevelEnabled(RuleLevel::Class_));
     }
 
@@ -459,7 +459,7 @@ final class ComplexityRuleTest extends TestCase
     ): void {
         $rule = new ComplexityRule(
             new ComplexityOptions(
-                method: new MethodComplexityOptions(
+                callable: new MethodComplexityOptions(
                     warning: $warning,
                     error: $error,
                 ),
@@ -478,7 +478,7 @@ final class ComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         if ($expectedSeverity === null) {
             self::assertCount(0, $violations);

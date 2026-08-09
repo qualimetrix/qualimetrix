@@ -123,7 +123,7 @@ rules:
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       warning: 15
       error: 25
 ```
@@ -137,7 +137,7 @@ rules:
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       threshold: 15    # warning=15 и error=15 → все нарушения становятся ошибками
 
   size.method-count:
@@ -164,7 +164,7 @@ rules:
 bin/qmx check src/ --rule-opt=size.method-count:threshold=25
 ```
 
-То же самое работает и в обратную сторону (`threshold` из нижнего слоя перекрывается парой `warning`/`error` из более приоритетного), а также для составных правил — на том уровне вложенности, где заданы ключи (например, `method:`/`class:` у `complexity.cyclomatic`).
+То же самое работает и в обратную сторону (`threshold` из нижнего слоя перекрывается парой `warning`/`error` из более приоритетного), а также для составных правил — на том уровне вложенности, где заданы ключи (например, `callable:`/`class:` у `complexity.cyclomatic`).
 
 `coupling.cbo` и `coupling.instability` тоже принимают голый `threshold` на своём верхнем уровне, но с другим эффектом, чем у `complexity.cyclomatic`: поскольку их дефолты для `class`/`namespace` совпадают, `threshold` на верхнем уровне применяется РАВНОМЕРНО к ОБОИМ уровням сразу, а не только к более детальному:
 
@@ -188,7 +188,7 @@ rules:
     exclude_namespaces:
       - App\Tests
       - App\Legacy
-    method:
+    callable:
       warning: 15
       error: 25
 
@@ -527,7 +527,7 @@ rules:
       - App\Tests
     exclude_paths:
       - src/Generated
-    method:
+    callable:
       warning: 15
       error: 25
 

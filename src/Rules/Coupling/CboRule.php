@@ -373,9 +373,9 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         $counts = [];
         $targetNames = [];
         foreach ($dependencies as $dep) {
-            $targetKey = $dep->target->toCanonical();
+            $targetKey = $dep->targetLogical()->toCanonical();
             $counts[$targetKey] = ($counts[$targetKey] ?? 0) + 1;
-            $targetNames[$targetKey] = $dep->target->type ?? $targetKey;
+            $targetNames[$targetKey] = $dep->targetLogical()->type ?? $targetKey;
         }
 
         // Sort by occurrence count descending

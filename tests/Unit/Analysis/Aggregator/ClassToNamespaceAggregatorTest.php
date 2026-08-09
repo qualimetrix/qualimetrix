@@ -13,10 +13,14 @@ use Qualimetrix\Analysis\Aggregator\MetricAggregator;
 use Qualimetrix\Analysis\Aggregator\NamespaceMetricContributions;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Metrics\Size\ClassCountCollector;
@@ -157,7 +161,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         // Add a global function in namespace App\Utils (no class in the file)
         $functionPath = SymbolPath::forGlobalFunction('App\\Utils', 'helper');
         $functionMetrics = (new MetricBag())->with('ccn', 2);
-        $repository->add($functionPath, $functionMetrics, RelativePath::fromString('src/Utils/helpers.php'), 10);
+        $this->addCallable($repository, $functionPath, $functionMetrics, RelativePath::fromString('src/Utils/helpers.php'), 100);
 
         // Add file-level LOC metrics for the same file
         $fileMetrics = (new MetricBag())
@@ -204,11 +208,12 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         );
 
         // File with only functions (no class)
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forGlobalFunction('App\\Service', 'serviceHelper'),
             new MetricBag(),
             RelativePath::fromString('src/Service/helpers.php'),
-            3,
+            30,
         );
         $repository->add(
             SymbolPath::forFile(RelativePath::fromString('src/Service/helpers.php')),
@@ -361,7 +366,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
 
         $definition = new MetricDefinition(
             name: 'ccn',
-            collectedAt: SymbolLevel::Method,
+            collectedAt: SymbolLevel::Callable,
             aggregations: [
                 SymbolLevel::Class_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
@@ -407,7 +412,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
 
         $definition = new MetricDefinition(
             name: 'ccn',
-            collectedAt: SymbolLevel::Method,
+            collectedAt: SymbolLevel::Callable,
             aggregations: [
                 SymbolLevel::Class_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
@@ -429,7 +434,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     {
         $definition = new MetricDefinition(
             name: 'mi',
-            collectedAt: SymbolLevel::Method,
+            collectedAt: SymbolLevel::Callable,
             aggregations: [
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Average, AggregationStrategy::Min],
             ],
@@ -452,7 +457,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
     {
         $definition = new MetricDefinition(
             name: 'test',
-            collectedAt: SymbolLevel::Method,
+            collectedAt: SymbolLevel::Callable,
             aggregations: [
                 SymbolLevel::Namespace_->value => [
                     AggregationStrategy::Average,
@@ -489,7 +494,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
 
         $definition = new MetricDefinition(
             name: 'ccn',
-            collectedAt: SymbolLevel::Method,
+            collectedAt: SymbolLevel::Callable,
             aggregations: [
                 SymbolLevel::Class_->value => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
@@ -515,11 +520,27 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         string $metric,
         int|float $value,
     ): void {
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod($namespace, $class, $method),
             (new MetricBag())->with($metric, $value),
             RelativePath::fromString($file),
-            1,
+            10,
         );
+    }
+
+    private function addCallable(InMemoryMetricRepository $repository, SymbolPath $symbol, MetricBag $metrics, RelativePath $file, int $startFilePos): void
+    {
+        $owner = $symbol->getType() === \Qualimetrix\Core\Symbol\SymbolType::Method
+            ? new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? ''))
+            : null;
+        $repository->addCallable(new CallableWithMetrics(
+            new DeclarationPath($symbol, $file, $startFilePos),
+            $symbol->getType() === \Qualimetrix\Core\Symbol\SymbolType::Method ? CallableKind::Method : CallableKind::Function,
+            null,
+            null,
+            $owner,
+            $metrics,
+        ));
     }
 }

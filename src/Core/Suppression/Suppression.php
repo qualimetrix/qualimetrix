@@ -26,7 +26,7 @@ final readonly class Suppression
      *
      * Supports:
      * - Wildcard '*' to suppress all rules
-     * - Prefix matching: 'complexity' suppresses 'complexity.cyclomatic.method'
+     * - Prefix matching: 'complexity' suppresses 'complexity.cyclomatic.callable'
      * - Exact matching: 'complexity.cyclomatic' suppresses 'complexity.cyclomatic'
      */
     public function matches(string $violationCode): bool

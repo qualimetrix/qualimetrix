@@ -19,16 +19,20 @@ use Qualimetrix\Analysis\Collection\FileProcessor;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
+use Qualimetrix\Core\Metric\CallableMetricsProviderInterface;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
 use Qualimetrix\Core\Metric\ClassWithMetrics;
-use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
 use Qualimetrix\Core\Metric\NamespaceMetricProviderInterface;
 use Qualimetrix\Core\Metric\NamespaceWithMetrics;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\SuppressionType;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
@@ -120,12 +124,13 @@ final class FileProcessorTest extends TestCase
         $symbolPath = SymbolPath::forMethod('App', 'Service', 'calculate');
         $methodBag = MetricBag::fromArray(['ccn' => 5]);
 
-        $methodWithMetrics = new MethodWithMetrics(
-            namespace: 'App',
-            class: 'Service',
-            method: 'calculate',
-            line: 15,
-            metrics: $methodBag,
+        $methodWithMetrics = new CallableWithMetrics(
+            new DeclarationPath($symbolPath, RelativePath::fromString('test.php'), 0),
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+            $methodBag,
         );
 
         // Create a mock that implements both interfaces
@@ -137,10 +142,8 @@ final class FileProcessorTest extends TestCase
         $result = $processor->process($file);
 
         self::assertTrue($result->isSuccessful());
-        self::assertCount(1, $result->collectedData()->methodMetrics);
-        self::assertArrayHasKey('App::Service::calculate', $result->collectedData()->methodMetrics);
-        self::assertSame(5, $result->collectedData()->methodMetrics['App::Service::calculate']['metrics']->get('ccn'));
-        self::assertSame(15, $result->collectedData()->methodMetrics['App::Service::calculate']['line']);
+        self::assertCount(1, $result->collectedData()->callableMetrics);
+        self::assertSame($methodWithMetrics, $result->collectedData()->callableMetrics[0]);
     }
 
     #[Test]
@@ -154,8 +157,7 @@ final class FileProcessorTest extends TestCase
         $classBag = MetricBag::fromArray(['wmc' => 25]);
 
         $classWithMetrics = new ClassWithMetrics(
-            namespace: 'App',
-            class: 'Service',
+            declarationPath: new DeclarationPath($symbolPath, RelativePath::fromString('test.php'), 16),
             line: 5,
             metrics: $classBag,
         );
@@ -169,8 +171,8 @@ final class FileProcessorTest extends TestCase
 
         self::assertTrue($result->isSuccessful());
         self::assertCount(1, $result->collectedData()->classMetrics);
-        self::assertArrayHasKey('App::Service', $result->collectedData()->classMetrics);
-        self::assertSame(25, $result->collectedData()->classMetrics['App::Service']['metrics']->get('wmc'));
+        self::assertArrayHasKey($classWithMetrics->subject->toCanonical(), $result->collectedData()->classMetrics);
+        self::assertSame(25, $result->collectedData()->classMetrics[$classWithMetrics->subject->toCanonical()]['metrics']->get('wmc'));
     }
 
     #[Test]
@@ -212,19 +214,20 @@ final class FileProcessorTest extends TestCase
     }
 
     #[Test]
-    public function itSkipsClosuresWithoutStableIdentity(): void
+    public function itPreservesClosuresWithDeclarationIdentity(): void
     {
         $file = new SplFileInfo('/tmp/test.php');
 
         $this->parser->method('parse')->willReturn([]);
 
-        // Method without stable identity (closure)
-        $methodWithMetrics = new MethodWithMetrics(
-            namespace: null,
-            class: null,
-            method: '{closure:0}',
-            line: 15,
-            metrics: MetricBag::fromArray(['ccn' => 3]),
+        $closurePath = SymbolPath::forGlobalFunction('', '{closure:0}');
+        $methodWithMetrics = new CallableWithMetrics(
+            new DeclarationPath($closurePath, RelativePath::fromString('test.php'), 0),
+            CallableKind::AnonymousCallable,
+            'closure',
+            null,
+            null,
+            MetricBag::fromArray(['ccn' => 3]),
         );
 
         $collector = $this->createMockCollectorWithMethodMetrics([$methodWithMetrics]);
@@ -235,7 +238,7 @@ final class FileProcessorTest extends TestCase
         $result = $processor->process($file);
 
         self::assertTrue($result->isSuccessful());
-        self::assertCount(0, $result->collectedData()->methodMetrics); // Closures skipped
+        self::assertSame([$methodWithMetrics], $result->collectedData()->callableMetrics);
     }
 
     #[Test]
@@ -320,12 +323,12 @@ final class FileProcessorTest extends TestCase
     }
 
     /**
-     * @param list<MethodWithMetrics> $methods
+     * @param list<CallableWithMetrics> $methods
      */
-    private function createMockCollectorWithMethodMetrics(array $methods): MetricCollectorInterface&MethodMetricsProviderInterface
+    private function createMockCollectorWithMethodMetrics(array $methods): MetricCollectorInterface&CallableMetricsProviderInterface
     {
-        $collector = new class ($methods) implements MetricCollectorInterface, MethodMetricsProviderInterface {
-            /** @param list<MethodWithMetrics> $methods */
+        $collector = new class ($methods) implements MetricCollectorInterface, CallableMetricsProviderInterface {
+            /** @param list<CallableWithMetrics> $methods */
             public function __construct(private readonly array $methods) {}
 
             public function getName(): string
@@ -356,8 +359,8 @@ final class FileProcessorTest extends TestCase
 
             public function reset(): void {}
 
-            /** @return list<MethodWithMetrics> */
-            public function getMethodsWithMetrics(): array
+            /** @return list<CallableWithMetrics> */
+            public function getCallablesWithMetrics(RelativePath $file): array
             {
                 return $this->methods;
             }
@@ -404,7 +407,7 @@ final class FileProcessorTest extends TestCase
             public function reset(): void {}
 
             /** @return list<ClassWithMetrics> */
-            public function getClassesWithMetrics(): array
+            public function getClassesWithMetrics(RelativePath $file): array
             {
                 return $this->classes;
             }

@@ -8,7 +8,8 @@ use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Violation\Location;
 
 final class DependencyContext
@@ -18,8 +19,8 @@ final class DependencyContext
 
     public function __construct(
         private readonly DependencyResolver $resolver,
-        private readonly ?RelativePath $file,
-        private readonly string $currentClass,
+        private readonly RelativePath $file,
+        private readonly DeclarationPath $currentClass,
     ) {}
 
     /**
@@ -28,13 +29,13 @@ final class DependencyContext
      */
     public function addDependency(string $resolvedTargetClass, DependencyType $type, int $line): void
     {
-        if ($resolvedTargetClass === $this->currentClass) {
+        if ($resolvedTargetClass === $this->currentClass->logical->toString()) {
             return;
         }
 
         $this->dependencies[] = new Dependency(
-            SymbolPath::fromClassFqn($this->currentClass),
-            SymbolPath::fromClassFqn($resolvedTargetClass),
+            $this->currentClass,
+            new LogicalClassPath(\Qualimetrix\Core\Symbol\SymbolPath::fromClassFqn($resolvedTargetClass)),
             $type,
             new Location($this->file, $line),
         );
@@ -53,13 +54,13 @@ final class DependencyContext
         return $this->resolver;
     }
 
-    public function getFile(): ?RelativePath
+    public function getFile(): RelativePath
     {
         return $this->file;
     }
 
     public function getCurrentClass(): string
     {
-        return $this->currentClass;
+        return $this->currentClass->logical->toString();
     }
 }

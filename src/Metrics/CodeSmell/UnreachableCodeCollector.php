@@ -7,12 +7,13 @@ namespace Qualimetrix\Metrics\CodeSmell;
 use Override;
 use PhpParser\Node;
 use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableMetricsProviderInterface;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
@@ -22,7 +23,7 @@ use SplFileInfo;
  * Metric format: unreachableCode:{FQN} — count of unreachable statements
  * Metric format: unreachableCode.firstLine:{FQN} — line number of first unreachable statement
  */
-final class UnreachableCodeCollector extends AbstractCollector implements MethodMetricsProviderInterface
+final class UnreachableCodeCollector extends AbstractCollector implements CallableMetricsProviderInterface
 {
     private const NAME = 'unreachable-code';
 
@@ -65,13 +66,13 @@ final class UnreachableCodeCollector extends AbstractCollector implements Method
     }
 
     /**
-     * @return list<MethodWithMetrics>
+     * @return list<CallableWithMetrics>
      */
-    public function getMethodsWithMetrics(): array
+    public function getCallablesWithMetrics(RelativePath $file): array
     {
         \assert($this->visitor instanceof UnreachableCodeVisitor);
 
-        return $this->visitor->getMethodsWithMetrics();
+        return $this->visitor->getCallablesWithMetrics($file);
     }
 
     /**
@@ -83,7 +84,7 @@ final class UnreachableCodeCollector extends AbstractCollector implements Method
         return [
             new MetricDefinition(
                 name: MetricName::CODE_SMELL_UNREACHABLE_CODE,
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: [
                     SymbolLevel::Class_->value => [
                         AggregationStrategy::Sum,
@@ -98,7 +99,7 @@ final class UnreachableCodeCollector extends AbstractCollector implements Method
             ),
             new MetricDefinition(
                 name: MetricName::CODE_SMELL_UNREACHABLE_CODE_FIRST_LINE,
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: [],
             ),
         ];

@@ -166,20 +166,15 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         $fileSymbol = SymbolPath::forFile($filePath);
         $repository->add($fileSymbol, $data->fileBag, $filePath, 1);
 
-        // Register method-level metrics
-        foreach ($data->methodMetrics as $methodData) {
-            $repository->add(
-                $methodData['symbolPath'],
-                $methodData['metrics'],
-                $filePath,
-                $methodData['line'],
-            );
+        // Register exact callable declarations before any logical aggregation.
+        foreach ($data->callableMetrics as $callable) {
+            $repository->addCallable($callable);
         }
 
         // Register class-level metrics
         foreach ($data->classMetrics as $classData) {
-            $repository->add(
-                $classData['symbolPath'],
+            $repository->addSubject(
+                $classData['subject'],
                 $classData['metrics'],
                 $filePath,
                 $classData['line'],
@@ -205,7 +200,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
             );
         }
 
-        // Extract derived metrics (like MI) from file bag and add to method symbols
-        $this->derivedMetricExtractor->extract($repository, $data->fileBag, $filePath);
+        // Derived callable metrics keep their declaration subject, never an FQN key.
+        $this->derivedMetricExtractor->extract($repository, $data->fileBag, $data->callableMetrics, $filePath);
     }
 }

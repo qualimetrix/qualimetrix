@@ -13,6 +13,9 @@ use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
@@ -154,7 +157,7 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
     /**
      * @return list<ClassWithMetrics>
      */
-    public function getClassesWithMetrics(): array
+    public function getClassesWithMetrics(RelativePath $file): array
     {
         \assert($this->visitor instanceof MethodCountVisitor);
 
@@ -201,8 +204,7 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
                 ->with(MetricName::STRUCTURE_WOC, $woc);
 
             $result[] = new ClassWithMetrics(
-                namespace: $metrics->namespace,
-                class: $metrics->className,
+                declarationPath: new DeclarationPath(SymbolPath::forClass($metrics->namespace ?? '', $metrics->className), $file, $metrics->startFilePos),
                 line: $metrics->line,
                 metrics: $bag,
             );

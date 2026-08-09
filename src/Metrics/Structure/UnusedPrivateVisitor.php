@@ -211,6 +211,7 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
             namespace: $this->currentNamespace,
             className: $className,
             line: $node->getStartLine(),
+            startFilePos: $node->getStartFilePos(),
         );
 
         // Resolve same-file trait usages

@@ -34,8 +34,8 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itParsesAMagnitudeEntry(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
-            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.method',
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
+            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable',
             'magnitudes' => [25],
             'count' => 1,
         ]);
@@ -62,7 +62,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itParsesTheSuppressMode(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
             'channel' => 'code-smell.goto#code-smell.goto',
             'count' => 2,
             'mode' => 'suppress',
@@ -75,7 +75,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAnEntryThatIsNotAnObjectInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', 'not an object');
+        $entry = $this->parser->parse('callable:App\Foo::bar', 'not an object');
 
         self::assertInertFor($entry, InertEntryReason::Malformed);
     }
@@ -83,7 +83,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAnEntryWithoutAChannelInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', ['count' => 1]);
+        $entry = $this->parser->parse('callable:App\Foo::bar', ['count' => 1]);
 
         self::assertInertFor($entry, InertEntryReason::Malformed);
     }
@@ -91,7 +91,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAnEntryWithAnUnparseableChannelInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', ['channel' => 'no-separator', 'count' => 1]);
+        $entry = $this->parser->parse('callable:App\Foo::bar', ['channel' => 'no-separator', 'count' => 1]);
 
         self::assertInertFor($entry, InertEntryReason::Malformed);
     }
@@ -99,7 +99,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAnEntryWithoutACountInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', ['channel' => 'code-smell.goto#code-smell.goto']);
+        $entry = $this->parser->parse('callable:App\Foo::bar', ['channel' => 'code-smell.goto#code-smell.goto']);
 
         self::assertInertFor($entry, InertEntryReason::Malformed);
     }
@@ -116,7 +116,7 @@ final class BaselineEntryParserTest extends TestCase
     #[TestWith([-1])]
     public function itTurnsANonPositiveCountInert(int $count): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
             'channel' => 'code-smell.goto#code-smell.goto',
             'count' => $count,
         ]);
@@ -129,8 +129,8 @@ final class BaselineEntryParserTest extends TestCase
     {
         // JSON has no literal for infinity, but an overflowing exponent
         // decodes to one.
-        $entry = $this->parser->parse('method:App\Foo::bar', json_decode(
-            '{"channel":"complexity.cyclomatic#complexity.cyclomatic.method","magnitudes":[1e400],"count":1}',
+        $entry = $this->parser->parse('callable:App\Foo::bar', json_decode(
+            '{"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[1e400],"count":1}',
             true,
             512,
             \JSON_THROW_ON_ERROR,
@@ -142,8 +142,8 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAMagnitudeListThatDisagreesWithTheCountInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
-            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.method',
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
+            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable',
             'magnitudes' => [10, 20],
             'count' => 3,
         ]);
@@ -154,7 +154,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAnUndeclaredChannelInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
             'channel' => 'nobody.declares#this.channel',
             'count' => 1,
         ]);
@@ -166,8 +166,8 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAMagnitudeChannelWithoutMagnitudesInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
-            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.method',
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
+            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable',
             'count' => 1,
         ]);
 
@@ -177,7 +177,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAnOccurrenceChannelWithMagnitudesInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
             'channel' => 'code-smell.goto#code-smell.goto',
             'magnitudes' => [1.0],
             'count' => 1,
@@ -189,7 +189,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAnUnrecognizedModeInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
             'channel' => 'code-smell.goto#code-smell.goto',
             'count' => 1,
             'mode' => 'ceiling',
@@ -218,8 +218,8 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itGivesAnInertEntryWithAnIdentityThatIdentitysSelector(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
-            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.method',
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
+            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable',
             'count' => 1,
         ]);
 
@@ -231,7 +231,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itGivesAnUnreadableEntryASelectorAnyway(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', ['nonsense' => true]);
+        $entry = $this->parser->parse('callable:App\Foo::bar', ['nonsense' => true]);
 
         self::assertInstanceOf(InertBaselineEntry::class, $entry);
         self::assertMatchesRegularExpression('/^[0-9a-f]{12}$/', $entry->selector->value);
@@ -242,7 +242,7 @@ final class BaselineEntryParserTest extends TestCase
     {
         $raw = ['channel' => 'nobody.declares#this.channel', 'count' => 1];
 
-        $entry = $this->parser->parse('method:App\Foo::bar', $raw);
+        $entry = $this->parser->parse('callable:App\Foo::bar', $raw);
 
         self::assertInstanceOf(InertBaselineEntry::class, $entry);
         self::assertSame($raw, $entry->raw);

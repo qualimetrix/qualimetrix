@@ -189,7 +189,7 @@ Or in your `qmx.yaml` configuration file:
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       warning: 15
       error: 25
   size.method-count:

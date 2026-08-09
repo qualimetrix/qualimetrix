@@ -5,21 +5,21 @@ failOn: warning
 
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       warning: 7
       error: 15
     class:
       max_warning: 20
       max_error: 35
   complexity.cognitive:
-    method:
+    callable:
       warning: 10
       error: 20
     class:
       max_warning: 20
       max_error: 35
   complexity.npath:
-    method:
+    callable:
       warning: 100
       error: 500
   complexity.wmc:

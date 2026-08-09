@@ -32,7 +32,7 @@ The number roughly tells you the minimum number of test cases you need to fully 
 <!-- llms:skip-begin -->
 ### Thresholds
 
-**Method level** (enabled by default):
+**Callable level** (enabled by default):
 
 | Level   | Threshold | Severity |
 | ------- | --------- | -------- |
@@ -107,7 +107,7 @@ This is a deliberate choice: all these constructs represent hidden branching. Fo
 # qmx.yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       warning: 15
       error: 25
     class:
@@ -120,14 +120,14 @@ For a simple pass/fail threshold (all violations become errors):
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       threshold: 15   # equivalent to warning: 15, error: 15
 ```
 
 ```bash
 # CLI overrides
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:method.warning=15"
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:method.error=25"
+bin/qmx check src/ --rule-opt="complexity.cyclomatic:callable.warning=15"
+bin/qmx check src/ --rule-opt="complexity.cyclomatic:callable.error=25"
 bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.max_warning=40"
 bin/qmx check src/ --rule-opt="complexity.cyclomatic:class.enabled=false"
 ```
@@ -163,7 +163,7 @@ Key differences from cyclomatic complexity:
 <!-- llms:skip-begin -->
 ### Thresholds
 
-**Method level** (enabled by default):
+**Callable level** (enabled by default):
 
 | Level   | Threshold | Severity |
 | ------- | --------- | -------- |
@@ -218,7 +218,7 @@ Notice how nesting makes the penalty grow. The deeply nested `if ($item->hasDisc
 # qmx.yaml
 rules:
   complexity.cognitive:
-    method:
+    callable:
       warning: 20
       error: 40
     class:
@@ -230,13 +230,13 @@ For a simple pass/fail threshold:
 ```yaml
 rules:
   complexity.cognitive:
-    method:
+    callable:
       threshold: 20   # warning=20, error=20 → all violations are errors
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="complexity.cognitive:method.warning=20"
-bin/qmx check src/ --rule-opt="complexity.cognitive:method.error=40"
+bin/qmx check src/ --rule-opt="complexity.cognitive:callable.warning=20"
+bin/qmx check src/ --rule-opt="complexity.cognitive:callable.error=40"
 ```
 
 ---
@@ -270,7 +270,7 @@ The category label is included in violation messages (e.g., "NPath complexity is
 <!-- llms:skip-begin -->
 ### Thresholds
 
-**Method level** (enabled by default):
+**Callable level** (enabled by default):
 
 | Level   | Threshold | Severity |
 | ------- | --------- | -------- |
@@ -344,7 +344,7 @@ earlier Qualimetrix releases and may require threshold/baseline recalibration.
 # qmx.yaml
 rules:
   complexity.npath:
-    method:
+    callable:
       warning: 300
       error: 2000
     class:
@@ -356,12 +356,12 @@ For a simple pass/fail threshold:
 ```yaml
 rules:
   complexity.npath:
-    method:
+    callable:
       threshold: 300   # warning=300, error=300 → all violations are errors
 ```
 
 ```bash
-bin/qmx check src/ --rule-opt="complexity.npath:method.warning=300"
+bin/qmx check src/ --rule-opt="complexity.npath:callable.warning=300"
 bin/qmx check src/ --rule-opt="complexity.npath:class.enabled=true"
 ```
 

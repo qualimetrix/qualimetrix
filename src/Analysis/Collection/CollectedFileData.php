@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Collection;
 
 use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
@@ -15,8 +16,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final readonly class CollectedFileData
 {
     /**
-     * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $methodMetrics
-     * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $classMetrics
+     * @param list<CallableWithMetrics> $callableMetrics
+     * @param array<string, array{subject: \Qualimetrix\Core\Symbol\MetricSubject, metrics: MetricBag, line: int}> $classMetrics
      * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $namespaceMetrics
      * @param list<Dependency> $dependencies
      * @param list<Suppression> $suppressions
@@ -25,7 +26,7 @@ final readonly class CollectedFileData
      */
     public function __construct(
         public MetricBag $fileBag,
-        public array $methodMetrics = [],
+        public array $callableMetrics = [],
         public array $classMetrics = [],
         public array $namespaceMetrics = [],
         public array $dependencies = [],

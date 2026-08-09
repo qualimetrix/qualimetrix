@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -24,9 +24,9 @@ use Qualimetrix\Rules\CodeSmell\LongParameterListRule;
 
 /**
  * Regression test: FileProcessor builds per-symbol metrics exclusively from
- * ParameterCountCollector::getMethodsWithMetrics() (via MethodWithMetrics), not
+ * ParameterCountCollector::getCallablesWithMetrics() (via CallableWithMetrics), not
  * from the file-level MetricBag produced by collect(). Before the fix,
- * getMethodsWithMetrics() never included the isVoConstructor flag, so
+ * getCallablesWithMetrics() never included the isVoConstructor flag, so
  * LongParameterListRule always evaluated VO constructors against the regular
  * (non-VO) thresholds — the `--long-parameter-list-vo-warning` /
  * `--long-parameter-list-vo-error` options were silently ignored end-to-end.
@@ -173,23 +173,25 @@ PHP;
         $traverser->addVisitor($collector->getVisitor());
         $traverser->traverse($ast);
 
-        $methodsWithMetrics = $collector->getMethodsWithMetrics();
+        $methodsWithMetrics = $collector->getCallablesWithMetrics(RelativePath::fromString('src/example.php'));
 
         $construct = null;
         foreach ($methodsWithMetrics as $methodWithMetrics) {
-            if ($methodWithMetrics->class === $class && $methodWithMetrics->method === '__construct') {
+            $logical = $methodWithMetrics->declarationPath->logical;
+            if ($logical->type === $class && $logical->member === '__construct') {
                 $construct = $methodWithMetrics;
 
                 break;
             }
         }
 
-        self::assertInstanceOf(MethodWithMetrics::class, $construct, \sprintf('No __construct found for %s\\%s', $namespace, $class));
+        self::assertInstanceOf(CallableWithMetrics::class, $construct, \sprintf('No __construct found for %s\\%s', $namespace, $class));
 
-        $symbolPath = $construct->getSymbolPath();
-        self::assertNotNull($symbolPath);
-
-        $symbolInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/example.php'), $construct->line);
+        $symbolInfo = new SymbolInfo(
+            $construct->declarationPath->logical,
+            RelativePath::fromString('src/example.php'),
+            $construct->declarationPath->startFilePos,
+        );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')

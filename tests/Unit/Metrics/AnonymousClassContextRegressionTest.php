@@ -57,13 +57,13 @@ final class AnonymousClassContextRegressionTest extends TestCase
         $visitor = new CyclomaticComplexityVisitor();
         $this->parseAndTraverse($visitor);
 
-        $methods = $visitor->getMethodsWithMetrics();
+        $methods = $visitor->getCallablesWithMetrics(RelativePath::fromString('src/Fixture.php'));
         $afterAnonymous = $this->findMethodByName($methods, 'afterAnonymous');
 
         self::assertNotNull($afterAnonymous, 'afterAnonymous method should be found');
         self::assertSame(
             'OuterClass',
-            $afterAnonymous->class,
+            $afterAnonymous->lexicalClassContext?->logical->type,
             'afterAnonymous should belong to OuterClass, not null (anonymous class leaked scope)',
         );
     }
@@ -113,13 +113,13 @@ final class AnonymousClassContextRegressionTest extends TestCase
         $visitor = new NpathComplexityVisitor();
         $this->parseAndTraverse($visitor);
 
-        $methods = $visitor->getMethodsWithMetrics();
+        $methods = $visitor->getCallablesWithMetrics(RelativePath::fromString('src/Fixture.php'));
         $afterAnonymous = $this->findMethodByName($methods, 'afterAnonymous');
 
         self::assertNotNull($afterAnonymous, 'afterAnonymous method should be found');
         self::assertSame(
             'OuterClass',
-            $afterAnonymous->class,
+            $afterAnonymous->lexicalClassContext?->logical->type,
             'afterAnonymous should belong to OuterClass, not null (anonymous class leaked scope)',
         );
     }
@@ -152,13 +152,13 @@ final class AnonymousClassContextRegressionTest extends TestCase
         $visitor = new HalsteadVisitor();
         $this->parseAndTraverse($visitor);
 
-        $methods = $visitor->getMethodsWithMetrics();
+        $methods = $visitor->getCallablesWithMetrics(RelativePath::fromString('src/Fixture.php'));
         $afterAnonymous = $this->findMethodByName($methods, 'afterAnonymous');
 
         self::assertNotNull($afterAnonymous, 'afterAnonymous method should be found');
         self::assertSame(
             'OuterClass',
-            $afterAnonymous->class,
+            $afterAnonymous->lexicalClassContext?->logical->type,
             'afterAnonymous should belong to OuterClass, not null (anonymous class leaked scope)',
         );
     }
@@ -188,13 +188,13 @@ final class AnonymousClassContextRegressionTest extends TestCase
         $visitor = new CognitiveComplexityVisitor();
         $this->parseAndTraverse($visitor);
 
-        $methods = $visitor->getMethodsWithMetrics();
+        $methods = $visitor->getCallablesWithMetrics(RelativePath::fromString('src/Fixture.php'));
         $afterAnonymous = $this->findMethodByName($methods, 'afterAnonymous');
 
         self::assertNotNull($afterAnonymous, 'afterAnonymous method should be found');
         self::assertSame(
             'OuterClass',
-            $afterAnonymous->class,
+            $afterAnonymous->lexicalClassContext?->logical->type,
             'afterAnonymous should belong to OuterClass, not null (anonymous class leaked scope)',
         );
     }
@@ -305,13 +305,13 @@ PHP;
         // Filter dependencies from OuterClass
         $outerDeps = array_filter(
             $deps,
-            static fn($dep) => $dep->source->toString() === 'App\Service\OuterClass',
+            static fn($dep) => $dep->sourceLogical()->toString() === 'App\Service\OuterClass',
         );
 
         // Both UserRepository (beforeAnonymous) and User (afterAnonymous)
         // should be attributed to OuterClass
         $targetClasses = array_map(
-            static fn($dep) => $dep->target->toString(),
+            static fn($dep) => $dep->targetLogical()->toString(),
             array_values($outerDeps),
         );
 
@@ -332,12 +332,12 @@ PHP;
     // ──────────────────────────────────────────────────────────────────
 
     /**
-     * @param list<\Qualimetrix\Core\Metric\MethodWithMetrics> $methods
+     * @param list<\Qualimetrix\Core\Metric\CallableWithMetrics> $methods
      */
-    private function findMethodByName(array $methods, string $name): ?\Qualimetrix\Core\Metric\MethodWithMetrics
+    private function findMethodByName(array $methods, string $name): ?\Qualimetrix\Core\Metric\CallableWithMetrics
     {
         foreach ($methods as $method) {
-            if ($method->method === $name) {
+            if ($method->declarationPath->logical->member === $name) {
                 return $method;
             }
         }

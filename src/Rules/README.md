@@ -31,9 +31,9 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 
 | Rule                                     | Category        | Type                            | Description                     | Default Thresholds                                                     |
 | ---------------------------------------- | --------------- | ------------------------------- | ------------------------------- | ---------------------------------------------------------------------- |
-| **complexity.cyclomatic**                | Complexity      | Hierarchical (Method, Class)    | Cyclomatic Complexity (CCN)     | method: 10/20, class.max: 30/50                                        |
-| **complexity.cognitive**                 | Complexity      | Hierarchical (Method, Class)    | Cognitive Complexity            | method: 15/30, class.max: 30/50                                        |
-| **complexity.npath**                     | Complexity      | Hierarchical (Method, Class)    | NPATH Complexity                | method: 200/1000, class (disabled)                                     |
+| **complexity.cyclomatic**                | Complexity      | Hierarchical (Callable, Class)  | Cyclomatic Complexity (CCN)     | callable: 10/20, class.max: 30/50                                      |
+| **complexity.cognitive**                 | Complexity      | Hierarchical (Callable, Class)  | Cognitive Complexity            | callable: 15/30, class.max: 30/50                                      |
+| **complexity.npath**                     | Complexity      | Hierarchical (Callable, Class)  | NPATH Complexity                | callable: 200/1000, class (disabled)                                   |
 | **complexity.wmc**                       | Complexity      | Simple                          | Weighted Methods per Class      | warning: 50, error: 80                                                 |
 | **size.method-count**                    | Size            | Simple                          | Method count per class          | warning: 20, error: 30                                                 |
 | **size.class-count**                     | Size            | Simple                          | Class count per namespace       | warning: 15, error: 25                                                 |
@@ -82,7 +82,7 @@ Rules that operate on multiple levels of the code hierarchy (method/class/namesp
 **Interface:**
 ```php
 interface HierarchicalRuleInterface extends RuleInterface {
-    public function getSupportedLevels(): array; // [RuleLevel::Method, RuleLevel::Class_]
+    public function getSupportedLevels(): array; // [RuleLevel::Callable, RuleLevel::Class_]
     public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array;
 }
 ```
@@ -90,7 +90,7 @@ interface HierarchicalRuleInterface extends RuleInterface {
 **CLI with prefix matching:**
 ```bash
 --disable-rule=complexity.cyclomatic.class  # Disable a specific level
---only-rule=complexity.cyclomatic.method    # Enable only method-level
+--only-rule=complexity.cyclomatic.callable    # Enable only callable-level
 --disable-rule=complexity                   # Disable all complexity.* rules (prefix match)
 --disable-rule=complexity.cyclomatic        # Disable the entire rule
 ```
@@ -99,18 +99,18 @@ interface HierarchicalRuleInterface extends RuleInterface {
 
 ## Complexity Rule (Hierarchical)
 
-**Name:** `complexity.cyclomatic` | **Category:** Complexity | **Levels:** Method, Class
+**Name:** `complexity.cyclomatic` | **Category:** Complexity | **Levels:** Callable, Class
 
 Checks cyclomatic complexity of methods and classes.
 
-**Method-level:** Checks CCN of individual methods (default: 10/20)
+**Callable-level:** Checks CCN of individual methods (default: 10/20)
 **Class-level:** Checks the maximum CCN of class methods (default: 30/50)
 
 **Configuration (graduated mode):**
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       warning: 10
       error: 20
     class:
@@ -122,7 +122,7 @@ rules:
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       threshold: 15   # all violations at 15+ are errors
 ```
 
@@ -132,21 +132,21 @@ rules:
 
 ## Cognitive Complexity Rule (Hierarchical)
 
-**Name:** `complexity.cognitive` | **Category:** Complexity | **Levels:** Method, Class
+**Name:** `complexity.cognitive` | **Category:** Complexity | **Levels:** Callable, Class
 
 Checks cognitive complexity of methods and classes. Unlike CCN, it considers:
 - **Nesting** — each level adds a penalty
 - **Logical chains** — `a && b && c` counts as +1 (not +3)
 - **Switch** — +1 for the entire switch (not for each case)
 
-**Method-level:** Checks cognitive complexity of individual methods (default: 15/30)
+**Callable-level:** Checks cognitive complexity of individual methods (default: 15/30)
 **Class-level:** Checks the maximum cognitive complexity of class methods (default: 30/50)
 
 **Configuration:**
 ```yaml
 rules:
   complexity.cognitive:
-    method:
+    callable:
       warning: 15
       error: 30
     class:
@@ -165,19 +165,19 @@ rules:
 
 ## NPATH Complexity Rule (Hierarchical)
 
-**Name:** `complexity.npath` | **Category:** Complexity | **Levels:** Method, Class
+**Name:** `complexity.npath` | **Category:** Complexity | **Levels:** Callable, Class
 
 Checks NPath complexity — the number of acyclic execution paths through a method.
 Unlike Cyclomatic Complexity (additive), NPath is multiplicative and grows exponentially.
 
-**Method-level:** Checks NPath of individual methods (default: 200/1000)
+**Callable-level:** Checks NPath of individual methods (default: 200/1000)
 **Class-level:** Checks the maximum NPath of class methods (disabled by default)
 
 **Configuration:**
 ```yaml
 rules:
   complexity.npath:
-    method:
+    callable:
       warning: 200
       error: 1000
     class:

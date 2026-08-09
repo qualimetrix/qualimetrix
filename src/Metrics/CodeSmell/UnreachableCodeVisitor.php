@@ -6,12 +6,17 @@ namespace Qualimetrix\Metrics\CodeSmell;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr;
+use PhpParser\Node\Expr\ArrowFunction;
+use PhpParser\Node\Expr\Closure;
+use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
 use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
@@ -35,18 +40,17 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
     /** @var array<string, int> Method/function FQN => first unreachable line number */
     private array $firstUnreachableLines = [];
 
-    /** @var array<string, array{namespace: ?string, class: ?string, method: string, line: int}> FQN => method info */
+    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
     private array $methodInfos = [];
 
     private ?string $currentNamespace = null;
     private ?string $currentClass = null;
+    private ?int $currentClassStartFilePos = null;
     private int $closureCounter = 0;
+    private ?string $currentProperty = null;
 
-    /** @var list<string|null> Stack of class names for nested class-like scopes */
+    /** @var list<array{?string, ?int}> Class context before each nested class-like scope */
     private array $classStack = [];
-
-    /** @var int Depth of anonymous class nesting (methods inside anonymous classes are skipped) */
-    private int $anonymousClassDepth = 0;
 
     public function reset(): void
     {
@@ -55,9 +59,11 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
         $this->methodInfos = [];
         $this->currentNamespace = null;
         $this->currentClass = null;
+        $this->currentClassStartFilePos = null;
         $this->closureCounter = 0;
+        $this->currentProperty = null;
+        $this->resetCallableTraversalKeys();
         $this->classStack = [];
-        $this->anonymousClassDepth = 0;
     }
 
     /**
@@ -65,7 +71,10 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
      */
     public function getUnreachableCounts(): array
     {
-        return $this->unreachableCounts;
+        /** @var array<string, int> $projected */
+        $projected = $this->projectLogicalMetricMap($this->unreachableCounts, $this->methodInfos);
+
+        return $projected;
     }
 
     /**
@@ -73,18 +82,22 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
      */
     public function getFirstUnreachableLines(): array
     {
-        return $this->firstUnreachableLines;
+        /** @var array<string, int> $projected */
+        $projected = $this->projectLogicalMetricMap($this->firstUnreachableLines, $this->methodInfos);
+
+        return $projected;
     }
 
     /**
      * Returns structured method metrics for each analyzed method.
      *
-     * @return list<MethodWithMetrics>
+     * @return list<CallableWithMetrics>
      */
-    public function getMethodsWithMetrics(): array
+    public function getCallablesWithMetrics(RelativePath $file): array
     {
         $result = [];
 
+        $ordinals = $this->callableCollisionOrdinals($this->methodInfos);
         foreach ($this->methodInfos as $fqn => $info) {
             $bag = (new MetricBag())->with('unreachableCode', $this->unreachableCounts[$fqn] ?? 0);
 
@@ -92,13 +105,7 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
                 $bag = $bag->with('unreachableCode.firstLine', $this->firstUnreachableLines[$fqn]);
             }
 
-            $result[] = new MethodWithMetrics(
-                namespace: $info['namespace'],
-                class: $info['class'],
-                method: $info['method'],
-                line: $info['line'],
-                metrics: $bag,
-            );
+            $result[] = $this->createCallableWithMetrics($info, $file, $bag, $ordinals[$fqn]);
         }
 
         return $result;
@@ -111,31 +118,57 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
             $this->currentNamespace = $node->name?->toString() ?? '';
         }
 
-        // Track class-like types with stack for nested anonymous classes
+        // Track class-like types, including anonymous declarations.
         $className = $this->extractClassLikeName($node);
+        if ($this->isClassLikeNode($node)) {
+            $this->classStack[] = [$this->currentClass, $this->currentClassStartFilePos];
+        }
         if ($className !== null) {
             $this->currentClass = $className;
-            $this->classStack[] = $className;
-        } elseif ($this->isClassLikeNode($node)) {
-            // Anonymous class — push null to track scope depth
-            $this->classStack[] = null;
-            if ($node instanceof Stmt\Class_ && $node->name === null) {
-                ++$this->anonymousClassDepth;
-            }
+            $this->currentClassStartFilePos = $node->getStartFilePos();
+        } elseif ($node instanceof Stmt\Class_ && $node->name === null) {
+            $this->currentClass = $this->buildAnonymousClassName($node->getStartFilePos());
+            $this->currentClassStartFilePos = $node->getStartFilePos();
         }
 
-        // Class method (skip if inside anonymous class)
+        // Class method
         if ($node instanceof ClassMethod) {
-            if ($this->anonymousClassDepth === 0) {
-                $fqn = $this->buildMethodFqn($node->name->toString());
-                $this->methodInfos[$fqn] = [
-                    'namespace' => $this->currentNamespace,
-                    'class' => $this->currentClass,
-                    'method' => $node->name->toString(),
-                    'line' => $node->getStartLine(),
-                ];
-                $this->analyzeAndStore($fqn, $node->stmts ?? []);
-            }
+            $fqn = $this->buildMethodFqn($node->name->toString());
+            $fqn = $this->createCallableTraversalKey($fqn, $node->getStartFilePos());
+            $this->methodInfos[$fqn] = [
+                'logicalFqn' => $this->buildMethodFqn($node->name->toString()),
+                'namespace' => $this->currentNamespace,
+                'class' => $this->currentClass,
+                'method' => $node->name->toString(),
+                'startFilePos' => $node->getStartFilePos(),
+                'kind' => CallableKind::Method,
+                'anonymousSyntax' => null,
+                'classStartFilePos' => $this->currentClassStartFilePos,
+            ];
+            $this->analyzeAndStore($fqn, $node->stmts ?? []);
+
+            return null;
+        }
+
+        if ($node instanceof Stmt\Property && $this->currentClass !== null && \count($node->props) === 1) {
+            $this->currentProperty = $node->props[0]->name->toString();
+        }
+
+        if ($node instanceof PropertyHook && $this->currentClass !== null && $this->currentProperty !== null) {
+            $name = $this->currentProperty . '::' . $node->name->toString();
+            $fqn = $this->buildMethodFqn($name);
+            $fqn = $this->createCallableTraversalKey($fqn, $node->getStartFilePos());
+            $this->methodInfos[$fqn] = [
+                'logicalFqn' => $this->buildMethodFqn($name),
+                'namespace' => $this->currentNamespace,
+                'class' => $this->currentClass,
+                'method' => $name,
+                'startFilePos' => $node->getStartFilePos(),
+                'kind' => CallableKind::PropertyHook,
+                'anonymousSyntax' => null,
+                'classStartFilePos' => $this->currentClassStartFilePos,
+            ];
+            $this->analyzeAndStore($fqn, $node->body instanceof Expr ? [] : ($node->body ?? []));
 
             return null;
         }
@@ -143,13 +176,38 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
         // Global function
         if ($node instanceof Function_) {
             $fqn = $this->buildFunctionFqn($node->name->toString());
+            $fqn = $this->createCallableTraversalKey($fqn, $node->getStartFilePos());
             $this->methodInfos[$fqn] = [
+                'logicalFqn' => $this->buildFunctionFqn($node->name->toString()),
                 'namespace' => $this->currentNamespace,
                 'class' => null,
                 'method' => $node->name->toString(),
-                'line' => $node->getStartLine(),
+                'startFilePos' => $node->getStartFilePos(),
+                'kind' => CallableKind::Function,
+                'anonymousSyntax' => null,
+                'classStartFilePos' => null,
             ];
             $this->analyzeAndStore($fqn, $node->stmts ?? []);
+
+            return null;
+        }
+
+        if ($node instanceof Closure || $node instanceof ArrowFunction) {
+            ++$this->closureCounter;
+            $name = '{closure#' . $this->closureCounter . '}';
+            $fqn = $this->buildClosureFqn();
+            $fqn = $this->createCallableTraversalKey($fqn, $node->getStartFilePos());
+            $this->methodInfos[$fqn] = [
+                'logicalFqn' => $this->buildClosureFqn(),
+                'namespace' => $this->currentNamespace,
+                'class' => $this->currentClass,
+                'method' => $name,
+                'startFilePos' => $node->getStartFilePos(),
+                'kind' => CallableKind::AnonymousCallable,
+                'anonymousSyntax' => $node instanceof Closure ? 'closure' : 'arrow',
+                'classStartFilePos' => $this->currentClassStartFilePos,
+            ];
+            $this->analyzeAndStore($fqn, $node instanceof ArrowFunction ? [] : ($node->stmts ?? []));
 
             return null;
         }
@@ -159,13 +217,13 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
 
     public function leaveNode(Node $node): ?int
     {
+        if ($node instanceof Stmt\Property) {
+            $this->currentProperty = null;
+        }
+
         // Exit class-like scope — pop stack and restore previous class context
         if ($this->isClassLikeNode($node)) {
-            if ($node instanceof Stmt\Class_ && $node->name === null) {
-                --$this->anonymousClassDepth;
-            }
-            array_pop($this->classStack);
-            $this->currentClass = $this->classStack !== [] ? $this->classStack[array_key_last($this->classStack)] : null;
+            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classStack) ?? [null, null];
         }
 
         // Exit namespace scope

@@ -156,7 +156,7 @@ final class AnalysisContextThresholdTest extends TestCase
             ],
         );
 
-        // Line 30 is within both scopes — method-level (narrower) wins
+        // Line 30 is within both scopes — callable-level (narrower) wins
         $result = $context->getThresholdOverride('complexity.cyclomatic', RelativePath::fromString('src/Foo.php'), 30);
         self::assertSame($methodOverride, $result);
 

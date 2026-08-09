@@ -29,12 +29,12 @@ final class SymbolPathTest extends TestCase
     {
         yield 'method with namespace' => [
             SymbolPath::forMethod('App\Service', 'UserService', 'calculateTotal'),
-            'method:App\Service\UserService::calculateTotal',
+            'callable:App\Service\UserService::calculateTotal',
         ];
 
         yield 'method without namespace' => [
             SymbolPath::forMethod('', 'UserService', 'calculate'),
-            'method:UserService::calculate',
+            'callable:UserService::calculate',
         ];
 
         yield 'class with namespace' => [

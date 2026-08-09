@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\Complexity\NpathComplexityCollector;
 use Qualimetrix\Metrics\Complexity\NpathComplexityVisitor;
 use SplFileInfo;
@@ -46,7 +47,7 @@ final class NpathComplexityCollectorTest extends TestCase
 
         self::assertCount(1, $definitions);
         self::assertSame('npath', $definitions[0]->name);
-        self::assertSame(SymbolLevel::Method, $definitions[0]->collectedAt);
+        self::assertSame(SymbolLevel::Callable, $definitions[0]->collectedAt);
         self::assertSame(
             [AggregationStrategy::Max, AggregationStrategy::Average],
             $definitions[0]->aggregations[SymbolLevel::Class_->value],
@@ -1114,7 +1115,7 @@ PHP;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $methods = $visitor->getMethodsWithMetrics();
+        $methods = $visitor->getCallablesWithMetrics(RelativePath::fromString('src/Test.php'));
         self::assertCount(1, $methods);
 
         $entries = $methods[0]->metrics->entries('npath-complexity.factors');

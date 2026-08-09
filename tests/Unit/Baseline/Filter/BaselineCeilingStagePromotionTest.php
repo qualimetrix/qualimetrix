@@ -136,7 +136,7 @@ final class BaselineCeilingStagePromotionTest extends TestCase
         $result = $stage->apply([$unbounded, $accepted, $breached]);
 
         self::assertSame(
-            ['method:App\Foo::fresh', 'method:App\Foo::breached'],
+            ['callable:App\Foo::fresh', 'callable:App\Foo::breached'],
             array_map(
                 static fn(Violation $violation): string => $violation->symbolPath->toCanonical(),
                 $result->violations,

@@ -10,6 +10,7 @@ use PhpParser\Node\Expr\ArrowFunction;
 use PhpParser\Node\Expr\BinaryOp;
 use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\Ternary;
+use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Do_;
@@ -17,12 +18,15 @@ use PhpParser\Node\Stmt\For_;
 use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\If_;
+use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\Switch_;
 use PhpParser\Node\Stmt\TryCatch;
 use PhpParser\Node\Stmt\While_;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
 use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
@@ -62,7 +66,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     /** @var array<string, list<array{type: string, line: int, factor: int}>> FQN => multiplicative factors */
     private array $factors = [];
 
-    /** @var array<string, array{namespace: ?string, class: ?string, method: string, line: int}> FQN => method info */
+    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
     private array $methodInfos = [];
 
     /** @var list<array{fqn: string, depth: int}> Stack of nested methods/functions */
@@ -70,13 +74,14 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
 
     private ?string $currentNamespace = null;
     private ?string $currentClass = null;
+    private ?int $currentClassStartFilePos = null;
     private int $closureCounter = 0;
+    private ?string $currentProperty = null;
+    /** @var list<array{?string, ?int}> */
+    private array $classContextStack = [];
 
     /** @var ?string FQN of the method currently being calculated (for factor tracking) */
     private ?string $calculatingFqn = null;
-
-    /** @var int Depth of anonymous class nesting (methods inside anonymous classes are skipped) */
-    private int $anonymousClassDepth = 0;
 
     private readonly NpathExpressionCalculator $expressionCalculator;
 
@@ -93,9 +98,12 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
         $this->methodStack = [];
         $this->currentNamespace = null;
         $this->currentClass = null;
+        $this->currentClassStartFilePos = null;
         $this->closureCounter = 0;
+        $this->currentProperty = null;
+        $this->classContextStack = [];
+        $this->resetCallableTraversalKeys();
         $this->calculatingFqn = null;
-        $this->anonymousClassDepth = 0;
     }
 
     /**
@@ -103,7 +111,10 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
      */
     public function getNpath(): array
     {
-        return $this->npath;
+        /** @var array<string, int> $projected */
+        $projected = $this->projectLogicalMetricMap($this->npath, $this->methodInfos);
+
+        return $projected;
     }
 
     /**
@@ -113,18 +124,22 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
      */
     public function getFactors(): array
     {
-        return $this->factors;
+        /** @var array<string, list<array{type: string, line: int, factor: int}>> $projected */
+        $projected = $this->projectLogicalMetricMap($this->factors, $this->methodInfos);
+
+        return $projected;
     }
 
     /**
      * Returns structured method metrics for each analyzed method.
      *
-     * @return list<MethodWithMetrics>
+     * @return list<CallableWithMetrics>
      */
-    public function getMethodsWithMetrics(): array
+    public function getCallablesWithMetrics(RelativePath $file): array
     {
         $result = [];
 
+        $ordinals = $this->callableCollisionOrdinals($this->methodInfos);
         foreach ($this->methodInfos as $fqn => $info) {
             $metrics = (new MetricBag())->with('npath', $this->npath[$fqn] ?? 1);
 
@@ -136,13 +151,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
                 ]);
             }
 
-            $result[] = new MethodWithMetrics(
-                namespace: $info['namespace'],
-                class: $info['class'],
-                method: $info['method'],
-                line: $info['line'],
-                metrics: $metrics,
-            );
+            $result[] = $this->createCallableWithMetrics($info, $file, $metrics, $ordinals[$fqn]);
         }
 
         return $result;
@@ -155,30 +164,49 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             $this->currentNamespace = $node->name?->toString() ?? '';
         }
 
-        // Track class-like types (skip anonymous classes)
+        if ($this->isClassLikeNode($node)) {
+            $this->classContextStack[] = [$this->currentClass, $this->currentClassStartFilePos];
+        }
+
         if ($node instanceof Node\Stmt\Class_) {
             if ($node->name === null) {
-                ++$this->anonymousClassDepth;
+                $this->currentClass = $this->buildAnonymousClassName($node->getStartFilePos());
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             } else {
                 $this->currentClass = $node->name->toString();
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             }
         } elseif ($this->isClassLikeNode($node)) {
             $className = $this->extractClassLikeName($node);
             if ($className !== null) {
                 $this->currentClass = $className;
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             }
         }
 
-        // Start of a method (skip if inside anonymous class)
         if ($node instanceof ClassMethod) {
-            if ($this->anonymousClassDepth === 0) {
-                $fqn = $this->buildMethodFqn($node->name->toString());
-                $this->calculatingFqn = $fqn;
-                $this->factors[$fqn] = [];
-                $npath = $this->calculateSequenceNpath($node->stmts ?? [], trackFactors: true);
-                $this->calculatingFqn = null;
-                $this->startMethod($fqn, $node->name->toString(), $node->getStartLine(), $npath);
-            }
+            $fqn = $this->buildMethodFqn($node->name->toString());
+            $this->calculatingFqn = $fqn;
+            $this->factors[$fqn] = [];
+            $npath = $this->calculateSequenceNpath($node->stmts ?? [], trackFactors: true);
+            $this->calculatingFqn = null;
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $npath, CallableKind::Method, null);
+
+            return null;
+        }
+
+        if ($node instanceof Property && $this->currentClass !== null && \count($node->props) === 1) {
+            $this->currentProperty = $node->props[0]->name->toString();
+        }
+
+        if ($node instanceof PropertyHook && $this->currentClass !== null && $this->currentProperty !== null) {
+            $name = $this->currentProperty . '::' . $node->name->toString();
+            $fqn = $this->buildMethodFqn($name);
+            $this->calculatingFqn = $fqn;
+            $this->factors[$fqn] = [];
+            $npath = $node->body instanceof Expr ? max(1, $this->expressionCalculator->calculate($node->body)) : $this->calculateSequenceNpath($node->body ?? [], trackFactors: true);
+            $this->calculatingFqn = null;
+            $this->startMethod($fqn, $name, $node->getStartFilePos(), $npath, CallableKind::PropertyHook, null);
 
             return null;
         }
@@ -190,17 +218,12 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             $this->factors[$fqn] = [];
             $npath = $this->calculateSequenceNpath($node->stmts ?? [], trackFactors: true);
             $this->calculatingFqn = null;
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartLine(), $npath);
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $npath, CallableKind::Function, null);
 
             return null;
         }
 
-        // Start of a closure (skip if inside anonymous class)
         if ($node instanceof Closure) {
-            if ($this->anonymousClassDepth > 0) {
-                return null;
-            }
-
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
@@ -208,23 +231,18 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             $this->factors[$fqn] = [];
             $npath = $this->calculateSequenceNpath($node->stmts ?? [], trackFactors: true);
             $this->calculatingFqn = null;
-            $this->startMethod($fqn, $closureName, $node->getStartLine(), $npath);
+            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), $npath, CallableKind::AnonymousCallable, 'closure');
 
             return null;
         }
 
-        // Start of an arrow function (skip if inside anonymous class)
         if ($node instanceof ArrowFunction) {
-            if ($this->anonymousClassDepth > 0) {
-                return null;
-            }
-
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
             $this->factors[$fqn] = [];
             $npath = max(1, $this->expressionCalculator->calculate($node->expr));
-            $this->startMethod($fqn, $closureName, $node->getStartLine(), $npath);
+            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), $npath, CallableKind::AnonymousCallable, 'arrow');
 
             return null;
         }
@@ -234,13 +252,22 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
 
     public function leaveNode(Node $node): ?int
     {
-        // End of method (skip if inside anonymous class — we didn't start it)
         if ($node instanceof ClassMethod) {
-            if ($this->anonymousClassDepth === 0) {
+            $this->endMethod();
+
+            return null;
+        }
+
+        if ($node instanceof PropertyHook) {
+            if ($this->currentClass !== null && $this->currentProperty !== null) {
                 $this->endMethod();
             }
 
             return null;
+        }
+
+        if ($node instanceof Property) {
+            $this->currentProperty = null;
         }
 
         if ($node instanceof Function_) {
@@ -250,22 +277,16 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
         }
 
         if ($node instanceof Closure || $node instanceof ArrowFunction) {
-            if ($this->anonymousClassDepth === 0) {
-                $this->endMethod();
-            }
+            $this->endMethod();
 
             return null;
         }
 
         // Exit class-like scope
         if ($node instanceof Node\Stmt\Class_) {
-            if ($node->name === null) {
-                --$this->anonymousClassDepth;
-            } else {
-                $this->currentClass = null;
-            }
+            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
         } elseif ($this->isClassLikeNode($node)) {
-            $this->currentClass = null;
+            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
         }
 
         // Exit namespace scope
@@ -276,15 +297,31 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
         return null;
     }
 
-    private function startMethod(string $fqn, string $methodName, int $line, int $npath): void
-    {
+    private function startMethod(
+        string $fqn,
+        string $methodName,
+        int $startFilePos,
+        int $npath,
+        CallableKind $kind,
+        ?string $anonymousSyntax,
+    ): void {
+        $logicalFqn = $fqn;
+        $fqn = $this->createCallableTraversalKey($logicalFqn, $startFilePos);
+        if (isset($this->factors[$logicalFqn])) {
+            $this->factors[$fqn] = $this->factors[$logicalFqn];
+            unset($this->factors[$logicalFqn]);
+        }
         $this->methodStack[] = ['fqn' => $fqn, 'depth' => \count($this->methodStack)];
         $this->npath[$fqn] = min($npath, NpathExpressionCalculator::MAX_NPATH);
         $this->methodInfos[$fqn] = [
             'namespace' => $this->currentNamespace,
+            'logicalFqn' => $logicalFqn,
             'class' => $this->currentClass,
             'method' => $methodName,
-            'line' => $line,
+            'startFilePos' => $startFilePos,
+            'kind' => $kind,
+            'anonymousSyntax' => $anonymousSyntax,
+            'classStartFilePos' => $this->currentClassStartFilePos,
         ];
     }
 

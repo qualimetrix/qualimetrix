@@ -54,7 +54,7 @@ final class FullPipelineIntegrationTest extends TestCase
         $this->writeYaml('qmx.yaml', [
             'rules' => [
                 'complexity.cyclomatic' => [
-                    'method' => [
+                    'callable' => [
                         'warning' => 12,
                     ],
                 ],
@@ -64,9 +64,9 @@ final class FullPipelineIntegrationTest extends TestCase
         $resolved = $this->resolveFullPipeline(['--preset' => ['strict']]);
 
         // Config file (priority 20) overrides preset (priority 15)
-        self::assertSame(12, $resolved->ruleOptions['complexity.cyclomatic']['method']['warning']);
+        self::assertSame(12, $resolved->ruleOptions['complexity.cyclomatic']['callable']['warning']);
         // Preset values not overridden by config file are preserved (strict.yaml: method.error = 15)
-        self::assertSame(15, $resolved->ruleOptions['complexity.cyclomatic']['method']['error']);
+        self::assertSame(15, $resolved->ruleOptions['complexity.cyclomatic']['callable']['error']);
     }
 
     #[Test]
@@ -88,7 +88,7 @@ final class FullPipelineIntegrationTest extends TestCase
         $resolved = $this->resolveFullPipeline(['--preset' => ['legacy,strict']]);
 
         // Strict is applied last, so its CCN thresholds win
-        self::assertSame(7, $resolved->ruleOptions['complexity.cyclomatic']['method']['warning']);
+        self::assertSame(7, $resolved->ruleOptions['complexity.cyclomatic']['callable']['warning']);
 
         // Disabled rules from legacy are preserved (union semantics)
         self::assertContains('code-smell.boolean-argument', $resolved->analysis->disabledRules);

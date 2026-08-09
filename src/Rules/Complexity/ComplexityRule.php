@@ -71,7 +71,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Method, RuleLevel::Class_];
+        return [RuleLevel::Callable, RuleLevel::Class_];
     }
 
     /**
@@ -89,7 +89,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
         }
 
         return match ($level) {
-            RuleLevel::Method => $this->analyzeMethodLevel($context),
+            RuleLevel::Callable => $this->analyzeMethodLevel($context),
             RuleLevel::Class_ => $this->analyzeClassLevel($context),
             default => [],
         };
@@ -122,7 +122,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     }
 
     /**
-     * `complexity.cyclomatic.method` reports the method's raw CCN
+     * `complexity.cyclomatic.callable` reports the method's raw CCN
      * (`$ccnValue`, an `int`) as `metricValue` — see the emission at
      * {@see analyzeMethodLevel()} — and is judged worse the higher it goes,
      * per {@see MethodComplexityOptions::getSeverity()}'s `$value >=
@@ -134,14 +134,14 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
      * (line 59).
      *
      * Keyed by the full channel key: the `ruleName` half is `self::NAME`,
-     * the `violationCode` half adds the `.method`/`.class` suffix.
+     * the `violationCode` half adds the `.callable`/`.class` suffix.
      *
      * @return array<string, ChannelDeclaration>
      */
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME . '.method'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            (new ViolationChannel(self::NAME, self::NAME . '.callable'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
             (new ViolationChannel(self::NAME, self::NAME . '.class'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
         ];
     }
@@ -152,7 +152,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     private function analyzeMethodLevel(AnalysisContext $context): array
     {
         \assert($this->options instanceof ComplexityOptions);
-        $methodOptions = $this->options->method;
+        $methodOptions = $this->options->callable;
 
         $violations = [];
 
@@ -178,11 +178,11 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
                     location: new Location($methodInfo->file, $methodInfo->line),
                     symbolPath: $methodInfo->symbolPath,
                     ruleName: $this->getName(),
-                    violationCode: self::NAME . '.method',
+                    violationCode: self::NAME . '.callable',
                     message: \sprintf('Cyclomatic complexity is %d, exceeds threshold of %d. Consider extracting methods or simplifying conditions', $ccnValue, $threshold),
                     severity: $severity,
                     metricValue: $ccnValue,
-                    level: RuleLevel::Method,
+                    level: RuleLevel::Callable,
                     recommendation: $recommendation,
                     threshold: $threshold,
                 );
@@ -193,7 +193,7 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
     }
 
     /**
-     * Builds recommendation text for method-level CCN violations.
+     * Builds recommendation text for callable-level CCN violations.
      *
      * When CCN is high but cognitive complexity is low, this indicates
      * mechanical branching (e.g., switch/match statements) rather than

@@ -80,8 +80,8 @@ Without `--remove`, `baseline:cleanup <baseline> [<paths>...]` only lists candid
 ### Explain a boundary
 
 ```bash
-bin/qmx baseline:explain 'method:App\OrderService::calculate' src/ --baseline=baseline.json
-bin/qmx baseline:explain 'method:App\OrderService::calculate' src/ --channel='complexity.cyclomatic#complexity.cyclomatic.method'
+bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --baseline=baseline.json
+bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel='complexity.cyclomatic#complexity.cyclomatic.callable'
 ```
 
 `baseline:explain <symbol> [<paths>...]` shows the accepted level, what fires now, the configured threshold, and any `@qmx-threshold` override. Use `--baseline=BASELINE` to include accepted levels and `--channel=CHANNEL` to restrict the answer.

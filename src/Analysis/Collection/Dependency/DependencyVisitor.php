@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Collection\Dependency;
 
+use LogicException;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Enum_;
@@ -24,6 +25,8 @@ use Qualimetrix\Analysis\Collection\Dependency\Handler\StaticAccessHandler;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\TraitUseHandler;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Visitor that collects all class dependencies from AST.
@@ -126,10 +129,18 @@ final class DependencyVisitor extends NodeVisitorAbstract
                 ? $this->resolver->getNamespace() . '\\' . $className
                 : $className;
 
+            if ($this->file === null) {
+                throw new LogicException('DependencyVisitor requires a relative file path before traversing declarations');
+            }
+
             $this->currentContext = new DependencyContext(
                 $this->resolver,
                 $this->file,
-                $this->currentClass,
+                new DeclarationPath(
+                    SymbolPath::fromClassFqn($this->currentClass),
+                    $this->file,
+                    $node->getStartFilePos(),
+                ),
             );
 
             $this->classLikeHandler->handle($node, $this->currentContext);

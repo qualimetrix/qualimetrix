@@ -95,7 +95,7 @@ Analysis/
 │   ├── AggregationPhaseInterface.php    # Phase contract
 │   ├── AggregationHelper.php            # Generic aggregation arithmetic
 │   ├── NamespaceMetricContributions.php # Namespace ownership and file mapping
-│   ├── MethodToClassAggregator.php      # Method → Class phase
+│   ├── CallableToClassAggregator.php      # Callable → Class phase
 │   ├── ClassToNamespaceAggregator.php   # Class → Namespace phase
 │   ├── NamespaceToProjectAggregator.php # Namespace → Project phase
 │   ├── MetricAggregator.php             # Thin orchestrator
@@ -379,8 +379,8 @@ Aggregates metrics by hierarchy levels based on `MetricDefinition` from collecto
 
 The aggregator has been decomposed into individual phases, each implementing `AggregationPhaseInterface`:
 
-- **MethodToClassAggregator** — applies strategies from `aggregations[Class_]` (result: `ccn.sum`, `ccn.avg`, `ccn.max`)
-- **ClassToNamespaceAggregator** — applies strategies from `aggregations[Namespace_]`. For method-collected metrics (CCN, Cognitive, NPath, MI), namespace-level aggregation reads raw method-level values directly (not class-level sums), so `.max`/`.avg`/`.p95` reflect per-method statistics
+- **CallableToClassAggregator** — applies strategies from `aggregations[Class_]` (result: `ccn.sum`, `ccn.avg`, `ccn.max`)
+- **ClassToNamespaceAggregator** — applies strategies from `aggregations[Namespace_]`. For method-collected metrics (CCN, Cognitive, NPath, MI), namespace-level aggregation reads raw callable-level values directly (not class-level sums), so `.max`/`.avg`/`.p95` reflect per-method statistics
 - **NamespaceToProjectAggregator** — aggregates across all namespaces; handles both class-collected metrics (promoted from namespace via `aggregations[Project_]`) and namespace-collected metrics (e.g., `distance`, `abstractness`, `ce.p95`) that already exist at namespace level and are aggregated directly to project level
 
 `MetricAggregator` is now a thin orchestrator that runs these phases in order. `AggregationHelper` provides generic aggregation arithmetic, while `NamespaceMetricContributions` resolves namespace-owned values and their physical-file mapping.
@@ -424,7 +424,9 @@ Value object representing the dependency graph between classes.
 
 ### DependencyGraphBuilder
 
-Builds the graph from collected dependencies: grouping by classes -> building the graph.
+Builds the graph from exact declaration-source dependencies and the explicit
+logical-class universe. `build(array $dependencies, iterable $logicalClassUniverse)`
+always receives that universe, so classes with no dependencies remain graph vertices.
 
 ### DependencyGraphAnalyzer
 
@@ -499,5 +501,7 @@ Stores metrics in memory.
 
 **Key methods:**
 - `add(SymbolPath, MetricBag, file, line)` — add with automatic merge
+- `addCallable(CallableWithMetrics)` — retain exact declaration identity and metadata
+- `allDeclarations()`, `allCallables()`, `allLogicalClasses()` — typed declaration/class views
 - `getNamespaces()` — list of namespaces
 - `forNamespace(string)` — symbols in namespace

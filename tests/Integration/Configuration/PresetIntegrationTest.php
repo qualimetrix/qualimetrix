@@ -27,7 +27,7 @@ final class PresetIntegrationTest extends TestCase
         $resolved = $this->resolveWithPresets(['strict']);
 
         self::assertArrayHasKey('complexity.cyclomatic', $resolved->ruleOptions);
-        self::assertSame(7, $resolved->ruleOptions['complexity.cyclomatic']['method']['warning']);
+        self::assertSame(7, $resolved->ruleOptions['complexity.cyclomatic']['callable']['warning']);
     }
 
     #[Test]
@@ -36,7 +36,7 @@ final class PresetIntegrationTest extends TestCase
         $resolved = $this->resolveWithPresets(['legacy']);
 
         self::assertArrayHasKey('complexity.cyclomatic', $resolved->ruleOptions);
-        self::assertSame(20, $resolved->ruleOptions['complexity.cyclomatic']['method']['warning']);
+        self::assertSame(20, $resolved->ruleOptions['complexity.cyclomatic']['callable']['warning']);
     }
 
     #[Test]
@@ -54,7 +54,7 @@ final class PresetIntegrationTest extends TestCase
 
         // Strict thresholds are applied
         self::assertArrayHasKey('complexity.cyclomatic', $resolved->ruleOptions);
-        self::assertSame(7, $resolved->ruleOptions['complexity.cyclomatic']['method']['warning']);
+        self::assertSame(7, $resolved->ruleOptions['complexity.cyclomatic']['callable']['warning']);
 
         // CI failOn is applied
         self::assertSame(Severity::Error, $resolved->analysis->failOn);

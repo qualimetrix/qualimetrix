@@ -80,6 +80,12 @@ PHP;
         self::assertSame(0, $metrics->entryCount('security.hardcodedCredentials'));
     }
 
+    #[Test]
+    public function itDeliberatelyDoesNotProvideCallableMetrics(): void
+    {
+        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
+    }
+
     private function collectMetrics(string $code): MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

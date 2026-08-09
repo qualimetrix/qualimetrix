@@ -7,12 +7,13 @@ namespace Qualimetrix\Metrics\CodeSmell;
 use Override;
 use PhpParser\Node;
 use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableMetricsProviderInterface;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
@@ -22,7 +23,7 @@ use SplFileInfo;
  * Metric format: parameterCount:{FQN}
  * Example: parameterCount:App\Service\UserService::calculate
  */
-final class ParameterCountCollector extends AbstractCollector implements MethodMetricsProviderInterface
+final class ParameterCountCollector extends AbstractCollector implements CallableMetricsProviderInterface
 {
     private const NAME = 'parameter-count';
 
@@ -68,13 +69,13 @@ final class ParameterCountCollector extends AbstractCollector implements MethodM
     }
 
     /**
-     * @return list<MethodWithMetrics>
+     * @return list<CallableWithMetrics>
      */
-    public function getMethodsWithMetrics(): array
+    public function getCallablesWithMetrics(RelativePath $file): array
     {
         \assert($this->visitor instanceof ParameterCountVisitor);
 
-        return $this->visitor->getMethodsWithMetrics();
+        return $this->visitor->getCallablesWithMetrics($file);
     }
 
     /**
@@ -86,7 +87,7 @@ final class ParameterCountCollector extends AbstractCollector implements MethodM
         return [
             new MetricDefinition(
                 name: MetricName::CODE_SMELL_PARAMETER_COUNT,
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: [
                     SymbolLevel::Class_->value => [
                         AggregationStrategy::Max,
@@ -107,7 +108,7 @@ final class ParameterCountCollector extends AbstractCollector implements MethodM
             // Boolean flag (0/1) for VO constructor detection — no aggregation needed
             new MetricDefinition(
                 name: MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR,
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: [],
             ),
         ];

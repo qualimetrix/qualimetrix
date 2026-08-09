@@ -857,13 +857,13 @@ PHP;
 
         $this->parseAndTraverse($code);
 
-        $classMetrics = $this->collector->getClassesWithMetrics();
+        $classMetrics = $this->collector->getClassesWithMetrics(\Qualimetrix\Core\Path\RelativePath::fromString('MyClass.php'));
 
         self::assertCount(1, $classMetrics);
 
         $class = $classMetrics[0];
-        self::assertSame('App', $class->namespace);
-        self::assertSame('MyClass', $class->class);
+        self::assertSame('App', $class->declarationPath->logical->namespace);
+        self::assertSame('MyClass', $class->declarationPath->logical->type);
 
         // Metrics without FQN prefix (ClassWithMetrics pattern)
         self::assertSame(1, $class->metrics->entryCount('unusedPrivate.method'));
@@ -1196,6 +1196,12 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         self::assertSame(0, $metrics->entryCount('unusedPrivate.method:MyClass'));
+    }
+
+    #[Test]
+    public function itDeliberatelyDoesNotProvideCallableMetrics(): void
+    {
+        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
     private function collectMetrics(string $code): MetricBag

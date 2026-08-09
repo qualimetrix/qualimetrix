@@ -119,7 +119,7 @@ final class DetailedViolationRendererTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
@@ -148,7 +148,7 @@ final class DetailedViolationRendererTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 15,
@@ -171,7 +171,7 @@ final class DetailedViolationRendererTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 15,
@@ -221,7 +221,7 @@ final class DetailedViolationRendererTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Test',
                 severity: Severity::Error,
             ),
@@ -230,7 +230,7 @@ final class DetailedViolationRendererTest extends TestCase
         $context = new FormatterContext(useColor: false);
         $output = $this->renderer->render($violations, $context);
 
-        self::assertStringContainsString('[complexity.cyclomatic.method]', $output);
+        self::assertStringContainsString('[complexity.cyclomatic.callable]', $output);
     }
 
     #[Test]
@@ -261,7 +261,7 @@ final class DetailedViolationRendererTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'a'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
@@ -269,7 +269,7 @@ final class DetailedViolationRendererTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo.php'), 20),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'b'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
@@ -301,7 +301,7 @@ final class DetailedViolationRendererTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'a'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
@@ -334,7 +334,7 @@ final class DetailedViolationRendererTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complexity is 31',
                 severity: Severity::Warning,
                 metricValue: 31,
@@ -355,7 +355,7 @@ final class DetailedViolationRendererTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complexity is 31',
                 severity: Severity::Warning,
                 metricValue: 31,

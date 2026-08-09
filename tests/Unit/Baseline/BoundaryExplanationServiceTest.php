@@ -16,20 +16,26 @@ use Qualimetrix\Baseline\BoundaryExplanationService;
 use Qualimetrix\Baseline\BoundaryExplanationStatus;
 use Qualimetrix\Baseline\InertBaselineEntry;
 use Qualimetrix\Baseline\InertEntryReason;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Core\Violation\ViolationChannel;
+use ReflectionMethod;
 
 #[CoversClass(BoundaryExplanationService::class)]
 final class BoundaryExplanationServiceTest extends TestCase
 {
-    private const string SYMBOL_KEY = 'method:App\Foo::bar';
+    private const string SYMBOL_KEY = 'callable:App\Foo::bar';
 
     private BoundaryExplanationService $service;
 
@@ -41,7 +47,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itClassifiesCurrentBaselineOnlyAndUnknownSymbolsExplicitly(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
         $baseline = $this->baselineWithEntry($channel, magnitudes: [25], count: 1);
         $currentRepository = $this->repositoryLocating(
             SymbolPath::forMethod('App', 'Foo', 'bar'),
@@ -78,7 +84,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             [],
             [],
         );
-        $unknown = $this->service->explain('method:App\Missing::method', $channel, $baseline, [], [], [], $currentRepository);
+        $unknown = $this->service->explain('callable:App\Missing::method', $channel, $baseline, [], [], [], $currentRepository);
 
         self::assertSame(BoundaryExplanationStatus::Current, $current->status);
         self::assertSame(BoundaryExplanationStatus::BaselineOnly, $baselineOnly->status);
@@ -94,7 +100,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itCollectsAllThreeSourcesWhenAllThreeApply(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
         $baseline = $this->baselineWithEntry($channel, magnitudes: [25], count: 1);
         $currentViolation = $this->violation($channel, metricValue: 31);
 
@@ -129,7 +135,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itPrintsBothTheStoredMagnitudeAndTheCurrentlyComparedOne(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
         $baseline = $this->baselineWithEntry($channel, magnitudes: [25], count: 1);
         $currentViolation = $this->violation($channel, metricValue: 31);
 
@@ -165,7 +171,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             symbolKey: self::SYMBOL_KEY,
             channelFilter: $channel,
             baseline: $this->baselineWithEntry(
-                new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method'),
+                new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
                 magnitudes: [25],
                 count: 1,
             ),
@@ -221,7 +227,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itDiscoversEveryApplicableChannelWhenNoneIsRequested(): void
     {
-        $baselinedChannel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+        $baselinedChannel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
         $firingOnlyChannel = new ViolationChannel('coupling.cbo', 'coupling.cbo.class');
 
         $baseline = $this->baselineWithEntry($baselinedChannel, magnitudes: [25], count: 1);
@@ -255,7 +261,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itReportsNoAnnotationWhenNoSourceLocatesTheSymbol(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
 
         $explanation = $this->service->explain(
             symbolKey: self::SYMBOL_KEY,
@@ -283,7 +289,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itFindsTheAnnotationForASymbolThatViolatesNothing(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
 
         $explanation = $this->service->explain(
             symbolKey: self::SYMBOL_KEY,
@@ -312,7 +318,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     #[Test]
     public function itReportsNoAnnotationForASymbolTheRunNeverMeasured(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
 
         $explanation = $this->service->explain(
             symbolKey: self::SYMBOL_KEY,
@@ -329,6 +335,30 @@ final class BoundaryExplanationServiceTest extends TestCase
         self::assertNull($explanation->boundaries[0]->annotation);
     }
 
+    #[Test]
+    public function itKeepsTheThresholdLookupNullRepositoryTypedAndEmpty(): void
+    {
+        $method = new ReflectionMethod(BoundaryExplanationService::class, 'nullMetrics');
+        $repository = $method->invoke(null);
+        $subject = MetricSubject::aggregate(SymbolPath::forProject());
+        $callable = new CallableWithMetrics(
+            new DeclarationPath(SymbolPath::forGlobalFunction('App', 'noop'), RelativePath::fromString('src/Null.php'), 0),
+            CallableKind::Function,
+            null,
+            null,
+            null,
+            new MetricBag(),
+        );
+
+        self::assertFalse($repository->hasSubject($subject));
+        self::assertEquals(new MetricBag(), $repository->getSubject($subject));
+        $repository->addSubject($subject, new MetricBag(), null, null);
+        $repository->addCallable($callable);
+        self::assertSame([], [...$repository->allDeclarations()]);
+        self::assertSame([], [...$repository->allCallables()]);
+        self::assertSame([], [...$repository->allLogicalClasses()]);
+    }
+
     /**
      * A repository that knows where exactly one symbol is declared — the
      * shape a run leaves behind for every symbol it measured, violating or
@@ -337,7 +367,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     private function repositoryLocating(SymbolPath $symbol, string $file, int $line): MetricRepositoryInterface
     {
         $repository = new InMemoryMetricRepository();
-        $repository->add($symbol, new MetricBag(), RelativePath::fromString($file), $line);
+        $repository->addCallable(new CallableWithMetrics(new DeclarationPath($symbol, RelativePath::fromString($file), 0), CallableKind::Method, null, null, new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')), new MetricBag(), $line));
 
         return $repository;
     }

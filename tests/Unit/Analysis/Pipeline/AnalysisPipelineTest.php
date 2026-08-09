@@ -38,6 +38,8 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -135,7 +137,12 @@ final class AnalysisPipelineTest extends TestCase
     {
         $files = [new SplFileInfo('/tmp/test.php')];
         $dependencies = [
-            new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Bar'), DependencyType::New_, new Location(RelativePath::fromString('tmp/test.php'), 10)),
+            new Dependency(
+                new DeclarationPath(SymbolPath::fromClassFqn('App\Foo'), RelativePath::fromString('tmp/test.php'), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\Bar')),
+                DependencyType::New_,
+                new Location(RelativePath::fromString('tmp/test.php'), 10),
+            ),
         ];
 
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator($files));

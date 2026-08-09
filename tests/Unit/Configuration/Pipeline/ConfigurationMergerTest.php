@@ -333,7 +333,7 @@ final class ConfigurationMergerTest extends TestCase
         $base = [
             'rules' => [
                 'complexity.cyclomatic' => [
-                    'method' => ['warning' => 10, 'error' => 20],
+                    'callable' => ['warning' => 10, 'error' => 20],
                     'class' => ['max_warning' => 30],
                 ],
             ],
@@ -341,7 +341,7 @@ final class ConfigurationMergerTest extends TestCase
         $overlay = [
             'rules' => [
                 'complexity.cyclomatic' => [
-                    'method' => ['error' => 25],
+                    'callable' => ['error' => 25],
                 ],
             ],
         ];
@@ -349,8 +349,8 @@ final class ConfigurationMergerTest extends TestCase
         $result = ConfigurationMerger::merge($base, $overlay);
 
         // Deeply nested: warning preserved, error overridden
-        self::assertSame(10, $result['rules']['complexity.cyclomatic']['method']['warning']);
-        self::assertSame(25, $result['rules']['complexity.cyclomatic']['method']['error']);
+        self::assertSame(10, $result['rules']['complexity.cyclomatic']['callable']['warning']);
+        self::assertSame(25, $result['rules']['complexity.cyclomatic']['callable']['error']);
         // Untouched nested key preserved
         self::assertSame(['max_warning' => 30], $result['rules']['complexity.cyclomatic']['class']);
     }
@@ -417,11 +417,11 @@ final class ConfigurationMergerTest extends TestCase
     public function overlayThresholdEvictsBaseWarningAtNestedRuleLevel(): void
     {
         // Hierarchical rule (complexity.cyclomatic): eviction must be scoped
-        // to the `method:` nesting level, not the rule's top level.
+        // to the `callable:` nesting level, not the rule's top level.
         $base = [
             'rules' => [
                 'complexity.cyclomatic' => [
-                    'method' => ['warning' => 10, 'error' => 20],
+                    'callable' => ['warning' => 10, 'error' => 20],
                     'class' => ['warning' => 30, 'error' => 50],
                 ],
             ],
@@ -429,14 +429,14 @@ final class ConfigurationMergerTest extends TestCase
         $overlay = [
             'rules' => [
                 'complexity.cyclomatic' => [
-                    'method' => ['threshold' => 15],
+                    'callable' => ['threshold' => 15],
                 ],
             ],
         ];
 
         $result = ConfigurationMerger::merge($base, $overlay);
 
-        self::assertSame(['threshold' => 15], $result['rules']['complexity.cyclomatic']['method']);
+        self::assertSame(['threshold' => 15], $result['rules']['complexity.cyclomatic']['callable']);
         // Untouched sibling level keeps its own warning/error pair.
         self::assertSame(['warning' => 30, 'error' => 50], $result['rules']['complexity.cyclomatic']['class']);
     }

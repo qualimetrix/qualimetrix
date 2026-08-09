@@ -53,7 +53,7 @@ final class CheckCommandInputValidationTest extends TestCase
     {
         $tester = $this->tester();
         $tester->execute(
-            ['paths' => ['tests/Fixtures/Ast/empty_file.php'], '--format' => 'json', '--rule-opt' => ['complexity.cyclomatic#method:warning=8']],
+            ['paths' => ['tests/Fixtures/Ast/empty_file.php'], '--format' => 'json', '--rule-opt' => ['complexity.cyclomatic#callable:warning=8']],
             ['capture_stderr_separately' => true],
         );
 

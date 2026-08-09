@@ -245,7 +245,7 @@ final class NamespaceDrillDownTest extends TestCase
             ],
         );
 
-        // Two violations: one class-level, one method-level (both count toward the class)
+        // Two violations: one class-level, one callable-level (both count toward the class)
         $violations = [
             new Violation(
                 location: new Location(RelativePath::fromString('src/Service/Foo.php'), 10),

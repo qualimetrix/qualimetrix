@@ -80,8 +80,8 @@ bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 ### Объяснение границы
 
 ```bash
-bin/qmx baseline:explain 'method:App\OrderService::calculate' src/ --baseline=baseline.json
-bin/qmx baseline:explain 'method:App\OrderService::calculate' src/ --channel='complexity.cyclomatic#complexity.cyclomatic.method'
+bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --baseline=baseline.json
+bin/qmx baseline:explain 'callable:App\OrderService::calculate' src/ --channel='complexity.cyclomatic#complexity.cyclomatic.callable'
 ```
 
 `baseline:explain <symbol> [<paths>...]` показывает принятую величину, текущее нарушение, порог из конфигурации и override `@qmx-threshold`. Используй `--baseline=BASELINE`, чтобы включить принятую величину, и `--channel=CHANNEL`, чтобы сузить ответ.

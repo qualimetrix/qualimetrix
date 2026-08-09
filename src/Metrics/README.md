@@ -51,7 +51,7 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 | `unreachableCode`, `unreachableCode.firstLine`                       | Code Smell      | Method           | Unreachable code count after terminal statements and first unreachable line                                                                                                       |
 | `identicalSubExpression.{type}` (entries)                            | Code Smell      | File             | Identical sub-expression findings per type via DataBag entries (`identical_operands`, `duplicate_condition`, `identical_ternary`, `duplicate_match_arm`, `duplicate_switch_case`) |
 | **Design**                                                           |                 |                  |                                                                                                                                                                                   |
-| `typeCoverage.param`, `typeCoverage.return`, `typeCoverage.property` | Design          | Class            | Type declaration coverage percentages (0-100) for parameters, return types, properties                                                                                            |
+| `typeCoverage.param`, `typeCoverage.return`, `typeCoverage.property` | Design          | Class            | Type declaration coverage percentages (0-100) for parameters, return types, properties; property hooks contribute only explicitly declared parameters                             |
 | `typeCoverage.pct`                                                   | Design          | Class            | Overall type coverage percentage (derived from typed/total counts)                                                                                                                |
 | `typeCoverage.paramTotal`, `typeCoverage.paramTyped`                 | Design          | Class            | Raw counts: total and typed parameters                                                                                                                                            |
 | `typeCoverage.returnTotal`, `typeCoverage.returnTyped`               | Design          | Class            | Raw counts: total and typed return declarations                                                                                                                                   |
@@ -134,7 +134,7 @@ counts therefore remain exact for dependent metrics and rule gates.
 - `reset(): void` — state reset between files
 
 **Optional interfaces:**
-- `MethodMetricsProviderInterface` — provides method-level metrics
+- `CallableMetricsProviderInterface` — provides callable-level metrics
 - `ClassMetricsProviderInterface` — provides class-level metrics
 - `NamespaceMetricProviderInterface` — provides source-owned namespace contributions for file metrics
 - `DerivedCollectorInterface` — derived metrics (require other collectors)
@@ -162,7 +162,7 @@ Describes a metric and its aggregation strategies.
 ```php
 new MetricDefinition(
     name: 'ccn',
-    collectedAt: SymbolLevel::Method,
+    collectedAt: SymbolLevel::Callable,
     aggregations: [
         SymbolLevel::Class_->value => [Sum, Average, Max],
         SymbolLevel::Namespace_->value => [Sum, Average, Max],
@@ -183,7 +183,7 @@ new MetricDefinition(
 4. [ ] Implement `getMetricDefinitions(): array` — aggregation descriptions
 5. [ ] Implement `collect()` — metric collection from visitor
 6. [ ] For class-level metrics: implement `ClassMetricsProviderInterface`
-7. [ ] For method-level metrics: implement `MethodMetricsProviderInterface`
+7. [ ] For callable-level metrics: implement `CallableMetricsProviderInterface`
 8. [ ] Add `qmx.collector` DI tag (automatically via autoconfiguration)
 9. [ ] Write unit tests (including a test for getMetricDefinitions)
 10. [ ] Add value hints to `src/Reporting/Template/src/hints.js` (`METRIC_HINTS` map) — range-based interpretations for the HTML report

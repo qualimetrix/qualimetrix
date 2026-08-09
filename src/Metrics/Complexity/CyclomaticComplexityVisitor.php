@@ -17,6 +17,7 @@ use PhpParser\Node\Expr\NullsafeMethodCall;
 use PhpParser\Node\Expr\NullsafePropertyFetch;
 use PhpParser\Node\Expr\Ternary;
 use PhpParser\Node\MatchArm;
+use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt\Case_;
 use PhpParser\Node\Stmt\Catch_;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -26,10 +27,13 @@ use PhpParser\Node\Stmt\For_;
 use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\If_;
+use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\While_;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
 use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
@@ -56,7 +60,7 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
     /** @var array<string, int> Method/function FQN => complexity */
     private array $complexities = [];
 
-    /** @var array<string, array{namespace: ?string, class: ?string, method: string, line: int}> FQN => method info */
+    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
     private array $methodInfos = [];
 
     /** @var list<array{fqn: string, depth: int}> Stack of nested methods/functions */
@@ -64,10 +68,11 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
 
     private ?string $currentNamespace = null;
     private ?string $currentClass = null;
+    private ?int $currentClassStartFilePos = null;
     private int $closureCounter = 0;
-
-    /** @var int Depth of anonymous class nesting (methods inside anonymous classes are skipped) */
-    private int $anonymousClassDepth = 0;
+    private ?string $currentProperty = null;
+    /** @var list<array{?string, ?int}> */
+    private array $classContextStack = [];
 
     public function reset(): void
     {
@@ -76,8 +81,11 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
         $this->methodStack = [];
         $this->currentNamespace = null;
         $this->currentClass = null;
+        $this->currentClassStartFilePos = null;
         $this->closureCounter = 0;
-        $this->anonymousClassDepth = 0;
+        $this->currentProperty = null;
+        $this->classContextStack = [];
+        $this->resetCallableTraversalKeys();
     }
 
     /**
@@ -85,28 +93,26 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
      */
     public function getComplexities(): array
     {
-        return $this->complexities;
+        /** @var array<string, int> $projected */
+        $projected = $this->projectLogicalMetricMap($this->complexities, $this->methodInfos);
+
+        return $projected;
     }
 
     /**
      * Returns structured method metrics for each analyzed method.
      *
-     * @return list<MethodWithMetrics>
+     * @return list<CallableWithMetrics>
      */
-    public function getMethodsWithMetrics(): array
+    public function getCallablesWithMetrics(RelativePath $file): array
     {
         $result = [];
 
+        $ordinals = $this->callableCollisionOrdinals($this->methodInfos);
         foreach ($this->methodInfos as $fqn => $info) {
             $metrics = (new MetricBag())->with('ccn', $this->complexities[$fqn] ?? 1);
 
-            $result[] = new MethodWithMetrics(
-                namespace: $info['namespace'],
-                class: $info['class'],
-                method: $info['method'],
-                line: $info['line'],
-                metrics: $metrics,
-            );
+            $result[] = $this->createCallableWithMetrics($info, $file, $metrics, $ordinals[$fqn]);
         }
 
         return $result;
@@ -119,26 +125,47 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
             $this->currentNamespace = $node->name?->toString() ?? '';
         }
 
+        if ($this->isClassLikeNode($node)) {
+            $this->classContextStack[] = [$this->currentClass, $this->currentClassStartFilePos];
+        }
+
         // Track class-like types (skip anonymous classes)
         if ($node instanceof Node\Stmt\Class_) {
             if ($node->name === null) {
-                ++$this->anonymousClassDepth;
+                $this->currentClass = $this->buildAnonymousClassName($node->getStartFilePos());
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             } else {
                 $this->currentClass = $node->name->toString();
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             }
         } elseif ($this->isClassLikeNode($node)) {
             $className = $this->extractClassLikeName($node);
             if ($className !== null) {
                 $this->currentClass = $className;
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             }
         }
 
-        // Start of a method (skip if inside anonymous class)
         if ($node instanceof ClassMethod) {
-            if ($this->anonymousClassDepth === 0) {
-                $fqn = $this->buildMethodFqn($node->name->toString());
-                $this->startMethod($fqn, $node->name->toString(), $node->getStartLine());
-            }
+            $fqn = $this->buildMethodFqn($node->name->toString());
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), CallableKind::Method, null);
+
+            return null;
+        }
+
+        if ($node instanceof Property && $this->currentClass !== null && \count($node->props) === 1) {
+            $this->currentProperty = $node->props[0]->name->toString();
+        }
+
+        if ($node instanceof PropertyHook && $this->currentClass !== null && $this->currentProperty !== null) {
+            $name = $this->currentProperty . '::' . $node->name->toString();
+            $this->startMethod(
+                $this->buildMethodFqn($name),
+                $name,
+                $node->getStartFilePos(),
+                CallableKind::PropertyHook,
+                null,
+            );
 
             return null;
         }
@@ -146,21 +173,22 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
         // Start of a function
         if ($node instanceof Function_) {
             $fqn = $this->buildFunctionFqn($node->name->toString());
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartLine());
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), CallableKind::Function, null);
 
             return null;
         }
 
-        // Start of a closure or arrow function (skip if inside anonymous class)
         if ($node instanceof Closure || $node instanceof ArrowFunction) {
-            if ($this->anonymousClassDepth > 0) {
-                return null;
-            }
-
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
-            $this->startMethod($fqn, $closureName, $node->getStartLine());
+            $this->startMethod(
+                $fqn,
+                $closureName,
+                $node->getStartFilePos(),
+                CallableKind::AnonymousCallable,
+                $node instanceof Closure ? 'closure' : 'arrow',
+            );
 
             return null;
         }
@@ -173,13 +201,22 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
 
     public function leaveNode(Node $node): ?int
     {
-        // End of method (skip if inside anonymous class — we didn't start it)
         if ($node instanceof ClassMethod) {
-            if ($this->anonymousClassDepth === 0) {
+            $this->endMethod();
+
+            return null;
+        }
+
+        if ($node instanceof PropertyHook) {
+            if ($this->currentClass !== null && $this->currentProperty !== null) {
                 $this->endMethod();
             }
 
             return null;
+        }
+
+        if ($node instanceof Property) {
+            $this->currentProperty = null;
         }
 
         if ($node instanceof Function_) {
@@ -189,22 +226,16 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
         }
 
         if ($node instanceof Closure || $node instanceof ArrowFunction) {
-            if ($this->anonymousClassDepth === 0) {
-                $this->endMethod();
-            }
+            $this->endMethod();
 
             return null;
         }
 
         // Exit class-like scope
         if ($node instanceof Node\Stmt\Class_) {
-            if ($node->name === null) {
-                --$this->anonymousClassDepth;
-            } else {
-                $this->currentClass = null;
-            }
+            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
         } elseif ($this->isClassLikeNode($node)) {
-            $this->currentClass = null;
+            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
         }
 
         // Exit namespace scope
@@ -215,17 +246,28 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
         return null;
     }
 
-    private function startMethod(string $fqn, string $methodName, int $line): void
-    {
+    private function startMethod(
+        string $fqn,
+        string $methodName,
+        int $startFilePos,
+        CallableKind $kind,
+        ?string $anonymousSyntax,
+    ): void {
+        $logicalFqn = $fqn;
+        $fqn = $this->createCallableTraversalKey($logicalFqn, $startFilePos);
         $this->methodStack[] = ['fqn' => $fqn, 'depth' => \count($this->methodStack)];
         // Initialize with base complexity of 1
         $this->complexities[$fqn] = 1;
         // Store method info for later retrieval
         $this->methodInfos[$fqn] = [
             'namespace' => $this->currentNamespace,
+            'logicalFqn' => $logicalFqn,
             'class' => $this->currentClass,
             'method' => $methodName,
-            'line' => $line,
+            'startFilePos' => $startFilePos,
+            'kind' => $kind,
+            'anonymousSyntax' => $anonymousSyntax,
+            'classStartFilePos' => $this->currentClassStartFilePos,
         ];
     }
 
@@ -237,11 +279,6 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
     private function countDecisionPoint(Node $node): void
     {
         if ($this->methodStack === []) {
-            return;
-        }
-
-        // Don't count decision points inside anonymous classes
-        if ($this->anonymousClassDepth > 0) {
             return;
         }
 

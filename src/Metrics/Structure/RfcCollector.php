@@ -13,6 +13,9 @@ use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
@@ -92,7 +95,7 @@ final class RfcCollector extends AbstractCollector implements ClassMetricsProvid
     /**
      * @return list<ClassWithMetrics>
      */
-    public function getClassesWithMetrics(): array
+    public function getClassesWithMetrics(RelativePath $file): array
     {
         \assert($this->visitor instanceof RfcVisitor);
 
@@ -105,8 +108,7 @@ final class RfcCollector extends AbstractCollector implements ClassMetricsProvid
                 ->with(self::METRIC_RFC_EXTERNAL, $data->getExternalMethodsCount());
 
             $result[] = new ClassWithMetrics(
-                namespace: $data->namespace,
-                class: $data->className,
+                declarationPath: new DeclarationPath(SymbolPath::forClass($data->namespace ?? '', $data->className), $file, $data->startFilePos),
                 line: $data->line,
                 metrics: $bag,
             );

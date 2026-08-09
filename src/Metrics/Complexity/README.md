@@ -8,7 +8,7 @@ Complexity metrics measure the number of execution paths and cognitive load of c
 
 **Collector:** `CyclomaticComplexityCollector`
 **Provides:** `ccn`
-**Level:** Method
+**Level:** Callable
 
 ### Formula
 
@@ -45,7 +45,7 @@ CCN = 1 + number of branching points
 
 **Collector:** `CognitiveComplexityCollector`
 **Provides:** `cognitive`
-**Level:** Method
+**Level:** Callable
 
 ### Differences from CCN
 
@@ -108,7 +108,7 @@ function processItems(array $data): void {
 
 **Collector:** `NpathComplexityCollector`
 **Provides:** `npath`
-**Level:** Method
+**Level:** Callable
 
 ### Differences from CCN
 
@@ -182,12 +182,13 @@ function manyIfs(bool $a, bool $b, bool $c, bool $d): int {
 
 ## Aggregation
 
-All metrics are collected at the **Method** level and aggregated upward:
+All metrics are collected at the **Callable** hierarchy level and aggregated upward.
+Concrete PHP methods and global functions are both represented as callables:
 
 ```php
 new MetricDefinition(
     name: 'ccn', // 'cognitive', 'npath'
-    collectedAt: SymbolLevel::Method,
+    collectedAt: SymbolLevel::Callable,
     aggregations: [
         SymbolLevel::Class_->value => [Sum, Average, Max],
         SymbolLevel::Namespace_->value => [Sum, Average, Max],

@@ -290,7 +290,7 @@ final class BaselineUpdaterTest extends TestCase
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'no magnitude reported',
             severity: Severity::Warning,
         );

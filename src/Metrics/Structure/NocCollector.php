@@ -128,12 +128,12 @@ final class NocCollector implements GlobalContextCollectorInterface
                 continue;
             }
 
-            $parentKey = $dependency->target->toCanonical();
+            $parentKey = $dependency->targetLogical()->toCanonical();
 
             // Add to children map
             if (!isset($childrenMap[$parentKey])) {
                 $childrenMap[$parentKey] = [
-                    'symbolPath' => $dependency->target,
+                    'symbolPath' => $dependency->targetLogical(),
                     'count' => 0,
                 ];
             }

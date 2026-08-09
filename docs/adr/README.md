@@ -61,3 +61,4 @@ What follows from this decision — trade-offs, constraints, future implications
 - [0018 — Analysis Coverage, Verdict, and Output Projection](0018-analysis-coverage-verdict-and-output-projection.md) — typed discovered-file terminal states, exit 4 for incomplete analysis, formatter coverage projection, and fail-closed artifact writers
 - [0019 — Namespace Metric Ownership and Attribution](0019-namespace-metric-ownership-and-attribution.md) — explicit namespace source contributions while physical file bags remain the project-total source
 - [0020 — Method Size and NPath Semantics](0020-method-size-and-npath-semantics.md) — dedicated method statement count, MI migration, and recursive expression-path accounting
+- [0021 — Declaration-Scoped Callable Identity and Dependency Projections](0021-declaration-scoped-callable-identity-and-dependency-projections.md) — intrinsic declaration identity, callable ownership, and separate architecture/coupling/ClassRank projections

@@ -151,7 +151,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @qmx-ignore complexity.cyclomatic.method Complex logic
+             * @qmx-ignore complexity.cyclomatic.callable Complex logic
              */
             DOC,
             10,
@@ -164,7 +164,7 @@ final class SuppressionExtractorTest extends TestCase
         $suppressions = $this->extractor->extract($node);
 
         self::assertCount(1, $suppressions);
-        self::assertSame('complexity.cyclomatic.method', $suppressions[0]->rule);
+        self::assertSame('complexity.cyclomatic.callable', $suppressions[0]->rule);
         self::assertSame('Complex logic', $suppressions[0]->reason);
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }

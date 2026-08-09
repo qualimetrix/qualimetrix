@@ -24,7 +24,7 @@ final class ViolationFactory
         SymbolPath $symbolPath,
         int|float $metricValue,
         string $ruleName = 'complexity.cyclomatic',
-        string $violationCode = 'complexity.cyclomatic.method',
+        string $violationCode = 'complexity.cyclomatic.callable',
     ): Violation {
         return new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 42),

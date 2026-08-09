@@ -65,7 +65,7 @@ final class BaselineWorkflowTest extends TestCase
         $violations = [
             new Violation(
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
@@ -113,7 +113,7 @@ final class BaselineWorkflowTest extends TestCase
         // Step 5: Test new violation (not in baseline)
         $newViolation = new Violation(
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Complexity 25 exceeds threshold 10',
             severity: Severity::Error,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
@@ -135,7 +135,7 @@ final class BaselineWorkflowTest extends TestCase
         $initialViolations = [
             new Violation(
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method1'),
@@ -144,7 +144,7 @@ final class BaselineWorkflowTest extends TestCase
             ),
             new Violation(
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complexity 20 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method2'),
@@ -166,7 +166,7 @@ final class BaselineWorkflowTest extends TestCase
         $currentViolations = [
             new Violation(
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complexity 15 exceeds threshold 10',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'method1'),
@@ -182,7 +182,7 @@ final class BaselineWorkflowTest extends TestCase
         // Should detect that method2 was resolved
         self::assertCount(1, $resolved);
         self::assertSame(
-            'method:App\Service\UserService::method2',
+            'callable:App\Service\UserService::method2',
             $resolved[0]->identity->symbolKey,
         );
     }
@@ -204,7 +204,7 @@ final class BaselineWorkflowTest extends TestCase
             ),
             new Violation(
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complexity 15',
                 severity: Severity::Warning,
                 symbolPath: SymbolPath::forMethod('App\Service', 'Service', 'handle'),
@@ -224,7 +224,7 @@ final class BaselineWorkflowTest extends TestCase
         $data = json_decode((string) file_get_contents($this->baselinePath), true);
         self::assertArrayHasKey('file:src/Service.php', $data['entries']);
         // Method canonical should be unchanged
-        self::assertArrayHasKey('method:App\Service\Service::handle', $data['entries']);
+        self::assertArrayHasKey('callable:App\Service\Service::handle', $data['entries']);
 
         // Load baseline — paths kept as-is (relative)
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
@@ -235,7 +235,7 @@ final class BaselineWorkflowTest extends TestCase
         self::assertSame(
             [],
             $stage->apply($violations)->violations,
-            'Both the file-level and the method-level finding should be accepted by their entries',
+            'Both the file-level and the callable-level finding should be accepted by their entries',
         );
     }
 
@@ -245,7 +245,7 @@ final class BaselineWorkflowTest extends TestCase
         // Same violation at different lines
         $violation1 = new Violation(
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -255,7 +255,7 @@ final class BaselineWorkflowTest extends TestCase
 
         $violation2 = new Violation(
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -277,7 +277,7 @@ final class BaselineWorkflowTest extends TestCase
         // Same violation with different numeric values
         $violation1 = new Violation(
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -287,7 +287,7 @@ final class BaselineWorkflowTest extends TestCase
 
         $violation2 = new Violation(
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Complexity 25 exceeds threshold 20', // Different values
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -308,7 +308,7 @@ final class BaselineWorkflowTest extends TestCase
     {
         $violation1 = new Violation(
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
@@ -318,7 +318,7 @@ final class BaselineWorkflowTest extends TestCase
 
         $violation2 = new Violation(
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Complexity 15 exceeds threshold 10',
             severity: Severity::Warning,
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'compute'), // Different method

@@ -389,7 +389,7 @@ final class HtmlTreeBuilderTest extends TestCase
         $appNode = $tree['children'][0];
         self::assertSame(3, $appNode['violationCountTotal']);
 
-        // ClassA has 2 violations (1 class-level + 1 method-level attached to class)
+        // ClassA has 2 violations (1 class-level + 1 callable-level attached to class)
         $aNode = null;
         $bNode = null;
         foreach ($appNode['children'] as $child) {

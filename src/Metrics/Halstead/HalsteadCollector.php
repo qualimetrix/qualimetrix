@@ -6,12 +6,13 @@ namespace Qualimetrix\Metrics\Halstead;
 
 use Override;
 use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableMetricsProviderInterface;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
@@ -71,7 +72,7 @@ use SplFileInfo;
  * @see https://en.wikipedia.org/wiki/Halstead_complexity_measures
  * @see Halstead, M.H. (1977). "Elements of Software Science". Elsevier.
  */
-final class HalsteadCollector extends AbstractCollector implements MethodMetricsProviderInterface
+final class HalsteadCollector extends AbstractCollector implements CallableMetricsProviderInterface
 {
     private const NAME = 'halstead';
 
@@ -108,31 +109,27 @@ final class HalsteadCollector extends AbstractCollector implements MethodMetrics
 
         \assert($this->visitor instanceof HalsteadVisitor);
 
-        foreach ($this->visitor->getMethodsWithMetrics() as $method) {
-            $fqn = ($method->namespace !== null ? $method->namespace . '\\' : '')
-                . ($method->class !== null ? $method->class . '::' : '')
-                . $method->method;
-            $metrics = $method->metrics;
+        foreach ($this->visitor->getMetrics() as $fqn => $metrics) {
 
             $bag = $bag
-                ->with(MetricName::HALSTEAD_VOLUME . ':' . $fqn, $metrics->get('halstead.volume') ?? 0.0)
-                ->with(MetricName::HALSTEAD_DIFFICULTY . ':' . $fqn, $metrics->get('halstead.difficulty') ?? 0.0)
-                ->with(MetricName::HALSTEAD_EFFORT . ':' . $fqn, $metrics->get('halstead.effort') ?? 0.0)
-                ->with(MetricName::HALSTEAD_BUGS . ':' . $fqn, $metrics->get('halstead.bugs') ?? 0.0)
-                ->with(MetricName::HALSTEAD_TIME . ':' . $fqn, $metrics->get(MetricName::HALSTEAD_TIME) ?? 0.0);
+                ->with(MetricName::HALSTEAD_VOLUME . ':' . $fqn, $metrics->volume())
+                ->with(MetricName::HALSTEAD_DIFFICULTY . ':' . $fqn, $metrics->difficulty())
+                ->with(MetricName::HALSTEAD_EFFORT . ':' . $fqn, $metrics->effort())
+                ->with(MetricName::HALSTEAD_BUGS . ':' . $fqn, $metrics->bugs())
+                ->with(MetricName::HALSTEAD_TIME . ':' . $fqn, $metrics->time());
         }
 
         return $bag;
     }
 
     /**
-     * @return list<MethodWithMetrics>
+     * @return list<CallableWithMetrics>
      */
-    public function getMethodsWithMetrics(): array
+    public function getCallablesWithMetrics(RelativePath $file): array
     {
         \assert($this->visitor instanceof HalsteadVisitor);
 
-        return $this->visitor->getMethodsWithMetrics();
+        return $this->visitor->getCallablesWithMetrics($file);
     }
 
     /**
@@ -161,22 +158,22 @@ final class HalsteadCollector extends AbstractCollector implements MethodMetrics
         return [
             new MetricDefinition(
                 name: MetricName::HALSTEAD_VOLUME,
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
                 name: MetricName::HALSTEAD_DIFFICULTY,
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
                 name: MetricName::HALSTEAD_EFFORT,
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: $aggregations,
             ),
             new MetricDefinition(
                 name: MetricName::HALSTEAD_BUGS,
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: [
                     SymbolLevel::Class_->value => [
                         AggregationStrategy::Sum,
@@ -193,7 +190,7 @@ final class HalsteadCollector extends AbstractCollector implements MethodMetrics
             ),
             new MetricDefinition(
                 name: MetricName::HALSTEAD_TIME,
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: [
                     SymbolLevel::Class_->value => [
                         AggregationStrategy::Sum,

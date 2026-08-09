@@ -72,7 +72,7 @@ final class RuleOptionThresholdModeResolver
      * Removes keys from $base that belong to the threshold "mode" the
      * $overlay array is switching away from, for any option group present
      * in both — at this array's nesting level only. Callers recurse into
-     * nested associative sub-arrays (e.g. `method:`/`class:` levels of a
+     * nested associative sub-arrays (e.g. `callable:`/`class:` levels of a
      * hierarchical rule) and call this again at each level, passing the
      * corresponding `$path` (`''` for the rule's own top level, `'method'`,
      * `'class'`, `'namespace'`, ... for nested levels).

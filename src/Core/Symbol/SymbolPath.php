@@ -142,7 +142,7 @@ final readonly class SymbolPath
      * Format: {prefix}:{path}
      *
      * Examples:
-     * - method:App\Service\UserService::calculateTotal — method
+     * - callable:App\Service\UserService::calculateTotal — method
      * - class:App\Service\UserService — class
      * - file:src/Service/UserService.php — file
      * - ns:App\Service — namespace
@@ -234,7 +234,7 @@ final readonly class SymbolPath
 
     private function buildMethodCanonical(): string
     {
-        $parts = ['method:'];
+        $parts = ['callable:'];
 
         if ($this->hasNamespace()) {
             $parts[] = $this->namespace;

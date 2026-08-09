@@ -11,6 +11,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 
@@ -21,8 +23,12 @@ final class DependencyTest extends TestCase
     public function itConstructorWithAllProperties(): void
     {
         $location = new Location(RelativePath::fromString('src/Service/UserService.php'), 42);
-        $source = SymbolPath::fromClassFqn('App\Service\UserService');
-        $target = SymbolPath::fromClassFqn('App\Repository\UserRepository');
+        $source = new DeclarationPath(
+            SymbolPath::fromClassFqn('App\Service\UserService'),
+            RelativePath::fromString('src/Service/UserService.php'),
+            0,
+        );
+        $target = new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\UserRepository'));
         $dependency = new Dependency(
             source: $source,
             target: $target,
@@ -43,12 +49,7 @@ final class DependencyTest extends TestCase
         string $targetClass,
         bool $expectedIsCrossNamespace,
     ): void {
-        $dependency = new Dependency(
-            source: SymbolPath::fromClassFqn($sourceClass),
-            target: SymbolPath::fromClassFqn($targetClass),
-            type: DependencyType::New_,
-            location: new Location(RelativePath::fromString('test.php')),
-        );
+        $dependency = $this->dependency($sourceClass, $targetClass, DependencyType::New_, new Location(RelativePath::fromString('test.php')));
 
         self::assertSame($expectedIsCrossNamespace, $dependency->isCrossNamespace());
     }
@@ -99,12 +100,7 @@ final class DependencyTest extends TestCase
     #[Test]
     public function itIsStrongCoupling(DependencyType $type, bool $expectedIsStrongCoupling): void
     {
-        $dependency = new Dependency(
-            source: SymbolPath::fromClassFqn('App\Service\UserService'),
-            target: SymbolPath::fromClassFqn('App\Repository\UserRepository'),
-            type: $type,
-            location: new Location(RelativePath::fromString('test.php')),
-        );
+        $dependency = $this->dependency('App\Service\UserService', 'App\Repository\UserRepository', $type, new Location(RelativePath::fromString('test.php')));
 
         self::assertSame($expectedIsStrongCoupling, $dependency->isStrongCoupling());
     }
@@ -132,12 +128,7 @@ final class DependencyTest extends TestCase
         Location $location,
         string $expected,
     ): void {
-        $dependency = new Dependency(
-            source: SymbolPath::fromClassFqn($sourceClass),
-            target: SymbolPath::fromClassFqn($targetClass),
-            type: $type,
-            location: $location,
-        );
+        $dependency = $this->dependency($sourceClass, $targetClass, $type, $location);
 
         self::assertSame($expected, $dependency->toString());
     }
@@ -183,15 +174,24 @@ final class DependencyTest extends TestCase
     #[Test]
     public function itDependencyIsReadonly(): void
     {
-        $dependency = new Dependency(
-            source: SymbolPath::fromClassFqn('Source'),
-            target: SymbolPath::fromClassFqn('Target'),
-            type: DependencyType::New_,
-            location: new Location(RelativePath::fromString('test.php')),
-        );
+        $dependency = $this->dependency('Source', 'Target', DependencyType::New_, new Location(RelativePath::fromString('test.php')));
 
         // This test verifies that Dependency is readonly
         // The readonly keyword ensures immutability at the language level
         self::assertInstanceOf(Dependency::class, $dependency); // @phpstan-ignore staticMethod.alreadyNarrowedType
+    }
+
+    private function dependency(string $source, string $target, DependencyType $type, Location $location): Dependency
+    {
+        return new Dependency(
+            new DeclarationPath(
+                SymbolPath::fromClassFqn($source),
+                $location->file ?? RelativePath::fromString('test.php'),
+                0,
+            ),
+            new LogicalClassPath(SymbolPath::fromClassFqn($target)),
+            $type,
+            $location,
+        );
     }
 }

@@ -63,7 +63,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Method, RuleLevel::Class_];
+        return [RuleLevel::Callable, RuleLevel::Class_];
     }
 
     /**
@@ -81,7 +81,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
         }
 
         return match ($level) {
-            RuleLevel::Method => $this->analyzeMethodLevel($context),
+            RuleLevel::Callable => $this->analyzeMethodLevel($context),
             RuleLevel::Class_ => $this->analyzeClassLevel($context),
             default => [],
         };
@@ -130,7 +130,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     public static function channelDeclarations(): array
     {
         return [
-            (new ViolationChannel(self::NAME, self::NAME . '.method'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
+            (new ViolationChannel(self::NAME, self::NAME . '.callable'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
             (new ViolationChannel(self::NAME, self::NAME . '.class'))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
         ];
     }
@@ -141,7 +141,7 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
     private function analyzeMethodLevel(AnalysisContext $context): array
     {
         \assert($this->options instanceof CognitiveComplexityOptions);
-        $methodOptions = $this->options->method;
+        $methodOptions = $this->options->callable;
 
         $violations = [];
 
@@ -167,11 +167,11 @@ final class CognitiveComplexityRule extends AbstractRule implements Hierarchical
                     location: new Location($methodInfo->file, $methodInfo->line),
                     symbolPath: $methodInfo->symbolPath,
                     ruleName: $this->getName(),
-                    violationCode: self::NAME . '.method',
+                    violationCode: self::NAME . '.callable',
                     message: \sprintf('Cognitive complexity is %d, exceeds threshold of %d.%s Reduce nesting and break into smaller methods', $cognitiveValue, $threshold, $breakdown !== '' ? " {$breakdown}." : ''),
                     severity: $severity,
                     metricValue: $cognitiveValue,
-                    level: RuleLevel::Method,
+                    level: RuleLevel::Callable,
                     recommendation: \sprintf('Cognitive complexity: %d (threshold: %d)%s — deeply nested, hard to follow', $cognitiveValue, $threshold, $breakdown !== '' ? ". {$breakdown}" : ''),
                     threshold: $threshold,
                 );

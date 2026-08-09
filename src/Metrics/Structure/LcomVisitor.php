@@ -85,6 +85,7 @@ final class LcomVisitor extends NodeVisitorAbstract implements ResettableVisitor
                     namespace: $this->currentNamespace,
                     className: $className,
                     line: $node->getStartLine(),
+                    startFilePos: $node->getStartFilePos(),
                 );
             }
 

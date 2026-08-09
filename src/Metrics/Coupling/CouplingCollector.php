@@ -208,10 +208,10 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             $frameworkCeTargets = [];
 
             foreach ($graph->getClassDependencies($symbolPath) as $dep) {
-                $targetCanonical = $dep->target->toCanonical();
+                $targetCanonical = $dep->targetLogical()->toCanonical();
                 $coupledClasses[$targetCanonical] = true;
 
-                if ($this->isFrameworkSymbol($dep->target, $frameworkNamespaces)) {
+                if ($this->isFrameworkSymbol($dep->targetLogical(), $frameworkNamespaces)) {
                     $frameworkCeTargets[$targetCanonical] = true;
                 } else {
                     $coupledAppClasses[$targetCanonical] = true;
@@ -219,12 +219,12 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             }
 
             foreach ($graph->getClassDependents($symbolPath) as $dep) {
-                $sourceCanonical = $dep->source->toCanonical();
+                $sourceCanonical = $dep->sourceLogical()->toCanonical();
                 $coupledClasses[$sourceCanonical] = true;
 
                 // Afferent from framework is unlikely (framework classes aren't scanned),
                 // but handle correctly anyway
-                if (!$this->isFrameworkSymbol($dep->source, $frameworkNamespaces)) {
+                if (!$this->isFrameworkSymbol($dep->sourceLogical(), $frameworkNamespaces)) {
                     $coupledAppClasses[$sourceCanonical] = true;
                 }
             }
@@ -240,7 +240,7 @@ final class CouplingCollector implements GlobalContextCollectorInterface
             $externalPackages = [];
 
             foreach ($graph->getClassDependencies($symbolPath) as $dep) {
-                $targetTopNs = $this->getTopLevelNamespace($dep->target->namespace);
+                $targetTopNs = $this->getTopLevelNamespace($dep->targetLogical()->namespace);
 
                 if ($targetTopNs !== '' && $targetTopNs !== $sourceTopNs) {
                     $externalPackages[$targetTopNs] = true;
@@ -311,8 +311,8 @@ final class CouplingCollector implements GlobalContextCollectorInterface
         $coupled = [];
 
         foreach ($graph->getAllDependencies() as $dep) {
-            $sourceNs = $dep->source->namespace ?? '';
-            $targetNs = $dep->target->namespace ?? '';
+            $sourceNs = $dep->sourceLogical()->namespace ?? '';
+            $targetNs = $dep->targetLogical()->namespace ?? '';
 
             // Only count cross-namespace dependencies
             if ($sourceNs === $targetNs) {

@@ -52,9 +52,9 @@ final class BaselineLoaderTest extends TestCase
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src", "tests"],
                 "entries": {
-                    "method:App\\OrderService::calculate": [
+                    "callable:App\\OrderService::calculate": [
                         {
-                            "channel": "complexity.cyclomatic#complexity.cyclomatic.method",
+                            "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
                             "magnitudes": [25],
                             "count": 1
                         }
@@ -296,14 +296,14 @@ final class BaselineLoaderTest extends TestCase
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
                 "entries": {
-                    "method:App\\Good::method": [
+                    "callable:App\\Good::method": [
                         {
-                            "channel": "complexity.cyclomatic#complexity.cyclomatic.method",
+                            "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
                             "magnitudes": [25],
                             "count": 1
                         }
                     ],
-                    "method:App\\Bad::method": [
+                    "callable:App\\Bad::method": [
                         { "channel": "nobody.declares#this.channel", "count": 1 },
                         { "channel": "code-smell.goto#code-smell.goto", "count": 1, "mode": "whatever" }
                     ]
@@ -327,7 +327,7 @@ final class BaselineLoaderTest extends TestCase
                 "version": 10,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
-                "entries": { "method:App\\Foo::bar": { "channel": "code-smell.goto#code-smell.goto" } }
+                "entries": { "callable:App\\Foo::bar": { "channel": "code-smell.goto#code-smell.goto" } }
             }
             JSON);
 
@@ -349,7 +349,7 @@ final class BaselineLoaderTest extends TestCase
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
                 "entries": {
-                    "method:App\\Foo::bar": [
+                    "callable:App\\Foo::bar": [
                         { "channel": "code-smell.goto#code-smell.goto", "count": 1 },
                         { "channel": "code-smell.goto#code-smell.goto", "count": 5 }
                     ]

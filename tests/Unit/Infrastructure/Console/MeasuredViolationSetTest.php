@@ -184,7 +184,7 @@ final class MeasuredViolationSetTest extends TestCase
             location: new Location(RelativePath::fromString($file), 10),
             symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'CCN too high',
             severity: Severity::Warning,
             metricValue: 25,

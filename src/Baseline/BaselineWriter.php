@@ -366,7 +366,7 @@ final readonly class BaselineWriter
     /**
      * Converts absolute `file:` canonical paths to relative for portability.
      *
-     * Only affects `file:` keys — `class:`, `method:`, `ns:` keys are
+     * Only affects `file:` keys — `class:`, `callable:`, `ns:` keys are
      * FQN-based and already portable. Out-of-tree absolute paths are
      * preserved verbatim so external baselines stay round-trippable.
      * Malformed `file:` payloads (empty, lexically escaping segments)

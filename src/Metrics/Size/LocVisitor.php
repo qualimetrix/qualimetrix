@@ -21,7 +21,7 @@ final class LocVisitor extends NodeVisitorAbstract implements ResettableVisitorI
     private ?string $currentNamespace = null;
 
     /**
-     * @var array<string, array{namespace: ?string, className: string, startLine: int, endLine: int}>
+     * @var array<string, array{namespace: ?string, className: string, startLine: int, startFilePos: int, endLine: int}>
      */
     private array $classRanges = [];
 
@@ -55,6 +55,7 @@ final class LocVisitor extends NodeVisitorAbstract implements ResettableVisitorI
                 'namespace' => $this->currentNamespace,
                 'className' => $className,
                 'startLine' => $node->getStartLine(),
+                'startFilePos' => max(0, $node->getStartFilePos()),
                 'endLine' => $node->getEndLine(),
             ];
         }
@@ -72,7 +73,7 @@ final class LocVisitor extends NodeVisitorAbstract implements ResettableVisitorI
     }
 
     /**
-     * @return array<string, array{namespace: ?string, className: string, startLine: int, endLine: int}>
+     * @return array<string, array{namespace: ?string, className: string, startLine: int, startFilePos: int, endLine: int}>
      */
     public function getClassRanges(): array
     {

@@ -61,7 +61,7 @@ final class BaselineExplainCommand extends BaselineCommand
         $this->addArgument(
             'symbol',
             InputArgument::REQUIRED,
-            'Canonical symbol key, as printed in reports (e.g. method:App\\OrderService::calculate)',
+            'Canonical symbol key, as printed in reports (e.g. callable:App\\OrderService::calculate)',
         );
 
         BaselineCommandDefinition::addMeasuredRunInput($this);

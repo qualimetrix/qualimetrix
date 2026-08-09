@@ -11,9 +11,16 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Core\Metric\CallableMetricsProviderInterface;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
 /**
@@ -51,12 +58,12 @@ final class DerivedCollectorSortTest extends TestCase
 
         // B runs before A, and A receives B's accumulated output.
         $composite = new CompositeCollector([$baseCollector], [$collectorB, $collectorA]);
-        $result = $composite->collect(new SplFileInfo(__FILE__), []);
+        $result = $composite->collect(new SplFileInfo(__FILE__), [], RelativePath::fromString('DerivedCollectorSortTest.php'));
 
         self::assertSame(10, $result->metrics->get('raw:App\Service::method'));
-        self::assertSame(20, $result->metrics->get('intermediate:App\Service::method'));
+        self::assertSame(20, $result->metrics->get($this->key('intermediate')));
 
-        self::assertSame(21, $result->metrics->get('final:App\Service::method'));
+        self::assertSame(21, $result->metrics->get($this->key('final')));
     }
 
     #[Test]
@@ -84,11 +91,11 @@ final class DerivedCollectorSortTest extends TestCase
 
         // Registration order is intentionally reverse dependency order.
         $composite = new CompositeCollector([$baseCollector], [$collectorA, $collectorB]);
-        $result = $composite->collect(new SplFileInfo(__FILE__), []);
+        $result = $composite->collect(new SplFileInfo(__FILE__), [], RelativePath::fromString('DerivedCollectorSortTest.php'));
 
         self::assertSame(10, $result->metrics->get('raw:App\Service::method'));
-        self::assertSame(20, $result->metrics->get('intermediate:App\Service::method'));
-        self::assertSame(21, $result->metrics->get('final:App\Service::method'));
+        self::assertSame(20, $result->metrics->get($this->key('intermediate')));
+        self::assertSame(21, $result->metrics->get($this->key('final')));
     }
 
     #[Test]
@@ -126,11 +133,11 @@ final class DerivedCollectorSortTest extends TestCase
 
         // Reverse order: C, B, A. The dependency graph determines execution.
         $composite = new CompositeCollector([$baseCollector], [$collectorC, $collectorB, $collectorA]);
-        $result = $composite->collect(new SplFileInfo(__FILE__), []);
+        $result = $composite->collect(new SplFileInfo(__FILE__), [], RelativePath::fromString('DerivedCollectorSortTest.php'));
 
-        self::assertSame(50, $result->metrics->get('step_a_result:test'));
-        self::assertSame(150, $result->metrics->get('step_b_result:test'));
-        self::assertSame(300, $result->metrics->get('step_c_result:test'));
+        self::assertSame(50, $result->metrics->get($this->key('step_a_result')));
+        self::assertSame(150, $result->metrics->get($this->key('step_b_result')));
+        self::assertSame(300, $result->metrics->get($this->key('step_c_result')));
     }
 
     #[Test]
@@ -159,7 +166,7 @@ final class DerivedCollectorSortTest extends TestCase
         self::expectException(LogicException::class);
         self::expectExceptionMessageMatches('/Cyclic dependency.*collector-a.*collector-b|Cyclic dependency.*collector-b.*collector-a/');
 
-        $composite->collect(new SplFileInfo(__FILE__), []);
+        $composite->collect(new SplFileInfo(__FILE__), [], RelativePath::fromString('DerivedCollectorSortTest.php'));
     }
 
     /**
@@ -183,13 +190,48 @@ final class DerivedCollectorSortTest extends TestCase
         return $mock;
     }
 
-    private function createBaseCollector(MetricBag $metrics): MetricCollectorInterface
+    private function createBaseCollector(MetricBag $metrics): MetricCollectorInterface&CallableMetricsProviderInterface
     {
-        $collector = self::createStub(MetricCollectorInterface::class);
-        $collector->method('getName')->willReturn('base');
-        $collector->method('getVisitor')->willReturn(new class extends NodeVisitorAbstract {});
-        $collector->method('collect')->willReturn($metrics);
+        $callable = $this->callable($metrics);
+        return new class ($metrics, $callable) implements MetricCollectorInterface, CallableMetricsProviderInterface {
+            public function __construct(private MetricBag $metrics, private CallableWithMetrics $callable) {}
+            public function getName(): string
+            {
+                return 'base';
+            }
+            public function provides(): array
+            {
+                return [];
+            }
+            public function getMetricDefinitions(): array
+            {
+                return [];
+            }
+            public function getVisitor(): NodeVisitorAbstract
+            {
+                return new class extends NodeVisitorAbstract {};
+            }
+            public function collect(SplFileInfo $file, array $ast): MetricBag
+            {
+                return $this->metrics;
+            }
+            public function reset(): void {}
+            public function getCallablesWithMetrics(RelativePath $file): array
+            {
+                return [$this->callable];
+            }
+        };
+    }
 
-        return $collector;
+    private function callable(MetricBag $metrics): CallableWithMetrics
+    {
+        $callableMetrics = new MetricBag();
+        foreach ($metrics->all() as $name => $value) {
+            $callableMetrics = $callableMetrics->with(explode(':', $name, 2)[0], $value);
+        } return new CallableWithMetrics(new DeclarationPath(SymbolPath::forMethod('App', 'Service', 'method'), RelativePath::fromString('DerivedCollectorSortTest.php'), 100), CallableKind::Method, null, null, new LogicalClassPath(SymbolPath::forClass('App', 'Service')), $callableMetrics);
+    }
+    private function key(string $metric): string
+    {
+        return $metric . ':method:' . $this->callable(new MetricBag())->declarationPath->toCanonical();
     }
 }

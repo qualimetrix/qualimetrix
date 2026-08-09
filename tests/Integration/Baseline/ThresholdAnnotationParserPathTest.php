@@ -215,7 +215,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
         // parser actually receives a validator for complexity.cyclomatic
         // instead of silently skipping it.
         $rootOptions = ComplexityOptions::fromArray([]);
-        $levelOptions = $rootOptions->forLevel(\Qualimetrix\Core\Rule\RuleLevel::Method);
+        $levelOptions = $rootOptions->forLevel(\Qualimetrix\Core\Rule\RuleLevel::Callable);
         self::assertInstanceOf(\Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface::class, $levelOptions);
         $validator = $levelOptions::getOverrideValidator();
         self::assertSame(StandardOverrideValidator::instance(), $validator);

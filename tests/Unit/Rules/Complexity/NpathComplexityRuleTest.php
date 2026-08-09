@@ -78,7 +78,7 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
-        self::assertSame([RuleLevel::Method, RuleLevel::Class_], $rule->getSupportedLevels());
+        self::assertSame([RuleLevel::Callable, RuleLevel::Class_], $rule->getSupportedLevels());
     }
 
     // Method-level tests
@@ -88,7 +88,7 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
-                method: new MethodNpathComplexityOptions(enabled: false),
+                callable: new MethodNpathComplexityOptions(enabled: false),
             ),
         );
 
@@ -97,7 +97,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $context = new AnalysisContext($repository);
 
-        self::assertSame([], $rule->analyzeLevel(RuleLevel::Method, $context));
+        self::assertSame([], $rule->analyzeLevel(RuleLevel::Callable, $context));
     }
 
     #[Test]
@@ -111,7 +111,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $context = new AnalysisContext($repository);
 
-        self::assertSame([], $rule->analyzeLevel(RuleLevel::Method, $context));
+        self::assertSame([], $rule->analyzeLevel(RuleLevel::Callable, $context));
     }
 
     #[Test]
@@ -131,14 +131,14 @@ final class NpathComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
         self::assertSame('NPath complexity (execution paths) is 250 (moderate), exceeds threshold of 200. Reduce branching or extract methods', $violations[0]->message);
         self::assertSame(250, $violations[0]->metricValue);
         self::assertSame('complexity.npath', $violations[0]->ruleName);
-        self::assertSame(RuleLevel::Method, $violations[0]->level);
+        self::assertSame(RuleLevel::Callable, $violations[0]->level);
     }
 
     #[Test]
@@ -158,7 +158,7 @@ final class NpathComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
@@ -249,7 +249,7 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
-                method: new MethodNpathComplexityOptions(enabled: true),
+                callable: new MethodNpathComplexityOptions(enabled: true),
                 class: new ClassNpathComplexityOptions(enabled: true),
             ),
         );
@@ -281,7 +281,7 @@ final class NpathComplexityRuleTest extends TestCase
         $violations = $rule->analyze($context);
 
         self::assertCount(2, $violations);
-        self::assertSame(RuleLevel::Method, $violations[0]->level);
+        self::assertSame(RuleLevel::Callable, $violations[0]->level);
         self::assertSame(RuleLevel::Class_, $violations[1]->level);
     }
 
@@ -304,7 +304,7 @@ final class NpathComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame('NPath complexity (execution paths) is > 1M (extreme), exceeds threshold of 1000. Reduce branching or extract methods', $violations[0]->message);
@@ -365,7 +365,7 @@ final class NpathComplexityRuleTest extends TestCase
     public function itNpathComplexityOptionsFromHierarchicalArray(): void
     {
         $options = NpathComplexityOptions::fromArray([
-            'method' => [
+            'callable' => [
                 'warning' => 150,
                 'error' => 400,
             ],
@@ -377,8 +377,8 @@ final class NpathComplexityRuleTest extends TestCase
         ]);
 
         self::assertTrue($options->isEnabled());
-        self::assertTrue($options->method->isEnabled());
-        self::assertSame(150, $options->method->warning);
+        self::assertTrue($options->callable->isEnabled());
+        self::assertSame(150, $options->callable->warning);
         self::assertTrue($options->class->isEnabled());
         self::assertSame(300, $options->class->maxWarning);
     }
@@ -393,9 +393,9 @@ final class NpathComplexityRuleTest extends TestCase
         ]);
 
         self::assertTrue($options->isEnabled());
-        self::assertTrue($options->method->isEnabled());
-        self::assertSame(180, $options->method->warning);
-        self::assertSame(450, $options->method->error);
+        self::assertTrue($options->callable->isEnabled());
+        self::assertSame(180, $options->callable->warning);
+        self::assertSame(450, $options->callable->error);
         // Legacy format disables class level
         self::assertFalse($options->class->isEnabled());
     }
@@ -405,7 +405,7 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $options = new NpathComplexityOptions();
 
-        self::assertSame($options->method, $options->forLevel(RuleLevel::Method));
+        self::assertSame($options->callable, $options->forLevel(RuleLevel::Callable));
         self::assertSame($options->class, $options->forLevel(RuleLevel::Class_));
     }
 
@@ -413,11 +413,11 @@ final class NpathComplexityRuleTest extends TestCase
     public function itNpathComplexityOptionsIsLevelEnabled(): void
     {
         $options = new NpathComplexityOptions(
-            method: new MethodNpathComplexityOptions(enabled: true),
+            callable: new MethodNpathComplexityOptions(enabled: true),
             class: new ClassNpathComplexityOptions(enabled: false),
         );
 
-        self::assertTrue($options->isLevelEnabled(RuleLevel::Method));
+        self::assertTrue($options->isLevelEnabled(RuleLevel::Callable));
         self::assertFalse($options->isLevelEnabled(RuleLevel::Class_));
     }
 
@@ -431,7 +431,7 @@ final class NpathComplexityRuleTest extends TestCase
     ): void {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
-                method: new MethodNpathComplexityOptions(
+                callable: new MethodNpathComplexityOptions(
                     warning: $warning,
                     error: $error,
                 ),
@@ -450,7 +450,7 @@ final class NpathComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         if ($expectedSeverity === null) {
             self::assertCount(0, $violations);
@@ -480,7 +480,7 @@ final class NpathComplexityRuleTest extends TestCase
             'warningThreshold' => 200,
         ]);
 
-        self::assertSame(1000, $options->method->error);
+        self::assertSame(1000, $options->callable->error);
     }
 
     #[Test]
@@ -490,8 +490,8 @@ final class NpathComplexityRuleTest extends TestCase
             'errorThreshold' => 800,
         ]);
 
-        self::assertSame(200, $options->method->warning);
-        self::assertSame(800, $options->method->error);
+        self::assertSame(200, $options->callable->warning);
+        self::assertSame(800, $options->callable->error);
     }
 
     #[Test]
@@ -516,7 +516,7 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
-                method: new MethodNpathComplexityOptions(
+                callable: new MethodNpathComplexityOptions(
                     warning: 1,
                     error: 2,
                 ),
@@ -535,7 +535,7 @@ final class NpathComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertStringContainsString(\sprintf('(%s)', $expectedCategory), $violations[0]->message);
@@ -641,7 +641,7 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
-                method: new MethodNpathComplexityOptions(
+                callable: new MethodNpathComplexityOptions(
                     warning: 200,
                     error: 1000,
                 ),
@@ -660,7 +660,7 @@ final class NpathComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame(
@@ -733,7 +733,7 @@ final class NpathComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         // Top 3 by factor: ×6 if/else, ×4 match, ×3 switch
@@ -761,7 +761,7 @@ final class NpathComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertStringNotContainsString('Chain:', $violations[0]->message);

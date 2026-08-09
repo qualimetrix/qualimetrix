@@ -11,6 +11,8 @@ use Qualimetrix\Analysis\Collection\Dependency\Export\JsonGraphExporter;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 
@@ -21,8 +23,8 @@ final class JsonGraphExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                SymbolPath::fromClassFqn('App\\ServiceA'),
-                SymbolPath::fromClassFqn('App\\ServiceB'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
@@ -58,14 +60,14 @@ final class JsonGraphExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                SymbolPath::fromClassFqn('App\\ServiceA'),
-                SymbolPath::fromClassFqn('App\\ServiceB'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
             new Dependency(
-                SymbolPath::fromClassFqn('App\\ServiceB'),
-                SymbolPath::fromClassFqn('App\\ServiceC'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\ServiceB'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceC')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('test/file.php'), 20),
             ),
@@ -84,8 +86,8 @@ final class JsonGraphExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                SymbolPath::fromClassFqn('App\\Service\\UserService'),
-                SymbolPath::fromClassFqn('App\\Repository\\UserRepository'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\Service\\UserService'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\Repository\\UserRepository')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
@@ -109,20 +111,20 @@ final class JsonGraphExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                SymbolPath::fromClassFqn('App\\ServiceA'),
-                SymbolPath::fromClassFqn('App\\ServiceB'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
             new Dependency(
-                SymbolPath::fromClassFqn('App\\ServiceA'),
-                SymbolPath::fromClassFqn('App\\ServiceB'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('test/file.php'), 20),
             ),
             new Dependency(
-                SymbolPath::fromClassFqn('App\\ServiceA'),
-                SymbolPath::fromClassFqn('App\\ServiceB'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file2.php'), 5),
             ),
@@ -148,20 +150,20 @@ final class JsonGraphExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                SymbolPath::fromClassFqn('App\\Z'),
-                SymbolPath::fromClassFqn('App\\A'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\Z'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\A')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
             new Dependency(
-                SymbolPath::fromClassFqn('App\\A'),
-                SymbolPath::fromClassFqn('App\\Z'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\A'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\Z')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 20),
             ),
             new Dependency(
-                SymbolPath::fromClassFqn('App\\A'),
-                SymbolPath::fromClassFqn('App\\B'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\A'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\B')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 30),
             ),
@@ -197,14 +199,14 @@ final class JsonGraphExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                SymbolPath::fromClassFqn('App\\Service\\Foo'),
-                SymbolPath::fromClassFqn('App\\Service\\Bar'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Bar')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
             new Dependency(
-                SymbolPath::fromClassFqn('App\\Tests\\FooTest'),
-                SymbolPath::fromClassFqn('App\\Service\\Foo'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\Tests\\FooTest'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Foo')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 20),
             ),
@@ -229,14 +231,14 @@ final class JsonGraphExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                SymbolPath::fromClassFqn('App\\Service\\Foo'),
-                SymbolPath::fromClassFqn('App\\Service\\Bar'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Bar')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
             new Dependency(
-                SymbolPath::fromClassFqn('App\\Tests\\FooTest'),
-                SymbolPath::fromClassFqn('App\\Service\\Foo'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\Tests\\FooTest'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Foo')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 20),
             ),
@@ -256,8 +258,8 @@ final class JsonGraphExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                SymbolPath::fromClassFqn('App\\Service\\Foo'),
-                SymbolPath::fromClassFqn('App\\Tests\\FooTest'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\Tests\\FooTest')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
@@ -291,20 +293,20 @@ final class JsonGraphExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                SymbolPath::fromClassFqn('App\\Foo'),
-                SymbolPath::fromClassFqn('App\\Bar'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\Foo'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\Bar')),
                 DependencyType::Extends,
                 new Location(RelativePath::fromString('test/file.php'), 1),
             ),
             new Dependency(
-                SymbolPath::fromClassFqn('App\\Foo'),
-                SymbolPath::fromClassFqn('App\\Bar'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\Foo'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\Bar')),
                 DependencyType::Implements,
                 new Location(RelativePath::fromString('test/file.php'), 2),
             ),
             new Dependency(
-                SymbolPath::fromClassFqn('App\\Foo'),
-                SymbolPath::fromClassFqn('App\\Bar'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\\Foo'), RelativePath::fromString("test.php"), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\\Bar')),
                 DependencyType::StaticCall,
                 new Location(RelativePath::fromString('test/file.php'), 3),
             ),
@@ -354,8 +356,10 @@ final class JsonGraphExporterTest extends TestCase
         $namespaceMap = [];
 
         foreach ($dependencies as $dep) {
-            $sourceKey = $dep->source->toCanonical();
-            $targetKey = $dep->target->toCanonical();
+            $source = $dep->sourceLogical();
+            $target = $dep->targetLogical();
+            $sourceKey = $source->toCanonical();
+            $targetKey = $target->toCanonical();
 
             if (!isset($bySource[$sourceKey])) {
                 $bySource[$sourceKey] = [];
@@ -367,11 +371,11 @@ final class JsonGraphExporterTest extends TestCase
             }
             $byTarget[$targetKey][] = $dep;
 
-            $classMap[$sourceKey] = $dep->source;
-            $classMap[$targetKey] = $dep->target;
+            $classMap[$sourceKey] = $source;
+            $classMap[$targetKey] = $target;
 
-            $sourceNs = $dep->source->namespace;
-            $targetNs = $dep->target->namespace;
+            $sourceNs = $source->namespace;
+            $targetNs = $target->namespace;
 
             if ($sourceNs !== null) {
                 $nsPath = SymbolPath::forNamespace($sourceNs);

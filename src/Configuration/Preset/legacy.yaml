@@ -4,21 +4,21 @@
 
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       warning: 20
       error: 40
     class:
       max_warning: 60
       max_error: 100
   complexity.cognitive:
-    method:
+    callable:
       warning: 30
       error: 60
     class:
       max_warning: 60
       max_error: 100
   complexity.npath:
-    method:
+    callable:
       warning: 500
       error: 2000
   complexity.wmc:

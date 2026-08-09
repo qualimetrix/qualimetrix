@@ -7,12 +7,15 @@ namespace Qualimetrix\Tests\Unit\Metrics\Structure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -34,8 +37,8 @@ final class NocCollectorTest extends TestCase
     private function createExtends(string $childClass, string $parentClass, string $file = 'test.php', int $line = 1): Dependency
     {
         return new Dependency(
-            source: SymbolPath::fromClassFqn($childClass),
-            target: SymbolPath::fromClassFqn($parentClass),
+            source: new DeclarationPath(SymbolPath::fromClassFqn($childClass), RelativePath::fromString($file), 0),
+            target: new LogicalClassPath(SymbolPath::fromClassFqn($parentClass)),
             type: DependencyType::Extends,
             location: new Location(RelativePath::fromString($file), $line),
         );
@@ -64,7 +67,7 @@ final class NocCollectorTest extends TestCase
     {
         // Leaf class with no children
         $repository = new InMemoryMetricRepository();
-        $graph = (new DependencyGraphBuilder())->build([]);
+        $graph = $this->graph([]);
 
         // Add leaf class without parent
         $leafPath = SymbolPath::forClass('App', 'LeafClass');
@@ -83,13 +86,8 @@ final class NocCollectorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Create dependency graph with extends relationship
-        $extends = new Dependency(
-            source: SymbolPath::fromClassFqn('App\\ChildClass'),
-            target: SymbolPath::fromClassFqn('App\\BaseClass'),
-            type: DependencyType::Extends,
-            location: new Location(RelativePath::fromString('child.php'), 20),
-        );
-        $graph = (new DependencyGraphBuilder())->build([$extends]);
+        $extends = $this->createExtends('App\\ChildClass', 'App\\BaseClass', 'child.php', 20);
+        $graph = $this->graph([$extends]);
 
         // Add parent class
         $parentPath = SymbolPath::forClass('App', 'BaseClass');
@@ -115,7 +113,7 @@ final class NocCollectorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Create dependency graph with two extends relationships
-        $graph = (new DependencyGraphBuilder())->build([
+        $graph = $this->graph([
             $this->createExtends('App\\ChildA', 'App\\BaseClass', 'child1.php', 20),
             $this->createExtends('App\\ChildB', 'App\\BaseClass', 'child2.php', 30),
         ]);
@@ -146,7 +144,7 @@ final class NocCollectorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Create dependency graph with two-level inheritance chain
-        $graph = (new DependencyGraphBuilder())->build([
+        $graph = $this->graph([
             $this->createExtends('App\\Parent', 'App\\GrandParent', 'parent.php', 20),
             $this->createExtends('App\\Child', 'App\\Parent', 'child.php', 30),
         ]);
@@ -185,7 +183,7 @@ final class NocCollectorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Create dependency graph with cross-namespace extends
-        $graph = (new DependencyGraphBuilder())->build([
+        $graph = $this->graph([
             $this->createExtends('App\\ServiceA', 'Vendor\\BaseService', 'app/service-a.php', 20),
             $this->createExtends('App\\ServiceB', 'Vendor\\BaseService', 'app/service-b.php', 30),
         ]);
@@ -214,7 +212,7 @@ final class NocCollectorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Create dependency graph with global namespace parent
-        $graph = (new DependencyGraphBuilder())->build([
+        $graph = $this->graph([
             $this->createExtends('App\\Child', 'GlobalParent', 'child.php', 20),
         ]);
 
@@ -239,7 +237,7 @@ final class NocCollectorTest extends TestCase
         // The parent should NOT get NOC metrics — only project classes get metrics.
         $repository = new InMemoryMetricRepository();
 
-        $graph = (new DependencyGraphBuilder())->build([
+        $graph = $this->graph([
             $this->createExtends('App\\Service\\MyException', 'Exception', 'exception.php', 10),
         ]);
 
@@ -263,7 +261,7 @@ final class NocCollectorTest extends TestCase
     {
         // Ensure all classes get NOC metric, even if 0
         $repository = new InMemoryMetricRepository();
-        $graph = (new DependencyGraphBuilder())->build([]);
+        $graph = $this->graph([]);
 
         // Add multiple classes
         $class1Path = SymbolPath::forClass('App', 'ClassA');
@@ -288,7 +286,7 @@ final class NocCollectorTest extends TestCase
         $repository = new InMemoryMetricRepository();
 
         // Create dependency graph
-        $graph = (new DependencyGraphBuilder())->build([
+        $graph = $this->graph([
             $this->createExtends('App\\ChildClass', 'App\\BaseClass', 'child.php', 20),
         ]);
 
@@ -308,5 +306,16 @@ final class NocCollectorTest extends TestCase
         self::assertSame(2, $parentMetrics->get('dit'));
         self::assertSame(10, $parentMetrics->get('wmc'));
         self::assertSame(1, $parentMetrics->get('noc'));
+    }
+
+    /** @param list<Dependency> $dependencies */
+    private function graph(array $dependencies): DependencyGraph
+    {
+        $universe = array_map(
+            static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
+            $dependencies,
+        );
+
+        return (new DependencyGraphBuilder())->build($dependencies, $universe);
     }
 }

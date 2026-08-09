@@ -128,8 +128,8 @@ final class RuleThresholdKeyGroupRegistry
         ],
 
         // complexity.cyclomatic / complexity.cognitive / complexity.npath
-        // (hierarchical method/class options with an identical shape):
-        // top-level legacy-flat shorthand applies only to the method
+        // (hierarchical callable/class options with an identical shape):
+        // top-level legacy-flat shorthand applies only to the callable
         // dimension — the bare `warning`/`error` keys are NOT part of that
         // top-level group: the legacy-flat branch's own trigger condition
         // (`ComplexityOptions::fromArray()` et al.) only checks for
@@ -138,17 +138,17 @@ final class RuleThresholdKeyGroupRegistry
         // it at all and fall through as unknown options.
         'complexity.cyclomatic' => [
             '' => [self::LEGACY_FLAT_ALIAS_PAIR],
-            'method' => [self::BARE_PAIR],
+            'callable' => [self::BARE_PAIR],
             'class' => [self::MAX_PREFIXED_PAIR],
         ],
         'complexity.cognitive' => [
             '' => [self::LEGACY_FLAT_ALIAS_PAIR],
-            'method' => [self::BARE_PAIR],
+            'callable' => [self::BARE_PAIR],
             'class' => [self::MAX_PREFIXED_PAIR],
         ],
         'complexity.npath' => [
             '' => [self::LEGACY_FLAT_ALIAS_PAIR],
-            'method' => [self::BARE_PAIR],
+            'callable' => [self::BARE_PAIR],
             'class' => [self::MAX_PREFIXED_PAIR],
         ],
 

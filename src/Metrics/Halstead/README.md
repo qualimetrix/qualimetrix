@@ -10,7 +10,7 @@ Halstead metrics are part of the Maintainability category and are closely relate
 
 **Collector:** `HalsteadCollector`
 **Provides:** `halstead.volume`, `halstead.difficulty`, `halstead.effort`, `halstead.bugs`, `halstead.time`
-**Level:** Method
+**Level:** Callable
 
 ### Base Components
 
@@ -30,3 +30,11 @@ Halstead metrics are part of the Maintainability category and are closely relate
 | Time       | Effort / 18               |
 
 **Details:** See [Maintainability/README.md](../Maintainability/README.md)
+
+> **Note:** Modern PHP callables are interpreted semantically. A first-class
+> callable capture (`target(...)`) is distinct from invocation and uses a
+> capture operator; it does not add the captured target as an operand. PHP 8.5
+> `clone($object, [...])` is the language `clone` operator, not a global
+> function call. A promoted-parameter default belongs to its constructor;
+> property and class-constant initializers do not create synthetic callable
+> metrics.

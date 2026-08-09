@@ -27,14 +27,14 @@ use Qualimetrix\Core\Violation\ViolationChannel;
  * that pair against the fresh capture's v10 entries. The fixture below is
  * built so every migration-report group defined by ADR 0017 is exercised by one run:
  *
- * - `method:App\Foo::bar` / `complexity.cyclomatic` — the fresh capture
- *   wrote two v10 entries under it (method- and class-level violation
- *   codes share one rule name), from two v5 records — **carried**.
+ * - `method:App\Foo::bar` / `complexity.cyclomatic` — the two legacy v5
+ *   records do not match the fresh capture's `callable:App\Foo::bar` entries,
+ *   so both are **dropped** and both v10 entries are **fresh**.
  * - `class:App\Foo` / `design.god-class` — one v5 record, one v10 entry —
  *   also **carried**.
  * - `method:App\Foo::baz` / `coupling.cbo` — a v5 record with nothing
  *   backing it in the fresh capture — **dropped**.
- * - `method:App\Foo::qux` / `size.method-count` — a v10 entry the v5 file
+ * - `callable:App\Foo::qux` / `size.method-count` — a v10 entry the v5 file
  *   never mentioned — **fresh**.
  */
 #[CoversClass(BaselineMigrator::class)]
@@ -68,8 +68,8 @@ final class BaselineMigratorTest extends TestCase
     {
         $result = $this->migrator->migrate($this->v5Fixture(), $this->freshCaptureFixture());
 
-        self::assertSame(3, $result->report->carriedV5EntryCount);
-        self::assertSame(3, $result->report->carriedV10EntryCount);
+        self::assertSame(1, $result->report->carriedV5EntryCount);
+        self::assertSame(1, $result->report->carriedV10EntryCount);
     }
 
     #[Test]
@@ -77,9 +77,16 @@ final class BaselineMigratorTest extends TestCase
     {
         $result = $this->migrator->migrate($this->v5Fixture(), $this->freshCaptureFixture());
 
-        self::assertCount(1, $result->report->dropped);
-        self::assertSame('method:App\Foo::baz', $result->report->dropped[0]->symbolKey);
-        self::assertSame('coupling.cbo', $result->report->dropped[0]->rule);
+        self::assertSame(
+            [
+                ['method:App\Foo::bar', 'complexity.cyclomatic'],
+                ['method:App\Foo::baz', 'coupling.cbo'],
+            ],
+            array_map(
+                static fn($entry): array => [$entry->symbolKey, $entry->rule],
+                $result->report->dropped,
+            ),
+        );
     }
 
     #[Test]
@@ -87,7 +94,7 @@ final class BaselineMigratorTest extends TestCase
     {
         $result = $this->migrator->migrate($this->v5Fixture(), $this->freshCaptureFixture());
 
-        self::assertSame(1, $result->report->freshV10EntryCount);
+        self::assertSame(3, $result->report->freshV10EntryCount);
     }
 
     #[Test]
@@ -164,15 +171,15 @@ final class BaselineMigratorTest extends TestCase
             entries: [
                 new BaselineEntry(
                     new BaselineIdentity(
-                        'method:App\Foo::bar',
-                        new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method'),
+                        'callable:App\Foo::bar',
+                        new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
                     ),
                     [25],
                     1,
                 ),
                 new BaselineEntry(
                     new BaselineIdentity(
-                        'method:App\Foo::bar',
+                        'callable:App\Foo::bar',
                         new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.class'),
                     ),
                     [30],
@@ -188,7 +195,7 @@ final class BaselineMigratorTest extends TestCase
                 ),
                 new BaselineEntry(
                     new BaselineIdentity(
-                        'method:App\Foo::qux',
+                        'callable:App\Foo::qux',
                         new ViolationChannel('size.method-count', 'size.method-count'),
                     ),
                     null,
@@ -199,7 +206,7 @@ final class BaselineMigratorTest extends TestCase
 
         $uncaptured = [
             new UncapturedGroup(
-                new BaselineIdentity('method:App\Foo::quux', new ViolationChannel('computed.custom', 'computed.custom')),
+                new BaselineIdentity('callable:App\Foo::quux', new ViolationChannel('computed.custom', 'computed.custom')),
                 UncapturedReason::UndeclaredChannel,
                 1,
             ),

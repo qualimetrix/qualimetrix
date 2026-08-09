@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Metric;
 
-use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 
 /**
  * Value object representing a class with its collected metrics.
@@ -15,17 +16,12 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final readonly class ClassWithMetrics
 {
     public function __construct(
-        public ?string $namespace,
-        public string $class,
+        public DeclarationPath $declarationPath,
         public int $line,
         public MetricBag $metrics,
-    ) {}
-
-    /**
-     * Creates SymbolPath for this class.
-     */
-    public function getSymbolPath(): SymbolPath
-    {
-        return SymbolPath::forClass($this->namespace ?? '', $this->class);
+    ) {
+        $this->subject = MetricSubject::declaration($declarationPath);
     }
+
+    public MetricSubject $subject;
 }

@@ -152,6 +152,12 @@ PHP;
         self::assertCount(0, $bag->entries('codeSmell.eval'));
     }
 
+    #[Test]
+    public function itDeliberatelyDoesNotProvideCallableMetrics(): void
+    {
+        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
+    }
+
     private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();

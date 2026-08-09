@@ -87,7 +87,7 @@ final class PredicateFilterStageTest extends TestCase
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: $message,
             severity: Severity::Warning,
         );

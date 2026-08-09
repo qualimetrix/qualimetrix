@@ -622,7 +622,7 @@ PHP;
 
         $ccnDefinition = $definitions[0];
         self::assertSame('ccn', $ccnDefinition->name);
-        self::assertSame(SymbolLevel::Method, $ccnDefinition->collectedAt);
+        self::assertSame(SymbolLevel::Callable, $ccnDefinition->collectedAt);
 
         // Check Class_ level aggregations
         $classStrategies = $ccnDefinition->getStrategiesForLevel(SymbolLevel::Class_);

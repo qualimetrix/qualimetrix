@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Collection\Metric;
 
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 
 /**
  * Extracts derived metrics from file-level MetricBag
@@ -28,10 +29,13 @@ final readonly class DerivedMetricExtractor
     /**
      * Extracts derived metrics from file-level MetricBag
      * and registers them as symbols in the repository.
+     *
+     * @param list<CallableWithMetrics> $callables
      */
     public function extract(
         MetricRepositoryInterface $repository,
         MetricBag $fileBag,
+        array $callables,
         RelativePath $filePath,
     ): void {
         // Get metric names provided by derived collectors
@@ -46,11 +50,11 @@ final readonly class DerivedMetricExtractor
             return;
         }
 
-        // Group derived metrics by FQN (method or class)
+        // Group derived metrics by exact declaration and callable kind.
         $symbolMetrics = [];
 
         foreach ($fileBag->all() as $key => $value) {
-            // Parse key format: metricName:fqn
+            // Parse key format: metricName:callable-kind:declaration-canonical.
             $colonPos = strpos($key, ':');
 
             if ($colonPos === false) {
@@ -64,106 +68,29 @@ final readonly class DerivedMetricExtractor
                 continue;
             }
 
-            $fqn = substr($key, $colonPos + 1);
-
-            // Validate FQN format (method or class)
-            if (!$this->isValidMethodFqn($fqn) && !$this->isValidClassFqn($fqn)) {
+            $declarationKey = substr($key, $colonPos + 1);
+            if (!str_contains($declarationKey, ':declaration:')) {
                 continue;
             }
 
-            if (!isset($symbolMetrics[$fqn])) {
-                $symbolMetrics[$fqn] = new MetricBag();
+            $symbolMetrics[$declarationKey] = ($symbolMetrics[$declarationKey] ?? new MetricBag())
+                ->with($metricName, $value);
+        }
+
+        // Add derived metrics only to their exact callable declaration.
+        foreach ($callables as $callable) {
+            $key = $callable->kind->value . ':' . $callable->declarationPath->toCanonical();
+            $derivedBag = $symbolMetrics[$key] ?? null;
+
+            if ($derivedBag !== null && $repository->hasSubject(MetricSubject::declaration($callable->declarationPath))) {
+                $repository->addSubject(
+                    MetricSubject::declaration($callable->declarationPath),
+                    $derivedBag,
+                    $filePath,
+                    $callable->declarationPath->startFilePos,
+                );
             }
-
-            $symbolMetrics[$fqn] = $symbolMetrics[$fqn]->with($metricName, $value);
-        }
-
-        // Add derived metrics to existing symbols
-        foreach ($symbolMetrics as $fqn => $derivedBag) {
-            foreach ($this->resolveCandidatePaths($fqn) as $symbolPath) {
-                // Only add if symbol exists (don't create new symbols)
-                if ($repository->has($symbolPath)) {
-                    $repository->add($symbolPath, $derivedBag, $filePath, 0);
-
-                    break;
-                }
-            }
         }
     }
 
-    /**
-     * Resolves a FQN string to candidate SymbolPaths.
-     *
-     * For method FQNs (contains "::"), returns a single method path.
-     * For bare FQNs (no "::"), returns both class and function candidates,
-     * since "App\Utils\helper" could be either a class or a standalone function.
-     *
-     * @return list<SymbolPath>
-     */
-    private function resolveCandidatePaths(string $fqn): array
-    {
-        $doubleColonPos = strrpos($fqn, '::');
-
-        if ($doubleColonPos !== false) {
-            // Method FQN: Namespace\Class::method — unambiguous
-            $classPath = substr($fqn, 0, $doubleColonPos);
-            $methodName = substr($fqn, $doubleColonPos + 2);
-            [$namespace, $className] = $this->splitClassPath($classPath);
-
-            return [SymbolPath::forMethod($namespace, $className, $methodName)];
-        }
-
-        // Bare FQN: could be class or standalone function
-        [$namespace, $name] = $this->splitClassPath($fqn);
-
-        return [
-            SymbolPath::forClass($namespace, $name),
-            SymbolPath::forGlobalFunction($namespace, $name),
-        ];
-    }
-
-    /**
-     * Splits a fully-qualified class path into namespace and class name.
-     *
-     * @return array{0: string, 1: string} [namespace, className]
-     */
-    private function splitClassPath(string $classPath): array
-    {
-        $lastBackslashPos = strrpos($classPath, '\\');
-
-        if ($lastBackslashPos === false) {
-            return ['', $classPath];
-        }
-
-        return [
-            substr($classPath, 0, $lastBackslashPos),
-            substr($classPath, $lastBackslashPos + 1),
-        ];
-    }
-
-    /**
-     * Validates method FQN format: Namespace\Class::method
-     */
-    private function isValidMethodFqn(string $fqn): bool
-    {
-        return (bool) preg_match(
-            '/^[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\\\\]*::[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*$/',
-            $fqn,
-        );
-    }
-
-    /**
-     * Validates class FQN format: Namespace\Class or Class
-     */
-    private function isValidClassFqn(string $fqn): bool
-    {
-        if (str_contains($fqn, '::')) {
-            return false;
-        }
-
-        return (bool) preg_match(
-            '/^[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\\\\]*$/',
-            $fqn,
-        );
-    }
 }

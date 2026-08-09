@@ -177,7 +177,14 @@ final class LayerAssignmentCommand extends Command
         }
 
         $collection = $this->collectionOrchestrator->collect($files, $repository, $resolved->analysis->projectRoot);
-        $graph = $this->graphBuilder->build($collection->dependencies);
+        $logicalClassUniverse = [];
+        foreach ($repository->allLogicalClasses() as $info) {
+            $logicalClass = $info->subject?->logicalClassPath();
+            if ($logicalClass !== null) {
+                $logicalClassUniverse[$logicalClass->toCanonical()] = $logicalClass;
+            }
+        }
+        $graph = $this->graphBuilder->build($collection->dependencies, array_values($logicalClassUniverse));
 
         $classPaths = [];
         foreach ($repository->all(SymbolType::Class_) as $classSymbol) {

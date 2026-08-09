@@ -21,7 +21,7 @@ use Qualimetrix\Rules\Support\ThresholdParser;
 final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptionsInterface, ShorthandOptionKeysInterface
 {
     public function __construct(
-        public MethodCognitiveComplexityOptions $method = new MethodCognitiveComplexityOptions(),
+        public MethodCognitiveComplexityOptions $callable = new MethodCognitiveComplexityOptions(),
         public ClassCognitiveComplexityOptions $class = new ClassCognitiveComplexityOptions(),
     ) {}
 
@@ -33,7 +33,7 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
         // Explicit top-level enabled: false disables all levels
         if (\array_key_exists(RuleOptionKey::ENABLED, $config) && $config[RuleOptionKey::ENABLED] === false) {
             return new self(
-                method: new MethodCognitiveComplexityOptions(enabled: false),
+                callable: new MethodCognitiveComplexityOptions(enabled: false),
                 class: new ClassCognitiveComplexityOptions(enabled: false),
             );
         }
@@ -44,7 +44,7 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
             $thresholds = ThresholdParser::parse($config, RuleOptionKey::WARNING, RuleOptionKey::ERROR, 15, 30, legacyKeys: ['warning' => ['warningThreshold'], 'error' => ['errorThreshold']]);
 
             return new self(
-                method: new MethodCognitiveComplexityOptions(
+                callable: new MethodCognitiveComplexityOptions(
                     enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
                     warning: (int) $thresholds['warning'],
                     error: (int) $thresholds['error'],
@@ -53,16 +53,16 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
             );
         }
 
-        // Handle hierarchical format: {method: {...}, class: {...}}
-        $methodConfig = isset($config['method']) && \is_array($config['method'])
-            ? $config['method']
+        // Handle hierarchical format: {callable: {...}, class: {...}}
+        $callableConfig = isset($config['callable']) && \is_array($config['callable'])
+            ? $config['callable']
             : [];
         $classConfig = isset($config['class']) && \is_array($config['class'])
             ? $config['class']
             : [];
 
         return new self(
-            method: MethodCognitiveComplexityOptions::fromArray($methodConfig),
+            callable: MethodCognitiveComplexityOptions::fromArray($callableConfig),
             class: ClassCognitiveComplexityOptions::fromArray($classConfig),
         );
     }
@@ -77,19 +77,19 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
 
     public function isEnabled(): bool
     {
-        return $this->method->isEnabled() || $this->class->isEnabled();
+        return $this->callable->isEnabled() || $this->class->isEnabled();
     }
 
     public function getSeverity(int|float $value): ?Severity
     {
-        // For general rule-level checks, use method level thresholds
-        return $this->method->getSeverity($value);
+        // For general rule-level checks, use callable level thresholds
+        return $this->callable->getSeverity($value);
     }
 
     public function forLevel(RuleLevel $level): LevelOptionsInterface
     {
         return match ($level) {
-            RuleLevel::Method => $this->method,
+            RuleLevel::Callable => $this->callable,
             RuleLevel::Class_ => $this->class,
             default => throw new InvalidArgumentException(
                 \sprintf('Level %s is not supported by CognitiveComplexityRule', $level->value),
@@ -100,7 +100,7 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
     public function isLevelEnabled(RuleLevel $level): bool
     {
         return match ($level) {
-            RuleLevel::Method => $this->method->isEnabled(),
+            RuleLevel::Callable => $this->callable->isEnabled(),
             RuleLevel::Class_ => $this->class->isEnabled(),
             default => false,
         };
@@ -111,6 +111,6 @@ final readonly class CognitiveComplexityOptions implements HierarchicalRuleOptio
      */
     public function getSupportedLevels(): array
     {
-        return [RuleLevel::Method, RuleLevel::Class_];
+        return [RuleLevel::Callable, RuleLevel::Class_];
     }
 }

@@ -6,11 +6,15 @@ namespace Qualimetrix\Metrics\Halstead;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr;
+use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt;
+use PhpParser\Node\Stmt\Property;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
 use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
@@ -71,7 +75,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
     /** @var array<string, HalsteadMetrics> FQN => metrics */
     private array $metrics = [];
 
-    /** @var array<string, array{namespace: ?string, class: ?string, method: string, line: int}> */
+    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> */
     private array $methodInfos = [];
 
     /** @var list<array{fqn: string, operators: array<string, int>, operands: array<string, int>}> */
@@ -79,10 +83,11 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
 
     private ?string $currentNamespace = null;
     private ?string $currentClass = null;
+    private ?int $currentClassStartFilePos = null;
     private int $closureCounter = 0;
-
-    /** @var int Depth of anonymous class nesting (methods inside anonymous classes are skipped) */
-    private int $anonymousClassDepth = 0;
+    private ?string $currentProperty = null;
+    /** @var list<array{?string, ?int}> */
+    private array $classContextStack = [];
 
     public function reset(): void
     {
@@ -91,8 +96,11 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
         $this->methodStack = [];
         $this->currentNamespace = null;
         $this->currentClass = null;
+        $this->currentClassStartFilePos = null;
         $this->closureCounter = 0;
-        $this->anonymousClassDepth = 0;
+        $this->currentProperty = null;
+        $this->classContextStack = [];
+        $this->resetCallableTraversalKeys();
     }
 
     /**
@@ -100,18 +108,23 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
      */
     public function getMetrics(): array
     {
-        return $this->metrics;
+        /** @var array<string, object> $projected */
+        $projected = $this->projectLogicalMetricMap($this->metrics, $this->methodInfos);
+
+        /** @var array<string, HalsteadMetrics> $projected */
+        return $projected;
     }
 
     /**
      * Returns structured method metrics for each analyzed method.
      *
-     * @return list<MethodWithMetrics>
+     * @return list<CallableWithMetrics>
      */
-    public function getMethodsWithMetrics(): array
+    public function getCallablesWithMetrics(RelativePath $file): array
     {
         $result = [];
 
+        $ordinals = $this->callableCollisionOrdinals($this->methodInfos);
         foreach ($this->methodInfos as $fqn => $info) {
             $halstead = $this->metrics[$fqn] ?? HalsteadMetrics::empty();
 
@@ -122,13 +135,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
                 ->with(MetricName::HALSTEAD_BUGS, $halstead->bugs())
                 ->with(MetricName::HALSTEAD_TIME, $halstead->time());
 
-            $result[] = new MethodWithMetrics(
-                namespace: $info['namespace'],
-                class: $info['class'],
-                method: $info['method'],
-                line: $info['line'],
-                metrics: $bag,
-            );
+            $result[] = $this->createCallableWithMetrics($info, $file, $bag, $ordinals[$fqn]);
         }
 
         return $result;
@@ -141,26 +148,47 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             $this->currentNamespace = $node->name?->toString() ?? '';
         }
 
+        if ($this->isClassLikeNode($node)) {
+            $this->classContextStack[] = [$this->currentClass, $this->currentClassStartFilePos];
+        }
+
         // Track class-like types (skip anonymous classes)
         if ($node instanceof Stmt\Class_) {
             if ($node->name === null) {
-                ++$this->anonymousClassDepth;
+                $this->currentClass = $this->buildAnonymousClassName($node->getStartFilePos());
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             } else {
                 $this->currentClass = $node->name->toString();
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             }
         } elseif ($this->isClassLikeNode($node)) {
             $className = $this->extractClassLikeName($node);
             if ($className !== null) {
                 $this->currentClass = $className;
+                $this->currentClassStartFilePos = $node->getStartFilePos();
             }
         }
 
-        // Start of a method (skip if inside anonymous class)
         if ($node instanceof Stmt\ClassMethod) {
-            if ($this->anonymousClassDepth === 0) {
-                $fqn = $this->buildMethodFqn($node->name->toString());
-                $this->startMethod($fqn, $node->name->toString(), $node->getStartLine());
-            }
+            $fqn = $this->buildMethodFqn($node->name->toString());
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), CallableKind::Method, null);
+
+            return null;
+        }
+
+        if ($node instanceof Property && $this->currentClass !== null && \count($node->props) === 1) {
+            $this->currentProperty = $node->props[0]->name->toString();
+        }
+
+        if ($node instanceof PropertyHook && $this->currentClass !== null && $this->currentProperty !== null) {
+            $name = $this->currentProperty . '::' . $node->name->toString();
+            $this->startMethod(
+                $this->buildMethodFqn($name),
+                $name,
+                $node->getStartFilePos(),
+                CallableKind::PropertyHook,
+                null,
+            );
 
             return null;
         }
@@ -168,41 +196,30 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
         // Start of a function
         if ($node instanceof Stmt\Function_) {
             $fqn = $this->buildFunctionFqn($node->name->toString());
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartLine());
+            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), CallableKind::Function, null);
 
             return null;
         }
 
-        // Start of a closure (skip if inside anonymous class)
         if ($node instanceof Expr\Closure) {
-            if ($this->anonymousClassDepth > 0) {
-                return null;
-            }
-
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
-            $this->startMethod($fqn, $closureName, $node->getStartLine());
+            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), CallableKind::AnonymousCallable, 'closure');
 
             return null;
         }
 
-        // Arrow function (skip if inside anonymous class)
         if ($node instanceof Expr\ArrowFunction) {
-            if ($this->anonymousClassDepth > 0) {
-                return null;
-            }
-
             ++$this->closureCounter;
             $fqn = $this->buildClosureFqn();
             $closureName = '{closure#' . $this->closureCounter . '}';
-            $this->startMethod($fqn, $closureName, $node->getStartLine());
+            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), CallableKind::AnonymousCallable, 'arrow');
 
             return null;
         }
 
-        // Count operators/operands (skip anonymous class internals)
-        if ($this->methodStack !== [] && $this->anonymousClassDepth === 0) {
+        if ($this->methodStack !== []) {
             $this->countOperators($node);
             $this->countOperands($node);
         }
@@ -212,13 +229,22 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
 
     public function leaveNode(Node $node): ?int
     {
-        // End of method (skip if inside anonymous class — we didn't start it)
         if ($node instanceof Stmt\ClassMethod) {
-            if ($this->anonymousClassDepth === 0) {
+            $this->endMethod();
+
+            return null;
+        }
+
+        if ($node instanceof PropertyHook) {
+            if ($this->currentClass !== null && $this->currentProperty !== null) {
                 $this->endMethod();
             }
 
             return null;
+        }
+
+        if ($node instanceof Property) {
+            $this->currentProperty = null;
         }
 
         // End of function
@@ -228,24 +254,17 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             return null;
         }
 
-        // End of closure/arrow function (skip if inside anonymous class — we didn't start it)
         if ($node instanceof Expr\Closure || $node instanceof Expr\ArrowFunction) {
-            if ($this->anonymousClassDepth === 0) {
-                $this->endMethod();
-            }
+            $this->endMethod();
 
             return null;
         }
 
         // Exit class-like scope
         if ($node instanceof Stmt\Class_) {
-            if ($node->name === null) {
-                --$this->anonymousClassDepth;
-            } else {
-                $this->currentClass = null;
-            }
+            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
         } elseif ($this->isClassLikeNode($node)) {
-            $this->currentClass = null;
+            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
         }
 
         // Exit namespace scope
@@ -256,8 +275,15 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
         return null;
     }
 
-    private function startMethod(string $fqn, string $methodName, int $line): void
-    {
+    private function startMethod(
+        string $fqn,
+        string $methodName,
+        int $startFilePos,
+        CallableKind $kind,
+        ?string $anonymousSyntax,
+    ): void {
+        $logicalFqn = $fqn;
+        $fqn = $this->createCallableTraversalKey($logicalFqn, $startFilePos);
         $this->methodStack[] = [
             'fqn' => $fqn,
             'operators' => [],
@@ -266,9 +292,13 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
 
         $this->methodInfos[$fqn] = [
             'namespace' => $this->currentNamespace,
+            'logicalFqn' => $logicalFqn,
             'class' => $this->currentClass,
             'method' => $methodName,
-            'line' => $line,
+            'startFilePos' => $startFilePos,
+            'kind' => $kind,
+            'anonymousSyntax' => $anonymousSyntax,
+            'classStartFilePos' => $this->currentClassStartFilePos,
         ];
     }
 
@@ -400,6 +430,10 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
     private function getCallOpName(Node $node): ?string
     {
         return match (true) {
+            $node instanceof Expr\FuncCall && $this->isCloneWithCall($node) => 'clone',
+            $node instanceof Expr\FuncCall && $node->isFirstClassCallable() => 'callable_function',
+            $node instanceof Expr\MethodCall && $node->isFirstClassCallable() => 'callable_method',
+            $node instanceof Expr\StaticCall && $node->isFirstClassCallable() => 'callable_static_method',
             $node instanceof Expr\MethodCall => '->',
             $node instanceof Expr\PropertyFetch => '->',
             $node instanceof Expr\StaticCall => '::',
@@ -479,6 +513,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             $node instanceof Expr\BinaryOp\GreaterOrEqual => '>=',
             $node instanceof Expr\BinaryOp\Spaceship => '<=>',
             $node instanceof Expr\BinaryOp\Coalesce => '??',
+            $node instanceof Expr\BinaryOp\Pipe => '|>',
             default => 'binary_op',
         };
     }
@@ -563,17 +598,30 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
             return 'prop:' . $node->name->toString();
         }
 
-        // Method/function names (the name being called)
+        // Method/function names are operands only for invocations. A first-class
+        // callable capture does not execute the target and has its own operator.
         if ($node instanceof Expr\MethodCall && $node->name instanceof Node\Identifier) {
+            if ($node->isFirstClassCallable()) {
+                return null;
+            }
+
             return 'method:' . $node->name->toString();
         }
         if ($node instanceof Expr\NullsafeMethodCall && $node->name instanceof Node\Identifier) {
             return 'method:' . $node->name->toString();
         }
         if ($node instanceof Expr\StaticCall && $node->name instanceof Node\Identifier) {
+            if ($node->isFirstClassCallable()) {
+                return null;
+            }
+
             return 'method:' . $node->name->toString();
         }
         if ($node instanceof Expr\FuncCall && $node->name instanceof Node\Name) {
+            if ($this->isCloneWithCall($node) || $node->isFirstClassCallable()) {
+                return null;
+            }
+
             return 'func:' . $node->name->toString();
         }
 
@@ -583,6 +631,17 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
         }
 
         return null;
+    }
+
+    /**
+     * PHP 8.5 clone-with syntax is represented by php-parser as a FuncCall.
+     * The reserved `clone` spelling remains a language operator, not a target
+     * function operand.
+     */
+    private function isCloneWithCall(Expr\FuncCall $node): bool
+    {
+        return $node->name instanceof Node\Name
+            && strtolower($node->name->toString()) === 'clone';
     }
 
 }

@@ -542,11 +542,11 @@ class Order
 PHP;
         $this->collectMetrics($code);
 
-        $classes = $this->collector->getClassesWithMetrics();
+        $classes = $this->collector->getClassesWithMetrics(\Qualimetrix\Core\Path\RelativePath::fromString('Order.php'));
 
         self::assertCount(1, $classes);
-        self::assertSame('App\Model', $classes[0]->namespace);
-        self::assertSame('Order', $classes[0]->class);
+        self::assertSame('App\Model', $classes[0]->declarationPath->logical->namespace);
+        self::assertSame('Order', $classes[0]->declarationPath->logical->type);
         self::assertNotNull($classes[0]->metrics->get('classLoc'));
     }
 
@@ -562,11 +562,17 @@ class Standalone
 PHP;
         $this->collectMetrics($code);
 
-        $classes = $this->collector->getClassesWithMetrics();
+        $classes = $this->collector->getClassesWithMetrics(\Qualimetrix\Core\Path\RelativePath::fromString('Standalone.php'));
 
         self::assertCount(1, $classes);
-        self::assertNull($classes[0]->namespace);
-        self::assertSame('Standalone', $classes[0]->class);
+        self::assertSame('', $classes[0]->declarationPath->logical->namespace);
+        self::assertSame('Standalone', $classes[0]->declarationPath->logical->type);
+    }
+
+    #[Test]
+    public function itDeliberatelyDoesNotProvideCallableMetrics(): void
+    {
+        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
     private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag

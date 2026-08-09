@@ -242,7 +242,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         string $namespace,
         string $class,
         string $ruleName = 'complexity.cyclomatic',
-        string $violationCode = 'complexity.cyclomatic.method',
+        string $violationCode = 'complexity.cyclomatic.callable',
     ): Violation {
         return new Violation(
             location: new Location(RelativePath::fromString($file), 10),

@@ -40,7 +40,7 @@ final class SuppressionTest extends TestCase
         // Prefix matching: 'complexity' matches all complexity.* violations
         self::assertTrue($suppression->matches('complexity'));
         self::assertTrue($suppression->matches('complexity.cyclomatic'));
-        self::assertTrue($suppression->matches('complexity.cyclomatic.method'));
+        self::assertTrue($suppression->matches('complexity.cyclomatic.callable'));
         self::assertFalse($suppression->matches('coupling'));
     }
 
@@ -92,7 +92,7 @@ final class SuppressionTest extends TestCase
     public function itReverseDoesNotMatch(): void
     {
         $suppression = new Suppression(
-            rule: 'complexity.cyclomatic.method',
+            rule: 'complexity.cyclomatic.callable',
             reason: null,
             line: 10,
             type: SuppressionType::Symbol,

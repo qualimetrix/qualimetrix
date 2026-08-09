@@ -9,7 +9,7 @@ namespace Qualimetrix\Core\Rule;
  */
 enum RuleLevel: string
 {
-    case Method = 'method';
+    case Callable = 'callable';
     case Class_ = 'class';
     case Namespace_ = 'namespace';
 
@@ -19,7 +19,7 @@ enum RuleLevel: string
     public function displayName(): string
     {
         return match ($this) {
-            self::Method => 'Method',
+            self::Callable => 'Callable',
             self::Class_ => 'Class',
             self::Namespace_ => 'Namespace',
         };

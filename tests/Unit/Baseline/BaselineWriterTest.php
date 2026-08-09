@@ -76,10 +76,10 @@ final class BaselineWriterTest extends TestCase
         /** @var array{entries: array<string, list<array<string, mixed>>>} $data */
         $data = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
 
-        self::assertArrayHasKey('method:App\Foo::bar', $data['entries']);
+        self::assertArrayHasKey('callable:App\Foo::bar', $data['entries']);
         self::assertSame(
-            'complexity.cyclomatic#complexity.cyclomatic.method',
-            $data['entries']['method:App\Foo::bar'][0]['channel'],
+            'complexity.cyclomatic#complexity.cyclomatic.callable',
+            $data['entries']['callable:App\Foo::bar'][0]['channel'],
         );
     }
 
@@ -412,7 +412,7 @@ final class BaselineWriterTest extends TestCase
     public function itWritesAsManyEntriesUnderASymbolAsItRead(): void
     {
         $undeclared = ['channel' => 'nobody.declares#this.channel', 'count' => 1];
-        $duplicated = 'complexity.cyclomatic#complexity.cyclomatic.method';
+        $duplicated = 'complexity.cyclomatic#complexity.cyclomatic.callable';
 
         $path = $this->tempDir . '/hand-written.json';
         file_put_contents($path, json_encode([
@@ -420,7 +420,7 @@ final class BaselineWriterTest extends TestCase
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => ['src'],
             'entries' => [
-                'method:App\Foo::bar' => [
+                'callable:App\Foo::bar' => [
                     ['channel' => $duplicated, 'magnitudes' => [3], 'count' => 1],
                     ['channel' => $duplicated, 'magnitudes' => [9], 'count' => 1],
                     $undeclared,
@@ -437,13 +437,13 @@ final class BaselineWriterTest extends TestCase
         /** @var array{entries: array<string, list<array<string, mixed>>>} $rewritten */
         $rewritten = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
 
-        self::assertCount(4, $rewritten['entries']['method:App\Foo::bar']);
+        self::assertCount(4, $rewritten['entries']['callable:App\Foo::bar']);
         self::assertSame(
             [3, 9],
             array_values(array_map(
                 static fn(array $entry): mixed => $entry['magnitudes'][0] ?? null,
                 array_filter(
-                    $rewritten['entries']['method:App\Foo::bar'],
+                    $rewritten['entries']['callable:App\Foo::bar'],
                     static fn(array $entry): bool => ($entry['channel'] ?? null) === $duplicated,
                 ),
             )),
@@ -552,7 +552,7 @@ final class BaselineWriterTest extends TestCase
             scope: ['src'],
             entries: [],
             inertEntries: [new InertBaselineEntry(
-                symbolKey: 'method:App\Foo::bar',
+                symbolKey: 'callable:App\Foo::bar',
                 channelKey: 'nobody.declares#this.channel',
                 identity: null,
                 selector: EntrySelector::forKey('x'),
@@ -565,7 +565,7 @@ final class BaselineWriterTest extends TestCase
         /** @var array{entries: array<string, list<mixed>>} $data */
         $data = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
 
-        self::assertSame([$raw], $data['entries']['method:App\Foo::bar']);
+        self::assertSame([$raw], $data['entries']['callable:App\Foo::bar']);
     }
 
     #[Test]
@@ -644,8 +644,8 @@ final class BaselineWriterTest extends TestCase
         $entries = [
             new BaselineEntry(
                 new BaselineIdentity(
-                    'method:App\Foo::bar',
-                    new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method'),
+                    'callable:App\Foo::bar',
+                    new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
                 ),
                 [25],
                 1,
@@ -683,8 +683,8 @@ final class BaselineWriterTest extends TestCase
             scope: ['src'],
             entries: [new BaselineEntry(
                 new BaselineIdentity(
-                    'method:App\Foo::bar',
-                    new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method'),
+                    'callable:App\Foo::bar',
+                    new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
                 ),
                 [0.1, 1.2345678, 40.0, 1234.5678912],
                 4,

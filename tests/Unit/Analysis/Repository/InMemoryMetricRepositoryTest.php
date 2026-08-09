@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Analysis\Repository;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -24,7 +29,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $symbol = SymbolPath::forMethod('App\\Service', 'UserService', 'calculate');
         $metrics = (new MetricBag())->with('ccn', 5);
 
-        $repository->add($symbol, $metrics, RelativePath::fromString('src/Service/UserService.php'), 42);
+        $this->addCallable($repository, $symbol, $metrics, RelativePath::fromString('src/Service/UserService.php'), 420);
 
         $retrieved = $repository->get($symbol);
 
@@ -120,8 +125,8 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $method2 = SymbolPath::forMethod('App', 'Service', 'method2');
         $class = SymbolPath::forClass('App', 'Service');
 
-        $repository->add($method1, new MetricBag(), RelativePath::fromString('test.php'), 10);
-        $repository->add($method2, new MetricBag(), RelativePath::fromString('test.php'), 20);
+        $this->addCallable($repository, $method1, new MetricBag(), RelativePath::fromString('test.php'), 100);
+        $this->addCallable($repository, $method2, new MetricBag(), RelativePath::fromString('test.php'), 200);
         $repository->add($class, new MetricBag(), RelativePath::fromString('test.php'), 1);
 
         $methods = iterator_to_array($repository->all(SymbolType::Method), false);
@@ -138,7 +143,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $class1 = SymbolPath::forClass('App', 'Service');
         $class2 = SymbolPath::forClass('App', 'Repository');
 
-        $repository->add($method, new MetricBag(), RelativePath::fromString('test.php'), 10);
+        $this->addCallable($repository, $method, new MetricBag(), RelativePath::fromString('test.php'), 100);
         $repository->add($class1, new MetricBag(), RelativePath::fromString('test.php'), 1);
         $repository->add($class2, new MetricBag(), RelativePath::fromString('test2.php'), 1);
 
@@ -215,11 +220,12 @@ final class InMemoryMetricRepositoryTest extends TestCase
             RelativePath::fromString('src/Repository/UserRepository.php'),
             1,
         );
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod('App\\Service', 'UserService', 'find'),
             new MetricBag(),
             RelativePath::fromString('src/Service/UserService.php'),
-            10,
+            100,
         );
 
         $serviceSymbols = iterator_to_array($repository->forNamespace('App\\Service'), false);
@@ -235,20 +241,22 @@ final class InMemoryMetricRepositoryTest extends TestCase
 
         // Add to first repository
         $metrics1 = (new MetricBag())->with('ccn', 5);
-        $repo1->add(
+        $this->addCallable(
+            $repo1,
             SymbolPath::forMethod('App', 'ServiceA', 'method1'),
             $metrics1,
             RelativePath::fromString('ServiceA.php'),
-            10,
+            100,
         );
 
         // Add to second repository
         $metrics2 = (new MetricBag())->with('ccn', 10);
-        $repo2->add(
+        $this->addCallable(
+            $repo2,
             SymbolPath::forMethod('App', 'ServiceB', 'method2'),
             $metrics2,
             RelativePath::fromString('ServiceB.php'),
-            20,
+            200,
         );
 
         $merged = $repo1->mergeWith($repo2);
@@ -303,11 +311,12 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $repo2 = new InMemoryMetricRepository();
 
         $metrics = (new MetricBag())->with('ccn', 5);
-        $repo1->add(
+        $this->addCallable(
+            $repo1,
             SymbolPath::forMethod('App', 'Service', 'method'),
             $metrics,
             RelativePath::fromString('Service.php'),
-            10,
+            100,
         );
 
         // Merge with empty
@@ -425,5 +434,36 @@ final class InMemoryMetricRepositoryTest extends TestCase
 
         self::assertSame(20, $retrieved->get('foo'));
         self::assertSame(42, $retrieved->get('bar'));
+    }
+
+    #[Test]
+    public function itRejectsDeclarationSymbolsFromAggregateAdd(): void
+    {
+        $repository = new InMemoryMetricRepository();
+
+        $this->expectException(InvalidArgumentException::class);
+        $repository->add(
+            SymbolPath::forMethod('App', 'Service', 'method'),
+            new MetricBag(),
+            RelativePath::fromString('Service.php'),
+            10,
+        );
+    }
+
+    private function addCallable(
+        InMemoryMetricRepository $repository,
+        SymbolPath $symbol,
+        MetricBag $metrics,
+        RelativePath $file,
+        int $startFilePos,
+    ): void {
+        $repository->addCallable(new CallableWithMetrics(
+            new DeclarationPath($symbol, $file, $startFilePos),
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')),
+            $metrics,
+        ));
     }
 }

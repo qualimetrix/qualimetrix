@@ -189,7 +189,7 @@ bin/qmx check src/ --rule-opt="size.method-count:warning=25"
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       warning: 15
       error: 25
   size.method-count:

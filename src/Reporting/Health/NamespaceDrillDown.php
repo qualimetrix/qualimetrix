@@ -132,7 +132,7 @@ final readonly class NamespaceDrillDown
         $warnThreshold = $overallDef->warningThreshold ?? 50.0;
         $errThreshold = $overallDef->errorThreshold ?? 30.0;
 
-        // Pre-compute violation counts per class (normalize method-level violations to class)
+        // Pre-compute violation counts per class (normalize callable-level violations to class)
         $violationCounts = [];
         foreach ($violations as $violation) {
             if ($violation->symbolPath->type === null) {

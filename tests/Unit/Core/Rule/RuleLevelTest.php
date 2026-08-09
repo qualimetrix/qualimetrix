@@ -16,7 +16,7 @@ final class RuleLevelTest extends TestCase
     #[Test]
     public function itEnumValues(): void
     {
-        self::assertSame('method', RuleLevel::Method->value);
+        self::assertSame('callable', RuleLevel::Callable->value);
         self::assertSame('class', RuleLevel::Class_->value);
         self::assertSame('namespace', RuleLevel::Namespace_->value);
     }
@@ -27,7 +27,7 @@ final class RuleLevelTest extends TestCase
         $cases = RuleLevel::cases();
 
         self::assertCount(3, $cases);
-        self::assertContains(RuleLevel::Method, $cases);
+        self::assertContains(RuleLevel::Callable, $cases);
         self::assertContains(RuleLevel::Class_, $cases);
         self::assertContains(RuleLevel::Namespace_, $cases);
     }
@@ -44,7 +44,7 @@ final class RuleLevelTest extends TestCase
      */
     public static function displayNameProvider(): iterable
     {
-        yield 'method' => [RuleLevel::Method, 'Method'];
+        yield 'callable' => [RuleLevel::Callable, 'Callable'];
         yield 'class' => [RuleLevel::Class_, 'Class'];
         yield 'namespace' => [RuleLevel::Namespace_, 'Namespace'];
     }
@@ -52,7 +52,7 @@ final class RuleLevelTest extends TestCase
     #[Test]
     public function itFromString(): void
     {
-        self::assertSame(RuleLevel::Method, RuleLevel::from('method'));
+        self::assertSame(RuleLevel::Callable, RuleLevel::from('callable'));
         self::assertSame(RuleLevel::Class_, RuleLevel::from('class'));
         self::assertSame(RuleLevel::Namespace_, RuleLevel::from('namespace'));
     }
@@ -62,5 +62,6 @@ final class RuleLevelTest extends TestCase
     {
         self::assertNull(RuleLevel::tryFrom('invalid'));
         self::assertNull(RuleLevel::tryFrom('function'));
+        self::assertNull(RuleLevel::tryFrom('method'));
     }
 }

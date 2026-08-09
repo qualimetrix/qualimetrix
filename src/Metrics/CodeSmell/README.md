@@ -6,17 +6,17 @@ The CodeSmell collector detects common anti-patterns and code smells in a single
 
 ## Detected Patterns
 
-| Type                | Description                                             | Example                                |
-| ------------------- | ------------------------------------------------------- | -------------------------------------- |
-| `goto`              | Usage of `goto`                                         | `goto label;`                          |
-| `eval`              | Usage of `eval()`                                       | `eval($code);`                         |
-| `exit`              | Usage of `exit()`/`die()`                               | `exit(1);`                             |
-| `empty_catch`       | Empty catch blocks                                      | `catch (Exception $e) {}`              |
-| `debug_code`        | Debug code                                              | `var_dump($x);`                        |
-| `error_suppression` | The `@` operator                                        | `@file_get_contents()`                 |
-| `count_in_loop`     | `count()` in loop condition                             | `for ($i = 0; $i < count($arr); $i++)` |
-| `superglobals`      | Direct superglobal access                               | `$_GET['id']`                          |
-| `boolean_argument`  | `bool` parameter in a method/function/closure signature | `function save(bool $overwrite)`       |
+| Type                | Description                                                                               | Example                                |
+| ------------------- | ----------------------------------------------------------------------------------------- | -------------------------------------- |
+| `goto`              | Usage of `goto`                                                                           | `goto label;`                          |
+| `eval`              | Usage of `eval()`                                                                         | `eval($code);`                         |
+| `exit`              | Usage of `exit()`/`die()`                                                                 | `exit(1);`                             |
+| `empty_catch`       | Empty catch blocks                                                                        | `catch (Exception $e) {}`              |
+| `debug_code`        | Debug code                                                                                | `var_dump($x);`                        |
+| `error_suppression` | The `@` operator                                                                          | `@file_get_contents()`                 |
+| `count_in_loop`     | `count()` in loop condition                                                               | `for ($i = 0; $i < count($arr); $i++)` |
+| `superglobals`      | Direct superglobal access                                                                 | `$_GET['id']`                          |
+| `boolean_argument`  | `bool` parameter in a method/function/closure signature, not a property-hook setter value | `function save(bool $overwrite)`       |
 
 ## Metrics
 

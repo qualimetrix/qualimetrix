@@ -6,6 +6,7 @@ namespace Qualimetrix\Metrics\Design;
 
 use PhpParser\Node;
 use PhpParser\Node\Param;
+use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Enum_;
@@ -16,8 +17,10 @@ use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Core\Metric\ClassWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
-use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
  * Visitor for collecting type coverage metrics per class.
@@ -33,17 +36,13 @@ use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
  */
 final class TypeCoverageVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
-    use VisitorMethodTrackingTrait;
-
     /** @var array<string, array{paramTotal: int, paramTyped: int, returnTotal: int, returnTyped: int, propertyTotal: int, propertyTyped: int}> */
     private array $classTypeInfo = [];
 
-    /** @var array<string, array{namespace: ?string, class: string, line: int}> */
+    /** @var array<string, array{namespace: ?string, class: string, line: int, startFilePos: int}> */
     private array $classInfos = [];
 
     private ?string $currentNamespace = null;
-    private ?string $currentClass = null; // @phpstan-ignore property.unusedType (assigned via VisitorMethodTrackingTrait)
-    private int $closureCounter = 0;
 
     /**
      * Magic methods excluded from return type counting.
@@ -62,8 +61,6 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Resettabl
         $this->classTypeInfo = [];
         $this->classInfos = [];
         $this->currentNamespace = null;
-        $this->currentClass = null;
-        $this->closureCounter = 0;
     }
 
     /**
@@ -75,7 +72,7 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Resettabl
     }
 
     /**
-     * @return array<string, array{namespace: ?string, class: string, line: int}>
+     * @return array<string, array{namespace: ?string, class: string, line: int, startFilePos: int}>
      */
     public function getClassInfos(): array
     {
@@ -87,7 +84,7 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Resettabl
      *
      * @return list<ClassWithMetrics>
      */
-    public function getClassesWithMetrics(): array
+    public function getClassesWithMetrics(RelativePath $file): array
     {
         $result = [];
 
@@ -128,8 +125,7 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Resettabl
             }
 
             $result[] = new ClassWithMetrics(
-                namespace: $info['namespace'],
-                class: $info['class'],
+                declarationPath: new DeclarationPath(SymbolPath::forClass($info['namespace'] ?? '', $info['class']), $file, $info['startFilePos']),
                 line: $info['line'],
                 metrics: $bag,
             );
@@ -155,6 +151,7 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Resettabl
                 'namespace' => $this->currentNamespace,
                 'class' => $className,
                 'line' => $node->getStartLine(),
+                'startFilePos' => $node->getStartFilePos(),
             ];
         }
 
@@ -191,6 +188,7 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Resettabl
                 $this->analyzeMethod($stmt, $info);
             } elseif ($stmt instanceof Property) {
                 $this->analyzeProperty($stmt, $info);
+                $this->analyzePropertyHookParameters($stmt->hooks, $info);
             }
         }
 
@@ -217,6 +215,8 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Resettabl
                 if ($param->type !== null) {
                     $info['propertyTyped']++;
                 }
+
+                $this->analyzePropertyHookParameters($param->hooks, $info);
             }
         }
 
@@ -246,6 +246,28 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Resettabl
         }
     }
 
+    /**
+     * Property hooks are callable declarations, but their return declaration is
+     * the property's type. Count only explicitly declared hook parameters here;
+     * the property itself is counted once by analyzeProperty().
+     *
+     * @param array<PropertyHook> $hooks
+     * @param array{paramTotal: int, paramTyped: int, returnTotal: int, returnTyped: int, propertyTotal: int, propertyTyped: int} $info
+     */
+    private function analyzePropertyHookParameters(array $hooks, array &$info): void
+    {
+        foreach ($hooks as $hook) {
+            \assert($hook instanceof PropertyHook);
+
+            foreach ($hook->params as $param) {
+                $info['paramTotal']++;
+                if ($param->type !== null) {
+                    $info['paramTyped']++;
+                }
+            }
+        }
+    }
+
     private function isPromotedProperty(Param $param): bool
     {
         // In php-parser v5, promoted properties have visibility flags.
@@ -261,6 +283,17 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Resettabl
         }
 
         return $className;
+    }
+
+    private function extractClassLikeName(Node $node): ?string
+    {
+        return match (true) {
+            $node instanceof Class_ && $node->name !== null => $node->name->toString(),
+            $node instanceof Interface_ && $node->name !== null => $node->name->toString(),
+            $node instanceof Trait_ && $node->name !== null => $node->name->toString(),
+            $node instanceof Enum_ && $node->name !== null => $node->name->toString(),
+            default => null,
+        };
     }
 
     /**

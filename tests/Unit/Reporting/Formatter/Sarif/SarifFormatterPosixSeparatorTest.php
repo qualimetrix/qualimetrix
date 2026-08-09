@@ -34,7 +34,7 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
             location: new Location(RelativePath::fromString('src/Sub/Dir/Foo.php'), 42, true),
             symbolPath: SymbolPath::forClass('App\\Sub\\Dir', 'Foo'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'too complex',
             severity: Severity::Warning,
         );

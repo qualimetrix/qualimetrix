@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Metric;
 
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -42,6 +43,27 @@ interface MetricRepositoryInterface
      * @param ?int $line The line number (null for aggregated/namespace metrics)
      */
     public function add(SymbolPath $symbol, MetricBag $metrics, ?RelativePath $file, ?int $line): void;
+
+    /** Returns metrics for an exact declaration, logical class, or aggregate subject. */
+    public function getSubject(MetricSubject $subject): MetricBag;
+
+    /** Checks whether an exact declaration, logical class, or aggregate subject exists. */
+    public function hasSubject(MetricSubject $subject): bool;
+
+    /** Adds or merges metrics without collapsing declaration identities to SymbolPath. */
+    public function addSubject(MetricSubject $subject, MetricBag $metrics, ?RelativePath $file, ?int $line): void;
+
+    /** Adds or merges one callable while preserving its declaration metadata. */
+    public function addCallable(CallableWithMetrics $callable): void;
+
+    /** @return iterable<SymbolInfo> exact declaration subjects */
+    public function allDeclarations(): iterable;
+
+    /** @return iterable<SymbolInfo> exact callable declaration subjects */
+    public function allCallables(): iterable;
+
+    /** @return iterable<SymbolInfo> logical class subjects */
+    public function allLogicalClasses(): iterable;
 
     /**
      * Adds a single scalar metric to an existing symbol.

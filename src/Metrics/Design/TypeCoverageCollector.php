@@ -13,6 +13,7 @@ use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
@@ -111,11 +112,11 @@ final class TypeCoverageCollector extends AbstractCollector implements ClassMetr
     /**
      * @return list<ClassWithMetrics>
      */
-    public function getClassesWithMetrics(): array
+    public function getClassesWithMetrics(RelativePath $file): array
     {
         \assert($this->visitor instanceof TypeCoverageVisitor);
 
-        return $this->visitor->getClassesWithMetrics();
+        return $this->visitor->getClassesWithMetrics($file);
     }
 
     /**

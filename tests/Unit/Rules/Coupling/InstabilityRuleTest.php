@@ -683,9 +683,9 @@ final class InstabilityRuleTest extends TestCase
         $options = new InstabilityOptions();
 
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('Level method is not supported by InstabilityRule');
+        self::expectExceptionMessage('Level callable is not supported by InstabilityRule');
 
-        $options->forLevel(RuleLevel::Method);
+        $options->forLevel(RuleLevel::Callable);
     }
 
     #[Test]

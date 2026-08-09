@@ -25,6 +25,8 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -189,7 +191,7 @@ final class LayerViolationRuleTest extends TestCase
         $location = new Location(RelativePath::fromString('src/Controller/UserController.php'), 42, precise: true);
 
         $graph = $this->buildGraph([
-            new Dependency($source, $target, DependencyType::New_, $location),
+            $this->dependency($source, $target, DependencyType::New_, $location),
         ]);
 
         $violations = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
@@ -319,8 +321,8 @@ final class LayerViolationRuleTest extends TestCase
         $target = SymbolPath::forClass('App\\Repository', 'UserRepository');
 
         $graph = $this->buildGraph([
-            new Dependency($source, $target, DependencyType::New_, new Location(RelativePath::fromString('a.php'), 10)),
-            new Dependency($source, $target, DependencyType::TypeHint, new Location(RelativePath::fromString('a.php'), 20)),
+            $this->dependency($source, $target, DependencyType::New_, new Location(RelativePath::fromString('a.php'), 10)),
+            $this->dependency($source, $target, DependencyType::TypeHint, new Location(RelativePath::fromString('a.php'), 20)),
         ]);
 
         $violations = $this->filterByRule($rule->analyze($this->buildContext($graph, $arch, $repo)), LayerViolationRule::NAME);
@@ -911,10 +913,20 @@ final class LayerViolationRuleTest extends TestCase
         DependencyType $type = DependencyType::New_,
     ): Dependency {
         return new Dependency(
-            source: SymbolPath::forClass($sourceNamespace, $sourceClass),
-            target: SymbolPath::forClass($targetNamespace, $targetClass),
+            source: new DeclarationPath(SymbolPath::forClass($sourceNamespace, $sourceClass), RelativePath::fromString('src/dummy.php'), 0),
+            target: new LogicalClassPath(SymbolPath::forClass($targetNamespace, $targetClass)),
             type: $type,
             location: new Location(RelativePath::fromString('src/dummy.php'), 1),
+        );
+    }
+
+    private function dependency(SymbolPath $source, SymbolPath $target, DependencyType $type, Location $location): Dependency
+    {
+        return new Dependency(
+            new DeclarationPath($source, $location->file ?? RelativePath::fromString('src/dummy.php'), 0),
+            new LogicalClassPath($target),
+            $type,
+            $location,
         );
     }
 

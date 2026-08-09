@@ -78,7 +78,7 @@ final class CognitiveComplexityRuleTest extends TestCase
     {
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
-        self::assertSame([RuleLevel::Method, RuleLevel::Class_], $rule->getSupportedLevels());
+        self::assertSame([RuleLevel::Callable, RuleLevel::Class_], $rule->getSupportedLevels());
     }
 
     // Method-level tests
@@ -88,7 +88,7 @@ final class CognitiveComplexityRuleTest extends TestCase
     {
         $rule = new CognitiveComplexityRule(
             new CognitiveComplexityOptions(
-                method: new MethodCognitiveComplexityOptions(enabled: false),
+                callable: new MethodCognitiveComplexityOptions(enabled: false),
             ),
         );
 
@@ -97,7 +97,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $context = new AnalysisContext($repository);
 
-        self::assertSame([], $rule->analyzeLevel(RuleLevel::Method, $context));
+        self::assertSame([], $rule->analyzeLevel(RuleLevel::Callable, $context));
     }
 
     #[Test]
@@ -111,7 +111,7 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         $context = new AnalysisContext($repository);
 
-        self::assertSame([], $rule->analyzeLevel(RuleLevel::Method, $context));
+        self::assertSame([], $rule->analyzeLevel(RuleLevel::Callable, $context));
     }
 
     #[Test]
@@ -131,14 +131,14 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
         self::assertSame('Cognitive complexity is 20, exceeds threshold of 15. Reduce nesting and break into smaller methods', $violations[0]->message);
         self::assertSame(20, $violations[0]->metricValue);
         self::assertSame('complexity.cognitive', $violations[0]->ruleName);
-        self::assertSame(RuleLevel::Method, $violations[0]->level);
+        self::assertSame(RuleLevel::Callable, $violations[0]->level);
     }
 
     #[Test]
@@ -158,7 +158,7 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
@@ -268,7 +268,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $violations = $rule->analyze($context);
 
         self::assertCount(2, $violations);
-        self::assertSame(RuleLevel::Method, $violations[0]->level);
+        self::assertSame(RuleLevel::Callable, $violations[0]->level);
         self::assertSame(RuleLevel::Class_, $violations[1]->level);
     }
 
@@ -316,7 +316,7 @@ final class CognitiveComplexityRuleTest extends TestCase
     public function itCognitiveComplexityOptionsFromHierarchicalArray(): void
     {
         $options = CognitiveComplexityOptions::fromArray([
-            'method' => [
+            'callable' => [
                 'warning' => 20,
                 'error' => 35,
             ],
@@ -327,8 +327,8 @@ final class CognitiveComplexityRuleTest extends TestCase
         ]);
 
         self::assertTrue($options->isEnabled());
-        self::assertTrue($options->method->isEnabled());
-        self::assertSame(20, $options->method->warning);
+        self::assertTrue($options->callable->isEnabled());
+        self::assertSame(20, $options->callable->warning);
         self::assertTrue($options->class->isEnabled());
         self::assertSame(40, $options->class->maxWarning);
     }
@@ -343,9 +343,9 @@ final class CognitiveComplexityRuleTest extends TestCase
         ]);
 
         self::assertTrue($options->isEnabled());
-        self::assertTrue($options->method->isEnabled());
-        self::assertSame(18, $options->method->warning);
-        self::assertSame(35, $options->method->error);
+        self::assertTrue($options->callable->isEnabled());
+        self::assertSame(18, $options->callable->warning);
+        self::assertSame(35, $options->callable->error);
         // Legacy format disables class level
         self::assertFalse($options->class->isEnabled());
     }
@@ -355,7 +355,7 @@ final class CognitiveComplexityRuleTest extends TestCase
     {
         $options = new CognitiveComplexityOptions();
 
-        self::assertSame($options->method, $options->forLevel(RuleLevel::Method));
+        self::assertSame($options->callable, $options->forLevel(RuleLevel::Callable));
         self::assertSame($options->class, $options->forLevel(RuleLevel::Class_));
     }
 
@@ -363,11 +363,11 @@ final class CognitiveComplexityRuleTest extends TestCase
     public function itCognitiveComplexityOptionsIsLevelEnabled(): void
     {
         $options = new CognitiveComplexityOptions(
-            method: new MethodCognitiveComplexityOptions(enabled: true),
+            callable: new MethodCognitiveComplexityOptions(enabled: true),
             class: new ClassCognitiveComplexityOptions(enabled: false),
         );
 
-        self::assertTrue($options->isLevelEnabled(RuleLevel::Method));
+        self::assertTrue($options->isLevelEnabled(RuleLevel::Callable));
         self::assertFalse($options->isLevelEnabled(RuleLevel::Class_));
     }
 
@@ -381,7 +381,7 @@ final class CognitiveComplexityRuleTest extends TestCase
     ): void {
         $rule = new CognitiveComplexityRule(
             new CognitiveComplexityOptions(
-                method: new MethodCognitiveComplexityOptions(
+                callable: new MethodCognitiveComplexityOptions(
                     warning: $warning,
                     error: $error,
                 ),
@@ -400,7 +400,7 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         if ($expectedSeverity === null) {
             self::assertCount(0, $violations);
@@ -430,7 +430,7 @@ final class CognitiveComplexityRuleTest extends TestCase
             'warningThreshold' => 15,
         ]);
 
-        self::assertSame(30, $options->method->error);
+        self::assertSame(30, $options->callable->error);
     }
 
     #[Test]
@@ -440,8 +440,8 @@ final class CognitiveComplexityRuleTest extends TestCase
             'errorThreshold' => 40,
         ]);
 
-        self::assertSame(15, $options->method->warning);
-        self::assertSame(40, $options->method->error);
+        self::assertSame(15, $options->callable->warning);
+        self::assertSame(40, $options->callable->error);
     }
 
     #[Test]
@@ -466,7 +466,7 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         // Top 3 by points: if +5, foreach +4, &&/|| +1 (or else +1)
@@ -496,7 +496,7 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         // Closure never gets "nested" prefix regardless of points
@@ -520,7 +520,7 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertStringNotContainsString('Top:', $violations[0]->message);

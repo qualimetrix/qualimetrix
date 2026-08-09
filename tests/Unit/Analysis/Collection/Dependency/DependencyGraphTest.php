@@ -12,6 +12,8 @@ use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 
@@ -35,12 +37,12 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Other', 'Vendor\\Bar'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         $fooDeps = $graph->getClassDependencies(SymbolPath::fromClassFqn('App\\Foo'));
         self::assertCount(2, $fooDeps);
 
-        $targets = array_map(fn($d) => $d->target->toString(), $fooDeps);
+        $targets = array_map(fn($d) => $d->targetLogical()->toString(), $fooDeps);
         self::assertContains('Vendor\\Bar', $targets);
         self::assertContains('Vendor\\Baz', $targets);
     }
@@ -54,12 +56,12 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Foo', 'Vendor\\Other'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         $barDependents = $graph->getClassDependents(SymbolPath::fromClassFqn('Vendor\\Bar'));
         self::assertCount(2, $barDependents);
 
-        $sources = array_map(fn($d) => $d->source->toString(), $barDependents);
+        $sources = array_map(fn($d) => $d->sourceLogical()->toString(), $barDependents);
         self::assertContains('App\\Foo', $sources);
         self::assertContains('App\\Baz', $sources);
     }
@@ -73,7 +75,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Foo', 'Vendor\\Baz'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         self::assertSame(2, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
     }
@@ -87,7 +89,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Baz', 'Vendor\\Bar'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         self::assertSame(2, $graph->getClassCa(SymbolPath::fromClassFqn('Vendor\\Bar')));
     }
@@ -104,7 +106,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Foo', 'App\\Internal'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // App namespace has Ce = 2 (Vendor\Bar, Vendor\Baz)
         self::assertSame(2, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('App')));
@@ -123,7 +125,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('Vendor\\Internal', 'Vendor\\Bar'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // Vendor namespace has Ca = 3 (App\Foo, App\Baz, Other\Service)
         self::assertSame(3, $graph->getNamespaceCa(SymbolPath::fromNamespaceFqn('Vendor')));
@@ -137,7 +139,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Foo', 'Vendor\\Baz'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
         $classes = array_map(fn(SymbolPath $p) => $p->toString(), $graph->getAllClasses());
 
         self::assertCount(3, $classes);
@@ -154,7 +156,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Domain\\Baz', 'Vendor\\Other\\Qux'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
         $namespaces = array_map(fn(SymbolPath $p) => $p->namespace ?? '', $graph->getAllNamespaces());
 
         // 4 leaf namespaces + 2 parent namespaces (App, Vendor)
@@ -175,7 +177,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Baz', 'Vendor\\Qux'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         self::assertCount(2, $graph->getAllDependencies());
     }
@@ -183,7 +185,7 @@ final class DependencyGraphTest extends TestCase
     #[Test]
     public function emptyGraph_returnsEmptyResults(): void
     {
-        $graph = $this->builder->build([]);
+        $graph = $this->build([]);
 
         self::assertSame([], $graph->getAllClasses());
         self::assertSame([], $graph->getAllNamespaces());
@@ -195,13 +197,25 @@ final class DependencyGraphTest extends TestCase
     }
 
     #[Test]
+    public function itSeedsDegreeZeroClassesFromTheExplicitUniverse(): void
+    {
+        $standalone = new LogicalClassPath(SymbolPath::fromClassFqn('App\\Standalone'));
+
+        $graph = $this->builder->build([], [$standalone]);
+
+        self::assertSame([$standalone->symbolPath], $graph->getAllClasses());
+        self::assertSame(0, $graph->getClassCe($standalone->symbolPath));
+        self::assertSame(0, $graph->getClassCa($standalone->symbolPath));
+    }
+
+    #[Test]
     public function handlesGlobalNamespace(): void
     {
         $deps = [
             $this->dep('GlobalClass', 'App\\Foo'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // Global namespace class should still be in classes list
         $classStrings = array_map(fn(SymbolPath $p) => $p->toString(), $graph->getAllClasses());
@@ -222,12 +236,12 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Foo', 'Iterator', DependencyType::Instanceof_),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // Only App\Bar should remain (non-structural built-in deps filtered)
         $allDeps = $graph->getAllDependencies();
         self::assertCount(1, $allDeps);
-        self::assertSame('App\\Bar', $allDeps[0]->target->toString());
+        self::assertSame('App\\Bar', $allDeps[0]->targetLogical()->toString());
 
         // Built-in classes should not appear in class list
         $classNames = array_map(fn(SymbolPath $p) => $p->toString(), $graph->getAllClasses());
@@ -246,7 +260,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\MyException', 'Throwable', DependencyType::Instanceof_),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // extends preserved, instanceof filtered
         self::assertCount(1, $graph->getAllDependencies());
@@ -267,7 +281,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Foo', 'Pdo\\Mysql', DependencyType::Extends),  // extends preserved
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // App\Bar and Pdo\Mysql (extends) remain, Random\Randomizer and Dom\Document filtered
         self::assertCount(2, $graph->getAllDependencies());
@@ -282,7 +296,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Foo', 'MyCustomGlobalClass'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         self::assertCount(1, $graph->getAllDependencies());
         self::assertSame(1, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
@@ -297,7 +311,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Foo', 'Vendor\\DateTime'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         self::assertCount(2, $graph->getAllDependencies());
         self::assertSame(2, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
@@ -312,7 +326,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Foo', 'RuntimeException', DependencyType::TypeHint),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // Only App\Bar counts toward Ce
         self::assertSame(1, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
@@ -327,7 +341,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Foo', 'Throwable', DependencyType::TypeHint),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // Only Vendor\Bar counts toward App namespace Ce
         self::assertSame(1, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('App')));
@@ -341,7 +355,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Foo', 'Vendor\\ContractInterface', DependencyType::Implements),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         self::assertCount(2, $graph->getAllDependencies());
         self::assertSame(2, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
@@ -357,7 +371,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('App\\Foo', 'Stringable', DependencyType::TypeHint),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         self::assertCount(1, $graph->getAllDependencies());
         self::assertSame(1, $graph->getClassCe(SymbolPath::fromClassFqn('App\\Foo')));
@@ -374,7 +388,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('A\\X\\Foo', 'A\\Y\\Bar'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // Both A\X and A\Y are children of A — dependency is internal to A
         self::assertSame(0, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('A')));
@@ -387,7 +401,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('A\\X\\Foo', 'B\\Bar'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // A\X\Foo depends on B\Bar — crosses A boundary
         self::assertSame(1, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('A')));
@@ -400,7 +414,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('B\\Bar', 'A\\X\\Foo'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // B\Bar depends on A\X\Foo — A gets Ca=1
         self::assertSame(1, $graph->getNamespaceCa(SymbolPath::fromNamespaceFqn('A')));
@@ -420,7 +434,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('D\\Service', 'A\\X\\Foo'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // Ce(A) = 2 unique external targets: B\Qux, C\Quux
         self::assertSame(2, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('A')));
@@ -435,7 +449,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('A\\B\\C\\Foo', 'D\\E\\Bar'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // The dependency crosses boundaries for both parent A and parent A\B
         self::assertSame(1, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('A')));
@@ -454,7 +468,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('A\\X\\Baz', 'A\\Z\\Qux'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // Leaf namespace Ce/Ca should reflect their own leaf-level semantics
         // A\X has 2 outgoing external deps (B\Y\Bar and A\Z\Qux are both outside A\X)
@@ -474,7 +488,7 @@ final class DependencyGraphTest extends TestCase
             $this->dep('A\\Z\\Baz', 'A\\X\\Foo'),
         ];
 
-        $graph = $this->builder->build($deps);
+        $graph = $this->build($deps);
 
         // All deps are internal to A — no boundary crossing
         self::assertSame(0, $graph->getNamespaceCe(SymbolPath::fromNamespaceFqn('A')));
@@ -483,11 +497,26 @@ final class DependencyGraphTest extends TestCase
 
     private function dep(string $source, string $target, DependencyType $type = DependencyType::New_): Dependency
     {
+        $sourcePath = SymbolPath::fromClassFqn($source);
+
         return new Dependency(
-            SymbolPath::fromClassFqn($source),
-            SymbolPath::fromClassFqn($target),
+            new DeclarationPath($sourcePath, RelativePath::fromString('test.php'), 0),
+            new LogicalClassPath(SymbolPath::fromClassFqn($target)),
             $type,
             new Location(RelativePath::fromString('test.php'), 1),
         );
+    }
+
+    /** @param list<Dependency> $dependencies */
+    private function build(array $dependencies): DependencyGraph
+    {
+        /** @var array<string, LogicalClassPath> $universe */
+        $universe = [];
+        foreach ($dependencies as $dependency) {
+            $source = new LogicalClassPath($dependency->sourceLogical());
+            $universe[$source->toCanonical()] = $source;
+        }
+
+        return $this->builder->build($dependencies, array_values($universe));
     }
 }

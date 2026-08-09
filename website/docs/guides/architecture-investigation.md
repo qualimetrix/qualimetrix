@@ -37,7 +37,7 @@ The namespace view shows per-namespace health, child namespaces, and the worst c
 bin/qmx check src/ --class=App\\Domain\\Order\\OrderService --detail
 ```
 
-The `--detail` flag shows individual method-level violations. Look at the "Technical debt by rule" breakdown to decide what **type** of refactoring to prioritize first.
+The `--detail` flag shows individual callable-level violations. Look at the "Technical debt by rule" breakdown to decide what **type** of refactoring to prioritize first.
 
 ### Step 4: Verify with Source Code
 

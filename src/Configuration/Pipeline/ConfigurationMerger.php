@@ -156,7 +156,7 @@ final class ConfigurationMerger
      * why this can't just be a plain deep-merge.
      *
      * Recurses so hierarchical rule levels (e.g. `complexity.cyclomatic`'s
-     * `method:`/`class:`) get eviction scoped to the level the conflicting
+     * `callable:`/`class:`) get eviction scoped to the level the conflicting
      * keys actually live at, not the rule's top level — `$path` tracks the
      * dot-joined nesting (`''`, `'method'`, `'class'`, ...) consulted by
      * {@see RuleThresholdKeyGroupRegistry}.

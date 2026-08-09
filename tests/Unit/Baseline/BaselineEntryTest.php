@@ -150,7 +150,7 @@ final class BaselineEntryTest extends TestCase
     private static function identity(): BaselineIdentity
     {
         return new BaselineIdentity(
-            'method:App\Foo::bar',
+            'callable:App\Foo::bar',
             new ViolationChannel('code-smell.goto', 'code-smell.goto'),
         );
     }

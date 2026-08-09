@@ -34,6 +34,7 @@ use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -128,7 +129,10 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             'dependencies' => \count($collectionOutput->dependencies),
         ]);
         $profiler?->start('dependency', 'pipeline');
-        $graph = $this->graphBuilder->build($collectionOutput->dependencies);
+        $graph = $this->graphBuilder->build(
+            $collectionOutput->dependencies,
+            self::collectLogicalClassPaths($repository),
+        );
         unset($collectionOutput); // Free raw dependencies — no longer needed
         $profiler?->stop('dependency');
 
@@ -276,6 +280,20 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         }
 
         return [$files, $generatedExcludedFiles, \count($filesByPath)];
+    }
+
+    /** @return list<LogicalClassPath> */
+    private static function collectLogicalClassPaths(MetricRepositoryInterface $repository): array
+    {
+        $classes = [];
+        foreach ($repository->allLogicalClasses() as $info) {
+            $logicalClass = $info->subject?->logicalClassPath();
+            if ($logicalClass !== null) {
+                $classes[$logicalClass->toCanonical()] = $logicalClass;
+            }
+        }
+
+        return array_values($classes);
     }
 
     /**

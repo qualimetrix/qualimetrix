@@ -165,7 +165,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         );
 
         $options = new ComplexityOptions(
-            method: new MethodComplexityOptions(warning: 10, error: 20),
+            callable: new MethodComplexityOptions(warning: 10, error: 20),
         );
         $rule = new ComplexityRule($options);
 
@@ -209,7 +209,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         );
 
         $options = new ComplexityOptions(
-            method: new MethodComplexityOptions(warning: 10, error: 20),
+            callable: new MethodComplexityOptions(warning: 10, error: 20),
         );
         $rule = new ComplexityRule($options);
 

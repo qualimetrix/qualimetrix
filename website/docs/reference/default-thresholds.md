@@ -163,7 +163,7 @@ Create an `qmx.yaml` file in your project root:
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       warning: 15
       error: 30
     class:
@@ -190,7 +190,7 @@ If you want a single pass/fail cutoff where all violations are errors, use the `
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       threshold: 15    # equivalent to warning: 15, error: 15
 
   size.method-count:

@@ -130,8 +130,8 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itRemovesExactlyTheNamedEntryAndLeavesItsNeighbours(): void
     {
-        $kept = new BaselineEntry(new BaselineIdentity('method:App\Foo::kept', self::gotoChannel()), null, 1);
-        $removed = new BaselineEntry(new BaselineIdentity('method:App\Foo::gone', self::gotoChannel()), null, 1);
+        $kept = new BaselineEntry(new BaselineIdentity('callable:App\Foo::kept', self::gotoChannel()), null, 1);
+        $removed = new BaselineEntry(new BaselineIdentity('callable:App\Foo::gone', self::gotoChannel()), null, 1);
         $selector = $removed->selector();
 
         $baseline = self::baselineOf($kept, $removed);
@@ -174,7 +174,7 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itReportsASelectorThatNamesNothing(): void
     {
-        $entry = new BaselineEntry(new BaselineIdentity('method:App\Foo::bar', self::gotoChannel()), null, 1);
+        $entry = new BaselineEntry(new BaselineIdentity('callable:App\Foo::bar', self::gotoChannel()), null, 1);
         $baseline = self::baselineOf($entry);
 
         $unknown = EntrySelector::fromString('000000000000');
@@ -210,7 +210,7 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itClassifiesEachSelectorValueOnlyOnceInFirstOccurrenceOrder(): void
     {
-        $removedEntry = new BaselineEntry(new BaselineIdentity('method:App\Foo::gone', self::gotoChannel()), null, 1);
+        $removedEntry = new BaselineEntry(new BaselineIdentity('callable:App\Foo::gone', self::gotoChannel()), null, 1);
         $removed = $removedEntry->selector();
         $notFound = EntrySelector::fromString('000000000000');
         $ambiguous = EntrySelector::fromString('aaaaaaaaaaaa');
@@ -242,7 +242,7 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itLeavesTheBaselineEntriesUnchangedWhenGivenNoSelectors(): void
     {
-        $entry = new BaselineEntry(new BaselineIdentity('method:App\Foo::bar', self::gotoChannel()), null, 1);
+        $entry = new BaselineEntry(new BaselineIdentity('callable:App\Foo::bar', self::gotoChannel()), null, 1);
         $baseline = self::baselineOf($entry);
 
         $result = $this->cleaner()->remove($baseline, []);
@@ -254,7 +254,7 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itStampsTheWrittenBaselineFromTheInjectedClock(): void
     {
-        $entry = new BaselineEntry(new BaselineIdentity('method:App\Foo::bar', self::gotoChannel()), null, 1);
+        $entry = new BaselineEntry(new BaselineIdentity('callable:App\Foo::bar', self::gotoChannel()), null, 1);
         $baseline = self::baselineOf($entry);
 
         $result = $this->cleaner()->remove($baseline, [$entry->selector()]);
@@ -265,7 +265,7 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itCarriesTheSourceContentHashForward(): void
     {
-        $entry = new BaselineEntry(new BaselineIdentity('method:App\Foo::bar', self::gotoChannel()), null, 1);
+        $entry = new BaselineEntry(new BaselineIdentity('callable:App\Foo::bar', self::gotoChannel()), null, 1);
         $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry], sourceContentHash: 'abc123');
 
         $result = $this->cleaner()->remove($baseline, []);

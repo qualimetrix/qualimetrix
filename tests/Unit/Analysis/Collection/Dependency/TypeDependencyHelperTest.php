@@ -83,7 +83,7 @@ PHP;
         $deps = $this->analyze($code);
 
         // Should only have the Extends dependency, not a "parent" type hint dependency
-        $targets = array_map(static fn($d) => $d->target->toString(), $deps);
+        $targets = array_map(static fn($d) => $d->targetLogical()->toString(), $deps);
         self::assertNotContains('App\\parent', $targets);
         self::assertNotContains('App\\static', $targets);
         self::assertNotContains('App\\self', $targets);
@@ -141,7 +141,7 @@ PHP;
         $deps = $this->analyze($code);
 
         // Should only have OtherClass dependency, not self
-        $targets = array_map(static fn($d) => $d->target->toString(), $deps);
+        $targets = array_map(static fn($d) => $d->targetLogical()->toString(), $deps);
         self::assertContains('Vendor\\OtherClass', $targets);
         self::assertNotContains('App\\self', $targets);
     }
