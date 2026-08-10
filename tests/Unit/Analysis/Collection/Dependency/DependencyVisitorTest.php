@@ -431,6 +431,44 @@ PHP;
     }
 
     #[Test]
+    public function itPreservesExactDeclarationSourcesForEveryNamedClassLike(): void
+    {
+        $deps = $this->analyze(<<<'PHP'
+<?php
+namespace App;
+use Vendor\Base;
+use Vendor\Contract;
+use Vendor\SharedTrait;
+class Service extends Base {}
+interface Port extends Contract {}
+trait Shared { use SharedTrait; }
+enum State implements Contract {}
+PHP);
+
+        $sources = array_values(array_unique(array_map(
+            static fn($dependency): string => $dependency->sourceLogical()->toString(),
+            $deps,
+        )));
+        sort($sources);
+        self::assertSame(['App\Port', 'App\Service', 'App\Shared', 'App\State'], $sources);
+        foreach ($deps as $dependency) {
+            self::assertStringContainsString('@test.php:', $dependency->source->toCanonical());
+        }
+    }
+
+    #[Test]
+    public function itResetsDependenciesAndImportsWhenReusedForAnotherFile(): void
+    {
+        $this->analyze('<?php namespace First; use Vendor\One; class A extends One {}', 'first.php');
+        $second = $this->analyze('<?php namespace Second; class B extends Two {}', 'second.php');
+
+        self::assertCount(1, $second);
+        self::assertSame('Second\B', $second[0]->sourceLogical()->toString());
+        self::assertSame('Second\Two', $second[0]->targetLogical()->toString());
+        self::assertStringContainsString('@second.php:', $second[0]->source->toCanonical());
+    }
+
+    #[Test]
     public function imports_do_not_leak_between_namespace_blocks(): void
     {
         $code = <<<'PHP'
@@ -682,7 +720,7 @@ PHP;
     /**
      * @return array<\Qualimetrix\Core\Dependency\Dependency>
      */
-    private function analyze(string $code): array
+    private function analyze(string $code, string $file = 'test.php'): array
     {
         $parser = (new ParserFactory())->createForNewestSupportedVersion();
         $ast = $parser->parse($code);
@@ -691,7 +729,7 @@ PHP;
             return [];
         }
 
-        $this->visitor->setFile(RelativePath::fromString('test.php'));
+        $this->visitor->setFile(RelativePath::fromString($file));
         $this->traverser->traverse($ast);
 
         return $this->visitor->getDependencies();

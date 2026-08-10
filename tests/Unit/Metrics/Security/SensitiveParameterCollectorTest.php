@@ -53,6 +53,18 @@ PHP;
     }
 
     #[Test]
+    public function itRetainsParameterEvidenceAndTheEnclosingCallableSubject(): void
+    {
+        $metrics = $this->collectMetrics('<?php namespace App; function login(string $password) {}');
+        $entry = $metrics->entries('security.sensitiveParameter')[0];
+
+        self::assertSame('password', $entry['paramName']);
+        self::assertSame('declaration', $entry['subjectKind']);
+        self::assertSame('function', $entry['logicalKind']);
+        self::assertSame('login', $entry['member']);
+    }
+
+    #[Test]
     public function itCollectsWithNoFindings(): void
     {
         $code = <<<'PHP'

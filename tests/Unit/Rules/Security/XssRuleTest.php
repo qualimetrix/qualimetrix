@@ -47,7 +47,7 @@ final class XssRuleTest extends TestCase
         $rule = new XssRule(new SecurityPatternOptions(enabled: false));
 
         $context = $this->createContext(
-            (new MetricBag())->withEntry('security.xss', ['line' => 1, 'superglobal' => '']),
+            (new MetricBag())->withEntry('security.xss', ['subjectKind' => 'file', 'line' => 1, 'superglobal' => '']),
         );
 
         self::assertCount(0, $rule->analyze($context));
@@ -70,7 +70,7 @@ final class XssRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.xss', ['line' => 8, 'superglobal' => '']),
+                ->withEntry('security.xss', ['subjectKind' => 'file', 'line' => 8, 'superglobal' => '']),
         );
 
         $violations = $rule->analyze($context);
@@ -79,7 +79,10 @@ final class XssRuleTest extends TestCase
         self::assertSame(8, $violations[0]->location->line);
         self::assertSame(Severity::Error, $violations[0]->severity);
         self::assertSame('security.xss', $violations[0]->ruleName);
-        self::assertStringContainsString('XSS', $violations[0]->message);
+        self::assertSame('Potential XSS — use htmlspecialchars() or equivalent before outputting user input', $violations[0]->message);
+        self::assertSame('file:src/View/Template.php', $violations[0]->subject->toCanonical());
+        self::assertSame('Escape output with htmlspecialchars() or use a template engine with auto-escaping.', $violations[0]->recommendation);
+        self::assertTrue($violations[0]->location->precise);
     }
 
     #[Test]
@@ -89,8 +92,8 @@ final class XssRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.xss', ['line' => 5, 'superglobal' => ''])
-                ->withEntry('security.xss', ['line' => 12, 'superglobal' => '']),
+                ->withEntry('security.xss', ['subjectKind' => 'file', 'line' => 5, 'superglobal' => ''])
+                ->withEntry('security.xss', ['subjectKind' => 'file', 'line' => 12, 'superglobal' => '']),
         );
 
         $violations = $rule->analyze($context);
@@ -107,7 +110,7 @@ final class XssRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.xss', ['line' => 8, 'superglobal' => '_POST']),
+                ->withEntry('security.xss', ['subjectKind' => 'file', 'line' => 8, 'superglobal' => '_POST']),
         );
 
         $violations = $rule->analyze($context);

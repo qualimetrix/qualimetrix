@@ -129,7 +129,7 @@ final class JsonFormatterTest extends TestCase
     public function itFormatsReportWithViolations(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'complexity.cyclomatic',
@@ -140,7 +140,7 @@ final class JsonFormatterTest extends TestCase
                 threshold: 10,
                 recommendation: 'Cyclomatic complexity: 25 (threshold: 10) — too many code paths',
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'complexity.cyclomatic',
@@ -190,7 +190,7 @@ final class JsonFormatterTest extends TestCase
     public function itUsesDisplayMessageFallbackForViolation(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
@@ -388,7 +388,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 55; $i++) {
-            $builder->addViolation(new Violation(
+            $builder->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -416,7 +416,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 55; $i++) {
-            $builder->addViolation(new Violation(
+            $builder->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -443,7 +443,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 20; $i++) {
-            $builder->addViolation(new Violation(
+            $builder->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -467,7 +467,7 @@ final class JsonFormatterTest extends TestCase
     public function itShowsNoViolationsWhenFormatOptViolationsIsZero(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -497,7 +497,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 55; $i++) {
-            $builder->addViolation(new Violation(
+            $builder->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -521,7 +521,7 @@ final class JsonFormatterTest extends TestCase
         // Violations are pre-filtered by ResultPresenter before reaching the formatter.
         // Only in-scope violations are passed to the report builder.
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Payment/Pay.php'), 10),
                 symbolPath: SymbolPath::forClass('App\Payment', 'PayService'),
                 ruleName: 'test',
@@ -529,7 +529,7 @@ final class JsonFormatterTest extends TestCase
                 message: 'In Payment',
                 severity: Severity::Error,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Payment/Gateway/Stripe.php'), 20),
                 symbolPath: SymbolPath::forClass('App\Payment\Gateway', 'Stripe'),
                 ruleName: 'test',
@@ -548,8 +548,8 @@ final class JsonFormatterTest extends TestCase
 
         // Only Payment violations (boundary-aware: App\Payment and App\Payment\Gateway)
         self::assertCount(2, $data['violations']);
-        self::assertSame('In Payment', $data['violations'][0]['message']);
-        self::assertSame('In Payment Gateway', $data['violations'][1]['message']);
+        self::assertSame('In Payment Gateway', $data['violations'][0]['message']);
+        self::assertSame('In Payment', $data['violations'][1]['message']);
 
         // Summary reflects filtered set
         self::assertSame(2, $data['summary']['violationCount']);
@@ -584,7 +584,7 @@ final class JsonFormatterTest extends TestCase
     {
         // Only the matching class violation is passed (pre-filtered by ResultPresenter)
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Payment/Pay.php'), 10),
                 symbolPath: SymbolPath::forMethod('App\Payment', 'PayService', 'process'),
                 ruleName: 'test',
@@ -612,7 +612,7 @@ final class JsonFormatterTest extends TestCase
     public function itProducesNullForNanAndInfMetricValues(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'maintainability.index',
@@ -621,7 +621,7 @@ final class JsonFormatterTest extends TestCase
                 severity: Severity::Warning,
                 metricValue: \NAN,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'maintainability.index',
@@ -645,10 +645,10 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itSortsViolationsBySeverityThenExceedance(): void
+    public function itSortsViolationsByCanonicalIdentity(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -658,7 +658,7 @@ final class JsonFormatterTest extends TestCase
                 metricValue: 11,
                 threshold: 10,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
@@ -668,7 +668,7 @@ final class JsonFormatterTest extends TestCase
                 metricValue: 11,
                 threshold: 10,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/C.php'), 30),
                 symbolPath: SymbolPath::forClass('App', 'C'),
                 ruleName: 'test',
@@ -678,7 +678,7 @@ final class JsonFormatterTest extends TestCase
                 metricValue: 50,
                 threshold: 10,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/D.php'), 40),
                 symbolPath: SymbolPath::forClass('App', 'D'),
                 ruleName: 'test',
@@ -696,18 +696,17 @@ final class JsonFormatterTest extends TestCase
         $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Errors first, higher exceedance first within same severity
-        self::assertSame('test.d', $data['violations'][0]['code']); // error, exceedance=40
-        self::assertSame('test.b', $data['violations'][1]['code']); // error, exceedance=1
-        self::assertSame('test.c', $data['violations'][2]['code']); // warning, exceedance=40
-        self::assertSame('test.a', $data['violations'][3]['code']); // warning, exceedance=1
+        self::assertSame('test.a', $data['violations'][0]['code']);
+        self::assertSame('test.b', $data['violations'][1]['code']);
+        self::assertSame('test.c', $data['violations'][2]['code']);
+        self::assertSame('test.d', $data['violations'][3]['code']);
     }
 
     #[Test]
-    public function itRendersInfoSeverityAndSortsAfterWarning(): void
+    public function itRendersInfoSeverityWithoutUsingItAsTheSortKey(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'architecture.coverage',
@@ -715,7 +714,7 @@ final class JsonFormatterTest extends TestCase
                 message: 'Class not assigned to a layer',
                 severity: Severity::Info,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), 1),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'complexity.cyclomatic',
@@ -725,7 +724,7 @@ final class JsonFormatterTest extends TestCase
                 metricValue: 12,
                 threshold: 10,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/C.php'), 1),
                 symbolPath: SymbolPath::forClass('App', 'C'),
                 ruleName: 'complexity.cyclomatic',
@@ -745,7 +744,7 @@ final class JsonFormatterTest extends TestCase
 
         // JSON severity uses the enum value ('info', 'warning', 'error')
         $severities = array_map(static fn(array $v): string => $v['severity'], $data['violations']);
-        self::assertSame(['error', 'warning', 'info'], $severities);
+        self::assertSame(['info', 'warning', 'error'], $severities);
 
         // Find the info violation and verify its rendered string
         $infoViolation = null;
@@ -760,10 +759,10 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itSortsNullThresholdViolations(): void
+    public function itSortsNullThresholdViolationsByIdentity(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'code-smell',
@@ -771,7 +770,7 @@ final class JsonFormatterTest extends TestCase
                 message: 'No threshold',
                 severity: Severity::Warning,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -789,16 +788,15 @@ final class JsonFormatterTest extends TestCase
         $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Threshold-based exceedance (10) comes first, then null threshold (0)
-        self::assertSame('test', $data['violations'][0]['code']);
-        self::assertSame('code-smell.eval', $data['violations'][1]['code']);
+        self::assertSame('code-smell.eval', $data['violations'][0]['code']);
+        self::assertSame('test', $data['violations'][1]['code']);
     }
 
     #[Test]
     public function itFormatsNamespaceLevelViolation(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php')),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'size.namespace',
@@ -825,7 +823,7 @@ final class JsonFormatterTest extends TestCase
     public function itFormatsFilelessViolation(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forNamespace('App'),
                 ruleName: 'architecture.circular',
@@ -948,7 +946,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 55; $i++) {
-            $builder->addViolation(new Violation(
+            $builder->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -995,10 +993,10 @@ final class JsonFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itSortsNanMetricValueCorrectly(): void
+    public function itSortsNanMetricValueByIdentity(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -1008,7 +1006,7 @@ final class JsonFormatterTest extends TestCase
                 metricValue: \NAN,
                 threshold: 10,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
@@ -1026,10 +1024,9 @@ final class JsonFormatterTest extends TestCase
         $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Normal metric (exceedance=15) should come before NaN (exceedance=0)
         self::assertCount(2, $data['violations']);
-        self::assertSame('test.b', $data['violations'][0]['code']);
-        self::assertSame('test.a', $data['violations'][1]['code']);
+        self::assertSame('test.a', $data['violations'][0]['code']);
+        self::assertSame('test.b', $data['violations'][1]['code']);
     }
 
     #[Test]
@@ -1183,7 +1180,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 55; $i++) {
-            $builder->addViolation(new Violation(
+            $builder->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -1212,7 +1209,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 10; $i++) {
-            $builder->addViolation(new Violation(
+            $builder->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -1240,7 +1237,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 20; $i++) {
-            $builder->addViolation(new Violation(
+            $builder->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -1270,7 +1267,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 55; $i++) {
-            $builder->addViolation(new Violation(
+            $builder->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -1301,7 +1298,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         for ($i = 0; $i < 20; $i++) {
-            $builder->addViolation(new Violation(
+            $builder->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -1326,7 +1323,7 @@ final class JsonFormatterTest extends TestCase
     public function itDoesNotIncludeViolationGroupsWhenGroupByNone(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -1351,7 +1348,7 @@ final class JsonFormatterTest extends TestCase
     public function itIncludesViolationGroupsWhenGroupByClassName(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
@@ -1359,7 +1356,7 @@ final class JsonFormatterTest extends TestCase
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'process'),
                 ruleName: 'complexity.cyclomatic',
@@ -1367,7 +1364,7 @@ final class JsonFormatterTest extends TestCase
                 message: 'Also complex',
                 severity: Severity::Warning,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Model/Order.php'), 15),
                 symbolPath: SymbolPath::forClass('App\Model', 'Order'),
                 ruleName: 'size.class-count',
@@ -1410,7 +1407,7 @@ final class JsonFormatterTest extends TestCase
     public function itIncludesViolationGroupsWhenGroupByNamespaceName(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
@@ -1418,7 +1415,7 @@ final class JsonFormatterTest extends TestCase
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Model/Order.php'), 15),
                 symbolPath: SymbolPath::forClass('App\Model', 'Order'),
                 ruleName: 'size.class-count',
@@ -1426,7 +1423,7 @@ final class JsonFormatterTest extends TestCase
                 message: 'Too large',
                 severity: Severity::Warning,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Model/Product.php'), 20),
                 symbolPath: SymbolPath::forClass('App\Model', 'Product'),
                 ruleName: 'size.class-count',
@@ -1466,7 +1463,7 @@ final class JsonFormatterTest extends TestCase
     public function itIncludesViolationGroupsWhenGroupByFile(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -1474,7 +1471,7 @@ final class JsonFormatterTest extends TestCase
                 message: 'Test A',
                 severity: Severity::Warning,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
@@ -1509,7 +1506,7 @@ final class JsonFormatterTest extends TestCase
 
         // Add 5 violations to ClassA, 3 to ClassB
         for ($i = 0; $i < 5; $i++) {
-            $builder->addViolation(new Violation(
+            $builder->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -1520,7 +1517,7 @@ final class JsonFormatterTest extends TestCase
         }
 
         for ($i = 0; $i < 3; $i++) {
-            $builder->addViolation(new Violation(
+            $builder->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
@@ -1582,7 +1579,7 @@ final class JsonFormatterTest extends TestCase
             ->duration(0.1);
 
         // 1 violation for ClassA
-        $builder->addViolation(new Violation(
+        $builder->addViolation(self::violation(
             location: new Location(RelativePath::fromString('src/A.php'), 1),
             symbolPath: SymbolPath::forClass('App', 'A'),
             ruleName: 'test',
@@ -1593,7 +1590,7 @@ final class JsonFormatterTest extends TestCase
 
         // 3 violations for ClassB
         for ($i = 0; $i < 3; $i++) {
-            $builder->addViolation(new Violation(
+            $builder->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
@@ -1605,7 +1602,7 @@ final class JsonFormatterTest extends TestCase
 
         // 2 violations for ClassC
         for ($i = 0; $i < 2; $i++) {
-            $builder->addViolation(new Violation(
+            $builder->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/C.php'), $i + 1),
                 symbolPath: SymbolPath::forClass('App', 'C'),
                 ruleName: 'test',
@@ -1630,4 +1627,61 @@ final class JsonFormatterTest extends TestCase
         self::assertSame('App\C', $keys[1]);
         self::assertSame('App\A', $keys[2]);
     }
+
+    /**
+     * Builds a violation fixture with an explicit declaration or aggregate
+     * subject, preserving the production contract without hiding it behind a
+     * legacy fallback.
+     *
+     * @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations
+     */
+    private static function violation(
+        \Qualimetrix\Core\Violation\Location $location,
+        \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
+        string $ruleName,
+        string $violationCode,
+        string $message,
+        \Qualimetrix\Core\Violation\Severity $severity,
+        int|float|null $metricValue = null,
+        ?\Qualimetrix\Core\Rule\RuleLevel $level = null,
+        array $relatedLocations = [],
+        ?string $recommendation = null,
+        int|float|null $threshold = null,
+        ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
+        ?\Qualimetrix\Core\Dependency\DependencyType $dependencyType = null,
+        ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null,
+        ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
+    ): Violation {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File,
+            \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
+            \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath(
+                $symbolPath,
+                $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'),
+                $location->line ?? 0,
+            )),
+        };
+
+        return new Violation(
+            location: $location,
+            subject: $subject,
+            symbolPath: $symbolPath,
+            ruleName: $ruleName,
+            violationCode: $violationCode,
+            message: $message,
+            severity: $severity,
+            metricValue: $metricValue,
+            level: $level,
+            relatedLocations: $relatedLocations,
+            recommendation: $recommendation,
+            threshold: $threshold,
+            dependencyTarget: $dependencyTarget,
+            dependencyType: $dependencyType,
+            acceptedLevel: $acceptedLevel,
+            occurrenceKey: $occurrenceKey,
+        );
+    }
+
 }

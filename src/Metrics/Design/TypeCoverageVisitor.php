@@ -8,6 +8,7 @@ use PhpParser\Node;
 use PhpParser\Node\Param;
 use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Enum_;
 use PhpParser\Node\Stmt\Interface_;
@@ -140,9 +141,9 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Resettabl
             $this->currentNamespace = $node->name?->toString() ?? '';
         }
 
-        // Enter class-like node (Class_, Interface_, Trait_, Enum_)
-        $className = $this->extractClassLikeName($node);
-        if ($className !== null) {
+        // Enter named class-like node (Class_, Interface_, Trait_, Enum_)
+        if ($node instanceof ClassLike && $node->name !== null) {
+            $className = $node->name->toString();
             $fqn = $this->buildClassFqn($className);
 
             $info = $this->analyzeClassLike($node);
@@ -283,17 +284,6 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Resettabl
         }
 
         return $className;
-    }
-
-    private function extractClassLikeName(Node $node): ?string
-    {
-        return match (true) {
-            $node instanceof Class_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Interface_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Trait_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Enum_ && $node->name !== null => $node->name->toString(),
-            default => null,
-        };
     }
 
     /**

@@ -63,7 +63,7 @@ architecture:
       patterns: ['Qualimetrix\Architecture\Rules\**']
 
     # ── Metrics — explicit cross-category primitives + category template
-    # These three implementation primitives are shared by multiple metric
+    # These cross-category implementation primitives are shared by multiple metric
     # subjects. Keep the set exact: a broad Qualimetrix\Metrics\** pattern
     # would mask a future category class placed in the root by mistake.
     - name: metrics-foundation
@@ -71,6 +71,10 @@ architecture:
         - 'Qualimetrix\Metrics\AbstractCollector'
         - 'Qualimetrix\Metrics\ResettableVisitorInterface'
         - 'Qualimetrix\Metrics\VisitorMethodTrackingTrait'
+        - 'Qualimetrix\Metrics\VisitorFileEntryScope'
+        - 'Qualimetrix\Metrics\VisitorCallableMetadata'
+        - 'Qualimetrix\Metrics\VisitorCallableScope'
+        - 'Qualimetrix\Metrics\VisitorMethodContext'
 
     # Per-category template layer (Phase 2 direction 2).
     # Each metric category (Complexity, Coupling, CodeSmell, ...) is

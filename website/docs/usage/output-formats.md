@@ -181,7 +181,11 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         {
             "file": "src/Service/UserService.php",
             "line": 42,
+            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php:1234",
             "symbol": "App\\Service\\UserService::calculate",
+            "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
+            "occurrence": null,
+            "edge": null,
             "namespace": "App\\Service",
             "rule": "complexity.cyclomatic",
             "code": "complexity.cyclomatic.callable",
@@ -208,6 +212,18 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 <!-- llms:skip-end -->
 
 The `worstNamespaces` and `worstClasses` entries include a `violationDensity` field -- violations per 100 lines of code -- providing a size-normalized view of code quality.
+
+For machine identity, use `channel + subject + optional occurrence + optional
+edge`. `symbol` is the logical display projection; source line, message, and
+display order are not stable identity. `subject` distinguishes exact
+declarations from logical and aggregate subjects, `occurrence` distinguishes
+semantic evidence within one channel, and `edge` contains a required dependency
+target plus an optional reference `type`. An untyped edge is
+`{"target": "class:App\\Dependency"}`; a typed edge is
+`{"type": "new", "target": "class:App\\Dependency"}`. Formatter fingerprints
+use the same tuple, so target-only edges differ by target and from a typed edge
+to the same target. Existing no-edge and fully typed fingerprints are
+unchanged.
 
 When using `--group-by=class` or `--group-by=namespace`, violations are organized into a `violationGroups` object keyed by class FQCN or namespace. Each group contains its violations array and summary counts (`errorCount`, `warningCount`, `violationDensity`).
 
@@ -250,11 +266,11 @@ bin/qmx check src/ --format=json --no-progress > report.json
 
 ## metrics
 
-Raw metric values for every symbol (file, class, method, namespace). Unlike `json` which outputs violations, `metrics` exports the underlying metric data that rules evaluate.
+Raw metric values for every symbol (file, class, callable, namespace). Unlike `json` which outputs violations, `metrics` exports the underlying metric data that rules evaluate.
 
 **When to use:** Custom dashboards, trend analysis, data science pipelines, or building your own quality gates on raw metrics.
 
-**Top-level keys:** `version`, `package`, `timestamp`, `symbols[]` (each with `type`: file/class/method/namespace, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`.
+**Top-level keys:** `version`, `package`, `timestamp`, `symbols[]` (each with `type`: file/class/callable/namespace, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`.
 
 <!-- llms:skip-begin -->
 **Example output (abbreviated):**

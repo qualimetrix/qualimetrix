@@ -11,7 +11,6 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineMigrateCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -46,7 +45,6 @@ use Symfony\Component\Console\Command\Command;
  * fact about today and this is a property of the surface.
  */
 #[CoversClass(BaselineGenerateCommand::class)]
-#[CoversClass(BaselineMigrateCommand::class)]
 #[CoversClass(BaselineUpdateCommand::class)]
 #[CoversClass(BaselineCleanupCommand::class)]
 #[CoversClass(BaselineExplainCommand::class)]
@@ -68,7 +66,6 @@ final class BaselineCommandOptionSurfaceTest extends TestCase
     public static function provideBaselineCommands(): iterable
     {
         yield 'generate' => [BaselineGenerateCommand::class];
-        yield 'migrate' => [BaselineMigrateCommand::class];
         yield 'update' => [BaselineUpdateCommand::class];
         yield 'cleanup' => [BaselineCleanupCommand::class];
         yield 'explain' => [BaselineExplainCommand::class];

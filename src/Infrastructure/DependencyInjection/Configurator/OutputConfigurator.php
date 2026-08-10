@@ -14,12 +14,10 @@ use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Baseline\BaselineCleaner;
 use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineLoader;
-use Qualimetrix\Baseline\BaselineMigrator;
 use Qualimetrix\Baseline\BaselineUpdater;
 use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Baseline\BoundaryExplanationService;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
-use Qualimetrix\Baseline\V5BaselineReader;
 use Qualimetrix\Configuration\ComputedMetricFormulaValidator;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
@@ -40,7 +38,6 @@ use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineConfiguredThresholds;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineMigrateCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRunInterface;
 use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
@@ -400,16 +397,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(BaselineRun::class),
                 new Reference(BaselineGenerator::class),
-                new Reference(BaselineWriter::class),
-            ])
-            ->setPublic(true);
-
-        $container->register(BaselineMigrateCommand::class)
-            ->setArguments([
-                new Reference(BaselineRun::class),
-                new Reference(BaselineGenerator::class),
-                new Reference(BaselineMigrator::class),
-                new Reference(V5BaselineReader::class),
                 new Reference(BaselineWriter::class),
             ])
             ->setPublic(true);

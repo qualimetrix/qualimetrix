@@ -7,7 +7,9 @@ namespace Qualimetrix\Tests\Unit\Analysis\Collection;
 use LogicException;
 use PhpParser\Comment\Doc;
 use PhpParser\Node;
+use PhpParser\NodeFinder;
 use PhpParser\NodeVisitorAbstract;
+use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\Stub;
@@ -29,6 +31,7 @@ use Qualimetrix\Core\Metric\NamespaceMetricProviderInterface;
 use Qualimetrix\Core\Metric\NamespaceWithMetrics;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Suppression\SuppressionType;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -118,14 +121,16 @@ final class FileProcessorTest extends TestCase
     public function itExtractsMethodMetricsFromCollectors(): void
     {
         $file = new SplFileInfo('/tmp/test.php');
+        $ast = $this->parseLiteral('<?php class Service { public function calculate(): void {} }');
+        $method = $this->singleNode($ast, Node\Stmt\ClassMethod::class);
 
-        $this->parser->method('parse')->willReturn([]);
+        $this->parser->method('parse')->willReturn($ast);
 
         $symbolPath = SymbolPath::forMethod('App', 'Service', 'calculate');
         $methodBag = MetricBag::fromArray(['ccn' => 5]);
 
         $methodWithMetrics = new CallableWithMetrics(
-            new DeclarationPath($symbolPath, RelativePath::fromString('test.php'), 0),
+            new DeclarationPath($symbolPath, RelativePath::fromString('test.php'), $method->getStartFilePos()),
             CallableKind::Method,
             null,
             null,
@@ -150,15 +155,17 @@ final class FileProcessorTest extends TestCase
     public function itExtractsClassMetricsFromCollectors(): void
     {
         $file = new SplFileInfo('/tmp/test.php');
+        $ast = $this->parseLiteral('<?php class Service {}');
+        $class = $this->singleNode($ast, Node\Stmt\Class_::class);
 
-        $this->parser->method('parse')->willReturn([]);
+        $this->parser->method('parse')->willReturn($ast);
 
         $symbolPath = SymbolPath::forClass('App', 'Service');
         $classBag = MetricBag::fromArray(['wmc' => 25]);
 
         $classWithMetrics = new ClassWithMetrics(
-            declarationPath: new DeclarationPath($symbolPath, RelativePath::fromString('test.php'), 16),
-            line: 5,
+            declarationPath: new DeclarationPath($symbolPath, RelativePath::fromString('test.php'), $class->getStartFilePos()),
+            line: $class->getStartLine(),
             metrics: $classBag,
         );
 
@@ -217,12 +224,14 @@ final class FileProcessorTest extends TestCase
     public function itPreservesClosuresWithDeclarationIdentity(): void
     {
         $file = new SplFileInfo('/tmp/test.php');
+        $ast = $this->parseLiteral('<?php $value = function (): void {};');
+        $closure = $this->singleNode($ast, Node\Expr\Closure::class);
 
-        $this->parser->method('parse')->willReturn([]);
+        $this->parser->method('parse')->willReturn($ast);
 
         $closurePath = SymbolPath::forGlobalFunction('', '{closure:0}');
         $methodWithMetrics = new CallableWithMetrics(
-            new DeclarationPath($closurePath, RelativePath::fromString('test.php'), 0),
+            new DeclarationPath($closurePath, RelativePath::fromString('test.php'), $closure->getStartFilePos()),
             CallableKind::AnonymousCallable,
             'closure',
             null,
@@ -245,10 +254,12 @@ final class FileProcessorTest extends TestCase
     public function itPreservesCallableSourceLineWhenCollectorPayloadsMerge(): void
     {
         $file = new SplFileInfo('/tmp/test.php');
-        $this->parser->method('parse')->willReturn([]);
+        $ast = $this->parseLiteral('<?php class Service { public function run(): void {} }');
+        $method = $this->singleNode($ast, Node\Stmt\ClassMethod::class);
+        $this->parser->method('parse')->willReturn($ast);
 
         $symbol = SymbolPath::forMethod('App', 'Service', 'run');
-        $declaration = new DeclarationPath($symbol, RelativePath::fromString('test.php'), 701);
+        $declaration = new DeclarationPath($symbol, RelativePath::fromString('test.php'), $method->getStartFilePos());
         $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Service'));
         $first = new CallableWithMetrics(
             $declaration,
@@ -257,7 +268,7 @@ final class FileProcessorTest extends TestCase
             null,
             $owner,
             MetricBag::fromArray(['ccn' => 3]),
-            23,
+            $method->getStartLine(),
         );
         $second = new CallableWithMetrics(
             $declaration,
@@ -266,7 +277,7 @@ final class FileProcessorTest extends TestCase
             null,
             $owner,
             MetricBag::fromArray(['npath' => 5]),
-            23,
+            $method->getStartLine(),
         );
 
         $result = $this->makeProcessor(new CompositeCollector([
@@ -277,7 +288,7 @@ final class FileProcessorTest extends TestCase
         self::assertTrue($result->isSuccessful());
         self::assertCount(1, $result->collectedData()->callableMetrics);
         $callable = $result->collectedData()->callableMetrics[0];
-        self::assertSame(23, $callable->sourceLine);
+        self::assertSame($method->getStartLine(), $callable->sourceLine);
         self::assertNotSame($callable->declarationPath->startFilePos, $callable->sourceLine);
         self::assertSame(3, $callable->metrics->get('ccn'));
         self::assertSame(5, $callable->metrics->get('npath'));
@@ -326,14 +337,24 @@ final class FileProcessorTest extends TestCase
     {
         $file = new SplFileInfo('/tmp/test.php');
 
-        $method = new Node\Stmt\ClassMethod('run', attributes: ['startLine' => 10, 'endLine' => 15]);
+        $method = new Node\Stmt\ClassMethod('run', attributes: [
+            'startLine' => 10,
+            'endLine' => 15,
+            'startFilePos' => 100,
+            'endFilePos' => 180,
+        ]);
         $method->setDocComment(new Doc(
             '/** @qmx-threshold complexity.cyclomatic warning=40 error=50 */',
             startLine: 9,
             endLine: 9,
         ));
 
-        $class = new Node\Stmt\Class_('MyClass', ['stmts' => [$method]], ['startLine' => 5, 'endLine' => 20]);
+        $class = new Node\Stmt\Class_('MyClass', ['stmts' => [$method]], [
+            'startLine' => 5,
+            'endLine' => 20,
+            'startFilePos' => 10,
+            'endFilePos' => 200,
+        ]);
         $class->setDocComment(new Doc(
             '/** @qmx-threshold complexity.cyclomatic warning=20 error=30 */',
             startLine: 4,
@@ -342,12 +363,31 @@ final class FileProcessorTest extends TestCase
 
         $this->parser->method('parse')->willReturn([$class]);
 
-        $processor = $this->makeProcessor(new CompositeCollector([]));
+        $classPath = new DeclarationPath(SymbolPath::forClass('', 'MyClass'), RelativePath::fromString('test.php'), 10);
+        $class = new ClassWithMetrics(
+            $classPath,
+            5,
+            new MetricBag(),
+        );
+        $methodMetric = new CallableWithMetrics(
+            new DeclarationPath(SymbolPath::forMethod('', 'MyClass', 'run'), RelativePath::fromString('test.php'), 100),
+            CallableKind::Method,
+            null,
+            $classPath,
+            new LogicalClassPath(SymbolPath::forClass('', 'MyClass')),
+            new MetricBag(),
+            10,
+        );
+
+        $processor = $this->makeProcessor(new CompositeCollector([
+            $this->createMockCollectorWithClassMetrics([$class]),
+            $this->createMockCollectorWithMethodMetrics([$methodMetric]),
+        ]));
         $result = $processor->process($file);
 
         self::assertTrue($result->isSuccessful());
         self::assertSame([], $result->collectedData()->thresholdDiagnostics);
-        self::assertCount(2, $result->collectedData()->thresholdOverrides);
+        self::assertCount(3, $result->collectedData()->thresholdOverrides);
 
         $classOverride = $result->collectedData()->thresholdOverrides[0];
         self::assertSame('complexity.cyclomatic', $classOverride->rulePattern);
@@ -355,13 +395,310 @@ final class FileProcessorTest extends TestCase
         self::assertSame(30, $classOverride->error);
         self::assertSame(4, $classOverride->line);
         self::assertSame(20, $classOverride->endLine);
+        self::assertSame(ControlScope::Class_, $classOverride->controlScope);
 
-        $methodOverride = $result->collectedData()->thresholdOverrides[1];
+        $inheritedClassOverride = $result->collectedData()->thresholdOverrides[1];
+        self::assertSame($methodMetric->declarationPath->toCanonical(), $inheritedClassOverride->subject->toCanonical());
+        self::assertSame(ControlScope::Class_, $inheritedClassOverride->controlScope);
+
+        $methodOverride = $result->collectedData()->thresholdOverrides[2];
         self::assertSame('complexity.cyclomatic', $methodOverride->rulePattern);
         self::assertSame(40, $methodOverride->warning);
         self::assertSame(50, $methodOverride->error);
         self::assertSame(9, $methodOverride->line);
         self::assertSame(15, $methodOverride->endLine);
+        self::assertSame(ControlScope::Callable, $methodOverride->controlScope);
+    }
+
+    #[Test]
+    public function itDropsValidPropertyThresholdsWithoutHooksAndBindsMalformedOnesToTheClass(): void
+    {
+        $ast = $this->parseLiteral(<<<'PHP'
+            <?php
+            namespace App;
+
+            class Record
+            {
+                /** @qmx-threshold complexity.cyclomatic 12 */
+                public int $withoutHooks;
+
+                /** @qmx-threshold complexity.cyclomatic broken */
+                public int $invalidWithoutHooks;
+            }
+            PHP);
+        $class = $this->singleNode($ast, Node\Stmt\Class_::class);
+        $classDeclaration = new DeclarationPath(
+            SymbolPath::forClass('App', 'Record'),
+            RelativePath::fromString('test.php'),
+            $class->getStartFilePos(),
+        );
+
+        $result = $this->processLiteralAst($ast, [new ClassWithMetrics($classDeclaration, $class->getStartLine(), new MetricBag())]);
+
+        self::assertTrue($result->isSuccessful());
+        self::assertSame([], $result->collectedData()->thresholdOverrides);
+        self::assertCount(1, $result->collectedData()->thresholdDiagnostics);
+        self::assertSame($classDeclaration->toCanonical(), $result->collectedData()->thresholdDiagnostics[0]->subject->toCanonical());
+    }
+
+    #[Test]
+    public function itBindsMalformedTopLevelPropertyThresholdDiagnosticsToTheFileSubject(): void
+    {
+        $property = new Node\Stmt\Property(
+            0,
+            [new Node\PropertyItem('unreachable')],
+            ['startLine' => 2, 'endLine' => 2, 'startFilePos' => 10, 'endFilePos' => 30],
+        );
+        $property->setDocComment(new Doc('/** @qmx-threshold complexity.cyclomatic broken */', 1, 1));
+
+        $result = $this->processLiteralAst([$property]);
+
+        self::assertTrue($result->isSuccessful());
+        self::assertSame([], $result->collectedData()->thresholdOverrides);
+        self::assertCount(1, $result->collectedData()->thresholdDiagnostics);
+        self::assertSame('file:test.php', $result->collectedData()->thresholdDiagnostics[0]->subject->toCanonical());
+    }
+
+    #[Test]
+    public function itBindsPromotedAndOrdinaryParameterSuppressionsToTheirInnermostConstructor(): void
+    {
+        $ast = $this->parseLiteral(<<<'PHP'
+            <?php
+            namespace App;
+
+            /** @qmx-ignore complexity.cyclomatic class fallback */
+            class Record
+            {
+                public function __construct(
+                    /** @qmx-ignore complexity.cyclomatic promoted parameter */
+                    public int $promoted,
+                    /** @qmx-ignore complexity.cyclomatic ordinary parameter */
+                    int $ordinary,
+                ) {}
+            }
+            PHP);
+        $class = $this->singleNode($ast, Node\Stmt\Class_::class);
+        $constructor = $this->singleNode($ast, Node\Stmt\ClassMethod::class);
+        $classDeclaration = new DeclarationPath(SymbolPath::forClass('App', 'Record'), RelativePath::fromString('test.php'), $class->getStartFilePos());
+        $constructorDeclaration = new DeclarationPath(SymbolPath::forMethod('App', 'Record', '__construct'), RelativePath::fromString('test.php'), $constructor->getStartFilePos());
+        $constructorMetric = new CallableWithMetrics(
+            $constructorDeclaration,
+            CallableKind::Method,
+            null,
+            $classDeclaration,
+            new LogicalClassPath(SymbolPath::forClass('App', 'Record')),
+            new MetricBag(),
+            $constructor->getStartLine(),
+        );
+
+        $result = $this->processLiteralAst(
+            $ast,
+            [new ClassWithMetrics($classDeclaration, $class->getStartLine(), new MetricBag())],
+            [$constructorMetric],
+        );
+
+        self::assertTrue($result->isSuccessful());
+        $controls = array_values(array_filter(
+            $result->collectedData()->suppressions,
+            static fn($suppression) => $suppression->type === SuppressionType::Symbol,
+        ));
+        self::assertCount(4, $controls);
+        self::assertSame(
+            [$classDeclaration->toCanonical(), $constructorDeclaration->toCanonical(), $constructorDeclaration->toCanonical(), $constructorDeclaration->toCanonical()],
+            array_map(static fn($control) => $control->subject?->toCanonical(), $controls),
+        );
+        self::assertSame([ControlScope::Class_, ControlScope::Class_, ControlScope::Callable, ControlScope::Callable], array_map(
+            static fn($control) => $control->controlScope,
+            $controls,
+        ));
+    }
+
+    #[Test]
+    public function itBindsNestedClosureAndArrowControlsToTheirOwnDeclarations(): void
+    {
+        $ast = $this->parseLiteral(<<<'PHP'
+            <?php
+            namespace App;
+
+            /** @qmx-ignore complexity.cyclomatic class fallback */
+            class Record
+            {
+                public function run(): void
+                {
+                    $closure = function (): int { return 1; };
+                    $arrow = fn(): int => 1;
+                }
+            }
+            PHP);
+        $class = $this->singleNode($ast, Node\Stmt\Class_::class);
+        $method = $this->singleNode($ast, Node\Stmt\ClassMethod::class);
+        $closure = $this->singleNode($ast, Node\Expr\Closure::class);
+        $arrow = $this->singleNode($ast, Node\Expr\ArrowFunction::class);
+        // php-parser attaches comments before an assignment to Expression rather than
+        // the nested callable. Attach the supported callable doc-comment position
+        // explicitly so this fixture exercises FileProcessor's innermost binding.
+        $closure->setDocComment(new Doc('/** @qmx-ignore complexity.cyclomatic closure control */', 9, 9));
+        $arrow->setDocComment(new Doc('/** @qmx-ignore complexity.cyclomatic arrow control */', 11, 11));
+        $classDeclaration = new DeclarationPath(SymbolPath::forClass('App', 'Record'), RelativePath::fromString('test.php'), $class->getStartFilePos());
+        $methodDeclaration = new DeclarationPath(SymbolPath::forMethod('App', 'Record', 'run'), RelativePath::fromString('test.php'), $method->getStartFilePos());
+        $closureDeclaration = new DeclarationPath(SymbolPath::forGlobalFunction('App', '{closure#1}'), RelativePath::fromString('test.php'), $closure->getStartFilePos());
+        $arrowDeclaration = new DeclarationPath(SymbolPath::forGlobalFunction('App', '{closure#2}'), RelativePath::fromString('test.php'), $arrow->getStartFilePos());
+        $metrics = [
+            new CallableWithMetrics($methodDeclaration, CallableKind::Method, null, $classDeclaration, new LogicalClassPath(SymbolPath::forClass('App', 'Record')), new MetricBag(), $method->getStartLine()),
+            new CallableWithMetrics($closureDeclaration, CallableKind::AnonymousCallable, 'closure', $classDeclaration, null, new MetricBag(), $closure->getStartLine()),
+            new CallableWithMetrics($arrowDeclaration, CallableKind::AnonymousCallable, 'arrow', $classDeclaration, null, new MetricBag(), $arrow->getStartLine()),
+        ];
+
+        $result = $this->processLiteralAst($ast, [new ClassWithMetrics($classDeclaration, $class->getStartLine(), new MetricBag())], $metrics);
+
+        self::assertTrue($result->isSuccessful());
+        $controls = array_values(array_filter(
+            $result->collectedData()->suppressions,
+            static fn($suppression) => $suppression->type === SuppressionType::Symbol,
+        ));
+        self::assertCount(6, $controls);
+        self::assertSame(
+            [$classDeclaration->toCanonical(), $methodDeclaration->toCanonical(), $closureDeclaration->toCanonical(), $arrowDeclaration->toCanonical(), $closureDeclaration->toCanonical(), $arrowDeclaration->toCanonical()],
+            array_map(static fn($control) => $control->subject?->toCanonical(), $controls),
+        );
+        self::assertSame(
+            [ControlScope::Class_, ControlScope::Class_, ControlScope::Class_, ControlScope::Class_, ControlScope::Callable, ControlScope::Callable],
+            array_map(static fn($control) => $control->controlScope, $controls),
+        );
+    }
+
+    #[Test]
+    public function itExpandsOuterClassControlsOnlyToCallablesWithItsExactLexicalClass(): void
+    {
+        $ast = $this->parseLiteral(<<<'PHP'
+            <?php
+            namespace App;
+
+            /** @qmx-threshold complexity.cyclomatic 10 */
+            class Outer
+            {
+                public function run(): void
+                {
+                    $outerClosure = function (): int { return 1; };
+                    $anonymous = new class {
+                        public function nested(): void {}
+                    };
+                }
+            }
+            PHP);
+        $classes = (new NodeFinder())->findInstanceOf($ast, Node\Stmt\Class_::class);
+        $outer = $classes[0] ?? throw new LogicException('Missing outer class');
+        $anonymous = $classes[1] ?? throw new LogicException('Missing anonymous class');
+        $method = $this->singleNode($ast, Node\Stmt\ClassMethod::class);
+        $closure = $this->singleNode($ast, Node\Expr\Closure::class);
+        $classMethods = (new NodeFinder())->findInstanceOf($ast, Node\Stmt\ClassMethod::class);
+        $nestedMethod = $classMethods[1] ?? throw new LogicException('Missing nested method');
+        $outerDeclaration = new DeclarationPath(SymbolPath::forClass('App', 'Outer'), RelativePath::fromString('test.php'), $outer->getStartFilePos());
+        $anonymousDeclaration = new DeclarationPath(SymbolPath::forClass('App', '{anonymous@' . $anonymous->getStartFilePos() . '}'), RelativePath::fromString('test.php'), $anonymous->getStartFilePos());
+        $methodDeclaration = new DeclarationPath(SymbolPath::forMethod('App', 'Outer', 'run'), RelativePath::fromString('test.php'), $method->getStartFilePos());
+        $closureDeclaration = new DeclarationPath(SymbolPath::forGlobalFunction('App', '{closure#1}'), RelativePath::fromString('test.php'), $closure->getStartFilePos());
+        $nestedDeclaration = new DeclarationPath(SymbolPath::forMethod('App', '{anonymous@' . $anonymous->getStartFilePos() . '}', 'nested'), RelativePath::fromString('test.php'), $nestedMethod->getStartFilePos());
+        $result = $this->processLiteralAst(
+            $ast,
+            [new ClassWithMetrics($outerDeclaration, $outer->getStartLine(), new MetricBag())],
+            [
+                new CallableWithMetrics($methodDeclaration, CallableKind::Method, null, $outerDeclaration, new LogicalClassPath(SymbolPath::forClass('App', 'Outer')), new MetricBag(), $method->getStartLine()),
+                new CallableWithMetrics($closureDeclaration, CallableKind::AnonymousCallable, 'closure', $outerDeclaration, null, new MetricBag(), $closure->getStartLine()),
+                new CallableWithMetrics($nestedDeclaration, CallableKind::Method, null, $anonymousDeclaration, null, new MetricBag(), $nestedMethod->getStartLine()),
+            ],
+        );
+
+        self::assertTrue($result->isSuccessful());
+        self::assertSame(
+            [$outerDeclaration->toCanonical(), $methodDeclaration->toCanonical(), $closureDeclaration->toCanonical()],
+            array_map(static fn($override) => $override->subject->toCanonical(), $result->collectedData()->thresholdOverrides),
+        );
+    }
+
+    #[Test]
+    public function itBindsNestedNamedClassPropertyAndConstantControlsToTheInnermostClass(): void
+    {
+        $ast = $this->parseLiteral(<<<'PHP'
+            <?php
+            namespace App;
+
+            class Outer
+            {
+                public function define(): void
+                {
+                    class Inner
+                    {
+                        /** @qmx-threshold complexity.cyclomatic broken */
+                        public int $value;
+
+                        /** @qmx-ignore complexity.cyclomatic inner constant */
+                        public const FLAG = 1;
+                    }
+                }
+            }
+            PHP);
+        $classes = (new NodeFinder())->findInstanceOf($ast, Node\Stmt\Class_::class);
+        $outer = $classes[0] ?? throw new LogicException('Missing outer class');
+        $inner = $classes[1] ?? throw new LogicException('Missing inner class');
+        $outerDeclaration = new DeclarationPath(SymbolPath::forClass('App', 'Outer'), RelativePath::fromString('test.php'), $outer->getStartFilePos());
+        $innerDeclaration = new DeclarationPath(SymbolPath::forClass('App', 'Inner'), RelativePath::fromString('test.php'), $inner->getStartFilePos());
+        $result = $this->processLiteralAst(
+            $ast,
+            [
+                new ClassWithMetrics($outerDeclaration, $outer->getStartLine(), new MetricBag()),
+                new ClassWithMetrics($innerDeclaration, $inner->getStartLine(), new MetricBag()),
+            ],
+        );
+
+        self::assertTrue($result->isSuccessful());
+        self::assertCount(1, $result->collectedData()->thresholdDiagnostics);
+        self::assertSame($innerDeclaration->toCanonical(), $result->collectedData()->thresholdDiagnostics[0]->subject->toCanonical());
+        self::assertCount(1, $result->collectedData()->suppressions);
+        self::assertSame($innerDeclaration->toCanonical(), $result->collectedData()->suppressions[0]->subject?->toCanonical());
+    }
+
+    /** @return list<Node> */
+    private function parseLiteral(string $source): array
+    {
+        $ast = (new ParserFactory())->createForNewestSupportedVersion()->parse($source);
+        self::assertIsArray($ast);
+
+        return array_values($ast);
+    }
+
+    /**
+     * @template T of Node
+     *
+     * @param list<Node> $ast
+     * @param class-string<T> $class
+     *
+     * @return T
+     */
+    private function singleNode(array $ast, string $class): Node
+    {
+        $node = (new NodeFinder())->findFirstInstanceOf($ast, $class);
+        self::assertInstanceOf($class, $node);
+
+        return $node;
+    }
+
+    /**
+     * @param list<Node> $ast
+     * @param list<ClassWithMetrics> $classes
+     * @param list<CallableWithMetrics> $callables
+     */
+    private function processLiteralAst(array $ast, array $classes = [], array $callables = []): \Qualimetrix\Analysis\Collection\FileProcessingResult
+    {
+        $this->parser->method('parse')->willReturn($ast);
+        $collectors = [];
+        if ($classes !== []) {
+            $collectors[] = $this->createMockCollectorWithClassMetrics($classes);
+        }
+        if ($callables !== []) {
+            $collectors[] = $this->createMockCollectorWithMethodMetrics($callables);
+        }
+
+        return $this->makeProcessor(new CompositeCollector($collectors))->process(new SplFileInfo('/tmp/test.php'));
     }
 
     /**

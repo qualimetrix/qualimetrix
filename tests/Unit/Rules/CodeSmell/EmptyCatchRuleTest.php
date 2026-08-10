@@ -89,7 +89,7 @@ final class EmptyCatchRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
 
         $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.empty_catch', ['line' => 20]);
+            ->withEntry('codeSmell.empty_catch', ['subjectKind' => 'file', 'line' => 20]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')

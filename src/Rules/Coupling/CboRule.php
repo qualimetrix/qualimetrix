@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Coupling;
 
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use LogicException;
 use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -14,6 +13,7 @@ use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -82,14 +82,9 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             return [];
         }
 
-        $levelOptions = $this->options->forLevel($level);
-        if (!$levelOptions->isEnabled()) {
-            return [];
-        }
-
         return match ($level) {
-            RuleLevel::Class_ => $this->analyzeClassLevel($context),
-            RuleLevel::Namespace_ => $this->analyzeNamespaceLevel($context),
+            RuleLevel::Class_ => $this->options->class->isEnabled() ? $this->analyzeClassLevel($context) : [],
+            RuleLevel::Namespace_ => $this->options->namespace->isEnabled() ? $this->analyzeNamespaceLevel($context) : [],
             default => [],
         };
     }
@@ -102,9 +97,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         $violations = [];
 
         foreach ($this->getSupportedLevels() as $level) {
-            if ($this->options instanceof CboOptions && $this->options->isLevelEnabled($level)) {
-                $violations = [...$violations, ...$this->analyzeLevel($level, $context)];
-            }
+            $violations = [...$violations, ...$this->analyzeLevel($level, $context)];
         }
 
         return $violations;
@@ -121,9 +114,9 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
     /**
      * Both CBO channels report the raw CBO value (`(float) $cbo` — see
      * {@see checkCbo()}) as `metricValue`, judged worse the higher it goes.
-     * The comparison is inline in this rule rather than in the Options
-     * class: `$cbo >= $options->error` (line 212) and `$cbo >=
-     * $options->warning` (line 227).
+     * {@see ClassCboOptions::getSeverity()} and
+     * {@see NamespaceCboOptions::getSeverity()} delegate the `>= error`, then
+     * `>= warning` comparisons for their respective levels.
      *
      * @return array<string, ChannelDeclaration>
      */
@@ -143,33 +136,44 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         if (!$this->options instanceof CboOptions) {
             return [];
         }
-        $classOptions = $this->options->class;
-
-        // Determine which metric to use based on scope
-        $isAppScope = $classOptions->scope === 'application';
-        $metricName = $isAppScope
-            ? MetricName::COUPLING_CBO_APP
-            : MetricName::COUPLING_CBO;
-
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
-            $metrics = $context->metrics->get($classInfo->symbolPath);
-
-            $cbo = $metrics->get($metricName);
-            if ($cbo === null) {
-                continue;
-            }
-
-            $cboValue = (int) $cbo;
-            $ceFramework = $isAppScope ? (int) ($metrics->get(MetricName::COUPLING_CE_FRAMEWORK) ?? 0) : null;
-            $violation = $this->checkCbo($cboValue, $classInfo, $metrics, $classOptions, RuleLevel::Class_, $context, $context->dependencyGraph, $isAppScope, $ceFramework);
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            $violation = $this->classViolation($classInfo, $context, $this->options->class);
             if ($violation !== null) {
                 $violations[] = $violation;
             }
         }
 
         return $violations;
+    }
+
+    private function classViolation(SymbolInfo $info, AnalysisContext $context, ClassCboOptions $options): ?Violation
+    {
+        $subject = $info->subject ?? throw new LogicException('CBO class findings require an exact class declaration subject');
+        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+            return null;
+        }
+
+        $metrics = $context->metrics->get($subject->toSymbolPath());
+        $applicationScope = $options->scope === 'application';
+        $metricName = $applicationScope ? MetricName::COUPLING_CBO_APP : MetricName::COUPLING_CBO;
+        $cbo = $metrics->get($metricName);
+        if ($cbo === null) {
+            return null;
+        }
+
+        $frameworkCe = $applicationScope ? (int) ($metrics->get(MetricName::COUPLING_CE_FRAMEWORK) ?? 0) : null;
+
+        return $this->checkCbo(
+            (int) $cbo,
+            $info,
+            $subject,
+            $options,
+            RuleLevel::Class_,
+            $context,
+            ['applicationScope' => $applicationScope, 'frameworkCe' => $frameworkCe],
+        );
     }
 
     /**
@@ -180,26 +184,10 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         if (!$this->options instanceof CboOptions) {
             return [];
         }
-        $namespaceOptions = $this->options->namespace;
-
         $violations = [];
 
         foreach ($context->metrics->all(SymbolType::Namespace_) as $nsInfo) {
-            $metrics = $context->metrics->get($nsInfo->symbolPath);
-
-            // Skip namespaces with too few classes
-            $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
-            if ($classCount < $namespaceOptions->minClassCount) {
-                continue;
-            }
-
-            $cbo = $metrics->get(MetricName::COUPLING_CBO);
-            if ($cbo === null) {
-                continue;
-            }
-
-            $cboValue = (int) $cbo;
-            $violation = $this->checkCbo($cboValue, $nsInfo, $metrics, $namespaceOptions, RuleLevel::Namespace_, $context);
+            $violation = $this->namespaceViolation($nsInfo, $context, $this->options->namespace);
             if ($violation !== null) {
                 $violations[] = $violation;
             }
@@ -208,58 +196,68 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         return $violations;
     }
 
+    private function namespaceViolation(SymbolInfo $info, AnalysisContext $context, NamespaceCboOptions $options): ?Violation
+    {
+        $subject = $info->subject ?? MetricSubject::aggregate($info->symbolPath);
+        $metrics = $context->metrics->get($info->symbolPath);
+        $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
+        $cbo = $metrics->get(MetricName::COUPLING_CBO);
+        if ($classCount < $options->minClassCount || $cbo === null) {
+            return null;
+        }
+
+        return $this->checkCbo(
+            (int) $cbo,
+            $info,
+            $subject,
+            $options,
+            RuleLevel::Namespace_,
+            $context,
+            ['applicationScope' => false, 'frameworkCe' => null],
+        );
+    }
+
     /**
      * Checks CBO threshold for a symbol.
+     *
+     * @param array{applicationScope: bool, frameworkCe: ?int} $presentation
      */
     private function checkCbo(
         int $cbo,
         SymbolInfo $symbolInfo,
-        MetricBag $metrics,
+        MetricSubject $subject,
         ClassCboOptions|NamespaceCboOptions $options,
         RuleLevel $level,
         AnalysisContext $context,
-        ?DependencyGraphInterface $dependencyGraph = null,
-        bool $isAppScope = false,
-        ?int $ceFramework = null,
+        array $presentation,
     ): ?Violation {
         /** @var ClassCboOptions|NamespaceCboOptions $options */
-        $options = $this->getEffectiveOptions($context, $options, $symbolInfo->file, $symbolInfo->line ?? 1);
+        $options = $this->getEffectiveOptions($context, $options, $subject);
+        $metrics = $context->metrics->get($subject->toSymbolPath());
         $ca = (int) $metrics->require(MetricName::COUPLING_CA);
         $ce = (int) $metrics->require(MetricName::COUPLING_CE);
 
+        $severity = $options->getSeverity($cbo);
+        if ($severity === null) {
+            return null;
+        }
+
+        $threshold = $severity === Severity::Error ? $options->error : $options->warning;
         $violationCode = self::NAME . ($level === RuleLevel::Namespace_ ? '.namespace' : '.class');
 
-        if ($cbo >= $options->error) {
-            return new Violation(
-                location: new Location($symbolInfo->file, $symbolInfo->line),
-                symbolPath: $symbolInfo->symbolPath,
-                ruleName: $this->getName(),
-                violationCode: $violationCode,
-                message: $this->buildMessage($cbo, $ca, $ce, $options->error, $isAppScope, $ceFramework),
-                severity: Severity::Error,
-                metricValue: (float) $cbo,
-                level: $level,
-                recommendation: $this->buildRecommendation($cbo, $ca, $ce, $options->error, $symbolInfo->symbolPath, $dependencyGraph, $isAppScope),
-                threshold: $options->error,
-            );
-        }
-
-        if ($cbo >= $options->warning) {
-            return new Violation(
-                location: new Location($symbolInfo->file, $symbolInfo->line),
-                symbolPath: $symbolInfo->symbolPath,
-                ruleName: $this->getName(),
-                violationCode: $violationCode,
-                message: $this->buildMessage($cbo, $ca, $ce, $options->warning, $isAppScope, $ceFramework),
-                severity: Severity::Warning,
-                metricValue: (float) $cbo,
-                level: $level,
-                recommendation: $this->buildRecommendation($cbo, $ca, $ce, $options->warning, $symbolInfo->symbolPath, $dependencyGraph, $isAppScope),
-                threshold: $options->warning,
-            );
-        }
-
-        return null;
+        return new Violation(
+            location: new Location($symbolInfo->file, $symbolInfo->line),
+            subject: $subject,
+            symbolPath: $symbolInfo->symbolPath,
+            ruleName: $this->getName(),
+            violationCode: $violationCode,
+            message: $this->buildMessage($cbo, $ca, $ce, $threshold, $presentation['applicationScope'], $presentation['frameworkCe']),
+            severity: $severity,
+            metricValue: (float) $cbo,
+            level: $level,
+            recommendation: $this->buildRecommendation($cbo, $ca, $ce, $threshold, $symbolInfo->symbolPath, $context, $presentation['applicationScope']),
+            threshold: $threshold,
+        );
     }
 
     /**
@@ -313,9 +311,9 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         int $ca,
         int $ce,
         int $threshold,
-        ?SymbolPath $symbolPath = null,
-        ?DependencyGraphInterface $dependencyGraph = null,
-        bool $isAppScope = false,
+        ?SymbolPath $symbolPath,
+        AnalysisContext $context,
+        bool $isAppScope,
     ): string {
         $direction = $this->getCouplingDirection($ca, $ce);
         $label = $isAppScope ? 'CBO_APP' : 'CBO';
@@ -341,7 +339,7 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
             ),
         };
 
-        $topDeps = $this->getTopDependencies($symbolPath, $dependencyGraph);
+        $topDeps = $this->getTopDependencies($symbolPath, $context);
         if ($topDeps !== '') {
             return $topDeps . '. ' . $base;
         }
@@ -354,8 +352,9 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
      *
      * Only works for class-level SymbolPaths when the dependency graph is available.
      */
-    private function getTopDependencies(?SymbolPath $symbolPath, ?DependencyGraphInterface $dependencyGraph): string
+    private function getTopDependencies(?SymbolPath $symbolPath, AnalysisContext $context): string
     {
+        $dependencyGraph = $context->dependencyGraph;
         if ($symbolPath === null || $dependencyGraph === null) {
             return '';
         }
@@ -381,21 +380,8 @@ final class CboRule extends AbstractRule implements HierarchicalRuleInterface
         // Sort by occurrence count descending
         arsort($counts);
 
-        // Take top 5 short class names
-        $topNames = [];
-        $i = 0;
-        foreach ($counts as $targetCanonical => $_count) {
-            if ($i >= 5) {
-                break;
-            }
-
-            $topNames[] = $targetNames[$targetCanonical];
-            $i++;
-        }
-
-        if ($topNames === []) {
-            return '';
-        }
+        $topKeys = \array_slice(array_keys($counts), 0, 5);
+        $topNames = array_map(static fn(string $targetKey): string => $targetNames[$targetKey], $topKeys);
 
         return 'Top dependencies: ' . implode(', ', $topNames);
     }

@@ -69,6 +69,7 @@ final class BaselineTest extends TestCase
             new BaselineIdentity(
                 'class:App\Web\Controller',
                 $channel,
+                null,
                 new BaselineEdge('class:App\Db\Connection', DependencyType::New_),
             ),
             null,
@@ -78,6 +79,7 @@ final class BaselineTest extends TestCase
             new BaselineIdentity(
                 'class:App\Web\Controller',
                 $channel,
+                null,
                 new BaselineEdge('class:App\Db\Statement', DependencyType::New_),
             ),
             null,
@@ -164,7 +166,7 @@ final class BaselineTest extends TestCase
 
         self::assertEqualsCanonicalizing(
             ['callable:App\Foo::bar', 'file:src/Legacy.php'],
-            $baseline->symbolKeys(),
+            $baseline->subjectKeys(),
         );
     }
 
@@ -236,7 +238,7 @@ final class BaselineTest extends TestCase
     private static function inert(string $symbolKey): InertBaselineEntry
     {
         return new InertBaselineEntry(
-            symbolKey: $symbolKey,
+            subjectKey: $symbolKey,
             channelKey: null,
             identity: null,
             selector: EntrySelector::forKey($symbolKey),

@@ -720,6 +720,16 @@ To suppress every layer violation in the project, use the standard prefix form: 
 
 The baseline file stores layer violations by source layer, target layer, dependency target class, and dependency type — not by file line — so re-formatting or moving the use-site within the same file does not invalidate the baseline. Multiple use-sites of the same forbidden edge collapse into a single baseline entry.
 
+!!! info "Deviation from original spec"
+    Policy matching remains logical, but finding identity is declaration-scoped.
+    An unowned target produces one finding on the exact source declaration; one
+    or more owned targets produce one finding per exact target declaration.
+    Symbol controls apply independently to each projected declaration, while
+    next-line and file controls still use the physical dependency use-site. A
+    semantic occurrence combines exact source, logical target, dependency type,
+    and projected target, so repeated identical edges share one count-bounded
+    baseline identity without using the presentation line.
+
 **Per-rule `exclude_namespaces` / `exclude_paths` also work here.** The [global `exclude_namespaces`](../getting-started/configuration.md#exclude-namespaces) is deliberately exempt for `architecture.*` rules (see the warning there) — a project-wide, metric-shaped exclusion should not double as a silent way to switch off architecture enforcement. The *per-rule* form is a different, explicit mechanism and is **not** exempt:
 
 ```yaml

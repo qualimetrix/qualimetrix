@@ -6,15 +6,14 @@ namespace Qualimetrix\Metrics\Size;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr;
-use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Metrics\VisitorCallableScope;
 use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
@@ -35,32 +34,21 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
 {
     use VisitorMethodTrackingTrait;
 
-    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, sourceLine: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int, count: int}> */
-    private array $methodInfos = [];
+    /** @var array<string, VisitorCallableScope> */
+    private array $scopes = [];
+
+    /** @var array<string, int> */
+    private array $counts = [];
 
     /** @var list<string> */
     private array $methodStack = [];
 
-    private ?string $currentNamespace = null;
-    private ?string $currentClass = null;
-    private ?int $currentClassStartFilePos = null;
-    private int $closureCounter = 0;
-    private ?string $currentProperty = null;
-
-    /** @var list<array{?string, ?int}> */
-    private array $classContextStack = [];
-
     public function reset(): void
     {
-        $this->methodInfos = [];
+        $this->scopes = [];
+        $this->counts = [];
         $this->methodStack = [];
-        $this->currentNamespace = null;
-        $this->currentClass = null;
-        $this->currentClassStartFilePos = null;
-        $this->closureCounter = 0;
-        $this->currentProperty = null;
-        $this->resetCallableTraversalKeys();
-        $this->classContextStack = [];
+        $this->resetVisitorMethodContext();
     }
 
     /**
@@ -70,12 +58,12 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
     {
         $result = [];
 
-        $ordinals = $this->callableCollisionOrdinals($this->methodInfos);
-        foreach ($this->methodInfos as $key => $info) {
+        $ordinals = $this->callableCollisionOrdinals($this->scopes);
+        foreach ($this->scopes as $key => $scope) {
             $result[] = $this->createCallableWithMetrics(
-                $info,
+                $scope,
                 $file,
-                (new MetricBag())->with(MetricName::SIZE_METHOD_STATEMENT_COUNT, $info['count']),
+                (new MetricBag())->with(MetricName::SIZE_METHOD_STATEMENT_COUNT, $this->counts[$key]),
                 $ordinals[$key],
             );
         }
@@ -86,95 +74,17 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
     /** @return array<string, int> */
     public function getStatementCounts(): array
     {
-        $counts = [];
-        foreach ($this->methodInfos as $info) {
-            $counts[$info['logicalFqn']] = $info['count'];
-        }
+        /** @var array<string, int> $counts */
+        $counts = $this->projectLogicalMetricMap($this->counts, $this->scopes);
 
         return $counts;
     }
 
     public function enterNode(Node $node): ?int
     {
-        if ($node instanceof Stmt\Namespace_) {
-            $this->currentNamespace = $node->name?->toString() ?? '';
-        }
-
-        if ($this->isClassLikeNode($node)) {
-            $this->classContextStack[] = [$this->currentClass, $this->currentClassStartFilePos];
-        }
-
-        if ($node instanceof Stmt\Class_) {
-            if ($node->name === null) {
-                $this->currentClass = $this->buildAnonymousClassName($node->getStartFilePos());
-                $this->currentClassStartFilePos = $node->getStartFilePos();
-            } else {
-                $this->currentClass = $node->name->toString();
-                $this->currentClassStartFilePos = $node->getStartFilePos();
-            }
-        } elseif ($this->isClassLikeNode($node)) {
-            $className = $this->extractClassLikeName($node);
-            if ($className !== null) {
-                $this->currentClass = $className;
-                $this->currentClassStartFilePos = $node->getStartFilePos();
-            }
-        }
-
-        if ($node instanceof Stmt\ClassMethod) {
-            $this->startMethod(
-                $this->buildMethodFqn($node->name->toString()),
-                $node->name->toString(),
-                $node->getStartFilePos(),
-                $node->getStartLine(),
-                CallableKind::Method,
-                null,
-            );
-
-            return null;
-        }
-
-        if ($node instanceof Stmt\Property && $this->currentClass !== null && \count($node->props) === 1) {
-            $this->currentProperty = $node->props[0]->name->toString();
-        }
-
-        if ($node instanceof PropertyHook && $this->currentClass !== null && $this->currentProperty !== null) {
-            $name = $this->currentProperty . '::' . $node->name->toString();
-            $this->startMethod(
-                $this->buildMethodFqn($name),
-                $name,
-                $node->getStartFilePos(),
-                $node->getStartLine(),
-                CallableKind::PropertyHook,
-                null,
-            );
-
-            return null;
-        }
-
-        if ($node instanceof Stmt\Function_) {
-            $this->startMethod(
-                $this->buildFunctionFqn($node->name->toString()),
-                $node->name->toString(),
-                $node->getStartFilePos(),
-                $node->getStartLine(),
-                CallableKind::Function,
-                null,
-            );
-
-            return null;
-        }
-
-        if ($node instanceof Expr\Closure || $node instanceof Expr\ArrowFunction) {
-            ++$this->closureCounter;
-            $name = '{closure#' . $this->closureCounter . '}';
-            $this->startMethod(
-                $this->buildClosureFqn(),
-                $name,
-                $node->getStartFilePos(),
-                $node->getStartLine(),
-                CallableKind::AnonymousCallable,
-                $node instanceof Expr\Closure ? 'closure' : 'arrow',
-            );
+        $scope = $this->enterVisitorMethodContext($node);
+        if ($scope !== null) {
+            $this->startMethod($scope);
 
             if ($node instanceof Expr\ArrowFunction) {
                 $this->incrementCurrentMethod();
@@ -192,72 +102,25 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
 
     public function leaveNode(Node $node): ?int
     {
-        if ($node instanceof Stmt\ClassMethod) {
-            array_pop($this->methodStack);
-
-            return null;
-        }
-
-        if ($node instanceof PropertyHook) {
-            if ($this->currentClass !== null && $this->currentProperty !== null) {
-                array_pop($this->methodStack);
-            }
-
-            return null;
-        }
-
-        if ($node instanceof Stmt\Property) {
-            $this->currentProperty = null;
-        }
-
-        if ($node instanceof Stmt\Function_) {
-            array_pop($this->methodStack);
-
-            return null;
-        }
-
-        if ($node instanceof Expr\Closure || $node instanceof Expr\ArrowFunction) {
-            array_pop($this->methodStack);
-
-            return null;
-        }
-
-        if ($node instanceof Stmt\Class_) {
-            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
-        } elseif ($this->isClassLikeNode($node)) {
-            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
-        }
-
-        if ($node instanceof Stmt\Namespace_) {
-            $this->currentNamespace = null;
+        $scope = $this->leaveVisitorMethodContext($node);
+        if ($scope !== null) {
+            $this->endMethod($scope);
         }
 
         return null;
     }
 
-    private function startMethod(
-        string $fqn,
-        string $method,
-        int $startFilePos,
-        int $sourceLine,
-        CallableKind $kind,
-        ?string $anonymousSyntax,
-    ): void {
-        $logicalFqn = $fqn;
-        $fqn = $this->createCallableTraversalKey($logicalFqn, $startFilePos);
-        $this->methodInfos[$fqn] = [
-            'logicalFqn' => $logicalFqn,
-            'namespace' => $this->currentNamespace,
-            'class' => $this->currentClass,
-            'method' => $method,
-            'startFilePos' => $startFilePos,
-            'sourceLine' => $sourceLine,
-            'kind' => $kind,
-            'anonymousSyntax' => $anonymousSyntax,
-            'classStartFilePos' => $this->currentClassStartFilePos,
-            'count' => 0,
-        ];
+    private function startMethod(VisitorCallableScope $scope): void
+    {
+        $fqn = $scope->traversalKey;
+        $this->scopes[$fqn] = $scope;
+        $this->counts[$fqn] = 0;
         $this->methodStack[] = $fqn;
+    }
+
+    private function endMethod(VisitorCallableScope $scope): void
+    {
+        array_pop($this->methodStack);
     }
 
     private function incrementCurrentMethod(): void
@@ -267,7 +130,7 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
         }
 
         $fqn = $this->methodStack[array_key_last($this->methodStack)];
-        ++$this->methodInfos[$fqn]['count'];
+        ++$this->counts[$fqn];
     }
 
     private function isCountedStatement(Node $node): bool

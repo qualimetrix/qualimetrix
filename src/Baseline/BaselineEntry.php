@@ -143,6 +143,10 @@ final readonly class BaselineEntry
     {
         $data = ['channel' => $this->identity->channel->toKey()];
 
+        if ($this->identity->occurrenceKey !== null) {
+            $data['occurrence'] = $this->identity->occurrenceKey;
+        }
+
         if ($this->identity->edge !== null) {
             $data['edge'] = $this->identity->edge->toArray();
         }

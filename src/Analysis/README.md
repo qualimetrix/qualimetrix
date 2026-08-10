@@ -53,12 +53,17 @@ Analysis/
 │   ├── FileProcessingResult.php         # Single file terminal state
 │   ├── CollectedFileData.php             # Successful metrics/dependencies/annotations payload
 │   ├── FileProcessingFailure.php         # Typed collection failure payload
-│   ├── FileProcessingFailureKind.php     # Parse and processing failure categories
-│   ├── FileProcessingFailureKind.php    # Parse or processing failure on the collection wire
+│   ├── FileProcessingFailureKind.php     # Parse or processing failure category on the collection wire
+│   │
+│   ├── Declaration/
+│   │   └── DeclarationBindings.php       # Immutable AST declaration-to-subject bindings
+│   ├── SourceControl/
+│   │   └── SourceControls.php            # Immutable source suppression/threshold extraction result
 │   │
 │   ├── Metric/
 │   │   ├── CompositeCollector.php       # Combines visitors (unified AST traversal)
 │   │   ├── CollectionOutput.php         # Output of composite collection
+│   │   ├── DerivedCollectorRunner.php   # Stable topological derived-collector execution
 │   │   └── DerivedMetricExtractor.php   # Extracts derived metrics from collected data
 │   │
 │   ├── Dependency/
@@ -123,7 +128,10 @@ Analysis/
 │   └── RuleExclusionStats.php           # VO: per-rule exclude_namespaces/exclude_paths suppression counts + optionally-captured violations (see RuleExclusionCaptureHolder)
 │
 ├── Repository/
-│   └── InMemoryMetricRepository.php
+│   ├── InMemoryMetricRepository.php
+│   ├── MetricSubjectIndex.php            # Exact subject lookup and logical callable bridge
+│   ├── NamespaceMetricIndex.php          # Deduplicated namespace projection
+│   └── RepositoryMerge.php               # Deterministic repository storage merge policy
 │
 ├── Namespace_/                          # Namespace detection
 │   ├── ChainNamespaceDetector.php
@@ -156,6 +164,28 @@ Coordinator of all analysis phases.
 
 **Public API:**
 - `analyze(string|array $paths, ?FileDiscoveryInterface $discovery = null): AnalysisResult`
+
+### Scanner orchestration boundaries
+
+The scanner keeps each transformation inside the existing owner of its subject:
+
+| Owner                          | Typed boundary and invariant                                                                                                                                                                                                                                                                                                                                                                                                                                      | Dependency treatment                                                                                                                                                                    | Focused regression                                                                                                                                                                 |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NamespaceMetricContributions` | `collectValues(MetricRepositoryInterface, list<SymbolInfo>, list<SymbolInfo>, list<MetricDefinition>, SymbolLevel): array<string, list<int\|float>>`. `collectFromSymbols` handles callable, class, and global-function subjects only; physical-file and explicit-namespace contributions remain separate passes. Physical file ownership maps each file once per owned namespace even when several exact declarations share a logical name.                      | Reads repository subjects only; it neither creates graph edges nor changes repository ownership.                                                                                        | `NamespaceMetricContributionsTest::itCollectsEachTypedSymbolLevelAndExpandsNamespaceOwnedAverages` and `::itMapsOnePhysicalFileToEveryOwnedNamespace`.                             |
+| `CollectionOrchestrator`       | `collect(list<SplFileInfo>, MetricRepositoryInterface, AbsolutePath): CollectionPhaseOutput`. It selects a strategy and folds the ordered `iterable<FileProcessingResult>` into `CollectionResult` plus the separately-lived `list<Dependency>`. Every terminal result advances progress once; only successful payloads register metrics, dependencies, suppressions, overrides, and diagnostics; every typed failure produces one warning and retains its order. | Retains successful dependencies in encounter order; failed results cannot contribute dependencies or controls.                                                                          | `CollectionOrchestratorTest::itFoldsSuccessfulPayloadsAndTypedFailuresWithoutLosingControls`.                                                                                      |
+| `DependencyGraphBuilder`       | `build(array<Dependency>, iterable<LogicalClassPath>): DependencyGraph`. The stages are filtering, source/target/class/leaf-namespace indexing, parent-universe expansion, one class/namespace Ce/Ca pass, and parent roll-up. Degree-zero declarations and undeclared external targets remain vertices; sibling edges are internal to their common parent.                                                                                                       | Retains every non-built-in edge and built-in `Extends`; removes only non-inheritance edges to PHP built-ins. Endpoint coupling is deduplicated while the ordered edge list is retained. | `DependencyGraphBuilderTest`, including degree-zero, built-in filtering, duplicate endpoints, and parent Ce/Ca boundary cases.                                                     |
+| `DependencyVisitor`            | `setFile(?RelativePath)` resets namespace, imports, class-like context, and collected dependencies; `enterNode(Node)` establishes named `ClassLike` sources, lets anonymous classes inherit the enclosing source, then dispatches other nodes through the existing handler table; `getDependencies(): array<Dependency>`.                                                                                                                                         | Handler-produced edge types and source/target identity are unchanged; state from a prior file cannot leak into the next traversal.                                                      | `DependencyVisitorTest::itPreservesExactDeclarationSourcesForEveryNamedClassLike` and `::itResetsDependenciesAndImportsWhenReusedForAnotherFile`.                                  |
+| `AnalysisPipeline`             | `analyze(AbsolutePath\|list<AbsolutePath>, ?FileDiscoveryInterface): AnalysisResult`. The invariant order is Discovery -> Collection -> graph build -> Architecture preparation -> enrichment -> RuleExecution -> result projection. Private boundaries pass the existing `DependencyGraph`, `EnrichmentResult`, and `CollectionResult`; one `ProfilerInterface` is resolved at entry and used for every pipeline span, including Architecture preparation.       | Raw dependencies are consumed by graph construction and released; graph semantics and rule context remain unchanged.                                                                    | `AnalysisPipelineTest::itKeepsCollectionArchitectureEnrichmentAndRulesInExactOrderForDegreeZeroClasses` and `::itUsesOneResolvedProfilerEvenWhenDiscoveryReplacesTheGlobalHolder`. |
+| `DependencyGraphAnalyzer`      | `analyze(list<AbsolutePath>, AbsolutePath): DependencyGraphAnalysisResult`. It discovers the named class/interface/trait/enum universe directly from parsed AST, excludes anonymous classes, builds the graph, and pairs it with canonical analyzed/parse-failure/processing-failure coverage.                                                                                                                                                                    | Visitor dependencies feed the same builder contract; declaration-only class-likes remain degree-zero vertices.                                                                          | `DependencyGraphAnalyzerTest::itBuildsTheCanonicalUniverseForEveryNamedClassLikeAndExternalTarget`.                                                                                |
+
+`CollectionOrchestrator` has a deliberately breaking internal constructor:
+`ProgressReporter` and `LoggerInterface` are mandatory and there is no null-object
+compatibility shim. Callers that previously omitted them must inject explicit
+implementations. The shipped DI configuration already supplies the delegating
+progress reporter (`DelegatingProgressReporter`) and logger
+(`DelegatingLogger`). Every direct `new CollectionOrchestrator(...)` consumer
+must pass its chosen explicit implementations; there is no default, nullable
+fallback, overload, or compatibility shim.
 
 ### Algorithm
 
@@ -304,8 +334,20 @@ Processing a single PHP file: parsing, collecting metrics AND dependencies, memo
 1. Parsing AST (with caching)
 2. Collecting metrics AND dependencies via `CompositeCollector` (unified AST traversal)
 3. Extracting method, class, and namespace-owned metric contributions
-4. Memory cleanup: `unset($ast)` + `gc_collect_cycles()`
-5. Returning `FileProcessingResult`
+4. Building immutable `DeclarationBindings` from the AST and collected declaration metrics
+5. Extracting immutable `SourceControls` (suppressions, threshold overrides, diagnostics)
+6. Memory cleanup: `unset($ast)` + `gc_collect_cycles()`
+7. Returning `FileProcessingResult`
+
+`DeclarationBindings` owns the declaration-binding subject: it maps named class
+and callable declarations (including closures, arrows, property hooks, and
+parameters) to exact `MetricSubject`s, preserving lexical ownership and the
+file fallback. `SourceControls` consumes only the AST, those bindings, and the
+Baseline extractors to produce immutable control lists. Both depend downward on
+Core/Baseline contracts; parsing, collector invocation, and collection-wire
+assembly remain owned by `FileProcessor`. Focused unit tests cover declaration
+binding and source-control extraction, while `FileProcessorTest` pins their
+transport through `FileProcessingResult`.
 
 Parse exceptions are caught and returned as `FileProcessingResult::failure()`.
 Successful results carry a cohesive `CollectedFileData` payload. Unexpected
@@ -370,6 +412,24 @@ Combines visitors of all collectors and DependencyVisitor for a single AST pass 
 4. Collecting and merging all MetricBags
 5. Collecting dependencies from DependencyVisitor
 6. Returning `CollectionOutput(metrics, dependencies)`
+
+`CompositeCollector` owns only base collector traversal and collection output.
+`DerivedCollectorRunner` receives the completed base bag, base collector
+subjects, and the relative file path. It validates collector-name dependencies,
+orders derived collectors topologically with deterministic name ties, and
+accumulates each derived result into the next collector's input. It applies
+only a `MetricDefinition`'s declared `collectedAt` level to its exact callable
+declaration or class declaration key; it does not resolve by FQN, line, or a
+fallback `provides()` name. `DerivedMetricExtractor` then transfers those
+already-keyed results into existing repository subjects. The runner depends
+downward on Core metric contracts; it does not orchestrate the pipeline or the
+repository.
+
+Focused tests are `CompositeCollectorTest`, `DerivedCollectorRunnerTest`,
+`DerivedCollectorSortTest`, and `DerivedMetricExtractorTest`. They cover base
+traversal separation, missing and cyclic collector dependencies, deterministic
+ties, multi-level derived values, empty subject collections, exact duplicate
+callable declarations, and repository result extraction.
 
 ---
 
@@ -505,3 +565,24 @@ Stores metrics in memory.
 - `allDeclarations()`, `allCallables()`, `allLogicalClasses()` — typed declaration/class views
 - `getNamespaces()` — list of namespaces
 - `forNamespace(string)` — symbols in namespace
+
+`MetricSubjectIndex` owns typed `MetricSubject` metrics, exact `SymbolInfo`,
+and the unique logical-callable-to-exact-declaration bridge. Its inputs are
+typed subject writes and `CallableWithMetrics`; its outputs are exact lookup and
+declaration/callable/logical-class iteration. Aggregate subjects keep their
+typed metadata there, while their metrics use the canonical plain aggregate
+`SymbolPath` storage and are synchronized from it. `NamespaceMetricIndex` owns the
+deduplicated namespace projection of aggregate and typed infos, excluding exact
+class declarations during rebuild so their logical-class projection is counted
+once. `RepositoryMerge` owns deterministic combination of plain and typed
+storage: right-hand scalar metrics override, structured entries append, typed
+callable metadata promotes plain metadata in either order, and conflicting
+typed metadata fails fast. These helpers depend only on Core contracts and
+each other inside the Repository leaf; the public repository API remains in
+`InMemoryMetricRepository`.
+
+Focused repository tests pin duplicate logical declarations, empty indexes,
+namespace projection rebuild/deduplication, typed metadata conflicts, and
+scalar/structured merge collisions. `InMemoryMetricRepositoryTest` covers the
+public API and both merge orders; `GoldenFileAggregationTest` confirms that
+aggregation values remain unchanged.

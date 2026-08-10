@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Structure;
 
+use LogicException;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
@@ -67,43 +69,54 @@ final class NocRule extends AbstractRule
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
-            $metrics = $context->metrics->get($classInfo->symbolPath);
-            $noc = $metrics->get(MetricName::STRUCTURE_NOC);
-
-            if ($noc === null || $noc === 0) {
-                continue;
-            }
-
-            $nocValue = (int) $noc;
-            /** @var NocOptions $effectiveOptions */
-            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $classInfo->file, $classInfo->line ?? 1);
-            $severity = $effectiveOptions->getSeverity($nocValue);
-
-            if ($severity !== null) {
-                $threshold = $severity === Severity::Error
-                    ? $effectiveOptions->error
-                    : $effectiveOptions->warning;
-
-                $violations[] = new Violation(
-                    location: new Location($classInfo->file, $classInfo->line),
-                    symbolPath: $classInfo->symbolPath,
-                    ruleName: $this->getName(),
-                    violationCode: self::NAME,
-                    message: \sprintf(
-                        'NOC (Number of Children) is %d, exceeds threshold of %d. Consider using interfaces instead of inheritance',
-                        $nocValue,
-                        $threshold,
-                    ),
-                    severity: $severity,
-                    metricValue: $nocValue,
-                    recommendation: \sprintf('NOC: %d (threshold: %d) — too many direct subclasses', $nocValue, $threshold),
-                    threshold: $threshold,
-                );
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            $violation = $this->violationForClass($classInfo, $context, $this->options);
+            if ($violation !== null) {
+                $violations[] = $violation;
             }
         }
 
         return $violations;
+    }
+
+    private function violationForClass(SymbolInfo $classInfo, AnalysisContext $context, NocOptions $options): ?Violation
+    {
+        $subject = $classInfo->subject ?? throw new LogicException('NOC findings require an exact class declaration subject');
+        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+            return null;
+        }
+
+        $noc = $context->metrics->get($subject->toSymbolPath())->get(MetricName::STRUCTURE_NOC);
+        if ($noc === null || $noc === 0) {
+            return null;
+        }
+
+        $nocValue = (int) $noc;
+        /** @var NocOptions $effectiveOptions */
+        $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
+        $severity = $effectiveOptions->getSeverity($nocValue);
+        if ($severity === null) {
+            return null;
+        }
+
+        $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
+
+        return new Violation(
+            location: new Location($classInfo->file, $classInfo->line),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
+            ruleName: $this->getName(),
+            violationCode: self::NAME,
+            message: \sprintf(
+                'NOC (Number of Children) is %d, exceeds threshold of %d. Consider using interfaces instead of inheritance',
+                $nocValue,
+                $threshold,
+            ),
+            severity: $severity,
+            metricValue: $nocValue,
+            recommendation: \sprintf('NOC: %d (threshold: %d) — too many direct subclasses', $nocValue, $threshold),
+            threshold: $threshold,
+        );
     }
 
     /**

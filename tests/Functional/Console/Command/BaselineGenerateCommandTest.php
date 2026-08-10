@@ -12,6 +12,7 @@ use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -246,9 +247,13 @@ final class BaselineGenerateCommandTest extends TestCase
 
     private static function violation(string $ruleName, string $violationCode): Violation
     {
+        $path = RelativePath::fromString('src/Legacy.php');
+        $symbol = SymbolPath::forFile($path);
+
         return new Violation(
-            location: new Location(RelativePath::fromString('src/Legacy.php'), 3),
-            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Legacy.php')),
+            location: new Location($path, 3),
+            subject: MetricSubject::aggregate($symbol),
+            symbolPath: $symbol,
             ruleName: $ruleName,
             violationCode: $violationCode,
             message: 'finding',

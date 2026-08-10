@@ -23,14 +23,22 @@ use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Progress\ProgressReporter;
+use Qualimetrix\Core\Suppression\ControlScope;
+use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Suppression\SuppressionType;
+use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
+use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
+use ReflectionMethod;
 use RuntimeException;
 use SplFileInfo;
 
@@ -66,6 +74,15 @@ final class CollectionOrchestratorTest extends TestCase
         self::assertSame(0, $result->result->filesAnalyzed);
         self::assertSame(0, $result->result->filesSkipped);
         self::assertSame([], $result->dependencies);
+    }
+
+    #[Test]
+    public function itRequiresExplicitProgressAndLoggerCollaborators(): void
+    {
+        $parameters = (new ReflectionMethod(CollectionOrchestrator::class, '__construct'))->getParameters();
+
+        self::assertFalse($parameters[3]->isDefaultValueAvailable());
+        self::assertFalse($parameters[4]->isDefaultValueAvailable());
     }
 
     #[Test]
@@ -184,7 +201,9 @@ final class CollectionOrchestratorTest extends TestCase
                 fileBag: new MetricBag(),
                 classMetrics: [
                     'declaration:class:App\\Service@tmp/test.php:16' => [
-                        'subject' => \Qualimetrix\Core\Symbol\MetricSubject::logicalClass(new LogicalClassPath($symbolPath)),
+                        'subject' => \Qualimetrix\Core\Symbol\MetricSubject::declaration(
+                            new DeclarationPath($symbolPath, RelativePath::fromString('tmp/test.php'), 16),
+                        ),
                         'metrics' => $classBag,
                         'line' => 5,
                     ],
@@ -201,6 +220,64 @@ final class CollectionOrchestratorTest extends TestCase
 
         self::assertTrue($repository->has($symbolPath));
         self::assertSame(25, $repository->get($symbolPath)->get('wmc'));
+    }
+
+    #[Test]
+    public function itRegistersClassDerivedMetricsForDistinctExactDeclarationsWithTheSameLogicalName(): void
+    {
+        $files = [new SplFileInfo('/tmp/test.php')];
+        $file = RelativePath::fromString('tmp/test.php');
+        $symbolPath = SymbolPath::forClass('App', 'Service');
+        $firstSubject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(
+            new DeclarationPath($symbolPath, $file, 16),
+        );
+        $secondSubject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(
+            new DeclarationPath($symbolPath, $file, 96),
+        );
+
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
+        $derivedCollector->method('provides')->willReturn(['typeCoverage.pct']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('typeCoverage.pct', SymbolLevel::Class_),
+        ]);
+        $extractor = new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector]));
+
+        $processingResults = [
+            FileProcessingResult::success(
+                filePath: $file,
+                fileBag: MetricBag::fromArray([
+                    'typeCoverage.pct:' . $firstSubject->toCanonical() => 100.0,
+                    'typeCoverage.pct:' . $secondSubject->toCanonical() => 50.0,
+                ]),
+                classMetrics: [
+                    $firstSubject->toCanonical() => [
+                        'subject' => $firstSubject,
+                        'metrics' => MetricBag::fromArray(['typeCoverage.paramTotal' => 2]),
+                        'line' => 5,
+                    ],
+                    $secondSubject->toCanonical() => [
+                        'subject' => $secondSubject,
+                        'metrics' => MetricBag::fromArray(['typeCoverage.paramTotal' => 2]),
+                        'line' => 20,
+                    ],
+                ],
+            ),
+        ];
+        $this->strategy->method('execute')->willReturn($processingResults);
+
+        $orchestrator = new CollectionOrchestrator(
+            $this->fileProcessor,
+            $this->strategySelector,
+            $extractor,
+            $this->progress,
+            $this->logger,
+        );
+        $repository = new InMemoryMetricRepository();
+
+        $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
+
+        self::assertSame(100.0, $repository->getSubject($firstSubject)->get('typeCoverage.pct'));
+        self::assertSame(50.0, $repository->getSubject($secondSubject)->get('typeCoverage.pct'));
     }
 
     #[Test]
@@ -340,6 +417,142 @@ final class CollectionOrchestratorTest extends TestCase
     }
 
     #[Test]
+    public function itFoldsSuccessfulPayloadsAndTypedFailuresWithoutLosingControls(): void
+    {
+        $files = [
+            new SplFileInfo('/tmp/good.php'),
+            new SplFileInfo('/tmp/empty-controls.php'),
+            new SplFileInfo('/tmp/parse.php'),
+            new SplFileInfo('/tmp/good2.php'),
+            new SplFileInfo('/tmp/processing.php'),
+        ];
+        $path = RelativePath::fromString('tmp/good.php');
+        $emptyControlsPath = RelativePath::fromString('tmp/empty-controls.php');
+        $secondPath = RelativePath::fromString('tmp/good2.php');
+        $subject = \Qualimetrix\Core\Symbol\MetricSubject::logicalClass(
+            new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service')),
+        );
+        $suppression = new Suppression('complexity', 'fixture', 7, SuppressionType::File);
+        $secondSuppression = new Suppression('design', 'second fixture', 17, SuppressionType::NextLine);
+        $override = new ThresholdOverride('complexity.cyclomatic', 12, 20, 8, $subject, ControlScope::Class_);
+        $secondOverride = new ThresholdOverride('design.type-coverage', 95, 80, 18, $subject, ControlScope::Class_);
+        $diagnostic = new ThresholdDiagnostic(9, $subject, 'invalid fixture threshold');
+        $secondDiagnostic = new ThresholdDiagnostic(19, $subject, 'second invalid fixture threshold');
+        $dependencies = [
+            $this->dependency('App\\Service', 'App\\Port', DependencyType::Implements, 'tmp/good.php', 10),
+            $this->dependency('App\\Service', 'App\\Helper', DependencyType::New_, 'tmp/good.php', 11),
+        ];
+        $secondDependency = $this->dependency(
+            'App\\SecondService',
+            'App\\SecondPort',
+            DependencyType::Implements,
+            'tmp/good2.php',
+            20,
+        );
+
+        $this->strategy->method('execute')->willReturn([
+            FileProcessingResult::success(
+                filePath: $path,
+                fileBag: MetricBag::fromArray(['loc' => 12]),
+                dependencies: $dependencies,
+                suppressions: [$suppression],
+                thresholdOverrides: [$override],
+                thresholdDiagnostics: [$diagnostic],
+            ),
+            FileProcessingResult::success(
+                filePath: $emptyControlsPath,
+                fileBag: MetricBag::fromArray(['loc' => 3]),
+            ),
+            FileProcessingResult::failure(
+                RelativePath::fromString('tmp/parse.php'),
+                'parse failed',
+                FileProcessingFailureKind::Parse,
+            ),
+            FileProcessingResult::success(
+                filePath: $secondPath,
+                fileBag: MetricBag::fromArray(['loc' => 8]),
+                dependencies: [$secondDependency],
+                suppressions: [$secondSuppression],
+                thresholdOverrides: [$secondOverride],
+                thresholdDiagnostics: [$secondDiagnostic],
+            ),
+            FileProcessingResult::failure(
+                RelativePath::fromString('tmp/processing.php'),
+                'processing failed',
+                FileProcessingFailureKind::Processing,
+            ),
+        ]);
+
+        $warningContexts = [];
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::exactly(2))->method('warning')->willReturnCallback(
+            static function (string $message, array $context) use (&$warningContexts): void {
+                self::assertSame('Failed to process file', $message);
+                $warningContexts[] = $context;
+            },
+        );
+        $progress = $this->createMock(ProgressReporter::class);
+        $progressMessages = [];
+        $progress->expects(self::once())->method('start')->with(5);
+        $progress->expects(self::exactly(5))->method('setMessage')->willReturnCallback(
+            static function (string $message) use (&$progressMessages): void {
+                $progressMessages[] = $message;
+            },
+        );
+        $progress->expects(self::exactly(5))->method('advance');
+        $progress->expects(self::once())->method('finish');
+        $repository = new InMemoryMetricRepository();
+
+        $output = $this->createOrchestratorWith(logger: $logger, progress: $progress)->collect(
+            $files,
+            $repository,
+            AbsolutePath::fromString('/tmp'),
+        );
+
+        self::assertSame([$path, $emptyControlsPath, $secondPath], $output->result->analyzedFiles);
+        self::assertSame(
+            ['tmp/parse.php', 'tmp/processing.php'],
+            array_map(static fn(FileProcessingResult $failure): string => $failure->filePath->value(), $output->result->failures),
+        );
+        self::assertSame(
+            [FileProcessingFailureKind::Parse, FileProcessingFailureKind::Processing],
+            array_map(
+                static fn(FileProcessingResult $failure): FileProcessingFailureKind => $failure->processingFailure()->kind,
+                $output->result->failures,
+            ),
+        );
+        self::assertSame([
+            ['file' => 'tmp/parse.php', 'error' => 'parse failed'],
+            ['file' => 'tmp/processing.php', 'error' => 'processing failed'],
+        ], $warningContexts);
+        self::assertSame([
+            'Registering good.php',
+            'Registering empty-controls.php',
+            'Registering parse.php',
+            'Registering good2.php',
+            'Registering processing.php',
+        ], $progressMessages);
+        self::assertSame([$suppression], $output->result->suppressions[$path->value()]);
+        self::assertSame([$secondSuppression], $output->result->suppressions[$secondPath->value()]);
+        self::assertSame([$override], $output->result->thresholdOverrides[$path->value()]);
+        self::assertSame([$secondOverride], $output->result->thresholdOverrides[$secondPath->value()]);
+        self::assertSame([$diagnostic], $output->result->thresholdDiagnostics[$path->value()]);
+        self::assertSame([$secondDiagnostic], $output->result->thresholdDiagnostics[$secondPath->value()]);
+        self::assertSame(['tmp/good.php', 'tmp/good2.php'], array_keys($output->result->suppressions));
+        self::assertSame(['tmp/good.php', 'tmp/good2.php'], array_keys($output->result->thresholdOverrides));
+        self::assertSame(['tmp/good.php', 'tmp/good2.php'], array_keys($output->result->thresholdDiagnostics));
+        self::assertArrayNotHasKey($emptyControlsPath->value(), $output->result->suppressions);
+        self::assertArrayNotHasKey($emptyControlsPath->value(), $output->result->thresholdOverrides);
+        self::assertArrayNotHasKey($emptyControlsPath->value(), $output->result->thresholdDiagnostics);
+        self::assertSame([...$dependencies, $secondDependency], $output->dependencies);
+        self::assertTrue($repository->has(SymbolPath::forFile($path)));
+        self::assertTrue($repository->has(SymbolPath::forFile($emptyControlsPath)));
+        self::assertTrue($repository->has(SymbolPath::forFile($secondPath)));
+        self::assertFalse($repository->has(SymbolPath::forFile(RelativePath::fromString('tmp/parse.php'))));
+        self::assertFalse($repository->has(SymbolPath::forFile(RelativePath::fromString('tmp/processing.php'))));
+    }
+
+    #[Test]
     public function itConvertsUnexpectedSequentialExceptionsToTypedPerFileFailures(): void
     {
         $files = [new SplFileInfo('/tmp/broken.php')];
@@ -446,6 +659,9 @@ final class CollectionOrchestratorTest extends TestCase
         // Create mock derived collector
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
 
@@ -582,6 +798,9 @@ final class CollectionOrchestratorTest extends TestCase
         // Create mock derived collector
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
 
@@ -629,6 +848,9 @@ final class CollectionOrchestratorTest extends TestCase
         // Create mock derived collector that provides 'mi'
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
 
@@ -768,6 +990,9 @@ final class CollectionOrchestratorTest extends TestCase
         // Create mock derived collector
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
 

@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Pipeline;
 
 use PhpParser\Node;
-use PhpParser\Node\Stmt\Class_;
-use PhpParser\Node\Stmt\Enum_;
-use PhpParser\Node\Stmt\Interface_;
+use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\Namespace_;
-use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeTraverser;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
@@ -98,17 +95,11 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
                 continue;
             }
 
-            $name = match (true) {
-                $node instanceof Class_ && $node->name !== null => $node->name->toString(),
-                $node instanceof Interface_ && $node->name !== null => $node->name->toString(),
-                $node instanceof Trait_ && $node->name !== null => $node->name->toString(),
-                $node instanceof Enum_ && $node->name !== null => $node->name->toString(),
-                default => null,
-            };
-
-            if ($name !== null) {
-                $classes[] = new LogicalClassPath(SymbolPath::forClass($namespace, $name));
+            if (!$node instanceof ClassLike || $node->name === null) {
+                continue;
             }
+
+            $classes[] = new LogicalClassPath(SymbolPath::forClass($namespace, $node->name->toString()));
         }
 
         return $classes;

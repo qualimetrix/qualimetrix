@@ -20,13 +20,14 @@ Baseline/
 ├── InertBaselineEntry.php       # VO: an entry that cannot be applied, and why
 ├── InertEntryReason.php         # Enum: why an entry is inert
 ├── BaselineEntryParser.php      # Parses one raw entry into a valid or inert entry
+├── BaselineEntryValues.php      # Strict count/magnitudes/mode value decoding for one entry
 ├── BaselineEntryRejection.php   # Internal control-flow signal used by the parser
 ├── BaselineConflictException.php # The file changed between read and write
 ├── BaselineGenerator.php        # Captures a run's findings as entries (injected clock)
-├── BaselineCapture.php          # VO: what one capture produced — the baseline plus its refusals
+├── BaselineCapture.php          # VO/factory: baseline plus materialized rejected-group outcomes
 ├── UncapturedGroup.php          # VO: a group that produced no entry, and why
 ├── UncapturedReason.php         # Enum: undeclared channel / no finite magnitude
-├── BaselineLoader.php           # Loads a version 10 file
+├── BaselineLoader.php           # Loads the exact typed-subject version 11 file
 ├── BaselineWriter.php           # Writes atomically under a compare-and-swap guard
 ├── RunScope.php                 # VO: a run's analysed paths in the portable form the file records, plus the coverage predicate the scope guard reads
 │
@@ -41,7 +42,7 @@ Baseline/
 ├── BaselineCleanupReason.php    # Enum: stale / channel no longer declared / inert
 ├── BaselineCleanupRemoval.php   # VO: what one `--remove` run did — removed/not-found/ambiguous
 │
-├── BaselineMigrator.php         # `baseline:migrate`: replaces the baseline with a fresh capture, matching v5 against it by (symbolKey, rule) to report continuity
+├── BaselineMigrator.php         # Historical continuity report logic for a fresh capture against v5 records; not a v11 conversion route
 ├── BaselineMigratorResult.php   # VO: the migrated baseline plus its MigrationReport
 ├── MigrationReport.php          # VO: carried/dropped/fresh pair counts, dropped entries and unreadable v5 rows enumerated in full
 ├── MigrationReportDroppedEntry.php # VO: one v5 (symbolKey, rule) pair the fresh capture no longer backs
@@ -99,11 +100,28 @@ report it otherwise, and "Baseline with 0 entries written" would read as success
 - **Version 3**: Rule naming scheme update (`group.rule-name` format)
 - **Version 4**: 16-char violation hashes (was 8-char in v3)
 - **Version 5**: Relative file paths in canonical keys (no path resolution needed)
-- **Version 10**: Entries record the magnitude a finding was accepted at, keyed by
-  identity instead of an opaque hash
+- **Version 10**: Entries record accepted magnitudes under logical symbol keys
+- **Version 11**: Identity uses exact typed subjects and may include semantic
+  occurrence, dependency target, and dependency type
 
-Only version 10 is loadable. A version 5 file is rejected with a message naming
-`bin/qmx baseline:migrate`; every other version is rejected as unsupported.
+Only version 11 is loadable. Versions 5 and 10 cannot supply exact declaration
+identity and are rejected with guidance to run a fresh analysis, deliberately map
+or split accepted entries, review the mapping, and write a version 11 baseline.
+
+## Parsing, Capture, Explanation, and Suppression Boundaries
+
+| Owner                        | Typed input and output                                                                                                        | Responsibility and invariant                                                                                                                                                                                                                                                                                                                                                                                                                        | Focused contract                                                |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `BaselineEntryParser`        | `parse(string, mixed): BaselineEntry\|InertBaselineEntry`                                                                     | Reads the outer JSON object and exact identity/occurrence/edge, delegates count/magnitudes/mode to `BaselineEntryValues`, validates channel declaration shape, and converts every rejection into a raw-preserving inert entry. Known identities retain their exact v11 selector; unknown identities receive a deterministic raw selector.                                                                                                           | `BaselineEntryParserTest`, `BaselineWorkflowTest`               |
+| `BaselineEntryValues`        | `decode(array): BaselineEntryValues` exposing readonly `count`, `?list<int\|float> magnitudes`, and `?BaselineEntryMode mode` | Owns only strict JSON value decoding. It rejects missing or non-integer count, non-list/non-numeric magnitudes, and unknown modes with the parser's existing reason/detail; `BaselineEntry` remains the owner of positive count, finite values, and count/list agreement.                                                                                                                                                                           | `BaselineEntryValuesTest`, `BaselineEntryParserTest`            |
+| `BaselineGenerator`          | `generate(list<Violation>, list<string>): BaselineCapture`                                                                    | Groups once by complete `BaselineIdentity`, preserves first-seen group/refusal order, asks the channel registry only while capturing a group, and reads the injected clock exactly once after grouping. It passes typed rejected records to `BaselineCapture::fromRejectedGroups`, which alone materializes `UncapturedGroup`. Occurrence is identified by the declaration's null direction; magnitude groups require one finite number per member. | `BaselineGeneratorTest`, `BaselineWorkflowTest`                 |
+| `BoundaryExplanationService` | measured violations, threshold maps, optional `MetricRepositoryInterface` -> `BoundaryExplanation`                            | Builds one typed repository index from declarations, callables, logical classes, and aggregate rows. Measured evidence wins over the repository. Annotation matching requires the exact subject and `ThresholdOverride::matches()`; highest control specificity wins, then smallest finite span, then first extraction on a tie. Baseline, configured, and annotation sources stay independently nullable and zero remains a value.                 | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest`        |
+| `SuppressionExtractor`       | AST `Node`, plus exact subject/control binding where required -> `list<Suppression>`                                          | Full mode projects File, NextLine, Symbol in that order; Physical projects File/NextLine and rejects Symbol; File-only silently projects only File. A docblock precedes regular comments, paired backticks are stripped once, and an unpaired backtick leaves a tag visible.                                                                                                                                                                        | `SuppressionExtractorTest`, `ThresholdAnnotationParserPathTest` |
+
+These owners retain only their subject dependencies: baseline and capture VOs,
+channel declarations and the clock; repository/subject/path and override VOs; or
+AST comments and suppression/control VOs. They add no public option, output shape,
+compatibility shim, or second definition of identity, matching, or precedence.
 
 ## Applying a Baseline: the Ceiling
 
@@ -268,27 +286,19 @@ is removed, since the digest is not a proof of uniqueness). A selector
 addresses the *complete* identity including the dependency edge, so it can
 remove one of two entries differing only by edge without touching the other.
 
-### `BaselineMigrator` — converting a version 5 file
+### Historical migration report types
 
-`baseline:migrate` reads the old file through `V5BaselineReader` and
-reconciles it against a fresh capture through `BaselineMigrator`. The new
-baseline is never a merge of the two — it is exactly what the fresh capture
-produced, because a v5 record carries no magnitude to merge in. What
-`BaselineMigrator` adds is the continuity report: matching is done **only**
-on the pair `(symbolKey, ruleName)` — the one thing a v5 record and a v10
-finding both carry — and **never** on the v5 `hash`, which is opaque (a
-digest of `rule|namespace|type|member|violationCode`) and holds no
-magnitude to recover. A pair the fresh capture still backs is counted as
-carried; a pair it does not is enumerated in `MigrationReport::$dropped`,
-since a user needs to know which acceptance was lost, not just how many.
+The retained v5 reader and migration report VOs describe historical continuity
+data only. They are not a conversion route into version 11: neither a v5 nor a
+v10 logical symbol key can infer the exact declaration subject now required.
+Version 11 construction therefore starts from a fresh analysis and an explicit,
+reviewed map or split of every acceptance.
 
 A v5 row that never parsed into a record belongs to none of those groups, and
 `V5BaselineReader` **collects rather than skips** it: `read()` returns it in
 `V5Baseline::$unreadable`, and `BaselineMigrator` carries it into
-`MigrationReport::$unreadableV5Records` for the command to name. `migrate` runs
-once, so a row dropped in silence is an acceptance the user loses without ever
-learning it existed — while refusing the whole file over one bad row would be
-the opposite mistake (ADR 0017).
+`MigrationReport::$unreadableV5Records` so historical inspection can name it;
+it does not make the record applicable to the current schema.
 
 `BoundaryExplanationService` is unrelated to migration but shares this
 package's "read-only against the measured set" shape: `baseline:explain`
@@ -303,16 +313,14 @@ neither source does. The command rejects `Unknown` as input instead of
 presenting a misspelling as a clean symbol; `BaselineOnly` remains explainable
 and is labelled as absent from the current scope or result.
 
-It also takes the run's `MetricRepositoryInterface` (optional, last argument),
-and only to locate a symbol that reports no violation. Matching an
-`@qmx-threshold` needs a file and a line; reading them off the symbol's
-findings answers only for symbols that are currently violating something,
-which is the wrong half of the population — a raised threshold is normally
-*why* the rule stopped firing, so ADR 0017's example ("`qmx.yaml` says 10;
-annotation raises it to 40") is precisely the case with no finding to read.
-The repository knows where every measured symbol is declared, violating or
-not. A symbol with no declaration line anywhere — `ns:`, `project:`, or one
-the run never measured — reports the annotation as absent rather than guessed.
+It also takes the run's `MetricRepositoryInterface` (optional, last argument)
+as exact typed-subject evidence for symbols with no current finding. Current
+violations take precedence by canonical subject alone: a different semantic
+occurrence or dependency edge does not change annotation ownership. The
+repository then supplies the exact declaration/callable subject when needed;
+logical and aggregate projections may prove that a subject is current but do
+not invent a declaration subject. Without either exact source, annotation is
+reported absent rather than guessed.
 
 ## Entry Identity
 
@@ -326,12 +334,10 @@ The set of violations in a run sharing one identity is that entry's **group**.
 - Message text (rewording should not invalidate baseline)
 - Severity (may change when thresholds are reconfigured)
 
-**Known collisions, accepted rather than discriminated away** (see the
-`BaselineIdentity` docblock for the full argument): two declarations of one FQN share
-an entry, a trait method is keyed once for all consumers, and a namespace literally
-called `__PROJECT__` collides with the project sentinel. Adding the declaring file as a
-discriminator would strand every entry on the most common refactor there is, and does
-not exist at all for namespace-, project- and file-keyed findings.
+Declaration subjects retain declaration file and start-position identity, so two
+declarations of one FQN are separate groups. Logical class and aggregate subjects
+remain their own typed identities. Optional semantic occurrence and dependency edge
+(target plus reference kind) participate in the same complete identity.
 
 ### Entry selector
 
@@ -341,16 +347,17 @@ user copies rather than composes it. `<symbol>#<channel>` cannot serve: `#` alre
 separates the two halves of a channel key, and two forbidden edges out of one class on
 one channel agree on everything else.
 
-## File Contract (version 10)
+## File Contract (version 11)
 
 ```json
 {
-  "version": 10,
+  "version": 11,
   "generated": "2026-08-05T12:00:00+03:00",
   "scope": ["src"],
   "entries": {
-    "callable:App\\OrderService::calculate": [
+    "declaration:callable:App\\OrderService::calculate@src/OrderService.php:0": [
       { "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
+        "occurrence": "body",
         "magnitudes": [25], "count": 1 }
     ],
     "file:src/Legacy/dup.php": [
@@ -368,7 +375,7 @@ one channel agree on everything else.
 
 | Field       | Contract                                                      |
 | ----------- | ------------------------------------------------------------- |
-| `version`   | Exactly `10`                                                  |
+| `version`   | Exactly `11`                                                  |
 | `generated` | ISO 8601, from an injected clock (`Core\Time\ClockInterface`) |
 | `scope`     | The analysed path set that produced this file, normalized     |
 | `entries`   | Canonical symbol keys → deterministic entry lists             |
@@ -381,7 +388,9 @@ Entry invariants:
   `round($v, 6)` and `-0.0` normalizes to `0`. The list is stored ascending — a
   determinism convention only, since the comparison counts members per severity level
   and never reads it positionally.
-- `edge` is present exactly when the finding carries a dependency target.
+- `occurrence` is optional and distinguishes semantic occurrences of the same channel.
+- `edge` is present exactly when the finding carries a dependency target; target and
+  optional dependency type are part of the selector-bearing identity.
 - `mode` is optional; `suppress` is the only recognized value.
 
 Entries under one symbol key sort by channel and then by edge, **whatever their state** —

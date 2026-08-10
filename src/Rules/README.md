@@ -75,6 +75,155 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 
 ---
 
+## Internal Rule Analysis Boundaries
+
+The rule entry point remains `RuleInterface::analyze()`. The boundaries below
+are private implementation seams: they keep policy decisions in each rule while
+moving one already-decided finding into a small, subject-specific projection.
+They do not add rule, option, channel, selector, threshold, message, severity,
+ordering, or recommendation surfaces.
+
+The P6-R9 part of the directory structure is:
+
+```text
+Rules/
+├── CodeSmell/
+│   ├── AbstractCodeSmellRule.php
+│   ├── CodeSmellFinding.php
+│   └── UnusedPrivateRule.php
+├── Coupling/
+│   ├── CboRule.php
+│   ├── ClassRankRule.php
+│   ├── DistanceRule.php
+│   └── InstabilityRule.php
+├── Design/
+│   └── TypeCoverageRule.php
+├── Security/
+│   ├── AbstractSecurityPatternRule.php
+│   └── SecurityPatternFinding.php
+├── Size/
+│   └── PropertyCountRule.php
+└── Structure/
+    ├── LcomRule.php
+    ├── NocRule.php
+    └── WmcRule.php
+```
+
+### Occurrence projection companions
+
+`CodeSmellFinding` is an internal, immutable CodeSmell-subject value. Its input
+direction is one scalar collector entry plus the already-resolved container
+`RelativePath`:
+
+```php
+/**
+ * @phpstan-type CodeSmellEntry array<string, scalar>
+ * @param CodeSmellEntry $entry
+ */
+public static function fromEntry(array $entry, RelativePath $file): self;
+```
+
+`fromEntry()` intersects the scalar entry with its private seven-key subject
+map, retains only `int|string` subject values, and delegates the exact
+file/class/method/function grammar exclusively to `MetricSubjectCodec`. Before
+construction it preserves the collector's scalar conversions (`line` to
+`int`, `extra` to `string`, and `promoted` to `bool`) and records the presence
+of `extra` and `promoted` separately from their converted values. Private
+storage contains the precise container `Location`, decoded `MetricSubject`,
+and CodeSmell evidence. `toViolation(SymbolPath $fileSymbol, string $ruleName, string
+$smellType, Severity $severity, string $message, ?string $recommendation): Violation`
+constructs the complete violation and emits one precise, fixed-`1.0` occurrence with
+`OccurrenceKey::semantic($smellType, {type, extra, hasExtra, promoted,
+hasPromoted})`. The dependency direction is
+`AbstractCodeSmellRule -> CodeSmellFinding -> Core`: the companion owns
+`MetricSubjectCodec`, `Location`, and `OccurrenceKey`; the abstract rule keeps
+container presence, filtering, and message policy. `CodeSmellFindingTest`
+directly covers the four subject shapes, malformed components, presence
+semantics, output fields, and canonical occurrence stability;
+`BooleanArgumentRuleTest` covers the base fail-fast seam before `fromEntry()`,
+filtering, messages, precise location, identity, recommendation, and fixed
+occurrence magnitude.
+
+`SecurityPatternFinding` is the corresponding internal, immutable
+SecurityPattern-subject value. Its input direction is:
+
+```php
+/**
+ * @phpstan-type SecurityPatternEntry array<string, scalar>
+ * @param SecurityPatternEntry $entry
+ */
+public static function fromEntry(array $entry, RelativePath $file): self;
+```
+
+`fromEntry()` applies its own private seven-key map and `int|string` filter,
+then leaves all subject grammar to `MetricSubjectCodec`. It stores the precise
+container `Location`, decoded `MetricSubject`, and the scalar-cast
+`superglobal`; an absent value becomes an empty string. `toViolation(SymbolPath $fileSymbol,
+string $ruleName, string $patternType, Severity $severity, string
+$messageTemplate, ?string $recommendation): Violation` owns the optional superglobal
+message suffix and constructs the complete precise, fixed-`1.0` violation with
+`OccurrenceKey::semantic($patternType, {type, superglobal})`. The dependency
+direction is `AbstractSecurityPatternRule -> SecurityPatternFinding -> Core`:
+the companion owns `MetricSubjectCodec`, `Location`, and `OccurrenceKey`; the
+abstract rule keeps container presence and pattern, severity, message, and
+recommendation policy. `SecurityPatternFindingTest` directly covers all
+subject shapes, malformed components, empty/non-empty superglobals, output
+fields, and occurrence stability. `CommandInjectionRuleTest` pins the base
+fail-fast seam before `fromEntry()`; it and `SqlInjectionRuleTest` /
+`XssRuleTest` pin each concrete rule's disabled/empty behavior, subject,
+location, occurrence, message, severity, and recommendation.
+
+### Existing rule-owner boundaries
+
+The two abstract bases keep their public `analyze()` entry point. Every newly
+extracted helper on the remaining owners is private and is exercised through
+that rule's public analysis entry point.
+
+| Owner                         | Analysis boundary and invariant                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Direct focused tests                                                                                                                                                                                                                                                                                                              |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AbstractCodeSmellRule`       | `analyze()` retains only enabled/type iteration, the missing-container fail-fast, `shouldIncludeEntry()` filtering, `buildMessage()` policy, and rule metadata. The raw scalar entry and resolved container go to `CodeSmellFinding`, which alone constructs `Location`, `OccurrenceKey`, and the complete `Violation`.                                                                                                                                                                                                                                                                                                                                              | `BooleanArgumentRuleTest` covers disabled/empty input, every subject kind, extra/no-extra, promoted filtering, message, location, identity, recommendation, and fixed occurrence magnitude.                                                                                                                                       |
+| `UnusedPrivateRule`           | `violationsForDeclaration()` returns nothing for a non-class or zero total, otherwise emits method/property/constant entries in that order. Missing exact subject/declaration fails fast; private `entryMessage()` alone formats named/unnamed entries, while every finding retains the class-wide total, warning severity, and recommendation.                                                                                                                                                                                                                                                                                                                      | `UnusedPrivateRuleTest` covers disabled/non-class/missing identity/zero, all three entry keys, named and unnamed entries, ordering, exact subject/location, and magnitude.                                                                                                                                                        |
+| `CboRule`                     | `classViolation()` and `namespaceViolation()` own their level-specific eligibility and options; the level methods only iterate and append. `checkCbo(int $cbo, SymbolInfo $info, MetricSubject $subject, ClassCboOptions\|NamespaceCboOptions $options, RuleLevel $level, AnalysisContext $context, array{applicationScope: bool, frameworkCe: ?int} $presentation)` is the exact seven-parameter projection seam and reads Ca/Ce from context metrics by subject path. Severity remains delegated to the options. `getTopDependencies()` counts through `AnalysisContext`, then deterministically applies `array_keys()`, `array_slice(..., 0, 5)`, and formatting. | `CboRuleTest` covers class/namespace/unsupported/disabled dispatch, nullable owner results, both scopes, context metric lookup, under/warning/error boundaries, overrides, coupling direction, framework count, stable top-five dependencies, repeats/ties, and missing graph; `ThresholdOverrideIntegrationTest` pins selectors. |
+| `ClassRankRule`               | `violationForClass()` owns the exact-class and metric guards, applies per-subject options before project-size scaling, and compares the rank with the scaled warning/error thresholds. `analyze()` computes class count and scale once.                                                                                                                                                                                                                                                                                                                                                                                                                              | `ClassRankRuleTest` covers disabled/zero/non-class/missing metric, 1/100/large-class scaling, threshold equality, overrides, identity, and message.                                                                                                                                                                               |
+| `DistanceRule`                | `namespaceResult()` owns empty/filter status and delegates accepted namespaces to `matchedNamespaceViolation()`, which owns minimum class count, metric lookup, overrides, and projection. `analyze()` arithmetically accumulates the `present` and `projectMatched` counters, appends non-null violations, and emits the existing no-project-namespace warning. Prefix boundaries, explicit-include precedence, resolver fallback, and logger context remain rule policy.                                                                                                                                                                                           | `DistanceRuleTest` covers every result state, accepted-but-small/missing/below-threshold namespaces, exact/nested/nonmatching prefixes, resolver and explicit includes, warning/no-warning paths, thresholds, and override.                                                                                                       |
+| `InstabilityRule`             | `classViolation()` owns exact-class, metric, minimum-afferent, effective-option, and projection policy; `analyzeClassLevel()` only iterates and appends. Namespace behavior remains separate. Missing subject fails fast; absent Ca/Ce keep their documented zero defaults.                                                                                                                                                                                                                                                                                                                                                                                          | `InstabilityRuleTest` covers every guard, the minimum-Ca boundary, warning/error equality, Ce default, override, and both levels.                                                                                                                                                                                                 |
+| `TypeCoverageRule`            | `checkCoverage()` receives the exact subject and one closed `{label, code, hint, warning, error}` spec. `analyze()` enumerates parameter, return, and property coverage in that order. Missing coverage is zero; missing/zero totals are skipped; lower-worse comparisons remain strict `<`, error before warning.                                                                                                                                                                                                                                                                                                                                                   | `TypeCoverageRuleTest` covers all three specs, missing/zero totals, missing coverage, both threshold boundaries, overrides, ordering, and exact output; `ThresholdOverrideIntegrationTest` pins selector precedence.                                                                                                              |
+| `AbstractSecurityPatternRule` | `analyze()` retains only enabled/type iteration, missing-container fail-fast, and abstract pattern/severity/message/recommendation policy. The raw scalar entry and resolved container go to `SecurityPatternFinding`, which owns message suffixing plus complete `Location`, `OccurrenceKey`, and `Violation` projection.                                                                                                                                                                                                                                                                                                                                           | `CommandInjectionRuleTest`, `SqlInjectionRuleTest`, and `XssRuleTest` cover the three concrete policies and their exact outputs.                                                                                                                                                                                                  |
+| `PropertyCountRule`           | `violationForClass()` owns exact-subject/class validation, effective options, equality boundaries, and the subject-specific message, recommendation, and threshold projection. `eligiblePropertyCount()` owns metric presence plus readonly and promoted-only exclusion guards.                                                                                                                                                                                                                                                                                                                                                                                      | `PropertyCountRuleTest` covers each eligibility result and exclusion independently and together, warning/error equality, override, and identity.                                                                                                                                                                                  |
+| `LcomRule`                    | `violationForClass()` owns exact-subject/class validation, effective options, threshold equality, and LCOM-specific message, recommendation, and projection. `eligibleLcom()` owns metric presence, readonly exclusion, and the minimum-method guard.                                                                                                                                                                                                                                                                                                                                                                                                                | `LcomRuleTest` covers every eligibility result, minimum-method equality, warning/error boundaries, override, message/recommendation, and identity.                                                                                                                                                                                |
+| `NocRule`                     | `violationForClass()` owns exact-class eligibility, null/zero skipping, effective overrides, threshold equality, and output projection.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `NocRuleTest` covers every guard, zero, both boundaries, override, message/recommendation, and identity.                                                                                                                                                                                                                          |
+| `WmcRule`                     | `violationForClass()` owns exact-class eligibility, data-class exclusion, missing WMC, effective overrides, threshold equality, and finding projection; `buildRecommendation()` retains the missing/zero/low/high method-count branches.                                                                                                                                                                                                                                                                                                                                                                                                                             | `WmcRuleTest` covers every guard, thresholds, override, all recommendation branches, and identity.                                                                                                                                                                                                                                |
+
+### Finding-owner boundaries
+
+The remaining rule owners keep their public contracts and category policies.
+Their private seams remove duplicated finding projection without introducing a
+generic rule template or moving behavior into `AbstractRule`.
+
+| Owner                          | Private boundary and invariant                                                                                                                            | Direct focused test                |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `ConstructorOverinjectionRule` | `analyze()` keeps the options guard and projects every callable through the existing `checkSymbol()` constructor policy while preserving symbol order.    | `ConstructorOverinjectionRuleTest` |
+| `LongParameterListRule`        | `analyzeEnabledSymbols()` owns callable iteration and the existing regular/VO-constructor dispatch.                                                       | `LongParameterListRuleTest`        |
+| `UnreachableCodeRule`          | `violationsForReachableSymbols()` owns callable iteration and stable unreachable-entry order; `checkSymbol()` retains metric and first-line policy.       | `UnreachableCodeRuleTest`          |
+| `IdenticalSubExpressionRule`   | Subject projection delegates directly to `MetricSubjectCodec::decodeEntry()`; finding type, fixed magnitude, occurrence identity, and order stay local.   | `IdenticalSubExpressionRuleTest`   |
+| `HardcodedCredentialsRule`     | `violationsForEntries()` owns ordered pattern projection for one file and delegates subject grammar to `decodeEntry()`.                                   | `HardcodedCredentialsRuleTest`     |
+| `SensitiveParameterRule`       | `violationForEntry()` owns one ordered parameter occurrence and delegates subject grammar to `decodeEntry()`.                                             | `SensitiveParameterRuleTest`       |
+| `CognitiveComplexityRule`      | `classViolation()` owns class-maximum severity and cognitive-specific projection after the caller resolves exact subject, maximum, and effective options. | `CognitiveComplexityRuleTest`      |
+| `ComplexityRule`               | `classViolation()` owns class-maximum severity and CCN-specific recommendation after the caller resolves exact subject, maximum, and effective options.   | `ComplexityRuleTest`               |
+| `DataClassRule`                | `analyzeEligibleClasses()` owns the exact options guard and declaration-only iteration; `evaluateClass()` retains the criteria.                           | `DataClassRuleTest`                |
+| `GodClassRule`                 | `analyze()` delegates every eligible declaration to `evaluateClass()`; exclusion and matched/evaluable severity remain local.                             | `GodClassRuleTest`                 |
+| `MaintainabilityRule`          | `violationForMetric()` owns inverted MI severity, message, and projection; test-file and minimum-statement filters remain in `analyze()`.                 | `MaintainabilityRuleTest`          |
+| `MethodCountRule`              | `violationForClass()` owns method-count severity, message, recommendation, and threshold projection.                                                      | `MethodCountRuleTest`              |
+| `InheritanceRule`              | `violationForClass()` owns only DIT severity, message, recommendation, and threshold projection; declaration order remains in `analyze()`.                | `InheritanceRuleTest`              |
+
+`LongParameterListRule` has one class-scoped dogfood control:
+`@qmx-ignore health.cohesion -- Interface metadata methods getCategory() and requires() return external enum/metric constants beside one cohesive analysis/projection component; LCOM4 cannot merge those stateless protocol methods.`
+The analysis and both finding projections form one connected component; the
+control documents that LCOM4 cannot merge the two stateless interface metadata
+methods whose truthful return values are external enum and metric constants.
+
+---
+
 ## Hierarchical Rules
 
 Rules that operate on multiple levels of the code hierarchy (method/class/namespace).
@@ -1068,15 +1217,29 @@ final class ExampleRule extends AbstractRule {
 
     public function analyze(AnalysisContext $context): array {
         $violations = [];
-        foreach ($context->metrics->all(SymbolType::Method) as $method) {
-            $metrics = $context->metrics->get($method->symbolPath);
+        foreach ($context->metrics->allCallables() as $callable) {
+            $subject = $callable->subject
+                ?? throw new LogicException('Callable rules require an exact declaration subject');
+            $metrics = $context->metrics->getSubject($subject);
             $value = $metrics->get('metricName');
+            if ($value === null) {
+                continue;
+            }
             // Use getEffectiveSeverity() to support @qmx-threshold overrides
             $severity = $this->getEffectiveSeverity(
-                $context, $this->options, $method->file, $method->line ?? 1, $value,
+                $context, $this->options, $subject, $value,
             );
             if ($severity !== null) {
-                $violations[] = Violation::create(/* ... */);
+                $violations[] = new Violation(
+                    location: new Location($callable->file, $callable->line),
+                    subject: $subject,
+                    symbolPath: $subject->toSymbolPath(),
+                    ruleName: self::NAME,
+                    violationCode: self::NAME,
+                    message: 'Example metric exceeded its threshold',
+                    severity: $severity,
+                    metricValue: $value,
+                );
             }
         }
         return $violations;

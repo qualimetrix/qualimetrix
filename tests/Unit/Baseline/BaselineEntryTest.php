@@ -99,6 +99,7 @@ final class BaselineEntryTest extends TestCase
         $identity = new BaselineIdentity(
             'class:App\Web\Controller',
             new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation'),
+            null,
             new BaselineEdge('class:App\Db\Connection', DependencyType::New_),
         );
 

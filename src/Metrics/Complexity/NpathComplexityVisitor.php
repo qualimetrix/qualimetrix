@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Metrics\Complexity;
 
+use LogicException;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ArrowFunction;
@@ -18,7 +19,6 @@ use PhpParser\Node\Stmt\For_;
 use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\Node\Stmt\If_;
-use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\Switch_;
 use PhpParser\Node\Stmt\TryCatch;
 use PhpParser\Node\Stmt\While_;
@@ -26,8 +26,8 @@ use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Metrics\VisitorCallableScope;
 use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
@@ -66,19 +66,11 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     /** @var array<string, list<array{type: string, line: int, factor: int}>> FQN => multiplicative factors */
     private array $factors = [];
 
-    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, sourceLine: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
-    private array $methodInfos = [];
+    /** @var array<string, VisitorCallableScope> */
+    private array $scopes = [];
 
     /** @var list<array{fqn: string, depth: int}> Stack of nested methods/functions */
     private array $methodStack = [];
-
-    private ?string $currentNamespace = null;
-    private ?string $currentClass = null;
-    private ?int $currentClassStartFilePos = null;
-    private int $closureCounter = 0;
-    private ?string $currentProperty = null;
-    /** @var list<array{?string, ?int}> */
-    private array $classContextStack = [];
 
     /** @var ?string FQN of the method currently being calculated (for factor tracking) */
     private ?string $calculatingFqn = null;
@@ -94,15 +86,9 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     {
         $this->npath = [];
         $this->factors = [];
-        $this->methodInfos = [];
+        $this->scopes = [];
         $this->methodStack = [];
-        $this->currentNamespace = null;
-        $this->currentClass = null;
-        $this->currentClassStartFilePos = null;
-        $this->closureCounter = 0;
-        $this->currentProperty = null;
-        $this->classContextStack = [];
-        $this->resetCallableTraversalKeys();
+        $this->resetVisitorMethodContext();
         $this->calculatingFqn = null;
     }
 
@@ -112,7 +98,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     public function getNpath(): array
     {
         /** @var array<string, int> $projected */
-        $projected = $this->projectLogicalMetricMap($this->npath, $this->methodInfos);
+        $projected = $this->projectLogicalMetricMap($this->npath, $this->scopes);
 
         return $projected;
     }
@@ -125,7 +111,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     public function getFactors(): array
     {
         /** @var array<string, list<array{type: string, line: int, factor: int}>> $projected */
-        $projected = $this->projectLogicalMetricMap($this->factors, $this->methodInfos);
+        $projected = $this->projectLogicalMetricMap($this->factors, $this->scopes);
 
         return $projected;
     }
@@ -139,8 +125,8 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     {
         $result = [];
 
-        $ordinals = $this->callableCollisionOrdinals($this->methodInfos);
-        foreach ($this->methodInfos as $fqn => $info) {
+        $ordinals = $this->callableCollisionOrdinals($this->scopes);
+        foreach ($this->scopes as $fqn => $scope) {
             $metrics = (new MetricBag())->with('npath', $this->npath[$fqn] ?? 1);
 
             foreach ($this->factors[$fqn] ?? [] as $factor) {
@@ -151,183 +137,55 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
                 ]);
             }
 
-            $result[] = $this->createCallableWithMetrics($info, $file, $metrics, $ordinals[$fqn]);
+            $result[] = $this->createCallableWithMetrics($scope, $file, $metrics, $ordinals[$fqn]);
         }
 
         return $result;
     }
 
+    /**
+     */
     public function enterNode(Node $node): ?int
     {
-        // Track namespace
-        if ($node instanceof Node\Stmt\Namespace_) {
-            $this->currentNamespace = $node->name?->toString() ?? '';
-        }
-
-        if ($this->isClassLikeNode($node)) {
-            $this->classContextStack[] = [$this->currentClass, $this->currentClassStartFilePos];
-        }
-
-        if ($node instanceof Node\Stmt\Class_) {
-            if ($node->name === null) {
-                $this->currentClass = $this->buildAnonymousClassName($node->getStartFilePos());
-                $this->currentClassStartFilePos = $node->getStartFilePos();
-            } else {
-                $this->currentClass = $node->name->toString();
-                $this->currentClassStartFilePos = $node->getStartFilePos();
-            }
-        } elseif ($this->isClassLikeNode($node)) {
-            $className = $this->extractClassLikeName($node);
-            if ($className !== null) {
-                $this->currentClass = $className;
-                $this->currentClassStartFilePos = $node->getStartFilePos();
-            }
-        }
-
-        if ($node instanceof ClassMethod) {
-            $fqn = $this->buildMethodFqn($node->name->toString());
-            $this->calculatingFqn = $fqn;
-            $this->factors[$fqn] = [];
-            $npath = $this->calculateSequenceNpath($node->stmts ?? [], trackFactors: true);
-            $this->calculatingFqn = null;
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $node->getStartLine(), $npath, CallableKind::Method, null);
-
+        $scope = $this->enterVisitorMethodContext($node);
+        if ($scope === null) {
             return null;
         }
-
-        if ($node instanceof Property && $this->currentClass !== null && \count($node->props) === 1) {
-            $this->currentProperty = $node->props[0]->name->toString();
-        }
-
-        if ($node instanceof PropertyHook && $this->currentClass !== null && $this->currentProperty !== null) {
-            $name = $this->currentProperty . '::' . $node->name->toString();
-            $fqn = $this->buildMethodFqn($name);
-            $this->calculatingFqn = $fqn;
-            $this->factors[$fqn] = [];
-            $npath = $node->body instanceof Expr ? $this->calculateCallableExpressionNpath($node->body) : $this->calculateSequenceNpath($node->body ?? [], trackFactors: true);
-            $this->calculatingFqn = null;
-            $this->startMethod($fqn, $name, $node->getStartFilePos(), $node->getStartLine(), $npath, CallableKind::PropertyHook, null);
-
-            return null;
-        }
-
-        // Start of a function
-        if ($node instanceof Function_) {
-            $fqn = $this->buildFunctionFqn($node->name->toString());
-            $this->calculatingFqn = $fqn;
-            $this->factors[$fqn] = [];
-            $npath = $this->calculateSequenceNpath($node->stmts ?? [], trackFactors: true);
-            $this->calculatingFqn = null;
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $node->getStartLine(), $npath, CallableKind::Function, null);
-
-            return null;
-        }
-
-        if ($node instanceof Closure) {
-            ++$this->closureCounter;
-            $fqn = $this->buildClosureFqn();
-            $closureName = '{closure#' . $this->closureCounter . '}';
-            $this->calculatingFqn = $fqn;
-            $this->factors[$fqn] = [];
-            $npath = $this->calculateSequenceNpath($node->stmts ?? [], trackFactors: true);
-            $this->calculatingFqn = null;
-            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), $node->getStartLine(), $npath, CallableKind::AnonymousCallable, 'closure');
-
-            return null;
-        }
-
-        if ($node instanceof ArrowFunction) {
-            ++$this->closureCounter;
-            $fqn = $this->buildClosureFqn();
-            $closureName = '{closure#' . $this->closureCounter . '}';
-            $this->factors[$fqn] = [];
-            $npath = $this->calculateCallableExpressionNpath($node->expr);
-            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), $node->getStartLine(), $npath, CallableKind::AnonymousCallable, 'arrow');
-
-            return null;
-        }
+        $this->calculatingFqn = $scope->traversalKey;
+        $this->factors[$scope->traversalKey] = [];
+        $npath = match (true) {
+            $node instanceof ClassMethod, $node instanceof Function_, $node instanceof Closure => $this->calculateSequenceNpath($node->stmts ?? [], trackFactors: true),
+            $node instanceof PropertyHook => $node->body instanceof Expr
+                ? $this->calculateCallableExpressionNpath($node->body)
+                : $this->calculateSequenceNpath($node->body ?? [], trackFactors: true),
+            $node instanceof ArrowFunction => $this->calculateCallableExpressionNpath($node->expr),
+            default => throw new LogicException('Callable scope requires a callable AST node'),
+        };
+        $this->calculatingFqn = null;
+        $this->startMethod($scope, $npath);
 
         return null;
     }
 
     public function leaveNode(Node $node): ?int
     {
-        if ($node instanceof ClassMethod) {
-            $this->endMethod();
-
-            return null;
-        }
-
-        if ($node instanceof PropertyHook) {
-            if ($this->currentClass !== null && $this->currentProperty !== null) {
-                $this->endMethod();
-            }
-
-            return null;
-        }
-
-        if ($node instanceof Property) {
-            $this->currentProperty = null;
-        }
-
-        if ($node instanceof Function_) {
-            $this->endMethod();
-
-            return null;
-        }
-
-        if ($node instanceof Closure || $node instanceof ArrowFunction) {
-            $this->endMethod();
-
-            return null;
-        }
-
-        // Exit class-like scope
-        if ($node instanceof Node\Stmt\Class_) {
-            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
-        } elseif ($this->isClassLikeNode($node)) {
-            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
-        }
-
-        // Exit namespace scope
-        if ($node instanceof Node\Stmt\Namespace_) {
-            $this->currentNamespace = null;
+        $scope = $this->leaveVisitorMethodContext($node);
+        if ($scope !== null) {
+            $this->endMethod($scope);
         }
 
         return null;
     }
 
-    private function startMethod(
-        string $fqn,
-        string $methodName,
-        int $startFilePos,
-        int $sourceLine,
-        int $npath,
-        CallableKind $kind,
-        ?string $anonymousSyntax,
-    ): void {
-        $logicalFqn = $fqn;
-        $fqn = $this->createCallableTraversalKey($logicalFqn, $startFilePos);
-        if (isset($this->factors[$logicalFqn])) {
-            $this->factors[$fqn] = $this->factors[$logicalFqn];
-            unset($this->factors[$logicalFqn]);
-        }
+    private function startMethod(VisitorCallableScope $scope, int $npath): void
+    {
+        $fqn = $scope->traversalKey;
         $this->methodStack[] = ['fqn' => $fqn, 'depth' => \count($this->methodStack)];
         $this->npath[$fqn] = min($npath, NpathExpressionCalculator::MAX_NPATH);
-        $this->methodInfos[$fqn] = [
-            'namespace' => $this->currentNamespace,
-            'logicalFqn' => $logicalFqn,
-            'class' => $this->currentClass,
-            'method' => $methodName,
-            'startFilePos' => $startFilePos,
-            'sourceLine' => $sourceLine,
-            'kind' => $kind,
-            'anonymousSyntax' => $anonymousSyntax,
-            'classStartFilePos' => $this->currentClassStartFilePos,
-        ];
+        $this->scopes[$fqn] = $scope;
     }
 
-    private function endMethod(): void
+    private function endMethod(VisitorCallableScope $scope): void
     {
         array_pop($this->methodStack);
     }

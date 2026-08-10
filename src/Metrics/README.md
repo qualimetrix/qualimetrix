@@ -9,6 +9,19 @@ Metrics are collectors that gather metrics from the AST. Each collector:
 
 Collectors **do not interpret** metrics — they only collect them. Interpretation happens in Rules.
 
+## Visitor context foundation
+
+The exact root `Metrics/` primitives are cross-category traversal contracts:
+
+- `VisitorFileEntryScope.php` owns all mutable per-file lexical state, file-entry subjects, closure numbering, and callable traversal ordinals; entering a callable produces one typed scope and leaving returns that same scope before popping it.
+- `VisitorCallableScope.php` is the immutable eleven-field callable identity passed from traversal to metric projection. It carries lexical, logical, positional, callable-kind, anonymous-syntax, and anonymous-class-lineage facts without parser nodes or metric state.
+- `VisitorCallableMetadata.php` is stateless and projects `VisitorCallableScope` values into immutable callable metrics, collision ordinals, and logical metric maps.
+- `VisitorMethodContext.php` composes the live scope and stateless metadata contracts for every consumer through `VisitorMethodTrackingTrait`; category visitors retain only their metric-specific state.
+
+The complete consumer set is `CodeSmellVisitor`, `IdenticalSubExpressionVisitor`, `ParameterCountVisitor`, `UnreachableCodeVisitor`, `CognitiveComplexityVisitor`, `CyclomaticComplexityVisitor`, `NpathComplexityVisitor`, `HalsteadVisitor`, `HardcodedCredentialsVisitor`, `SecurityPatternVisitor`, `SensitiveParameterVisitor`, and `MethodStatementCountVisitor`. Each visitor keeps metric state locally and pairs context entry and exit for every AST node.
+
+Semantic policy stays in category subjects. `CodeSmell/ControlFlow/ControlFlowSmells.php`, `CodeSmell/Debug/DebugCodeSmells.php`, and `CodeSmell/BooleanArgument/BooleanArgumentSmells.php` return `CodeSmellLocation`; the complete `CodeSmell/RepeatedExpression/` stack owns repeated-expression findings. `Security/Credential/` owns credential literal classification and locations, while `Security/SensitiveNameMatcher.php` remains the shared Security matcher.
+
 ---
 
 ## Metrics Table
@@ -76,6 +89,49 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 - **[Design/](Design/)** — Type coverage metrics, type coverage percentage (derived)
 - **[ComputedMetric/](ComputedMetric/)** — Computed metric evaluator (health scores via Expression Language); `ComputedMetricDependencyGraphCalculator` sorts definitions into dependency order (Kahn's algorithm, phase-separated: graph construction, in-degree counting, queue traversal, cycle detection)
 - **[Security/](Security/)** — Hardcoded credentials, security pattern detection (SQL injection, XSS, command injection), sensitive parameter detection. Pattern detectors: `CommandInjectionDetector`, `SqlInjectionDetector`, `XssDetector`, `SuperglobalAnalyzer` (extracted from SecurityPatternVisitor)
+
+### Credential subject
+
+`Security/Credential/` owns the complete hardcoded-credential collection stack:
+
+- `CredentialLocation.php` is the immutable `{line, pattern, subjectId}` result
+  produced for one detected literal.
+- `HardcodedCredentialsVisitor.php` owns traversal and reset lifecycle, delegates
+  literal policy to `CredentialLiterals`, and maps each location's `subjectId`
+  through the shared visitor-context foundation.
+- `HardcodedCredentialsCollector.php` adapts those locations to
+  `security.hardcodedCredentials` DataBag entries with exact file or declaration
+  subject components; it depends on `AbstractCollector`, the visitor, and the
+  cross-security `SensitiveNameMatcher`, and deliberately exposes no callable
+  metric provider contract.
+
+The dependency direction is root Metrics traversal foundation and
+`Security/SensitiveNameMatcher` into the Credential subject; no other metric
+category is imported. `HardcodedCredentialsVisitorTest` directly covers
+detection, traversal state, subject tracking, and reset behavior;
+`HardcodedCredentialsCollectorTest` directly covers metric projection, exact
+file/class ownership, reset, and the absent callable-provider surface.
+`DogfoodingTopologyTest` fixes the four-file subject inventory and its allowed
+dependencies.
+
+### Foundation coverage
+
+The complete consumer set is `CodeSmellVisitor`,
+`IdenticalSubExpressionVisitor`, `ParameterCountVisitor`,
+`UnreachableCodeVisitor`, `CognitiveComplexityVisitor`,
+`CyclomaticComplexityVisitor`, `NpathComplexityVisitor`, `HalsteadVisitor`,
+`HardcodedCredentialsVisitor`, `SecurityPatternVisitor`,
+`SensitiveParameterVisitor`, and `MethodStatementCountVisitor`. The foundation
+depends only on Core; metric categories depend on it, never on each other.
+Focused coverage is in `CodeSmellVisitorTest`,
+`IdenticalSubExpressionVisitorTest`, `ParameterCountCollectorTest`,
+`UnreachableCodeCollectorTest`, `CognitiveComplexityVisitorTest`,
+`CyclomaticComplexityVisitorTest`, `NpathComplexityCollectorTest`,
+`HalsteadCollectorTest`, `HardcodedCredentialsVisitorTest`,
+`SecurityPatternVisitorTest`, `SensitiveParameterVisitorTest`,
+`MethodStatementCountCollectorTest`, and
+`PropertyHookControlPrecedenceTest`; `GoldenFileAggregationTest` is the
+read-only aggregation oracle.
 
 ---
 

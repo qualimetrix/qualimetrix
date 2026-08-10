@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Metrics\Security;
+namespace Qualimetrix\Metrics\Security\Credential;
 
 use PhpParser\Node;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Metrics\AbstractCollector;
+use Qualimetrix\Metrics\Security\SensitiveNameMatcher;
 use SplFileInfo;
 
 /**
@@ -57,6 +58,7 @@ final class HardcodedCredentialsCollector extends AbstractCollector
             $bag = $bag->withEntry(MetricName::SECURITY_HARDCODED_CREDENTIALS, [
                 'line' => $location->line,
                 'pattern' => $location->pattern,
+                ...$this->visitor->getSubjectComponents($location),
             ]);
         }
 

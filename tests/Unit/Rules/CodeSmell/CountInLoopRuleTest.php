@@ -89,7 +89,7 @@ final class CountInLoopRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
 
         $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.count_in_loop', ['line' => 15]);
+            ->withEntry('codeSmell.count_in_loop', ['subjectKind' => 'file', 'line' => 15]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')

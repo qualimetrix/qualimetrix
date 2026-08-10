@@ -70,6 +70,8 @@ final readonly class HtmlViolationPartitioner
      *
      * @param array<string, HtmlTreeNode> $nodesByPath
      * @param array<string, list<Violation>> $violationsByNode
+     *
+     * @qmx-threshold complexity.cyclomatic warning=11 error=11 — Finite attachment projection keeps node lookup, magnitude normalization, and payload fields together.
      */
     public function attach(
         array $nodesByPath,
@@ -90,6 +92,7 @@ final readonly class HtmlViolationPartitioner
                 }
 
                 $node->violations[] = [
+                    'subject' => $violation->subject->toCanonical(),
                     'ruleName' => $violation->ruleName,
                     'violationCode' => $violation->violationCode,
                     'message' => $violation->message,
@@ -97,6 +100,7 @@ final readonly class HtmlViolationPartitioner
                     'severity' => $violation->severity->value,
                     'metricValue' => $metricValue,
                     'symbolPath' => $violation->symbolPath->toString(),
+                    'occurrence' => $violation->occurrenceKey?->value,
                     'file' => $violation->location->file === null
                         ? ''
                         : $context->relativizePath($violation->location->file),

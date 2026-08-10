@@ -8,7 +8,7 @@ use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
-use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -85,7 +85,7 @@ final class ComputedMetricRule extends AbstractRule
     ): void {
         $symbols = $this->getSymbolsForLevel($context, $level);
 
-        foreach ($symbols as [$symbolPath, $location]) {
+        foreach ($symbols as [$subject, $symbolPath, $location]) {
             $metrics = $context->metrics->get($symbolPath);
             $value = $metrics->get($definition->name);
 
@@ -110,6 +110,7 @@ final class ComputedMetricRule extends AbstractRule
 
             $violations[] = new Violation(
                 location: $location,
+                subject: $subject,
                 symbolPath: $symbolPath,
                 ruleName: $this->getName(),
                 violationCode: $definition->name,
@@ -199,14 +200,14 @@ final class ComputedMetricRule extends AbstractRule
     }
 
     /**
-     * @return list<array{SymbolPath, Location}>
+     * @return list<array{MetricSubject, SymbolPath, Location}>
      */
     private function getSymbolsForLevel(AnalysisContext $context, SymbolType $level): array
     {
         return match ($level) {
-            SymbolType::Project => [[SymbolPath::forProject(), Location::none()]],
+            SymbolType::Project => [[MetricSubject::aggregate(SymbolPath::forProject()), SymbolPath::forProject(), Location::none()]],
             SymbolType::Namespace_ => array_map(
-                static fn(string $ns) => [SymbolPath::forNamespace($ns), Location::none()],
+                static fn(string $ns) => [MetricSubject::aggregate(SymbolPath::forNamespace($ns)), SymbolPath::forNamespace($ns), Location::none()],
                 $context->metrics->getNamespaces(),
             ),
             SymbolType::Class_ => $this->getClassSymbolsWithPresentationLocations($context),
@@ -215,51 +216,25 @@ final class ComputedMetricRule extends AbstractRule
     }
 
     /**
-     * @return list<array{SymbolPath, Location}>
+     * @return list<array{MetricSubject, SymbolPath, Location}>
      */
     private function getClassSymbolsWithPresentationLocations(AnalysisContext $context): array
     {
-        /** @var array<string, list<SymbolInfo>> $declarationsByClass */
-        $declarationsByClass = [];
+        $symbols = [];
         foreach ($context->metrics->allDeclarations() as $declarationInfo) {
             $declaration = $declarationInfo->subject?->declarationPath();
             if ($declaration?->logical->getType() !== SymbolType::Class_) {
                 continue;
             }
 
-            $declarationsByClass[$declaration->logical->toCanonical()][] = $declarationInfo;
-        }
-
-        $symbols = [];
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
             $symbols[] = [
-                $classInfo->symbolPath,
-                $this->resolveClassPresentationLocation($classInfo, $declarationsByClass),
+                $declarationInfo->subject,
+                $declaration->logical,
+                new Location($declarationInfo->file ?? $declaration->file, $declarationInfo->line),
             ];
         }
 
         return $symbols;
-    }
-
-    /**
-     * @param array<string, list<SymbolInfo>> $declarationsByClass
-     */
-    private function resolveClassPresentationLocation(SymbolInfo $classInfo, array $declarationsByClass): Location
-    {
-        if ($classInfo->subject?->logicalClassPath() === null) {
-            return new Location($classInfo->file, $classInfo->line);
-        }
-
-        $declarations = $declarationsByClass[$classInfo->symbolPath->toCanonical()] ?? [];
-        if (\count($declarations) !== 1) {
-            return Location::none();
-        }
-
-        $declarationInfo = $declarations[0];
-        $declaration = $declarationInfo->subject?->declarationPath();
-        \assert($declaration !== null);
-
-        return new Location($declarationInfo->file ?? $declaration->file, $declarationInfo->line);
     }
 
     /**

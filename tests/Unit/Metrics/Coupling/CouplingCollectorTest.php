@@ -286,6 +286,62 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsDegreeZeroClassAndNamespaceCouplingMetricsExplicit(): void
+    {
+        $isolated = new LogicalClassPath(SymbolPath::forClass('App\\Isolated', 'Standalone'));
+        $graph = $this->graph([], [$isolated]);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Isolated\\Standalone');
+        $this->registerNamespace($repository, 'App\\Isolated');
+
+        $this->collector->calculate($graph, $repository);
+
+        $classMetrics = $repository->get(SymbolPath::forClass('App\\Isolated', 'Standalone'));
+        self::assertSame(0, $classMetrics->get('ca'));
+        self::assertSame(0, $classMetrics->get('ce'));
+        self::assertSame(0, $classMetrics->get('cbo'));
+        self::assertSame(0.0, $classMetrics->get('instability'));
+
+        $namespaceMetrics = $repository->get(SymbolPath::forNamespace('App\\Isolated'));
+        self::assertSame(0, $namespaceMetrics->get('ca'));
+        self::assertSame(0, $namespaceMetrics->get('ce'));
+        self::assertSame(0, $namespaceMetrics->get('cbo'));
+        self::assertSame(0.0, $namespaceMetrics->get('instability'));
+    }
+
+    #[Test]
+    public function itDeduplicatesExactSourcesWhileRetainingExternalLogicalTargets(): void
+    {
+        $source = SymbolPath::forClass('App', 'Consumer');
+        $externalTarget = SymbolPath::forClass('Vendor', 'Gateway');
+        $dependencies = [
+            new Dependency(
+                new DeclarationPath($source, RelativePath::fromString('src/ConsumerA.php'), 10),
+                new LogicalClassPath($externalTarget),
+                DependencyType::New_,
+                new Location(RelativePath::fromString('src/ConsumerA.php'), 12),
+            ),
+            new Dependency(
+                new DeclarationPath($source, RelativePath::fromString('src/ConsumerB.php'), 20),
+                new LogicalClassPath($externalTarget),
+                DependencyType::New_,
+                new Location(RelativePath::fromString('src/ConsumerB.php'), 22),
+            ),
+        ];
+        $graph = $this->graph($dependencies);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Consumer');
+
+        $this->collector->calculate($graph, $repository);
+
+        $metrics = $repository->get($source);
+        self::assertSame(1, $metrics->get('ce'));
+        self::assertSame(1, $metrics->get('cbo'));
+        self::assertSame(1, $metrics->get('cbo_app'));
+        self::assertSame(1, $metrics->get('ce_packages'));
+    }
+
+    #[Test]
     public function calculate_handlesGlobalNamespaceClasses(): void
     {
         $deps = [
@@ -818,13 +874,18 @@ final class CouplingCollectorTest extends TestCase
         );
     }
 
-    /** @param list<Dependency> $dependencies */
-    private function graph(array $dependencies): DependencyGraph
+    /**
+     * @param list<Dependency> $dependencies
+     * @param list<LogicalClassPath> $universe
+     */
+    private function graph(array $dependencies, array $universe = []): DependencyGraph
     {
-        $universe = array_map(
-            static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
-            $dependencies,
-        );
+        if ($universe === []) {
+            $universe = array_map(
+                static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
+                $dependencies,
+            );
+        }
 
         return $this->graphBuilder->build($dependencies, $universe);
     }

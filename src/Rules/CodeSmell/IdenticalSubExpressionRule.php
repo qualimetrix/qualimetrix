@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\CodeSmell;
 
+use LogicException;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\OccurrenceKey;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Core\Violation\ViolationChannel;
@@ -96,9 +99,11 @@ final class IdenticalSubExpressionRule extends AbstractRule
             foreach (self::FINDING_TYPES as $type => $message) {
                 foreach ($metrics->entries("identicalSubExpression.{$type}") as $entry) {
                     $line = (int) $entry['line'];
+                    $subject = MetricSubjectCodec::decodeEntry($entry, $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path'));
 
                     $violations[] = new Violation(
                         location: new Location($fileInfo->file, $line, precise: true),
+                        subject: $subject,
                         symbolPath: $fileInfo->symbolPath,
                         ruleName: $this->getName(),
                         violationCode: self::NAME,
@@ -106,6 +111,10 @@ final class IdenticalSubExpressionRule extends AbstractRule
                         severity: Severity::Warning,
                         metricValue: 1.0,
                         recommendation: 'This looks like a copy-paste error. Verify the intended logic.',
+                        occurrenceKey: OccurrenceKey::semantic(self::NAME, [
+                            'type' => $type,
+                            'detail' => (string) ($entry['detail'] ?? ''),
+                        ]),
                     );
                 }
             }

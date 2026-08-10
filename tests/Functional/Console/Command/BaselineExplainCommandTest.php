@@ -24,10 +24,12 @@ use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
@@ -92,7 +94,15 @@ final class BaselineExplainCommandTest extends TestCase
         $tester = $this->execute(
             [self::finding($symbol, self::CCN_CHANNEL, 31.0)],
             ['--baseline' => $this->baselinePath],
-            [self::SYMBOL_FILE => [new ThresholdOverride('complexity.cyclomatic', 40, 60, 1, 99)]],
+            [self::SYMBOL_FILE => [new ThresholdOverride(
+                'complexity.cyclomatic',
+                40,
+                60,
+                1,
+                self::subject($symbol),
+                ControlScope::Callable,
+                99,
+            )]],
         );
 
         self::assertSame(Command::SUCCESS, $tester->getStatusCode(), $tester->getDisplay());
@@ -207,7 +217,7 @@ final class BaselineExplainCommandTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsAnUnknownSymbolEvenWhenAChannelWasExplicitlyRequested(): void
+    public function itRejectsAnUnknownSubjectEvenWhenAChannelWasExplicitlyRequested(): void
     {
         $tester = $this->execute(
             [],
@@ -216,11 +226,11 @@ final class BaselineExplainCommandTest extends TestCase
         );
 
         self::assertSame(Command::INVALID, $tester->getStatusCode(), $tester->getDisplay());
-        self::assertStringContainsString('Unknown symbol', $tester->getDisplay());
+        self::assertStringContainsString('Unknown subject', $tester->getDisplay());
     }
 
     #[Test]
-    public function itExplainsThatABaselineOnlySymbolIsAbsentFromTheCurrentRun(): void
+    public function itExplainsThatABaselineOnlySubjectIsAbsentFromTheCurrentRun(): void
     {
         $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
         $this->writeBaseline([
@@ -253,12 +263,20 @@ final class BaselineExplainCommandTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
 
         $metrics = new InMemoryMetricRepository();
-        $metrics->addCallable(new CallableWithMetrics(new DeclarationPath($symbol, RelativePath::fromString(self::SYMBOL_FILE), 120), CallableKind::Method, null, null, new LogicalClassPath(SymbolPath::forClass('App', 'OrderService')), new MetricBag(), 12));
+        $metrics->addCallable(new CallableWithMetrics(new DeclarationPath($symbol, RelativePath::fromString(self::SYMBOL_FILE), 12), CallableKind::Method, null, null, new LogicalClassPath(SymbolPath::forClass('App', 'OrderService')), new MetricBag(), 12));
 
         $tester = $this->execute(
             measured: [],
             options: ['--channel' => self::CCN_CHANNEL],
-            overrides: [self::SYMBOL_FILE => [new ThresholdOverride('complexity.cyclomatic', 40, 60, 1, 99)]],
+            overrides: [self::SYMBOL_FILE => [new ThresholdOverride(
+                'complexity.cyclomatic',
+                40,
+                60,
+                1,
+                self::subject($symbol),
+                ControlScope::Callable,
+                99,
+            )]],
             symbol: $symbol,
             metrics: $metrics,
         );
@@ -310,7 +328,7 @@ final class BaselineExplainCommandTest extends TestCase
 
         $tester = new CommandTester($command);
         $tester->execute([
-            'symbol' => ($symbol ?? SymbolPath::forMethod('App', 'OrderService', 'calculate'))->toCanonical(),
+            'subject' => self::subject($symbol ?? SymbolPath::forMethod('App', 'OrderService', 'calculate'))->toCanonical(),
             'paths' => ['src'],
             ...$options,
         ]);
@@ -338,7 +356,7 @@ final class BaselineExplainCommandTest extends TestCase
 
         $tester = new CommandTester($command);
         $tester->execute([
-            'symbol' => SymbolPath::forClass('App', 'OrderService')->toCanonical(),
+            'subject' => self::subject(SymbolPath::forClass('App', 'OrderService'))->toCanonical(),
             'paths' => ['src'],
             ...$options,
         ]);
@@ -383,7 +401,7 @@ final class BaselineExplainCommandTest extends TestCase
 
     private static function identity(SymbolPath $symbol, string $channelKey): BaselineIdentity
     {
-        return new BaselineIdentity($symbol->toCanonical(), ViolationChannel::fromKey($channelKey));
+        return new BaselineIdentity(self::subject($symbol)->toCanonical(), ViolationChannel::fromKey($channelKey));
     }
 
     private static function finding(SymbolPath $symbol, string $channelKey, float $magnitude): Violation
@@ -392,12 +410,20 @@ final class BaselineExplainCommandTest extends TestCase
 
         return new Violation(
             location: new Location(RelativePath::fromString(self::SYMBOL_FILE), 12),
+            subject: self::subject($symbol),
             symbolPath: $symbol,
             ruleName: $channel->ruleName,
             violationCode: $channel->violationCode,
             message: 'finding',
             severity: Severity::Warning,
             metricValue: $magnitude,
+        );
+    }
+
+    private static function subject(SymbolPath $symbol): MetricSubject
+    {
+        return MetricSubject::declaration(
+            new DeclarationPath($symbol, RelativePath::fromString(self::SYMBOL_FILE), 12),
         );
     }
 }

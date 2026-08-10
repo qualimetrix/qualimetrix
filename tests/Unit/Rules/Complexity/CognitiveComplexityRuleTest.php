@@ -14,7 +14,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Severity;
@@ -106,7 +105,9 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
+            ->willReturn([]);
+        $repository->method('allDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -120,13 +121,17 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('cognitive', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -147,13 +152,17 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('cognitive', 35);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -190,13 +199,17 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('cognitive.max', 35); // Above warning (30), below error (50)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$classInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -216,13 +229,17 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('cognitive.max', 55); // Above error (50)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$classInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -242,21 +259,20 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $methodPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($methodPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($methodPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 5);
+        $classInfo = self::subjectInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $methodBag = (new MetricBag())->with('cognitive', 20); // Warning
         $classBag = (new MetricBag())->with('cognitive.max', 35); // Warning
 
         $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => match ($type) {
-                SymbolType::Method => [$methodInfo],
-                SymbolType::Class_ => [$classInfo],
-                default => [],
-            });
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('getSubject')->willReturn($methodBag);
         $repository->method('get')
             ->willReturnCallback(fn(SymbolPath $path) => match ($path) {
                 $methodPath => $methodBag,
@@ -389,13 +405,17 @@ final class CognitiveComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('cognitive', $cognitive);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -450,7 +470,7 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('cognitive', 25)
@@ -460,8 +480,12 @@ final class CognitiveComplexityRuleTest extends TestCase
             ->withEntry('cognitive-complexity.increments', ['type' => 'else', 'line' => 30, 'points' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -483,15 +507,19 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('cognitive', 20)
             ->withEntry('cognitive-complexity.increments', ['type' => 'closure', 'line' => 15, 'points' => 3]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -509,13 +537,17 @@ final class CognitiveComplexityRuleTest extends TestCase
         $rule = new CognitiveComplexityRule(new CognitiveComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('cognitive', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -524,5 +556,68 @@ final class CognitiveComplexityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertStringNotContainsString('Top:', $violations[0]->message);
+    }
+    #[Test]
+    public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([
+            self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('get')->willReturn((new MetricBag())->with('cognitive.max', 35));
+
+        $violations = (new CognitiveComplexityRule(new CognitiveComplexityOptions()))
+            ->analyzeLevel(RuleLevel::Class_, new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:class:App\\Service\\Twin@src/A.php:100',
+            'declaration:class:App\\Service\\Twin@src/B.php:200',
+        ], $subjects);
+    }
+
+    #[Test]
+    public function itProjectsDuplicateLogicalCallableScoresToIndependentExactDeclarations(): void
+    {
+        $method = SymbolPath::forMethod('App\\Service', 'Twin', 'run');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([
+            self::subjectInfo($method, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($method, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('cognitive', 20));
+
+        $violations = (new CognitiveComplexityRule(new CognitiveComplexityOptions()))
+            ->analyzeLevel(RuleLevel::Callable, new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:callable:App\\Service\\Twin::run@src/A.php:100',
+            'declaration:callable:App\\Service\\Twin::run@src/B.php:200',
+        ], $subjects);
+    }
+
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            $file,
+            $line,
+            $kind,
+        );
     }
 }

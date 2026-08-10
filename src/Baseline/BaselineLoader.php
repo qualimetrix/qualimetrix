@@ -9,7 +9,7 @@ use JsonException;
 use RuntimeException;
 
 /**
- * Reads a version 10 baseline file (ADR 0017).
+ * Reads a version 11 baseline file.
  *
  * Two failure classes, deliberately handled differently:
  *
@@ -88,11 +88,10 @@ final readonly class BaselineLoader
     }
 
     /**
-     * Version 5 gets its own message naming the route out of it. The route —
-     * `baseline:migrate` — is deliberately named before the command exists:
-     * a user meeting this error needs to know what to look for, and a
-     * message that only says "unsupported" sends them to regenerate, which
-     * throws away every acceptance they had recorded.
+     * Version 5 is a historical format, not an alternate route into the
+     * current schema. Its logical symbol keys cannot determine the exact
+     * declaration subjects a version 11 baseline requires, so its accepted
+     * entries need the same explicit mapping and review as version 10.
      */
     private function assertVersion(mixed $version): void
     {
@@ -104,11 +103,20 @@ final readonly class BaselineLoader
             return;
         }
 
+        if ($version === 10) {
+            throw new RuntimeException(
+                'Baseline version 10 cannot be converted automatically because declaration identity cannot be inferred '
+                . 'from a logical symbol key. Run a fresh analysis, deliberately map or split accepted entries, then '
+                . 'write a new version 11 baseline (or regenerate and review the accepted state).',
+            );
+        }
+
         if ($version === 5) {
             throw new RuntimeException(
-                'This baseline is version 5, which records only that a finding existed. '
-                . 'Version ' . Baseline::VERSION . ' records the magnitude it was accepted at. '
-                . 'Run `bin/qmx baseline:migrate <file>` to convert it.',
+                'This baseline is version 5, a historical format that cannot be loaded or converted to version 11 '
+                . 'because declaration identity cannot be inferred from a logical symbol key. Run a fresh analysis, '
+                . 'deliberately map or split accepted entries, review every mapping, then write a new version 11 '
+                . 'baseline (or regenerate and review the accepted state).',
             );
         }
 
@@ -183,7 +191,7 @@ final readonly class BaselineLoader
      * for it deliberately. `json_decode(..., true)` renders `{}` and `[]`
      * identically as an empty PHP array, so no check can tell them apart, and
      * both mean the same thing: no entries. A non-empty list is a different
-     * matter and is not tolerated — its numeric keys become symbol keys whose
+     * matter and is not tolerated — its numeric keys become subject keys whose
      * buckets fail the list check below, so every element turns inert with a
      * reason rather than slipping through.
      *
@@ -198,15 +206,15 @@ final readonly class BaselineLoader
         $parsed = [];
         $inert = [];
 
-        foreach ($entries as $symbolKey => $symbolEntries) {
-            $symbolKey = (string) $symbolKey;
+        foreach ($entries as $subjectKey => $symbolEntries) {
+            $subjectKey = (string) $subjectKey;
 
             if (!\is_array($symbolEntries) || !array_is_list($symbolEntries)) {
                 $inert[] = InertBaselineEntry::forRaw(
-                    $symbolKey,
+                    $subjectKey,
                     null,
                     InertEntryReason::Malformed,
-                    'the entries under a symbol key must be a JSON array',
+                    'the entries under a subject key must be a JSON array',
                     $symbolEntries,
                 );
 
@@ -214,7 +222,7 @@ final readonly class BaselineLoader
             }
 
             foreach ($symbolEntries as $raw) {
-                $entry = $this->entryParser->parse($symbolKey, $raw);
+                $entry = $this->entryParser->parse($subjectKey, $raw);
 
                 if ($entry instanceof InertBaselineEntry) {
                     $inert[] = $entry;

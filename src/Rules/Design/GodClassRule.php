@@ -78,7 +78,7 @@ final class GodClassRule extends AbstractRule
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
             $violation = $this->evaluateClass($context, $classInfo);
             if ($violation !== null) {
                 $violations[] = $violation;
@@ -90,14 +90,17 @@ final class GodClassRule extends AbstractRule
 
     private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo): ?Violation
     {
-        $metrics = $context->metrics->get($classInfo->symbolPath);
+        $subject = $classInfo->subject;
+        if ($subject === null || $subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+            return null;
+        }
+        $metrics = $context->metrics->get($subject->toSymbolPath());
 
         // Apply @qmx-threshold overrides for this class
         $effectiveOptions = $this->getEffectiveOptions(
             $context,
             $this->options,
-            $classInfo->file,
-            $classInfo->line ?? 1,
+            $subject,
         );
         \assert($effectiveOptions instanceof GodClassOptions);
 
@@ -126,7 +129,8 @@ final class GodClassRule extends AbstractRule
 
         return new Violation(
             location: new Location($classInfo->file, $classInfo->line),
-            symbolPath: $classInfo->symbolPath,
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             violationCode: self::NAME,
             message: \sprintf(

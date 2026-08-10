@@ -20,6 +20,8 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\SuppressionType;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -192,7 +194,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         $entries = [];
 
         foreach ($baseline->entries as $entry) {
-            $entries[$entry->identity->symbolKey][] = array_filter(
+            $entries[$entry->identity->subjectKey][] = array_filter(
                 [
                     'channel' => $entry->identity->channel->toKey(),
                     'magnitudes' => $entry->magnitudes,
@@ -245,6 +247,11 @@ final class CaptureFromMeasuredSetTest extends TestCase
         string $violationCode = 'complexity.cyclomatic.callable',
     ): Violation {
         return new Violation(
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass($namespace, $class),
+                RelativePath::fromString($file),
+                0,
+            )),
             location: new Location(RelativePath::fromString($file), 10),
             symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: $ruleName,
@@ -258,6 +265,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
     private static function occurrenceFinding(SymbolPath $symbolPath, int $line): Violation
     {
         return new Violation(
+            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Legacy/Service.php'))),
             location: new Location(RelativePath::fromString('src/Legacy/Service.php'), $line, precise: true),
             symbolPath: $symbolPath,
             ruleName: 'code-smell.goto',

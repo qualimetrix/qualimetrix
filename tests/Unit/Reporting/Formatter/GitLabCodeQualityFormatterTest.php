@@ -7,7 +7,10 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Location;
@@ -69,7 +72,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     public function itFormatsReportWithViolations(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'cyclomatic-complexity',
@@ -78,7 +81,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 severity: Severity::Error,
                 metricValue: 25,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'cyclomatic-complexity',
@@ -121,7 +124,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     public function itMapsSeverityCorrectly(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -129,7 +132,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 message: 'Error violation',
                 severity: Severity::Error,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
@@ -154,7 +157,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     public function itMapsInfoSeverityToInfo(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'architecture.coverage',
@@ -176,7 +179,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     #[Test]
     public function itGeneratesStableFingerprint(): void
     {
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             ruleName: 'cyclomatic-complexity',
@@ -208,10 +211,76 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itFingerprintsDuplicateLogicalDeclarationsByTheirCanonicalSubjects(): void
+    {
+        $logical = SymbolPath::forMethod('App\\Service', 'DuplicateService', 'run');
+        $make = static fn(int $startFilePos): Violation => self::violation(
+            location: new Location(RelativePath::fromString('src/Service/DuplicateService.php'), 42),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                $logical,
+                RelativePath::fromString('src/Service/DuplicateService.php'),
+                $startFilePos,
+            )),
+            symbolPath: $logical,
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.callable',
+            message: 'Same message must not participate in the fingerprint',
+            severity: Severity::Warning,
+        );
+
+        $data = json_decode($this->formatter->format(
+            ReportBuilder::create()->addViolations([$make(101), $make(202)])->build(),
+            new FormatterContext(),
+        ), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertNotSame($data[0]['fingerprint'], $data[1]['fingerprint']);
+
+        $unrelated = self::violation(
+            location: new Location(RelativePath::fromString('src/Service/UnrelatedService.php'), 5),
+            symbolPath: SymbolPath::forMethod('App\\Service', 'UnrelatedService', 'run'),
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.callable',
+            message: 'An unrelated finding',
+            severity: Severity::Warning,
+        );
+        $withUnrelated = json_decode($this->formatter->format(
+            ReportBuilder::create()->addViolations([$make(101), $unrelated])->build(),
+            new FormatterContext(),
+        ), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame($data[0]['fingerprint'], $withUnrelated[0]['fingerprint']);
+    }
+
+    #[Test]
+    public function itKeepsLegacyFingerprintsAndSeparatesTargetOnlyEdges(): void
+    {
+        $alpha = SymbolPath::forClass('App', 'Alpha');
+        $beta = SymbolPath::forClass('App', 'Beta');
+        $violations = [
+            self::edgeViolation('no-edge'),
+            self::edgeViolation('untyped-alpha', $alpha),
+            self::edgeViolation('untyped-beta', $beta),
+            self::edgeViolation('typed-alpha', $alpha, DependencyType::New_),
+        ];
+        $data = json_decode($this->formatter->format(
+            ReportBuilder::create()->addViolations($violations)->build(),
+            new FormatterContext(),
+        ), true, 512, \JSON_THROW_ON_ERROR);
+        $fingerprints = array_column($data, 'fingerprint', 'description');
+        $prefix = 'r#r.edge:file:src/Foo.php';
+
+        self::assertSame(md5($prefix), $fingerprints['no-edge']);
+        self::assertSame(md5($prefix . ':untyped-edge:15:class:App\\Alpha'), $fingerprints['untyped-alpha']);
+        self::assertSame(md5($prefix . ':untyped-edge:14:class:App\\Beta'), $fingerprints['untyped-beta']);
+        self::assertSame(md5($prefix . ':new:class:App\\Alpha'), $fingerprints['typed-alpha']);
+        self::assertCount(4, array_unique($fingerprints));
+    }
+
+    #[Test]
     public function itGeneratesDifferentFingerprintsForDifferentViolations(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test-rule',
@@ -219,7 +288,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 message: 'First violation',
                 severity: Severity::Warning,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test-rule',
@@ -227,7 +296,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 message: 'Second violation',
                 severity: Severity::Warning,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'other-rule',
@@ -252,10 +321,10 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     }
 
     #[Test]
-    public function itGeneratesDifferentFingerprintsForSameLineViolations(): void
+    public function itKeepsTheFingerprintStableWhenOnlyTheMessageChanges(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test-rule',
@@ -263,7 +332,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
                 message: 'First violation on same line',
                 severity: Severity::Warning,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test-rule',
@@ -279,16 +348,16 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         $output = $this->formatter->format($report, new FormatterContext());
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
-        // Same rule, same symbol, same line, different messages => different fingerprints
+        // Presentation text does not participate in the canonical identity.
         self::assertCount(2, $data);
-        self::assertNotSame($data[0]['fingerprint'], $data[1]['fingerprint']);
+        self::assertSame($data[0]['fingerprint'], $data[1]['fingerprint']);
     }
 
     #[Test]
     public function itFormatsNamespaceLevelViolation(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php')),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'namespace-size',
@@ -314,7 +383,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     public function itProducesStructureMatchingGitLabSpec(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 45),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'foo'),
                 ruleName: 'complexity',
@@ -357,7 +426,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     public function itUsesViolationCodeAsCheckName(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity',
@@ -381,7 +450,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     public function itUsesDescriptiveSyntheticPathForProjectLevelViolation(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forNamespace('App'),
                 ruleName: 'architecture',
@@ -414,7 +483,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     #[Test]
     public function itIncludesTheAcceptedLevelInTheDescriptionOnABreach(): void
     {
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             ruleName: 'cyclomatic-complexity',
@@ -457,7 +526,7 @@ final class GitLabCodeQualityFormatterTest extends TestCase
     public function itKeepsAlreadyRelativePathUnchanged(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'cyclomatic-complexity',
@@ -475,6 +544,78 @@ final class GitLabCodeQualityFormatterTest extends TestCase
         $data = json_decode($output, true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame('src/Service/UserService.php', $data[0]['location']['path']);
+    }
+    /**
+     * Builds a violation fixture with an explicit declaration or aggregate
+     * subject, preserving the production contract without hiding it behind a
+     * legacy fallback.
+     *
+     * @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations
+     */
+    private static function violation(
+        \Qualimetrix\Core\Violation\Location $location,
+        \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
+        string $ruleName,
+        string $violationCode,
+        string $message,
+        \Qualimetrix\Core\Violation\Severity $severity,
+        int|float|null $metricValue = null,
+        ?\Qualimetrix\Core\Rule\RuleLevel $level = null,
+        array $relatedLocations = [],
+        ?string $recommendation = null,
+        int|float|null $threshold = null,
+        ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
+        ?\Qualimetrix\Core\Dependency\DependencyType $dependencyType = null,
+        ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null,
+        ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
+    ): Violation {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File,
+            \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
+            \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath(
+                $symbolPath,
+                $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'),
+                $location->line ?? 0,
+            )),
+        };
+
+        return new Violation(
+            location: $location,
+            subject: $subject,
+            symbolPath: $symbolPath,
+            ruleName: $ruleName,
+            violationCode: $violationCode,
+            message: $message,
+            severity: $severity,
+            metricValue: $metricValue,
+            level: $level,
+            relatedLocations: $relatedLocations,
+            recommendation: $recommendation,
+            threshold: $threshold,
+            dependencyTarget: $dependencyTarget,
+            dependencyType: $dependencyType,
+            acceptedLevel: $acceptedLevel,
+            occurrenceKey: $occurrenceKey,
+        );
+    }
+
+    private static function edgeViolation(
+        string $message,
+        ?SymbolPath $target = null,
+        ?DependencyType $type = null,
+    ): Violation {
+        return self::violation(
+            location: new Location(RelativePath::fromString('src/Foo.php'), 1),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Foo.php')),
+            ruleName: 'r',
+            violationCode: 'r.edge',
+            message: $message,
+            severity: Severity::Warning,
+            dependencyTarget: $target,
+            dependencyType: $type,
+        );
     }
 
 }

@@ -152,7 +152,7 @@ final class ViolationSorterTest extends TestCase
     #[Test]
     public function itGroupsByClassNameFallingBackToFileForNamespaceLevelViolation(): void
     {
-        $v1 = new Violation(
+        $v1 = self::buildViolation(
             location: new Location(RelativePath::fromString('src/Service.php'), 1),
             symbolPath: SymbolPath::forNamespace('App\Service'),
             ruleName: 'size',
@@ -186,7 +186,7 @@ final class ViolationSorterTest extends TestCase
     #[Test]
     public function itGroupsByNamespaceNameUsingGlobalForEmptyNamespace(): void
     {
-        $v1 = new Violation(
+        $v1 = self::buildViolation(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forClass('', 'GlobalClass'),
             ruleName: 'test',
@@ -202,7 +202,7 @@ final class ViolationSorterTest extends TestCase
 
     private function violation(string $file, int $line, Severity $severity, string $ruleName): Violation
     {
-        return new Violation(
+        return self::buildViolation(
             location: new Location(RelativePath::fromString($file), $line),
             symbolPath: SymbolPath::forClass('App', 'MyClass'),
             ruleName: $ruleName,
@@ -220,7 +220,7 @@ final class ViolationSorterTest extends TestCase
         string $namespace,
         string $class,
     ): Violation {
-        return new Violation(
+        return self::buildViolation(
             location: new Location(RelativePath::fromString($file), $line),
             symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: $ruleName,
@@ -229,4 +229,15 @@ final class ViolationSorterTest extends TestCase
             severity: $severity,
         );
     }
+
+    /** @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations */
+    private static function buildViolation(\Qualimetrix\Core\Violation\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Core\Violation\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Core\Rule\RuleLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Core\Dependency\DependencyType $dependencyType = null, ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), $location->line ?? 0)),
+        };
+        return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+    }
+
 }

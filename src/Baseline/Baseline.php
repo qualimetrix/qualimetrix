@@ -23,7 +23,7 @@ use InvalidArgumentException;
 final readonly class Baseline
 {
     /** The only file version this type represents (ADR 0017). */
-    public const int VERSION = 10;
+    public const int VERSION = 11;
 
     /** @var array<string, BaselineEntry> identity key => entry */
     private array $byIdentityKey;
@@ -217,20 +217,20 @@ final readonly class Baseline
     }
 
     /**
-     * The distinct symbol keys the file mentions, valid and inert alike.
+     * The distinct subject keys the file mentions, valid and inert alike.
      *
      * @return list<string>
      */
-    public function symbolKeys(): array
+    public function subjectKeys(): array
     {
         $keys = [];
 
         foreach ($this->entries as $entry) {
-            $keys[$entry->identity->symbolKey] = true;
+            $keys[$entry->identity->subjectKey] = true;
         }
 
         foreach ($this->inertEntries as $inert) {
-            $keys[$inert->symbolKey] = true;
+            $keys[$inert->subjectKey] = true;
         }
 
         return array_keys($keys);

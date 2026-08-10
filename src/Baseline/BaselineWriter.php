@@ -262,7 +262,7 @@ final readonly class BaselineWriter
     }
 
     /**
-     * Groups entries under their symbol keys in a fixed order.
+     * Groups entries under their subject keys in a fixed order.
      *
      * **Every entry read is an entry written.** Entries are accumulated as a
      * list and never as a map: a map key that two entries can share resolves
@@ -290,7 +290,7 @@ final readonly class BaselineWriter
      * could not understand would be the same inference in a different place.
      *
      * @throws InvalidArgumentException when two entries collapse onto one identity after
-     *                                  their symbol keys are relativized
+     *                                  their subject keys are relativized
      *
      * @return array<string, list<mixed>>
      */
@@ -302,12 +302,16 @@ final readonly class BaselineWriter
         $seen = [];
 
         foreach ($baseline->entries as $entry) {
-            $key = $this->portableKey($entry->identity->symbolKey, $projectRoot);
-            $sort = self::orderingKey($entry->identity->channel->toKey(), $entry->identity->edge?->key());
+            $key = $this->portableKey($entry->identity->subjectKey, $projectRoot);
+            $sort = self::orderingKey(
+                $entry->identity->channel->toKey(),
+                $entry->identity->occurrenceKey,
+                $entry->identity->edge?->key(),
+            );
 
             if (isset($seen[$key][$sort])) {
                 throw new InvalidArgumentException(\sprintf(
-                    'Two baseline entries collapse onto the identity %s once their symbol keys are '
+                    'Two baseline entries collapse onto the identity %s once their subject keys are '
                     . 'made project-relative; refusing to write a file that would keep only one of them.',
                     $entry->identity->describe(),
                 ));
@@ -318,7 +322,7 @@ final readonly class BaselineWriter
         }
 
         foreach ($baseline->inertEntries as $entry) {
-            $key = $this->portableKey($entry->symbolKey, $projectRoot);
+            $key = $this->portableKey($entry->subjectKey, $projectRoot);
             $grouped[$key][] = ['sort' => self::inertOrderingKey($entry), 'payload' => $entry->raw];
         }
 
@@ -340,24 +344,28 @@ final readonly class BaselineWriter
     }
 
     /**
-     * Where an entry sorts among its siblings under one symbol key. The
+     * Where an entry sorts among its siblings under one subject key. The
      * leading digit keeps entries with a readable channel ahead of the ones
      * that have nothing to sort on, without either group depending on the
      * other's contents.
      */
-    private static function orderingKey(string $channelKey, ?string $edgeKey): string
+    private static function orderingKey(string $channelKey, ?string $occurrenceKey, ?string $edgeKey): string
     {
-        return '0' . $channelKey . "\x1F" . ($edgeKey ?? '');
+        return '0' . $channelKey . "\x1F" . ($occurrenceKey ?? '') . "\x1F" . ($edgeKey ?? '');
     }
 
     private static function inertOrderingKey(InertBaselineEntry $entry): string
     {
         if ($entry->identity !== null) {
-            return self::orderingKey($entry->identity->channel->toKey(), $entry->identity->edge?->key());
+            return self::orderingKey(
+                $entry->identity->channel->toKey(),
+                $entry->identity->occurrenceKey,
+                $entry->identity->edge?->key(),
+            );
         }
 
         if ($entry->channelKey !== null) {
-            return self::orderingKey($entry->channelKey, null);
+            return self::orderingKey($entry->channelKey, null, null);
         }
 
         return '1' . $entry->selector->value;
@@ -374,7 +382,7 @@ final readonly class BaselineWriter
      * in-memory corruption, not as tolerated input.
      *
      * **This is the one place where two identities can become one.** The
-     * duplicate guard in {@see Baseline} runs on the raw symbol key, so
+     * duplicate guard in {@see Baseline} runs on the raw subject key, so
      * `file:<root>/src/Foo.php` and `file:src/Foo.php` are two legal
      * identities in memory that name one key here. {@see serializeEntries()}
      * therefore refuses such a pair rather than resolving it: silently

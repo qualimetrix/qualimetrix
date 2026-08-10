@@ -111,6 +111,12 @@ state.
 - More identities and graph vertices increase test surface and serialization
   obligations, but preserve the one-analysis-model guarantee across output
   formats.
-- F-007, F-008, F-009, F-010, F-011, F-013, and F-014 are implemented against
-  the contract in the linked plan; their Round 1 record remains historical
-  until implementation and validation prove a disposition.
+- F-006 through F-014 are implemented and validated against the contract in
+  the linked plan; their Round 1 record remains an immutable historical
+  finding record rather than the current implementation status.
+- The final dogfooding migration uses baseline version 11. All 63 frozen fresh
+  rows were remediated; the 34 worsening rows closed as 32 remediated, zero
+  unresolved, and two reviewed R6 topology residuals. The separately reviewed
+  Metrics namespace CBO 16 fresh residual and CodeSmell namespace class-count
+  23-to-24 mapped recalibration are post-ledger dispositions, not frozen-ledger
+  remediations.

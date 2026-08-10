@@ -17,6 +17,7 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Profiler\ProfilerInterface;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -506,6 +507,7 @@ final class ResultPresenterTest extends TestCase
         return new Violation(
             location: new Location(RelativePath::fromString('test.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
+            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test.php'))),
             ruleName: 'test.rule',
             violationCode: 'test.rule.violation',
             message: 'Test violation',

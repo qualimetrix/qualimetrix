@@ -40,9 +40,7 @@ final class NamespaceMetricContributions
             $values[$definition->name] = [];
         }
 
-        self::collectFromCallables($repository, $symbolInfos, $definitions, $values);
-        self::collectFromClasses($repository, $symbolInfos, $definitions, $values);
-        self::collectFromFunctions($repository, $symbolInfos, $definitions, $values);
+        self::collectFromSymbols($repository, $symbolInfos, $definitions, $values);
         $namespaceProvided = self::collectExplicitNamespaceValues(
             $repository,
             $symbolInfos,
@@ -112,7 +110,7 @@ final class NamespaceMetricContributions
      * @param list<MetricDefinition> $definitions
      * @param array<string, list<int|float>> $values
      */
-    private static function collectFromCallables(
+    private static function collectFromSymbols(
         MetricRepositoryInterface $repository,
         array $symbolInfos,
         array $definitions,
@@ -121,53 +119,17 @@ final class NamespaceMetricContributions
         foreach ($symbolInfos as $info) {
             $path = $info->symbolPath;
 
-            if ($path->type === null || $path->member === null) {
+            $sourceLevel = match (true) {
+                $path->getType() === SymbolType::Function_ => SymbolLevel::Callable,
+                $path->type !== null && $path->member !== null => SymbolLevel::Callable,
+                $path->type !== null => SymbolLevel::Class_,
+                default => null,
+            };
+            if ($sourceLevel === null) {
                 continue;
             }
 
-            self::appendValues($repository, $info, $definitions, $values, SymbolLevel::Callable);
-        }
-    }
-
-    /**
-     * @param list<SymbolInfo> $symbolInfos
-     * @param list<MetricDefinition> $definitions
-     * @param array<string, list<int|float>> $values
-     */
-    private static function collectFromClasses(
-        MetricRepositoryInterface $repository,
-        array $symbolInfos,
-        array $definitions,
-        array &$values,
-    ): void {
-        foreach ($symbolInfos as $info) {
-            $path = $info->symbolPath;
-
-            if ($path->type === null || $path->member !== null) {
-                continue;
-            }
-
-            self::appendValues($repository, $info, $definitions, $values, SymbolLevel::Class_);
-        }
-    }
-
-    /**
-     * @param list<SymbolInfo> $symbolInfos
-     * @param list<MetricDefinition> $definitions
-     * @param array<string, list<int|float>> $values
-     */
-    private static function collectFromFunctions(
-        MetricRepositoryInterface $repository,
-        array $symbolInfos,
-        array $definitions,
-        array &$values,
-    ): void {
-        foreach ($symbolInfos as $info) {
-            if ($info->symbolPath->getType() !== SymbolType::Function_) {
-                continue;
-            }
-
-            self::appendValues($repository, $info, $definitions, $values, SymbolLevel::Callable);
+            self::appendValues($repository, $info, $definitions, $values, $sourceLevel);
         }
     }
 

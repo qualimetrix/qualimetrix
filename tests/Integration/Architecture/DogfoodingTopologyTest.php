@@ -137,6 +137,10 @@ final class DogfoodingTopologyTest extends TestCase
             [
                 'AbstractCollector.php',
                 'ResettableVisitorInterface.php',
+                'VisitorCallableMetadata.php',
+                'VisitorCallableScope.php',
+                'VisitorFileEntryScope.php',
+                'VisitorMethodContext.php',
                 'VisitorMethodTrackingTrait.php',
             ],
             $rootFileNames,
@@ -145,7 +149,7 @@ final class DogfoodingTopologyTest extends TestCase
         );
 
         $registry = $this->loadProjectArchitecture()->registry();
-        foreach (['AbstractCollector', 'ResettableVisitorInterface', 'VisitorMethodTrackingTrait'] as $type) {
+        foreach (['AbstractCollector', 'ResettableVisitorInterface', 'VisitorCallableMetadata', 'VisitorCallableScope', 'VisitorFileEntryScope', 'VisitorMethodContext', 'VisitorMethodTrackingTrait'] as $type) {
             self::assertSame(
                 'metrics-foundation',
                 $registry->resolveLayer(SymbolPath::forClass('Qualimetrix\\Metrics', $type)),
@@ -167,6 +171,151 @@ final class DogfoodingTopologyTest extends TestCase
             $policy->isAllowed('metrics-foundation', 'metrics-Complexity'),
             'The metric foundation must remain independent of every concrete metric category.',
         );
+    }
+
+    #[Test]
+    public function itPinsTheCompleteRepeatedExpressionAndCredentialSubjectStacks(): void
+    {
+        $repoRoot = realpath(__DIR__ . '/../../..');
+        self::assertIsString($repoRoot, 'Could not resolve repository root.');
+
+        self::assertSame(
+            [
+                'IdenticalSubExpressionCollector.php',
+                'IdenticalSubExpressionFinding.php',
+                'IdenticalSubExpressionVisitor.php',
+                'RepeatedConditions.php',
+                'RepeatedExpressions.php',
+            ],
+            $this->phpFiles($repoRoot . '/src/Metrics/CodeSmell/RepeatedExpression'),
+        );
+        self::assertSame(
+            [
+                'CredentialLiterals.php',
+                'CredentialLocation.php',
+                'HardcodedCredentialsCollector.php',
+                'HardcodedCredentialsVisitor.php',
+            ],
+            $this->phpFiles($repoRoot . '/src/Metrics/Security/Credential'),
+        );
+        $codeSmellRemnants = glob($repoRoot . '/src/Metrics/CodeSmell/IdenticalSubExpression*.php');
+        $securityRemnants = glob($repoRoot . '/src/Metrics/Security/{CredentialLocation,HardcodedCredentials}*.php', \GLOB_BRACE);
+        self::assertIsArray($codeSmellRemnants);
+        self::assertIsArray($securityRemnants);
+        self::assertSame([], $codeSmellRemnants);
+        self::assertSame([], $securityRemnants);
+
+        $imports = [
+            'CodeSmell/CodeSmellVisitor.php' => [
+                'Qualimetrix\\Metrics\\CodeSmell\\BooleanArgument\\BooleanArgumentSmells',
+                'Qualimetrix\\Metrics\\CodeSmell\\ControlFlow\\ControlFlowSmells',
+                'Qualimetrix\\Metrics\\CodeSmell\\Debug\\DebugCodeSmells',
+                'Qualimetrix\\Metrics\\ResettableVisitorInterface',
+                'Qualimetrix\\Metrics\\VisitorMethodTrackingTrait',
+            ],
+            'CodeSmell/ControlFlow/ControlFlowSmells.php' => ['Qualimetrix\\Metrics\\CodeSmell\\CodeSmellLocation'],
+            'CodeSmell/Debug/DebugCodeSmells.php' => ['Qualimetrix\\Metrics\\CodeSmell\\CodeSmellLocation'],
+            'CodeSmell/BooleanArgument/BooleanArgumentSmells.php' => ['Qualimetrix\\Metrics\\CodeSmell\\CodeSmellLocation'],
+            'CodeSmell/RepeatedExpression/IdenticalSubExpressionCollector.php' => ['Qualimetrix\\Metrics\\AbstractCollector'],
+            'CodeSmell/RepeatedExpression/IdenticalSubExpressionVisitor.php' => [
+                'Qualimetrix\\Metrics\\ResettableVisitorInterface',
+                'Qualimetrix\\Metrics\\VisitorMethodTrackingTrait',
+            ],
+            'CodeSmell/RepeatedExpression/IdenticalSubExpressionFinding.php' => [],
+            'CodeSmell/RepeatedExpression/RepeatedExpressions.php' => [],
+            'CodeSmell/RepeatedExpression/RepeatedConditions.php' => [],
+            'Security/Credential/HardcodedCredentialsCollector.php' => [
+                'Qualimetrix\\Metrics\\AbstractCollector',
+                'Qualimetrix\\Metrics\\Security\\SensitiveNameMatcher',
+            ],
+            'Security/Credential/HardcodedCredentialsVisitor.php' => [
+                'Qualimetrix\\Metrics\\ResettableVisitorInterface',
+                'Qualimetrix\\Metrics\\Security\\SensitiveNameMatcher',
+                'Qualimetrix\\Metrics\\VisitorMethodTrackingTrait',
+            ],
+            'Security/Credential/CredentialLocation.php' => [],
+            'Security/Credential/CredentialLiterals.php' => ['Qualimetrix\\Metrics\\Security\\SensitiveNameMatcher'],
+        ];
+        foreach ($imports as $path => $expected) {
+            $source = file_get_contents($repoRoot . '/src/Metrics/' . $path);
+            self::assertIsString($source);
+            preg_match_all('/^use\\s+(Qualimetrix\\\\Metrics\\\\[^;]+);$/m', $source, $matches);
+            $actual = $matches[1];
+            sort($actual);
+            sort($expected);
+            self::assertSame($expected, $actual, "{$path} must keep its complete R4 Metrics import allow-list.");
+        }
+
+        $subjectTypes = [
+            'IdenticalSubExpressionCollector',
+            'IdenticalSubExpressionFinding',
+            'IdenticalSubExpressionVisitor',
+            'RepeatedConditions',
+            'RepeatedExpressions',
+            'CredentialLiterals',
+            'CredentialLocation',
+            'HardcodedCredentialsCollector',
+            'HardcodedCredentialsVisitor',
+        ];
+        $sameSubjectDependencies = [
+            'CodeSmell/ControlFlow/ControlFlowSmells.php' => [],
+            'CodeSmell/Debug/DebugCodeSmells.php' => [],
+            'CodeSmell/BooleanArgument/BooleanArgumentSmells.php' => [],
+            'CodeSmell/RepeatedExpression/IdenticalSubExpressionCollector.php' => ['IdenticalSubExpressionVisitor'],
+            'CodeSmell/RepeatedExpression/IdenticalSubExpressionVisitor.php' => ['IdenticalSubExpressionFinding', 'RepeatedConditions', 'RepeatedExpressions'],
+            'CodeSmell/RepeatedExpression/IdenticalSubExpressionFinding.php' => [],
+            'CodeSmell/RepeatedExpression/RepeatedExpressions.php' => ['IdenticalSubExpressionFinding'],
+            'CodeSmell/RepeatedExpression/RepeatedConditions.php' => ['IdenticalSubExpressionFinding', 'RepeatedExpressions'],
+            'Security/Credential/HardcodedCredentialsCollector.php' => ['HardcodedCredentialsVisitor'],
+            'Security/Credential/HardcodedCredentialsVisitor.php' => ['CredentialLiterals', 'CredentialLocation'],
+            'Security/Credential/CredentialLocation.php' => [],
+            'Security/Credential/CredentialLiterals.php' => ['CredentialLocation'],
+        ];
+        foreach ($sameSubjectDependencies as $path => $expected) {
+            $source = $this->source($repoRoot, $path);
+            self::assertSame(
+                $expected,
+                $this->sameSubjectReferences($source, $subjectTypes, pathinfo($path, \PATHINFO_FILENAME)),
+                "{$path} must keep its complete same-subject dependency allow-list.",
+            );
+        }
+    }
+
+    /** @return list<string> */
+    private function phpFiles(string $directory): array
+    {
+        $files = glob($directory . '/*.php');
+        self::assertIsArray($files);
+
+        $names = array_map(basename(...), $files);
+        sort($names);
+
+        return $names;
+    }
+
+    private function source(string $repoRoot, string $path): string
+    {
+        $source = file_get_contents($repoRoot . '/src/Metrics/' . $path);
+        self::assertIsString($source);
+
+        return $source;
+    }
+
+    /** @param list<string> $candidates
+     *  @return list<string> */
+    private function sameSubjectReferences(string $source, array $candidates, string $declaredType): array
+    {
+        $references = [];
+        foreach (token_get_all($source) as $token) {
+            if (!\is_array($token) || $token[0] !== \T_STRING || $token[1] === $declaredType || !\in_array($token[1], $candidates, true)) {
+                continue;
+            }
+            $references[] = $token[1];
+        }
+        $references = array_values(array_unique($references));
+        sort($references);
+
+        return $references;
     }
 
     /**

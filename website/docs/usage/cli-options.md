@@ -314,20 +314,18 @@ Stale and inert entries are reported without failing the run or disabling other 
 
 ### Baseline lifecycle commands
 
-The commands below are the only baseline write and migration surface:
+The commands below are the complete baseline write and inspection surface:
 
 ```text
 bin/qmx baseline:generate <baseline> [<paths>...] [--mode=MODE] [--force]
-bin/qmx baseline:migrate  <baseline> [<paths>...] [--force]
 bin/qmx baseline:update   <baseline> [<paths>...] [--force]
 bin/qmx baseline:cleanup  <baseline> [<paths>...] [--remove=REMOVE]... [--force]
 bin/qmx baseline:explain  <symbol> [<paths>...] [--baseline=BASELINE] [--channel=CHANNEL]
 ```
 
-All five commands accept `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=DISABLE-RULE`, `--only-rule=ONLY-RULE`, and `--rule-opt=RULE-OPT`. They do not accept any exclusion or suppression option.
+All four commands accept `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=DISABLE-RULE`, `--only-rule=ONLY-RULE`, and `--rule-opt=RULE-OPT`. They do not accept any exclusion or suppression option.
 
 - `baseline:generate` captures the current measured findings. `--mode=ratchet` is the default; `--mode=suppress` records unconditional acceptance for captured identities. Its `--force` overwrites an existing file.
-- `baseline:migrate` converts only a v5 file by making a fresh v10 capture. Its `--force` replaces a destination that is not v5 with that fresh capture.
 - `baseline:update` tightens existing entries only. Its `--force` overrides the recorded-scope coverage guard.
 - `baseline:cleanup` lists candidates by default and removes only repeated `--remove=REMOVE` selectors. Its `--force` also overrides the scope guard.
 - `baseline:explain` shows the configured threshold, accepted baseline level, and source override for a canonical symbol; `--channel=CHANNEL` narrows the answer.
@@ -336,6 +334,13 @@ All lifecycle commands refuse incomplete analysis with exit 4 before interpretin
 or writing a baseline. `--force` overrides file/scope guards only; it cannot make
 a partial measured set acceptable. Existing destinations remain byte-identical,
 and `baseline:generate` does not create a missing destination.
+
+Only baseline version 11 is loadable. Versions 5 and 10 cannot infer exact
+declaration subjects, semantic occurrences, or dependency edges. Run a fresh
+analysis, deliberately map or split previously accepted groups, review the
+result, and write a new v11 file. The removed migration command has no alias or
+compatibility shim; `baseline:generate --force` replaces bytes but does not
+infer or convert old identity.
 
 The removed `--generate-baseline` and `--baseline-ignore-stale` options have no aliases. Use `baseline:generate` and explicit `baseline:cleanup --remove` instead.
 

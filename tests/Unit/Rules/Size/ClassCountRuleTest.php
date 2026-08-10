@@ -15,7 +15,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Size\ClassCountOptions;
@@ -114,7 +113,7 @@ final class ClassCountRuleTest extends TestCase
         $rule = new ClassCountRule(new ClassCountOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $namespaceInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
+        $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
         $metricBag = (new MetricBag())->with('classCount.sum', 5);
 
@@ -135,7 +134,7 @@ final class ClassCountRuleTest extends TestCase
         $rule = new ClassCountRule(new ClassCountOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $namespaceInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
+        $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
         // 18 classes is above warning (15) but below error (25)
         $metricBag = (new MetricBag())->with('classCount.sum', 18);
@@ -163,7 +162,7 @@ final class ClassCountRuleTest extends TestCase
         $rule = new ClassCountRule(new ClassCountOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $namespaceInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
+        $namespaceInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 0);
 
         // 30 classes is above error threshold (25)
         $metricBag = (new MetricBag())->with('classCount.sum', 30);
@@ -193,7 +192,7 @@ final class ClassCountRuleTest extends TestCase
         $rule = new ClassCountRule(new ClassCountOptions(warning: $warning, error: $error));
 
         $symbolPath = SymbolPath::forNamespace('App\Test');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 0);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 0);
 
         $metricBag = (new MetricBag())->with('classCount.sum', $classCount);
 
@@ -256,5 +255,22 @@ final class ClassCountRuleTest extends TestCase
         $options = ClassCountOptions::fromArray([]);
 
         self::assertFalse($options->isEnabled());
+    }
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            $file,
+            $line,
+            $kind,
+        );
     }
 }

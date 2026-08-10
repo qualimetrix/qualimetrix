@@ -15,9 +15,13 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Qualimetrix\Core\Metric\CallableMetricsProviderInterface;
 use Qualimetrix\Core\Metric\CallableWithMetrics;
+use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
+use Qualimetrix\Core\Metric\ClassWithMetrics;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -152,7 +156,9 @@ final class CompositeCollectorTest extends TestCase
         $derivedCollector->method('getName')->willReturn('derived');
         $derivedCollector->method('requires')->willReturn(['base']);
         $derivedCollector->method('provides')->willReturn(['derived_ccn']);
-        $derivedCollector->method('getMetricDefinitions')->willReturn([]);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('derived_ccn', SymbolLevel::Callable),
+        ]);
 
         // The derived collector receives a MetricBag with base metric names (without FQN)
         $derivedCollector->method('calculate')
@@ -188,7 +194,9 @@ final class CompositeCollectorTest extends TestCase
         $derived1->method('getName')->willReturn('derived1');
         $derived1->method('requires')->willReturn(['base']);
         $derived1->method('provides')->willReturn(['doubled']);
-        $derived1->method('getMetricDefinitions')->willReturn([]);
+        $derived1->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('doubled', SymbolLevel::Callable),
+        ]);
         $derived1->method('calculate')
             ->willReturnCallback(static fn(MetricBag $bag): MetricBag =>
                 (new MetricBag())->with('doubled', ($bag->get('value') ?? 0) * 2));
@@ -198,7 +206,9 @@ final class CompositeCollectorTest extends TestCase
         $derived2->method('getName')->willReturn('derived2');
         $derived2->method('requires')->willReturn(['base']);
         $derived2->method('provides')->willReturn(['tripled']);
-        $derived2->method('getMetricDefinitions')->willReturn([]);
+        $derived2->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('tripled', SymbolLevel::Callable),
+        ]);
         $derived2->method('calculate')
             ->willReturnCallback(static fn(MetricBag $bag): MetricBag =>
                 (new MetricBag())->with('tripled', ($bag->get('value') ?? 0) * 3));
@@ -263,7 +273,9 @@ final class CompositeCollectorTest extends TestCase
         $derivedCollector->method('getName')->willReturn('derived');
         $derivedCollector->method('requires')->willReturn(['base']);
         $derivedCollector->method('provides')->willReturn(['calculated']);
-        $derivedCollector->method('getMetricDefinitions')->willReturn([]);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('calculated', SymbolLevel::Callable),
+        ]);
         $derivedCollector->method('calculate')
             ->willReturnCallback(static function (MetricBag $sourceBag): MetricBag {
                 // Should only receive metrics with separator
@@ -337,7 +349,9 @@ final class CompositeCollectorTest extends TestCase
         $derivedCollector->method('getName')->willReturn('derived');
         $derivedCollector->method('requires')->willReturn(['base']);
         $derivedCollector->method('provides')->willReturn(['ratio']);
-        $derivedCollector->method('getMetricDefinitions')->willReturn([]);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('ratio', SymbolLevel::Callable),
+        ]);
         $derivedCollector->method('calculate')
             ->willReturnCallback(static function (MetricBag $sourceBag): MetricBag {
                 $ccn = $sourceBag->get('ccn');
@@ -356,6 +370,49 @@ final class CompositeCollectorTest extends TestCase
         // Should have derived metrics for each FQN
         self::assertEqualsWithDelta(0.05, $result->metrics->get($this->derivedKey('ratio', $first)), 0.001);
         self::assertEqualsWithDelta(0.04, $result->metrics->get($this->derivedKey('ratio', $second)), 0.001);
+    }
+
+    #[Test]
+    public function itRoutesClassDerivedMetricsOnlyToTheirExactClassDeclaration(): void
+    {
+        $class = new ClassWithMetrics(
+            new DeclarationPath(
+                SymbolPath::forClass('App\\Design', 'TypedService'),
+                RelativePath::fromString('CompositeCollectorTest.php'),
+                330,
+            ),
+            45,
+            MetricBag::fromArray([
+                'typeCoverage.paramTyped' => 2,
+                'typeCoverage.paramTotal' => 2,
+            ]),
+        );
+        $baseCollector = $this->createClassCollector('type-coverage', new MetricBag(), [$class]);
+
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
+        $derivedCollector->method('getName')->willReturn('type-coverage-pct');
+        $derivedCollector->method('requires')->willReturn(['type-coverage']);
+        $derivedCollector->method('provides')->willReturn(['typeCoverage.pct']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('typeCoverage.pct', SymbolLevel::Class_),
+        ]);
+        $derivedCollector->method('calculate')->willReturnCallback(
+            static fn(MetricBag $metrics): MetricBag => (new MetricBag())->with(
+                'typeCoverage.pct',
+                ($metrics->get('typeCoverage.paramTyped') ?? 0) === ($metrics->get('typeCoverage.paramTotal') ?? 0)
+                    ? 100.0
+                    : 0.0,
+            ),
+        );
+
+        $result = (new CompositeCollector([$baseCollector], [$derivedCollector]))->collect(
+            new SplFileInfo(__FILE__),
+            [],
+            RelativePath::fromString('CompositeCollectorTest.php'),
+        );
+
+        self::assertSame(100.0, $result->metrics->get($this->derivedSubjectKey('typeCoverage.pct', $class->subject)));
+        self::assertFalse($result->metrics->has('typeCoverage.pct:callable:' . $class->declarationPath->toCanonical()));
     }
 
     #[Test]
@@ -457,7 +514,7 @@ final class CompositeCollectorTest extends TestCase
             }
             public function getMetricDefinitions(): array
             {
-                return [];
+                return [new MetricDefinition('base', SymbolLevel::Callable)];
             }
             public function getVisitor(): NodeVisitorAbstract
             {
@@ -471,6 +528,51 @@ final class CompositeCollectorTest extends TestCase
             public function getCallablesWithMetrics(RelativePath $file): array
             {
                 return $this->callables;
+            }
+        };
+    }
+
+    /** @param list<ClassWithMetrics> $classes */
+    private function createClassCollector(string $name, MetricBag $metrics, array $classes): MetricCollectorInterface&ClassMetricsProviderInterface
+    {
+        return new class ($name, $metrics, $classes) implements MetricCollectorInterface, ClassMetricsProviderInterface {
+            /** @param list<ClassWithMetrics> $classes */
+            public function __construct(
+                private readonly string $name,
+                private readonly MetricBag $metrics,
+                private readonly array $classes,
+            ) {}
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
+
+            public function provides(): array
+            {
+                return [];
+            }
+
+            public function getMetricDefinitions(): array
+            {
+                return [new MetricDefinition('base', SymbolLevel::Class_)];
+            }
+
+            public function getVisitor(): NodeVisitorAbstract
+            {
+                return new class extends NodeVisitorAbstract {};
+            }
+
+            public function collect(SplFileInfo $file, array $ast): MetricBag
+            {
+                return $this->metrics;
+            }
+
+            public function reset(): void {}
+
+            public function getClassesWithMetrics(RelativePath $file): array
+            {
+                return $this->classes;
             }
         };
     }
@@ -492,6 +594,11 @@ final class CompositeCollectorTest extends TestCase
     private function derivedKey(string $metric, CallableWithMetrics $callable): string
     {
         return $metric . ':' . $callable->kind->value . ':' . $callable->declarationPath->toCanonical();
+    }
+
+    private function derivedSubjectKey(string $metric, \Qualimetrix\Core\Symbol\MetricSubject $subject): string
+    {
+        return $metric . ':' . $subject->toCanonical();
     }
 }
 

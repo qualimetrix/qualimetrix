@@ -11,7 +11,6 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
-use Qualimetrix\Infrastructure\Console\Command\BaselineMigrateCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Support\Console\TempDirectory;
@@ -39,7 +38,7 @@ final class BaselineIncompleteAnalysisTest extends TestCase
     }
 
     /**
-     * @param 'baseline:generate'|'baseline:update'|'baseline:cleanup'|'baseline:migrate' $commandName
+     * @param 'baseline:generate'|'baseline:update'|'baseline:cleanup' $commandName
      * @param 'all-failed'|'partial' $coverage
      */
     #[Test]
@@ -48,13 +47,7 @@ final class BaselineIncompleteAnalysisTest extends TestCase
         string $commandName,
         string $coverage,
     ): void {
-        $before = $commandName === 'baseline:migrate'
-            ? (string) json_encode([
-                'version' => 5,
-                'generated' => '2026-01-01T00:00:00+00:00',
-                'violations' => [],
-            ], \JSON_THROW_ON_ERROR)
-            : '{"sentinel":"must remain byte-identical"}';
+        $before = '{"sentinel":"must remain byte-identical"}';
         file_put_contents($this->baselinePath, $before);
 
         $tester = $this->execute($commandName, [
@@ -72,7 +65,7 @@ final class BaselineIncompleteAnalysisTest extends TestCase
     /** @return iterable<string, array{string, string}> */
     public static function provideWritingCommandsAndCoverage(): iterable
     {
-        foreach (['baseline:generate', 'baseline:update', 'baseline:cleanup', 'baseline:migrate'] as $command) {
+        foreach (['baseline:generate', 'baseline:update', 'baseline:cleanup'] as $command) {
             yield $command . ' all failed' => [$command, 'all-failed'];
             yield $command . ' partial' => [$command, 'partial'];
         }
@@ -97,15 +90,15 @@ final class BaselineIncompleteAnalysisTest extends TestCase
     public function itDoesNotClassifyASymbolWhenExplainAnalysisIsIncomplete(string $coverage): void
     {
         $tester = $this->execute('baseline:explain', [
-            'symbol' => 'class:Good',
+            'subject' => 'declaration:class:Good@src/Good.php:0',
             'paths' => [$coverage === 'all-failed' ? $this->tempDir . '/Broken.php' : $this->tempDir],
             '--channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable',
         ]);
 
         self::assertSame(4, $tester->getStatusCode(), $tester->getDisplay());
         self::assertStringContainsString('Analysis incomplete:', $tester->getDisplay());
-        self::assertStringNotContainsString('Unknown symbol', $tester->getDisplay());
-        self::assertStringNotContainsString('Symbol:', $tester->getDisplay());
+        self::assertStringNotContainsString('Unknown subject', $tester->getDisplay());
+        self::assertStringNotContainsString('Subject:', $tester->getDisplay());
     }
 
     /** @return iterable<string, array{string}> */
@@ -122,7 +115,6 @@ final class BaselineIncompleteAnalysisTest extends TestCase
             'baseline:generate' => BaselineGenerateCommand::class,
             'baseline:update' => BaselineUpdateCommand::class,
             'baseline:cleanup' => BaselineCleanupCommand::class,
-            'baseline:migrate' => BaselineMigrateCommand::class,
             'baseline:explain' => BaselineExplainCommand::class,
             default => throw new LogicException('Unsupported baseline command fixture: ' . $commandName),
         };

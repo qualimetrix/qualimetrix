@@ -111,6 +111,53 @@ PHP;
     }
 
     #[Test]
+    public function itHashesTheCompleteNormalizedTokenSequenceRatherThanBlockSize(): void
+    {
+        $first = <<<'PHP'
+<?php
+function alpha() {
+    $firstValue = Source::load()->one()->two();
+    return $firstValue;
+}
+PHP;
+        $second = <<<'PHP'
+<?php
+function beta() {
+    $secondValue = Source::load()->one()->two();
+    return $secondValue;
+}
+PHP;
+        $third = <<<'PHP'
+<?php
+function gamma() {
+    $thirdValue = Other::read()->four()->five();
+    return $thirdValue;
+}
+PHP;
+        $fourth = <<<'PHP'
+<?php
+function delta() {
+    $fourthValue = Other::read()->four()->five();
+    return $fourthValue;
+}
+PHP;
+
+        $blocks = $this->createDetector(minTokens: 10, minLines: 3)->detect([
+            $this->createFile('first.php', $first),
+            $this->createFile('second.php', $second),
+            $this->createFile('third.php', $third),
+            $this->createFile('fourth.php', $fourth),
+        ]);
+
+        self::assertCount(2, $blocks);
+        self::assertSame($blocks[0]->lines, $blocks[1]->lines);
+        self::assertSame($blocks[0]->tokens, $blocks[1]->tokens);
+        self::assertNotSame($blocks[0]->contentHash, $blocks[1]->contentHash);
+        self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $blocks[0]->contentHash);
+        self::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $blocks[1]->contentHash);
+    }
+
+    #[Test]
     public function itFindsNoDuplicationInDifferentCode(): void
     {
         $code1 = <<<'PHP'
@@ -424,12 +471,14 @@ PHP;
             ],
             lines: 11,
             tokens: 50,
+            contentHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
         );
 
         self::assertSame(3, $block->occurrences());
         self::assertSame('a.php', $block->primaryLocation()->file->value());
         self::assertCount(2, $block->relatedLocations());
         self::assertSame('b.php', $block->relatedLocations()[0]->file->value());
+        self::assertSame('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', $block->contentHash);
     }
 
     #[Test]

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Complexity;
 
+use LogicException;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
@@ -163,8 +164,9 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Method) as $methodInfo) {
-            $metrics = $context->metrics->get($methodInfo->symbolPath);
+        foreach ($context->metrics->allCallables() as $methodInfo) {
+            $subject = $methodInfo->subject ?? throw new LogicException('NPath complexity findings require an exact callable subject');
+            $metrics = $context->metrics->getSubject($subject);
             $npath = $metrics->get(MetricName::COMPLEXITY_NPATH);
 
             if ($npath === null) {
@@ -174,7 +176,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
             $npathValue = (int) $npath;
 
             /** @var MethodNpathComplexityOptions $effectiveMethodOptions */
-            $effectiveMethodOptions = $this->getEffectiveOptions($context, $methodOptions, $methodInfo->file, $methodInfo->line ?? 1);
+            $effectiveMethodOptions = $this->getEffectiveOptions($context, $methodOptions, $subject);
             $severity = $effectiveMethodOptions->getSeverity($npathValue);
 
             if ($severity !== null) {
@@ -185,7 +187,8 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
 
                 $violations[] = new Violation(
                     location: new Location($methodInfo->file, $methodInfo->line),
-                    symbolPath: $methodInfo->symbolPath,
+                    subject: $subject,
+                    symbolPath: $subject->toSymbolPath(),
                     ruleName: $this->getName(),
                     violationCode: self::NAME . '.callable',
                     message: \sprintf('NPath complexity (execution paths) is %s (%s), exceeds threshold of %s.%s Reduce branching or extract methods', $displayValue, $categoryLabel, $threshold, $chain !== '' ? " {$chain}." : ''),
@@ -211,8 +214,12 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
-            $metrics = $context->metrics->get($classInfo->symbolPath);
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            $subject = $classInfo->subject ?? throw new LogicException('NPath complexity class findings require an exact declaration subject');
+            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+                continue;
+            }
+            $metrics = $context->metrics->get($subject->toSymbolPath());
             $maxNpath = $metrics->get(MetricName::agg(MetricName::COMPLEXITY_NPATH, AggregationStrategy::Max));
 
             if ($maxNpath === null) {
@@ -222,7 +229,7 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
             $maxNpathValue = (int) $maxNpath;
 
             /** @var ClassNpathComplexityOptions $effectiveClassOptions */
-            $effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $classInfo->file, $classInfo->line ?? 1);
+            $effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $subject);
             $severity = $effectiveClassOptions->getSeverity($maxNpathValue);
 
             if ($severity !== null) {
@@ -232,7 +239,8 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
 
                 $violations[] = new Violation(
                     location: new Location($classInfo->file, $classInfo->line),
-                    symbolPath: $classInfo->symbolPath,
+                    subject: $subject,
+                    symbolPath: $subject->toSymbolPath(),
                     ruleName: $this->getName(),
                     violationCode: self::NAME . '.class',
                     message: \sprintf('Maximum method NPath complexity is %s (%s), exceeds threshold of %s. Refactor the most complex methods', $displayValue, $categoryLabel, $threshold),

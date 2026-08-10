@@ -10,6 +10,7 @@ use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
@@ -89,6 +90,8 @@ final class ClassCountRule extends AbstractRule
         $violations = [];
 
         foreach ($context->metrics->all(SymbolType::Namespace_) as $namespaceInfo) {
+            $subject = $namespaceInfo->subject
+                ?? MetricSubject::aggregate($namespaceInfo->symbolPath);
             // Skip parent namespaces — only analyze leaf namespaces
             $namespace = $namespaceInfo->symbolPath->namespace;
             if ($namespace !== null && $context->namespaceTree !== null && !$context->namespaceTree->isLeaf($namespace)) {
@@ -105,7 +108,7 @@ final class ClassCountRule extends AbstractRule
             }
 
             /** @var ClassCountOptions $effectiveOptions */
-            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $namespaceInfo->file, $namespaceInfo->line ?? 1);
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
             $severity = $effectiveOptions->getSeverity($classCount);
 
             if ($severity !== null) {
@@ -113,6 +116,7 @@ final class ClassCountRule extends AbstractRule
 
                 $violations[] = new Violation(
                     location: new Location($namespaceInfo->file),
+                    subject: $subject,
                     symbolPath: $namespaceInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: self::NAME,

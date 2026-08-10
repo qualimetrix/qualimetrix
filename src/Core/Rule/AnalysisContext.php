@@ -9,8 +9,8 @@ use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Duplication\DuplicateBlock;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\MetricSubject;
 
 final readonly class AnalysisContext
 {
@@ -42,43 +42,35 @@ final readonly class AnalysisContext
     }
 
     /**
-     * Finds the most specific threshold override for a rule, file, and line.
+     * Finds the most specific threshold override bound to an exact subject.
      *
-     * When multiple overrides match (e.g., class-level and callable-level),
-     * selects the one with the smallest scope (endLine - line span).
-     * This ensures callable-level overrides take priority over class-level ones.
-     *
-     * Overrides with null endLine (unbounded scope) are treated as having
-     * infinite span, so any bounded override will win over an unbounded one.
+     * FileProcessor expands class and property controls to their applicable
+     * declaration subjects before transport. Rules therefore never reconstruct
+     * ownership from presentation file/line metadata.
      */
-    public function getThresholdOverride(string $ruleName, ?RelativePath $file, int $line): ?ThresholdOverride
+    public function getThresholdOverride(string $ruleName, MetricSubject $subject): ?ThresholdOverride
     {
-        if ($file === null) {
-            return null;
-        }
-
-        $fileKey = $file->value();
-        if (!isset($this->thresholdOverrides[$fileKey])) {
-            return null;
-        }
-
         $bestMatch = null;
+        $bestSpecificity = 0;
         $bestSpan = \PHP_INT_MAX;
 
-        foreach ($this->thresholdOverrides[$fileKey] as $override) {
-            if (!$override->matches($ruleName)) {
-                continue;
-            }
+        foreach ($this->thresholdOverrides as $overrides) {
+            foreach ($overrides as $override) {
+                if (!$override->matches($ruleName) || $override->subject->toCanonical() !== $subject->toCanonical()) {
+                    continue;
+                }
 
-            if ($line < $override->line || ($override->endLine !== null && $line > $override->endLine)) {
-                continue;
-            }
+                $specificity = $override->controlScope->specificity();
+                $span = $override->endLine !== null ? ($override->endLine - $override->line) : \PHP_INT_MAX;
 
-            $span = $override->endLine !== null ? ($override->endLine - $override->line) : \PHP_INT_MAX;
-
-            if ($bestMatch === null || $span < $bestSpan) {
-                $bestMatch = $override;
-                $bestSpan = $span;
+                if ($bestMatch === null
+                    || $specificity > $bestSpecificity
+                    || ($specificity === $bestSpecificity && $span < $bestSpan)
+                ) {
+                    $bestMatch = $override;
+                    $bestSpecificity = $specificity;
+                    $bestSpan = $span;
+                }
             }
         }
 

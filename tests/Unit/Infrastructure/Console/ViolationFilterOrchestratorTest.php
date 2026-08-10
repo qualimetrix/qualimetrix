@@ -21,6 +21,8 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -140,9 +142,12 @@ final class ViolationFilterOrchestratorTest extends TestCase
     #[Test]
     public function itPrintsExcludedViolationDetailsWithShowSuppressed(): void
     {
+        $path = RelativePath::fromString('src/Service/UserService.php');
+        $symbol = SymbolPath::forClass('App\\Tests', 'UserServiceTest');
         $violation = new Violation(
-            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
-            symbolPath: SymbolPath::forClass('App\\Tests', 'UserServiceTest'),
+            location: new Location($path, 42),
+            subject: MetricSubject::declaration(new DeclarationPath($symbol, $path, 42)),
+            symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
             message: 'CCN too high',
@@ -176,9 +181,12 @@ final class ViolationFilterOrchestratorTest extends TestCase
     #[Test]
     public function itDoesNotPrintExcludedViolationDetailsWithoutShowSuppressed(): void
     {
+        $path = RelativePath::fromString('src/Service/UserService.php');
+        $symbol = SymbolPath::forClass('App\\Tests', 'UserServiceTest');
         $violation = new Violation(
-            location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
-            symbolPath: SymbolPath::forClass('App\\Tests', 'UserServiceTest'),
+            location: new Location($path, 42),
+            subject: MetricSubject::declaration(new DeclarationPath($symbol, $path, 42)),
+            symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
             message: 'CCN too high',
@@ -216,7 +224,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
     {
         $stillFiring = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
         $baselinePath = $this->writeBaseline([
-            $stillFiring->symbolPath->toCanonical() => [
+            $stillFiring->subject->toCanonical() => [
                 ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
                 ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
             ],
@@ -251,7 +259,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
     {
         $stillFiring = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
         $baselinePath = $this->writeBaseline([
-            $stillFiring->symbolPath->toCanonical() => [
+            $stillFiring->subject->toCanonical() => [
                 ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
                 ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
             ],
@@ -270,9 +278,13 @@ final class ViolationFilterOrchestratorTest extends TestCase
 
     private static function violation(string $file, string $namespace, string $class): Violation
     {
+        $path = RelativePath::fromString($file);
+        $symbol = SymbolPath::forClass($namespace, $class);
+
         return new Violation(
-            location: new Location(RelativePath::fromString($file), 10),
-            symbolPath: SymbolPath::forClass($namespace, $class),
+            location: new Location($path, 10),
+            subject: MetricSubject::declaration(new DeclarationPath($symbol, $path, 10)),
+            symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
             message: 'CCN too high',
@@ -290,7 +302,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $this->tempFiles[] = $path;
 
         file_put_contents($path, json_encode([
-            'version' => 10,
+            'version' => 11,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => ['src'],
             'entries' => $entries,

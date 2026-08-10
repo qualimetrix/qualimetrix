@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\CodeSmell;
 
+use LogicException;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
-use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Core\Violation\ViolationChannel;
@@ -59,7 +59,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
     /**
      * Every subclass that does not override {@see analyze()} emits its
      * channel through the loop below with a fixed `1.0` occurrence marker
-     * (`metricValue: 1.0` at the `new Violation(...)` call) — never a
+     * projected by {@see CodeSmellFinding} — never a
      * measured magnitude — so `occurrence` is the correct shape for all of
      * them uniformly. `static::NAME` resolves per concrete subclass via
      * late static binding, exactly as {@see getName()} above already relies
@@ -114,17 +114,14 @@ abstract class AbstractCodeSmellRule extends AbstractRule
                     continue;
                 }
 
-                $line = (int) $entry['line'];
-
-                $violations[] = new Violation(
-                    location: new Location($fileInfo->file, $line, precise: true),
-                    symbolPath: $fileInfo->symbolPath,
-                    ruleName: static::NAME,
-                    violationCode: static::NAME,
-                    message: $this->buildMessage($entry),
-                    severity: static::SEVERITY,
-                    metricValue: 1.0,
-                    recommendation: static::RECOMMENDATION,
+                $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
+                $violations[] = CodeSmellFinding::fromEntry($entry, $file)->toViolation(
+                    $fileInfo->symbolPath,
+                    static::NAME,
+                    static::SMELL_TYPE,
+                    static::SEVERITY,
+                    $this->buildMessage($entry),
+                    static::RECOMMENDATION,
                 );
             }
         }

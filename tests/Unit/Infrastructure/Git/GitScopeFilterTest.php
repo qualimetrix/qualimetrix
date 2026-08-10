@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -60,6 +62,11 @@ final class GitScopeFilterTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App\\Service', 'UserService'),
+                RelativePath::fromString('src/Service.php'),
+                10,
+            )),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -83,6 +90,11 @@ final class GitScopeFilterTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Controller.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Controller', 'HomeController'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App\\Controller', 'HomeController'),
+                RelativePath::fromString('src/Controller.php'),
+                10,
+            )),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -107,6 +119,7 @@ final class GitScopeFilterTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service/Aggregated.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Service')),
             ruleName: 'size',
             violationCode: 'size',
             message: 'Namespace too large',
@@ -136,6 +149,7 @@ final class GitScopeFilterTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service/Aggregated.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Service')),
             ruleName: 'size',
             violationCode: 'size',
             message: 'Namespace too large',
@@ -165,6 +179,11 @@ final class GitScopeFilterTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App\\Service', 'UserService'),
+                RelativePath::fromString('src/Service.php'),
+                10,
+            )),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -188,6 +207,7 @@ final class GitScopeFilterTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('README.md'), 10),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('README.md')),
+            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('README.md'))),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -223,6 +243,7 @@ final class GitScopeFilterTest extends TestCase
             $violation = new Violation(
                 location: new Location(RelativePath::fromString('some/file.php'), null),
                 symbolPath: SymbolPath::forNamespace($namespace),
+                subject: MetricSubject::aggregate(SymbolPath::forNamespace($namespace)),
                 ruleName: 'size',
                 violationCode: 'size',
                 message: 'Namespace too large',
@@ -252,6 +273,11 @@ final class GitScopeFilterTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/legacy.php'), 10),
             symbolPath: SymbolPath::forClass('', 'LegacyClass'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('', 'LegacyClass'),
+                RelativePath::fromString('src/legacy.php'),
+                10,
+            )),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -287,6 +313,11 @@ final class GitScopeFilterTest extends TestCase
             new Violation(
                 location: new Location(RelativePath::fromString('src/Service.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Service'),
+                subject: MetricSubject::declaration(new DeclarationPath(
+                    SymbolPath::forClass('App', 'Service'),
+                    RelativePath::fromString('src/Service.php'),
+                    10,
+                )),
                 ruleName: 'complexity',
                 violationCode: 'complexity',
                 message: 'Too complex',
@@ -295,6 +326,11 @@ final class GitScopeFilterTest extends TestCase
             new Violation(
                 location: new Location(RelativePath::fromString('src/Controller.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'Controller'),
+                subject: MetricSubject::declaration(new DeclarationPath(
+                    SymbolPath::forClass('App', 'Controller'),
+                    RelativePath::fromString('src/Controller.php'),
+                    20,
+                )),
                 ruleName: 'size',
                 violationCode: 'size',
                 message: 'Too large',
@@ -303,6 +339,11 @@ final class GitScopeFilterTest extends TestCase
             new Violation(
                 location: new Location(RelativePath::fromString('src/Repository.php'), 30),
                 symbolPath: SymbolPath::forClass('App', 'Repository'),
+                subject: MetricSubject::declaration(new DeclarationPath(
+                    SymbolPath::forClass('App', 'Repository'),
+                    RelativePath::fromString('src/Repository.php'),
+                    30,
+                )),
                 ruleName: 'coupling',
                 violationCode: 'coupling',
                 message: 'Too coupled',
@@ -340,6 +381,11 @@ final class GitScopeFilterTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App\\Service', 'UserService'),
+                RelativePath::fromString('src/Service.php'),
+                10,
+            )),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -354,6 +400,11 @@ final class GitScopeFilterTest extends TestCase
         $baseViolation = new Violation(
             location: new Location(RelativePath::fromString('src/Base.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Base'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App', 'Base'),
+                RelativePath::fromString('src/Base.php'),
+                10,
+            )),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -384,6 +435,11 @@ final class GitScopeFilterTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Deleted.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Deleted'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App', 'Deleted'),
+                RelativePath::fromString('src/Deleted.php'),
+                10,
+            )),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -410,6 +466,7 @@ final class GitScopeFilterTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service.php'), null),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service.php')),
+            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Service.php'))),
             ruleName: 'size',
             violationCode: 'size',
             message: 'File too large',
@@ -446,6 +503,7 @@ PHP;
         $violation = new Violation(
             location: new Location(RelativePath::fromString('some/file.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\Complex\\Nested'),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Complex\\Nested')),
             ruleName: 'size',
             violationCode: 'size',
             message: 'Namespace too large',
@@ -483,6 +541,7 @@ PHP;
         $violation = new Violation(
             location: new Location(RelativePath::fromString('some/file.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\Bracketed'),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Bracketed')),
             ruleName: 'size',
             violationCode: 'size',
             message: 'Namespace too large',
@@ -514,6 +573,7 @@ PHP;
             self::assertTrue($filter->shouldInclude(new Violation(
                 location: new Location(RelativePath::fromString('other.php'), null),
                 symbolPath: SymbolPath::forNamespace($namespace),
+                subject: MetricSubject::aggregate(SymbolPath::forNamespace($namespace)),
                 ruleName: 'size',
                 violationCode: 'size',
                 message: 'Namespace issue',

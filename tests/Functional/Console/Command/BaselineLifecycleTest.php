@@ -43,7 +43,7 @@ final class BaselineLifecycleTest extends TestCase
     }
 
     #[Test]
-    public function itReportsARekeyedDuplicateAfterTheAlphabeticallyFirstCopyWasRemoved(): void
+    public function itKeepsADuplicateAcceptedWhenThePrimaryCopyChanges(): void
     {
         $project = BaselineCliFixture::from('duplication');
 
@@ -71,8 +71,8 @@ final class BaselineLifecycleTest extends TestCase
 
             $checked = $project->checkWithSeparatedDiagnostics($paths, ['--baseline' => $project->baselinePath]);
             self::assertSame(Command::SUCCESS, $checked->getStatusCode(), $checked->getDisplay());
-            self::assertStringContainsString('baseline entries did not appear in this run', $checked->getErrorOutput());
-            self::assertStringContainsString('1 violation (1 warning)', $checked->getDisplay());
+            self::assertStringNotContainsString('baseline entries did not appear in this run', $checked->getDisplay());
+            self::assertStringContainsString('No violations found', $checked->getDisplay());
         } finally {
             $project->remove();
         }
@@ -93,7 +93,7 @@ final class BaselineLifecycleTest extends TestCase
             $generated = $project->generate($paths);
             self::assertSame(Command::SUCCESS, $generated->getStatusCode(), $generated->getDisplay());
 
-            $captured = self::entryForChannel($project->baselinePath, 'duplication.code-duplication#duplication.code-duplication');
+            $captured = self::aggregateForChannel($project->baselinePath, 'duplication.code-duplication#duplication.code-duplication');
             self::assertSame(2, $captured['count']);
             self::assertSame([11, 15], $captured['magnitudes']);
 
@@ -102,7 +102,7 @@ final class BaselineLifecycleTest extends TestCase
             $currentBaseline = $project->root . '/after-repair.json';
             $measured = $project->generateAt($currentBaseline, $paths);
             self::assertSame(Command::SUCCESS, $measured->getStatusCode(), $measured->getDisplay());
-            $survivor = self::entryForChannel($currentBaseline, 'duplication.code-duplication#duplication.code-duplication');
+            $survivor = self::aggregateForChannel($currentBaseline, 'duplication.code-duplication#duplication.code-duplication');
             self::assertSame(1, $survivor['count']);
             self::assertSame([15], $survivor['magnitudes']);
 
@@ -129,11 +129,11 @@ final class BaselineLifecycleTest extends TestCase
             file_put_contents($project->root . '/Second.php', self::repairedClass('Second'));
 
             $bytesBeforeListing = (string) file_get_contents($project->baselinePath);
-            $before = self::entriesByFile($project->baselinePath);
+            $before = self::entriesBySubject($project->baselinePath);
             $cleanup = $project->cleanup($paths);
             self::assertSame(Command::SUCCESS, $cleanup->getStatusCode(), $cleanup->getDisplay());
             self::assertSame($bytesBeforeListing, file_get_contents($project->baselinePath));
-            self::assertSame($before, self::entriesByFile($project->baselinePath));
+            self::assertSame($before, self::entriesBySubject($project->baselinePath));
             $firstSelector = self::selectorFor($cleanup->getDisplay(), 'First.php');
             $secondSelector = self::selectorFor($cleanup->getDisplay(), 'Second.php');
             self::assertStringNotContainsString('Kept.php', $cleanup->getDisplay());
@@ -146,7 +146,9 @@ final class BaselineLifecycleTest extends TestCase
             self::assertStringContainsString($firstSelector, $removed->getDisplay());
             self::assertStringContainsString($secondSelector, $removed->getDisplay());
 
-            self::assertSame(['Kept.php'], array_keys(self::entriesByFile($project->baselinePath)));
+            $remaining = self::entriesBySubject($project->baselinePath);
+            self::assertCount(1, $remaining);
+            self::assertStringContainsString('/Kept.php:', (string) array_key_first($remaining));
         } finally {
             $project->remove();
         }
@@ -166,21 +168,20 @@ final class BaselineLifecycleTest extends TestCase
     /**
      * @return array<string, array{count: int, channel: string}>
      */
-    private static function entriesByFile(string $baselinePath): array
+    private static function entriesBySubject(string $baselinePath): array
     {
-        /** @var array<string, array{count: int, channel: string}> $byFile */
-        $byFile = [];
+        /** @var array<string, array{count: int, channel: string}> $bySubject */
+        $bySubject = [];
 
         /** @var array{entries: array<string, list<array{count: int, channel: string}>>} $baseline */
         $baseline = json_decode((string) file_get_contents($baselinePath), true, flags: \JSON_THROW_ON_ERROR);
-        foreach ($baseline['entries'] as $symbol => $entries) {
-            $file = basename($symbol);
-            $byFile[$file] = $entries[0];
+        foreach ($baseline['entries'] as $subject => $entries) {
+            $bySubject[$subject] = $entries[0];
         }
 
-        ksort($byFile);
+        ksort($bySubject);
 
-        return $byFile;
+        return $bySubject;
     }
 
     private static function selectorFor(string $display, string $file): string
@@ -195,19 +196,25 @@ final class BaselineLifecycleTest extends TestCase
     /**
      * @return array{count: int, channel: string, magnitudes: list<int|float>}
      */
-    private static function entryForChannel(string $baselinePath, string $channel): array
+    private static function aggregateForChannel(string $baselinePath, string $channel): array
     {
+        $count = 0;
+        $magnitudes = [];
+
         foreach (self::entries($baselinePath) as $entry) {
             if ($entry['channel'] === $channel && isset($entry['magnitudes'])) {
-                return [
-                    'count' => $entry['count'],
-                    'channel' => $entry['channel'],
-                    'magnitudes' => $entry['magnitudes'],
-                ];
+                $count += $entry['count'];
+                $magnitudes = [...$magnitudes, ...$entry['magnitudes']];
             }
         }
 
-        self::fail("No captured entry for {$channel}.");
+        if ($magnitudes === []) {
+            self::fail("No captured entry for {$channel}.");
+        }
+
+        sort($magnitudes, \SORT_NUMERIC);
+
+        return ['count' => $count, 'channel' => $channel, 'magnitudes' => $magnitudes];
     }
 
     private static function uniqueClass(string $class): string

@@ -181,7 +181,11 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
         {
             "file": "src/Service/UserService.php",
             "line": 42,
+            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php:1234",
             "symbol": "App\\Service\\UserService::calculate",
+            "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
+            "occurrence": null,
+            "edge": null,
             "namespace": "App\\Service",
             "rule": "complexity.cyclomatic",
             "code": "complexity.cyclomatic.callable",
@@ -208,6 +212,18 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
 <!-- llms:skip-end -->
 
 Записи `worstNamespaces` и `worstClasses` включают поле `violationDensity` -- количество нарушений на 100 строк кода -- для нормализованной по размеру оценки качества кода.
+
+Для машинной идентичности используй `channel + subject + optional occurrence +
+optional edge`. `symbol` — логическая проекция для отображения; строка исходника,
+сообщение и порядок вывода не являются стабильной идентичностью. `subject`
+различает точные декларации, логические и агрегатные subjects, `occurrence`
+различает семантические свидетельства внутри канала, а `edge` содержит
+обязательную цель зависимости и необязательный `type` ссылки. Нетипизированное
+ребро имеет вид `{"target": "class:App\\Dependency"}`, типизированное —
+`{"type": "new", "target": "class:App\\Dependency"}`. Fingerprints форматтеров
+используют ту же комбинацию, поэтому target-only рёбра различаются по цели и
+отличаются от типизированного ребра к той же цели. Существующие fingerprints
+без ребра и с полностью типизированным ребром не меняются.
 
 При использовании `--group-by=class` или `--group-by=namespace` нарушения организуются в объект `violationGroups`, где ключами являются FQCN класса или пространство имён. Каждая группа содержит массив нарушений и сводные счётчики (`errorCount`, `warningCount`, `violationDensity`).
 
@@ -250,11 +266,11 @@ bin/qmx check src/ --format=json --no-progress > report.json
 
 ## metrics
 
-Необработанные значения метрик для каждого символа (файл, класс, метод, пространство имён). В отличие от `json`, который выводит нарушения, `metrics` экспортирует исходные данные метрик, которые оценивают правила.
+Необработанные значения метрик для каждого символа (файл, класс, callable, пространство имён). В отличие от `json`, который выводит нарушения, `metrics` экспортирует исходные данные метрик, которые оценивают правила.
 
 **Когда использовать:** Пользовательские дашборды, анализ трендов, пайплайны data science или создание собственных критериев качества на основе сырых метрик.
 
-**Ключи верхнего уровня:** `version`, `package`, `timestamp`, `symbols[]` (каждый с `type`: file/class/method/namespace, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`.
+**Ключи верхнего уровня:** `version`, `package`, `timestamp`, `symbols[]` (каждый с `type`: file/class/callable/namespace, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`.
 
 <!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**

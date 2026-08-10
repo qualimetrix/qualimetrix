@@ -6,18 +6,13 @@ namespace Qualimetrix\Metrics\CodeSmell;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr;
-use PhpParser\Node\Expr\ArrowFunction;
-use PhpParser\Node\Expr\Closure;
-use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt;
-use PhpParser\Node\Stmt\ClassMethod;
-use PhpParser\Node\Stmt\Function_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Metrics\VisitorCallableScope;
 use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
@@ -40,30 +35,15 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
     /** @var array<string, int> Method/function FQN => first unreachable line number */
     private array $firstUnreachableLines = [];
 
-    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, sourceLine: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
-    private array $methodInfos = [];
-
-    private ?string $currentNamespace = null;
-    private ?string $currentClass = null;
-    private ?int $currentClassStartFilePos = null;
-    private int $closureCounter = 0;
-    private ?string $currentProperty = null;
-
-    /** @var list<array{?string, ?int}> Class context before each nested class-like scope */
-    private array $classStack = [];
+    /** @var array<string, VisitorCallableScope> */
+    private array $scopes = [];
 
     public function reset(): void
     {
         $this->unreachableCounts = [];
         $this->firstUnreachableLines = [];
-        $this->methodInfos = [];
-        $this->currentNamespace = null;
-        $this->currentClass = null;
-        $this->currentClassStartFilePos = null;
-        $this->closureCounter = 0;
-        $this->currentProperty = null;
-        $this->resetCallableTraversalKeys();
-        $this->classStack = [];
+        $this->scopes = [];
+        $this->resetVisitorMethodContext();
     }
 
     /**
@@ -72,7 +52,7 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
     public function getUnreachableCounts(): array
     {
         /** @var array<string, int> $projected */
-        $projected = $this->projectLogicalMetricMap($this->unreachableCounts, $this->methodInfos);
+        $projected = $this->projectLogicalMetricMap($this->unreachableCounts, $this->scopes);
 
         return $projected;
     }
@@ -83,7 +63,7 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
     public function getFirstUnreachableLines(): array
     {
         /** @var array<string, int> $projected */
-        $projected = $this->projectLogicalMetricMap($this->firstUnreachableLines, $this->methodInfos);
+        $projected = $this->projectLogicalMetricMap($this->firstUnreachableLines, $this->scopes);
 
         return $projected;
     }
@@ -97,15 +77,15 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
     {
         $result = [];
 
-        $ordinals = $this->callableCollisionOrdinals($this->methodInfos);
-        foreach ($this->methodInfos as $fqn => $info) {
+        $ordinals = $this->callableCollisionOrdinals($this->scopes);
+        foreach ($this->scopes as $fqn => $scope) {
             $bag = (new MetricBag())->with('unreachableCode', $this->unreachableCounts[$fqn] ?? 0);
 
             if (isset($this->firstUnreachableLines[$fqn])) {
                 $bag = $bag->with('unreachableCode.firstLine', $this->firstUnreachableLines[$fqn]);
             }
 
-            $result[] = $this->createCallableWithMetrics($info, $file, $bag, $ordinals[$fqn]);
+            $result[] = $this->createCallableWithMetrics($scope, $file, $bag, $ordinals[$fqn]);
         }
 
         return $result;
@@ -113,127 +93,24 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
 
     public function enterNode(Node $node): ?int
     {
-        // Track namespace
-        if ($node instanceof Stmt\Namespace_) {
-            $this->currentNamespace = $node->name?->toString() ?? '';
-        }
-
-        // Track class-like types, including anonymous declarations.
-        $className = $this->extractClassLikeName($node);
-        if ($this->isClassLikeNode($node)) {
-            $this->classStack[] = [$this->currentClass, $this->currentClassStartFilePos];
-        }
-        if ($className !== null) {
-            $this->currentClass = $className;
-            $this->currentClassStartFilePos = $node->getStartFilePos();
-        } elseif ($node instanceof Stmt\Class_ && $node->name === null) {
-            $this->currentClass = $this->buildAnonymousClassName($node->getStartFilePos());
-            $this->currentClassStartFilePos = $node->getStartFilePos();
-        }
-
-        // Class method
-        if ($node instanceof ClassMethod) {
-            $fqn = $this->buildMethodFqn($node->name->toString());
-            $fqn = $this->createCallableTraversalKey($fqn, $node->getStartFilePos());
-            $this->methodInfos[$fqn] = [
-                'logicalFqn' => $this->buildMethodFqn($node->name->toString()),
-                'namespace' => $this->currentNamespace,
-                'class' => $this->currentClass,
-                'method' => $node->name->toString(),
-                'startFilePos' => $node->getStartFilePos(),
-                'sourceLine' => $node->getStartLine(),
-                'kind' => CallableKind::Method,
-                'anonymousSyntax' => null,
-                'classStartFilePos' => $this->currentClassStartFilePos,
-            ];
-            $this->analyzeAndStore($fqn, $node->stmts ?? []);
-
+        $scope = $this->enterVisitorMethodContext($node);
+        if ($scope === null) {
             return null;
         }
-
-        if ($node instanceof Stmt\Property && $this->currentClass !== null && \count($node->props) === 1) {
-            $this->currentProperty = $node->props[0]->name->toString();
-        }
-
-        if ($node instanceof PropertyHook && $this->currentClass !== null && $this->currentProperty !== null) {
-            $name = $this->currentProperty . '::' . $node->name->toString();
-            $fqn = $this->buildMethodFqn($name);
-            $fqn = $this->createCallableTraversalKey($fqn, $node->getStartFilePos());
-            $this->methodInfos[$fqn] = [
-                'logicalFqn' => $this->buildMethodFqn($name),
-                'namespace' => $this->currentNamespace,
-                'class' => $this->currentClass,
-                'method' => $name,
-                'startFilePos' => $node->getStartFilePos(),
-                'sourceLine' => $node->getStartLine(),
-                'kind' => CallableKind::PropertyHook,
-                'anonymousSyntax' => null,
-                'classStartFilePos' => $this->currentClassStartFilePos,
-            ];
-            $this->analyzeAndStore($fqn, $node->body instanceof Expr ? [] : ($node->body ?? []));
-
-            return null;
-        }
-
-        // Global function
-        if ($node instanceof Function_) {
-            $fqn = $this->buildFunctionFqn($node->name->toString());
-            $fqn = $this->createCallableTraversalKey($fqn, $node->getStartFilePos());
-            $this->methodInfos[$fqn] = [
-                'logicalFqn' => $this->buildFunctionFqn($node->name->toString()),
-                'namespace' => $this->currentNamespace,
-                'class' => null,
-                'method' => $node->name->toString(),
-                'startFilePos' => $node->getStartFilePos(),
-                'sourceLine' => $node->getStartLine(),
-                'kind' => CallableKind::Function,
-                'anonymousSyntax' => null,
-                'classStartFilePos' => null,
-            ];
-            $this->analyzeAndStore($fqn, $node->stmts ?? []);
-
-            return null;
-        }
-
-        if ($node instanceof Closure || $node instanceof ArrowFunction) {
-            ++$this->closureCounter;
-            $name = '{closure#' . $this->closureCounter . '}';
-            $fqn = $this->buildClosureFqn();
-            $fqn = $this->createCallableTraversalKey($fqn, $node->getStartFilePos());
-            $this->methodInfos[$fqn] = [
-                'logicalFqn' => $this->buildClosureFqn(),
-                'namespace' => $this->currentNamespace,
-                'class' => $this->currentClass,
-                'method' => $name,
-                'startFilePos' => $node->getStartFilePos(),
-                'sourceLine' => $node->getStartLine(),
-                'kind' => CallableKind::AnonymousCallable,
-                'anonymousSyntax' => $node instanceof Closure ? 'closure' : 'arrow',
-                'classStartFilePos' => $this->currentClassStartFilePos,
-            ];
-            $this->analyzeAndStore($fqn, $node instanceof ArrowFunction ? [] : ($node->stmts ?? []));
-
-            return null;
-        }
+        $this->scopes[$scope->traversalKey] = $scope;
+        $statements = match (true) {
+            $node instanceof Stmt\ClassMethod, $node instanceof Stmt\Function_, $node instanceof Expr\Closure => $node->stmts ?? [],
+            $node instanceof Node\PropertyHook => $node->body instanceof Expr ? [] : ($node->body ?? []),
+            default => [],
+        };
+        $this->analyzeAndStore($scope->traversalKey, $statements);
 
         return null;
     }
 
     public function leaveNode(Node $node): ?int
     {
-        if ($node instanceof Stmt\Property) {
-            $this->currentProperty = null;
-        }
-
-        // Exit class-like scope — pop stack and restore previous class context
-        if ($this->isClassLikeNode($node)) {
-            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classStack) ?? [null, null];
-        }
-
-        // Exit namespace scope
-        if ($node instanceof Stmt\Namespace_) {
-            $this->currentNamespace = null;
-        }
+        $this->leaveVisitorMethodContext($node);
 
         return null;
     }

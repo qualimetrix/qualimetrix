@@ -11,7 +11,8 @@ use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
-use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
@@ -73,9 +74,9 @@ final class TypeCoverageRule extends AbstractRule
      * All three type-coverage channels (`.param`, `.return`, `.property`)
      * share one emission helper, {@see checkCoverage()}, which reports the
      * coverage percentage (`$coverage`) as `metricValue` and is judged worse
-     * the *lower* it goes: `$coverage < $errorThreshold` (line 161, strict)
-     * and `elseif ($coverage < $warningThreshold)` (line 164, strict) — less
-     * type coverage is worse debt.
+     * the *lower* it goes. The error threshold is checked first, followed by
+     * the warning threshold, and both comparisons are strict — less type
+     * coverage is worse debt.
      *
      * @return array<string, ChannelDeclaration>
      */
@@ -99,78 +100,67 @@ final class TypeCoverageRule extends AbstractRule
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
-            $metrics = $context->metrics->get($classInfo->symbolPath);
-
-            $location = new Location($classInfo->file, $classInfo->line);
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            $subject = $classInfo->subject ?? throw new LogicException('Type coverage findings require an exact class declaration subject');
+            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+                continue;
+            }
+            $metrics = $context->metrics->get($subject->toSymbolPath());
 
             // Apply @qmx-threshold overrides for this class
             $effectiveOptions = $this->getEffectiveOptions(
                 $context,
                 $this->options,
-                $classInfo->file,
-                $classInfo->line ?? 1,
+                $subject,
             );
             \assert($effectiveOptions instanceof TypeCoverageOptions);
 
-            $paramViolation = $this->checkCoverage(
-                $metrics,
-                $classInfo->symbolPath,
-                $location,
-                MetricName::TYPE_COVERAGE_PARAM_TOTAL,
-                MetricName::TYPE_COVERAGE_PARAM,
-                'Parameter',
-                $effectiveOptions->paramWarning,
-                $effectiveOptions->paramError,
-            );
+            $specs = [
+                [
+                    'totalMetric' => MetricName::TYPE_COVERAGE_PARAM_TOTAL,
+                    'coverageMetric' => MetricName::TYPE_COVERAGE_PARAM,
+                    'spec' => ['label' => 'Parameter', 'code' => 'param', 'hint' => 'Add type declarations to method parameters', 'warning' => $effectiveOptions->paramWarning, 'error' => $effectiveOptions->paramError],
+                ],
+                [
+                    'totalMetric' => MetricName::TYPE_COVERAGE_RETURN_TOTAL,
+                    'coverageMetric' => MetricName::TYPE_COVERAGE_RETURN,
+                    'spec' => ['label' => 'Return', 'code' => 'return', 'hint' => 'Add return type declarations to methods', 'warning' => $effectiveOptions->returnWarning, 'error' => $effectiveOptions->returnError],
+                ],
+                [
+                    'totalMetric' => MetricName::TYPE_COVERAGE_PROPERTY_TOTAL,
+                    'coverageMetric' => MetricName::TYPE_COVERAGE_PROPERTY,
+                    'spec' => ['label' => 'Property', 'code' => 'property', 'hint' => 'Add type declarations to properties', 'warning' => $effectiveOptions->propertyWarning, 'error' => $effectiveOptions->propertyError],
+                ],
+            ];
 
-            if ($paramViolation !== null) {
-                $violations[] = $paramViolation;
-            }
-
-            $returnViolation = $this->checkCoverage(
-                $metrics,
-                $classInfo->symbolPath,
-                $location,
-                MetricName::TYPE_COVERAGE_RETURN_TOTAL,
-                MetricName::TYPE_COVERAGE_RETURN,
-                'Return',
-                $effectiveOptions->returnWarning,
-                $effectiveOptions->returnError,
-            );
-
-            if ($returnViolation !== null) {
-                $violations[] = $returnViolation;
-            }
-
-            $propertyViolation = $this->checkCoverage(
-                $metrics,
-                $classInfo->symbolPath,
-                $location,
-                MetricName::TYPE_COVERAGE_PROPERTY_TOTAL,
-                MetricName::TYPE_COVERAGE_PROPERTY,
-                'Property',
-                $effectiveOptions->propertyWarning,
-                $effectiveOptions->propertyError,
-            );
-
-            if ($propertyViolation !== null) {
-                $violations[] = $propertyViolation;
+            foreach ($specs as $coverageSpec) {
+                $violation = $this->checkCoverage(
+                    $metrics,
+                    $subject,
+                    $classInfo,
+                    $coverageSpec['totalMetric'],
+                    $coverageSpec['coverageMetric'],
+                    $coverageSpec['spec'],
+                );
+                if ($violation !== null) {
+                    $violations[] = $violation;
+                }
             }
         }
 
         return $violations;
     }
 
+    /**
+     * @param array{label: string, code: 'param'|'return'|'property', hint: string, warning: float, error: float} $spec
+     */
     private function checkCoverage(
         MetricBag $metrics,
-        SymbolPath $symbolPath,
-        Location $location,
+        MetricSubject $subject,
+        SymbolInfo $classInfo,
         string $totalMetric,
         string $coverageMetric,
-        string $label,
-        float $warningThreshold,
-        float $errorThreshold,
+        array $spec,
     ): ?Violation {
         $total = $metrics->get($totalMetric);
 
@@ -180,38 +170,36 @@ final class TypeCoverageRule extends AbstractRule
 
         $coverage = (float) ($metrics->get($coverageMetric) ?? 0.0);
 
-        if ($coverage < $errorThreshold) {
+        if ($coverage < $spec['error']) {
             $severity = Severity::Error;
-            $threshold = $errorThreshold;
-        } elseif ($coverage < $warningThreshold) {
+            $threshold = $spec['error'];
+        } elseif ($coverage < $spec['warning']) {
             $severity = Severity::Warning;
-            $threshold = $warningThreshold;
+            $threshold = $spec['warning'];
         } else {
             return null;
         }
 
-        [$code, $hint] = match ($label) {
-            'Parameter' => ['param', 'Add type declarations to method parameters'],
-            'Return' => ['return', 'Add return type declarations to methods'],
-            'Property' => ['property', 'Add type declarations to properties'],
-            default => throw new LogicException(\sprintf('Unknown coverage label: %s', $label)),
-        };
-
         return new Violation(
-            location: $location,
-            symbolPath: $symbolPath,
+            location: new Location($classInfo->file, $classInfo->line),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
-            violationCode: self::NAME . '.' . $code,
+            violationCode: match ($spec['code']) {
+                'param' => 'design.type-coverage.param',
+                'return' => 'design.type-coverage.return',
+                'property' => 'design.type-coverage.property',
+            },
             message: \sprintf(
                 '%s type coverage is %.1f%% (minimum: %.1f%%). %s',
-                $label,
+                $spec['label'],
                 $coverage,
                 $threshold,
-                $hint,
+                $spec['hint'],
             ),
             severity: $severity,
             metricValue: $coverage,
-            recommendation: \sprintf('%s type coverage: %.1f%% (threshold: %.1f%%) — missing type declarations', $label, $coverage, $threshold),
+            recommendation: \sprintf('%s type coverage: %.1f%% (threshold: %.1f%%) — missing type declarations', $spec['label'], $coverage, $threshold),
             threshold: $threshold,
         );
     }

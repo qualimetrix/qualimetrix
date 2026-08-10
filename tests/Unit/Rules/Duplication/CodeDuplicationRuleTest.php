@@ -13,6 +13,8 @@ use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Rules\Duplication\CodeDuplicationRule;
@@ -23,6 +25,8 @@ use Qualimetrix\Rules\Duplication\CodeDuplicationRule;
 #[CoversClass(DuplicateLocation::class)]
 final class CodeDuplicationRuleTest extends TestCase
 {
+    private const string CONTENT_HASH = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
     #[Test]
     public function nameAndDescriptionAreCorrect(): void
     {
@@ -52,6 +56,7 @@ final class CodeDuplicationRuleTest extends TestCase
                     [new DuplicateLocation(RelativePath::fromString('a.php'), 1, 10), new DuplicateLocation(RelativePath::fromString('b.php'), 1, 10)],
                     10,
                     50,
+                    self::CONTENT_HASH,
                 ),
             ],
         );
@@ -86,6 +91,7 @@ final class CodeDuplicationRuleTest extends TestCase
                     ],
                     lines: 16,
                     tokens: 80,
+                    contentHash: self::CONTENT_HASH,
                 ),
             ],
         );
@@ -100,6 +106,9 @@ final class CodeDuplicationRuleTest extends TestCase
         self::assertSame(10, $v->location->line);
         self::assertSame(Severity::Warning, $v->severity);
         self::assertSame(16, $v->metricValue);
+        self::assertSame(MetricSubject::aggregate(SymbolPath::forProject())->toCanonical(), $v->subject->toCanonical());
+        self::assertSame(SymbolPath::forProject()->toCanonical(), $v->symbolPath->toCanonical());
+        self::assertNotNull($v->occurrenceKey);
         self::assertStringContainsString('16 lines', $v->message);
         self::assertStringContainsString('2 occurrences', $v->message);
         self::assertStringContainsString('src/B.php:30-45', $v->message);
@@ -121,6 +130,7 @@ final class CodeDuplicationRuleTest extends TestCase
                     ],
                     lines: 16,
                     tokens: 80,
+                    contentHash: self::CONTENT_HASH,
                     hint: 'function processItems($items) { $result = [];',
                 ),
             ],
@@ -152,6 +162,7 @@ final class CodeDuplicationRuleTest extends TestCase
                     ],
                     lines: 16,
                     tokens: 80,
+                    contentHash: self::CONTENT_HASH,
                     hint: null,
                 ),
             ],
@@ -181,6 +192,7 @@ final class CodeDuplicationRuleTest extends TestCase
                     ],
                     lines: 60,
                     tokens: 300,
+                    contentHash: self::CONTENT_HASH,
                 ),
             ],
         );
@@ -204,11 +216,13 @@ final class CodeDuplicationRuleTest extends TestCase
                     [new DuplicateLocation(RelativePath::fromString('a.php'), 1, 10), new DuplicateLocation(RelativePath::fromString('b.php'), 1, 10)],
                     10,
                     50,
+                    self::CONTENT_HASH,
                 ),
                 new DuplicateBlock(
                     [new DuplicateLocation(RelativePath::fromString('c.php'), 5, 20), new DuplicateLocation(RelativePath::fromString('d.php'), 5, 20)],
                     16,
                     80,
+                    'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
                 ),
             ],
         );
@@ -235,6 +249,7 @@ final class CodeDuplicationRuleTest extends TestCase
                     ],
                     lines: 10,
                     tokens: 50,
+                    contentHash: self::CONTENT_HASH,
                 ),
             ],
         );
@@ -245,6 +260,50 @@ final class CodeDuplicationRuleTest extends TestCase
         self::assertStringContainsString('3 occurrences', $violations[0]->message);
         self::assertStringContainsString('b.php:5-14', $violations[0]->message);
         self::assertStringContainsString('c.php:20-29', $violations[0]->message);
+    }
+
+    #[Test]
+    public function itUsesOnlyProjectAndContentForDuplicateGroupIdentity(): void
+    {
+        $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
+        $repository = self::createStub(MetricRepositoryInterface::class);
+
+        $sameContentWithLaterPrimary = new DuplicateBlock(
+            locations: [
+                new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
+                new DuplicateLocation(RelativePath::fromString('src/C.php'), 60, 75),
+            ],
+            lines: 16,
+            tokens: 80,
+            contentHash: self::CONTENT_HASH,
+        );
+        $sameContentWithEarlierSibling = new DuplicateBlock(
+            locations: [
+                new DuplicateLocation(RelativePath::fromString('src/A.php'), 1, 16),
+                new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
+                new DuplicateLocation(RelativePath::fromString('src/C.php'), 60, 75),
+            ],
+            lines: 16,
+            tokens: 80,
+            contentHash: self::CONTENT_HASH,
+        );
+        $differentContent = new DuplicateBlock(
+            locations: [
+                new DuplicateLocation(RelativePath::fromString('src/A.php'), 1, 16),
+                new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
+            ],
+            lines: 16,
+            tokens: 80,
+            contentHash: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        );
+
+        $fingerprints = array_map(
+            static fn(DuplicateBlock $block): string => $rule->analyze(new AnalysisContext($repository, duplicateBlocks: [$block]))[0]->getFingerprint(),
+            [$sameContentWithLaterPrimary, $sameContentWithEarlierSibling, $differentContent],
+        );
+
+        self::assertSame($fingerprints[0], $fingerprints[1]);
+        self::assertNotSame($fingerprints[0], $fingerprints[2]);
     }
 
     #[Test]

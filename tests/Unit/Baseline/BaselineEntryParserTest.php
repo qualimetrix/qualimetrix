@@ -14,6 +14,7 @@ use Qualimetrix\Baseline\BaselineEntryParser;
 use Qualimetrix\Baseline\InertBaselineEntry;
 use Qualimetrix\Baseline\InertEntryReason;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Violation\OccurrenceKey;
 use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
 
 /**
@@ -60,6 +61,27 @@ final class BaselineEntryParserTest extends TestCase
     }
 
     #[Test]
+    public function itParsesSemanticOccurrencesAsDistinctSelectorBearingIdentities(): void
+    {
+        $firstKey = OccurrenceKey::semantic('goto', ['line' => 10])->value;
+        $secondKey = OccurrenceKey::semantic('goto', ['line' => 20])->value;
+        $raw = [
+            'channel' => 'code-smell.goto#code-smell.goto',
+            'count' => 1,
+        ];
+
+        $first = $this->parser->parse('file:src/Foo.php', [...$raw, 'occurrence' => $firstKey]);
+        $second = $this->parser->parse('file:src/Foo.php', [...$raw, 'occurrence' => $secondKey]);
+
+        self::assertInstanceOf(BaselineEntry::class, $first);
+        self::assertInstanceOf(BaselineEntry::class, $second);
+        self::assertSame($firstKey, $first->identity->occurrenceKey);
+        self::assertSame($secondKey, $second->identity->occurrenceKey);
+        self::assertNotSame($first->identity->key(), $second->identity->key());
+        self::assertNotSame($first->selector()->value, $second->selector()->value);
+    }
+
+    #[Test]
     public function itParsesTheSuppressMode(): void
     {
         $entry = $this->parser->parse('callable:App\Foo::bar', [
@@ -78,6 +100,15 @@ final class BaselineEntryParserTest extends TestCase
         $entry = $this->parser->parse('callable:App\Foo::bar', 'not an object');
 
         self::assertInertFor($entry, InertEntryReason::Malformed);
+    }
+
+    #[Test]
+    public function itTurnsAJsonListAtTheEntryBoundaryInert(): void
+    {
+        $entry = $this->parser->parse('callable:App\Foo::bar', []);
+
+        self::assertInstanceOf(InertBaselineEntry::class, $entry);
+        self::assertSame('entry must be a JSON object', $entry->detail);
     }
 
     #[Test]
@@ -208,6 +239,42 @@ final class BaselineEntryParserTest extends TestCase
         ]);
 
         self::assertInertFor($entry, InertEntryReason::Malformed);
+    }
+
+    #[Test]
+    public function itRejectsAJsonListWhereEdgeRequiresAnObject(): void
+    {
+        $entry = $this->parser->parse('class:App\\Web\\Controller', [
+            'channel' => 'architecture.layer-violation#architecture.layer-violation',
+            'edge' => [],
+            'count' => 1,
+        ]);
+
+        self::assertInstanceOf(InertBaselineEntry::class, $entry);
+        self::assertSame(InertEntryReason::Malformed, $entry->reason);
+        self::assertSame('"edge" must be a JSON object', $entry->detail);
+    }
+
+    #[Test]
+    public function itRejectsWrongOptionalAndRequiredJsonShapesWithoutLosingRawInput(): void
+    {
+        $cases = [
+            ['channel' => 12, 'count' => 1],
+            ['channel' => 'code-smell.goto#code-smell.goto', 'occurrence' => [], 'count' => 1],
+            ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 1.0],
+            ['channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable', 'magnitudes' => ['value' => 1], 'count' => 1],
+            ['channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable', 'magnitudes' => ['one'], 'count' => 1],
+            ['channel' => 'architecture.layer-violation#architecture.layer-violation', 'edge' => ['target' => ''], 'count' => 1],
+            ['channel' => 'architecture.layer-violation#architecture.layer-violation', 'edge' => ['target' => 'class:App\\Target', 'type' => 1], 'count' => 1],
+        ];
+
+        foreach ($cases as $raw) {
+            $entry = $this->parser->parse('callable:App\Foo::bar', $raw);
+
+            self::assertInertFor($entry, InertEntryReason::Malformed);
+            self::assertInstanceOf(InertBaselineEntry::class, $entry);
+            self::assertSame($raw, $entry->raw);
+        }
     }
 
     /**

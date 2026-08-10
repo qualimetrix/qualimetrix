@@ -13,6 +13,7 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
  * AST visitor that detects parameters with sensitive names missing #[\SensitiveParameter].
@@ -22,6 +23,8 @@ use Qualimetrix\Metrics\ResettableVisitorInterface;
  */
 final class SensitiveParameterVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
+    use VisitorMethodTrackingTrait;
+
     /** @var list<SensitiveParameterLocation> */
     private array $locations = [];
 
@@ -32,10 +35,12 @@ final class SensitiveParameterVisitor extends NodeVisitorAbstract implements Res
     public function reset(): void
     {
         $this->locations = [];
+        $this->resetVisitorMethodContext();
     }
 
     public function enterNode(Node $node): ?int
     {
+        $this->enterVisitorMethodContext($node);
         if ($node instanceof ClassMethod
             || $node instanceof Function_
             || $node instanceof Closure
@@ -43,6 +48,13 @@ final class SensitiveParameterVisitor extends NodeVisitorAbstract implements Res
         ) {
             $this->checkParams($node->params);
         }
+
+        return null;
+    }
+
+    public function leaveNode(Node $node): null
+    {
+        $this->leaveVisitorMethodContext($node);
 
         return null;
     }
@@ -78,8 +90,15 @@ final class SensitiveParameterVisitor extends NodeVisitorAbstract implements Res
             $this->locations[] = new SensitiveParameterLocation(
                 line: $param->getStartLine(),
                 paramName: $name,
+                subjectId: $this->currentFileEntrySubjectId(),
             );
         }
+    }
+
+    /** @return array<string, int|string> */
+    public function getSubjectComponents(SensitiveParameterLocation $location): array
+    {
+        return $this->fileEntrySubjectComponents($location->subjectId);
     }
 
     /**

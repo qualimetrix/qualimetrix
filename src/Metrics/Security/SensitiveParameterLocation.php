@@ -12,5 +12,6 @@ final readonly class SensitiveParameterLocation
     public function __construct(
         public int $line,
         public string $paramName,
+        public string $subjectId,
     ) {}
 }

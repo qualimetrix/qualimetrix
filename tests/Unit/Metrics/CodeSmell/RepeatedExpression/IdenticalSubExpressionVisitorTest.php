@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Metrics\CodeSmell;
+namespace Qualimetrix\Tests\Unit\Metrics\CodeSmell\RepeatedExpression;
 
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Metrics\CodeSmell\IdenticalSubExpressionCollector;
-use Qualimetrix\Metrics\CodeSmell\IdenticalSubExpressionFinding;
-use Qualimetrix\Metrics\CodeSmell\IdenticalSubExpressionVisitor;
+use Qualimetrix\Metrics\CodeSmell\RepeatedExpression\IdenticalSubExpressionCollector;
+use Qualimetrix\Metrics\CodeSmell\RepeatedExpression\IdenticalSubExpressionFinding;
+use Qualimetrix\Metrics\CodeSmell\RepeatedExpression\IdenticalSubExpressionVisitor;
 use SplFileInfo;
 
 #[CoversClass(IdenticalSubExpressionVisitor::class)]

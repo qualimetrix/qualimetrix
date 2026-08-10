@@ -34,14 +34,14 @@ final readonly class BaselineEntryParser
     ) {}
 
     /**
-     * @param string $symbolKey the file key this entry sits under
+     * @param string $subjectKey the file key this entry sits under
      * @param mixed $raw the decoded entry
      */
-    public function parse(string $symbolKey, mixed $raw): BaselineEntry|InertBaselineEntry
+    public function parse(string $subjectKey, mixed $raw): BaselineEntry|InertBaselineEntry
     {
-        if (!\is_array($raw)) {
+        if (!\is_array($raw) || array_is_list($raw)) {
             return InertBaselineEntry::forRaw(
-                $symbolKey,
+                $subjectKey,
                 null,
                 InertEntryReason::Malformed,
                 'entry must be a JSON object',
@@ -50,12 +50,12 @@ final readonly class BaselineEntryParser
         }
 
         try {
-            $identity = $this->parseIdentity($symbolKey, $raw);
+            $identity = $this->parseIdentity($subjectKey, $raw);
         } catch (BaselineEntryRejection $rejection) {
             $channel = $raw['channel'] ?? null;
 
             return InertBaselineEntry::forRaw(
-                $symbolKey,
+                $subjectKey,
                 \is_string($channel) ? $channel : null,
                 $rejection->reason,
                 $rejection->getMessage(),
@@ -80,21 +80,24 @@ final readonly class BaselineEntryParser
      *
      * @throws BaselineEntryRejection
      */
-    private function parseIdentity(string $symbolKey, array $raw): BaselineIdentity
+    private function parseIdentity(string $subjectKey, array $raw): BaselineIdentity
     {
-        $channel = $raw['channel'] ?? null;
-        if (!\is_string($channel) || $channel === '') {
-            throw new BaselineEntryRejection(
-                InertEntryReason::Malformed,
-                '"channel" must be a non-empty string in the "ruleName#violationCode" form',
-            );
-        }
+        $channel = self::readRequiredNonEmptyString(
+            $raw,
+            'channel',
+            '"channel" must be a non-empty string in the "ruleName#violationCode" form',
+        );
 
         try {
             return new BaselineIdentity(
-                $symbolKey,
+                $subjectKey,
                 ViolationChannel::fromKey($channel),
-                $this->parseEdge($raw['edge'] ?? null),
+                self::readOptionalNonEmptyString(
+                    $raw,
+                    'occurrence',
+                    '"occurrence" must be a non-empty string when present',
+                ),
+                self::readEdge($raw),
             );
         } catch (InvalidArgumentException $e) {
             throw new BaselineEntryRejection(InertEntryReason::Malformed, $e->getMessage());
@@ -102,53 +105,54 @@ final readonly class BaselineEntryParser
     }
 
     /**
-     * @throws BaselineEntryRejection
-     */
-    private function parseEdge(mixed $raw): ?BaselineEdge
-    {
-        if ($raw === null) {
-            return null;
-        }
-
-        if (!\is_array($raw)) {
-            throw new BaselineEntryRejection(InertEntryReason::Malformed, '"edge" must be a JSON object');
-        }
-
-        $target = $raw['target'] ?? null;
-        if (!\is_string($target) || $target === '') {
-            throw new BaselineEntryRejection(
-                InertEntryReason::Malformed,
-                '"edge.target" must be a non-empty canonical symbol path',
-            );
-        }
-
-        return new BaselineEdge($target, $this->parseEdgeType($raw['type'] ?? null));
-    }
-
-    /**
-     * An absent `type` is a legal edge — ADR 0017 writes the key only when the
-     * finding carries one — while an unrecognized one is not, and the two
-     * answers are different enough to be worth reading apart from the target
-     * validation above.
+     * @param array<mixed, mixed> $object
      *
      * @throws BaselineEntryRejection
      */
-    private function parseEdgeType(mixed $type): ?DependencyType
+    private static function readRequiredNonEmptyString(array $object, string $field, string $label): string
     {
-        if ($type === null) {
+        $value = $object[$field] ?? null;
+        if (!\is_string($value) || $value === '') {
+            throw new BaselineEntryRejection(InertEntryReason::Malformed, $label);
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param array<mixed, mixed> $object
+     *
+     * @throws BaselineEntryRejection
+     */
+    private static function readOptionalNonEmptyString(array $object, string $field, string $label): ?string
+    {
+        $value = $object[$field] ?? null;
+        if ($value === null) {
             return null;
         }
 
-        $dependencyType = \is_string($type) ? DependencyType::tryFrom($type) : null;
+        return self::readRequiredNonEmptyString([$field => $value], $field, $label);
+    }
 
-        if ($dependencyType === null) {
-            throw new BaselineEntryRejection(
-                InertEntryReason::Malformed,
-                \sprintf('"edge.type" is not a known dependency type: %s', self::describe($type)),
-            );
+    /**
+     * @param array<mixed, mixed> $object
+     *
+     * @throws BaselineEntryRejection
+     *
+     * @return ?array<mixed, mixed>
+     */
+    private static function readOptionalObject(array $object, string $field, string $label): ?array
+    {
+        $value = $object[$field] ?? null;
+        if ($value === null) {
+            return null;
         }
 
-        return $dependencyType;
+        if (!\is_array($value) || array_is_list($value)) {
+            throw new BaselineEntryRejection(InertEntryReason::Malformed, $label);
+        }
+
+        return $value;
     }
 
     /**
@@ -158,13 +162,7 @@ final readonly class BaselineEntryParser
      */
     private function parseEntry(BaselineIdentity $identity, array $raw): BaselineEntry
     {
-        $count = $raw['count'] ?? null;
-        if (!\is_int($count)) {
-            throw new BaselineEntryRejection(InertEntryReason::Malformed, '"count" must be an integer');
-        }
-
-        $magnitudes = $this->parseMagnitudes($raw['magnitudes'] ?? null);
-        $mode = $this->parseMode($raw);
+        $values = BaselineEntryValues::decode($raw);
 
         $declaration = $this->declarations->declarationFor($identity->channel);
         if ($declaration === null) {
@@ -175,7 +173,7 @@ final readonly class BaselineEntryParser
         }
 
         try {
-            $entry = new BaselineEntry($identity, $magnitudes, $count, $mode);
+            $entry = new BaselineEntry($identity, $values->magnitudes, $values->count, $values->mode);
         } catch (InvalidArgumentException $e) {
             throw new BaselineEntryRejection(InertEntryReason::Malformed, $e->getMessage());
         }
@@ -192,56 +190,49 @@ final readonly class BaselineEntryParser
     }
 
     /**
-     * @throws BaselineEntryRejection
-     *
-     * @return ?list<int|float>
-     */
-    private function parseMagnitudes(mixed $raw): ?array
-    {
-        if ($raw === null) {
-            return null;
-        }
-
-        if (!\is_array($raw) || !array_is_list($raw)) {
-            throw new BaselineEntryRejection(InertEntryReason::Malformed, '"magnitudes" must be a JSON array');
-        }
-
-        $magnitudes = [];
-        foreach ($raw as $value) {
-            if (!\is_int($value) && !\is_float($value)) {
-                throw new BaselineEntryRejection(
-                    InertEntryReason::Malformed,
-                    \sprintf('"magnitudes" must hold numbers, found %s', self::describe($value)),
-                );
-            }
-
-            $magnitudes[] = $value;
-        }
-
-        return $magnitudes;
-    }
-
-    /**
      * @param array<mixed, mixed> $raw
      *
      * @throws BaselineEntryRejection
      */
-    private function parseMode(array $raw): ?BaselineEntryMode
+    private static function readEdge(array $raw): ?BaselineEdge
     {
-        if (!\array_key_exists('mode', $raw) || $raw['mode'] === null) {
+        $edge = self::readOptionalObject($raw, 'edge', '"edge" must be a JSON object');
+        if ($edge === null) {
             return null;
         }
 
-        $mode = \is_string($raw['mode']) ? BaselineEntryMode::tryFrom($raw['mode']) : null;
+        return new BaselineEdge(
+            self::readRequiredNonEmptyString(
+                $edge,
+                'target',
+                '"edge.target" must be a non-empty canonical symbol path',
+            ),
+            self::readEdgeType($edge),
+        );
+    }
 
-        if ($mode === null) {
+    /**
+     * @param array<mixed, mixed> $edge
+     *
+     * @throws BaselineEntryRejection
+     */
+    private static function readEdgeType(array $edge): ?DependencyType
+    {
+        $type = $edge['type'] ?? null;
+        if ($type === null) {
+            return null;
+        }
+
+        $dependencyType = \is_string($type) ? DependencyType::tryFrom($type) : null;
+
+        if ($dependencyType === null) {
             throw new BaselineEntryRejection(
-                InertEntryReason::UnrecognizedMode,
-                \sprintf('"mode" is not a recognized mode: %s', self::describe($raw['mode'])),
+                InertEntryReason::Malformed,
+                \sprintf('"edge.type" is not a known dependency type: %s', self::describe($type)),
             );
         }
 
-        return $mode;
+        return $dependencyType;
     }
 
     /**

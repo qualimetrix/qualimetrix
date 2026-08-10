@@ -6,16 +6,14 @@ namespace Qualimetrix\Metrics\Halstead;
 
 use PhpParser\Node;
 use PhpParser\Node\Expr;
-use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt;
-use PhpParser\Node\Stmt\Property;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Metrics\VisitorCallableScope;
 use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
@@ -75,32 +73,18 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
     /** @var array<string, HalsteadMetrics> FQN => metrics */
     private array $metrics = [];
 
-    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, sourceLine: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> */
-    private array $methodInfos = [];
+    /** @var array<string, VisitorCallableScope> */
+    private array $scopes = [];
 
     /** @var list<array{fqn: string, operators: array<string, int>, operands: array<string, int>}> */
     private array $methodStack = [];
 
-    private ?string $currentNamespace = null;
-    private ?string $currentClass = null;
-    private ?int $currentClassStartFilePos = null;
-    private int $closureCounter = 0;
-    private ?string $currentProperty = null;
-    /** @var list<array{?string, ?int}> */
-    private array $classContextStack = [];
-
     public function reset(): void
     {
         $this->metrics = [];
-        $this->methodInfos = [];
+        $this->scopes = [];
         $this->methodStack = [];
-        $this->currentNamespace = null;
-        $this->currentClass = null;
-        $this->currentClassStartFilePos = null;
-        $this->closureCounter = 0;
-        $this->currentProperty = null;
-        $this->classContextStack = [];
-        $this->resetCallableTraversalKeys();
+        $this->resetVisitorMethodContext();
     }
 
     /**
@@ -109,7 +93,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
     public function getMetrics(): array
     {
         /** @var array<string, object> $projected */
-        $projected = $this->projectLogicalMetricMap($this->metrics, $this->methodInfos);
+        $projected = $this->projectLogicalMetricMap($this->metrics, $this->scopes);
 
         /** @var array<string, HalsteadMetrics> $projected */
         return $projected;
@@ -124,8 +108,8 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
     {
         $result = [];
 
-        $ordinals = $this->callableCollisionOrdinals($this->methodInfos);
-        foreach ($this->methodInfos as $fqn => $info) {
+        $ordinals = $this->callableCollisionOrdinals($this->scopes);
+        foreach ($this->scopes as $fqn => $scope) {
             $halstead = $this->metrics[$fqn] ?? HalsteadMetrics::empty();
 
             $bag = (new MetricBag())
@@ -135,7 +119,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
                 ->with(MetricName::HALSTEAD_BUGS, $halstead->bugs())
                 ->with(MetricName::HALSTEAD_TIME, $halstead->time());
 
-            $result[] = $this->createCallableWithMetrics($info, $file, $bag, $ordinals[$fqn]);
+            $result[] = $this->createCallableWithMetrics($scope, $file, $bag, $ordinals[$fqn]);
         }
 
         return $result;
@@ -143,79 +127,9 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
 
     public function enterNode(Node $node): ?int
     {
-        // Track namespace
-        if ($node instanceof Stmt\Namespace_) {
-            $this->currentNamespace = $node->name?->toString() ?? '';
-        }
-
-        if ($this->isClassLikeNode($node)) {
-            $this->classContextStack[] = [$this->currentClass, $this->currentClassStartFilePos];
-        }
-
-        // Track class-like types (skip anonymous classes)
-        if ($node instanceof Stmt\Class_) {
-            if ($node->name === null) {
-                $this->currentClass = $this->buildAnonymousClassName($node->getStartFilePos());
-                $this->currentClassStartFilePos = $node->getStartFilePos();
-            } else {
-                $this->currentClass = $node->name->toString();
-                $this->currentClassStartFilePos = $node->getStartFilePos();
-            }
-        } elseif ($this->isClassLikeNode($node)) {
-            $className = $this->extractClassLikeName($node);
-            if ($className !== null) {
-                $this->currentClass = $className;
-                $this->currentClassStartFilePos = $node->getStartFilePos();
-            }
-        }
-
-        if ($node instanceof Stmt\ClassMethod) {
-            $fqn = $this->buildMethodFqn($node->name->toString());
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $node->getStartLine(), CallableKind::Method, null);
-
-            return null;
-        }
-
-        if ($node instanceof Property && $this->currentClass !== null && \count($node->props) === 1) {
-            $this->currentProperty = $node->props[0]->name->toString();
-        }
-
-        if ($node instanceof PropertyHook && $this->currentClass !== null && $this->currentProperty !== null) {
-            $name = $this->currentProperty . '::' . $node->name->toString();
-            $this->startMethod(
-                $this->buildMethodFqn($name),
-                $name,
-                $node->getStartFilePos(),
-                $node->getStartLine(),
-                CallableKind::PropertyHook,
-                null,
-            );
-
-            return null;
-        }
-
-        // Start of a function
-        if ($node instanceof Stmt\Function_) {
-            $fqn = $this->buildFunctionFqn($node->name->toString());
-            $this->startMethod($fqn, $node->name->toString(), $node->getStartFilePos(), $node->getStartLine(), CallableKind::Function, null);
-
-            return null;
-        }
-
-        if ($node instanceof Expr\Closure) {
-            ++$this->closureCounter;
-            $fqn = $this->buildClosureFqn();
-            $closureName = '{closure#' . $this->closureCounter . '}';
-            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), $node->getStartLine(), CallableKind::AnonymousCallable, 'closure');
-
-            return null;
-        }
-
-        if ($node instanceof Expr\ArrowFunction) {
-            ++$this->closureCounter;
-            $fqn = $this->buildClosureFqn();
-            $closureName = '{closure#' . $this->closureCounter . '}';
-            $this->startMethod($fqn, $closureName, $node->getStartFilePos(), $node->getStartLine(), CallableKind::AnonymousCallable, 'arrow');
+        $scope = $this->enterVisitorMethodContext($node);
+        if ($scope !== null) {
+            $this->startMethod($scope);
 
             return null;
         }
@@ -230,82 +144,27 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
 
     public function leaveNode(Node $node): ?int
     {
-        if ($node instanceof Stmt\ClassMethod) {
-            $this->endMethod();
-
-            return null;
-        }
-
-        if ($node instanceof PropertyHook) {
-            if ($this->currentClass !== null && $this->currentProperty !== null) {
-                $this->endMethod();
-            }
-
-            return null;
-        }
-
-        if ($node instanceof Property) {
-            $this->currentProperty = null;
-        }
-
-        // End of function
-        if ($node instanceof Stmt\Function_) {
-            $this->endMethod();
-
-            return null;
-        }
-
-        if ($node instanceof Expr\Closure || $node instanceof Expr\ArrowFunction) {
-            $this->endMethod();
-
-            return null;
-        }
-
-        // Exit class-like scope
-        if ($node instanceof Stmt\Class_) {
-            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
-        } elseif ($this->isClassLikeNode($node)) {
-            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classContextStack) ?? [null, null];
-        }
-
-        // Exit namespace scope
-        if ($node instanceof Stmt\Namespace_) {
-            $this->currentNamespace = null;
+        $scope = $this->leaveVisitorMethodContext($node);
+        if ($scope !== null) {
+            $this->endMethod($scope);
         }
 
         return null;
     }
 
-    private function startMethod(
-        string $fqn,
-        string $methodName,
-        int $startFilePos,
-        int $sourceLine,
-        CallableKind $kind,
-        ?string $anonymousSyntax,
-    ): void {
-        $logicalFqn = $fqn;
-        $fqn = $this->createCallableTraversalKey($logicalFqn, $startFilePos);
+    private function startMethod(VisitorCallableScope $scope): void
+    {
+        $fqn = $scope->traversalKey;
         $this->methodStack[] = [
             'fqn' => $fqn,
             'operators' => [],
             'operands' => [],
         ];
 
-        $this->methodInfos[$fqn] = [
-            'namespace' => $this->currentNamespace,
-            'logicalFqn' => $logicalFqn,
-            'class' => $this->currentClass,
-            'method' => $methodName,
-            'startFilePos' => $startFilePos,
-            'sourceLine' => $sourceLine,
-            'kind' => $kind,
-            'anonymousSyntax' => $anonymousSyntax,
-            'classStartFilePos' => $this->currentClassStartFilePos,
-        ];
+        $this->scopes[$fqn] = $scope;
     }
 
-    private function endMethod(): void
+    private function endMethod(VisitorCallableScope $scope): void
     {
         if ($this->methodStack === []) {
             return;

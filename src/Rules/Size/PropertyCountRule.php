@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Size;
 
+use LogicException;
+use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
@@ -85,55 +88,77 @@ final class PropertyCountRule extends AbstractRule
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
-            $metrics = $context->metrics->get($classInfo->symbolPath);
-            $propertyCount = $metrics->get(MetricName::STRUCTURE_PROPERTY_COUNT);
-
-            if ($propertyCount === null) {
-                continue;
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            $violation = $this->violationForClass($classInfo, $context, $this->options);
+            if ($violation !== null) {
+                $violations[] = $violation;
             }
-
-            // Skip readonly classes if configured
-            if ($this->options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
-                continue;
-            }
-
-            // Skip classes with only promoted properties if configured
-            if ($this->options->excludePromotedOnly && $metrics->get(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY) === 1) {
-                continue;
-            }
-
-            $propertyCountValue = (int) $propertyCount;
-            /** @var PropertyCountOptions $effectiveOptions */
-            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $classInfo->file, $classInfo->line ?? 1);
-            $severity = $effectiveOptions->getSeverity($propertyCountValue);
-
-            if ($severity === null) {
-                continue;
-            }
-
-            $threshold = $severity === Severity::Error
-                ? $effectiveOptions->error
-                : $effectiveOptions->warning;
-
-            $violations[] = new Violation(
-                location: new Location($classInfo->file, $classInfo->line),
-                symbolPath: $classInfo->symbolPath,
-                ruleName: $this->getName(),
-                violationCode: self::NAME,
-                message: \sprintf(
-                    'Property count is %d, exceeds threshold of %d. Consider splitting the class or using composition',
-                    $propertyCountValue,
-                    $threshold,
-                ),
-                severity: $severity,
-                metricValue: $propertyCountValue,
-                recommendation: \sprintf('Properties: %d (threshold: %d) — too many properties', $propertyCountValue, $threshold),
-                threshold: $threshold,
-            );
         }
 
         return $violations;
+    }
+
+    private function violationForClass(
+        SymbolInfo $classInfo,
+        AnalysisContext $context,
+        PropertyCountOptions $options,
+    ): ?Violation {
+        $subject = $classInfo->subject ?? throw new LogicException('Property count findings require an exact class declaration subject');
+        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+            return null;
+        }
+
+        $metrics = $context->metrics->get($subject->toSymbolPath());
+        $propertyCountValue = $this->eligiblePropertyCount($metrics, $options);
+        if ($propertyCountValue === null) {
+            return null;
+        }
+
+        /** @var PropertyCountOptions $effectiveOptions */
+        $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
+        $severity = $effectiveOptions->getSeverity($propertyCountValue);
+        if ($severity === null) {
+            return null;
+        }
+
+        $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
+        $message = \sprintf(
+            'Property count is %d, exceeds threshold of %d. Consider splitting the class or using composition',
+            $propertyCountValue,
+            $threshold,
+        );
+        $recommendation = \sprintf('Properties: %d (threshold: %d) — too many properties', $propertyCountValue, $threshold);
+        $location = new Location($classInfo->file, $classInfo->line);
+        $symbolPath = $subject->toSymbolPath();
+
+        return new Violation(
+            location: $location,
+            subject: $subject,
+            symbolPath: $symbolPath,
+            ruleName: $this->getName(),
+            violationCode: self::NAME,
+            message: $message,
+            severity: $severity,
+            metricValue: $propertyCountValue,
+            recommendation: $recommendation,
+            threshold: $threshold,
+        );
+    }
+
+    private function eligiblePropertyCount(MetricBag $metrics, PropertyCountOptions $options): ?int
+    {
+        $propertyCount = $metrics->get(MetricName::STRUCTURE_PROPERTY_COUNT);
+        if ($propertyCount === null) {
+            return null;
+        }
+        if ($options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
+            return null;
+        }
+        if ($options->excludePromotedOnly && $metrics->get(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY) === 1) {
+            return null;
+        }
+
+        return (int) $propertyCount;
     }
 
 }

@@ -67,6 +67,19 @@ PHP;
     }
 
     #[Test]
+    public function itAssignsAPatternInsideAMethodToThatMethodWithoutSerializingContext(): void
+    {
+        $metrics = $this->collectMetrics('<?php namespace App; class Query { public function run(): void { echo $_GET["id"]; } }');
+        $entry = $metrics->entries('security.xss')[0];
+
+        self::assertSame('declaration', $entry['subjectKind']);
+        self::assertSame('method', $entry['logicalKind']);
+        self::assertSame('Query', $entry['class']);
+        self::assertSame('run', $entry['member']);
+        self::assertArrayNotHasKey('context', $entry);
+    }
+
+    #[Test]
     public function itCollectsWithNoFindings(): void
     {
         $code = <<<'PHP'

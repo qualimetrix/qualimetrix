@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Rules\CodeSmell;
 
 use InvalidArgumentException;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -15,10 +16,12 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\CodeSmell\LongParameterListOptions;
 use Qualimetrix\Rules\CodeSmell\LongParameterListRule;
@@ -108,7 +111,7 @@ final class LongParameterListRuleTest extends TestCase
         $rule = new LongParameterListRule(new LongParameterListOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('all');
+        $repository->expects(self::never())->method('allCallables');
 
         $context = new AnalysisContext($repository);
 
@@ -121,14 +124,13 @@ final class LongParameterListRuleTest extends TestCase
         $rule = new LongParameterListRule(new LongParameterListOptions(warning: 4, error: 6));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 3);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -142,14 +144,13 @@ final class LongParameterListRuleTest extends TestCase
         $rule = new LongParameterListRule(new LongParameterListOptions(warning: 4, error: 6));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 4);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -169,14 +170,13 @@ final class LongParameterListRuleTest extends TestCase
         $rule = new LongParameterListRule(new LongParameterListOptions(warning: 4, error: 6));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 6);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -193,14 +193,13 @@ final class LongParameterListRuleTest extends TestCase
         $rule = new LongParameterListRule(new LongParameterListOptions(warning: 4, error: 6));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 8);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -236,14 +235,13 @@ final class LongParameterListRuleTest extends TestCase
         $rule = new LongParameterListRule(new LongParameterListOptions(warning: $warning, error: $error));
 
         $symbolPath = SymbolPath::forMethod('App\Test', 'TestClass', 'testMethod');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'test.php', 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', $parameterCount);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -381,7 +379,7 @@ final class LongParameterListRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forMethod('App\Dto', 'UserDto', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/UserDto.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Dto/UserDto.php', 10);
 
         // 7 params in VO constructor — below vo-warning=8, but above regular warning=4
         $metricBag = (new MetricBag())
@@ -389,9 +387,8 @@ final class LongParameterListRuleTest extends TestCase
             ->with('isVoConstructor', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -410,16 +407,15 @@ final class LongParameterListRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forMethod('App\Dto', 'UserDto', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/UserDto.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Dto/UserDto.php', 10);
 
         $metricBag = (new MetricBag())
             ->with('parameterCount', 8)
             ->with('isVoConstructor', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -444,16 +440,15 @@ final class LongParameterListRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forMethod('App\Dto', 'UserDto', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/UserDto.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Dto/UserDto.php', 10);
 
         $metricBag = (new MetricBag())
             ->with('parameterCount', 13)
             ->with('isVoConstructor', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -477,16 +472,15 @@ final class LongParameterListRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         // 5 params in non-VO constructor — above warning=4, below error=6
         $metricBag = (new MetricBag())
             ->with('parameterCount', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -533,16 +527,15 @@ final class LongParameterListRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forMethod('App\Dto', 'TestDto', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'test.php', 10);
 
         $metricBag = (new MetricBag())
             ->with('parameterCount', $parameterCount)
             ->with('isVoConstructor', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -669,15 +662,10 @@ final class LongParameterListRuleTest extends TestCase
         ?int $expectedThreshold,
     ): void {
         $file = RelativePath::fromString('src/Dto/UserDto.php');
-        $symbolInfo = new SymbolInfo(
-            SymbolPath::forMethod('App\\Dto', 'UserDto', '__construct'),
-            $file,
-            10,
-        );
+        $symbolInfo = $this->exactDeclarationInfo(SymbolPath::forMethod('App\\Dto', 'UserDto', '__construct'), $file->value(), 10);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$symbolInfo] : []);
-        $repository->method('get')->willReturn(
+        $repository->method('allCallables')->willReturn([$symbolInfo]);
+        $repository->method('getSubject')->willReturn(
             (new MetricBag())
                 ->with('parameterCount', $parameterCount)
                 ->with('isVoConstructor', 1),
@@ -686,7 +674,15 @@ final class LongParameterListRuleTest extends TestCase
             metrics: $repository,
             thresholdOverrides: [
                 $file->value() => [
-                    new ThresholdOverride('code-smell.long-parameter-list', 5, 7, 1, 20),
+                    new ThresholdOverride(
+                        'code-smell.long-parameter-list',
+                        5,
+                        7,
+                        1,
+                        $symbolInfo->subject ?? throw new LogicException('Exact subject is required'),
+                        ControlScope::Callable,
+                        20,
+                    ),
                 ],
             ],
         );
@@ -720,20 +716,23 @@ final class LongParameterListRuleTest extends TestCase
     public function itKeepsRegularThresholdOverridesOnTheRegularBranch(): void
     {
         $file = RelativePath::fromString('src/Service/UserService.php');
-        $symbolInfo = new SymbolInfo(
-            SymbolPath::forMethod('App\\Service', 'UserService', 'create'),
-            $file,
-            10,
-        );
+        $symbolInfo = $this->exactDeclarationInfo(SymbolPath::forMethod('App\\Service', 'UserService', 'create'), $file->value(), 10);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$symbolInfo] : []);
-        $repository->method('get')->willReturn((new MetricBag())->with('parameterCount', 5));
+        $repository->method('allCallables')->willReturn([$symbolInfo]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('parameterCount', 5));
         $context = new AnalysisContext(
             metrics: $repository,
             thresholdOverrides: [
                 $file->value() => [
-                    new ThresholdOverride('code-smell.long-parameter-list', 5, 7, 1, 20),
+                    new ThresholdOverride(
+                        'code-smell.long-parameter-list',
+                        5,
+                        7,
+                        1,
+                        $symbolInfo->subject ?? throw new LogicException('Exact subject is required'),
+                        ControlScope::Callable,
+                        20,
+                    ),
                 ],
             ],
         );
@@ -746,5 +745,99 @@ final class LongParameterListRuleTest extends TestCase
         self::assertSame(Severity::Warning, $violations[0]->severity);
         self::assertSame(5, $violations[0]->threshold);
         self::assertStringStartsWith('Method has 5 parameters', $violations[0]->message);
+    }
+
+    #[Test]
+    public function itBindsTheFindingAndThresholdControlToTheExactCallableDeclaration(): void
+    {
+        $file = RelativePath::fromString('src/Service/UserService.php');
+        $logical = SymbolPath::forMethod('App\\Service', 'UserService', 'create');
+        $controlled = new SymbolInfo(
+            MetricSubject::declaration(new DeclarationPath($logical, $file, 100)),
+            $file,
+            10,
+        );
+        $uncontrolled = new SymbolInfo(
+            MetricSubject::declaration(new DeclarationPath($logical, $file, 200)),
+            $file,
+            20,
+        );
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([$controlled, $uncontrolled]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('parameterCount', 5));
+        $context = new AnalysisContext(
+            metrics: $repository,
+            thresholdOverrides: [
+                $file->value() => [
+                    new ThresholdOverride(
+                        'code-smell.long-parameter-list',
+                        6,
+                        7,
+                        1,
+                        $controlled->subject ?? throw new LogicException('Exact subject is required'),
+                        ControlScope::Callable,
+                        20,
+                    ),
+                ],
+            ],
+        );
+
+        $violations = (new LongParameterListRule(
+            new LongParameterListOptions(warning: 4, error: 6),
+        ))->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(
+            $uncontrolled->subject?->toCanonical(),
+            $violations[0]->subject->toCanonical(),
+        );
+    }
+
+    #[Test]
+    public function itPreservesCallableOrderAcrossRegularAndVoProjections(): void
+    {
+        $regular = $this->exactDeclarationInfo(
+            SymbolPath::forMethod('App\\Service', 'UserService', 'create'),
+            'src/Service/UserService.php',
+            10,
+        );
+        $vo = $this->exactDeclarationInfo(
+            SymbolPath::forMethod('App\\Dto', 'UserDto', '__construct'),
+            'src/Dto/UserDto.php',
+            20,
+        );
+        $regularSubject = $regular->subject ?? throw new LogicException('Exact regular subject is required');
+        $voSubject = $vo->subject ?? throw new LogicException('Exact VO subject is required');
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([$regular, $vo]);
+        $repository->method('getSubject')->willReturnCallback(
+            static fn(MetricSubject $subject): MetricBag => $subject->toCanonical() === $regularSubject->toCanonical()
+                ? (new MetricBag())->with('parameterCount', 4)
+                : (new MetricBag())->with('parameterCount', 8)->with('isVoConstructor', 1),
+        );
+
+        $violations = (new LongParameterListRule(new LongParameterListOptions()))
+            ->analyze(new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        self::assertSame($regularSubject->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertSame('Method has 4 parameters, exceeds threshold of 4. Consider introducing a parameter object', $violations[0]->message);
+        self::assertSame(4, $violations[0]->threshold);
+        self::assertSame($voSubject->toCanonical(), $violations[1]->subject->toCanonical());
+        self::assertSame('VO constructor has 8 promoted parameters, exceeds threshold of 8. Consider splitting the value object', $violations[1]->message);
+        self::assertSame(8, $violations[1]->threshold);
+    }
+
+    private function exactDeclarationInfo(SymbolPath $symbolPath, string $file, int $line): SymbolInfo
+    {
+        $relativePath = RelativePath::fromString($file);
+
+        return new SymbolInfo(
+            MetricSubject::declaration(new DeclarationPath($symbolPath, $relativePath, $line)),
+            $relativePath,
+            $line,
+        );
     }
 }

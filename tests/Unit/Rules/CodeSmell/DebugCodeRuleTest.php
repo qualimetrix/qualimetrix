@@ -89,9 +89,9 @@ final class DebugCodeRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
 
         $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.debug_code', ['line' => 5])
-            ->withEntry('codeSmell.debug_code', ['line' => 12])
-            ->withEntry('codeSmell.debug_code', ['line' => 30]);
+            ->withEntry('codeSmell.debug_code', ['subjectKind' => 'file', 'line' => 5])
+            ->withEntry('codeSmell.debug_code', ['subjectKind' => 'file', 'line' => 12])
+            ->withEntry('codeSmell.debug_code', ['subjectKind' => 'file', 'line' => 30]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')

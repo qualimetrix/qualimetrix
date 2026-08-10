@@ -25,6 +25,13 @@ Coupling metrics measure dependencies between components. All collectors in this
 
 > **Note:** Robert C. Martin (1994) originally defined Instability only at the **package** (namespace) level. Qualimetrix extends it to the class level for finer-grained analysis. The namespace-level instability is the canonical metric per Martin's specification.
 
+> **Note:** The dependency graph is seeded with every named project class,
+> interface, trait, and enum, including degree-zero declarations. CBO/Ca/Ce
+> deduplicate logical endpoints, retain undeclared external targets, and remove
+> PHP built-ins except structural `extends` edges. One logical class score is
+> projected to every exact owned declaration so declaration controls, baseline
+> identities, and fingerprints remain independent.
+
 ### Instability Interpretation
 
 | Value | Description                                     |

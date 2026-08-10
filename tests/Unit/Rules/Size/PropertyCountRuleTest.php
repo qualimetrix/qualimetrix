@@ -12,7 +12,8 @@ use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
-use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Suppression\ControlScope;
+use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Size\PropertyCountOptions;
@@ -141,14 +142,14 @@ final class PropertyCountRuleTest extends TestCase
         // No propertyCount metric
 
         $symbolPath = SymbolPath::forClass('App', 'Test');
-        $symbolInfo = new SymbolInfo(
+        $symbolInfo = self::subjectInfo(
             symbolPath: $symbolPath,
             file: RelativePath::fromString(basename(__FILE__)),
             line: 1,
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$symbolInfo]);
         $repository->method('get')
             ->willReturn($bag);
@@ -157,6 +158,35 @@ final class PropertyCountRuleTest extends TestCase
 
         $violations = $rule->analyze($context);
         self::assertCount(0, $violations);
+    }
+
+    #[Test]
+    public function itAppliesTheExactSubjectOverrideAndPreservesOutput(): void
+    {
+        $classInfo = self::subjectInfo(
+            SymbolPath::forClass('App', 'Overridden'),
+            RelativePath::fromString('src/Overridden.php'),
+            10,
+        );
+        $subject = $classInfo->subject;
+        self::assertNotNull($subject);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('get')->willReturn((new MetricBag())->with('propertyCount', 12));
+        $context = new AnalysisContext(
+            metrics: $repository,
+            thresholdOverrides: [
+                'src/Overridden.php' => [new ThresholdOverride('size.property-count', 11, 12, 1, $subject, ControlScope::Class_, 100)],
+            ],
+        );
+
+        $violations = (new PropertyCountRule(new PropertyCountOptions(warning: 15, error: 20)))->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertSame(12, $violations[0]->threshold);
+        self::assertSame('Property count is 12, exceeds threshold of 12. Consider splitting the class or using composition', $violations[0]->message);
+        self::assertSame($subject->toCanonical(), $violations[0]->subject->toCanonical());
     }
 
     #[Test]
@@ -291,18 +321,63 @@ final class PropertyCountRuleTest extends TestCase
         }
 
         $symbolPath = SymbolPath::forClass($namespace, $class);
-        $symbolInfo = new SymbolInfo(
+        $symbolInfo = self::subjectInfo(
             symbolPath: $symbolPath,
             file: RelativePath::fromString(basename(__FILE__)),
             line: 1,
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$symbolInfo]);
         $repository->method('get')
             ->willReturn($bag);
 
         return new AnalysisContext($repository);
+    }
+    #[Test]
+    public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([
+            self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('get')->willReturn(
+            (new MetricBag())
+                ->with('propertyCount', 12)
+                ->with('isReadonly', 0)
+                ->with('isPromotedPropertiesOnly', 0),
+        );
+
+        $violations = (new PropertyCountRule(new PropertyCountOptions(warning: 10, error: 15)))
+            ->analyze(new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:class:App\\Service\\Twin@src/A.php:100',
+            'declaration:class:App\\Service\\Twin@src/B.php:200',
+        ], $subjects);
+    }
+
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            $file,
+            $line,
+            $kind,
+        );
     }
 }

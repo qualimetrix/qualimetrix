@@ -10,9 +10,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Names the findings a capture refused to record.
  *
- * Both commands that capture — `baseline:generate` and `baseline:migrate` —
- * report this, and both need it for the same reason: without it the success
- * line is the whole story, and for a run whose findings all sit on
+ * `baseline:generate` reports this because without it its success line is the
+ * whole story, and for a run whose findings all sit on
  * non-baselineable channels that story is "Baseline with 0 entries written",
  * followed by a `check` that reports everything the user believed they had
  * just accepted.

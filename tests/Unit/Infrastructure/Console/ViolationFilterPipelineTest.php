@@ -19,6 +19,8 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\SuppressionType;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Filter\ViolationFilterStage;
 use Qualimetrix\Core\Violation\Filter\ViolationFilterStageInterface;
@@ -140,7 +142,7 @@ final class ViolationFilterPipelineTest extends TestCase
 
         $result = $pipeline->filter([$ignored], new ViolationFilterOptions(
             baselinePath: $this->writeBaselineFile([
-                $ignored->symbolPath->toCanonical() => [
+                $ignored->subject->toCanonical() => [
                     ['channel' => $ignored->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
                 ],
             ]),
@@ -171,7 +173,7 @@ final class ViolationFilterPipelineTest extends TestCase
 
         $result = $pipeline->filter([$violation], new ViolationFilterOptions(
             baselinePath: $this->writeBaselineFile([
-                $violation->symbolPath->toCanonical() => [
+                $violation->subject->toCanonical() => [
                     ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
                 ],
             ]),
@@ -226,7 +228,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
 
         $baselinePath = $this->writeBaselineFile([
-            $violation->symbolPath->toCanonical() => [
+            $violation->subject->toCanonical() => [
                 ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
             ],
         ]);
@@ -252,7 +254,7 @@ final class ViolationFilterPipelineTest extends TestCase
 
         $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions(
             baselinePath: $this->writeBaselineFile([
-                $violation->symbolPath->toCanonical() => [
+                $violation->subject->toCanonical() => [
                     ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
                 ],
             ]),
@@ -287,7 +289,7 @@ final class ViolationFilterPipelineTest extends TestCase
 
         $result = $this->createPipeline()->filter([$first, $second], new ViolationFilterOptions(
             baselinePath: $this->writeBaselineFile([
-                $first->symbolPath->toCanonical() => [
+                $first->subject->toCanonical() => [
                     ['channel' => $first->channel()->toKey(), 'count' => 1],
                 ],
             ]),
@@ -322,7 +324,7 @@ final class ViolationFilterPipelineTest extends TestCase
         // boundary the channel's findings cannot be compared against.
         $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions(
             baselinePath: $this->writeBaselineFile([
-                $violation->symbolPath->toCanonical() => [
+                $violation->subject->toCanonical() => [
                     ['channel' => $violation->channel()->toKey(), 'magnitudes' => [1], 'count' => 1],
                 ],
             ]),
@@ -367,17 +369,18 @@ final class ViolationFilterPipelineTest extends TestCase
     public function itCollectsInertEntriesFromTheLoadedBaseline(): void
     {
         $violation = $this->makeViolation('src/Service/UserService.php');
+        $subjectKey = self::subjectKey('App\\Nowhere', 'Ghost', 'src/Nowhere/Ghost.php');
 
         $result = $this->createPipeline()->filter([$violation], new ViolationFilterOptions(
             baselinePath: $this->writeBaselineFile([
-                'class:App\\Nowhere\\Ghost' => [
+                $subjectKey => [
                     ['channel' => 'nonexistent.channel#nonexistent.channel', 'count' => 1],
                 ],
             ]),
         ));
 
         self::assertCount(1, $result->inertEntries);
-        self::assertSame('class:App\Nowhere\Ghost', $result->inertEntries[0]->symbolKey);
+        self::assertSame($subjectKey, $result->inertEntries[0]->subjectKey);
     }
 
     #[Test]
@@ -425,12 +428,13 @@ final class ViolationFilterPipelineTest extends TestCase
     public function itReportsAStaleEntryWithoutDisablingTheRestOfTheBaseline(): void
     {
         $violation = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService', metricValue: 25);
+        $otherSubjectKey = self::subjectKey('App\\Service', 'OtherClass', 'src/Service/OtherClass.php');
 
         $baselinePath = $this->writeBaselineFile([
-            $violation->symbolPath->toCanonical() => [
+            $violation->subject->toCanonical() => [
                 ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
             ],
-            'class:App\\Service\\OtherClass' => [
+            $otherSubjectKey => [
                 ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 3],
             ],
         ]);
@@ -440,7 +444,7 @@ final class ViolationFilterPipelineTest extends TestCase
         self::assertSame([], $result->violations);
         self::assertSame(1, $result->removedCountBy(ViolationFilterStage::Baseline));
         self::assertSame(1, $result->staleEntryCount());
-        self::assertSame('class:App\Service\OtherClass', $result->staleEntries[0]->identity->symbolKey);
+        self::assertSame($otherSubjectKey, $result->staleEntries[0]->identity->subjectKey);
     }
 
     /**
@@ -460,7 +464,7 @@ final class ViolationFilterPipelineTest extends TestCase
         );
 
         $baselinePath = $this->writeBaselineFile([
-            $stillFiring->symbolPath->toCanonical() => [
+            $stillFiring->subject->toCanonical() => [
                 ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
                 ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
             ],
@@ -515,7 +519,7 @@ final class ViolationFilterPipelineTest extends TestCase
 
         $result = $pipeline->filter([$measured, $annotated], new ViolationFilterOptions(
             baselinePath: $this->writeBaselineFile([
-                $measured->symbolPath->toCanonical() => [
+                $measured->subject->toCanonical() => [
                     ['channel' => $measured->channel()->toKey(), 'count' => 1],
                 ],
             ]),
@@ -544,7 +548,7 @@ final class ViolationFilterPipelineTest extends TestCase
         [$measured, $annotated] = $this->makeAnnotatedPair();
 
         $baselinePath = $this->writeBaselineFile([
-            $measured->symbolPath->toCanonical() => [
+            $measured->subject->toCanonical() => [
                 ['channel' => $measured->channel()->toKey(), 'count' => 1],
             ],
         ]);
@@ -763,9 +767,12 @@ final class ViolationFilterPipelineTest extends TestCase
     #[Test]
     public function itKeepsAFindingThatHasNoNamespaceToExclude(): void
     {
+        $path = RelativePath::fromString('src/helpers.php');
+        $symbol = SymbolPath::forFile($path);
         $fileLevel = new Violation(
-            location: new Location(RelativePath::fromString('src/helpers.php'), 10),
-            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/helpers.php')),
+            location: new Location($path, 10),
+            subject: MetricSubject::aggregate($symbol),
+            symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
             message: 'CCN too high',
@@ -912,9 +919,13 @@ final class ViolationFilterPipelineTest extends TestCase
         Severity $severity = Severity::Error,
         int $line = 10,
     ): Violation {
+        $path = RelativePath::fromString($file);
+        $symbol = SymbolPath::forClass($namespace, $class);
+
         return new Violation(
-            location: new Location(RelativePath::fromString($file), $line),
-            symbolPath: SymbolPath::forClass($namespace, $class),
+            location: new Location($path, $line),
+            subject: MetricSubject::declaration(new DeclarationPath($symbol, $path, $line)),
+            symbolPath: $symbol,
             ruleName: $ruleName,
             violationCode: $ruleName === 'code-smell.goto' ? $ruleName : $ruleName . '.callable',
             message: 'CCN too high',
@@ -976,9 +987,9 @@ final class ViolationFilterPipelineTest extends TestCase
     }
 
     /**
-     * Writes a temporary version 10 baseline JSON file.
+     * Writes a temporary version 11 baseline JSON file.
      *
-     * @param array<string, list<array<string, mixed>>> $entries symbol key => list of entry objects
+     * @param array<string, list<array<string, mixed>>> $entries subject key => list of entry objects
      *                                                           (each in the `channel`/`magnitudes`/`count` shape)
      */
     private function writeBaselineFile(array $entries): string
@@ -989,7 +1000,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $this->tempFiles[] = $path;
 
         $data = [
-            'version' => 10,
+            'version' => 11,
             'generated' => (new DateTimeImmutable())->format('c'),
             'scope' => ['src'],
             'entries' => $entries,
@@ -998,6 +1009,15 @@ final class ViolationFilterPipelineTest extends TestCase
         file_put_contents($path, json_encode($data, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT));
 
         return $path;
+    }
+
+    private static function subjectKey(string $namespace, string $class, string $file): string
+    {
+        $symbol = SymbolPath::forClass($namespace, $class);
+
+        return MetricSubject::declaration(
+            new DeclarationPath($symbol, RelativePath::fromString($file), 0),
+        )->toCanonical();
     }
 
     private static function removeDirectory(string $dir): void

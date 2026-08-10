@@ -125,17 +125,16 @@ Infrastructure/
     │   └── DelegatingProgressReporter.php
     └── Command/
         ├── CheckCommand.php           # Thin orchestrator (delegates to extracted classes)
-        ├── BaselineCommand.php              # Base class for the five baseline commands: shared error-to-exit-code mapping and the scope-covers guard the two writers apply
+        ├── BaselineCommand.php              # Base class for the four lifecycle commands: shared error-to-exit-code mapping and scope validation
         ├── BaselineCommandDefinition.php    # Shared input definition: paths + the configuration options that decide what is measured (--config, --preset, --rule-opt, --only-rule, --disable-rule), deliberately without check's exclusion/suppression flags (ADR 0017)
         ├── BaselineRunInterface.php         # The one way a baseline command obtains the set it measures
         ├── BaselineRun.php                  # Implements BaselineRunInterface: resolves configuration, configures the runtime and runs the analysis exactly as `check` does
         ├── BaselineRunContext.php           # VO: one run's measured violations, its RunScope and project root
-        ├── BaselineCaptureReporter.php      # Reports findings a capture (generate/migrate) could not record on a non-baselineable channel
+        ├── BaselineCaptureReporter.php      # Reports non-baselineable findings omitted by baseline:generate
         ├── BaselineConfiguredThresholds.php # Resolves each channel's qmx.yaml-configured warning boundary, for baseline:explain
         ├── BaselineGenerateCommand.php # `baseline:generate` — captures the current findings as a new baseline file
         ├── BaselineUpdateCommand.php   # `baseline:update` — direction-aware monotonic tightening of an existing baseline in place
         ├── BaselineCleanupCommand.php  # `baseline:cleanup` — lists removal candidates (stale/undeclared/inert entries) and removes only the selectors named via --remove
-        ├── BaselineMigrateCommand.php  # `baseline:migrate` — converts a version 5 baseline into the current format in one run
         ├── BaselineExplainCommand.php  # `baseline:explain` — prints the effective boundary for one symbol and its three sources (baseline, qmx.yaml, @qmx-threshold)
         ├── GraphExportCommand.php           # Export dependency graph (DOT, JSON)
         ├── RulesCommand.php           # Lists all rules with options and CLI aliases

@@ -14,8 +14,8 @@ use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Metrics\CodeSmell\ParameterCountCollector;
 use Qualimetrix\Metrics\CodeSmell\ParameterCountVisitor;
@@ -188,15 +188,14 @@ PHP;
         self::assertInstanceOf(CallableWithMetrics::class, $construct, \sprintf('No __construct found for %s\\%s', $namespace, $class));
 
         $symbolInfo = new SymbolInfo(
-            $construct->declarationPath->logical,
+            MetricSubject::declaration($construct->declarationPath),
             RelativePath::fromString('src/example.php'),
             $construct->declarationPath->startFilePos,
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$symbolInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$symbolInfo]);
+        $repository->method('getSubject')
             ->willReturn($construct->metrics);
 
         $context = new AnalysisContext($repository);

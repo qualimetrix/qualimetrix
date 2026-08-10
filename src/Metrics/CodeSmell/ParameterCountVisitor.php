@@ -5,18 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Metrics\CodeSmell;
 
 use PhpParser\Node;
-use PhpParser\Node\Expr\ArrowFunction;
-use PhpParser\Node\Expr\Closure;
-use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt\ClassMethod;
-use PhpParser\Node\Stmt\Function_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Metrics\VisitorCallableScope;
 use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
@@ -36,17 +32,8 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
     /** @var array<string, bool> Method/function FQN => is VO constructor */
     private array $voConstructors = [];
 
-    /** @var array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, sourceLine: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}> traversal key => callable info */
-    private array $methodInfos = [];
-
-    private ?string $currentNamespace = null;
-    private ?string $currentClass = null;
-    private ?int $currentClassStartFilePos = null;
-    private int $closureCounter = 0;
-    private ?string $currentProperty = null;
-
-    /** @var list<array{?string, ?int}> Class context before each nested class-like scope */
-    private array $classStack = [];
+    /** @var array<string, VisitorCallableScope> */
+    private array $scopes = [];
 
     /** @var list<bool> Stack of readonly flags matching classStack */
     private array $readonlyStack = [];
@@ -55,14 +42,8 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
     {
         $this->parameterCounts = [];
         $this->voConstructors = [];
-        $this->methodInfos = [];
-        $this->currentNamespace = null;
-        $this->currentClass = null;
-        $this->currentClassStartFilePos = null;
-        $this->closureCounter = 0;
-        $this->currentProperty = null;
-        $this->resetCallableTraversalKeys();
-        $this->classStack = [];
+        $this->scopes = [];
+        $this->resetVisitorMethodContext();
         $this->readonlyStack = [];
     }
 
@@ -72,7 +53,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
     public function getParameterCounts(): array
     {
         /** @var array<string, int> $projected */
-        $projected = $this->projectLogicalMetricMap($this->parameterCounts, $this->methodInfos);
+        $projected = $this->projectLogicalMetricMap($this->parameterCounts, $this->scopes);
 
         return $projected;
     }
@@ -88,17 +69,17 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
     public function getVoConstructors(): array
     {
         /** @var array<string, bool> $projected */
-        $projected = $this->projectLogicalMetricMap($this->voConstructors, $this->methodInfos);
+        $projected = $this->projectLogicalMetricMap($this->voConstructors, $this->scopes);
 
         return $projected;
     }
 
     /**
-     * @return array<string, array{logicalFqn: string, namespace: ?string, class: ?string, method: string, startFilePos: int, kind: CallableKind, anonymousSyntax: ?string, classStartFilePos: ?int}>
+     * @return array<string, VisitorCallableScope>
      */
     public function getMethodInfos(): array
     {
-        return $this->methodInfos;
+        return $this->scopes;
     }
 
     /**
@@ -110,15 +91,15 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
     {
         $result = [];
 
-        $ordinals = $this->callableCollisionOrdinals($this->methodInfos);
-        foreach ($this->methodInfos as $fqn => $info) {
+        $ordinals = $this->callableCollisionOrdinals($this->scopes);
+        foreach ($this->scopes as $fqn => $scope) {
             $metrics = (new MetricBag())->with(MetricName::CODE_SMELL_PARAMETER_COUNT, $this->parameterCounts[$fqn] ?? 0);
 
             if (isset($this->voConstructors[$fqn])) {
                 $metrics = $metrics->with(MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR, 1);
             }
 
-            $result[] = $this->createCallableWithMetrics($info, $file, $metrics, $ordinals[$fqn]);
+            $result[] = $this->createCallableWithMetrics($scope, $file, $metrics, $ordinals[$fqn]);
         }
 
         return $result;
@@ -126,115 +107,27 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
 
     public function enterNode(Node $node): ?int
     {
-        // Track namespace
-        if ($node instanceof Node\Stmt\Namespace_) {
-            $this->currentNamespace = $node->name?->toString() ?? '';
-        }
-
-        // Track class-like types, including anonymous declarations.
-        $className = $this->extractClassLikeName($node);
-        if ($this->isClassLikeNode($node)) {
-            $this->classStack[] = [$this->currentClass, $this->currentClassStartFilePos];
+        if ($node instanceof Node\Stmt\ClassLike) {
             $this->readonlyStack[] = $node instanceof Node\Stmt\Class_ && $node->isReadonly();
         }
-        if ($className !== null) {
-            $this->currentClass = $className;
-            $this->currentClassStartFilePos = $node->getStartFilePos();
-        } elseif ($node instanceof Node\Stmt\Class_ && $node->name === null) {
-            $this->currentClass = $this->buildAnonymousClassName($node->getStartFilePos());
-            $this->currentClassStartFilePos = $node->getStartFilePos();
+        $scope = $this->enterVisitorMethodContext($node);
+        if ($scope === null) {
+            return null;
         }
-
-        // Class method
-        if ($node instanceof ClassMethod) {
-            $fqn = $this->buildMethodFqn($node->name->toString());
-            $fqn = $this->createCallableTraversalKey($fqn, $node->getStartFilePos());
-            $this->parameterCounts[$fqn] = \count($node->params);
-            $this->methodInfos[$fqn] = [
-                'logicalFqn' => $this->buildMethodFqn($node->name->toString()),
-                'namespace' => $this->currentNamespace,
-                'class' => $this->currentClass,
-                'method' => $node->name->toString(),
-                'startFilePos' => $node->getStartFilePos(),
-                'sourceLine' => $node->getStartLine(),
-                'kind' => CallableKind::Method,
-                'anonymousSyntax' => null,
-                'classStartFilePos' => $this->currentClassStartFilePos,
-            ];
-
-            // Detect VO constructor: readonly class + __construct + all promoted + empty body
-            if ($node->name->toString() === '__construct' && $this->isCurrentClassReadonly()) {
-                if ($this->isVoConstructor($node)) {
-                    $this->voConstructors[$fqn] = true;
-                }
-            }
-
+        if (!$node instanceof Node\FunctionLike) {
             return null;
         }
 
-        if ($node instanceof Node\Stmt\Property && $this->currentClass !== null && \count($node->props) === 1) {
-            $this->currentProperty = $node->props[0]->name->toString();
-        }
+        $fqn = $scope->traversalKey;
+        $this->scopes[$fqn] = $scope;
+        $this->parameterCounts[$fqn] = \count($node->getParams());
 
-        if ($node instanceof PropertyHook && $this->currentClass !== null && $this->currentProperty !== null) {
-            $name = $this->currentProperty . '::' . $node->name->toString();
-            $fqn = $this->buildMethodFqn($name);
-            $fqn = $this->createCallableTraversalKey($fqn, $node->getStartFilePos());
-            $this->parameterCounts[$fqn] = \count($node->params);
-            $this->methodInfos[$fqn] = [
-                'logicalFqn' => $this->buildMethodFqn($name),
-                'namespace' => $this->currentNamespace,
-                'class' => $this->currentClass,
-                'method' => $name,
-                'startFilePos' => $node->getStartFilePos(),
-                'sourceLine' => $node->getStartLine(),
-                'kind' => CallableKind::PropertyHook,
-                'anonymousSyntax' => null,
-                'classStartFilePos' => $this->currentClassStartFilePos,
-            ];
-
-            return null;
-        }
-
-        // Global function
-        if ($node instanceof Function_) {
-            $fqn = $this->buildFunctionFqn($node->name->toString());
-            $fqn = $this->createCallableTraversalKey($fqn, $node->getStartFilePos());
-            $this->parameterCounts[$fqn] = \count($node->params);
-            $this->methodInfos[$fqn] = [
-                'logicalFqn' => $this->buildFunctionFqn($node->name->toString()),
-                'namespace' => $this->currentNamespace,
-                'class' => null,
-                'method' => $node->name->toString(),
-                'startFilePos' => $node->getStartFilePos(),
-                'sourceLine' => $node->getStartLine(),
-                'kind' => CallableKind::Function,
-                'anonymousSyntax' => null,
-                'classStartFilePos' => null,
-            ];
-
-            return null;
-        }
-
-        if ($node instanceof Closure || $node instanceof ArrowFunction) {
-            ++$this->closureCounter;
-            $name = '{closure#' . $this->closureCounter . '}';
-            $fqn = $this->buildClosureFqn();
-            $fqn = $this->createCallableTraversalKey($fqn, $node->getStartFilePos());
-            $this->parameterCounts[$fqn] = \count($node->params);
-            $this->methodInfos[$fqn] = [
-                'logicalFqn' => $this->buildClosureFqn(),
-                'namespace' => $this->currentNamespace,
-                'class' => $this->currentClass,
-                'method' => $name,
-                'startFilePos' => $node->getStartFilePos(),
-                'sourceLine' => $node->getStartLine(),
-                'kind' => CallableKind::AnonymousCallable,
-                'anonymousSyntax' => $node instanceof Closure ? 'closure' : 'arrow',
-                'classStartFilePos' => $this->currentClassStartFilePos,
-            ];
-
-            return null;
+        if ($node instanceof ClassMethod
+            && $scope->member === '__construct'
+            && $this->isCurrentClassReadonly()
+            && $this->isVoConstructor($node)
+        ) {
+            $this->voConstructors[$fqn] = true;
         }
 
         return null;
@@ -242,19 +135,9 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
 
     public function leaveNode(Node $node): ?int
     {
-        if ($node instanceof Node\Stmt\Property) {
-            $this->currentProperty = null;
-        }
-
-        // Exit class-like scope — pop stack and restore previous class context
-        if ($this->isClassLikeNode($node)) {
-            [$this->currentClass, $this->currentClassStartFilePos] = array_pop($this->classStack) ?? [null, null];
+        $this->leaveVisitorMethodContext($node);
+        if ($node instanceof Node\Stmt\ClassLike) {
             array_pop($this->readonlyStack);
-        }
-
-        // Exit namespace scope
-        if ($node instanceof Node\Stmt\Namespace_) {
-            $this->currentNamespace = null;
         }
 
         return null;

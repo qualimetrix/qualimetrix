@@ -171,14 +171,12 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
             $nonAccessorMethods = $metrics->methodCountTotal
                 - $metrics->getterCount
                 - $metrics->setterCount
-                - ($metrics->hasConstructor ? 1 : 0);
+                - (int) $metrics->hasConstructor;
             $isDataClass = $nonAccessorMethods === 0;
 
             // WOC = allPublicMethods / totalMethods (percentage 0-100)
             // Uses methodCountPublicAll which includes getters/setters
-            $woc = $metrics->methodCountTotal > 0
-                ? (int) round(($metrics->methodCountPublicAll / $metrics->methodCountTotal) * 100)
-                : 0;
+            $woc = (int) round(($metrics->methodCountPublicAll / max(1, $metrics->methodCountTotal)) * 100);
 
             $bag = (new MetricBag())
                 ->with(MetricName::STRUCTURE_METHOD_COUNT, $metrics->methodCount())

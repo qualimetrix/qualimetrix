@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Rules\Security;
 
 use InvalidArgumentException;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -15,6 +16,7 @@ use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Violation\OccurrenceKey;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Security\CommandInjectionRule;
 use Qualimetrix\Rules\Security\SecurityPatternOptions;
@@ -47,7 +49,7 @@ final class CommandInjectionRuleTest extends TestCase
         $rule = new CommandInjectionRule(new SecurityPatternOptions(enabled: false));
 
         $context = $this->createContext(
-            (new MetricBag())->withEntry('security.command_injection', ['line' => 1, 'superglobal' => '']),
+            (new MetricBag())->withEntry('security.command_injection', ['subjectKind' => 'file', 'line' => 1, 'superglobal' => '']),
         );
 
         self::assertCount(0, $rule->analyze($context));
@@ -64,13 +66,30 @@ final class CommandInjectionRuleTest extends TestCase
     }
 
     #[Test]
+    public function itFailsBeforeEntryProjectionWhenAFileSymbolHasNoContainerPath(): void
+    {
+        $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Missing.php'));
+        $fileInfo = new SymbolInfo($symbolPath, null, null);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([$fileInfo]);
+        $repository->method('get')->willReturn(
+            (new MetricBag())->withEntry('security.command_injection', ['line' => 10]),
+        );
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('File symbol must carry a relative path');
+
+        (new CommandInjectionRule(new SecurityPatternOptions()))->analyze(new AnalysisContext($repository));
+    }
+
+    #[Test]
     public function itCreatesViolationForSingleFinding(): void
     {
         $rule = new CommandInjectionRule(new SecurityPatternOptions());
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.command_injection', ['line' => 20, 'superglobal' => '']),
+                ->withEntry('security.command_injection', ['subjectKind' => 'file', 'line' => 20, 'superglobal' => '']),
         );
 
         $violations = $rule->analyze($context);
@@ -79,7 +98,16 @@ final class CommandInjectionRuleTest extends TestCase
         self::assertSame(20, $violations[0]->location->line);
         self::assertSame(Severity::Error, $violations[0]->severity);
         self::assertSame('security.command-injection', $violations[0]->ruleName);
-        self::assertStringContainsString('command injection', $violations[0]->message);
+        self::assertSame('Potential command injection — use escapeshellarg() before passing user input to shell commands', $violations[0]->message);
+        self::assertSame('file:src/Service/DeployService.php', $violations[0]->subject->toCanonical());
+        self::assertSame('src/Service/DeployService.php', $violations[0]->location->pathString());
+        self::assertTrue($violations[0]->location->precise);
+        self::assertSame(1.0, $violations[0]->metricValue);
+        self::assertSame('Use escapeshellarg() for arguments or avoid shell commands entirely.', $violations[0]->recommendation);
+        self::assertSame(
+            OccurrenceKey::semantic('command_injection', ['type' => 'command_injection', 'superglobal' => ''])->value,
+            $violations[0]->occurrenceKey?->value,
+        );
     }
 
     #[Test]
@@ -89,8 +117,8 @@ final class CommandInjectionRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.command_injection', ['line' => 10, 'superglobal' => ''])
-                ->withEntry('security.command_injection', ['line' => 30, 'superglobal' => '']),
+                ->withEntry('security.command_injection', ['subjectKind' => 'file', 'line' => 10, 'superglobal' => ''])
+                ->withEntry('security.command_injection', ['subjectKind' => 'file', 'line' => 30, 'superglobal' => '']),
         );
 
         $violations = $rule->analyze($context);
@@ -107,7 +135,7 @@ final class CommandInjectionRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.command_injection', ['line' => 20, 'superglobal' => '_REQUEST']),
+                ->withEntry('security.command_injection', ['subjectKind' => 'file', 'line' => 20, 'superglobal' => '_REQUEST']),
         );
 
         $violations = $rule->analyze($context);

@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -129,6 +131,7 @@ final class SummaryEnricherTest extends TestCase
 
         $violation = new Violation(
             location: new Location(RelativePath::fromString('test.php'), 1),
+            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test.php'))),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
@@ -180,6 +183,11 @@ final class SummaryEnricherTest extends TestCase
 
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Payment/PaymentService.php'), 42),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App\\Payment', 'PaymentService'),
+                RelativePath::fromString('src/Payment/PaymentService.php'),
+                0,
+            )),
             symbolPath: SymbolPath::forClass('App\\Payment', 'PaymentService'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
@@ -308,6 +316,7 @@ final class SummaryEnricherTest extends TestCase
 
         $violation = new Violation(
             location: new Location(RelativePath::fromString('test.php'), 1),
+            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test.php'))),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'test',
             violationCode: 'test',
@@ -426,6 +435,7 @@ final class SummaryEnricherTest extends TestCase
 
         $violation = new Violation(
             location: new Location(RelativePath::fromString('test.php'), 1),
+            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test.php'))),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test.php')),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',

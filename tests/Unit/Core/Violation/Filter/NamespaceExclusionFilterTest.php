@@ -10,6 +10,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 use Qualimetrix\Core\Violation\Filter\NamespaceExclusionFilter;
@@ -90,6 +92,7 @@ final class NamespaceExclusionFilterTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/helpers.php'), 10),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/helpers.php')),
+            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/helpers.php'))),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
             message: 'Test',
@@ -104,6 +107,11 @@ final class NamespaceExclusionFilterTest extends TestCase
         return new Violation(
             location: new Location(RelativePath::fromString('src/Entity/User.php'), 10),
             symbolPath: SymbolPath::forClass($namespace, 'User'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass($namespace, 'User'),
+                RelativePath::fromString('src/Entity/User.php'),
+                10,
+            )),
             ruleName: $ruleName,
             violationCode: $ruleName,
             message: 'Test',

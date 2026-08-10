@@ -18,6 +18,8 @@ use Qualimetrix\Baseline\BaselineWriter;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -236,18 +238,25 @@ final class BaselineCleanupCommandTest extends TestCase
 
     private static function edgeIdentity(string $target): BaselineIdentity
     {
+        $symbol = SymbolPath::forClass('App\\Web', 'Controller');
+
         return new BaselineIdentity(
-            SymbolPath::forClass('App\\Web', 'Controller')->toCanonical(),
+            MetricSubject::declaration(
+                new DeclarationPath($symbol, RelativePath::fromString('src/Web/Controller.php'), 0),
+            )->toCanonical(),
             ViolationChannel::fromKey(self::EDGE_CHANNEL),
-            new BaselineEdge($target, DependencyType::New_),
+            edge: new BaselineEdge($target, DependencyType::New_),
         );
     }
 
     private static function occurrenceEntry(): BaselineEntry
     {
+        $path = RelativePath::fromString('src/Legacy.php');
+        $symbol = SymbolPath::forFile($path);
+
         return new BaselineEntry(
             new BaselineIdentity(
-                SymbolPath::forFile(RelativePath::fromString('src/Legacy.php'))->toCanonical(),
+                MetricSubject::aggregate($symbol)->toCanonical(),
                 ViolationChannel::fromKey(self::OCCURRENCE_CHANNEL),
             ),
             null,
@@ -257,9 +266,13 @@ final class BaselineCleanupCommandTest extends TestCase
 
     private static function gotoFinding(): Violation
     {
+        $path = RelativePath::fromString('src/Legacy.php');
+        $symbol = SymbolPath::forFile($path);
+
         return new Violation(
-            location: new Location(RelativePath::fromString('src/Legacy.php'), 3),
-            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Legacy.php')),
+            location: new Location($path, 3),
+            subject: MetricSubject::aggregate($symbol),
+            symbolPath: $symbol,
             ruleName: 'code-smell.goto',
             violationCode: 'code-smell.goto',
             message: 'finding',

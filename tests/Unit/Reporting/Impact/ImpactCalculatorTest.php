@@ -11,6 +11,8 @@ use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -296,6 +298,11 @@ final class ImpactCalculatorTest extends TestCase
     ): Violation {
         return new Violation(
             location: new Location(RelativePath::fromString($file), $line),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                $symbolPath,
+                RelativePath::fromString($file),
+                0,
+            )),
             symbolPath: $symbolPath,
             ruleName: $rule,
             violationCode: $rule,

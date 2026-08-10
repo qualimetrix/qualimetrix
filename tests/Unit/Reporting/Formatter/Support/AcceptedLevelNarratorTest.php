@@ -8,6 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Location;
@@ -103,6 +105,11 @@ final class AcceptedLevelNarratorTest extends TestCase
     {
         return new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 10),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forMethod('App', 'Foo', 'bar'),
+                RelativePath::fromString('src/Foo.php'),
+                0,
+            )),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',

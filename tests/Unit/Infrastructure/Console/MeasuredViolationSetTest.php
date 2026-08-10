@@ -18,6 +18,8 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\SuppressionType;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Filter\ViolationFilterStage;
 use Qualimetrix\Core\Violation\Filter\ViolationFilterStageInterface;
@@ -180,9 +182,13 @@ final class MeasuredViolationSetTest extends TestCase
 
     private static function violation(string $file, string $namespace, string $class): Violation
     {
+        $path = RelativePath::fromString($file);
+        $symbol = SymbolPath::forClass($namespace, $class);
+
         return new Violation(
-            location: new Location(RelativePath::fromString($file), 10),
-            symbolPath: SymbolPath::forClass($namespace, $class),
+            location: new Location($path, 10),
+            subject: MetricSubject::declaration(new DeclarationPath($symbol, $path, 10)),
+            symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
             message: 'CCN too high',

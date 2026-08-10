@@ -6,10 +6,11 @@ namespace Qualimetrix\Core\Violation;
 
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
- * @qmx-threshold code-smell.constructor-overinjection error=16 — Violation is a flat domain VO; its constructor parameters mirror its public surface and bundling would obscure their independence. Re-evaluated when $acceptedLevel took the count to 14: still the same argument, and still inside the allowance
+ * @qmx-threshold code-smell.constructor-overinjection warning=17 error=17 — Violation is a flat immutable transport VO; its 16 constructor parameters mirror independent public fields that a parameter bundle would obscure.
  */
 final readonly class Violation
 {
@@ -24,6 +25,7 @@ final readonly class Violation
      */
     public function __construct(
         public Location $location,
+        public MetricSubject $subject,
         public SymbolPath $symbolPath,
         public string $ruleName,
         public string $violationCode,
@@ -37,6 +39,7 @@ final readonly class Violation
         public ?SymbolPath $dependencyTarget = null,
         public ?DependencyType $dependencyType = null,
         public ?AcceptedLevel $acceptedLevel = null,
+        public ?OccurrenceKey $occurrenceKey = null,
     ) {}
 
     /**
@@ -67,6 +70,7 @@ final readonly class Violation
     {
         return new self(
             location: $this->location,
+            subject: $this->subject,
             symbolPath: $this->symbolPath,
             ruleName: $this->ruleName,
             violationCode: $this->violationCode,
@@ -80,6 +84,7 @@ final readonly class Violation
             dependencyTarget: $this->dependencyTarget,
             dependencyType: $this->dependencyType,
             acceptedLevel: $acceptedLevel,
+            occurrenceKey: $this->occurrenceKey,
         );
     }
 
@@ -97,13 +102,26 @@ final readonly class Violation
     /**
      * Returns unique identifier for baseline.
      *
-     * Format: ruleName:symbolPath
+     * Format: channel:subject[:occurrence][:edge]
      *
      * @internal Not used in production code. May be removed in a future version.
      */
     public function getFingerprint(): string
     {
-        return \sprintf('%s:%s', $this->ruleName, $this->symbolPath->toCanonical());
+        $parts = [$this->channel()->toKey(), $this->subject->toCanonical()];
+
+        if ($this->occurrenceKey !== null) {
+            $parts[] = $this->occurrenceKey->value;
+        }
+
+        if ($this->dependencyTarget !== null) {
+            $target = $this->dependencyTarget->toCanonical();
+            $parts[] = $this->dependencyType !== null
+                ? $this->dependencyType->value . ':' . $target
+                : 'untyped-edge:' . \strlen($target) . ':' . $target;
+        }
+
+        return implode(':', $parts);
     }
 
     /**

@@ -73,6 +73,17 @@ Side-effect expressions (function calls, method calls, etc.) are excluded to avo
 
 ### Files
 
-- `IdenticalSubExpressionCollector.php` — collector implementation
-- `IdenticalSubExpressionVisitor.php` — AST visitor
-- `IdenticalSubExpressionFinding.php` — finding value object
+- `RepeatedExpression/IdenticalSubExpressionCollector.php` — repeated-expression collector implementation
+- `RepeatedExpression/IdenticalSubExpressionVisitor.php` — repeated-expression AST traversal and delegation
+- `RepeatedExpression/IdenticalSubExpressionFinding.php` — repeated-expression finding value object
+- `RepeatedExpression/RepeatedExpressions.php` — binary/ternary structural equality and side-effect policy
+- `RepeatedExpression/RepeatedConditions.php` — if, match, and switch repeated-condition policy; its only companion dependency is `RepeatedExpressions`
+- `ControlFlow/ControlFlowSmells.php` — empty catches, goto, exit/die, and count/sizeof loop conditions
+- `Debug/DebugCodeSmells.php` — debug-call recognition
+- `BooleanArgument/BooleanArgumentSmells.php` — boolean-argument and promoted-property policy
+
+`CodeSmellVisitor` owns AST traversal/delegation and only three residual one-node projections: `eval`, error suppression (including its direct function-name payload), and direct superglobal access. `ControlFlowSmells` owns only empty catches (including the foreach chain return/continue exception), `goto`, `exit`/`die`, and `count`/`sizeof` calls in `for`, `while`, and `do` conditions. Debug and boolean-argument policy stay in their named child subjects.
+
+The complete repeated-expression stack is collector → visitor → `RepeatedExpressions` / `RepeatedConditions` → finding VO. `RepeatedConditions` is the sole child-to-child dependency and calls `RepeatedExpressions` only for structural equality. Direct companion tests own semantic matrices (`ControlFlowSmellsTest`, `DebugCodeSmellsTest`, `BooleanArgumentSmellsTest`, `RepeatedExpressionsTest`, `RepeatedConditionsTest`); visitor tests own traversal/delegation and residual projection. `CredentialLiteralsTest` owns the seven credential-literal shapes and exclusions; the credential visitor test owns delegation.
+
+The only internal dogfood controls are `CredentialLiterals` `@qmx-ignore health.cohesion -- Stateless credential-literal shapes share one classification policy and location boundary.` and `HardcodedCredentialsVisitor` `@qmx-ignore design.data-class -- Traversal adapter intentionally delegates credential policy and retains only lifecycle state.` They are structural explanations, not metric behavior changes or baseline debt.

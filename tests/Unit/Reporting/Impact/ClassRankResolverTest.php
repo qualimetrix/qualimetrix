@@ -11,8 +11,11 @@ use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -282,8 +285,18 @@ final class ClassRankResolverTest extends TestCase
 
     private function createViolation(SymbolPath $symbolPath): Violation
     {
+        $subject = match ($symbolPath->getType()) {
+            SymbolType::File, SymbolType::Namespace_, SymbolType::Project => MetricSubject::aggregate($symbolPath),
+            default => MetricSubject::declaration(new DeclarationPath(
+                $symbolPath,
+                RelativePath::fromString('test.php'),
+                0,
+            )),
+        };
+
         return new Violation(
             location: new Location(RelativePath::fromString('test.php'), 1),
+            subject: $subject,
             symbolPath: $symbolPath,
             ruleName: 'test.rule',
             violationCode: 'test.rule',

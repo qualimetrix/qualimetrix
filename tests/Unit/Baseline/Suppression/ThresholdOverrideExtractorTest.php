@@ -12,7 +12,12 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractionResult;
 use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\Override\StandardOverrideValidator;
+use Qualimetrix\Core\Suppression\ControlScope;
+use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(ThresholdOverrideExtractor::class)]
 #[CoversClass(ThresholdOverrideExtractionResult::class)]
@@ -43,7 +48,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(1, $overrides);
         self::assertSame('complexity.cyclomatic', $overrides[0]->rulePattern);
@@ -66,7 +71,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(1, $overrides);
         self::assertSame('complexity.cyclomatic', $overrides[0]->rulePattern);
@@ -87,7 +92,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(1, $overrides);
         self::assertSame(15, $overrides[0]->warning);
@@ -107,7 +112,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(1, $overrides);
         self::assertNull($overrides[0]->warning);
@@ -127,7 +132,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(1, $overrides);
         self::assertSame(0.8, $overrides[0]->warning);
@@ -147,7 +152,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(1, $overrides);
         self::assertSame(0.7, $overrides[0]->warning);
@@ -168,7 +173,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(2, $overrides);
         self::assertSame('complexity.cyclomatic', $overrides[0]->rulePattern);
@@ -188,7 +193,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(1, $overrides);
         self::assertSame('*', $overrides[0]->rulePattern);
@@ -209,7 +214,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(0, $overrides);
     }
@@ -227,7 +232,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(0, $result->overrides);
         self::assertCount(1, $result->diagnostics);
@@ -247,7 +252,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(0, $overrides);
     }
@@ -258,7 +263,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node = new Class_('Foo');
         // No docblock
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(0, $overrides);
     }
@@ -276,7 +281,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(0, $overrides);
     }
@@ -299,7 +304,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node->setAttribute('startLine', 23);
         $node->setAttribute('endLine', 40);
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(1, $overrides);
         self::assertSame('complexity.cyclomatic', $overrides[0]->rulePattern);
@@ -322,7 +327,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(1, $overrides);
         self::assertSame('complexity', $overrides[0]->rulePattern);
@@ -348,7 +353,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(0, $result->overrides);
         self::assertCount(1, $result->diagnostics);
@@ -371,7 +376,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(0, $result->overrides);
         self::assertCount(1, $result->diagnostics);
@@ -399,7 +404,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
                 50,
             );
 
-            $result = $this->extractor->extractWithDiagnostics($node);
+            $result = $this->extractWithDiagnostics($node);
 
             self::assertCount(0, $result->overrides, $valueString);
             self::assertCount(1, $result->diagnostics, $valueString);
@@ -419,7 +424,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(1, $result->overrides);
         self::assertCount(0, $result->diagnostics);
@@ -440,7 +445,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(1, $result->overrides);
         self::assertCount(0, $result->diagnostics);
@@ -461,7 +466,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(0, $result->overrides);
         self::assertCount(1, $result->diagnostics);
@@ -482,7 +487,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(0, $result->overrides);
         self::assertCount(1, $result->diagnostics);
@@ -503,7 +508,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(1, $result->overrides);
         self::assertSame(15, $result->overrides[0]->warning);
@@ -526,7 +531,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(2, $result->overrides);
         self::assertCount(0, $result->diagnostics);
@@ -545,7 +550,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(1, $result->overrides);
         self::assertCount(0, $result->diagnostics);
@@ -556,7 +561,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
     {
         $node = new Class_('Foo');
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(0, $result->overrides);
         self::assertCount(0, $result->diagnostics);
@@ -575,7 +580,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(0, $result->overrides);
         self::assertCount(0, $result->diagnostics);
@@ -595,7 +600,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(0, $result->overrides);
         self::assertCount(2, $result->diagnostics);
@@ -619,7 +624,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertSame([31, 32, 34], array_map(
             static fn($diagnostic): int => $diagnostic->line,
@@ -637,7 +642,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertSame(42, $result->diagnostics[0]->line);
     }
@@ -651,7 +656,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertSame(50, $result->diagnostics[0]->line);
     }
@@ -671,7 +676,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertCount(2, $result->overrides);
         self::assertSame('complexity.cyclomatic', $result->overrides[0]->rulePattern);
@@ -693,7 +698,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertEmpty($overrides);
     }
@@ -712,7 +717,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $overrides = $this->extractor->extract($node);
+        $overrides = $this->extract($node);
 
         self::assertCount(1, $overrides);
         self::assertSame('complexity.cyclomatic', $overrides[0]->rulePattern);
@@ -732,7 +737,7 @@ final class ThresholdOverrideExtractorTest extends TestCase
             50,
         );
 
-        $result = $this->extractor->extractWithDiagnostics($node);
+        $result = $this->extractWithDiagnostics($node);
 
         self::assertEmpty($result->overrides);
         self::assertEmpty($result->diagnostics);
@@ -748,5 +753,23 @@ final class ThresholdOverrideExtractorTest extends TestCase
         $node->setAttribute('endLine', $endLine);
 
         return $node;
+    }
+
+    /**
+     * @return list<ThresholdOverride>
+     */
+    private function extract(\PhpParser\Node $node): array
+    {
+        return $this->extractor->extract($node, $this->subject(), ControlScope::Class_);
+    }
+
+    private function extractWithDiagnostics(\PhpParser\Node $node): ThresholdOverrideExtractionResult
+    {
+        return $this->extractor->extractWithDiagnostics($node, $this->subject(), ControlScope::Class_);
+    }
+
+    private function subject(): MetricSubject
+    {
+        return MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/TestClass.php')));
     }
 }

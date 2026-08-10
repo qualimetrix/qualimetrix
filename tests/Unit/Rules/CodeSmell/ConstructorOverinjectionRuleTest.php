@@ -15,9 +15,10 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\CodeSmell\ConstructorOverinjectionOptions;
 use Qualimetrix\Rules\CodeSmell\ConstructorOverinjectionRule;
@@ -102,7 +103,7 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('all');
+        $repository->expects(self::never())->method('allCallables');
 
         $context = new AnalysisContext($repository);
 
@@ -115,14 +116,13 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 2, error: 4));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -136,14 +136,13 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 2, error: 4));
 
         $symbolPath = SymbolPath::forGlobalFunction('App\Helpers', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Helpers/functions.php'), 5);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Helpers/functions.php', 5);
 
         $metricBag = (new MetricBag())->with('parameterCount', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -157,14 +156,13 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 7);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -178,14 +176,13 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 8);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -205,14 +202,13 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -229,14 +225,13 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -258,14 +253,13 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: $warning, error: $error));
 
         $symbolPath = SymbolPath::forMethod('App\Test', 'TestClass', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'test.php', 10);
 
         $metricBag = (new MetricBag())->with('parameterCount', $parameterCount);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -297,14 +291,13 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -342,5 +335,16 @@ final class ConstructorOverinjectionRuleTest extends TestCase
         $options = ConstructorOverinjectionOptions::fromArray([]);
 
         self::assertFalse($options->isEnabled());
+    }
+
+    private function exactDeclarationInfo(SymbolPath $symbolPath, string $file, int $line): SymbolInfo
+    {
+        $relativePath = RelativePath::fromString($file);
+
+        return new SymbolInfo(
+            MetricSubject::declaration(new DeclarationPath($symbolPath, $relativePath, $line)),
+            $relativePath,
+            $line,
+        );
     }
 }

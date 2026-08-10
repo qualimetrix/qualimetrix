@@ -16,6 +16,8 @@ use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -184,7 +186,10 @@ final class DerivedCollectorSortTest extends TestCase
         $mock->method('getName')->willReturn($name);
         $mock->method('requires')->willReturn($requires);
         $mock->method('provides')->willReturn($provides);
-        $mock->method('getMetricDefinitions')->willReturn([]);
+        $mock->method('getMetricDefinitions')->willReturn(array_map(
+            static fn(string $metric): MetricDefinition => new MetricDefinition($metric, SymbolLevel::Callable),
+            $provides,
+        ));
         $mock->method('calculate')->willReturnCallback($calculate);
 
         return $mock;

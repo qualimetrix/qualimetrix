@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Rules\CodeSmell;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -12,9 +13,10 @@ use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\CodeSmell\UnusedPrivateOptions;
 use Qualimetrix\Rules\CodeSmell\UnusedPrivateRule;
@@ -45,7 +47,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('all');
+        $repository->expects(self::never())->method('allDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -58,15 +60,14 @@ final class UnusedPrivateRuleTest extends TestCase
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
         $symbolPath = SymbolPath::forClass('App', 'Clean');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Clean.php'), 5);
+        $classInfo = $this->exactClassInfo($symbolPath, 'src/Clean.php', 5);
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
-        $repository->method('get')
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -80,16 +81,15 @@ final class UnusedPrivateRuleTest extends TestCase
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
         $symbolPath = SymbolPath::forClass('App', 'Smelly');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), 5);
+        $classInfo = $this->exactClassInfo($symbolPath, 'src/Smelly.php', 5);
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 1)
             ->withEntry('unusedPrivate.method', ['line' => 15, 'name' => 'doLoadMappingFile']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
-        $repository->method('get')
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -109,16 +109,15 @@ final class UnusedPrivateRuleTest extends TestCase
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
         $symbolPath = SymbolPath::forClass('App', 'PropClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/PropClass.php'), 5);
+        $classInfo = $this->exactClassInfo($symbolPath, 'src/PropClass.php', 5);
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 1)
             ->withEntry('unusedPrivate.property', ['line' => 10, 'name' => 'cache']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
-        $repository->method('get')
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -134,16 +133,15 @@ final class UnusedPrivateRuleTest extends TestCase
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
         $symbolPath = SymbolPath::forClass('App', 'ConstClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/ConstClass.php'), 5);
+        $classInfo = $this->exactClassInfo($symbolPath, 'src/ConstClass.php', 5);
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 1)
             ->withEntry('unusedPrivate.constant', ['line' => 8, 'name' => 'MAX_RETRIES']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
-        $repository->method('get')
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -160,7 +158,7 @@ final class UnusedPrivateRuleTest extends TestCase
         $rule = new UnusedPrivateRule(new UnusedPrivateOptions());
 
         $symbolPath = SymbolPath::forClass('App', 'ManyUnused');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/ManyUnused.php'), 5);
+        $classInfo = $this->exactClassInfo($symbolPath, 'src/ManyUnused.php', 5);
 
         $metricBag = (new MetricBag())
             ->with('unusedPrivate.total', 4)
@@ -170,9 +168,8 @@ final class UnusedPrivateRuleTest extends TestCase
             ->withEntry('unusedPrivate.constant', ['line' => 8, 'name' => 'QUX']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
-        $repository->method('get')
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -180,11 +177,88 @@ final class UnusedPrivateRuleTest extends TestCase
 
         self::assertCount(4, $violations);
 
-        // Check messages by type
-        $messages = array_map(fn($v) => $v->message, $violations);
-        self::assertCount(2, array_filter($messages, fn($m) => str_starts_with($m, 'Unused private method')));
-        self::assertCount(1, array_filter($messages, fn($m) => str_starts_with($m, 'Unused private property')));
-        self::assertCount(1, array_filter($messages, fn($m) => str_starts_with($m, 'Unused private constant')));
+        self::assertSame([
+            'Unused private method `foo`',
+            'Unused private method `bar`',
+            'Unused private property `baz`',
+            'Unused private constant `QUX`',
+        ], array_map(static fn($violation): string => $violation->message, $violations));
+        self::assertSame([10, 15, 7, 8], array_map(static fn($violation): ?int => $violation->location->line, $violations));
+        self::assertSame([4, 4, 4, 4], array_map(static fn($violation): int|float|null => $violation->metricValue, $violations));
+        self::assertSame([true, true, true, true], array_map(static fn($violation): bool => $violation->location->precise, $violations));
+    }
+
+    #[Test]
+    public function itPreservesTheUnnamedEntryWordingAndRecommendation(): void
+    {
+        $classInfo = $this->exactClassInfo(SymbolPath::forClass('App', 'Unnamed'), 'src/Unnamed.php', 5);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('getSubject')->willReturn(
+            (new MetricBag())
+                ->with('unusedPrivate.total', 1)
+                ->withEntry('unusedPrivate.property', ['line' => 9]),
+        );
+
+        $violations = (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame('Unused private property', $violations[0]->message);
+        self::assertSame('Remove the unused symbol to reduce dead code.', $violations[0]->recommendation);
+        self::assertSame($classInfo->subject?->toCanonical(), $violations[0]->subject->toCanonical());
+    }
+
+    #[Test]
+    public function itRejectsMissingExactAndDeclarationSubjectsBeforeReadingMetrics(): void
+    {
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::never())->method('getSubject');
+        $repository->method('allDeclarations')->willReturn([
+            new SymbolInfo(SymbolPath::forClass('App', 'Legacy'), RelativePath::fromString('src/Legacy.php'), 1),
+        ]);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessage('Unused private findings require an exact class subject');
+
+        (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository));
+    }
+
+    #[Test]
+    public function itSkipsTypedNonClassDeclarationsBeforeReadingMetrics(): void
+    {
+        $path = RelativePath::fromString('src/helper.php');
+        $function = new SymbolInfo(
+            MetricSubject::declaration(new DeclarationPath(SymbolPath::forGlobalFunction('App', 'helper'), $path, 10)),
+            $path,
+            1,
+        );
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([$function]);
+        $repository->expects(self::never())->method('getSubject');
+
+        self::assertSame([], (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository)));
+    }
+
+    #[Test]
+    public function itProducesSeparateExactSubjectFindingsForDuplicateLogicalClassDeclarations(): void
+    {
+        $logical = SymbolPath::forClass('App', 'Duplicated');
+        $first = $this->exactClassInfo($logical, 'src/First.php', 5);
+        $second = $this->exactClassInfo($logical, 'src/Second.php', 8);
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([$first, $second]);
+        $repository->method('getSubject')->willReturnCallback(
+            static fn() => (new MetricBag())
+                ->with('unusedPrivate.total', 1)
+                ->withEntry('unusedPrivate.method', ['line' => 15, 'name' => 'stale']),
+        );
+
+        $violations = (new UnusedPrivateRule(new UnusedPrivateOptions()))->analyze(new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        self::assertSame($first->subject?->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertSame($second->subject?->toCanonical(), $violations[1]->subject->toCanonical());
     }
 
     #[Test]
@@ -205,5 +279,16 @@ final class UnusedPrivateRuleTest extends TestCase
         self::assertSame(Severity::Warning, $options->getSeverity(1));
         self::assertSame(Severity::Warning, $options->getSeverity(5));
         self::assertNull($options->getSeverity(0));
+    }
+
+    private function exactClassInfo(SymbolPath $symbolPath, string $file, int $line): SymbolInfo
+    {
+        $relativePath = RelativePath::fromString($file);
+
+        return new SymbolInfo(
+            MetricSubject::declaration(new DeclarationPath($symbolPath, $relativePath, $line)),
+            $relativePath,
+            $line,
+        );
     }
 }

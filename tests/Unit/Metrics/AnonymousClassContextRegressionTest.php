@@ -22,12 +22,9 @@ use Qualimetrix\Metrics\Halstead\HalsteadVisitor;
 /**
  * Regression tests for anonymous class context handling in visitors.
  *
- * Bug: Several visitors use a scalar $currentClass property instead of a stack.
- * When an anonymous class appears inside a method of an outer class:
- * 1. $currentClass is set to outer class name
- * 2. Entering anonymous class — extractClassLikeName() returns null (skipped)
- * 3. Leaving anonymous class — leaveNode sets $currentClass = null (via isClassLikeNode())
- * 4. Methods AFTER the anonymous class get $currentClass = null → wrong FQN
+ * An anonymous class nested inside an outer method must not leak its lexical
+ * scope. Leaving it restores the outer class so subsequent methods retain the
+ * correct logical and declaration identities.
  */
 #[Group('regression')]
 final class AnonymousClassContextRegressionTest extends TestCase

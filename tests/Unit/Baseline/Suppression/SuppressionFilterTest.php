@@ -9,8 +9,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\SuppressionType;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -41,14 +44,14 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::Symbol),
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
         ]);
 
         $violationBefore = $this->createViolation('src/Foo.php', 5, 'complexity');
         $violationAtLine = $this->createViolation('src/Foo.php', 10, 'complexity');
         $violationAfter = $this->createViolation('src/Foo.php', 42, 'complexity');
 
-        self::assertTrue($filter->shouldInclude($violationBefore), 'Symbol suppression should NOT affect violations before suppression line');
+        self::assertFalse($filter->shouldInclude($violationBefore), 'Symbol suppression is exact-subject-bound, not line-bound');
         self::assertFalse($filter->shouldInclude($violationAtLine), 'Symbol suppression should suppress violations at suppression line');
         self::assertFalse($filter->shouldInclude($violationAfter), 'Symbol suppression should suppress violations after suppression line');
     }
@@ -58,12 +61,12 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 20, SuppressionType::Symbol),
+            new Suppression('complexity', null, 20, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
         ]);
 
         $violation = $this->createViolation('src/Foo.php', 5, 'complexity');
 
-        self::assertTrue($filter->shouldInclude($violation), 'Symbol suppression must not affect violations before its line');
+        self::assertFalse($filter->shouldInclude($violation), 'Symbol suppression is exact-subject-bound, not line-bound');
     }
 
     #[Test]
@@ -141,7 +144,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::Symbol),
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
         ]);
 
         $violation1 = $this->createViolation('src/Foo.php', 42, 'complexity');
@@ -159,11 +162,12 @@ final class SuppressionFilterTest extends TestCase
         $filter = new SuppressionFilter();
         // Suppress 'complexity' — should match all complexity.* violation codes
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::Symbol),
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
         ]);
 
         $violation1 = new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 42),
+            subject: $this->subject(),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
@@ -173,6 +177,7 @@ final class SuppressionFilterTest extends TestCase
 
         $violation2 = new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 50),
+            subject: $this->subject(),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'baz'),
             ruleName: 'coupling.distance',
             violationCode: 'coupling.distance',
@@ -189,11 +194,12 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('health.cohesion', 'Structurally inapplicable', 10, SuppressionType::Symbol, endLine: 50),
+            new Suppression('health.cohesion', 'Structurally inapplicable', 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable, endLine: 50),
         ]);
 
         $cohesion = new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 20),
+            subject: $this->subject(),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'computed.health',
             violationCode: 'health.cohesion',
@@ -202,6 +208,7 @@ final class SuppressionFilterTest extends TestCase
         );
         $coupling = new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 20),
+            subject: $this->subject(),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'computed.health',
             violationCode: 'health.coupling',
@@ -218,8 +225,8 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::Symbol),
-            new Suppression('coupling', null, 20, SuppressionType::Symbol),
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
+            new Suppression('coupling', null, 20, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
         ]);
 
         $violation1 = $this->createViolation('src/Foo.php', 42, 'complexity');
@@ -236,7 +243,7 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::Symbol),
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
         ]);
 
         $violation = $this->createViolation('src/Foo.php', 42, 'coupling');
@@ -291,12 +298,13 @@ final class SuppressionFilterTest extends TestCase
     {
         $filter = new SuppressionFilter();
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('coupling', null, 10, SuppressionType::Symbol),
+            new Suppression('coupling', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
         ]);
 
-        // Namespace/file-level violation with line=null should NOT be suppressed by symbol tag
+        // Symbol suppression matches the exact bound subject independently of presentation line.
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), null),
+            subject: $this->subject(),
             symbolPath: SymbolPath::forNamespace('App'),
             ruleName: 'coupling',
             violationCode: 'coupling',
@@ -304,7 +312,7 @@ final class SuppressionFilterTest extends TestCase
             severity: Severity::Warning,
         );
 
-        self::assertTrue($filter->shouldInclude($violation), 'Symbol-level suppression must not suppress violations with null line');
+        self::assertFalse($filter->shouldInclude($violation));
     }
 
     #[Test]
@@ -313,7 +321,7 @@ final class SuppressionFilterTest extends TestCase
         $filter = new SuppressionFilter();
         // Suppression on first class (lines 10-50), should NOT suppress second class (line 60)
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::Symbol, endLine: 50),
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable, endLine: 50),
         ]);
 
         $violationInFirstClass = $this->createViolation('src/Foo.php', 30, 'complexity');
@@ -322,7 +330,7 @@ final class SuppressionFilterTest extends TestCase
 
         self::assertFalse($filter->shouldInclude($violationInFirstClass), 'Violation inside suppressed symbol should be suppressed');
         self::assertFalse($filter->shouldInclude($violationAtEndLine), 'Violation at symbol end line should be suppressed');
-        self::assertTrue($filter->shouldInclude($violationInSecondClass), 'Violation after symbol end line should NOT be suppressed');
+        self::assertFalse($filter->shouldInclude($violationInSecondClass), 'Symbol suppression is exact-subject-bound, not line-bound');
     }
 
     #[Test]
@@ -331,7 +339,7 @@ final class SuppressionFilterTest extends TestCase
         $filter = new SuppressionFilter();
         // Legacy behavior: no endLine means suppress until EOF
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::Symbol, endLine: null),
+            new Suppression('complexity', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable, endLine: null),
         ]);
 
         $violation = $this->createViolation('src/Foo.php', 999, 'complexity');
@@ -339,15 +347,99 @@ final class SuppressionFilterTest extends TestCase
         self::assertFalse($filter->shouldInclude($violation), 'Suppression without endLine should suppress until end of file');
     }
 
+    #[Test]
+    public function itResolvesTargetControlsIndependentlyOfThePresentationFileAndRebuildsTheIndex(): void
+    {
+        $filter = new SuppressionFilter();
+        $targetDeclaration = new DeclarationPath(
+            SymbolPath::forMethod('App', 'Target', 'run'),
+            RelativePath::fromString('src/Target.php'),
+            100,
+        );
+        $sourceDeclaration = new DeclarationPath(
+            SymbolPath::forMethod('App', 'Source', 'call'),
+            RelativePath::fromString('src/Source.php'),
+            50,
+        );
+        $targetSubject = MetricSubject::declaration($targetDeclaration);
+        $sourceSubject = MetricSubject::declaration($sourceDeclaration);
+        $targetViolation = new Violation(
+            location: new Location(RelativePath::fromString('src/Source.php'), 42),
+            subject: $targetSubject,
+            symbolPath: $targetDeclaration->logical,
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic',
+            message: 'Target finding reported at its use site',
+            severity: Severity::Warning,
+        );
+        $targetControl = new Suppression(
+            'complexity.cyclomatic',
+            null,
+            10,
+            SuppressionType::Symbol,
+            subject: $targetSubject,
+            controlScope: ControlScope::Callable,
+        );
+        $sourceControl = new Suppression(
+            'complexity.cyclomatic',
+            null,
+            10,
+            SuppressionType::Symbol,
+            subject: $sourceSubject,
+            controlScope: ControlScope::Callable,
+        );
+
+        $filter->setSuppressions('src/Target.php', [$targetControl]);
+        $filter->setSuppressions('src/Source.php', [
+            $sourceControl,
+            new Suppression('physical.file', null, 1, SuppressionType::File),
+            new Suppression('physical.next', null, 10, SuppressionType::NextLine),
+        ]);
+        self::assertFalse($filter->shouldInclude($targetViolation));
+
+        $filter->setSuppressions('src/Target.php', []);
+        self::assertTrue($filter->shouldInclude($targetViolation), 'A source control must not suppress a different target subject');
+
+        $filter->setSuppressions('src/Target.php', [$targetControl]);
+        self::assertFalse($filter->shouldInclude($targetViolation));
+        self::assertFalse($filter->shouldInclude(new Violation(
+            location: new Location(RelativePath::fromString('src/Source.php'), 42),
+            subject: $targetSubject,
+            symbolPath: $targetDeclaration->logical,
+            ruleName: 'physical.file',
+            violationCode: 'physical.file',
+            message: 'Physical file suppression',
+            severity: Severity::Warning,
+        )));
+        self::assertFalse($filter->shouldInclude(new Violation(
+            location: new Location(RelativePath::fromString('src/Source.php'), 11),
+            subject: $targetSubject,
+            symbolPath: $targetDeclaration->logical,
+            ruleName: 'physical.next',
+            violationCode: 'physical.next',
+            message: 'Physical next-line suppression',
+            severity: Severity::Warning,
+        )));
+
+        $filter->clearSuppressions();
+        self::assertTrue($filter->shouldInclude($targetViolation));
+    }
+
     private function createViolation(string $file, int $line, string $violationCode): Violation
     {
         return new Violation(
             location: new Location(RelativePath::fromString($file), $line),
+            subject: $this->subject(),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: $violationCode,
             violationCode: $violationCode,
             message: 'Test message',
             severity: Severity::Warning,
         );
+    }
+
+    private function subject(): MetricSubject
+    {
+        return MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')));
     }
 }

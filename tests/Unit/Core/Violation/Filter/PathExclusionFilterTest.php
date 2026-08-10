@@ -10,6 +10,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Util\PathMatcher;
 use Qualimetrix\Core\Violation\Filter\PathExclusionFilter;
@@ -70,6 +72,7 @@ final class PathExclusionFilterTest extends TestCase
             $violation = new Violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forNamespace(''),
+                subject: MetricSubject::aggregate(SymbolPath::forProject()),
                 ruleName: $ruleName,
                 violationCode: $ruleName,
                 message: 'Test',
@@ -101,6 +104,7 @@ final class PathExclusionFilterTest extends TestCase
         $violation = new Violation(
             location: Location::none(),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Service')),
             ruleName: 'test.rule',
             violationCode: 'test.rule',
             message: 'Test',
@@ -135,6 +139,11 @@ final class PathExclusionFilterTest extends TestCase
         return new Violation(
             location: new Location(RelativePath::fromString($file), 10),
             symbolPath: SymbolPath::forClass('App\\Entity', 'User'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App\\Entity', 'User'),
+                RelativePath::fromString($file),
+                10,
+            )),
             ruleName: $ruleName,
             violationCode: $ruleName,
             message: 'Test',

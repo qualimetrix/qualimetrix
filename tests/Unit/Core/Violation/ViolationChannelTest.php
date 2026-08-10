@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -47,6 +49,11 @@ final class ViolationChannelTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/App.php'), 1),
             symbolPath: SymbolPath::forClass('App', 'App'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App', 'App'),
+                RelativePath::fromString('src/App.php'),
+                1,
+            )),
             ruleName: 'architecture.unreachable-layer',
             violationCode: 'architecture.unreachable-layer',
             message: 'Layer never matched',

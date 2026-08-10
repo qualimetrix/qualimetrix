@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Baseline\Suppression;
 
+use LogicException;
 use PhpParser\Comment\Doc;
 use PhpParser\Node;
+use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\SuppressionType;
+use Qualimetrix\Core\Symbol\MetricSubject;
 
 /**
  * Extracts suppression tags from docblock comments and regular PHP comments.
@@ -31,45 +34,31 @@ final readonly class SuppressionExtractor
     private const PATTERN_SYMBOL = '/@qmx-ignore(?!-next-line|-file)(?![\w-])\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
     private const PATTERN_NEXT_LINE = '/@qmx-ignore-next-line(?![\w-])\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
     private const PATTERN_FILE = '/@qmx-ignore-file(?![\w-])(?:\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?)?/';
+    private const MODE_FULL = 'full';
+    private const MODE_PHYSICAL = 'physical';
+    private const MODE_FILE_ONLY = 'file-only';
 
     /**
      * Extracts suppression tags from node's docblock and regular comments.
      *
      * @return list<Suppression>
      */
-    public function extract(Node $node): array
+    public function extract(Node $node, MetricSubject $subject, ControlScope $controlScope): array
     {
-        $suppressions = [];
-        $nodeEndLine = $node->getEndLine() > 0 ? $node->getEndLine() : null;
+        return $this->extractNode($node, $subject, $controlScope, self::MODE_FULL);
+    }
 
-        // Process docblock
-        $docComment = $node->getDocComment();
-        if ($docComment !== null) {
-            $suppressions = $this->extractFromText(
-                $docComment->getText(),
-                $docComment->getStartLine(),
-                $docComment->getEndLine(),
-                $nodeEndLine,
-            );
-        }
-
-        // Process regular comments (skip Doc instances, already handled above)
-        foreach ($node->getComments() as $comment) {
-            if ($comment instanceof Doc) {
-                continue;
-            }
-
-            foreach ($this->extractFromText(
-                $comment->getText(),
-                $comment->getStartLine(),
-                $comment->getEndLine(),
-                $nodeEndLine,
-            ) as $suppression) {
-                $suppressions[] = $suppression;
-            }
-        }
-
-        return $suppressions;
+    /**
+     * Extracts only physical file and next-line controls from a node.
+     *
+     * Symbol controls intentionally require {@see extract()} so a caller cannot
+     * silently discard an `@qmx-ignore` declaration control without its binding.
+     *
+     * @return list<Suppression>
+     */
+    public function extractPhysical(Node $node): array
+    {
+        return $this->extractNode($node, null, null, self::MODE_PHYSICAL);
     }
 
     /**
@@ -79,47 +68,50 @@ final readonly class SuppressionExtractor
      */
     public function extractFileLevelSuppressions(Node $node): array
     {
-        $suppressions = [];
+        return $this->extractNode($node, null, null, self::MODE_FILE_ONLY);
+    }
 
-        // Check docblock
+    /**
+     * Extracts suppressions from a comment text block.
+     *
+     * @param 'full'|'physical'|'file-only' $mode
+     *
+     * @return list<Suppression>
+     */
+    private function extractNode(
+        Node $node,
+        ?MetricSubject $subject,
+        ?ControlScope $controlScope,
+        string $mode,
+    ): array {
+        $suppressions = [];
+        $nodeEndLine = $node->getEndLine() > 0 ? $node->getEndLine() : null;
+        $comments = [];
         $docComment = $node->getDocComment();
         if ($docComment !== null) {
-            $text = self::stripBacktickRegions($docComment->getText());
-            if (str_contains($text, '@qmx-ignore-file')) {
-                if (preg_match_all(self::PATTERN_FILE, $text, $matches, \PREG_SET_ORDER) !== 0) {
-                    foreach ($matches as $match) {
-                        $rule = ($match[1] ?? '') !== '' ? $match[1] : '*';
-                        $suppressions[] = new Suppression(
-                            rule: $rule,
-                            reason: self::extractReason($match[2] ?? null),
-                            line: $docComment->getStartLine(),
-                            type: SuppressionType::File,
-                        );
-                    }
-                }
+            $comments[] = $docComment;
+        }
+
+        foreach ($node->getComments() as $comment) {
+            if (!$comment instanceof Doc) {
+                $comments[] = $comment;
             }
         }
 
-        // Check regular comments (skip Doc instances)
-        foreach ($node->getComments() as $comment) {
-            if ($comment instanceof Doc) {
-                continue;
-            }
+        foreach ($comments as $comment) {
+            foreach ($this->matchText($comment->getText()) as $match) {
+                $suppression = $this->projectMatch(
+                    $match,
+                    $comment->getStartLine(),
+                    $comment->getEndLine(),
+                    $nodeEndLine,
+                    $subject,
+                    $controlScope,
+                    $mode,
+                );
 
-            $text = self::stripBacktickRegions($comment->getText());
-            if (!str_contains($text, '@qmx-ignore-file')) {
-                continue;
-            }
-
-            if (preg_match_all(self::PATTERN_FILE, $text, $matches, \PREG_SET_ORDER) !== 0) {
-                foreach ($matches as $match) {
-                    $rule = ($match[1] ?? '') !== '' ? $match[1] : '*';
-                    $suppressions[] = new Suppression(
-                        rule: $rule,
-                        reason: self::extractReason($match[2] ?? null),
-                        line: $comment->getStartLine(),
-                        type: SuppressionType::File,
-                    );
+                if ($suppression !== null) {
+                    $suppressions[] = $suppression;
                 }
             }
         }
@@ -127,55 +119,84 @@ final readonly class SuppressionExtractor
         return $suppressions;
     }
 
-    /**
-     * Extracts suppressions from a comment text block.
-     *
-     * @return list<Suppression>
-     */
-    private function extractFromText(string $text, int $startLine, int $endLine, ?int $nodeEndLine): array
+    /** @return list<array{type: SuppressionType, rule: non-empty-string, reason: ?string}> */
+    private function matchText(string $text): array
     {
         $text = self::stripBacktickRegions($text);
-        $suppressions = [];
+        $matches = [];
 
-        // Extract file-level suppressions
-        if (preg_match_all(self::PATTERN_FILE, $text, $matches, \PREG_SET_ORDER) !== 0) {
-            foreach ($matches as $match) {
-                $rule = ($match[1] ?? '') !== '' ? $match[1] : '*';
-                $suppressions[] = new Suppression(
-                    rule: $rule,
-                    reason: self::extractReason($match[2] ?? null),
-                    line: $startLine,
-                    type: SuppressionType::File,
-                );
+        foreach ([
+            [SuppressionType::File, self::PATTERN_FILE],
+            [SuppressionType::NextLine, self::PATTERN_NEXT_LINE],
+            [SuppressionType::Symbol, self::PATTERN_SYMBOL],
+        ] as [$type, $pattern]) {
+            if (preg_match_all($pattern, $text, $patternMatches, \PREG_SET_ORDER) <= 0) {
+                continue;
+            }
+
+            foreach ($patternMatches as $match) {
+                $rule = $match[1] ?? '';
+                if ($type === SuppressionType::File && $rule === '') {
+                    $rule = '*';
+                }
+                if ($rule === '') {
+                    continue;
+                }
+
+                $matches[] = [
+                    'type' => $type,
+                    'rule' => $rule,
+                    'reason' => self::extractReason($match[2] ?? null),
+                ];
             }
         }
 
-        // Extract next-line suppressions (use endLine so filter targets endLine+1)
-        if (preg_match_all(self::PATTERN_NEXT_LINE, $text, $matches, \PREG_SET_ORDER) !== 0) {
-            foreach ($matches as $match) {
-                $suppressions[] = new Suppression(
-                    rule: $match[1],
-                    reason: self::extractReason($match[2] ?? null),
-                    line: $endLine,
-                    type: SuppressionType::NextLine,
-                );
-            }
+        return $matches;
+    }
+
+    /**
+     * @param array{type: SuppressionType, rule: non-empty-string, reason: ?string} $match
+     * @param 'full'|'physical'|'file-only' $mode
+     */
+    private function projectMatch(
+        array $match,
+        int $startLine,
+        int $endLine,
+        ?int $nodeEndLine,
+        ?MetricSubject $subject,
+        ?ControlScope $controlScope,
+        string $mode,
+    ): ?Suppression {
+        if ($mode === self::MODE_FILE_ONLY && $match['type'] !== SuppressionType::File) {
+            return null;
         }
 
-        // Extract symbol-level suppressions (plain @qmx-ignore, not -next-line or -file)
-        if (preg_match_all(self::PATTERN_SYMBOL, $text, $matches, \PREG_SET_ORDER) !== 0) {
-            foreach ($matches as $match) {
-                $suppressions[] = new Suppression(
-                    rule: $match[1],
-                    reason: self::extractReason($match[2] ?? null),
-                    line: $startLine,
-                    type: SuppressionType::Symbol,
-                    endLine: $nodeEndLine,
-                );
-            }
+        if ($mode === self::MODE_PHYSICAL && $match['type'] === SuppressionType::Symbol) {
+            throw new LogicException('Symbol suppression requires an explicit declaration binding');
         }
 
-        return $suppressions;
+        if ($match['type'] === SuppressionType::Symbol) {
+            if ($subject === null || $controlScope === null) {
+                throw new LogicException('Symbol suppression requires an explicit declaration binding');
+            }
+
+            return new Suppression(
+                rule: $match['rule'],
+                reason: $match['reason'],
+                line: $startLine,
+                type: SuppressionType::Symbol,
+                endLine: $nodeEndLine,
+                subject: $subject,
+                controlScope: $controlScope,
+            );
+        }
+
+        return new Suppression(
+            rule: $match['rule'],
+            reason: $match['reason'],
+            line: $match['type'] === SuppressionType::File ? $startLine : $endLine,
+            type: $match['type'],
+        );
     }
 
     /**

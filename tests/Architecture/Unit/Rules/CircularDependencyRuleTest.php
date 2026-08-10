@@ -13,6 +13,7 @@ use Qualimetrix\Architecture\Rules\CircularDependencyOptions;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Severity;
 
@@ -63,7 +64,43 @@ final class CircularDependencyRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame('architecture.circular-dependency', $violations[0]->ruleName);
+        self::assertSame(MetricSubject::aggregate(SymbolPath::forProject())->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertNotNull($violations[0]->occurrenceKey);
         self::assertStringContainsString('Circular dependency (2 classes)', $violations[0]->message);
+    }
+
+    #[Test]
+    public function itKeepsCycleIdentityStableWhenMemberOrderChanges(): void
+    {
+        $rule = new CircularDependencyRule(new CircularDependencyOptions());
+
+        $first = $rule->analyze(new AnalysisContext(
+            metrics: new InMemoryMetricRepository(),
+            cycles: [new Cycle($this->paths(['App\\A', 'App\\B', 'App\\C']), $this->paths(['App\\A', 'App\\B', 'App\\C', 'App\\A']))],
+        ));
+        $second = $rule->analyze(new AnalysisContext(
+            metrics: new InMemoryMetricRepository(),
+            cycles: [new Cycle($this->paths(['App\\C', 'App\\A', 'App\\B']), $this->paths(['App\\C', 'App\\A', 'App\\B', 'App\\C']))],
+        ));
+
+        self::assertSame($first[0]->occurrenceKey?->value, $second[0]->occurrenceKey?->value);
+        self::assertSame($first[0]->getFingerprint(), $second[0]->getFingerprint());
+    }
+
+    #[Test]
+    public function itDistinguishesCyclesWithDifferentCompleteMemberSets(): void
+    {
+        $rule = new CircularDependencyRule(new CircularDependencyOptions());
+        $violations = $rule->analyze(new AnalysisContext(
+            metrics: new InMemoryMetricRepository(),
+            cycles: [
+                new Cycle($this->paths(['App\\A', 'App\\B']), $this->paths(['App\\A', 'App\\B', 'App\\A'])),
+                new Cycle($this->paths(['App\\A', 'App\\C']), $this->paths(['App\\A', 'App\\C', 'App\\A'])),
+            ],
+        ));
+
+        self::assertCount(2, $violations);
+        self::assertNotSame($violations[0]->occurrenceKey?->value, $violations[1]->occurrenceKey?->value);
     }
 
     #[Test]

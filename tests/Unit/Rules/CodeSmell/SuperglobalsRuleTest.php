@@ -89,9 +89,9 @@ final class SuperglobalsRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
 
         $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.superglobals', ['line' => 5])
-            ->withEntry('codeSmell.superglobals', ['line' => 18])
-            ->withEntry('codeSmell.superglobals', ['line' => 33]);
+            ->withEntry('codeSmell.superglobals', ['subjectKind' => 'file', 'line' => 5])
+            ->withEntry('codeSmell.superglobals', ['subjectKind' => 'file', 'line' => 18])
+            ->withEntry('codeSmell.superglobals', ['subjectKind' => 'file', 'line' => 33]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')

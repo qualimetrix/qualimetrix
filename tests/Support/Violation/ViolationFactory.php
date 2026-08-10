@@ -6,7 +6,10 @@ namespace Qualimetrix\Tests\Support\Violation;
 
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -25,9 +28,11 @@ final class ViolationFactory
         int|float $metricValue,
         string $ruleName = 'complexity.cyclomatic',
         string $violationCode = 'complexity.cyclomatic.callable',
+        ?MetricSubject $subject = null,
     ): Violation {
         return new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 42),
+            subject: $subject ?? self::subjectFor($symbolPath, 42),
             symbolPath: $symbolPath,
             ruleName: $ruleName,
             violationCode: $violationCode,
@@ -44,9 +49,11 @@ final class ViolationFactory
         SymbolPath $symbolPath,
         string $ruleName = 'code-smell.goto',
         string $violationCode = 'code-smell.goto',
+        ?MetricSubject $subject = null,
     ): Violation {
         return new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 7),
+            subject: $subject ?? self::subjectFor($symbolPath, 7),
             symbolPath: $symbolPath,
             ruleName: $ruleName,
             violationCode: $violationCode,
@@ -64,9 +71,11 @@ final class ViolationFactory
         SymbolPath $symbolPath,
         SymbolPath $target,
         DependencyType $type = DependencyType::New_,
+        ?MetricSubject $subject = null,
     ): Violation {
         return new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 11),
+            subject: $subject ?? self::subjectFor($symbolPath, 11),
             symbolPath: $symbolPath,
             ruleName: 'architecture.layer-violation',
             violationCode: 'architecture.layer-violation',
@@ -75,5 +84,15 @@ final class ViolationFactory
             dependencyTarget: $target,
             dependencyType: $type,
         );
+    }
+
+    private static function subjectFor(SymbolPath $symbolPath, int $startFilePos): MetricSubject
+    {
+        return match ($symbolPath->getType()) {
+            SymbolType::File, SymbolType::Namespace_, SymbolType::Project => MetricSubject::aggregate($symbolPath),
+            SymbolType::Class_, SymbolType::Method, SymbolType::Function_ => MetricSubject::declaration(
+                new DeclarationPath($symbolPath, RelativePath::fromString('src/Foo.php'), $startFilePos),
+            ),
+        };
     }
 }

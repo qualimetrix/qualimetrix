@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Metrics\Structure;
 
 use PhpParser\Node;
+use PhpParser\Node\Expr\Assign;
+use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Expr\Variable;
 use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\Class_;
@@ -75,12 +77,21 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
      */
     private array $traitDefinitions = [];
 
+    /**
+     * Callable-scoped variables proven to hold an instance created by
+     * new self() or new static().
+     *
+     * @var list<array<string, true>>
+     */
+    private array $sameClassReceiverScopes = [];
+
     public function reset(): void
     {
         $this->classData = [];
         $this->currentNamespace = null;
         $this->classStack = [];
         $this->traitDefinitions = [];
+        $this->sameClassReceiverScopes = [];
     }
 
     /**
@@ -128,10 +139,17 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
 
         // Track declarations
         if ($node instanceof ClassMethod) {
+            $this->sameClassReceiverScopes[] = [];
             $this->trackMethodDeclaration($node, $classData);
 
             return null;
         }
+
+        if ($node instanceof Node\FunctionLike) {
+            $this->sameClassReceiverScopes[] = [];
+        }
+
+        $this->trackSameClassReceiverAssignment($node);
 
         if ($node instanceof Property) {
             $this->trackPropertyDeclaration($node, $classData);
@@ -158,13 +176,23 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
         }
 
         // Track usages
-        $this->trackUsage($node, $classData);
+        $this->trackUsage(
+            $node,
+            $classData,
+            $this->sameClassReceiverScopes === []
+                ? []
+                : $this->sameClassReceiverScopes[array_key_last($this->sameClassReceiverScopes)],
+        );
 
         return null;
     }
 
     public function leaveNode(Node $node): ?int
     {
+        if ($node instanceof Node\FunctionLike && $this->sameClassReceiverScopes !== []) {
+            array_pop($this->sameClassReceiverScopes);
+        }
+
         if ($this->isClassLikeNode($node)) {
             array_pop($this->classStack);
         }
@@ -299,5 +327,30 @@ final class UnusedPrivateVisitor extends NodeVisitorAbstract implements Resettab
         }
 
         return $className;
+    }
+
+    private function trackSameClassReceiverAssignment(Node $node): void
+    {
+        if (!$node instanceof Assign
+            || !$node->var instanceof Variable
+            || !\is_string($node->var->name)
+            || $node->var->name === 'this'
+            || $this->sameClassReceiverScopes === []
+        ) {
+            return;
+        }
+
+        $scopeIndex = array_key_last($this->sameClassReceiverScopes);
+        $name = $node->var->name;
+        if ($node->expr instanceof New_
+            && $node->expr->class instanceof Node\Name
+            && $this->isSelfOrStatic($node->expr->class)
+        ) {
+            $this->sameClassReceiverScopes[$scopeIndex][$name] = true;
+
+            return;
+        }
+
+        unset($this->sameClassReceiverScopes[$scopeIndex][$name]);
     }
 }

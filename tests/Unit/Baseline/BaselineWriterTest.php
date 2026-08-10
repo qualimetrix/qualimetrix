@@ -63,7 +63,7 @@ final class BaselineWriterTest extends TestCase
         $data = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(['version', 'generated', 'scope', 'entries'], array_keys($data));
-        self::assertSame(10, $data['version']);
+        self::assertSame(11, $data['version']);
         self::assertSame('2026-08-05T12:00:00+03:00', $data['generated']);
         self::assertSame(['src'], $data['scope']);
     }
@@ -130,6 +130,7 @@ final class BaselineWriterTest extends TestCase
         $edge = $reloaded->findByIdentity(new BaselineIdentity(
             'class:App\Web\Controller',
             new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation'),
+            null,
             new BaselineEdge('class:App\Db\Connection', DependencyType::New_),
         ));
         self::assertNotNull($edge);
@@ -416,7 +417,7 @@ final class BaselineWriterTest extends TestCase
 
         $path = $this->tempDir . '/hand-written.json';
         file_put_contents($path, json_encode([
-            'version' => 10,
+            'version' => 11,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => ['src'],
             'entries' => [
@@ -488,7 +489,7 @@ final class BaselineWriterTest extends TestCase
     {
         $path = $this->tempDir . '/mixed.json';
         file_put_contents($path, json_encode([
-            'version' => 10,
+            'version' => 11,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => ['src'],
             'entries' => [
@@ -535,7 +536,7 @@ final class BaselineWriterTest extends TestCase
         // No source hash: nothing was read, so there is nothing to conflict with.
         $this->writer->write($this->baseline(), $path, $this->projectRoot);
 
-        self::assertStringContainsString('"version": 10', (string) file_get_contents($path));
+        self::assertStringContainsString('"version": 11', (string) file_get_contents($path));
     }
 
     /**
@@ -552,7 +553,7 @@ final class BaselineWriterTest extends TestCase
             scope: ['src'],
             entries: [],
             inertEntries: [new InertBaselineEntry(
-                symbolKey: 'callable:App\Foo::bar',
+                subjectKey: 'callable:App\Foo::bar',
                 channelKey: 'nobody.declares#this.channel',
                 identity: null,
                 selector: EntrySelector::forKey('x'),
@@ -662,6 +663,7 @@ final class BaselineWriterTest extends TestCase
                 new BaselineIdentity(
                     'class:App\Web\Controller',
                     new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation'),
+                    null,
                     new BaselineEdge('class:App\Db\Connection', DependencyType::New_),
                 ),
                 null,

@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Collection\Metric\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\CallableWithMetrics;
+use Qualimetrix\Core\Metric\ClassWithMetrics;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
@@ -33,6 +34,9 @@ final class DerivedMetricExtractorTest extends TestCase
     {
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
         $extractor = new DerivedMetricExtractor($compositeCollector);
@@ -60,6 +64,9 @@ final class DerivedMetricExtractorTest extends TestCase
     {
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
         $extractor = new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector]));
 
         $repository = new InMemoryMetricRepository();
@@ -92,28 +99,85 @@ final class DerivedMetricExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itIgnoresInvalidFqns(): void
+    public function itExtractsDerivedMetricsOnlyForTheirDeclaredTypedTargets(): void
+    {
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
+        $derivedCollector->method('provides')->willReturn(['mi', 'typeCoverage.pct']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+            new MetricDefinition('typeCoverage.pct', SymbolLevel::Class_),
+        ]);
+        $extractor = new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector]));
+
+        $repository = new InMemoryMetricRepository();
+        $file = RelativePath::fromString('src/Service.php');
+        $callable = new CallableWithMetrics(
+            new DeclarationPath(SymbolPath::forMethod('App', 'Service', 'run'), $file, 701),
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath(SymbolPath::forClass('App', 'Service')),
+            MetricBag::fromArray(['ccn' => 3]),
+        );
+        $class = new ClassWithMetrics(
+            new DeclarationPath(SymbolPath::forClass('App', 'Service'), $file, 500),
+            12,
+            MetricBag::fromArray(['typeCoverage.paramTotal' => 2]),
+        );
+        $repository->addCallable($callable);
+        $repository->addSubject($class->subject, $class->metrics, $file, $class->line);
+
+        $extractor->extract(
+            $repository,
+            MetricBag::fromArray([
+                $this->derivedKey('mi', $callable) => 83.5,
+                $this->derivedClassKey('typeCoverage.pct', $class) => 100.0,
+            ]),
+            [$callable],
+            $file,
+            [$class],
+        );
+
+        self::assertSame(83.5, $repository->getSubject($this->declarationSubject($callable))->get('mi'));
+        self::assertNull($repository->getSubject($this->declarationSubject($callable))->get('typeCoverage.pct'));
+        self::assertSame(100.0, $repository->getSubject($class->subject)->get('typeCoverage.pct'));
+        self::assertNull($repository->getSubject($class->subject)->get('mi'));
+    }
+
+    #[Test]
+    public function itIgnoresMalformedWrongKindAndWrongSubjectCanonicalKeys(): void
     {
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
-
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
-        $extractor = new DerivedMetricExtractor($compositeCollector);
-
-        $repository = new InMemoryMetricRepository();
-
-        $fileBag = MetricBag::fromArray([
-            'mi:InvalidFqn' => 85.5,         // no ::
-            'mi:123Invalid::method' => 90.0,  // starts with digit
-            'mi:' => 80.0,                    // empty FQN
-            'mi:::double' => 75.0,            // invalid format
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
         ]);
 
-        // Should not throw exceptions
-        $extractor->extract($repository, $fileBag, [], RelativePath::fromString('tmp/test.php'));
+        $repository = new InMemoryMetricRepository();
+        $symbol = SymbolPath::forMethod('App', 'Service', 'run');
+        $callable = $this->callable($symbol, MetricBag::fromArray(['ccn' => 3]));
+        $repository->addCallable($callable);
+        $subject = MetricSubject::declaration($callable->declarationPath);
+        $otherSubject = MetricSubject::declaration(new DeclarationPath(
+            $symbol,
+            $callable->declarationPath->file,
+            $callable->declarationPath->startFilePos + 1,
+        ));
 
-        // No symbols should be created
-        self::assertFalse($repository->has(SymbolPath::forMethod('', 'InvalidFqn', '')));
+        $fileBag = MetricBag::fromArray([
+            'mi:' . $subject->toCanonical() => 85.5,
+            'mi:function:' . $subject->toCanonical() => 90.0,
+            'mi:method:' . $otherSubject->toCanonical() => 75.0,
+        ]);
+
+        (new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector])))->extract(
+            $repository,
+            $fileBag,
+            [$callable],
+            RelativePath::fromString('tmp/test.php'),
+        );
+
+        self::assertNull($repository->getSubject($subject)->get('mi'));
     }
 
     #[Test]
@@ -121,6 +185,9 @@ final class DerivedMetricExtractorTest extends TestCase
     {
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
         $extractor = new DerivedMetricExtractor($compositeCollector);
@@ -167,31 +234,45 @@ final class DerivedMetricExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itIgnoresDerivedMetricsForNonExistentMethods(): void
+    public function itDoesNotCreateAnUnregisteredExactDeclarationSubject(): void
     {
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
-
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
-        $extractor = new DerivedMetricExtractor($compositeCollector);
-
-        $repository = new InMemoryMetricRepository();
-
-        $fileBag = MetricBag::fromArray([
-            'mi:App\NonExistent::method' => 85.5,
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
         ]);
 
-        $extractor->extract($repository, $fileBag, [], RelativePath::fromString('tmp/test.php'));
+        $repository = new InMemoryMetricRepository();
+        $file = RelativePath::fromString('tmp/test.php');
+        $class = new ClassWithMetrics(
+            new DeclarationPath(SymbolPath::forClass('App', 'Service'), $file, 4),
+            1,
+            MetricBag::fromArray(['tcc' => 0.5]),
+        );
+        $repository->addSubject($class->subject, $class->metrics, $file, $class->line);
+        $callable = $this->callable(SymbolPath::forMethod('App', 'Service', 'run'), new MetricBag());
 
-        $nonExistentSymbol = SymbolPath::forMethod('App', 'NonExistent', 'method');
-        self::assertFalse($repository->has($nonExistentSymbol));
+        $fileBag = MetricBag::fromArray([$this->derivedKey('mi', $callable) => 85.5]);
+
+        (new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector])))->extract(
+            $repository,
+            $fileBag,
+            [$callable],
+            $file,
+        );
+
+        self::assertFalse($repository->hasSubject(MetricSubject::declaration($callable->declarationPath)));
+        self::assertNull($repository->getSubject($class->subject)->get('mi'));
     }
 
     #[Test]
-    public function itHandlesFqnWithoutNamespace(): void
+    public function itPreservesGlobalNamespaceMethodMetricsByExactDeclarationIdentity(): void
     {
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
         $extractor = new DerivedMetricExtractor($compositeCollector);
@@ -212,26 +293,29 @@ final class DerivedMetricExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itIgnoresMetricsWithoutColonSeparator(): void
+    public function itIgnoresBareMetricNamesForAnExistingExactSubject(): void
     {
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
-
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
-        $extractor = new DerivedMetricExtractor($compositeCollector);
-
-        $repository = new InMemoryMetricRepository();
-
-        $fileBag = MetricBag::fromArray([
-            'totalLoc' => 100,
-            'fileComplexity' => 50,
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
         ]);
 
-        // Should not throw exceptions
-        $extractor->extract($repository, $fileBag, [], RelativePath::fromString('tmp/test.php'));
+        $repository = new InMemoryMetricRepository();
+        $callable = $this->callable(SymbolPath::forMethod('App', 'Service', 'run'), MetricBag::fromArray(['ccn' => 3]));
+        $repository->addCallable($callable);
 
-        // No method symbols should have been created
-        self::expectNotToPerformAssertions();
+        $fileBag = MetricBag::fromArray(['mi' => 85.5]);
+
+        (new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector])))->extract(
+            $repository,
+            $fileBag,
+            [$callable],
+            RelativePath::fromString('tmp/test.php'),
+        );
+
+        self::assertSame(3, $repository->getSubject(MetricSubject::declaration($callable->declarationPath))->get('ccn'));
+        self::assertNull($repository->getSubject(MetricSubject::declaration($callable->declarationPath))->get('mi'));
     }
 
     #[Test]
@@ -239,6 +323,9 @@ final class DerivedMetricExtractorTest extends TestCase
     {
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
         $extractor = new DerivedMetricExtractor($compositeCollector);
@@ -249,7 +336,7 @@ final class DerivedMetricExtractorTest extends TestCase
         $callable = $this->callable($functionSymbol, MetricBag::fromArray(['ccn' => 5]));
         $repository->addCallable($callable);
 
-        // Derived collector outputs MI keyed by FQN — same format as class FQN
+        // Derived collector outputs MI keyed by the exact callable declaration.
         $fileBag = MetricBag::fromArray([
             $this->derivedKey('mi', $callable) => 72.5,
         ]);
@@ -264,10 +351,13 @@ final class DerivedMetricExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itPreservesFunctionDerivedMetricsWithoutClassFqnFallback(): void
+    public function itPreservesGlobalFunctionMetricsByExactDeclarationIdentity(): void
     {
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
         $extractor = new DerivedMetricExtractor($compositeCollector);
@@ -296,6 +386,9 @@ final class DerivedMetricExtractorTest extends TestCase
     {
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
         $extractor = new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector]));
 
         $repository = new InMemoryMetricRepository();
@@ -384,6 +477,11 @@ final class DerivedMetricExtractorTest extends TestCase
     private function derivedKey(string $metric, CallableWithMetrics $callable): string
     {
         return $metric . ':' . $callable->kind->value . ':' . $callable->declarationPath->toCanonical();
+    }
+
+    private function derivedClassKey(string $metric, ClassWithMetrics $class): string
+    {
+        return $metric . ':' . $class->subject->toCanonical();
     }
 
     private function declarationSubject(CallableWithMetrics $callable): MetricSubject

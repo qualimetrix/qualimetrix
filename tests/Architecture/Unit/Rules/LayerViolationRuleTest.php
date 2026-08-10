@@ -15,8 +15,11 @@ use Qualimetrix\Architecture\Domain\Layer\LayerPolicy;
 use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
+use Qualimetrix\Architecture\Rules\LayerViolationFinding;
 use Qualimetrix\Architecture\Rules\LayerViolationOptions;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
+use Qualimetrix\Architecture\Rules\OwnedLayerTargets;
+use Qualimetrix\Baseline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
@@ -25,8 +28,12 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Suppression\ControlScope;
+use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Suppression\SuppressionType;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -34,6 +41,8 @@ use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
 use Qualimetrix\Tests\Architecture\Support\ProcessorBuilder;
 
 #[CoversClass(LayerViolationRule::class)]
+#[CoversClass(LayerViolationFinding::class)]
+#[CoversClass(OwnedLayerTargets::class)]
 final class LayerViolationRuleTest extends TestCase
 {
     /**
@@ -202,6 +211,11 @@ final class LayerViolationRuleTest extends TestCase
         self::assertSame('architecture.layer-violation', $violation->ruleName);
         self::assertSame(Severity::Error, $violation->severity);
         self::assertSame($source, $violation->symbolPath);
+        self::assertSame(
+            $this->findDeclarationSubject($repo, $target)->toCanonical(),
+            $violation->subject->toCanonical(),
+        );
+        self::assertNotNull($violation->occurrenceKey);
         self::assertSame($location, $violation->location);
         self::assertSame($target, $violation->dependencyTarget);
         self::assertSame(DependencyType::New_, $violation->dependencyType);
@@ -330,6 +344,364 @@ final class LayerViolationRuleTest extends TestCase
         self::assertCount(2, $violations);
         self::assertSame(10, $violations[0]->location->line);
         self::assertSame(20, $violations[1]->location->line);
+        self::assertNotSame($violations[0]->occurrenceKey?->value, $violations[1]->occurrenceKey?->value);
+    }
+
+    #[Test]
+    public function itKeepsIdenticalSemanticEdgesStableAcrossUseSiteLocations(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions());
+        $architecture = $this->buildArchitecture([
+            'controller' => ['App\\Controller'],
+            'repository' => ['App\\Repository'],
+        ], ['controller' => []]);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Controller', 'Controller');
+        $this->registerClass($repository, 'App\\Repository', 'Repository');
+        $source = SymbolPath::forClass('App\\Controller', 'Controller');
+        $target = SymbolPath::forClass('App\\Repository', 'Repository');
+        $violations = $this->filterByRule(
+            $rule->analyze($this->buildContext($this->buildGraph([
+                $this->dependency($source, $target, DependencyType::New_, new Location(RelativePath::fromString('src/Controller.php'), 10)),
+                $this->dependency($source, $target, DependencyType::New_, new Location(RelativePath::fromString('src/Controller.php'), 20)),
+            ]), $architecture, $repository)),
+            LayerViolationRule::NAME,
+        );
+
+        self::assertCount(2, $violations);
+        self::assertSame($violations[0]->occurrenceKey?->value, $violations[1]->occurrenceKey?->value);
+        self::assertSame([10, 20], array_map(
+            static fn(\Qualimetrix\Core\Violation\Violation $violation): ?int => $violation->location->line,
+            $violations,
+        ));
+    }
+
+    #[Test]
+    public function itUsesTheExactSourceSubjectWhenTheLogicalTargetIsNotOwned(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions());
+        $architecture = $this->buildArchitecture([
+            'controller' => ['App\\Controller'],
+            'vendor' => ['Vendor'],
+        ], ['controller' => []]);
+        $source = SymbolPath::forClass('App\\Controller', 'Controller');
+        $dependency = $this->dependency(
+            $source,
+            SymbolPath::forClass('Vendor', 'External'),
+            DependencyType::New_,
+            new Location(RelativePath::fromString('src/Controller.php'), 12),
+        );
+
+        $violations = $this->filterByRule(
+            $rule->analyze($this->buildContext($this->buildGraph([$dependency]), $architecture)),
+            LayerViolationRule::NAME,
+        );
+
+        self::assertCount(1, $violations);
+        self::assertSame(MetricSubject::declaration($dependency->source)->toCanonical(), $violations[0]->subject->toCanonical());
+    }
+
+    #[Test]
+    public function itProjectsOneViolationToTheOwnedTargetDeclaration(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions());
+        $architecture = $this->buildArchitecture([
+            'controller' => ['App\\Controller'],
+            'repository' => ['App\\Repository'],
+        ], ['controller' => []]);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Controller', 'Controller');
+        $targetSubject = $this->registerClass($repository, 'App\\Repository', 'Repository');
+        $dependency = $this->buildDependency('App\\Controller', 'Controller', 'App\\Repository', 'Repository');
+
+        $violations = $this->filterByRule(
+            $rule->analyze($this->buildContext($this->buildGraph([$dependency]), $architecture, $repository)),
+            LayerViolationRule::NAME,
+        );
+
+        self::assertCount(1, $violations);
+        self::assertSame($targetSubject->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertSame($dependency->sourceLogical(), $violations[0]->symbolPath);
+    }
+
+    #[Test]
+    public function itKeepsDuplicateExactSourceDeclarationsIndependentlyControlledWhenTargetIsUnowned(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions());
+        $architecture = $this->buildArchitecture([
+            'controller' => ['App\\Controller'],
+            'vendor' => ['Vendor'],
+        ], ['controller' => []]);
+        $sourceLogical = SymbolPath::forClass('App\\Controller', 'Controller');
+        $target = new LogicalClassPath(SymbolPath::forClass('Vendor', 'External'));
+        $firstSource = new DeclarationPath(
+            $sourceLogical,
+            RelativePath::fromString('src/ControllerFirst.php'),
+            10,
+        );
+        $secondSource = new DeclarationPath(
+            $sourceLogical,
+            RelativePath::fromString('src/ControllerSecond.php'),
+            20,
+        );
+        $firstSubject = MetricSubject::declaration($firstSource);
+        $secondSubject = MetricSubject::declaration($secondSource);
+        $dependencies = [
+            new Dependency($firstSource, $target, DependencyType::New_, new Location(RelativePath::fromString('src/ControllerFirst.php'), 5)),
+            new Dependency($secondSource, $target, DependencyType::New_, new Location(RelativePath::fromString('src/ControllerSecond.php'), 5)),
+        ];
+
+        $violations = $this->filterByRule(
+            $rule->analyze($this->buildContext($this->buildGraph($dependencies), $architecture)),
+            LayerViolationRule::NAME,
+        );
+        self::assertSame([$firstSubject->toCanonical(), $secondSubject->toCanonical()], array_map(
+            static fn(\Qualimetrix\Core\Violation\Violation $violation): string => $violation->subject->toCanonical(),
+            $violations,
+        ));
+
+        $filter = new SuppressionFilter();
+        $filter->setSuppressions('src/ControllerFirst.php', [new Suppression(
+            rule: LayerViolationRule::NAME,
+            reason: 'Only the first exact source declaration is accepted.',
+            line: 1,
+            type: SuppressionType::Symbol,
+            subject: $firstSubject,
+            controlScope: ControlScope::Class_,
+        )]);
+        self::assertSame([false, true], array_map($filter->shouldInclude(...), $violations));
+    }
+
+    #[Test]
+    public function itProjectsEveryOwnedDuplicateTargetInCanonicalOrder(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions());
+        $architecture = $this->buildArchitecture([
+            'controller' => ['App\\Controller'],
+            'repository' => ['App\\Repository'],
+        ], ['controller' => []]);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Controller', 'Controller');
+        $second = $this->registerClass($repository, 'App\\Repository', 'Repository', 'src/RepositorySecond.php', 20);
+        $first = $this->registerClass($repository, 'App\\Repository', 'Repository', 'src/RepositoryFirst.php', 10);
+        $dependency = $this->buildDependency('App\\Controller', 'Controller', 'App\\Repository', 'Repository');
+
+        $violations = $this->filterByRule(
+            $rule->analyze($this->buildContext($this->buildGraph([$dependency]), $architecture, $repository)),
+            LayerViolationRule::NAME,
+        );
+
+        self::assertCount(2, $violations);
+        self::assertSame(
+            [$first->toCanonical(), $second->toCanonical()],
+            array_map(static fn(\Qualimetrix\Core\Violation\Violation $violation): string => $violation->subject->toCanonical(), $violations),
+        );
+        self::assertNotSame($violations[0]->occurrenceKey?->value, $violations[1]->occurrenceKey?->value);
+    }
+
+    #[Test]
+    public function itAppendsForbiddenEdgeFindingsInGraphAndCanonicalTargetOrder(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions());
+        $architecture = $this->buildArchitecture([
+            'controller' => ['App\\Controller'],
+            'service' => ['App\\Service'],
+            'repository' => ['App\\Repository'],
+        ], ['controller' => ['service']]);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Controller', 'FirstController');
+        $this->registerClass($repository, 'App\\Controller', 'SecondController');
+        $this->registerClass($repository, 'App\\Service', 'AllowedService');
+        $secondTarget = $this->registerClass($repository, 'App\\Repository', 'Repository', 'src/RepositorySecond.php', 20);
+        $firstTarget = $this->registerClass($repository, 'App\\Repository', 'Repository', 'src/RepositoryFirst.php', 10);
+
+        $dependencies = [
+            $this->buildDependency('App\\Controller', 'FirstController', 'App\\Repository', 'Repository'),
+            $this->buildDependency('App\\Controller', 'FirstController', 'App\\Service', 'AllowedService'),
+            $this->buildDependency('App\\Controller', 'SecondController', 'App\\Repository', 'Repository'),
+        ];
+
+        $violations = $this->filterByRule(
+            $rule->analyze($this->buildContext($this->buildGraph($dependencies), $architecture, $repository)),
+            LayerViolationRule::NAME,
+        );
+
+        self::assertCount(4, $violations);
+        self::assertSame([
+            'class:App\\Controller\\FirstController|' . $firstTarget->toCanonical(),
+            'class:App\\Controller\\FirstController|' . $secondTarget->toCanonical(),
+            'class:App\\Controller\\SecondController|' . $firstTarget->toCanonical(),
+            'class:App\\Controller\\SecondController|' . $secondTarget->toCanonical(),
+        ], array_map(
+            static fn(\Qualimetrix\Core\Violation\Violation $violation): string => $violation->symbolPath->toCanonical() . '|' . $violation->subject->toCanonical(),
+            $violations,
+        ));
+    }
+
+    #[Test]
+    public function itResolvesOwnedTargetDeclarationsInCanonicalOrder(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $second = $this->registerClass($repository, 'App\\Repository', 'Repository', 'src/RepositorySecond.php', 20);
+        $first = $this->registerClass($repository, 'App\\Repository', 'Repository', 'src/RepositoryFirst.php', 10);
+
+        $targets = OwnedLayerTargets::fromDeclarations($repository->allDeclarations())->forLogical(
+            SymbolPath::forClass('App\\Repository', 'Repository'),
+        );
+
+        self::assertSame([$first->toCanonical(), $second->toCanonical()], array_map(
+            static fn(MetricSubject $subject): string => $subject->toCanonical(),
+            $targets,
+        ));
+    }
+
+    #[Test]
+    public function itBuildsZeroOneAndManyPolicyApprovedTargetFindings(): void
+    {
+        $source = SymbolPath::forClass('App\\Controller', 'Controller');
+        $target = SymbolPath::forClass('App\\Repository', 'Repository');
+        $registry = new LayerRegistry([
+            new LayerDefinition('controller', new MembershipSpec(['App\\Controller'])),
+            new LayerDefinition('repository', new MembershipSpec(['App\\Repository'])),
+        ]);
+        $fromMatch = $registry->resolveAll($source)[0];
+        $toMatch = $registry->resolveAll($target)[0];
+        $dependency = $this->dependency(
+            $source,
+            $target,
+            DependencyType::New_,
+            new Location(RelativePath::fromString('src/Controller.php'), 12),
+        );
+        $first = MetricSubject::declaration(new DeclarationPath(
+            $target,
+            RelativePath::fromString('src/RepositoryFirst.php'),
+            10,
+        ));
+        $second = MetricSubject::declaration(new DeclarationPath(
+            $target,
+            RelativePath::fromString('src/RepositorySecond.php'),
+            20,
+        ));
+
+        $fallback = new LayerViolationFinding(
+            dependency: $dependency,
+            fromMatch: $fromMatch,
+            toMatch: $toMatch,
+            ownedTargets: [],
+            ruleName: LayerViolationRule::NAME,
+            severity: Severity::Warning,
+            recommendation: 'Policy recommendation.',
+        );
+        $one = new LayerViolationFinding(
+            dependency: $dependency,
+            fromMatch: $fromMatch,
+            toMatch: $toMatch,
+            ownedTargets: [$first],
+            ruleName: LayerViolationRule::NAME,
+            severity: Severity::Warning,
+            recommendation: 'Policy recommendation.',
+        );
+        $many = new LayerViolationFinding(
+            dependency: $dependency,
+            fromMatch: $fromMatch,
+            toMatch: $toMatch,
+            ownedTargets: [$first, $second],
+            ruleName: LayerViolationRule::NAME,
+            severity: Severity::Warning,
+            recommendation: 'Policy recommendation.',
+        );
+
+        $fallbackViolations = $fallback->toViolations();
+        $oneViolations = $one->toViolations();
+        $manyViolations = $many->toViolations();
+
+        self::assertSame(MetricSubject::declaration($dependency->source)->toCanonical(), $fallbackViolations[0]->subject->toCanonical());
+        self::assertSame([$first->toCanonical()], array_map(
+            static fn(\Qualimetrix\Core\Violation\Violation $violation): string => $violation->subject->toCanonical(),
+            $oneViolations,
+        ));
+        self::assertSame([$first->toCanonical(), $second->toCanonical()], array_map(
+            static fn(\Qualimetrix\Core\Violation\Violation $violation): string => $violation->subject->toCanonical(),
+            $manyViolations,
+        ));
+        self::assertNotSame($manyViolations[0]->occurrenceKey?->value, $manyViolations[1]->occurrenceKey?->value);
+        self::assertSame($dependency->location, $manyViolations[0]->location);
+        self::assertSame($target, $manyViolations[0]->dependencyTarget);
+        self::assertSame(DependencyType::New_, $manyViolations[0]->dependencyType);
+        self::assertStringContainsString('Layer "controller" must not depend on layer "repository"', $manyViolations[0]->message);
+
+        $sameEdgeAtAnotherLocation = new LayerViolationFinding(
+            dependency: $this->dependency(
+                $source,
+                $target,
+                DependencyType::New_,
+                new Location(RelativePath::fromString('src/Controller.php'), 24),
+            ),
+            fromMatch: $fromMatch,
+            toMatch: $toMatch,
+            ownedTargets: [$first],
+            ruleName: LayerViolationRule::NAME,
+            severity: Severity::Warning,
+            recommendation: 'Policy recommendation.',
+        );
+        $sameEdgeViolation = $sameEdgeAtAnotherLocation->toViolations()[0];
+
+        self::assertSame($oneViolations[0]->occurrenceKey?->value, $sameEdgeViolation->occurrenceKey?->value);
+        self::assertSame(24, $sameEdgeViolation->location->line);
+    }
+
+    #[Test]
+    public function itKeepsTargetSymbolControlsIndependentWhileUseSitePhysicalControlsApplyToEveryProjection(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions());
+        $architecture = $this->buildArchitecture([
+            'controller' => ['App\\Controller'],
+            'repository' => ['App\\Repository'],
+        ], ['controller' => []]);
+        $repository = new InMemoryMetricRepository();
+        $sourceSubject = $this->registerClass($repository, 'App\\Controller', 'Controller');
+        $firstTargetSubject = $this->registerClass($repository, 'App\\Repository', 'Repository', 'src/RepositoryOne.php', 10);
+        $this->registerClass($repository, 'App\\Repository', 'Repository', 'src/RepositoryTwo.php', 20);
+        $dependency = $this->dependency(
+            SymbolPath::forClass('App\\Controller', 'Controller'),
+            SymbolPath::forClass('App\\Repository', 'Repository'),
+            DependencyType::New_,
+            new Location(RelativePath::fromString('src/Controller.php'), 11),
+        );
+        $violations = $this->filterByRule(
+            $rule->analyze($this->buildContext($this->buildGraph([$dependency]), $architecture, $repository)),
+            LayerViolationRule::NAME,
+        );
+        self::assertCount(2, $violations);
+
+        $filter = new SuppressionFilter();
+        $filter->setSuppressions('src/source.php', [new Suppression(
+            rule: LayerViolationRule::NAME,
+            reason: 'Source declaration is independently controlled.',
+            line: 1,
+            type: SuppressionType::Symbol,
+            subject: $sourceSubject,
+            controlScope: ControlScope::Class_,
+        )]);
+        self::assertSame([true, true], array_map($filter->shouldInclude(...), $violations));
+
+        $filter->setSuppressions('src/RepositoryOne.php', [new Suppression(
+            rule: LayerViolationRule::NAME,
+            reason: 'Target declaration control is independent.',
+            line: 1,
+            type: SuppressionType::Symbol,
+            subject: $firstTargetSubject,
+            controlScope: ControlScope::Class_,
+        )]);
+        self::assertSame([false, true], array_map($filter->shouldInclude(...), $violations));
+
+        $filter->setSuppressions('src/Controller.php', [new Suppression(
+            rule: LayerViolationRule::NAME,
+            reason: 'Physical use-site control applies to every projection.',
+            line: 10,
+            type: SuppressionType::NextLine,
+        )]);
+        self::assertSame([false, false], array_map($filter->shouldInclude(...), $violations));
     }
 
     #[Test]
@@ -967,14 +1339,38 @@ final class LayerViolationRuleTest extends TestCase
      * Registers a class symbol in the metric repository so that
      * `metrics->all(SymbolType::Class_)` yields it.
      */
-    private function registerClass(InMemoryMetricRepository $repo, string $namespace, string $class): void
-    {
-        $repo->add(
-            SymbolPath::forClass($namespace, $class),
+    private function registerClass(
+        InMemoryMetricRepository $repo,
+        string $namespace,
+        string $class,
+        ?string $file = null,
+        int $startFilePos = 0,
+    ): MetricSubject {
+        $logical = SymbolPath::forClass($namespace, $class);
+        $subject = MetricSubject::declaration(new DeclarationPath(
+            $logical,
+            RelativePath::fromString($file ?? \sprintf('src/%s.php', str_replace('\\', '/', $class))),
+            $startFilePos,
+        ));
+        $repo->addSubject(
+            $subject,
             new MetricBag(),
-            RelativePath::fromString(\sprintf('src/%s.php', str_replace('\\', '/', $class))),
+            $subject->declarationPath()?->file,
             1,
         );
+
+        return $subject;
+    }
+
+    private function findDeclarationSubject(InMemoryMetricRepository $repository, SymbolPath $logical): MetricSubject
+    {
+        foreach ($repository->allDeclarations() as $declarationInfo) {
+            if ($declarationInfo->subject?->toSymbolPath()->toCanonical() === $logical->toCanonical()) {
+                return $declarationInfo->subject;
+            }
+        }
+
+        self::fail('Expected an owned declaration for ' . $logical->toString());
     }
 
     /**

@@ -154,12 +154,12 @@ final class BaselineCleanerTest extends TestCase
     {
         $channel = new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation');
         $toConnection = new BaselineEntry(
-            new BaselineIdentity('class:App\Web\Controller', $channel, new BaselineEdge('class:App\Db\Connection', DependencyType::New_)),
+            new BaselineIdentity('class:App\Web\Controller', $channel, null, new BaselineEdge('class:App\Db\Connection', DependencyType::New_)),
             null,
             1,
         );
         $toStatement = new BaselineEntry(
-            new BaselineIdentity('class:App\Web\Controller', $channel, new BaselineEdge('class:App\Db\Statement', DependencyType::New_)),
+            new BaselineIdentity('class:App\Web\Controller', $channel, null, new BaselineEdge('class:App\Db\Statement', DependencyType::New_)),
             null,
             1,
         );
@@ -291,7 +291,7 @@ final class BaselineCleanerTest extends TestCase
     private static function inertEntry(string $symbolKey, InertEntryReason $reason, ?EntrySelector $selector = null): InertBaselineEntry
     {
         return new InertBaselineEntry(
-            symbolKey: $symbolKey,
+            subjectKey: $symbolKey,
             channelKey: null,
             identity: null,
             selector: $selector ?? EntrySelector::forKey($symbolKey),

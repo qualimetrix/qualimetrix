@@ -13,6 +13,8 @@ use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
@@ -91,64 +93,11 @@ final class DistanceRule extends AbstractRule
         $analyzedNamespaces = 0;
 
         foreach ($context->metrics->all(SymbolType::Namespace_) as $nsInfo) {
-            $namespace = $nsInfo->symbolPath->namespace;
-
-            // Skip empty namespaces
-            if ($namespace === null) {
-                continue;
-            }
-
-            ++$totalNamespaces;
-
-            // Skip namespaces not belonging to the project
-            if (!$this->shouldAnalyzeNamespace($namespace)) {
-                continue;
-            }
-
-            ++$analyzedNamespaces;
-
-            $metrics = $context->metrics->get($nsInfo->symbolPath);
-
-            // Skip namespaces with too few classes for meaningful analysis
-            $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
-            if ($classCount < $this->options->minClassCount) {
-                continue;
-            }
-
-            $distance = $metrics->get(MetricName::COUPLING_DISTANCE);
-
-            if ($distance === null) {
-                continue;
-            }
-
-            $distanceValue = (float) $distance;
-            /** @var DistanceOptions $effectiveOptions */
-            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $nsInfo->file, $nsInfo->line ?? 1);
-            $severity = $effectiveOptions->getSeverity($distanceValue);
-
-            if ($severity !== null) {
-                $abstractness = (float) ($metrics->get(MetricName::COUPLING_ABSTRACTNESS) ?? 0.0);
-                $instability = (float) ($metrics->get(MetricName::COUPLING_INSTABILITY) ?? 0.0);
-
-                $threshold = $severity === Severity::Error ? $effectiveOptions->maxDistanceError : $effectiveOptions->maxDistanceWarning;
-
-                $violations[] = new Violation(
-                    location: new Location($nsInfo->file, $nsInfo->line),
-                    symbolPath: $nsInfo->symbolPath,
-                    ruleName: $this->getName(),
-                    violationCode: self::NAME,
-                    message: \sprintf(
-                        'Distance from main sequence is %.2f (A=%.2f, I=%.2f), exceeds threshold of %.2f. Balance abstractness and stability',
-                        $distanceValue,
-                        $abstractness,
-                        $instability,
-                        $threshold,
-                    ),
-                    severity: $severity,
-                    metricValue: $distanceValue,
-                    recommendation: \sprintf('Distance: %.2f (threshold: %.2f) — poor balance of abstraction and stability', $distanceValue, $threshold),
-                    threshold: $threshold,
-                );
+            $result = $this->namespaceResult($nsInfo, $context);
+            $totalNamespaces += (int) $result['present'];
+            $analyzedNamespaces += (int) $result['projectMatched'];
+            if ($result['violation'] !== null) {
+                $violations[] = $result['violation'];
             }
         }
 
@@ -162,6 +111,73 @@ final class DistanceRule extends AbstractRule
         }
 
         return $violations;
+    }
+
+    /**
+     * @return array{present: bool, projectMatched: bool, violation: ?Violation}
+     */
+    private function namespaceResult(SymbolInfo $namespaceInfo, AnalysisContext $context): array
+    {
+        \assert($this->options instanceof DistanceOptions);
+
+        $namespace = $namespaceInfo->symbolPath->namespace;
+        if ($namespace === null) {
+            return ['present' => false, 'projectMatched' => false, 'violation' => null];
+        }
+
+        if (!$this->shouldAnalyzeNamespace($namespace)) {
+            return ['present' => true, 'projectMatched' => false, 'violation' => null];
+        }
+
+        return [
+            'present' => true,
+            'projectMatched' => true,
+            'violation' => $this->matchedNamespaceViolation($namespaceInfo, $context),
+        ];
+    }
+
+    private function matchedNamespaceViolation(SymbolInfo $info, AnalysisContext $context): ?Violation
+    {
+        \assert($this->options instanceof DistanceOptions);
+
+        $metrics = $context->metrics->get($info->symbolPath);
+        $classCount = (int) ($metrics->get(MetricName::agg(MetricName::SIZE_CLASS_COUNT, AggregationStrategy::Sum)) ?? 0);
+        $distance = $metrics->get(MetricName::COUPLING_DISTANCE);
+        if ($classCount < $this->options->minClassCount || $distance === null) {
+            return null;
+        }
+
+        $subject = $info->subject ?? MetricSubject::aggregate($info->symbolPath);
+        $distanceValue = (float) $distance;
+        /** @var DistanceOptions $effectiveOptions */
+        $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+        $severity = $effectiveOptions->getSeverity($distanceValue);
+        if ($severity === null) {
+            return null;
+        }
+
+        $abstractness = (float) ($metrics->get(MetricName::COUPLING_ABSTRACTNESS) ?? 0.0);
+        $instability = (float) ($metrics->get(MetricName::COUPLING_INSTABILITY) ?? 0.0);
+        $threshold = $severity === Severity::Error ? $effectiveOptions->maxDistanceError : $effectiveOptions->maxDistanceWarning;
+
+        return new Violation(
+            location: new Location($info->file, $info->line),
+            subject: $subject,
+            symbolPath: $info->symbolPath,
+            ruleName: $this->getName(),
+            violationCode: self::NAME,
+            message: \sprintf(
+                'Distance from main sequence is %.2f (A=%.2f, I=%.2f), exceeds threshold of %.2f. Balance abstractness and stability',
+                $distanceValue,
+                $abstractness,
+                $instability,
+                $threshold,
+            ),
+            severity: $severity,
+            metricValue: $distanceValue,
+            recommendation: \sprintf('Distance: %.2f (threshold: %.2f) — poor balance of abstraction and stability', $distanceValue, $threshold),
+            threshold: $threshold,
+        );
     }
 
     /**

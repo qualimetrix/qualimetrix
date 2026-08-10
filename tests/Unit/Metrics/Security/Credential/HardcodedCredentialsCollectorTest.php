@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Metrics\Security;
+namespace Qualimetrix\Tests\Unit\Metrics\Security\Credential;
 
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
-use Qualimetrix\Metrics\Security\HardcodedCredentialsCollector;
+use Qualimetrix\Metrics\Security\Credential\HardcodedCredentialsCollector;
 use SplFileInfo;
 
 #[CoversClass(HardcodedCredentialsCollector::class)]
@@ -50,6 +50,40 @@ PHP;
         $entries = $metrics->entries('security.hardcodedCredentials');
         self::assertSame(2, $entries[0]['line']);
         self::assertSame(3, $entries[1]['line']);
+    }
+
+    #[Test]
+    public function itAssignsClassInitializersToTheirExactClassAndTopLevelCodeToTheFile(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+$password = 'top-secret';
+class Credentials { public string $password = 'class-secret'; }
+PHP);
+        $entries = $metrics->entries('security.hardcodedCredentials');
+
+        self::assertSame('file', $entries[0]['subjectKind']);
+        self::assertSame('declaration', $entries[1]['subjectKind']);
+        self::assertSame('class', $entries[1]['logicalKind']);
+        self::assertSame('Credentials', $entries[1]['class']);
+    }
+
+    #[Test]
+    public function itKeepsAnonymousClassAndEnumCaseFindingsFileOwnedWhileNamedConstantsAreClassOwned(): void
+    {
+        $metrics = $this->collectMetrics(<<<'PHP'
+<?php
+$anonymous = new class { public string $password = 'anonymous-secret'; };
+class Named { public const PASSWORD = 'constant-secret'; }
+enum Tokens: string { case PASSWORD = 'case-secret'; }
+PHP);
+        $entries = $metrics->entries('security.hardcodedCredentials');
+
+        self::assertSame('file', $entries[0]['subjectKind']);
+        self::assertSame('declaration', $entries[1]['subjectKind']);
+        self::assertSame('Named', $entries[1]['class']);
+        self::assertSame('declaration', $entries[2]['subjectKind']);
+        self::assertSame('Tokens', $entries[2]['class']);
     }
 
     #[Test]

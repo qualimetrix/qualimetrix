@@ -13,9 +13,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Design\GodClassOptions;
 use Qualimetrix\Rules\Design\GodClassRule;
@@ -85,7 +83,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('all');
+        $repository->expects(self::never())->method('allDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -98,7 +96,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions(excludeReadonly: true));
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('wmc', 50)
@@ -109,8 +107,8 @@ final class GodClassRuleTest extends TestCase
             ->with('isReadonly', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -125,7 +123,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions(minMethods: 3));
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('wmc', 50)
@@ -136,8 +134,8 @@ final class GodClassRuleTest extends TestCase
             ->with('isReadonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -152,7 +150,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('wmc', 50)
@@ -163,8 +161,8 @@ final class GodClassRuleTest extends TestCase
             ->with('isReadonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -184,7 +182,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // TCC = 0.2 < 0.33, so TCC criterion matched; LCOM not vetoed (TCC < 0.5)
         // WMC matched, LCOM matched, TCC matched, LOC not matched → 3/4
@@ -197,8 +195,8 @@ final class GodClassRuleTest extends TestCase
             ->with('isReadonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -216,7 +214,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // TCC = 0.5 (not matched + vetoes LCOM), classLoc = 100 (not matched) → only WMC matched
         $metricBag = (new MetricBag())
@@ -228,8 +226,8 @@ final class GodClassRuleTest extends TestCase
             ->with('isReadonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -244,7 +242,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Printer', 'Standard');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Printer/Standard.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Printer/Standard.php'), 10);
 
         // WMC=400 (matched), LCOM=100 (vetoed — excluded from evaluable), TCC=0.8 (not matched), LOC=1500 (matched)
         // evaluableCount=3 (WMC + TCC + LOC), matchedCount=2 (WMC + LOC) → not a god class
@@ -257,8 +255,8 @@ final class GodClassRuleTest extends TestCase
             ->with('isReadonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -273,7 +271,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // TCC = 0.5 exactly → vetoes LCOM (excluded from evaluable)
         // evaluableCount=3 (WMC + TCC + LOC), matchedCount=2 (WMC + LOC) → 2/3
@@ -286,8 +284,8 @@ final class GodClassRuleTest extends TestCase
             ->with('isReadonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -302,7 +300,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // TCC = 0.49 < 0.5 → does NOT veto LCOM
         // WMC matched, LCOM matched, TCC not matched (0.49 >= 0.33), LOC matched → 3/4
@@ -315,8 +313,8 @@ final class GodClassRuleTest extends TestCase
             ->with('isReadonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -334,7 +332,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // No TCC metric — 3 evaluable, all 3 matched → Error
         $metricBag = (new MetricBag())
@@ -345,8 +343,8 @@ final class GodClassRuleTest extends TestCase
             ->with('isReadonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -364,7 +362,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // Only WMC and classLoc — 2 evaluable, minCriteria=3 → no violation
         $metricBag = (new MetricBag())
@@ -374,8 +372,8 @@ final class GodClassRuleTest extends TestCase
             ->with('isReadonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -395,7 +393,7 @@ final class GodClassRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('wmc', 25)
@@ -406,8 +404,8 @@ final class GodClassRuleTest extends TestCase
             ->with('isReadonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -424,7 +422,7 @@ final class GodClassRuleTest extends TestCase
         $rule = new GodClassRule(new GodClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('wmc', 50)
@@ -435,8 +433,8 @@ final class GodClassRuleTest extends TestCase
             ->with('isReadonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -517,5 +515,53 @@ final class GodClassRuleTest extends TestCase
         $options = GodClassOptions::fromArray([]);
 
         self::assertFalse($options->isEnabled());
+    }
+    #[Test]
+    public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([
+            self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('get')->willReturn(
+            (new MetricBag())
+                ->with('wmc', 50)
+                ->with('lcom', 4)
+                ->with('tcc', 0.1)
+                ->with('classLoc', 350)
+                ->with('methodCount', 10)
+                ->with('isReadonly', 0),
+        );
+
+        $violations = (new GodClassRule(new GodClassOptions()))
+            ->analyze(new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:class:App\\Service\\Twin@src/A.php:100',
+            'declaration:class:App\\Service\\Twin@src/B.php:200',
+        ], $subjects);
+    }
+
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            $file,
+            $line,
+            $kind,
+        );
     }
 }

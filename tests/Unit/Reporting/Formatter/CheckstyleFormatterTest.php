@@ -77,7 +77,7 @@ final class CheckstyleFormatterTest extends TestCase
     public function itFormatsReportWithViolations(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'cyclomatic-complexity',
@@ -86,7 +86,7 @@ final class CheckstyleFormatterTest extends TestCase
                 severity: Severity::Error,
                 metricValue: 25,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'cyclomatic-complexity',
@@ -132,7 +132,7 @@ final class CheckstyleFormatterTest extends TestCase
     public function itGroupsViolationsByFile(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -140,7 +140,7 @@ final class CheckstyleFormatterTest extends TestCase
                 message: 'Error in A',
                 severity: Severity::Error,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
@@ -148,7 +148,7 @@ final class CheckstyleFormatterTest extends TestCase
                 message: 'Error in B',
                 severity: Severity::Error,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 30),
                 symbolPath: SymbolPath::forClass('App', 'A2'),
                 ruleName: 'test',
@@ -188,7 +188,7 @@ final class CheckstyleFormatterTest extends TestCase
     public function itFormatsNamespaceLevelViolationWithoutLine(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php')),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'namespace-size',
@@ -218,7 +218,7 @@ final class CheckstyleFormatterTest extends TestCase
     public function itEscapesXmlSpecialCharacters(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Test.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Test'),
                 ruleName: 'test-rule',
@@ -254,7 +254,7 @@ final class CheckstyleFormatterTest extends TestCase
     public function itUsesViolationCodeAsSource(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity',
@@ -295,7 +295,7 @@ final class CheckstyleFormatterTest extends TestCase
     public function itIncludesTheAcceptedLevelInTheMessageOnABreach(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation((new Violation(
+            ->addViolation((self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'complexity.cyclomatic',
@@ -327,7 +327,7 @@ final class CheckstyleFormatterTest extends TestCase
     {
         // Regression pin: byte-for-byte the same message as before this feature.
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'cyclomatic-complexity',
@@ -353,7 +353,7 @@ final class CheckstyleFormatterTest extends TestCase
     public function itRendersInfoSeverityAsLowercaseInfo(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 7),
                 symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
                 ruleName: 'architecture.coverage',
@@ -372,6 +372,61 @@ final class CheckstyleFormatterTest extends TestCase
         $error = $xml->getElementsByTagName('error')->item(0);
         self::assertNotNull($error);
         self::assertSame('info', $error->getAttribute('severity'));
+    }
+    /**
+     * Builds a violation fixture with an explicit declaration or aggregate
+     * subject, preserving the production contract without hiding it behind a
+     * legacy fallback.
+     *
+     * @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations
+     */
+    private static function violation(
+        \Qualimetrix\Core\Violation\Location $location,
+        \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
+        string $ruleName,
+        string $violationCode,
+        string $message,
+        \Qualimetrix\Core\Violation\Severity $severity,
+        int|float|null $metricValue = null,
+        ?\Qualimetrix\Core\Rule\RuleLevel $level = null,
+        array $relatedLocations = [],
+        ?string $recommendation = null,
+        int|float|null $threshold = null,
+        ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
+        ?\Qualimetrix\Core\Dependency\DependencyType $dependencyType = null,
+        ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null,
+        ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
+    ): Violation {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File,
+            \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
+            \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath(
+                $symbolPath,
+                $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'),
+                $location->line ?? 0,
+            )),
+        };
+
+        return new Violation(
+            location: $location,
+            subject: $subject,
+            symbolPath: $symbolPath,
+            ruleName: $ruleName,
+            violationCode: $violationCode,
+            message: $message,
+            severity: $severity,
+            metricValue: $metricValue,
+            level: $level,
+            relatedLocations: $relatedLocations,
+            recommendation: $recommendation,
+            threshold: $threshold,
+            dependencyTarget: $dependencyTarget,
+            dependencyType: $dependencyType,
+            acceptedLevel: $acceptedLevel,
+            occurrenceKey: $occurrenceKey,
+        );
     }
 
 }

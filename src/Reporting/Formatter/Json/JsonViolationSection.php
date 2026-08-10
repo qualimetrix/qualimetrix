@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Json;
 
-use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
 use Qualimetrix\Reporting\FormatterContext;
@@ -32,8 +31,7 @@ final class JsonViolationSection
     }
 
     /**
-     * Sorts violations by severity (errors first), then by exceedance (descending),
-     * then by file/line/code.
+     * Sorts violations by their stable identity projection.
      *
      * @param list<Violation> $violations
      *
@@ -41,23 +39,7 @@ final class JsonViolationSection
      */
     public function sort(array $violations): array
     {
-        usort($violations, static function (Violation $a, Violation $b): int {
-            $severityOrder = self::severityRank($a->severity) <=> self::severityRank($b->severity);
-            if ($severityOrder !== 0) {
-                return $severityOrder;
-            }
-
-            $exceedA = self::getExceedance($a);
-            $exceedB = self::getExceedance($b);
-            $exceedOrder = $exceedB <=> $exceedA;
-            if ($exceedOrder !== 0) {
-                return $exceedOrder;
-            }
-
-            return (($cmp1 = $a->location->pathString() <=> $b->location->pathString()) !== 0 ? $cmp1
-                : (($cmp2 = $a->location->line <=> $b->location->line) !== 0 ? $cmp2
-                : ($a->violationCode <=> $b->violationCode)));
-        });
+        usort($violations, static fn(Violation $a, Violation $b): int => self::identitySortKey($a) <=> self::identitySortKey($b));
 
         return $violations;
     }
@@ -96,7 +78,11 @@ final class JsonViolationSection
         return [
             'file' => $file,
             'line' => $violation->location->line,
+            'subject' => $violation->subject->toCanonical(),
             'symbol' => $violation->symbolPath->toString(),
+            'channel' => $violation->channel()->toKey(),
+            'occurrence' => $violation->occurrenceKey?->value,
+            'edge' => self::formatEdge($violation),
             'namespace' => $ns !== '' ? $ns : null,
             'rule' => $violation->ruleName,
             'code' => $violation->violationCode,
@@ -136,30 +122,39 @@ final class JsonViolationSection
     }
 
     /**
-     * Sort rank for severities: Error first (0), then Warning (1), then Info (2).
+     * @return ?array{target: string, type?: string}
      */
-    private static function severityRank(Severity $severity): int
+    private static function formatEdge(Violation $violation): ?array
     {
-        return match ($severity) {
-            Severity::Error => 0,
-            Severity::Warning => 1,
-            Severity::Info => 2,
-        };
+        if ($violation->dependencyTarget === null) {
+            return null;
+        }
+
+        $target = $violation->dependencyTarget->toCanonical();
+        if ($violation->dependencyType === null) {
+            return ['target' => $target];
+        }
+
+        return [
+            'type' => $violation->dependencyType->value,
+            'target' => $target,
+        ];
     }
 
-    private static function getExceedance(Violation $v): float
+    /**
+     * @return array{string, string, string, int, string, string}
+     */
+    private static function identitySortKey(Violation $violation): array
     {
-        if ($v->metricValue === null || $v->threshold === null) {
-            return 0.0;
-        }
+        $edge = self::formatEdge($violation);
 
-        $val = (float) $v->metricValue;
-        $thr = (float) $v->threshold;
-
-        if (!is_finite($val) || !is_finite($thr)) {
-            return 0.0;
-        }
-
-        return abs($val - $thr);
+        return [
+            $violation->channel()->toKey(),
+            $violation->subject->toCanonical(),
+            $violation->occurrenceKey === null ? '' : $violation->occurrenceKey->value,
+            $edge === null ? 0 : 1,
+            $edge['type'] ?? '',
+            $edge['target'] ?? '',
+        ];
     }
 }

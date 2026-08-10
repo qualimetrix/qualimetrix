@@ -55,6 +55,8 @@ final class SensitiveParameterCollector extends AbstractCollector
         foreach ($locations as $location) {
             $bag = $bag->withEntry(MetricName::SECURITY_SENSITIVE_PARAMETER, [
                 'line' => $location->line,
+                'paramName' => $location->paramName,
+                ...$this->visitor->getSubjectComponents($location),
             ]);
         }
 

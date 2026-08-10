@@ -157,7 +157,8 @@ reports about the loaded baseline — each with its own header and its own
 explaining line, so they never run together. None of the three prints
 anything on a run without `--baseline`.
 
-- **Stale entries** — an entry whose identity (ADR 0017: symbol, channel, edge)
+- **Stale entries** — an entry whose complete v11 identity (typed subject,
+  channel, optional semantic occurrence, and optional edge)
   did not appear in the measured set. `--show-resolved` reads the same
   list and reports the same predicate in a different unit — entries, not
   violations. Because the predicate is keyed on the *full* identity rather

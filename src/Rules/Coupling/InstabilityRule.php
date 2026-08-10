@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Coupling;
 
+use LogicException;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
@@ -12,6 +13,8 @@ use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
@@ -149,57 +152,67 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
-            $metrics = $context->metrics->get($classInfo->symbolPath);
-
-            $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
-
-            if ($instability === null) {
-                continue;
-            }
-
-            // Skip classes with insufficient afferent coupling.
-            // Classes with very few dependents (low Ca) have high instability by definition,
-            // which is architecturally expected for concrete implementation classes.
-            $caRaw = $metrics->get(MetricName::COUPLING_CA);
-            $ca = $caRaw !== null ? (int) $caRaw : 0;
-            if ($ca < $classOptions->minAfferent) {
-                continue;
-            }
-
-            $instabilityValue = (float) $instability;
-
-            /** @var ClassInstabilityOptions $effectiveClassOptions */
-            $effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $classInfo->file, $classInfo->line ?? 1);
-            $severity = $effectiveClassOptions->getSeverity($instabilityValue);
-
-            if ($severity !== null) {
-                $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
-
-                $threshold = $severity === Severity::Error ? $effectiveClassOptions->maxError : $effectiveClassOptions->maxWarning;
-
-                $violations[] = new Violation(
-                    location: new Location($classInfo->file, $classInfo->line),
-                    symbolPath: $classInfo->symbolPath,
-                    ruleName: $this->getName(),
-                    violationCode: self::NAME . '.class',
-                    message: \sprintf(
-                        'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
-                        $instabilityValue,
-                        $ca,
-                        $ce,
-                        $threshold,
-                    ),
-                    severity: $severity,
-                    metricValue: $instabilityValue,
-                    level: RuleLevel::Class_,
-                    recommendation: \sprintf('Instability: %.2f (threshold: %.2f) — package is highly unstable', $instabilityValue, $threshold),
-                    threshold: $threshold,
-                );
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            $violation = $this->classViolation($classInfo, $context, $classOptions);
+            if ($violation !== null) {
+                $violations[] = $violation;
             }
         }
 
         return $violations;
+    }
+
+    private function classViolation(
+        SymbolInfo $classInfo,
+        AnalysisContext $context,
+        ClassInstabilityOptions $options,
+    ): ?Violation {
+        $subject = $classInfo->subject ?? throw new LogicException('Instability class findings require an exact class declaration subject');
+        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+            return null;
+        }
+
+        $metrics = $context->metrics->get($subject->toSymbolPath());
+        $instability = $metrics->get(MetricName::COUPLING_INSTABILITY);
+        if ($instability === null) {
+            return null;
+        }
+
+        $ca = (int) ($metrics->get(MetricName::COUPLING_CA) ?? 0);
+        if ($ca < $options->minAfferent) {
+            return null;
+        }
+
+        $instabilityValue = (float) $instability;
+        /** @var ClassInstabilityOptions $effectiveOptions */
+        $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
+        $severity = $effectiveOptions->getSeverity($instabilityValue);
+        if ($severity === null) {
+            return null;
+        }
+
+        $ce = (int) ($metrics->get(MetricName::COUPLING_CE) ?? 0);
+        $threshold = $severity === Severity::Error ? $effectiveOptions->maxError : $effectiveOptions->maxWarning;
+
+        return new Violation(
+            location: new Location($classInfo->file, $classInfo->line),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
+            ruleName: $this->getName(),
+            violationCode: self::NAME . '.class',
+            message: \sprintf(
+                'Instability is %.2f (Ca=%d, Ce=%d), exceeds threshold of %.2f. Reduce outgoing dependencies',
+                $instabilityValue,
+                $ca,
+                $ce,
+                $threshold,
+            ),
+            severity: $severity,
+            metricValue: $instabilityValue,
+            level: RuleLevel::Class_,
+            recommendation: \sprintf('Instability: %.2f (threshold: %.2f) — package is highly unstable', $instabilityValue, $threshold),
+            threshold: $threshold,
+        );
     }
 
     /**
@@ -215,6 +228,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
         $violations = [];
 
         foreach ($context->metrics->all(SymbolType::Namespace_) as $nsInfo) {
+            $subject = $nsInfo->subject ?? MetricSubject::aggregate($nsInfo->symbolPath);
             $metrics = $context->metrics->get($nsInfo->symbolPath);
 
             // Skip namespaces with too few classes
@@ -239,7 +253,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
             $instabilityValue = (float) $instability;
 
             /** @var NamespaceInstabilityOptions $effectiveNsOptions */
-            $effectiveNsOptions = $this->getEffectiveOptions($context, $namespaceOptions, $nsInfo->file, $nsInfo->line ?? 1);
+            $effectiveNsOptions = $this->getEffectiveOptions($context, $namespaceOptions, $subject);
             $severity = $effectiveNsOptions->getSeverity($instabilityValue);
 
             if ($severity !== null) {
@@ -249,6 +263,7 @@ final class InstabilityRule extends AbstractRule implements HierarchicalRuleInte
 
                 $violations[] = new Violation(
                     location: new Location($nsInfo->file, $nsInfo->line),
+                    subject: $subject,
                     symbolPath: $nsInfo->symbolPath,
                     ruleName: $this->getName(),
                     violationCode: self::NAME . '.namespace',

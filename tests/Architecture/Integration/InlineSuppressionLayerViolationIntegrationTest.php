@@ -22,12 +22,11 @@ use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
 
 /**
- * Verifies that {@code @qmx-ignore architecture.layer-violation} on a
- * symbol docblock drops the matching violation through the same
- * {@see SuppressionFilter} that handles complexity / coupling rules.
- * Architecture violations carry per-line locations (the offending
- * dependency expression) so the symbol-level suppression must apply to
- * them too.
+ * Verifies that {@code @qmx-ignore architecture.layer-violation} on a source
+ * declaration does not drop a finding attributed to an owned target through
+ * the same {@see SuppressionFilter} that handles complexity / coupling rules.
+ * Architecture violations retain the source use-site location and display,
+ * but declaration controls follow their projected target subject.
  *
  * Suppression filtering happens AFTER the analysis pipeline:
  * {@see AnalysisPipelineInterface::analyze()} emits the raw violation
@@ -37,10 +36,9 @@ use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
  * and verifies the policy works end-to-end on architecture violations
  * specifically.
  *
- * The fixture pairs two controllers: one carries the suppression tag,
- * the other doesn't. After analysis + filtering, the suppressed
- * controller must NOT appear among `architecture.layer-violation` sources;
- * the un-suppressed controller must.
+ * The fixture pairs two controllers: one carries the source suppression tag,
+ * the other doesn't. After analysis + filtering, both must remain because
+ * their forbidden dependencies target the owned repository declaration.
  */
 #[Group('integration')]
 final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
@@ -49,7 +47,7 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
     private const string FIXTURE_NAMESPACE = 'Fixtures\\IgnoreSample';
 
     #[Test]
-    public function qmxIgnoreOnSymbol_dropsArchitectureLayerViolation(): void
+    public function qmxIgnoreOnSourceDoesNotDropTargetAttributedArchitectureLayerViolation(): void
     {
         $registry = new LayerRegistry([
             new LayerDefinition('controller', new MembershipSpec([self::FIXTURE_NAMESPACE . '\\Controller'])),
@@ -103,16 +101,25 @@ final class InlineSuppressionLayerViolationIntegrationTest extends TestCase
             $this->filterByRule($filtered, LayerViolationRule::NAME),
         );
 
-        // After suppression: PolicedController still fires, SilencedController gone.
+        // The source symbol control is intentionally independent from the
+        // owned repository target subject, so both source displays remain.
         self::assertNotEmpty(
             array_filter($filteredSources, static fn(string $s): bool => str_contains($s, 'PolicedController')),
             'After suppression: PolicedController without @qmx-ignore must remain.',
         );
-        self::assertEmpty(
+        self::assertNotEmpty(
             array_filter($filteredSources, static fn(string $s): bool => str_contains($s, 'SilencedController')),
-            'After suppression: SilencedController carries `@qmx-ignore architecture.layer-violation` — '
-            . 'must NOT appear. Got sources: ' . implode(', ', $filteredSources),
+            'A source declaration control must not suppress a finding attributed to an owned target. Got sources: '
+            . implode(', ', $filteredSources),
         );
+
+        foreach ($this->filterByRule($filtered, LayerViolationRule::NAME) as $violation) {
+            self::assertStringContainsString(
+                'CustomerRepository',
+                $violation->subject->toSymbolPath()->toString(),
+                'The owned target declaration must own the finding identity.',
+            );
+        }
     }
 
     private function createPipelineWithArchitecture(ArchitectureConfiguration $architecture): AnalysisPipelineInterface

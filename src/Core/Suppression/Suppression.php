@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Suppression;
 
+use InvalidArgumentException;
 use Qualimetrix\Core\Rule\RuleMatcher;
+use Qualimetrix\Core\Symbol\MetricSubject;
 
 /**
  * Represents a suppression tag from docblock.
@@ -19,7 +21,14 @@ final readonly class Suppression
         public int $line,
         public SuppressionType $type,
         public ?int $endLine = null,
-    ) {}
+        public ?MetricSubject $subject = null,
+        public ?ControlScope $controlScope = null,
+    ) {
+        $isSymbolControl = $type === SuppressionType::Symbol;
+        if ($isSymbolControl !== ($subject !== null) || $isSymbolControl !== ($controlScope !== null)) {
+            throw new InvalidArgumentException('Symbol suppressions require a subject and control scope; physical suppressions require neither');
+        }
+    }
 
     /**
      * Checks if suppression matches given violation code.

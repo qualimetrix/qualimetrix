@@ -8,6 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -46,6 +48,11 @@ final class HtmlDebtCalculatorTest extends TestCase
 
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App', 'Service'),
+                RelativePath::fromString('src/Service.php'),
+                0,
+            )),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -70,6 +77,11 @@ final class HtmlDebtCalculatorTest extends TestCase
 
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Other.php'), 10),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App', 'Other'),
+                RelativePath::fromString('src/Other.php'),
+                0,
+            )),
             symbolPath: SymbolPath::forClass('App', 'Other'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -90,8 +102,8 @@ final class HtmlDebtCalculatorTest extends TestCase
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
         $node->violations = [
-            ['ruleName' => 'r1', 'violationCode' => 'r1', 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbolPath' => 's', 'file' => 'f', 'line' => 1],
-            ['ruleName' => 'r2', 'violationCode' => 'r2', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbolPath' => 's', 'file' => 'f', 'line' => 2],
+            ['subject' => 'declaration:class:s@f:0', 'ruleName' => 'r1', 'violationCode' => 'r1', 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1],
+            ['subject' => 'declaration:class:s@f:1', 'ruleName' => 'r2', 'violationCode' => 'r2', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2],
         ];
         $node->debtMinutes = 60;
 
@@ -109,14 +121,14 @@ final class HtmlDebtCalculatorTest extends TestCase
 
         $childA = new HtmlTreeNode('A', 'App\\A', 'class');
         $childA->violations = [
-            ['ruleName' => 'r1', 'violationCode' => 'r1', 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbolPath' => 's', 'file' => 'f', 'line' => 1],
+            ['subject' => 'declaration:class:s@f:0', 'ruleName' => 'r1', 'violationCode' => 'r1', 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1],
         ];
         $childA->debtMinutes = 30;
 
         $childB = new HtmlTreeNode('B', 'App\\B', 'class');
         $childB->violations = [
-            ['ruleName' => 'r2', 'violationCode' => 'r2', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbolPath' => 's', 'file' => 'f', 'line' => 2],
-            ['ruleName' => 'r3', 'violationCode' => 'r3', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 3, 'symbolPath' => 's', 'file' => 'f', 'line' => 3],
+            ['subject' => 'declaration:class:s@f:1', 'ruleName' => 'r2', 'violationCode' => 'r2', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2],
+            ['subject' => 'declaration:class:s@f:2', 'ruleName' => 'r3', 'violationCode' => 'r3', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 3, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 3],
         ];
         $childB->debtMinutes = 45;
 
@@ -143,14 +155,14 @@ final class HtmlDebtCalculatorTest extends TestCase
 
         $classA = new HtmlTreeNode('ClassA', 'App\\ClassA', 'class');
         $classA->violations = [
-            ['ruleName' => 'r1', 'violationCode' => 'r1', 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbolPath' => 's', 'file' => 'f', 'line' => 1],
+            ['subject' => 'declaration:class:s@f:0', 'ruleName' => 'r1', 'violationCode' => 'r1', 'message' => 'm', 'recommendation' => null, 'severity' => 'warning', 'metricValue' => 1, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 1],
         ];
         $classA->debtMinutes = 20;
 
         $classB = new HtmlTreeNode('ClassB', 'App\\ClassB', 'class');
         $classB->violations = [
-            ['ruleName' => 'r2', 'violationCode' => 'r2', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbolPath' => 's', 'file' => 'f', 'line' => 2],
-            ['ruleName' => 'r3', 'violationCode' => 'r3', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 3, 'symbolPath' => 's', 'file' => 'f', 'line' => 3],
+            ['subject' => 'declaration:class:s@f:1', 'ruleName' => 'r2', 'violationCode' => 'r2', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 2, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 2],
+            ['subject' => 'declaration:class:s@f:2', 'ruleName' => 'r3', 'violationCode' => 'r3', 'message' => 'm', 'recommendation' => null, 'severity' => 'error', 'metricValue' => 3, 'symbolPath' => 's', 'occurrence' => null, 'file' => 'f', 'line' => 3],
         ];
         $classB->debtMinutes = 40;
 

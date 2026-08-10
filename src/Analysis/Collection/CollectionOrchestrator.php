@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Collection;
 
+use LogicException;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Collection\Metric\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Collection\Strategy\StrategySelectorInterface;
 use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Metric\ClassWithMetrics;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Progress\NullProgressReporter;
 use Qualimetrix\Core\Progress\ProgressReporter;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
@@ -35,8 +35,8 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         private readonly FileProcessorInterface $fileProcessor,
         private readonly StrategySelectorInterface $strategySelector,
         private readonly DerivedMetricExtractor $derivedMetricExtractor,
-        private readonly ProgressReporter $progress = new NullProgressReporter(),
-        private readonly LoggerInterface $logger = new NullLogger(),
+        private readonly ProgressReporter $progress,
+        private readonly LoggerInterface $logger,
     ) {}
 
     public function collect(
@@ -70,7 +70,21 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         );
         $profiler->stop('collection.execute_strategy');
 
-        // Register results in repository and collect dependencies
+        $output = $this->foldResults($results, $repository);
+
+        $this->progress->finish();
+
+        return $output;
+    }
+
+    /**
+     * @param iterable<FileProcessingResult> $results
+     */
+    private function foldResults(
+        iterable $results,
+        MetricRepositoryInterface $repository,
+    ): CollectionPhaseOutput {
+        $profiler = ProfilerHolder::get();
         $profiler->start('collection.register_results', 'collection');
         /** @var list<RelativePath> $analyzedFiles */
         $analyzedFiles = [];
@@ -94,22 +108,13 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
                 $analyzedFiles[] = $result->filePath;
                 $data = $result->collectedData();
 
-                // Collect dependencies from result
-                foreach ($data->dependencies as $dependency) {
-                    $allDependencies[] = $dependency;
-                }
-
-                // Collect suppressions from result
+                array_push($allDependencies, ...$data->dependencies);
                 if ($data->suppressions !== []) {
                     $allSuppressions[$filePathKey] = $data->suppressions;
                 }
-
-                // Collect threshold overrides from result
                 if ($data->thresholdOverrides !== []) {
                     $allThresholdOverrides[$filePathKey] = $data->thresholdOverrides;
                 }
-
-                // Collect threshold diagnostics from result
                 if ($data->thresholdDiagnostics !== []) {
                     $allThresholdDiagnostics[$filePathKey] = $data->thresholdDiagnostics;
                 }
@@ -124,8 +129,6 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
             $this->progress->advance();
         }
         $profiler->stop('collection.register_results');
-
-        $this->progress->finish();
 
         return new CollectionPhaseOutput(
             new CollectionResult(
@@ -200,7 +203,18 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
             );
         }
 
-        // Derived callable metrics keep their declaration subject, never an FQN key.
-        $this->derivedMetricExtractor->extract($repository, $data->fileBag, $data->callableMetrics, $filePath);
+        // Derived metrics keep their exact declaration subject, never an FQN key.
+        $classes = array_map(
+            static function (array $classData): ClassWithMetrics {
+                $declarationPath = $classData['subject']->declarationPath();
+                if ($declarationPath === null) {
+                    throw new LogicException('Class metrics must use an exact declaration subject');
+                }
+
+                return new ClassWithMetrics($declarationPath, $classData['line'], $classData['metrics']);
+            },
+            array_values($data->classMetrics),
+        );
+        $this->derivedMetricExtractor->extract($repository, $data->fileBag, $data->callableMetrics, $filePath, $classes);
     }
 }

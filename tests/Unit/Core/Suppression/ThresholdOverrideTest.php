@@ -7,7 +7,11 @@ namespace Qualimetrix\Tests\Unit\Core\Suppression;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(ThresholdOverride::class)]
 final class ThresholdOverrideTest extends TestCase
@@ -20,6 +24,8 @@ final class ThresholdOverrideTest extends TestCase
             warning: 15,
             error: 25,
             line: 10,
+            subject: $this->subject(),
+            controlScope: ControlScope::Callable,
         );
 
         self::assertTrue($override->matches('complexity.cyclomatic'));
@@ -35,6 +41,8 @@ final class ThresholdOverrideTest extends TestCase
             warning: 15,
             error: 25,
             line: 10,
+            subject: $this->subject(),
+            controlScope: ControlScope::Callable,
         );
 
         self::assertTrue($override->matches('complexity.cyclomatic'));
@@ -50,6 +58,8 @@ final class ThresholdOverrideTest extends TestCase
             warning: 30,
             error: 50,
             line: 10,
+            subject: $this->subject(),
+            controlScope: ControlScope::Callable,
         );
 
         self::assertTrue($override->matches('complexity.cyclomatic'));
@@ -65,6 +75,8 @@ final class ThresholdOverrideTest extends TestCase
             warning: 15,
             error: 25,
             line: 10,
+            subject: $this->subject(),
+            controlScope: ControlScope::Callable,
             endLine: 50,
         );
 
@@ -83,6 +95,8 @@ final class ThresholdOverrideTest extends TestCase
             warning: null,
             error: 25,
             line: 10,
+            subject: $this->subject(),
+            controlScope: ControlScope::Callable,
         );
 
         self::assertNull($override->warning);
@@ -97,9 +111,16 @@ final class ThresholdOverrideTest extends TestCase
             warning: 0.7,
             error: 0.9,
             line: 10,
+            subject: $this->subject(),
+            controlScope: ControlScope::Callable,
         );
 
         self::assertSame(0.7, $override->warning);
         self::assertSame(0.9, $override->error);
+    }
+
+    private function subject(): MetricSubject
+    {
+        return MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')));
     }
 }

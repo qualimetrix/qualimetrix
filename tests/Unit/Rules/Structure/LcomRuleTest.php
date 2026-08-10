@@ -15,7 +15,8 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
-use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Suppression\ControlScope;
+use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Structure\LcomOptions;
@@ -86,7 +87,7 @@ final class LcomRuleTest extends TestCase
         $rule = new LcomRule(new LcomOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('all');
+        $repository->expects(self::never())->method('allDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -99,7 +100,7 @@ final class LcomRuleTest extends TestCase
         $rule = new LcomRule(new LcomOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -113,7 +114,7 @@ final class LcomRuleTest extends TestCase
         $rule = new LcomRule(new LcomOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'GodClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/GodClass.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/GodClass.php'), 10);
 
         // LCOM of 4 is above warning threshold (3) but below error (5)
         $metricBag = (new MetricBag())
@@ -122,7 +123,7 @@ final class LcomRuleTest extends TestCase
             ->with('isReadonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -145,7 +146,7 @@ final class LcomRuleTest extends TestCase
         $rule = new LcomRule(new LcomOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'VeryLargeClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/VeryLargeClass.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/VeryLargeClass.php'), 10);
 
         // LCOM of 5 is above error threshold (4)
         $metricBag = (new MetricBag())
@@ -154,7 +155,7 @@ final class LcomRuleTest extends TestCase
             ->with('isReadonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -173,13 +174,13 @@ final class LcomRuleTest extends TestCase
         $rule = new LcomRule(new LcomOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'CohesiveClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/CohesiveClass.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/CohesiveClass.php'), 10);
 
         // LCOM of 1 means perfectly cohesive (below warning threshold 2)
         $metricBag = (new MetricBag())->with('lcom', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -196,13 +197,13 @@ final class LcomRuleTest extends TestCase
         $rule = new LcomRule(new LcomOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'SomeClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
 
         // No 'lcom' metric
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -211,6 +212,39 @@ final class LcomRuleTest extends TestCase
         $violations = $rule->analyze($context);
 
         self::assertCount(0, $violations);
+    }
+
+    #[Test]
+    public function itPreservesReadonlyMinMethodAndExactOverrideEligibility(): void
+    {
+        $classInfo = self::subjectInfo(SymbolPath::forClass('App', 'Candidate'), RelativePath::fromString('src/Candidate.php'), 10);
+        $subject = $classInfo->subject;
+        self::assertNotNull($subject);
+        $contextFor = static function (MetricBag $bag, array $overrides = []) use ($classInfo): AnalysisContext {
+            $repository = self::createStub(MetricRepositoryInterface::class);
+            $repository->method('allDeclarations')->willReturn([$classInfo]);
+            $repository->method('get')->willReturn($bag);
+
+            return new AnalysisContext($repository, thresholdOverrides: $overrides);
+        };
+        $rule = new LcomRule(new LcomOptions(warning: 3, error: 5, excludeReadonly: true, minMethods: 3));
+
+        self::assertSame([], $rule->analyze($contextFor(
+            (new MetricBag())->with('lcom', 4)->with('methodCount', 3)->with('isReadonly', 1),
+        )));
+        self::assertSame([], $rule->analyze($contextFor(
+            (new MetricBag())->with('lcom', 4)->with('methodCount', 2)->with('isReadonly', 0),
+        )));
+
+        $eligible = (new MetricBag())->with('lcom', 3)->with('methodCount', 3)->with('isReadonly', 0);
+        $violations = $rule->analyze($contextFor($eligible));
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertSame($subject->toCanonical(), $violations[0]->subject->toCanonical());
+
+        self::assertSame([], $rule->analyze($contextFor($eligible, [
+            'src/Candidate.php' => [new ThresholdOverride('design.lcom', 4, 6, 1, $subject, ControlScope::Class_, 100)],
+        ])));
     }
 
     // Options tests
@@ -263,7 +297,7 @@ final class LcomRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
             ->with('lcom', $lcom)
@@ -271,7 +305,7 @@ final class LcomRuleTest extends TestCase
             ->with('isReadonly', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -366,5 +400,47 @@ final class LcomRuleTest extends TestCase
         self::assertSame(4, $overridden->warning);
         self::assertSame(6, $overridden->error);
         self::assertSame(['getName', 'getDescription'], $overridden->excludeMethods);
+    }
+    #[Test]
+    public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([
+            self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('get')->willReturn(
+            (new MetricBag())->with('lcom', 4)->with('methodCount', 5)->with('isReadonly', 0),
+        );
+
+        $violations = (new LcomRule(new LcomOptions()))
+            ->analyze(new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:class:App\\Service\\Twin@src/A.php:100',
+            'declaration:class:App\\Service\\Twin@src/B.php:200',
+        ], $subjects);
+    }
+
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            $file,
+            $line,
+            $kind,
+        );
     }
 }

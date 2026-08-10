@@ -8,6 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -111,6 +113,7 @@ final class ViolationFilterTest extends TestCase
         // Namespace-level violation (no type)
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 1),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Service')),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
             ruleName: 'test.rule',
             violationCode: 'T001',
@@ -222,6 +225,11 @@ final class ViolationFilterTest extends TestCase
     {
         return new Violation(
             location: new Location(RelativePath::fromString('src/test.php'), 1),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass($namespace, $class),
+                RelativePath::fromString('src/test.php'),
+                0,
+            )),
             symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: 'test.rule',
             violationCode: 'T001',

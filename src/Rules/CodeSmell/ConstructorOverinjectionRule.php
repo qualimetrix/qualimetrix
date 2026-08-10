@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\CodeSmell;
 
+use LogicException;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolInfo;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -88,15 +88,14 @@ final class ConstructorOverinjectionRule extends AbstractRule
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Method) as $symbolInfo) {
-            $violation = $this->checkSymbol($symbolInfo, $context);
-
-            if ($violation !== null) {
-                $violations[] = $violation;
-            }
+        foreach ($context->metrics->allCallables() as $symbolInfo) {
+            $violations[] = $this->checkSymbol($symbolInfo, $context);
         }
 
-        return $violations;
+        return array_values(array_filter(
+            $violations,
+            static fn(?Violation $violation): bool => $violation !== null,
+        ));
     }
 
     private function checkSymbol(SymbolInfo $symbolInfo, AnalysisContext $context): ?Violation
@@ -104,17 +103,20 @@ final class ConstructorOverinjectionRule extends AbstractRule
         /** @var ConstructorOverinjectionOptions $options */
         $options = $this->options;
 
-        // Only check constructors
-        if ($symbolInfo->symbolPath->member !== '__construct') {
+        $subject = $symbolInfo->subject ?? throw new LogicException('Constructor findings require an exact callable subject');
+        $declaration = $subject->declarationPath() ?? throw new LogicException('Constructor findings require a declaration subject');
+
+        // Only check constructors.
+        if ($declaration->logical->member !== '__construct') {
             return null;
         }
 
         // Skip global functions (no class context)
-        if ($symbolInfo->symbolPath->type === null) {
+        if ($declaration->logical->type === null) {
             return null;
         }
 
-        $metrics = $context->metrics->get($symbolInfo->symbolPath);
+        $metrics = $context->metrics->getSubject($subject);
         $parameterCount = $metrics->get(MetricName::CODE_SMELL_PARAMETER_COUNT);
 
         if ($parameterCount === null) {
@@ -124,7 +126,7 @@ final class ConstructorOverinjectionRule extends AbstractRule
         $parameterCountValue = (int) $parameterCount;
 
         /** @var ConstructorOverinjectionOptions $effectiveOptions */
-        $effectiveOptions = $this->getEffectiveOptions($context, $options, $symbolInfo->file, $symbolInfo->line ?? 1);
+        $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
         $severity = $effectiveOptions->getSeverity($parameterCountValue);
 
         if ($severity === null) {
@@ -132,11 +134,12 @@ final class ConstructorOverinjectionRule extends AbstractRule
         }
 
         $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
-        $className = $symbolInfo->symbolPath->type;
+        $className = $declaration->logical->type;
 
         return new Violation(
             location: new Location($symbolInfo->file, $symbolInfo->line),
-            symbolPath: $symbolInfo->symbolPath,
+            subject: $subject,
+            symbolPath: $declaration->logical,
             ruleName: $this->getName(),
             violationCode: self::NAME,
             message: \sprintf(

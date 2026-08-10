@@ -12,10 +12,106 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\Complexity\CyclomaticComplexityVisitor;
+use Qualimetrix\Metrics\VisitorMethodContext;
 
 #[CoversClass(CyclomaticComplexityVisitor::class)]
+#[CoversClass(VisitorMethodContext::class)]
 final class CyclomaticComplexityVisitorTest extends TestCase
 {
+    #[Test]
+    public function itKeepsNestedCallableAndLexicalSubjectsScopedToOneFile(): void
+    {
+        $context = new VisitorMethodContext();
+        $probe = new class ($context) extends \PhpParser\NodeVisitorAbstract {
+            /** @var list<array<string, int|string>> */
+            public array $subjects = [];
+
+            public function __construct(private readonly VisitorMethodContext $context) {}
+
+            public function enterNode(\PhpParser\Node $node): ?int
+            {
+                $this->context->enter($node);
+                if ($node instanceof \PhpParser\Node\Stmt\ClassMethod
+                    || $node instanceof \PhpParser\Node\PropertyHook
+                    || $node instanceof \PhpParser\Node\Stmt\Function_
+                    || $node instanceof \PhpParser\Node\Expr\Closure
+                    || $node instanceof \PhpParser\Node\Expr\ArrowFunction
+                ) {
+                    $this->subjects[] = $this->context->fileEntrySubjectComponents($this->context->currentFileEntrySubjectId());
+                }
+
+                return null;
+            }
+
+            public function leaveNode(\PhpParser\Node $node): ?int
+            {
+                $this->context->leave($node);
+
+                return null;
+            }
+        };
+        $parser = (new ParserFactory())->createForHostVersion();
+        $firstFile = <<<'PHP'
+<?php
+namespace App;
+class Service {
+    public string $name { get => fn (): string => 'name'; }
+    public function outer(): void {
+        function nested(): void {}
+        $closure = function (): void {};
+        $anonymous = new class { public function hidden(): void {} };
+    }
+}
+PHP;
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($probe);
+        $traverser->traverse($parser->parse($firstFile) ?? []);
+
+        self::assertSame('method', $probe->subjects[0]['logicalKind']);
+        self::assertSame('name::get', $probe->subjects[0]['member']);
+        self::assertSame('function', $probe->subjects[1]['logicalKind']);
+        self::assertSame('{closure#1}', $probe->subjects[1]['member']);
+        self::assertSame('method', $probe->subjects[2]['logicalKind']);
+        self::assertSame('outer', $probe->subjects[2]['member']);
+        self::assertSame('function', $probe->subjects[3]['logicalKind']);
+        self::assertSame('nested', $probe->subjects[3]['member']);
+        self::assertSame('function', $probe->subjects[4]['logicalKind']);
+        self::assertSame('{closure#2}', $probe->subjects[4]['member']);
+        self::assertSame(['subjectKind' => 'file'], $probe->subjects[5]);
+
+        $context->reset();
+        $secondFile = $parser->parse('<?php namespace Next; function onlyHere(): void {}') ?? [];
+        $secondTraverser = new NodeTraverser();
+        $secondProbe = new class ($context) extends \PhpParser\NodeVisitorAbstract {
+            /** @var list<array<string, int|string>> */
+            public array $subjects = [];
+
+            public function __construct(private readonly VisitorMethodContext $context) {}
+
+            public function enterNode(\PhpParser\Node $node): ?int
+            {
+                $this->context->enter($node);
+                if ($node instanceof \PhpParser\Node\Stmt\Function_) {
+                    $this->subjects[] = $this->context->fileEntrySubjectComponents($this->context->currentFileEntrySubjectId());
+                }
+
+                return null;
+            }
+
+            public function leaveNode(\PhpParser\Node $node): ?int
+            {
+                $this->context->leave($node);
+
+                return null;
+            }
+        };
+        $secondTraverser->addVisitor($secondProbe);
+        $secondTraverser->traverse($secondFile);
+
+        self::assertSame('Next', $secondProbe->subjects[0]['namespace']);
+        self::assertSame('onlyHere', $secondProbe->subjects[0]['member']);
+    }
+
     #[Test]
     public function itEmitsFinalMetadataForEveryCallableKind(): void
     {

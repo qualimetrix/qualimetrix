@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Complexity;
 
+use LogicException;
 use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -13,6 +13,8 @@ use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\HierarchicalRuleInterface;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
@@ -156,9 +158,11 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Method) as $methodInfo) {
-            $metrics = $context->metrics->get($methodInfo->symbolPath);
+        foreach ($context->metrics->allCallables() as $methodInfo) {
+            $subject = $methodInfo->subject ?? throw new LogicException('Cyclomatic complexity findings require an exact callable subject');
+            $metrics = $context->metrics->getSubject($subject);
             $ccn = $metrics->get(MetricName::COMPLEXITY_CCN);
+            $cognitive = $metrics->get(MetricName::COMPLEXITY_COGNITIVE);
 
             if ($ccn === null) {
                 continue;
@@ -167,16 +171,21 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
             $ccnValue = (int) $ccn;
 
             /** @var MethodComplexityOptions $effectiveMethodOptions */
-            $effectiveMethodOptions = $this->getEffectiveOptions($context, $methodOptions, $methodInfo->file, $methodInfo->line ?? 1);
+            $effectiveMethodOptions = $this->getEffectiveOptions($context, $methodOptions, $subject);
             $severity = $effectiveMethodOptions->getSeverity($ccnValue);
 
             if ($severity !== null) {
                 $threshold = $severity === Severity::Error ? $effectiveMethodOptions->error : $effectiveMethodOptions->warning;
-                $recommendation = $this->buildMethodRecommendation($ccnValue, $threshold, $metrics);
+                $recommendation = $this->buildMethodRecommendation(
+                    $ccnValue,
+                    $threshold,
+                    $cognitive === null ? null : (int) $cognitive,
+                );
 
                 $violations[] = new Violation(
                     location: new Location($methodInfo->file, $methodInfo->line),
-                    symbolPath: $methodInfo->symbolPath,
+                    subject: $subject,
+                    symbolPath: $subject->toSymbolPath(),
                     ruleName: $this->getName(),
                     violationCode: self::NAME . '.callable',
                     message: \sprintf('Cyclomatic complexity is %d, exceeds threshold of %d. Consider extracting methods or simplifying conditions', $ccnValue, $threshold),
@@ -199,16 +208,14 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
      * mechanical branching (e.g., switch/match statements) rather than
      * genuinely complex logic — a lower refactoring priority.
      */
-    private function buildMethodRecommendation(int $ccnValue, int $threshold, MetricBag $metrics): string
+    private function buildMethodRecommendation(int $ccnValue, int $threshold, ?int $cognitive): string
     {
-        $cognitive = $metrics->get(MetricName::COMPLEXITY_COGNITIVE);
-
-        if ($cognitive !== null && (int) $cognitive < self::COGNITIVE_WARNING_THRESHOLD) {
+        if ($cognitive !== null && $cognitive < self::COGNITIVE_WARNING_THRESHOLD) {
             return \sprintf(
                 'Cyclomatic complexity: %d (threshold: %d) — high CCN with low cognitive complexity (%d) suggests mechanical branching (switch/match). Lower refactoring priority.',
                 $ccnValue,
                 $threshold,
-                (int) $cognitive,
+                $cognitive,
             );
         }
 
@@ -225,8 +232,12 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
-            $metrics = $context->metrics->get($classInfo->symbolPath);
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            $subject = $classInfo->subject ?? throw new LogicException('Cyclomatic complexity class findings require an exact declaration subject');
+            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+                continue;
+            }
+            $metrics = $context->metrics->get($subject->toSymbolPath());
             $maxCcn = $metrics->get(MetricName::agg(MetricName::COMPLEXITY_CCN, AggregationStrategy::Max));
 
             if ($maxCcn === null) {
@@ -236,27 +247,46 @@ final class ComplexityRule extends AbstractRule implements HierarchicalRuleInter
             $maxCcnValue = (int) $maxCcn;
 
             /** @var ClassComplexityOptions $effectiveClassOptions */
-            $effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $classInfo->file, $classInfo->line ?? 1);
-            $severity = $effectiveClassOptions->getSeverity($maxCcnValue);
-
-            if ($severity !== null) {
-                $threshold = $severity === Severity::Error ? $effectiveClassOptions->maxError : $effectiveClassOptions->maxWarning;
-
-                $violations[] = new Violation(
-                    location: new Location($classInfo->file, $classInfo->line),
-                    symbolPath: $classInfo->symbolPath,
-                    ruleName: $this->getName(),
-                    violationCode: self::NAME . '.class',
-                    message: \sprintf('Maximum method cyclomatic complexity is %d, exceeds threshold of %d. Refactor the most complex methods', $maxCcnValue, $threshold),
-                    severity: $severity,
-                    metricValue: $maxCcnValue,
-                    level: RuleLevel::Class_,
-                    recommendation: \sprintf('Max cyclomatic complexity: %d (threshold: %d) — too many code paths', $maxCcnValue, $threshold),
-                    threshold: $threshold,
-                );
+            $effectiveClassOptions = $this->getEffectiveOptions($context, $classOptions, $subject);
+            $violation = $this->classViolation($classInfo, $subject, $maxCcnValue, $effectiveClassOptions);
+            if ($violation !== null) {
+                $violations[] = $violation;
             }
         }
 
         return $violations;
+    }
+
+    private function classViolation(
+        SymbolInfo $classInfo,
+        MetricSubject $subject,
+        int $maximum,
+        ClassComplexityOptions $options,
+    ): ?Violation {
+        /** @var array{Severity, int}|null $projection */
+        $projection = match (true) {
+            $maximum >= $options->maxError => [Severity::Error, $options->maxError],
+            $maximum >= $options->maxWarning => [Severity::Warning, $options->maxWarning],
+            default => null,
+        };
+
+        if ($projection === null) {
+            return null;
+        }
+        [$severity, $threshold] = $projection;
+
+        return new Violation(
+            location: new Location($classInfo->file, $classInfo->line),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
+            ruleName: $this->getName(),
+            violationCode: self::NAME . '.class',
+            message: \sprintf('Maximum method cyclomatic complexity is %d, exceeds threshold of %d. Refactor the most complex methods', $maximum, $threshold),
+            severity: $severity,
+            metricValue: $maximum,
+            level: RuleLevel::Class_,
+            recommendation: \sprintf('Max cyclomatic complexity: %d (threshold: %d) — too many code paths', $maximum, $threshold),
+            threshold: $threshold,
+        );
     }
 }

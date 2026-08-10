@@ -8,6 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Filter\PredicateFilterStage;
 use Qualimetrix\Core\Violation\Filter\ViolationFilterInterface;
@@ -86,6 +88,11 @@ final class PredicateFilterStageTest extends TestCase
         return new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App', 'Foo'),
+                RelativePath::fromString('src/Foo.php'),
+                1,
+            )),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
             message: $message,

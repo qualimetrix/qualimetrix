@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Structure;
 
+use LogicException;
+use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
@@ -67,56 +70,73 @@ final class LcomRule extends AbstractRule
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
-            $metrics = $context->metrics->get($classInfo->symbolPath);
-
-            // Skip readonly classes if configured
-            if ($this->options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
-                continue;
-            }
-
-            // Skip classes with too few methods
-            $methodCount = (int) ($metrics->get(MetricName::STRUCTURE_METHOD_COUNT) ?? 0);
-            if ($methodCount < $this->options->minMethods) {
-                continue;
-            }
-
-            $lcom = $metrics->get(MetricName::STRUCTURE_LCOM);
-
-            if ($lcom === null) {
-                continue;
-            }
-
-            $lcomValue = (int) $lcom;
-            /** @var LcomOptions $effectiveOptions */
-            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $classInfo->file, $classInfo->line ?? 1);
-            $severity = $effectiveOptions->getSeverity($lcomValue);
-
-            if ($severity !== null) {
-                $threshold = $severity === Severity::Error
-                    ? $effectiveOptions->error
-                    : $effectiveOptions->warning;
-
-                $violations[] = new Violation(
-                    location: new Location($classInfo->file, $classInfo->line),
-                    symbolPath: $classInfo->symbolPath,
-                    ruleName: $this->getName(),
-                    violationCode: self::NAME,
-                    message: \sprintf(
-                        'LCOM (Lack of Cohesion) is %d, exceeds threshold of %d. Class could be split into %d cohesive parts',
-                        $lcomValue,
-                        $threshold,
-                        $lcomValue,
-                    ),
-                    severity: $severity,
-                    metricValue: $lcomValue,
-                    recommendation: \sprintf('LCOM4: %d (threshold: %d) — class has %d unrelated method groups', $lcomValue, $threshold, $lcomValue),
-                    threshold: $threshold,
-                );
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            $violation = $this->violationForClass($classInfo, $context, $this->options);
+            if ($violation !== null) {
+                $violations[] = $violation;
             }
         }
 
         return $violations;
+    }
+
+    private function violationForClass(SymbolInfo $classInfo, AnalysisContext $context, LcomOptions $options): ?Violation
+    {
+        $subject = $classInfo->subject ?? throw new LogicException('LCOM findings require an exact class declaration subject');
+        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+            return null;
+        }
+
+        $metrics = $context->metrics->get($subject->toSymbolPath());
+        $lcomValue = $this->eligibleLcom($metrics, $options);
+        if ($lcomValue === null) {
+            return null;
+        }
+
+        /** @var LcomOptions $effectiveOptions */
+        $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
+        $severity = $effectiveOptions->getSeverity($lcomValue);
+        if ($severity === null) {
+            return null;
+        }
+
+        $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
+        $message = \sprintf(
+            'LCOM (Lack of Cohesion) is %d, exceeds threshold of %d. Class could be split into %d cohesive parts',
+            $lcomValue,
+            $threshold,
+            $lcomValue,
+        );
+        $recommendation = \sprintf('LCOM4: %d (threshold: %d) — class has %d unrelated method groups', $lcomValue, $threshold, $lcomValue);
+        $location = new Location($classInfo->file, $classInfo->line);
+        $symbolPath = $subject->toSymbolPath();
+
+        return new Violation(
+            location: $location,
+            subject: $subject,
+            symbolPath: $symbolPath,
+            ruleName: $this->getName(),
+            violationCode: self::NAME,
+            message: $message,
+            severity: $severity,
+            metricValue: $lcomValue,
+            recommendation: $recommendation,
+            threshold: $threshold,
+        );
+    }
+
+    private function eligibleLcom(MetricBag $metrics, LcomOptions $options): ?int
+    {
+        if ($options->excludeReadonly && $metrics->get(MetricName::STRUCTURE_IS_READONLY) === 1) {
+            return null;
+        }
+        $methodCount = (int) ($metrics->get(MetricName::STRUCTURE_METHOD_COUNT) ?? 0);
+        if ($methodCount < $options->minMethods) {
+            return null;
+        }
+        $lcom = $metrics->get(MetricName::STRUCTURE_LCOM);
+
+        return $lcom !== null ? (int) $lcom : null;
     }
 
     /**

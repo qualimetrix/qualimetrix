@@ -14,7 +14,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Severity;
@@ -106,7 +105,9 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
+            ->willReturn([]);
+        $repository->method('allDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -120,13 +121,17 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('npath', 250); // Above warning (200), below error (1000)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -147,13 +152,17 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('npath', 1200); // Above error (1000)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -194,13 +203,17 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('npath.max', 600); // Above warning (500), below error (1000)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$classInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -224,13 +237,17 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('npath.max', 1200); // Above error (1000)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$classInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -255,21 +272,20 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $methodPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($methodPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($methodPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 5);
+        $classInfo = self::subjectInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $methodBag = (new MetricBag())->with('npath', 250); // Warning
         $classBag = (new MetricBag())->with('npath.max', 600); // Warning
 
         $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => match ($type) {
-                SymbolType::Method => [$methodInfo],
-                SymbolType::Class_ => [$classInfo],
-                default => [],
-            });
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('getSubject')->willReturn($methodBag);
         $repository->method('get')
             ->willReturnCallback(fn(SymbolPath $path) => match ($path) {
                 $methodPath => $methodBag,
@@ -293,13 +309,17 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('npath', 2_500_000); // > 1M
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -439,13 +459,17 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath', $npath);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -524,13 +548,17 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath', $npath);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -556,13 +584,17 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'Test');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath.max', $npath);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$classInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -615,13 +647,17 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('npath.max', 2_500_000); // > 1M
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$classInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -649,13 +685,17 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath', 1_500_000);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -683,13 +723,17 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'Test');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath.max', 1_500_000);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$classInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -718,7 +762,7 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('npath', 1296)
@@ -727,8 +771,12 @@ final class NpathComplexityRuleTest extends TestCase
             ->withEntry('npath-complexity.factors', ['type' => 'switch', 'line' => 20, 'factor' => 3]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -750,13 +798,17 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('npath', 1200);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -765,5 +817,70 @@ final class NpathComplexityRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertStringNotContainsString('Chain:', $violations[0]->message);
+    }
+    #[Test]
+    public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([
+            self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('get')->willReturn((new MetricBag())->with('npath.max', 600));
+        $rule = new NpathComplexityRule(new NpathComplexityOptions(
+            class: new ClassNpathComplexityOptions(enabled: true),
+        ));
+
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:class:App\\Service\\Twin@src/A.php:100',
+            'declaration:class:App\\Service\\Twin@src/B.php:200',
+        ], $subjects);
+    }
+
+    #[Test]
+    public function itProjectsDuplicateLogicalCallableScoresToIndependentExactDeclarations(): void
+    {
+        $method = SymbolPath::forMethod('App\\Service', 'Twin', 'run');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([
+            self::subjectInfo($method, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($method, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('npath', 300));
+
+        $violations = (new NpathComplexityRule(new NpathComplexityOptions()))
+            ->analyzeLevel(RuleLevel::Callable, new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:callable:App\\Service\\Twin::run@src/A.php:100',
+            'declaration:callable:App\\Service\\Twin::run@src/B.php:200',
+        ], $subjects);
+    }
+
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            $file,
+            $line,
+            $kind,
+        );
     }
 }

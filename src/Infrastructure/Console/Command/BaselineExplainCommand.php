@@ -21,7 +21,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * `baseline:explain` — prints the boundary in force for one symbol and where
+ * `baseline:explain` — prints the boundary in force for one metric subject and where
  * each part of it comes from (ADR 0017).
  *
  * Three sources answer the same question and a user cannot see which is
@@ -43,7 +43,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 #[AsCommand(
     name: 'baseline:explain',
-    description: 'Show the effective boundary for a symbol and where it comes from',
+    description: 'Show the effective boundary for a metric subject and where it comes from',
 )]
 final class BaselineExplainCommand extends BaselineCommand
 {
@@ -59,9 +59,9 @@ final class BaselineExplainCommand extends BaselineCommand
     protected function configure(): void
     {
         $this->addArgument(
-            'symbol',
+            'subject',
             InputArgument::REQUIRED,
-            'Canonical symbol key, as printed in reports (e.g. callable:App\\OrderService::calculate)',
+            'Canonical metric subject key, as printed in reports',
         );
 
         BaselineCommandDefinition::addMeasuredRunInput($this);
@@ -89,8 +89,8 @@ final class BaselineExplainCommand extends BaselineCommand
 
     protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
-        /** @var string $symbolKey */
-        $symbolKey = $input->getArgument('symbol');
+        /** @var string $subjectKey */
+        $subjectKey = $input->getArgument('subject');
 
         $channel = $this->readChannel($input, $output);
         if ($channel === false) {
@@ -106,7 +106,7 @@ final class BaselineExplainCommand extends BaselineCommand
         $baseline = $this->readBaseline($input);
 
         $explanation = $this->explanationService->explain(
-            $symbolKey,
+            $subjectKey,
             $channel,
             $baseline,
             $context->violations(),
@@ -117,8 +117,8 @@ final class BaselineExplainCommand extends BaselineCommand
 
         if ($explanation->status === BoundaryExplanationStatus::Unknown) {
             $output->writeln(\sprintf(
-                '<error>Unknown symbol "%s": it is absent from both the current analysis and the baseline.</error>',
-                $symbolKey,
+                '<error>Unknown subject "%s": it is absent from both the current analysis and the baseline.</error>',
+                $subjectKey,
             ));
 
             return self::EXIT_INVALID_INPUT;
@@ -159,17 +159,17 @@ final class BaselineExplainCommand extends BaselineCommand
 
     private static function render(BoundaryExplanation $explanation, OutputInterface $output): void
     {
-        $output->writeln(\sprintf('Symbol: <info>%s</info>', $explanation->symbolKey));
+        $output->writeln(\sprintf('Subject: <info>%s</info>', $explanation->subjectKey));
 
         if ($explanation->status === BoundaryExplanationStatus::BaselineOnly) {
-            $output->writeln('  <comment>Baseline only: this symbol is absent from the current analysis scope or result.</comment>');
+            $output->writeln('  <comment>Baseline only: this subject is absent from the current analysis scope or result.</comment>');
         }
 
         if ($explanation->boundaries === []) {
             $output->writeln('');
             $output->writeln($explanation->status === BoundaryExplanationStatus::BaselineOnly
-                ? '  <comment>The baseline names this symbol, but no entry forms an applicable boundary.</comment>'
-                : '  <comment>Nothing currently reports on this measured symbol.</comment>');
+                ? '  <comment>The baseline names this subject, but no entry forms an applicable boundary.</comment>'
+                : '  <comment>Nothing currently reports on this measured subject.</comment>');
 
             return;
         }

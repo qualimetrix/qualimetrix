@@ -15,6 +15,8 @@ use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -606,7 +608,15 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     private static function godClassFinding(int $wmc): Violation
     {
         $symbolPath = self::someClass();
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/OrderService.php'), 10);
+        $classInfo = new SymbolInfo(
+            MetricSubject::declaration(new DeclarationPath(
+                $symbolPath,
+                RelativePath::fromString('src/OrderService.php'),
+                0,
+            )),
+            RelativePath::fromString('src/OrderService.php'),
+            10,
+        );
         $metrics = (new MetricBag())
             ->with('wmc', $wmc)
             ->with('lcom', 4)
@@ -615,6 +625,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
             ->with('methodCount', 10)
             ->with('isReadonly', 0);
         $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('all')
             ->willReturnCallback(static fn(SymbolType $type): array => $type === SymbolType::Class_ ? [$classInfo] : []);
         $repository->method('get')->willReturn($metrics);

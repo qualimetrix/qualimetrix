@@ -60,6 +60,7 @@ Core/
 │   ├── DeclarationPath.php                # Durable source declaration identity
 │   ├── LogicalClassPath.php               # Validated class-level logical identity
 │   ├── MetricSubject.php                  # Declaration, class, or aggregate metric subject
+│   ├── MetricSubjectCodec.php             # Scalar wire codec for metric subjects
 │   ├── SymbolType.php
 │   ├── SymbolPath.php                     # Stable symbol identifier (moved from Violation/)
 │   ├── SymbolInfo.php
@@ -81,6 +82,7 @@ Core/
 │   └── DuplicateLocation.php              # VO: a single location within a duplicate block
 ├── Violation/
 │   ├── Violation.php
+│   ├── OccurrenceKey.php                 # Stable SHA-256 discriminator for one semantic occurrence
 │   ├── ViolationChannel.php               # VO: (ruleName, violationCode) — the address of a kind of finding
 │   ├── ChannelShape.php                   # Enum: magnitude / occurrence — what a channel's metricValue means for baseline purposes
 │   ├── ChannelDeclaration.php             # VO: a channel's shape plus, for magnitude channels, its WorseDirection
@@ -111,6 +113,7 @@ Core/
 │   ├── ComputedMetricDefinitionHolder.php # Static runtime holder for resolved definitions
 │   └── HealthDimension.php               # Enum: health dimension identifiers (complexity, cohesion, etc.)
 ├── Suppression/
+│   ├── ControlScope.php                  # Declaration scope and precedence: hook > property > callable > class
 │   ├── Suppression.php                    # VO: suppression tag from docblock (@qmx-ignore)
 │   ├── SuppressionType.php                # Enum: suppression scope (symbol/next-line/file)
 │   └── ThresholdOverride.php              # VO: threshold override from docblock (@qmx-threshold)
@@ -284,9 +287,12 @@ enum SymbolType: string {
 
 **Usage examples:**
 ```php
-// Method metrics (raw)
-$metrics = $repository->get(SymbolPath::forMethod('App\Service', 'UserService', 'calculate'));
-$ccn = $metrics->get('ccn'); // int
+// Exact callable metrics (raw; duplicate logical declarations stay distinct)
+foreach ($repository->allCallables() as $callableInfo) {
+    $subject = $callableInfo->subject
+        ?? throw new LogicException('Callable metrics require an exact declaration subject');
+    $ccn = $repository->getSubject($subject)->get('ccn'); // int|null
+}
 
 // Namespace metrics (aggregated)
 $nsMetrics = $repository->get(SymbolPath::forNamespace('App\Service'));
@@ -294,10 +300,6 @@ $avgCcn = $nsMetrics->get('ccn.avg'); // float
 $totalLoc = $nsMetrics->get('loc.sum'); // int
 $classCount = $nsMetrics->get('classCount.sum'); // int
 
-// Iterate over all methods
-foreach ($repository->all(SymbolType::Method) as $methodInfo) {
-    $metrics = $repository->get($methodInfo->symbolPath);
-}
 ```
 
 **Advantages of a unified API:**
@@ -592,6 +594,20 @@ Stable symbol identifier for baseline. Does not depend on line number. Located i
 - `App\Service` — namespace
 - `::globalFunction` — global function
 
+### MetricSubjectCodec
+
+`MetricSubjectCodec` is the canonical scalar wire grammar for metric subjects.
+Collectors encode file, class, method, and function identity without serializing
+paths or identity objects through IPC. Rules decode those components with the
+authoritative container `RelativePath`.
+
+`decodeEntry(array<string, scalar>, RelativePath): MetricSubject` is the DataBag
+ingress. It selects exactly `subjectKind`, `logicalKind`, `namespace`, `class`,
+`member`, `startFilePos`, and `collisionOrdinal`, retains only `int|string`, and
+delegates all grammar validation to `decode()`. Unrelated entry data is ignored;
+a retained bool or float is dropped and therefore fails when the component is
+required. Entry data can never replace the caller-supplied container path.
+
 ### Violation
 
 A rule violation.
@@ -608,12 +624,28 @@ A rule violation.
 - `relatedLocations: list<Location>` — additional locations related to this violation (e.g., other occurrences of duplicated code)
 - `recommendation: ?string` — human-readable message for summary/detail formatters (e.g., "Cyclomatic complexity: 15 (threshold: 10) — too many code paths")
 - `threshold: int|float|null` — threshold that was exceeded (for programmatic comparison)
-- `dependencyTarget: ?SymbolPath` — target symbol of the offending dependency edge (for dependency-based rules such as `architecture.layer-violation`); null for non-dependency rules
-- `dependencyType: ?DependencyType` — type of the offending dependency edge; null for non-dependency rules. Both fields are included in the baseline hash when non-null, enabling per-edge baseline identity that survives line drift
+- `dependencyTarget: ?SymbolPath` — target symbol of the offending dependency edge (for dependency-based rules such as `architecture.layer-violation`); target presence defines whether an edge exists
+- `dependencyType: ?DependencyType` — optional reference type for a target-bearing edge; a target without a type is a valid untyped edge
+- `occurrenceKey: ?OccurrenceKey` — stable semantic discriminator for repeated findings on one channel and subject
 
 **Methods:**
-- `getFingerprint(): string` — unique identifier for baseline (`ruleName:symbolPath`)
+- `getFingerprint(): string` — formatter identity built from channel, exact subject, optional occurrence, and optional edge. No-edge and fully typed edge bytes retain their established forms; a target-only edge uses the collision-safe `untyped-edge:<byte-length>:<canonical-target>` component. Baseline identity is owned separately by `BaselineIdentity`.
 - `channel(): ViolationChannel` — the `(ruleName, violationCode)` pair this violation was emitted on
+
+### OccurrenceKey
+
+Immutable semantic discriminator for occurrence-shaped findings that share a
+channel and metric subject. `semantic(string $kind, array $scalarEvidence):
+self` sorts the named evidence, serializes `{kind, evidence}` with stable JSON
+flags, and exposes the resulting 64-character SHA-256 digest through the
+readonly `value` field. The kind and every evidence name must be non-empty;
+evidence values are scalar. Invalid input throws `InvalidArgumentException`.
+
+The type depends only on PHP scalar/JSON/hash primitives and
+`InvalidArgumentException`; it does not depend on Baseline or Reporting.
+`OccurrenceKeyTest` directly covers order-independent canonicalization,
+kind/evidence separation, digest shape, and an empty-kind rejection. Baseline identity and
+serialization are integration consumers, not owners of this contract.
 
 ### ViolationChannel
 
@@ -840,6 +872,19 @@ Matches namespaces against patterns. Same dual-mode logic as `PathMatcher` but u
 ---
 
 ## Suppression Value Objects
+
+### ControlScope (Enum)
+
+Declaration-ranked scope carried by symbol suppressions and threshold
+overrides. Its cases are `Hook`, `Property`, `Callable`, and `Class_`;
+`specificity(): int` returns `4`, `3`, `2`, and `1` respectively. Physical
+file and next-line controls remain represented by `SuppressionType` and never
+enter this precedence enum.
+
+`ControlScope` has no dependencies beyond PHP. `DeclarationBindingsTest` and
+`PropertyHookControlPrecedenceTest` cover production binding and the exact
+hook-over-property-over-class precedence, while `SourceControlsTest` verifies
+that controls with different declaration scopes remain distinct.
 
 ### Suppression
 

@@ -632,6 +632,129 @@ final class InMemoryMetricRepositoryTest extends TestCase
         }
     }
 
+    #[Test]
+    public function itProjectsTypedAggregateSubjectsToCanonicalPublicViews(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $file = RelativePath::fromString('src/Service.php');
+        $filePath = SymbolPath::forFile($file);
+        $fileSubject = MetricSubject::aggregate($filePath);
+
+        $repository->addSubject($fileSubject, (new MetricBag())->with('loc', 10)->withEntry('source', ['name' => 'first']), $file, 0);
+        $repository->addSubject($fileSubject, (new MetricBag())->with('loc', 20)->withEntry('source', ['name' => 'second']), $file, 0);
+
+        $fileMetrics = $repository->get($filePath);
+        self::assertTrue($repository->has($filePath));
+        self::assertSame(20, $fileMetrics->get('loc'));
+        self::assertSame($fileMetrics->all(), $repository->getSubject($fileSubject)->all());
+        self::assertSame($fileMetrics->entries('source'), $repository->getSubject($fileSubject)->entries('source'));
+        self::assertCount(1, iterator_to_array($repository->all(SymbolType::File), false));
+
+        $namespacePath = SymbolPath::forNamespace('App');
+        $namespaceSubject = MetricSubject::aggregate($namespacePath);
+        $repository->addSubject($namespaceSubject, MetricBag::fromArray(['loc.sum' => 20]), $file, 1);
+
+        self::assertTrue($repository->has($namespacePath));
+        self::assertSame(20, $repository->get($namespacePath)->get('loc.sum'));
+        self::assertSame($repository->get($namespacePath)->all(), $repository->getSubject($namespaceSubject)->all());
+        self::assertSame(['App'], $repository->getNamespaces());
+        self::assertCount(1, $repository->forNamespace('App'));
+        self::assertCount(1, iterator_to_array($repository->all(SymbolType::Namespace_), false));
+
+        $projectPath = SymbolPath::forProject();
+        $projectSubject = MetricSubject::aggregate($projectPath);
+        $repository->addSubject($projectSubject, MetricBag::fromArray(['loc.sum' => 20]), null, null);
+
+        self::assertTrue($repository->has($projectPath));
+        self::assertSame(20, $repository->get($projectPath)->get('loc.sum'));
+        self::assertSame($repository->get($projectPath)->all(), $repository->getSubject($projectSubject)->all());
+        self::assertCount(1, iterator_to_array($repository->all(SymbolType::Project), false));
+    }
+
+    #[Test]
+    public function itProjectsPlainAggregateWritesThroughTypedSubjectReads(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $file = RelativePath::fromString('src/Service.php');
+        $filePath = SymbolPath::forFile($file);
+        $namespacePath = SymbolPath::forNamespace('App');
+        $projectPath = SymbolPath::forProject();
+
+        foreach ([$filePath, $namespacePath, $projectPath] as $path) {
+            $repository->add($path, MetricBag::fromArray(['loc.sum' => 10]), $file, 0);
+            $subject = MetricSubject::aggregate($path);
+
+            self::assertTrue($repository->hasSubject($subject));
+            self::assertSame($repository->get($path)->all(), $repository->getSubject($subject)->all());
+        }
+
+        self::assertCount(1, iterator_to_array($repository->all(SymbolType::File), false));
+        self::assertCount(1, iterator_to_array($repository->all(SymbolType::Namespace_), false));
+        self::assertCount(1, iterator_to_array($repository->all(SymbolType::Project), false));
+        self::assertSame(['App'], $repository->getNamespaces());
+        self::assertCount(1, $repository->forNamespace('App'));
+    }
+
+    #[Test]
+    public function itKeepsAggregateSubjectReadsOnCanonicalStorageAfterPublicMutations(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $file = RelativePath::fromString('src/Service.php');
+        $path = SymbolPath::forNamespace('App');
+        $subject = MetricSubject::aggregate($path);
+
+        $repository->addSubject($subject, (new MetricBag())->with('loc.sum', 10)->withEntry('source', ['name' => 'typed']), null, null);
+        $repository->addScalar($path, 'loc.sum', 20);
+        $repository->add($path, (new MetricBag())->with('ccn.sum', 5)->withEntry('source', ['name' => 'plain']), $file, 13);
+        $repository->addSubject($subject, (new MetricBag())->with('loc.sum', 30)->withEntry('source', ['name' => 'typed-again']), $file, 13);
+
+        $public = $repository->get($path);
+        self::assertSame(30, $public->get('loc.sum'));
+        self::assertSame(5, $public->get('ccn.sum'));
+        self::assertSame(
+            [['name' => 'typed'], ['name' => 'plain'], ['name' => 'typed-again']],
+            $public->entries('source'),
+        );
+        self::assertSame($public->all(), $repository->getSubject($subject)->all());
+        self::assertSame($public->entries('source'), $repository->getSubject($subject)->entries('source'));
+
+        $info = $repository->forNamespace('App')[0];
+        self::assertSame($file, $info->file);
+        self::assertSame(13, $info->line);
+        self::assertCount(1, $repository->forNamespace('App'));
+    }
+
+    #[Test]
+    public function itSynchronizesMixedPlainAndTypedAggregateMergesInBothOrders(): void
+    {
+        $path = SymbolPath::forNamespace('App');
+        $subject = MetricSubject::aggregate($path);
+        $plain = new InMemoryMetricRepository();
+        $plainFile = RelativePath::fromString('src/Plain.php');
+        $plain->add($path, (new MetricBag())->with('loc.sum', 10)->withEntry('source', ['name' => 'plain']), $plainFile, 13);
+        $typed = new InMemoryMetricRepository();
+        $typedFile = RelativePath::fromString('src/Typed.php');
+        $typed->addSubject($subject, (new MetricBag())->with('loc.sum', 20)->withEntry('source', ['name' => 'typed']), $typedFile, null);
+
+        foreach ([
+            [$plain->mergeWith($typed), 20, [['name' => 'plain'], ['name' => 'typed']], $plainFile],
+            [$typed->mergeWith($plain), 10, [['name' => 'typed'], ['name' => 'plain']], $typedFile],
+        ] as [$repository, $loc, $entries, $expectedFile]) {
+            $public = $repository->get($path);
+            $typedMetrics = $repository->getSubject($subject);
+
+            self::assertTrue($repository->has($path));
+            self::assertSame($loc, $public->get('loc.sum'));
+            self::assertSame($public->all(), $typedMetrics->all());
+            self::assertSame($entries, $public->entries('source'));
+            self::assertSame($public->entries('source'), $typedMetrics->entries('source'));
+            self::assertCount(1, $repository->forNamespace('App'));
+            self::assertCount(1, iterator_to_array($repository->all(SymbolType::Namespace_), false));
+            self::assertSame($expectedFile, $repository->forNamespace('App')[0]->file);
+            self::assertSame(13, $repository->forNamespace('App')[0]->line);
+        }
+    }
+
     private function assertLocationFreeLogicalClassProjection(InMemoryMetricRepository $repository): void
     {
         $logicalClasses = iterator_to_array($repository->allLogicalClasses(), false);

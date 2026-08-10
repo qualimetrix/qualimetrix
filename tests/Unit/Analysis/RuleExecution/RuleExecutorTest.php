@@ -20,6 +20,8 @@ use Qualimetrix\Core\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Rule\RuleSelector;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\RuleExclusionCaptureHolder;
@@ -658,6 +660,11 @@ final class RuleExecutorTest extends TestCase
         $classCohesion = new Violation(
             location: new Location(RelativePath::fromString('src/Metrics/Collector.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Metrics', 'Collector'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App\\Metrics', 'Collector'),
+                RelativePath::fromString('src/Metrics/Collector.php'),
+                10,
+            )),
             ruleName: 'computed.health',
             violationCode: 'health.cohesion',
             message: 'Class cohesion health is low',
@@ -694,6 +701,7 @@ final class RuleExecutorTest extends TestCase
         $projectCohesion = new Violation(
             location: Location::none(),
             symbolPath: SymbolPath::forProject(),
+            subject: MetricSubject::aggregate(SymbolPath::forProject()),
             ruleName: 'computed.health',
             violationCode: 'health.cohesion',
             message: 'Project cohesion health is low',
@@ -844,6 +852,7 @@ final class RuleExecutorTest extends TestCase
                 line: 1,
             ),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test/file.php')),
+            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test/file.php'))),
             ruleName: $ruleName,
             violationCode: $violationCode ?? $ruleName,
             message: "Violation from $ruleName",
@@ -863,6 +872,7 @@ final class RuleExecutorTest extends TestCase
                 line: 1,
             ),
             symbolPath: SymbolPath::forNamespace($namespace),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace($namespace)),
             ruleName: $ruleName,
             violationCode: $violationCode ?? $ruleName,
             message: "Violation from $ruleName in $namespace",
@@ -945,6 +955,7 @@ final class RuleExecutorTest extends TestCase
                 line: 1,
             ),
             symbolPath: SymbolPath::forFile($symbolPathFile),
+            subject: MetricSubject::aggregate(SymbolPath::forFile($symbolPathFile)),
             ruleName: $ruleName,
             violationCode: $ruleName,
             message: "Violation from $ruleName in $file",

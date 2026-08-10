@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Metrics\CodeSmell;
+namespace Qualimetrix\Metrics\CodeSmell\RepeatedExpression;
 
 use PhpParser\Node;
 use Qualimetrix\Core\Metric\MetricBag;
@@ -67,6 +67,8 @@ final class IdenticalSubExpressionCollector extends AbstractCollector
         foreach ($findings as $finding) {
             $bag = $bag->withEntry("identicalSubExpression.{$finding->type}", [
                 'line' => $finding->line,
+                'detail' => $finding->detail,
+                ...$this->visitor->getSubjectComponents($finding),
             ]);
         }
 

@@ -89,8 +89,8 @@ final class ExitRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
 
         $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.exit', ['line' => 10])
-            ->withEntry('codeSmell.exit', ['line' => 35]);
+            ->withEntry('codeSmell.exit', ['subjectKind' => 'file', 'line' => 10])
+            ->withEntry('codeSmell.exit', ['subjectKind' => 'file', 'line' => 35]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')

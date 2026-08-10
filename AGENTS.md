@@ -226,8 +226,10 @@ Infrastructure -> Analysis -> Metrics/Rules/Reporting/Configuration -> Core
 ```php
 // Correct: Rule reads pre-computed metrics
 public function analyze(AnalysisContext $context): array {
-    foreach ($context->metrics->all(SymbolType::Method) as $method) {
-        $ccn = $context->metrics->get($method->symbolPath);
+    foreach ($context->metrics->allCallables() as $callable) {
+        $subject = $callable->subject
+            ?? throw new LogicException('Callable metrics require an exact declaration subject');
+        $ccn = $context->metrics->getSubject($subject)->get(MetricName::COMPLEXITY_CCN);
     }
 }
 
@@ -253,7 +255,10 @@ Discovery -> Collection (parallel) -> Aggregation -> RuleExecution -> Reporting
 ### 4. SymbolPath for Identification
 
 ```php
-// Use SymbolPath for violations and metrics
+// Use MetricSubject for exact declaration metrics and violations
+$subject = MetricSubject::declaration($declarationPath);
+
+// SymbolPath remains the logical identity for named symbols and aggregates
 SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
 SymbolPath::forClass('App\Service', 'UserService');
 SymbolPath::forNamespace('App\Service');
@@ -552,7 +557,7 @@ Run `bin/qmx check src/` after modifying metric collection or aggregation logic 
 ### Dogfooding: Violation Management Strategy
 
 We analyze ourselves with `bin/qmx check src/` using `qmx.yaml` and the
-versioned root `qmx-baseline.json`. That file is a v10 ratchet snapshot for
+versioned root `qmx-baseline.json`. That file is a v11 ratchet snapshot for
 residual, currently accepted warnings only; it is not a suppress-mode or legacy
 baseline. Direct hard gates remain outside the baseline and are declared in
 `qmx.yaml`. `composer selfcheck` applies the ratchet with `--fail-on=warning`,
@@ -579,7 +584,7 @@ so any new warning fails the build.
   point suppressions over adding findings to the ratchet. Baseline lifecycle
   and recalibration must be explicit and reviewed: regenerate
   `qmx-baseline.json` only after an intentional change to accepted residual
-  debt, and review the resulting v10 snapshot diff
+  debt, and review the resulting v11 snapshot diff
 - Never use suppress-mode or legacy baselines for dogfooding
 
 ---

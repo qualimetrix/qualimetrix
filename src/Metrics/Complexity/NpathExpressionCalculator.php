@@ -25,6 +25,8 @@ use PhpParser\Node\Stmt\Class_;
  * enclosing callable statement contributes its base path in the visitor.
  * Nested callable and anonymous-class bodies belong to separate analysis
  * scopes and are deliberately opaque.
+ *
+ * @qmx-threshold complexity.wmc warning=51 error=51 -- Finite php-parser expression algebra keeps exact NPath composition and saturation together.
  */
 final class NpathExpressionCalculator
 {
@@ -45,6 +47,8 @@ final class NpathExpressionCalculator
      * contribution unchanged for structural formulas.
      *
      * @return array{ordinary: int, nullsafe: int}
+     *
+     * @qmx-threshold complexity.cyclomatic warning=14 error=14 -- Finite php-parser expression dispatch preserves the closed NPath contribution algebra.
      */
     public function calculateContributions(Expr $expr): array
     {

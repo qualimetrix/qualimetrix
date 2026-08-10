@@ -164,7 +164,14 @@ final class DuplicateBlockFinder
         $locationA = new DuplicateLocation(RelativePath::fromString($this->request->filePaths[$fileIdxA]), $startLineA, $endLineA);
         $locationB = new DuplicateLocation(RelativePath::fromString($this->request->filePaths[$fileIdxB]), $startLineB, $endLineB);
 
-        return $this->assembleBlock($fileIdxA, $locationA, $locationB, $lineCount, $matchLength);
+        return $this->assembleBlock(
+            $fileIdxA,
+            $locationA,
+            $locationB,
+            $lineCount,
+            $matchLength,
+            $this->contentHash($tokensA, $offsetA, $matchLength),
+        );
     }
 
     private function isTrivialSelfMatch(int $fileIdxA, int $offsetA, int $fileIdxB, int $offsetB): bool
@@ -182,6 +189,7 @@ final class DuplicateBlockFinder
         DuplicateLocation $locationB,
         int $lineCount,
         int $matchLength,
+        string $contentHash,
     ): DuplicateBlock {
         $sourceA = $this->request->retokenized->sources[$fileIdxA] ?? null;
         $hint = $sourceA !== null
@@ -192,8 +200,31 @@ final class DuplicateBlockFinder
             locations: [$locationA, $locationB],
             lines: $lineCount,
             tokens: $matchLength,
+            contentHash: $contentHash,
             hint: $hint,
         );
+    }
+
+    /**
+     * Creates the semantic identity for one fully verified duplicate block.
+     *
+     * The sequence is length-prefixed through JSON and carries its token count
+     * explicitly, so neither source locations nor a shortened display hint can
+     * influence the group identity.
+     *
+     * @param list<NormalizedToken> $tokens
+     */
+    private function contentHash(array $tokens, int $offset, int $length): string
+    {
+        $values = [];
+        for ($i = 0; $i < $length; $i++) {
+            $values[] = $tokens[$offset + $i]->value;
+        }
+
+        return hash('sha256', json_encode(
+            ['tokenCount' => $length, 'tokens' => $values],
+            \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES,
+        ));
     }
 
     /**

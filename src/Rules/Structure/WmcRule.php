@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Structure;
 
+use LogicException;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
@@ -67,52 +69,60 @@ final class WmcRule extends AbstractRule
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
-            $metrics = $context->metrics->get($classInfo->symbolPath);
-
-            // Skip data classes if configured
-            if ($this->options->excludeDataClasses && $metrics->get(MetricName::STRUCTURE_IS_DATA_CLASS) === 1) {
-                continue;
-            }
-
-            $wmc = $metrics->get(MetricName::STRUCTURE_WMC);
-
-            if ($wmc === null) {
-                continue;
-            }
-
-            $wmcValue = (int) $wmc;
-            /** @var WmcOptions $effectiveOptions */
-            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $classInfo->file, $classInfo->line ?? 1);
-            $severity = $effectiveOptions->getSeverity($wmcValue);
-
-            if ($severity !== null) {
-                $threshold = $severity === Severity::Error
-                    ? $effectiveOptions->error
-                    : $effectiveOptions->warning;
-
-                $methodCount = $metrics->get(MetricName::STRUCTURE_METHOD_COUNT);
-                $recommendation = $this->buildRecommendation($wmcValue, $threshold, $methodCount !== null ? (int) $methodCount : null);
-
-                $violations[] = new Violation(
-                    location: new Location($classInfo->file, $classInfo->line),
-                    symbolPath: $classInfo->symbolPath,
-                    ruleName: $this->getName(),
-                    violationCode: self::NAME,
-                    message: \sprintf(
-                        'WMC (Weighted Methods per Class) is %d, exceeds threshold of %d. Simplify methods or split the class',
-                        $wmcValue,
-                        $threshold,
-                    ),
-                    severity: $severity,
-                    metricValue: $wmcValue,
-                    recommendation: $recommendation,
-                    threshold: $threshold,
-                );
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            $violation = $this->violationForClass($classInfo, $context, $this->options);
+            if ($violation !== null) {
+                $violations[] = $violation;
             }
         }
 
         return $violations;
+    }
+
+    private function violationForClass(SymbolInfo $classInfo, AnalysisContext $context, WmcOptions $options): ?Violation
+    {
+        $subject = $classInfo->subject ?? throw new LogicException('WMC findings require an exact class declaration subject');
+        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+            return null;
+        }
+
+        $metrics = $context->metrics->get($subject->toSymbolPath());
+        if ($options->excludeDataClasses && $metrics->get(MetricName::STRUCTURE_IS_DATA_CLASS) === 1) {
+            return null;
+        }
+
+        $wmc = $metrics->get(MetricName::STRUCTURE_WMC);
+        if ($wmc === null) {
+            return null;
+        }
+
+        $wmcValue = (int) $wmc;
+        /** @var WmcOptions $effectiveOptions */
+        $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
+        $severity = $effectiveOptions->getSeverity($wmcValue);
+        if ($severity === null) {
+            return null;
+        }
+
+        $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
+        $methodCount = $metrics->get(MetricName::STRUCTURE_METHOD_COUNT);
+
+        return new Violation(
+            location: new Location($classInfo->file, $classInfo->line),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
+            ruleName: $this->getName(),
+            violationCode: self::NAME,
+            message: \sprintf(
+                'WMC (Weighted Methods per Class) is %d, exceeds threshold of %d. Simplify methods or split the class',
+                $wmcValue,
+                $threshold,
+            ),
+            severity: $severity,
+            metricValue: $wmcValue,
+            recommendation: $this->buildRecommendation($wmcValue, $threshold, $methodCount !== null ? (int) $methodCount : null),
+            threshold: $threshold,
+        );
     }
 
     /**

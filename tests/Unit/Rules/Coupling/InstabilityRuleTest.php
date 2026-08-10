@@ -16,7 +16,6 @@ use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Severity;
@@ -129,7 +128,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -143,12 +142,12 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -164,7 +163,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // 0.85 is above warning (0.8), below error (0.95)
         $metricBag = (new MetricBag())
@@ -173,7 +172,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -196,7 +195,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // 0.97 is above error (0.95)
         $metricBag = (new MetricBag())
@@ -205,7 +204,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 32);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -224,7 +223,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'LeafService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/LeafService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/LeafService.php'), 10);
 
         // Ca=0, below default minAfferent=1, should be skipped
         $metricBag = (new MetricBag())
@@ -233,7 +232,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -254,7 +253,7 @@ final class InstabilityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'LeafService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/LeafService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/LeafService.php'), 10);
 
         // Ca=0, but minAfferent=0 means check all classes
         $metricBag = (new MetricBag())
@@ -263,7 +262,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -276,6 +275,30 @@ final class InstabilityRuleTest extends TestCase
     }
 
     #[Test]
+    public function itDefaultsMissingClassEfferentCouplingToZeroInTheExactMessage(): void
+    {
+        $rule = new InstabilityRule(new InstabilityOptions(
+            class: new ClassInstabilityOptions(minAfferent: 0),
+        ));
+        $symbolPath = SymbolPath::forClass('App\\Service', 'LeafService');
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/LeafService.php'), 10);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('get')->willReturn(
+            (new MetricBag())->with('instability', 1.0),
+        );
+
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame(
+            'Instability is 1.00 (Ca=0, Ce=0), exceeds threshold of 0.95. Reduce outgoing dependencies',
+            $violations[0]->message,
+        );
+        self::assertSame($classInfo->subject?->toCanonical(), $violations[0]->subject->toCanonical());
+    }
+
+    #[Test]
     public function itSkipsClassWhenCaOneBelowMinAfferentTwo(): void
     {
         $rule = new InstabilityRule(
@@ -285,7 +308,7 @@ final class InstabilityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'NearLeafService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/NearLeafService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/NearLeafService.php'), 10);
 
         // Ca=1, below minAfferent=2, should be skipped
         $metricBag = (new MetricBag())
@@ -294,7 +317,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 11);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -315,7 +338,7 @@ final class InstabilityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'CoreService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/CoreService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/CoreService.php'), 10);
 
         // Ca=2, meets minAfferent=2, should NOT be skipped
         $metricBag = (new MetricBag())
@@ -324,7 +347,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -361,7 +384,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // 0.88 is above warning (0.8), below error (0.95)
         $metricBag = (new MetricBag())
@@ -392,7 +415,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // 0.98 is above error (0.95)
         $metricBag = (new MetricBag())
@@ -421,7 +444,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // Ca=0, below default minAfferent=1, should be skipped
         $metricBag = (new MetricBag())
@@ -452,7 +475,7 @@ final class InstabilityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // Ca=0, but minAfferent=0 means check all namespaces
         $metricBag = (new MetricBag())
@@ -484,7 +507,7 @@ final class InstabilityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // Ca=1, below minAfferent=2, should be skipped
         $metricBag = (new MetricBag())
@@ -513,7 +536,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // classCount.sum = 1, below default minClassCount (3)
         $metricBag = (new MetricBag())
@@ -540,7 +563,7 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // classCount.sum = 5, above default minClassCount (3)
         $metricBag = (new MetricBag())
@@ -570,10 +593,10 @@ final class InstabilityRuleTest extends TestCase
         $rule = new InstabilityRule(new InstabilityOptions());
 
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $nsPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($nsPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($nsPath, RelativePath::fromString('src/Service'), null);
 
         $classBag = (new MetricBag())
             ->with('instability', 0.85)
@@ -592,6 +615,7 @@ final class InstabilityRuleTest extends TestCase
                 SymbolType::Namespace_ => [$nsInfo],
                 default => [],
             });
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturnCallback(fn(SymbolPath $path) => match ($path) {
                 $classPath => $classBag,
@@ -756,7 +780,7 @@ final class InstabilityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'Test');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
             ->with('instability', $instability)
@@ -764,7 +788,7 @@ final class InstabilityRuleTest extends TestCase
             ->with('ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -887,5 +911,47 @@ final class InstabilityRuleTest extends TestCase
         self::assertFalse($options->enabled);
         self::assertSame(0.75, $options->maxWarning);
         self::assertSame(0.92, $options->maxError);
+    }
+    #[Test]
+    public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([
+            self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('get')->willReturn(
+            (new MetricBag())->with('instability', 0.85)->with('ca', 2)->with('ce', 12),
+        );
+
+        $violations = (new InstabilityRule(new InstabilityOptions()))
+            ->analyzeLevel(RuleLevel::Class_, new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:class:App\\Service\\Twin@src/A.php:100',
+            'declaration:class:App\\Service\\Twin@src/B.php:200',
+        ], $subjects);
+    }
+
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            $file,
+            $line,
+            $kind,
+        );
     }
 }

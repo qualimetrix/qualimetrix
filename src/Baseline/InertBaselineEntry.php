@@ -28,7 +28,7 @@ namespace Qualimetrix\Baseline;
 final readonly class InertBaselineEntry
 {
     /**
-     * @param string $symbolKey the file key this entry sat under
+     * @param string $subjectKey the file key this entry sat under
      * @param ?string $channelKey the entry's `channel` as written, when it was a string at all
      * @param ?BaselineIdentity $identity present when the identity parsed but the entry is
      *                                    still inapplicable (an undeclared channel, a shape
@@ -39,7 +39,7 @@ final readonly class InertBaselineEntry
      * @param mixed $raw the decoded entry, preserved for rewrite
      */
     public function __construct(
-        public string $symbolKey,
+        public string $subjectKey,
         public ?string $channelKey,
         public ?BaselineIdentity $identity,
         public EntrySelector $selector,
@@ -58,7 +58,7 @@ final readonly class InertBaselineEntry
         mixed $raw,
     ): self {
         return new self(
-            symbolKey: $identity->symbolKey,
+            subjectKey: $identity->subjectKey,
             channelKey: $identity->channel->toKey(),
             identity: $identity,
             selector: $identity->selector(),
@@ -74,17 +74,17 @@ final readonly class InertBaselineEntry
      * to be able to remove a line precisely because it is unreadable.
      */
     public static function forRaw(
-        string $symbolKey,
+        string $subjectKey,
         ?string $channelKey,
         InertEntryReason $reason,
         string $detail,
         mixed $raw,
     ): self {
         return new self(
-            symbolKey: $symbolKey,
+            subjectKey: $subjectKey,
             channelKey: $channelKey,
             identity: null,
-            selector: EntrySelector::forKey($symbolKey . "\x1F" . self::encodeRaw($raw)),
+            selector: EntrySelector::forKey($subjectKey . "\x1F" . self::encodeRaw($raw)),
             reason: $reason,
             detail: $detail,
             raw: $raw,
@@ -97,7 +97,7 @@ final readonly class InertBaselineEntry
     public function describe(): string
     {
         return $this->identity?->describe()
-            ?? $this->symbolKey . ' ' . ($this->channelKey ?? '(no channel)');
+            ?? $this->subjectKey . ' ' . ($this->channelKey ?? '(no channel)');
     }
 
     /**

@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Security;
 
+use LogicException;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\MetricSubjectCodec;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\OccurrenceKey;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
@@ -74,24 +78,11 @@ final class SensitiveParameterRule extends AbstractRule
                 continue;
             }
 
-            $severity = $this->getEffectiveSeverity($context, $this->options, $fileInfo->file, $fileInfo->line ?? 1, \count($entries));
-            if ($severity === null) {
-                continue;
-            }
-
             foreach ($entries as $entry) {
-                $line = (int) $entry['line'];
-
-                $violations[] = new Violation(
-                    location: new Location($fileInfo->file, $line, precise: true),
-                    symbolPath: $fileInfo->symbolPath,
-                    ruleName: $this->getName(),
-                    violationCode: self::NAME,
-                    message: 'Sensitive parameter missing #[\\SensitiveParameter] attribute — add it to prevent credential leakage in stack traces',
-                    severity: $severity,
-                    metricValue: 1.0,
-                    recommendation: 'Add #[\\SensitiveParameter] attribute to prevent credential leakage in stack traces.',
-                );
+                $violation = $this->violationForEntry($fileInfo, $entry, $context);
+                if ($violation !== null) {
+                    $violations[] = $violation;
+                }
             }
         }
 
@@ -99,13 +90,40 @@ final class SensitiveParameterRule extends AbstractRule
     }
 
     /**
+     * @param array<string, bool|float|int|string> $entry
+     */
+    private function violationForEntry(SymbolInfo $fileInfo, array $entry, AnalysisContext $context): ?Violation
+    {
+        \assert($this->options instanceof SensitiveParameterOptions);
+        $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
+        $line = (int) $entry['line'];
+        $subject = MetricSubjectCodec::decodeEntry($entry, $file);
+        $severity = $this->getEffectiveSeverity($context, $this->options, $subject, 1);
+        if ($severity === null) {
+            return null;
+        }
+
+        return new Violation(
+            location: new Location($file, $line, precise: true),
+            subject: $subject,
+            symbolPath: $fileInfo->symbolPath,
+            ruleName: $this->getName(),
+            violationCode: self::NAME,
+            message: 'Sensitive parameter missing #[\\SensitiveParameter] attribute — add it to prevent credential leakage in stack traces',
+            severity: $severity,
+            metricValue: 1.0,
+            recommendation: 'Add #[\\SensitiveParameter] attribute to prevent credential leakage in stack traces.',
+            occurrenceKey: OccurrenceKey::semantic(self::NAME, ['paramName' => (string) $entry['paramName']]),
+        );
+    }
+
+    /**
      * `security.sensitive-parameter` reports a fixed `1.0` occurrence
-     * marker per entry — same pattern as `security.hardcoded-credentials`:
-     * severity uses `count($entries)` via
-     * {@see SensitiveParameterOptions::getSeverity()}'s `$value > 0`, but
-     * that count never reaches `metricValue`, and the call site's
-     * `$entries === []` guard makes the comparison unreachable-false in
-     * practice — no live threshold, no direction to declare.
+     * marker per entry — same pattern as `security.hardcoded-credentials`.
+     * Severity receives the same fixed per-occurrence value `1`, and
+     * {@see SensitiveParameterOptions::getSeverity()} only checks that the
+     * value is greater than zero. There is no live threshold that varies the
+     * outcome, so no direction to declare.
      *
      * @return array<string, ChannelDeclaration>
      */
