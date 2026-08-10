@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\Complexity\CognitiveComplexityVisitor;
 
 #[CoversClass(CognitiveComplexityVisitor::class)]
@@ -1499,7 +1500,7 @@ PHP;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $methods = $visitor->getMethodsWithMetrics();
+        $methods = $visitor->getCallablesWithMetrics(RelativePath::fromString('src/Service.php'));
         self::assertCount(1, $methods);
 
         $entries = $methods[0]->metrics->entries('cognitive-complexity.increments');

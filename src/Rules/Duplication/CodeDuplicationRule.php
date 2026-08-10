@@ -8,9 +8,11 @@ use Qualimetrix\Core\Duplication\DuplicateBlock;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\OccurrenceKey;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Core\Violation\ViolationChannel;
@@ -111,7 +113,9 @@ final class CodeDuplicationRule extends AbstractRule
             $otherLocations,
         );
 
-        $severity = $this->getEffectiveSeverity($context, $this->options, $primary->file, $primary->startLine, $block->lines);
+        $projectPath = SymbolPath::forProject();
+        $subject = MetricSubject::aggregate($projectPath);
+        $severity = $this->getEffectiveSeverity($context, $this->options, $subject, $block->lines);
 
         // Build related locations for SARIF support
         $relatedViolationLocations = array_map(
@@ -121,7 +125,8 @@ final class CodeDuplicationRule extends AbstractRule
 
         return new Violation(
             location: new Location($primary->file, $primary->startLine, precise: true),
-            symbolPath: SymbolPath::forFile($primary->file),
+            subject: $subject,
+            symbolPath: $projectPath,
             ruleName: $this->getName(),
             violationCode: $this->getName(),
             message: $message,
@@ -129,6 +134,7 @@ final class CodeDuplicationRule extends AbstractRule
             metricValue: $block->lines,
             relatedLocations: $relatedViolationLocations,
             recommendation: 'Extract duplicated code into a shared method or class.',
+            occurrenceKey: OccurrenceKey::semantic(self::NAME, ['contentHash' => $block->contentHash]),
         );
     }
 }

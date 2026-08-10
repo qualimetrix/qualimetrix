@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\CodeSmell\ParameterCountCollector;
 use Qualimetrix\Metrics\CodeSmell\ParameterCountVisitor;
 use SplFileInfo;
@@ -249,7 +250,7 @@ PHP;
 
         $definition = $definitions[0];
         self::assertSame('parameterCount', $definition->name);
-        self::assertSame(SymbolLevel::Method, $definition->collectedAt);
+        self::assertSame(SymbolLevel::Callable, $definition->collectedAt);
 
         // Check Class_ level aggregations
         $classStrategies = $definition->getStrategiesForLevel(SymbolLevel::Class_);
@@ -274,7 +275,7 @@ PHP;
         // Check isVoConstructor metric definition
         $voDefinition = $definitions[1];
         self::assertSame('isVoConstructor', $voDefinition->name);
-        self::assertSame(SymbolLevel::Method, $voDefinition->collectedAt);
+        self::assertSame(SymbolLevel::Callable, $voDefinition->collectedAt);
     }
 
     #[Test]
@@ -600,10 +601,10 @@ PHP;
         self::assertNull($metrics->get('parameterCount:App\Outer::inner'));
     }
 
-    // -- getMethodsWithMetrics() per-symbol propagation ----------------------
+    // -- getCallablesWithMetrics() per-symbol propagation ----------------------
     //
     // Regression coverage: FileProcessor builds per-symbol metrics exclusively
-    // from MethodWithMetrics (see getMethodsWithMetrics()), not from the
+    // from CallableWithMetrics (see getCallablesWithMetrics()), not from the
     // file-level MetricBag produced by collect(). isVoConstructor must be
     // present on the per-method MetricBag returned here, or LongParameterListRule
     // never sees it and falls back to the non-VO thresholds at analysis time.
@@ -627,7 +628,7 @@ final readonly class UserDto
 PHP;
 
         $methodsWithMetrics = $this->collectMethodsWithMetrics($code);
-        $construct = $this->findMethodWithMetrics($methodsWithMetrics, 'UserDto', '__construct');
+        $construct = $this->findCallableWithMetrics($methodsWithMetrics, 'UserDto', '__construct');
 
         self::assertSame(3, $construct->metrics->get('parameterCount'));
         self::assertSame(1, $construct->metrics->get('isVoConstructor'));
@@ -651,7 +652,7 @@ class UserService
 PHP;
 
         $methodsWithMetrics = $this->collectMethodsWithMetrics($code);
-        $construct = $this->findMethodWithMetrics($methodsWithMetrics, 'UserService', '__construct');
+        $construct = $this->findCallableWithMetrics($methodsWithMetrics, 'UserService', '__construct');
 
         self::assertSame(2, $construct->metrics->get('parameterCount'));
         self::assertNull($construct->metrics->get('isVoConstructor'));
@@ -679,14 +680,14 @@ final readonly class UserDto
 PHP;
 
         $methodsWithMetrics = $this->collectMethodsWithMetrics($code);
-        $withName = $this->findMethodWithMetrics($methodsWithMetrics, 'UserDto', 'withName');
+        $withName = $this->findCallableWithMetrics($methodsWithMetrics, 'UserDto', 'withName');
 
         self::assertSame(1, $withName->metrics->get('parameterCount'));
         self::assertNull($withName->metrics->get('isVoConstructor'));
     }
 
     /**
-     * @return list<\Qualimetrix\Core\Metric\MethodWithMetrics>
+     * @return list<\Qualimetrix\Core\Metric\CallableWithMetrics>
      */
     private function collectMethodsWithMetrics(string $code): array
     {
@@ -697,21 +698,22 @@ PHP;
         $traverser->addVisitor($this->collector->getVisitor());
         $traverser->traverse($ast);
 
-        return $this->collector->getMethodsWithMetrics();
+        return $this->collector->getCallablesWithMetrics(RelativePath::fromString('src/Callable.php'));
     }
 
     /**
-     * @param list<\Qualimetrix\Core\Metric\MethodWithMetrics> $methodsWithMetrics
+     * @param list<\Qualimetrix\Core\Metric\CallableWithMetrics> $methodsWithMetrics
      */
-    private function findMethodWithMetrics(array $methodsWithMetrics, string $class, string $method): \Qualimetrix\Core\Metric\MethodWithMetrics
+    private function findCallableWithMetrics(array $methodsWithMetrics, string $class, string $method): \Qualimetrix\Core\Metric\CallableWithMetrics
     {
         foreach ($methodsWithMetrics as $methodWithMetrics) {
-            if ($methodWithMetrics->class === $class && $methodWithMetrics->method === $method) {
+            $logical = $methodWithMetrics->declarationPath->logical;
+            if ($logical->type === $class && $logical->member === $method) {
                 return $methodWithMetrics;
             }
         }
 
-        self::fail(\sprintf('No MethodWithMetrics found for %s::%s', $class, $method));
+        self::fail(\sprintf('No CallableWithMetrics found for %s::%s', $class, $method));
     }
 
     private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag

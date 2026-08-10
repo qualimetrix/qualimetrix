@@ -151,8 +151,8 @@ PHP;
 
         // Simulate MetricBag with entry data
         $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.eval', ['line' => 5])
-            ->withEntry('codeSmell.eval', ['line' => 16]);
+            ->withEntry('codeSmell.eval', ['subjectKind' => 'file', 'line' => 5])
+            ->withEntry('codeSmell.eval', ['subjectKind' => 'file', 'line' => 16]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -178,7 +178,7 @@ PHP;
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/test.php'), null);
 
         $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.eval', ['line' => 42]);
+            ->withEntry('codeSmell.eval', ['subjectKind' => 'file', 'line' => 42]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')

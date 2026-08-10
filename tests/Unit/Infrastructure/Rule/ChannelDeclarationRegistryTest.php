@@ -30,7 +30,7 @@ final class ChannelDeclarationRegistryTest extends TestCase
     #[Test]
     public function itReturnsTheDeclarationForAStaticallyDeclaredChannel(): void
     {
-        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+        $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
         $declaration = ChannelDeclaration::magnitude(WorseDirection::Higher);
 
         $registry = new ChannelDeclarationRegistry([

@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\Halstead\HalsteadCollector;
 use Qualimetrix\Metrics\Halstead\HalsteadMetrics;
 use Qualimetrix\Metrics\Halstead\HalsteadVisitor;
@@ -541,7 +542,7 @@ PHP;
 
         // Check collected at level
         foreach ($definitions as $def) {
-            self::assertSame(SymbolLevel::Method, $def->collectedAt);
+            self::assertSame(SymbolLevel::Callable, $def->collectedAt);
         }
 
         // Check aggregations for volume (representative)
@@ -580,14 +581,12 @@ class Test
 PHP;
 
         $this->collectMetrics($code);
-        $methodsWithMetrics = $this->collector->getMethodsWithMetrics();
+        $methodsWithMetrics = $this->collector->getCallablesWithMetrics(RelativePath::fromString('src/Test.php'));
 
         self::assertCount(2, $methodsWithMetrics);
 
         $method1 = $methodsWithMetrics[0];
-        self::assertSame('App', $method1->namespace);
-        self::assertSame('Test', $method1->class);
-        self::assertSame('method1', $method1->method);
+        self::assertSame('declaration:callable:App\\Test::method1@src/Test.php:40', $method1->declarationPath->toCanonical());
         self::assertNotNull($method1->metrics->get('halstead.volume'));
         self::assertFalse($method1->metrics->has('methodLoc'));
         self::assertFalse($method1->metrics->has('methodStatementCount'));
@@ -1005,6 +1004,96 @@ PHP;
 
         // Total operators differ due to structural differences, but arms/cases ARE counted
         self::assertGreaterThanOrEqual(4, $matchMetrics->N1, 'Match arms should be counted as operators');
+    }
+
+    #[Test]
+    public function itDistinguishesFirstClassCallableCapturesFromInvocations(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class CaptureFactory
+{
+    public function capture(object $service): void
+    {
+        normal();
+        normal(...);
+        $service->run();
+        $service->run(...);
+        Factory::build();
+        Factory::build(...);
+    }
+}
+PHP;
+
+        $halstead = $this->collectHalsteadMetrics($code, 'CaptureFactory::capture');
+
+        // Invocation and capture have distinct operators; captures do not add
+        // callable target operands.
+        self::assertSame(6, $halstead->n1);
+        self::assertSame(6, $halstead->N1);
+        self::assertSame(4, $halstead->n2);
+        self::assertSame(6, $halstead->N2);
+    }
+
+    #[Test]
+    public function itTreatsCloneWithAsLanguageOperatorWithoutFunctionOperand(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class Duplicator
+{
+    public function duplicate(object $value): mixed
+    {
+        return [regular(), clone($value, ['source' => $value])];
+    }
+}
+PHP;
+
+        $halstead = $this->collectHalsteadMetrics($code, 'Duplicator::duplicate');
+
+        // Operators: return, array, call, clone. `clone` is not func:clone.
+        self::assertSame(4, $halstead->n1);
+        self::assertSame(5, $halstead->N1);
+        self::assertSame(3, $halstead->n2);
+        self::assertSame(5, $halstead->N2);
+    }
+
+    #[Test]
+    public function itAttributesPromotedParameterCaptureDefaultOnlyToConstructor(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+class CallbackConfiguration
+{
+    public const CLASS_CALLBACK = factory(...);
+    public mixed $propertyCallback = factory(...);
+
+    public function __construct(public mixed $constructorCallback = factory(...))
+    {
+    }
+}
+PHP;
+
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+        $visitor = new HalsteadVisitor();
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($visitor);
+        $traverser->traverse($ast);
+
+        $allMetrics = $visitor->getMetrics();
+        self::assertSame(['CallbackConfiguration::__construct'], array_keys($allMetrics));
+        $halstead = $allMetrics['CallbackConfiguration::__construct'];
+
+        // Only the promoted parameter default belongs to a callable. Its capture
+        // is a callable operator and has no func:factory operand.
+        self::assertSame(1, $halstead->n1);
+        self::assertSame(1, $halstead->N1);
+        self::assertSame(1, $halstead->n2);
+        self::assertSame(1, $halstead->N2);
     }
 
     private function collectMetrics(string $code): MetricBag

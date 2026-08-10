@@ -14,7 +14,7 @@ use Qualimetrix\Core\Violation\Violation;
  *
  * Suppressions can be applied at:
  * - File level (`@qmx-ignore-file`) — suppresses all matching violations in file
- * - Symbol level (`@qmx-ignore <rule>`) — suppresses matching violations within the symbol's line range
+ * - Symbol level (`@qmx-ignore <rule>`) — suppresses matching violations bound to the exact declaration subject
  * - Line level (`@qmx-ignore-next-line <rule>`) — suppresses matching violations on next line only
  */
 final class SuppressionFilter implements ViolationFilterInterface
@@ -25,6 +25,11 @@ final class SuppressionFilter implements ViolationFilterInterface
     private array $suppressions = [];
 
     /**
+     * @var array<string, list<Suppression>> exact subject canonical => symbol controls
+     */
+    private array $symbolSuppressionsBySubject = [];
+
+    /**
      * Sets suppressions for a file (replaces any existing).
      *
      * @param list<Suppression> $suppressions
@@ -32,6 +37,7 @@ final class SuppressionFilter implements ViolationFilterInterface
     public function setSuppressions(string $file, array $suppressions): void
     {
         $this->suppressions[$file] = $suppressions;
+        $this->rebuildSymbolSuppressionsBySubject();
     }
 
     /**
@@ -42,39 +48,33 @@ final class SuppressionFilter implements ViolationFilterInterface
     {
         $file = $violation->location->pathString();
 
+        foreach ($this->symbolSuppressionsBySubject[$violation->subject->toCanonical()] ?? [] as $suppression) {
+            if (!$suppression->matches($violation->violationCode)) {
+                continue;
+            }
+
+            return false;
+        }
+
         if (!isset($this->suppressions[$file])) {
-            return true; // No suppressions — pass through
+            return true; // No physical suppressions at the presentation location
         }
 
         $violationLine = $violation->location->line;
-
         foreach ($this->suppressions[$file] as $suppression) {
             if (!$suppression->matches($violation->violationCode)) {
                 continue;
             }
 
-            switch ($suppression->type) {
-                case SuppressionType::File:
-                    return false; // File-level: suppress all matching violations
+            if ($suppression->type === SuppressionType::File) {
+                return false;
+            }
 
-                case SuppressionType::Symbol:
-                    // Symbol-level: suppress matching violations at or after the suppression line,
-                    // but only up to the symbol's end line (if known)
-                    // Do NOT suppress file/namespace-level violations (line=null)
-                    if ($violationLine !== null
-                        && $violationLine >= $suppression->line
-                        && ($suppression->endLine === null || $violationLine <= $suppression->endLine)
-                    ) {
-                        return false;
-                    }
-                    break;
-
-                case SuppressionType::NextLine:
-                    // Next-line: suppress only violations on the exact next line
-                    if ($violationLine !== null && $violationLine === $suppression->line + 1) {
-                        return false;
-                    }
-                    break;
+            if ($suppression->type === SuppressionType::NextLine
+                && $violationLine !== null
+                && $violationLine === $suppression->line + 1
+            ) {
+                return false;
             }
         }
 
@@ -89,6 +89,7 @@ final class SuppressionFilter implements ViolationFilterInterface
     public function clearSuppressions(): void
     {
         $this->suppressions = [];
+        $this->symbolSuppressionsBySubject = [];
     }
 
     /**
@@ -104,5 +105,20 @@ final class SuppressionFilter implements ViolationFilterInterface
             $allViolations,
             fn(Violation $v) => !$this->shouldInclude($v),
         ));
+    }
+
+    private function rebuildSymbolSuppressionsBySubject(): void
+    {
+        $this->symbolSuppressionsBySubject = [];
+
+        foreach ($this->suppressions as $suppressions) {
+            foreach ($suppressions as $suppression) {
+                if ($suppression->type !== SuppressionType::Symbol || $suppression->subject === null) {
+                    continue;
+                }
+
+                $this->symbolSuppressionsBySubject[$suppression->subject->toCanonical()][] = $suppression;
+            }
+        }
     }
 }

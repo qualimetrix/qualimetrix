@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Suppression;
 
+use Qualimetrix\Core\Symbol\MetricSubject;
+
 /**
  * Represents a `@qmx-threshold` annotation from a docblock.
  *
@@ -26,6 +28,8 @@ final readonly class ThresholdOverride
         public int|float|null $warning,
         public int|float|null $error,
         public int $line,
+        public MetricSubject $subject,
+        public ControlScope $controlScope,
         public ?int $endLine = null,
     ) {}
 

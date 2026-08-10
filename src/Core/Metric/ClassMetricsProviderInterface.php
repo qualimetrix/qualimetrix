@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Metric;
 
+use Qualimetrix\Core\Path\RelativePath;
+
 /**
  * Interface for collectors that provide class-level metrics.
  *
@@ -21,5 +23,5 @@ interface ClassMetricsProviderInterface
      *
      * @return list<ClassWithMetrics>
      */
-    public function getClassesWithMetrics(): array;
+    public function getClassesWithMetrics(RelativePath $file): array;
 }

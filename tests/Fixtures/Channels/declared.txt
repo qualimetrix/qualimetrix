@@ -19,7 +19,7 @@
 # fixture line could enumerate it.
 #
 # P1a of the ADR 0017's P1 declared three static channels end
-# to end to prove the mechanism (code-smell.goto, complexity.cyclomatic.method,
+# to end to prove the mechanism (code-smell.goto, complexity.cyclomatic.callable,
 # maintainability.index). P1b fills in every other static emission point in
 # violation-magnitude-inventory.md, per the shape mapping and the four named
 # families of ADR 0017. One emission point remains deliberately outside this
@@ -58,11 +58,11 @@ code-smell.superglobals#code-smell.superglobals occurrence
 code-smell.unreachable-code#code-smell.unreachable-code magnitude:higher
 code-smell.unused-private#code-smell.unused-private magnitude:higher
 complexity.cognitive#complexity.cognitive.class magnitude:higher
-complexity.cognitive#complexity.cognitive.method magnitude:higher
+complexity.cognitive#complexity.cognitive.callable magnitude:higher
 complexity.cyclomatic#complexity.cyclomatic.class magnitude:higher
-complexity.cyclomatic#complexity.cyclomatic.method magnitude:higher
+complexity.cyclomatic#complexity.cyclomatic.callable magnitude:higher
 complexity.npath#complexity.npath.class magnitude:higher
-complexity.npath#complexity.npath.method magnitude:higher
+complexity.npath#complexity.npath.callable magnitude:higher
 complexity.wmc#complexity.wmc magnitude:higher
 coupling.cbo#coupling.cbo.class magnitude:higher
 coupling.cbo#coupling.cbo.namespace magnitude:higher

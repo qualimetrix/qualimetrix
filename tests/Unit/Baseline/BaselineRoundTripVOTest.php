@@ -65,7 +65,7 @@ final class BaselineRoundTripVOTest extends TestCase
 
         self::assertEqualsCanonicalizing(
             ['file:src/Service/UserService.php', 'class:App\Service\UserService'],
-            $reloaded->symbolKeys(),
+            $reloaded->subjectKeys(),
         );
     }
 
@@ -74,7 +74,7 @@ final class BaselineRoundTripVOTest extends TestCase
     {
         $reloaded = $this->roundTrip('file:/home/user/project/src/Foo.php');
 
-        self::assertSame(['file:src/Foo.php'], $reloaded->symbolKeys());
+        self::assertSame(['file:src/Foo.php'], $reloaded->subjectKeys());
     }
 
     #[Test]
@@ -87,7 +87,7 @@ final class BaselineRoundTripVOTest extends TestCase
 
         self::assertEqualsCanonicalizing(
             ['file:/external/vendor/src/Bar.php', 'file:src/InTree.php'],
-            $reloaded->symbolKeys(),
+            $reloaded->subjectKeys(),
             'Out-of-tree absolute paths must be preserved verbatim',
         );
     }
@@ -120,7 +120,7 @@ final class BaselineRoundTripVOTest extends TestCase
         $reloaded = $this->writeAndLoad($original);
 
         self::assertSame(2, $reloaded->count());
-        self::assertSame([$symbol], $reloaded->symbolKeys());
+        self::assertSame([$symbol], $reloaded->subjectKeys());
     }
 
     private function roundTrip(string ...$symbolKeys): Baseline

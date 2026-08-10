@@ -6,8 +6,10 @@ namespace Qualimetrix\Baseline\Suppression;
 
 use PhpParser\Node;
 use Qualimetrix\Core\Rule\Override\OverrideValidatorInterface;
+use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\MetricSubject;
 
 /**
  * Extracts `@qmx-threshold` annotations from docblock comments.
@@ -51,9 +53,9 @@ final readonly class ThresholdOverrideExtractor
      *
      * @return list<ThresholdOverride>
      */
-    public function extract(Node $node): array
+    public function extract(Node $node, MetricSubject $subject, ControlScope $controlScope): array
     {
-        return $this->extractWithDiagnostics($node)->overrides;
+        return $this->extractWithDiagnostics($node, $subject, $controlScope)->overrides;
     }
 
     /**
@@ -61,8 +63,11 @@ final readonly class ThresholdOverrideExtractor
      *
      * Returns both valid overrides and diagnostics for invalid annotations.
      */
-    public function extractWithDiagnostics(Node $node): ThresholdOverrideExtractionResult
-    {
+    public function extractWithDiagnostics(
+        Node $node,
+        MetricSubject $subject,
+        ControlScope $controlScope,
+    ): ThresholdOverrideExtractionResult {
         $docComment = $node->getDocComment();
         if ($docComment === null) {
             return new ThresholdOverrideExtractionResult([], []);
@@ -93,6 +98,7 @@ final readonly class ThresholdOverrideExtractor
                 if ($parsed === null) {
                     $diagnostics[] = new ThresholdDiagnostic(
                         line: $line,
+                        subject: $subject,
                         message: \sprintf(
                             '@qmx-threshold %s: invalid syntax "%s" — expected a number or warning=N error=N',
                             $rulePattern,
@@ -115,6 +121,7 @@ final readonly class ThresholdOverrideExtractor
                     if ($failure !== null) {
                         $diagnostics[] = new ThresholdDiagnostic(
                             line: $line,
+                            subject: $subject,
                             message: \sprintf('@qmx-threshold %s: %s', $rulePattern, $failure->message),
                             code: $failure->code,
                             hint: $failure->hint,
@@ -128,6 +135,7 @@ final readonly class ThresholdOverrideExtractor
                 if (isset($seenRules[$rulePattern])) {
                     $diagnostics[] = new ThresholdDiagnostic(
                         line: $line,
+                        subject: $subject,
                         message: \sprintf(
                             '@qmx-threshold %s: duplicate annotation — rule "%s" already has a threshold override on this symbol',
                             $rulePattern,
@@ -145,6 +153,8 @@ final readonly class ThresholdOverrideExtractor
                     warning: $warning,
                     error: $error,
                     line: $line,
+                    subject: $subject,
+                    controlScope: $controlScope,
                     endLine: $node->getEndLine() > 0 ? $node->getEndLine() : null,
                 );
             }

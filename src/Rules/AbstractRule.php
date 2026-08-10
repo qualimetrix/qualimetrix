@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules;
 
 use InvalidArgumentException;
-use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\LevelOptionsInterface;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Violation\Severity;
 
 /**
@@ -51,18 +51,16 @@ abstract class AbstractRule implements RuleInterface
      * @template T of RuleOptionsInterface|LevelOptionsInterface
      *
      * @param T $options The options to apply overrides to
-     * @param ?RelativePath $file File path of the symbol (null for symbols without a single owning file, e.g. dependency cycles)
-     * @param int $line Line number of the symbol
+     * @param MetricSubject $subject Exact or aggregate subject under evaluation
      *
      * @return T
      */
     protected function getEffectiveOptions(
         AnalysisContext $context,
         RuleOptionsInterface|LevelOptionsInterface $options,
-        ?RelativePath $file,
-        int $line,
+        MetricSubject $subject,
     ): RuleOptionsInterface|LevelOptionsInterface {
-        $override = $context->getThresholdOverride($this->getName(), $file, $line);
+        $override = $context->getThresholdOverride($this->getName(), $subject);
 
         if ($override !== null && $options instanceof ThresholdAwareOptionsInterface) {
             return $options->withOverride($override->warning, $override->error);
@@ -78,18 +76,16 @@ abstract class AbstractRule implements RuleInterface
      * per-symbol threshold overrides via `@qmx-threshold` annotations.
      *
      * @param RuleOptionsInterface|LevelOptionsInterface $options The options to use for severity check
-     * @param ?RelativePath $file File path of the symbol (null for symbols without a single owning file, e.g. dependency cycles)
-     * @param int $line Line number of the symbol
+     * @param MetricSubject $subject Exact or aggregate subject under evaluation
      * @param int|float $value The metric value to check
      */
     protected function getEffectiveSeverity(
         AnalysisContext $context,
         RuleOptionsInterface|LevelOptionsInterface $options,
-        ?RelativePath $file,
-        int $line,
+        MetricSubject $subject,
         int|float $value,
     ): ?Severity {
-        $effectiveOptions = $this->getEffectiveOptions($context, $options, $file, $line);
+        $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
 
         return $effectiveOptions->getSeverity($value);
     }

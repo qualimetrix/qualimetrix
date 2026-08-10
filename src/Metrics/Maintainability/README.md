@@ -172,7 +172,7 @@ function processComplexData(array $data): array
 ```php
 new MetricDefinition(
     name: 'halstead.volume', // same for others
-    collectedAt: SymbolLevel::Method,
+    collectedAt: SymbolLevel::Callable,
     aggregations: [
         SymbolLevel::Class_->value => [Average, Max],
         SymbolLevel::Namespace_->value => [Average, Max],
@@ -186,7 +186,7 @@ new MetricDefinition(
 ```php
 new MetricDefinition(
     name: 'mi',
-    collectedAt: SymbolLevel::Method,
+    collectedAt: SymbolLevel::Callable,
     aggregations: [
         SymbolLevel::Class_->value => [Average, Min],
         SymbolLevel::Namespace_->value => [Average, Min],

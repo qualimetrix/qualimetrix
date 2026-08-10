@@ -89,7 +89,7 @@ final class GotoRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
 
         $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.goto', ['line' => 50]);
+            ->withEntry('codeSmell.goto', ['subjectKind' => 'file', 'line' => 50]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')

@@ -178,7 +178,7 @@ final class MaintainabilityIndexCollectorTest extends TestCase
 
         $miDef = $definitions[0];
         self::assertSame('mi', $miDef->name);
-        self::assertSame(SymbolLevel::Method, $miDef->collectedAt);
+        self::assertSame(SymbolLevel::Callable, $miDef->collectedAt);
 
         // Check aggregations
         $classStrategies = $miDef->getStrategiesForLevel(SymbolLevel::Class_);

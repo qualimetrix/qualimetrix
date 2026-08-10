@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\Size\MethodStatementCountCollector;
 use Qualimetrix\Metrics\Size\MethodStatementCountVisitor;
 use SplFileInfo;
@@ -129,14 +130,26 @@ PHP;
         $methods = $this->collectMethods($code);
         $closureCounts = [];
         foreach ($methods as $method) {
-            if (str_starts_with($method->method, '{closure#')) {
+            if ($method->kind === \Qualimetrix\Core\Symbol\CallableKind::AnonymousCallable) {
                 $closureCounts[] = $method->metrics->get('methodStatementCount');
             }
         }
 
         // A block closure owns echo; an arrow function owns its expression body.
         self::assertSame([1, 1], $closureCounts);
-        self::assertCount(3, $methods, 'Anonymous-class methods are outside the analyzed callable set');
+        self::assertCount(4, $methods);
+        $anonymousMethod = null;
+        foreach ($methods as $method) {
+            if ($method->declarationPath->logical->member === 'nested') {
+                $anonymousMethod = $method;
+                break;
+            }
+        }
+
+        self::assertNotNull($anonymousMethod);
+        self::assertNull($anonymousMethod->classAggregationOwner);
+        self::assertNotNull($anonymousMethod->lexicalClassContext);
+        self::assertStringStartsWith('{anonymous@', $anonymousMethod->lexicalClassContext->logical->type ?? '');
     }
 
     #[Test]
@@ -149,7 +162,7 @@ PHP;
 
         $definitions = $collector->getMetricDefinitions();
         self::assertCount(1, $definitions);
-        self::assertSame(SymbolLevel::Method, $definitions[0]->collectedAt);
+        self::assertSame(SymbolLevel::Callable, $definitions[0]->collectedAt);
         self::assertSame(
             [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
             $definitions[0]->getStrategiesForLevel(SymbolLevel::Class_),
@@ -159,7 +172,9 @@ PHP;
     private function methodCount(string $code, string $fqn): int
     {
         foreach ($this->collectMethods($code) as $method) {
-            $methodFqn = ($method->class !== null ? $method->class . '::' : '') . $method->method;
+            $methodFqn = $method->declarationPath->logical->getType() === \Qualimetrix\Core\Symbol\SymbolType::Method
+                ? $method->declarationPath->logical->type . '::' . $method->declarationPath->logical->member
+                : $method->declarationPath->logical->member;
             if ($methodFqn === $fqn) {
                 return (int) ($method->metrics->get('methodStatementCount') ?? -1);
             }
@@ -169,7 +184,7 @@ PHP;
     }
 
     /**
-     * @return list<\Qualimetrix\Core\Metric\MethodWithMetrics>
+     * @return list<\Qualimetrix\Core\Metric\CallableWithMetrics>
      */
     private function collectMethods(string $code): array
     {
@@ -183,6 +198,6 @@ PHP;
         $traverser->traverse($ast);
         $collector->collect(new SplFileInfo('/tmp/example.php'), $ast);
 
-        return $collector->getMethodsWithMetrics();
+        return $collector->getCallablesWithMetrics(RelativePath::fromString('src/example.php'));
     }
 }

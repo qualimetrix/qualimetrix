@@ -77,7 +77,9 @@ final class FileProcessingResultWireFormatTest extends TestCase
     {
         $result = FileProcessingResult::success(
             filePath: RelativePath::fromString('src/X.php'),
-            fileBag: MetricBag::fromArray(['loc' => 7]),
+            fileBag: (new MetricBag())
+                ->with('loc', 7)
+                ->withEntry('codeSmell.eval', ['subjectKind' => 'file', 'line' => 7]),
             namespaceMetrics: [
                 'namespace:One' => [
                     'symbolPath' => SymbolPath::forNamespace('One'),
@@ -93,6 +95,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
         self::assertTrue($restored->isSuccessful());
         self::assertSame('src/X.php', $restored->filePath->value());
         self::assertSame(7, $restored->collectedData()->fileBag->get('loc'));
+        self::assertSame(['subjectKind' => 'file', 'line' => 7], $restored->collectedData()->fileBag->entries('codeSmell.eval')[0]);
         self::assertSame(3, $restored->collectedData()->namespaceMetrics['namespace:One']['metrics']->get('loc'));
     }
 

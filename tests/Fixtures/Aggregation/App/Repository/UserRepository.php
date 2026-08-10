@@ -9,7 +9,7 @@ use RuntimeException;
 /**
  * UserRepository - fixture for testing metric aggregation
  *
- * Expected method-level metrics:
+ * Expected callable-level metrics:
  * - findAll():    CCN=1 (no branches)
  * - findOne():    CCN=1 (no branches)
  * - save():       CCN=2 (1 + 1 if)

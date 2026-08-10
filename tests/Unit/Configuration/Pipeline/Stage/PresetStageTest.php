@@ -102,7 +102,7 @@ final class PresetStageTest extends TestCase
             ->method('load')
             ->willReturn([
                 'failOn' => 'warning',
-                'rules' => ['complexity.cyclomatic' => ['method' => ['warning' => 7]]],
+                'rules' => ['complexity.cyclomatic' => ['callable' => ['warning' => 7]]],
             ]);
 
         $stage = new PresetStage($loader, $this->resolver);
@@ -117,7 +117,7 @@ final class PresetStageTest extends TestCase
         self::assertSame('preset:strict', $layer->source);
         self::assertSame('warning', $layer->values['fail_on']);
         self::assertSame(
-            ['complexity.cyclomatic' => ['method' => ['warning' => 7]]],
+            ['complexity.cyclomatic' => ['callable' => ['warning' => 7]]],
             $layer->values['rules'],
         );
     }
@@ -274,13 +274,13 @@ final class PresetStageTest extends TestCase
                 return match ($path) {
                     $presetA => [
                         'rules' => [
-                            'complexity.cyclomatic' => ['method' => ['warning' => 7, 'error' => 15]],
+                            'complexity.cyclomatic' => ['callable' => ['warning' => 7, 'error' => 15]],
                         ],
                     ],
                     $presetB => [
                         'rules' => [
                             'size.method-count' => ['class' => ['warning' => 20]],
-                            'complexity.cyclomatic' => ['method' => ['warning' => 10]],
+                            'complexity.cyclomatic' => ['callable' => ['warning' => 10]],
                         ],
                     ],
                     default => [],
@@ -303,8 +303,8 @@ final class PresetStageTest extends TestCase
         self::assertSame(['warning' => 20], $rules['size.method-count']['class']);
 
         // preset2 overrides warning but preserves error from preset1
-        self::assertSame(10, $rules['complexity.cyclomatic']['method']['warning']);
-        self::assertSame(15, $rules['complexity.cyclomatic']['method']['error']);
+        self::assertSame(10, $rules['complexity.cyclomatic']['callable']['warning']);
+        self::assertSame(15, $rules['complexity.cyclomatic']['callable']['error']);
     }
 
     #[Test]

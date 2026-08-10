@@ -20,13 +20,25 @@ use Qualimetrix\Analysis\Collection\Strategy\StrategySelectorInterface;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\DerivedCollectorInterface;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricDefinition;
+use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Progress\ProgressReporter;
+use Qualimetrix\Core\Suppression\ControlScope;
+use Qualimetrix\Core\Suppression\Suppression;
+use Qualimetrix\Core\Suppression\SuppressionType;
+use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
+use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
+use ReflectionMethod;
 use RuntimeException;
 use SplFileInfo;
 
@@ -62,6 +74,15 @@ final class CollectionOrchestratorTest extends TestCase
         self::assertSame(0, $result->result->filesAnalyzed);
         self::assertSame(0, $result->result->filesSkipped);
         self::assertSame([], $result->dependencies);
+    }
+
+    #[Test]
+    public function itRequiresExplicitProgressAndLoggerCollaborators(): void
+    {
+        $parameters = (new ReflectionMethod(CollectionOrchestrator::class, '__construct'))->getParameters();
+
+        self::assertFalse($parameters[3]->isDefaultValueAvailable());
+        self::assertFalse($parameters[4]->isDefaultValueAvailable());
     }
 
     #[Test]
@@ -152,13 +173,7 @@ final class CollectionOrchestratorTest extends TestCase
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: new MetricBag(),
-                methodMetrics: [
-                    'App::Service::calculate' => [
-                        'symbolPath' => $symbolPath,
-                        'metrics' => $methodBag,
-                        'line' => 15,
-                    ],
-                ],
+                callableMetrics: [$this->callable($symbolPath, $methodBag, 15, 'tmp/test.php')],
             ),
         ];
 
@@ -185,8 +200,10 @@ final class CollectionOrchestratorTest extends TestCase
                 filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: new MetricBag(),
                 classMetrics: [
-                    'App::Service' => [
-                        'symbolPath' => $symbolPath,
+                    'declaration:class:App\\Service@tmp/test.php:16' => [
+                        'subject' => \Qualimetrix\Core\Symbol\MetricSubject::declaration(
+                            new DeclarationPath($symbolPath, RelativePath::fromString('tmp/test.php'), 16),
+                        ),
                         'metrics' => $classBag,
                         'line' => 5,
                     ],
@@ -206,17 +223,75 @@ final class CollectionOrchestratorTest extends TestCase
     }
 
     #[Test]
+    public function itRegistersClassDerivedMetricsForDistinctExactDeclarationsWithTheSameLogicalName(): void
+    {
+        $files = [new SplFileInfo('/tmp/test.php')];
+        $file = RelativePath::fromString('tmp/test.php');
+        $symbolPath = SymbolPath::forClass('App', 'Service');
+        $firstSubject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(
+            new DeclarationPath($symbolPath, $file, 16),
+        );
+        $secondSubject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(
+            new DeclarationPath($symbolPath, $file, 96),
+        );
+
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
+        $derivedCollector->method('provides')->willReturn(['typeCoverage.pct']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('typeCoverage.pct', SymbolLevel::Class_),
+        ]);
+        $extractor = new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector]));
+
+        $processingResults = [
+            FileProcessingResult::success(
+                filePath: $file,
+                fileBag: MetricBag::fromArray([
+                    'typeCoverage.pct:' . $firstSubject->toCanonical() => 100.0,
+                    'typeCoverage.pct:' . $secondSubject->toCanonical() => 50.0,
+                ]),
+                classMetrics: [
+                    $firstSubject->toCanonical() => [
+                        'subject' => $firstSubject,
+                        'metrics' => MetricBag::fromArray(['typeCoverage.paramTotal' => 2]),
+                        'line' => 5,
+                    ],
+                    $secondSubject->toCanonical() => [
+                        'subject' => $secondSubject,
+                        'metrics' => MetricBag::fromArray(['typeCoverage.paramTotal' => 2]),
+                        'line' => 20,
+                    ],
+                ],
+            ),
+        ];
+        $this->strategy->method('execute')->willReturn($processingResults);
+
+        $orchestrator = new CollectionOrchestrator(
+            $this->fileProcessor,
+            $this->strategySelector,
+            $extractor,
+            $this->progress,
+            $this->logger,
+        );
+        $repository = new InMemoryMetricRepository();
+
+        $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
+
+        self::assertSame(100.0, $repository->getSubject($firstSubject)->get('typeCoverage.pct'));
+        self::assertSame(50.0, $repository->getSubject($secondSubject)->get('typeCoverage.pct'));
+    }
+
+    #[Test]
     public function itCollectsDependenciesFromResults(): void
     {
         $files = [new SplFileInfo('/tmp/test.php')];
-        $dependency1 = new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Bar'), DependencyType::New_, new Location(RelativePath::fromString('tmp/test.php'), 10));
-        $dependency2 = new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Baz'), DependencyType::Extends, new Location(RelativePath::fromString('tmp/test.php'), 5));
+        $dependency1 = $this->dependency('App\Foo', 'App\Bar', DependencyType::New_, 'tmp/test.php', 10);
+        $dependency2 = $this->dependency('App\Foo', 'App\Baz', DependencyType::Extends, 'tmp/test.php', 5);
 
         $processingResults = [
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: new MetricBag(),
-                methodMetrics: [],
+                callableMetrics: [],
                 classMetrics: [],
                 dependencies: [$dependency1, $dependency2],
             ),
@@ -230,9 +305,9 @@ final class CollectionOrchestratorTest extends TestCase
         $result = $orchestrator->collect($files, $repository, AbsolutePath::fromString('/tmp'));
 
         self::assertCount(2, $result->dependencies);
-        self::assertSame('App\Foo', $result->dependencies[0]->source->toString());
-        self::assertSame('App\Bar', $result->dependencies[0]->target->toString());
-        self::assertSame('App\Baz', $result->dependencies[1]->target->toString());
+        self::assertSame('App\Foo', $result->dependencies[0]->sourceLogical()->toString());
+        self::assertSame('App\Bar', $result->dependencies[0]->targetLogical()->toString());
+        self::assertSame('App\Baz', $result->dependencies[1]->targetLogical()->toString());
     }
 
     #[Test]
@@ -243,8 +318,8 @@ final class CollectionOrchestratorTest extends TestCase
             new SplFileInfo('/tmp/file2.php'),
         ];
 
-        $dep1 = new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Bar'), DependencyType::New_, new Location(RelativePath::fromString('tmp/file1.php'), 10));
-        $dep2 = new Dependency(SymbolPath::fromClassFqn('App\Baz'), SymbolPath::fromClassFqn('App\Qux'), DependencyType::Implements, new Location(RelativePath::fromString('tmp/file2.php'), 5));
+        $dep1 = $this->dependency('App\Foo', 'App\Bar', DependencyType::New_, 'tmp/file1.php', 10);
+        $dep2 = $this->dependency('App\Baz', 'App\Qux', DependencyType::Implements, 'tmp/file2.php', 5);
 
         $processingResults = [
             FileProcessingResult::success(
@@ -339,6 +414,142 @@ final class CollectionOrchestratorTest extends TestCase
 
         self::assertSame(2, $result->result->filesAnalyzed);
         self::assertSame(2, $result->result->filesSkipped);
+    }
+
+    #[Test]
+    public function itFoldsSuccessfulPayloadsAndTypedFailuresWithoutLosingControls(): void
+    {
+        $files = [
+            new SplFileInfo('/tmp/good.php'),
+            new SplFileInfo('/tmp/empty-controls.php'),
+            new SplFileInfo('/tmp/parse.php'),
+            new SplFileInfo('/tmp/good2.php'),
+            new SplFileInfo('/tmp/processing.php'),
+        ];
+        $path = RelativePath::fromString('tmp/good.php');
+        $emptyControlsPath = RelativePath::fromString('tmp/empty-controls.php');
+        $secondPath = RelativePath::fromString('tmp/good2.php');
+        $subject = \Qualimetrix\Core\Symbol\MetricSubject::logicalClass(
+            new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service')),
+        );
+        $suppression = new Suppression('complexity', 'fixture', 7, SuppressionType::File);
+        $secondSuppression = new Suppression('design', 'second fixture', 17, SuppressionType::NextLine);
+        $override = new ThresholdOverride('complexity.cyclomatic', 12, 20, 8, $subject, ControlScope::Class_);
+        $secondOverride = new ThresholdOverride('design.type-coverage', 95, 80, 18, $subject, ControlScope::Class_);
+        $diagnostic = new ThresholdDiagnostic(9, $subject, 'invalid fixture threshold');
+        $secondDiagnostic = new ThresholdDiagnostic(19, $subject, 'second invalid fixture threshold');
+        $dependencies = [
+            $this->dependency('App\\Service', 'App\\Port', DependencyType::Implements, 'tmp/good.php', 10),
+            $this->dependency('App\\Service', 'App\\Helper', DependencyType::New_, 'tmp/good.php', 11),
+        ];
+        $secondDependency = $this->dependency(
+            'App\\SecondService',
+            'App\\SecondPort',
+            DependencyType::Implements,
+            'tmp/good2.php',
+            20,
+        );
+
+        $this->strategy->method('execute')->willReturn([
+            FileProcessingResult::success(
+                filePath: $path,
+                fileBag: MetricBag::fromArray(['loc' => 12]),
+                dependencies: $dependencies,
+                suppressions: [$suppression],
+                thresholdOverrides: [$override],
+                thresholdDiagnostics: [$diagnostic],
+            ),
+            FileProcessingResult::success(
+                filePath: $emptyControlsPath,
+                fileBag: MetricBag::fromArray(['loc' => 3]),
+            ),
+            FileProcessingResult::failure(
+                RelativePath::fromString('tmp/parse.php'),
+                'parse failed',
+                FileProcessingFailureKind::Parse,
+            ),
+            FileProcessingResult::success(
+                filePath: $secondPath,
+                fileBag: MetricBag::fromArray(['loc' => 8]),
+                dependencies: [$secondDependency],
+                suppressions: [$secondSuppression],
+                thresholdOverrides: [$secondOverride],
+                thresholdDiagnostics: [$secondDiagnostic],
+            ),
+            FileProcessingResult::failure(
+                RelativePath::fromString('tmp/processing.php'),
+                'processing failed',
+                FileProcessingFailureKind::Processing,
+            ),
+        ]);
+
+        $warningContexts = [];
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::exactly(2))->method('warning')->willReturnCallback(
+            static function (string $message, array $context) use (&$warningContexts): void {
+                self::assertSame('Failed to process file', $message);
+                $warningContexts[] = $context;
+            },
+        );
+        $progress = $this->createMock(ProgressReporter::class);
+        $progressMessages = [];
+        $progress->expects(self::once())->method('start')->with(5);
+        $progress->expects(self::exactly(5))->method('setMessage')->willReturnCallback(
+            static function (string $message) use (&$progressMessages): void {
+                $progressMessages[] = $message;
+            },
+        );
+        $progress->expects(self::exactly(5))->method('advance');
+        $progress->expects(self::once())->method('finish');
+        $repository = new InMemoryMetricRepository();
+
+        $output = $this->createOrchestratorWith(logger: $logger, progress: $progress)->collect(
+            $files,
+            $repository,
+            AbsolutePath::fromString('/tmp'),
+        );
+
+        self::assertSame([$path, $emptyControlsPath, $secondPath], $output->result->analyzedFiles);
+        self::assertSame(
+            ['tmp/parse.php', 'tmp/processing.php'],
+            array_map(static fn(FileProcessingResult $failure): string => $failure->filePath->value(), $output->result->failures),
+        );
+        self::assertSame(
+            [FileProcessingFailureKind::Parse, FileProcessingFailureKind::Processing],
+            array_map(
+                static fn(FileProcessingResult $failure): FileProcessingFailureKind => $failure->processingFailure()->kind,
+                $output->result->failures,
+            ),
+        );
+        self::assertSame([
+            ['file' => 'tmp/parse.php', 'error' => 'parse failed'],
+            ['file' => 'tmp/processing.php', 'error' => 'processing failed'],
+        ], $warningContexts);
+        self::assertSame([
+            'Registering good.php',
+            'Registering empty-controls.php',
+            'Registering parse.php',
+            'Registering good2.php',
+            'Registering processing.php',
+        ], $progressMessages);
+        self::assertSame([$suppression], $output->result->suppressions[$path->value()]);
+        self::assertSame([$secondSuppression], $output->result->suppressions[$secondPath->value()]);
+        self::assertSame([$override], $output->result->thresholdOverrides[$path->value()]);
+        self::assertSame([$secondOverride], $output->result->thresholdOverrides[$secondPath->value()]);
+        self::assertSame([$diagnostic], $output->result->thresholdDiagnostics[$path->value()]);
+        self::assertSame([$secondDiagnostic], $output->result->thresholdDiagnostics[$secondPath->value()]);
+        self::assertSame(['tmp/good.php', 'tmp/good2.php'], array_keys($output->result->suppressions));
+        self::assertSame(['tmp/good.php', 'tmp/good2.php'], array_keys($output->result->thresholdOverrides));
+        self::assertSame(['tmp/good.php', 'tmp/good2.php'], array_keys($output->result->thresholdDiagnostics));
+        self::assertArrayNotHasKey($emptyControlsPath->value(), $output->result->suppressions);
+        self::assertArrayNotHasKey($emptyControlsPath->value(), $output->result->thresholdOverrides);
+        self::assertArrayNotHasKey($emptyControlsPath->value(), $output->result->thresholdDiagnostics);
+        self::assertSame([...$dependencies, $secondDependency], $output->dependencies);
+        self::assertTrue($repository->has(SymbolPath::forFile($path)));
+        self::assertTrue($repository->has(SymbolPath::forFile($emptyControlsPath)));
+        self::assertTrue($repository->has(SymbolPath::forFile($secondPath)));
+        self::assertFalse($repository->has(SymbolPath::forFile(RelativePath::fromString('tmp/parse.php'))));
+        self::assertFalse($repository->has(SymbolPath::forFile(RelativePath::fromString('tmp/processing.php'))));
     }
 
     #[Test]
@@ -448,30 +659,29 @@ final class CollectionOrchestratorTest extends TestCase
         // Create mock derived collector
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
 
         $files = [new SplFileInfo('/tmp/test.php')];
         $methodSymbol = SymbolPath::forMethod('App', 'Service', 'calculate');
 
-        // File bag contains base metrics + derived metric with FQN suffix
+        $callable = $this->callable($methodSymbol, MetricBag::fromArray(['ccn' => 5, 'loc' => 20]), 15, 'tmp/test.php');
+
+        // File bag contains base metrics plus the declaration-scoped derived metric.
         $fileBag = MetricBag::fromArray([
             'ccn:App\Service::calculate' => 5,
             'loc:App\Service::calculate' => 20,
-            'mi:App\Service::calculate' => 85.5, // derived metric
+            $this->derivedKey('mi', $callable) => 85.5,
         ]);
 
         $processingResults = [
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: $fileBag,
-                methodMetrics: [
-                    'App::Service::calculate' => [
-                        'symbolPath' => $methodSymbol,
-                        'metrics' => MetricBag::fromArray(['ccn' => 5, 'loc' => 20]),
-                        'line' => 15,
-                    ],
-                ],
+                callableMetrics: [$callable],
             ),
         ];
 
@@ -515,7 +725,7 @@ final class CollectionOrchestratorTest extends TestCase
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: $fileBag,
-                methodMetrics: [], // No methods registered
+                callableMetrics: [], // No methods registered
             ),
         ];
 
@@ -588,28 +798,27 @@ final class CollectionOrchestratorTest extends TestCase
         // Create mock derived collector
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
 
         $files = [new SplFileInfo('/tmp/test.php')];
         $methodSymbol = SymbolPath::forMethod('', 'SimpleClass', 'method');
 
-        // File bag contains derived metric for class without namespace
+        $callable = $this->callable($methodSymbol, MetricBag::fromArray(['ccn' => 3]), 10, 'tmp/test.php');
+
+        // File bag contains the declaration-scoped derived metric for a class without namespace.
         $fileBag = MetricBag::fromArray([
-            'mi:SimpleClass::method' => 85.5,
+            $this->derivedKey('mi', $callable) => 85.5,
         ]);
 
         $processingResults = [
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: $fileBag,
-                methodMetrics: [
-                    '::SimpleClass::method' => [
-                        'symbolPath' => $methodSymbol,
-                        'metrics' => MetricBag::fromArray(['ccn' => 3]),
-                        'line' => 10,
-                    ],
-                ],
+                callableMetrics: [$callable],
             ),
         ];
 
@@ -639,29 +848,28 @@ final class CollectionOrchestratorTest extends TestCase
         // Create mock derived collector that provides 'mi'
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
 
         $files = [new SplFileInfo('/tmp/test.php')];
 
-        // File bag contains metrics with colon format, but not derived
+        $callable = $this->callable(SymbolPath::forMethod('App', 'Service', 'method'), new MetricBag(), 10, 'tmp/test.php');
+
+        // File bag contains aggregate-looking keys and one declaration-scoped derived metric.
         $fileBag = MetricBag::fromArray([
             'ccn:App\Service::method' => 5, // not a derived metric
             'loc:App\Service::method' => 20, // not a derived metric
-            'mi:App\Service::method' => 85.5, // IS a derived metric
+            $this->derivedKey('mi', $callable) => 85.5,
         ]);
 
         $processingResults = [
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: $fileBag,
-                methodMetrics: [
-                    'App::Service::method' => [
-                        'symbolPath' => SymbolPath::forMethod('App', 'Service', 'method'),
-                        'metrics' => new MetricBag(),
-                        'line' => 10,
-                    ],
-                ],
+                callableMetrics: [$callable],
             ),
         ];
 
@@ -753,13 +961,7 @@ final class CollectionOrchestratorTest extends TestCase
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: $fileBag,
-                methodMetrics: [
-                    'App::Service::method' => [
-                        'symbolPath' => $methodSymbol,
-                        'metrics' => MetricBag::fromArray(['ccn' => 5]),
-                        'line' => 10,
-                    ],
-                ],
+                callableMetrics: [$this->callable($methodSymbol, MetricBag::fromArray(['ccn' => 5]), 10, 'tmp/test.php')],
             ),
         ];
 
@@ -788,6 +990,9 @@ final class CollectionOrchestratorTest extends TestCase
         // Create mock derived collector
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('mi', SymbolLevel::Callable),
+        ]);
 
         $compositeCollector = new CompositeCollector([], [$derivedCollector]);
 
@@ -795,22 +1000,18 @@ final class CollectionOrchestratorTest extends TestCase
         // PHP allows Unicode in identifiers (0x7f-0xff range)
         $methodSymbol = SymbolPath::forMethod('App', 'Service', 'calculate');
 
-        // File bag contains derived metric with Unicode characters
+        $callable = $this->callable($methodSymbol, MetricBag::fromArray(['ccn' => 3]), 10, 'tmp/test.php');
+
+        // File bag contains a declaration-scoped derived metric.
         $fileBag = MetricBag::fromArray([
-            'mi:App\Service::calculate' => 85.5,
+            $this->derivedKey('mi', $callable) => 85.5,
         ]);
 
         $processingResults = [
             FileProcessingResult::success(
                 filePath: RelativePath::fromString('tmp/test.php'),
                 fileBag: $fileBag,
-                methodMetrics: [
-                    'App::Service::calculate' => [
-                        'symbolPath' => $methodSymbol,
-                        'metrics' => MetricBag::fromArray(['ccn' => 3]),
-                        'line' => 10,
-                    ],
-                ],
+                callableMetrics: [$callable],
             ),
         ];
 
@@ -883,6 +1084,35 @@ final class CollectionOrchestratorTest extends TestCase
             derivedMetricExtractor: $this->derivedMetricExtractor,
             progress: $progress ?? $this->progress,
             logger: $logger ?? $this->logger,
+        );
+    }
+
+    private function callable(SymbolPath $symbol, MetricBag $metrics, int $line, string $file): CallableWithMetrics
+    {
+        return new CallableWithMetrics(
+            new DeclarationPath($symbol, RelativePath::fromString($file), 0),
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')),
+            $metrics,
+        );
+    }
+
+    private function derivedKey(string $metric, CallableWithMetrics $callable): string
+    {
+        return $metric . ':' . $callable->kind->value . ':' . $callable->declarationPath->toCanonical();
+    }
+
+    private function dependency(string $source, string $target, DependencyType $type, string $file, int $line): Dependency
+    {
+        $path = RelativePath::fromString($file);
+
+        return new Dependency(
+            new DeclarationPath(SymbolPath::fromClassFqn($source), $path, 0),
+            new LogicalClassPath(SymbolPath::fromClassFqn($target)),
+            $type,
+            new Location($path, $line),
         );
     }
 }

@@ -22,12 +22,9 @@ use Qualimetrix\Metrics\Halstead\HalsteadVisitor;
 /**
  * Regression tests for anonymous class context handling in visitors.
  *
- * Bug: Several visitors use a scalar $currentClass property instead of a stack.
- * When an anonymous class appears inside a method of an outer class:
- * 1. $currentClass is set to outer class name
- * 2. Entering anonymous class — extractClassLikeName() returns null (skipped)
- * 3. Leaving anonymous class — leaveNode sets $currentClass = null (via isClassLikeNode())
- * 4. Methods AFTER the anonymous class get $currentClass = null → wrong FQN
+ * An anonymous class nested inside an outer method must not leak its lexical
+ * scope. Leaving it restores the outer class so subsequent methods retain the
+ * correct logical and declaration identities.
  */
 #[Group('regression')]
 final class AnonymousClassContextRegressionTest extends TestCase
@@ -57,13 +54,13 @@ final class AnonymousClassContextRegressionTest extends TestCase
         $visitor = new CyclomaticComplexityVisitor();
         $this->parseAndTraverse($visitor);
 
-        $methods = $visitor->getMethodsWithMetrics();
+        $methods = $visitor->getCallablesWithMetrics(RelativePath::fromString('src/Fixture.php'));
         $afterAnonymous = $this->findMethodByName($methods, 'afterAnonymous');
 
         self::assertNotNull($afterAnonymous, 'afterAnonymous method should be found');
         self::assertSame(
             'OuterClass',
-            $afterAnonymous->class,
+            $afterAnonymous->lexicalClassContext?->logical->type,
             'afterAnonymous should belong to OuterClass, not null (anonymous class leaked scope)',
         );
     }
@@ -113,13 +110,13 @@ final class AnonymousClassContextRegressionTest extends TestCase
         $visitor = new NpathComplexityVisitor();
         $this->parseAndTraverse($visitor);
 
-        $methods = $visitor->getMethodsWithMetrics();
+        $methods = $visitor->getCallablesWithMetrics(RelativePath::fromString('src/Fixture.php'));
         $afterAnonymous = $this->findMethodByName($methods, 'afterAnonymous');
 
         self::assertNotNull($afterAnonymous, 'afterAnonymous method should be found');
         self::assertSame(
             'OuterClass',
-            $afterAnonymous->class,
+            $afterAnonymous->lexicalClassContext?->logical->type,
             'afterAnonymous should belong to OuterClass, not null (anonymous class leaked scope)',
         );
     }
@@ -152,13 +149,13 @@ final class AnonymousClassContextRegressionTest extends TestCase
         $visitor = new HalsteadVisitor();
         $this->parseAndTraverse($visitor);
 
-        $methods = $visitor->getMethodsWithMetrics();
+        $methods = $visitor->getCallablesWithMetrics(RelativePath::fromString('src/Fixture.php'));
         $afterAnonymous = $this->findMethodByName($methods, 'afterAnonymous');
 
         self::assertNotNull($afterAnonymous, 'afterAnonymous method should be found');
         self::assertSame(
             'OuterClass',
-            $afterAnonymous->class,
+            $afterAnonymous->lexicalClassContext?->logical->type,
             'afterAnonymous should belong to OuterClass, not null (anonymous class leaked scope)',
         );
     }
@@ -188,13 +185,13 @@ final class AnonymousClassContextRegressionTest extends TestCase
         $visitor = new CognitiveComplexityVisitor();
         $this->parseAndTraverse($visitor);
 
-        $methods = $visitor->getMethodsWithMetrics();
+        $methods = $visitor->getCallablesWithMetrics(RelativePath::fromString('src/Fixture.php'));
         $afterAnonymous = $this->findMethodByName($methods, 'afterAnonymous');
 
         self::assertNotNull($afterAnonymous, 'afterAnonymous method should be found');
         self::assertSame(
             'OuterClass',
-            $afterAnonymous->class,
+            $afterAnonymous->lexicalClassContext?->logical->type,
             'afterAnonymous should belong to OuterClass, not null (anonymous class leaked scope)',
         );
     }
@@ -305,13 +302,13 @@ PHP;
         // Filter dependencies from OuterClass
         $outerDeps = array_filter(
             $deps,
-            static fn($dep) => $dep->source->toString() === 'App\Service\OuterClass',
+            static fn($dep) => $dep->sourceLogical()->toString() === 'App\Service\OuterClass',
         );
 
         // Both UserRepository (beforeAnonymous) and User (afterAnonymous)
         // should be attributed to OuterClass
         $targetClasses = array_map(
-            static fn($dep) => $dep->target->toString(),
+            static fn($dep) => $dep->targetLogical()->toString(),
             array_values($outerDeps),
         );
 
@@ -332,12 +329,12 @@ PHP;
     // ──────────────────────────────────────────────────────────────────
 
     /**
-     * @param list<\Qualimetrix\Core\Metric\MethodWithMetrics> $methods
+     * @param list<\Qualimetrix\Core\Metric\CallableWithMetrics> $methods
      */
-    private function findMethodByName(array $methods, string $name): ?\Qualimetrix\Core\Metric\MethodWithMetrics
+    private function findMethodByName(array $methods, string $name): ?\Qualimetrix\Core\Metric\CallableWithMetrics
     {
         foreach ($methods as $method) {
-            if ($method->method === $name) {
+            if ($method->declarationPath->logical->member === $name) {
                 return $method;
             }
         }

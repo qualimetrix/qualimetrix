@@ -7,7 +7,10 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Location;
@@ -50,6 +53,82 @@ final class SarifFormatterTest extends TestCase
     }
 
     #[Test]
+    public function itFingerprintsDuplicateLogicalDeclarationsByTheirCanonicalSubjects(): void
+    {
+        $logical = SymbolPath::forMethod('App\\Service', 'DuplicateService', 'run');
+        $make = static fn(int $startFilePos): Violation => self::violation(
+            location: new Location(RelativePath::fromString('src/Service/DuplicateService.php'), 42),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                $logical,
+                RelativePath::fromString('src/Service/DuplicateService.php'),
+                $startFilePos,
+            )),
+            symbolPath: $logical,
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.callable',
+            message: 'Same message must not participate in the fingerprint',
+            severity: Severity::Warning,
+        );
+
+        $data = json_decode($this->formatter->format(
+            ReportBuilder::create()->addViolations([$make(101), $make(202)])->build(),
+            new FormatterContext(),
+        ), true, 512, \JSON_THROW_ON_ERROR);
+
+        $results = $data['runs'][0]['results'];
+        self::assertNotSame(
+            $results[0]['partialFingerprints']['primaryLocationLineHash'],
+            $results[1]['partialFingerprints']['primaryLocationLineHash'],
+        );
+
+        $unrelated = self::violation(
+            location: new Location(RelativePath::fromString('src/Service/UnrelatedService.php'), 5),
+            symbolPath: SymbolPath::forMethod('App\\Service', 'UnrelatedService', 'run'),
+            ruleName: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.callable',
+            message: 'An unrelated finding',
+            severity: Severity::Warning,
+        );
+        $withUnrelated = json_decode($this->formatter->format(
+            ReportBuilder::create()->addViolations([$make(101), $unrelated])->build(),
+            new FormatterContext(),
+        ), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame(
+            $results[0]['partialFingerprints']['primaryLocationLineHash'],
+            $withUnrelated['runs'][0]['results'][0]['partialFingerprints']['primaryLocationLineHash'],
+        );
+    }
+
+    #[Test]
+    public function itKeepsLegacyFingerprintsAndSeparatesTargetOnlyEdges(): void
+    {
+        $alpha = SymbolPath::forClass('App', 'Alpha');
+        $beta = SymbolPath::forClass('App', 'Beta');
+        $violations = [
+            self::edgeViolation('no-edge'),
+            self::edgeViolation('untyped-alpha', $alpha),
+            self::edgeViolation('untyped-beta', $beta),
+            self::edgeViolation('typed-alpha', $alpha, DependencyType::New_),
+        ];
+        $data = json_decode($this->formatter->format(
+            ReportBuilder::create()->addViolations($violations)->build(),
+            new FormatterContext(),
+        ), true, 512, \JSON_THROW_ON_ERROR);
+        $fingerprints = [];
+        foreach ($data['runs'][0]['results'] as $result) {
+            $fingerprints[$result['message']['text']] = $result['partialFingerprints']['primaryLocationLineHash'];
+        }
+        $prefix = 'r#r.edge:file:src/Foo.php';
+
+        self::assertSame($prefix, $fingerprints['no-edge']);
+        self::assertSame($prefix . ':untyped-edge:15:class:App\\Alpha', $fingerprints['untyped-alpha']);
+        self::assertSame($prefix . ':untyped-edge:14:class:App\\Beta', $fingerprints['untyped-beta']);
+        self::assertSame($prefix . ':new:class:App\\Alpha', $fingerprints['typed-alpha']);
+        self::assertCount(4, array_unique($fingerprints));
+    }
+
+    #[Test]
     public function itFormatsEmptyReport(): void
     {
         $report = ReportBuilder::create()
@@ -84,7 +163,7 @@ final class SarifFormatterTest extends TestCase
     public function itFormatsReportWithViolations(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'complexity.cyclomatic',
@@ -93,7 +172,7 @@ final class SarifFormatterTest extends TestCase
                 severity: Severity::Error,
                 metricValue: 25,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'processOrder'),
                 ruleName: 'complexity.cyclomatic',
@@ -146,7 +225,7 @@ final class SarifFormatterTest extends TestCase
     public function itFormatsMultipleRules(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'complexity.cyclomatic',
@@ -154,7 +233,7 @@ final class SarifFormatterTest extends TestCase
                 message: 'Complexity too high',
                 severity: Severity::Error,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'class-size',
@@ -162,7 +241,7 @@ final class SarifFormatterTest extends TestCase
                 message: 'Class too large',
                 severity: Severity::Warning,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/C.php'), 30),
                 symbolPath: SymbolPath::forClass('App', 'C'),
                 ruleName: 'maintainability-index',
@@ -202,7 +281,7 @@ final class SarifFormatterTest extends TestCase
     public function itFormatsNamespaceLevelViolation(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php')),
                 symbolPath: SymbolPath::forNamespace('App\Service'),
                 ruleName: 'namespace-size',
@@ -228,7 +307,7 @@ final class SarifFormatterTest extends TestCase
     public function itMapsSeverityCorrectly(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'test',
@@ -236,7 +315,7 @@ final class SarifFormatterTest extends TestCase
                 message: 'Error violation',
                 severity: Severity::Error,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'test',
@@ -263,7 +342,7 @@ final class SarifFormatterTest extends TestCase
     public function itMapsInfoSeverityToNote(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'architecture.coverage',
@@ -290,7 +369,7 @@ final class SarifFormatterTest extends TestCase
     public function itProducesCorrectRuleDescriptions(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'design.lcom',
@@ -298,7 +377,7 @@ final class SarifFormatterTest extends TestCase
                 message: 'LCOM too high',
                 severity: Severity::Warning,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'design.inheritance',
@@ -338,7 +417,7 @@ final class SarifFormatterTest extends TestCase
     public function itUsesViolationCodeForRuleId(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity',
@@ -380,7 +459,7 @@ final class SarifFormatterTest extends TestCase
     public function itLeavesAlreadyRelativePathUnchanged(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
@@ -406,7 +485,7 @@ final class SarifFormatterTest extends TestCase
     public function itOmitsLocationsForProjectLevelViolation(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forNamespace('App'),
                 ruleName: 'architecture',
@@ -431,7 +510,7 @@ final class SarifFormatterTest extends TestCase
     public function itProducesThreeSlashesForUnixPathFileUri(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('home/user/project/src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
@@ -460,7 +539,7 @@ final class SarifFormatterTest extends TestCase
     public function itPercentEncodesPathWithSpaces(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
@@ -489,7 +568,7 @@ final class SarifFormatterTest extends TestCase
     public function itMapsRuleHelpUriToDocsCategoryPage(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'complexity.cyclomatic',
@@ -497,7 +576,7 @@ final class SarifFormatterTest extends TestCase
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'code-smell.boolean-argument',
@@ -505,7 +584,7 @@ final class SarifFormatterTest extends TestCase
                 message: 'Boolean argument',
                 severity: Severity::Warning,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/C.php'), 30),
                 symbolPath: SymbolPath::forClass('App', 'C'),
                 ruleName: 'unknown-rule',
@@ -541,7 +620,7 @@ final class SarifFormatterTest extends TestCase
         // When ruleName differs from violationCode, the description should
         // be looked up by violationCode (which matches the match arms).
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'cyclomatic-complexity',
@@ -566,7 +645,7 @@ final class SarifFormatterTest extends TestCase
     public function itIncludesRelatedLocationsInResult(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
                 symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service/UserService.php')),
                 ruleName: 'duplication.code-duplication',
@@ -613,7 +692,7 @@ final class SarifFormatterTest extends TestCase
     public function itOmitsRelatedLocationsFieldWhenEmpty(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'complexity.cyclomatic',
@@ -639,7 +718,7 @@ final class SarifFormatterTest extends TestCase
     public function itIncludesTheAcceptedLevelInTheMessageOnABreach(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation((new Violation(
+            ->addViolation((self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
                 ruleName: 'complexity.cyclomatic',
@@ -670,7 +749,7 @@ final class SarifFormatterTest extends TestCase
         // reportedAsBreach(). SARIF must derive both the per-result 'level'
         // and the rule's run-level default from that same field — no
         // separate mapping that could fall out of sync with the promotion.
-        $breach = (new Violation(
+        $breach = (self::violation(
             location: new Location(RelativePath::fromString('src/A.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'A'),
             ruleName: 'duplication.code-duplication',
@@ -703,7 +782,7 @@ final class SarifFormatterTest extends TestCase
     public function itUsesMaxSeverityForDefaultConfigurationLevel(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'cyclomatic-complexity',
@@ -711,7 +790,7 @@ final class SarifFormatterTest extends TestCase
                 message: 'Warning level',
                 severity: Severity::Warning,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/B.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'cyclomatic-complexity',
@@ -719,7 +798,7 @@ final class SarifFormatterTest extends TestCase
                 message: 'Error level',
                 severity: Severity::Error,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/C.php'), 30),
                 symbolPath: SymbolPath::forClass('App', 'C'),
                 ruleName: 'class-size',
@@ -747,4 +826,78 @@ final class SarifFormatterTest extends TestCase
         // size.class has only Warning violations -> Warning
         self::assertSame('warning', $rulesByCode['size.class']['defaultConfiguration']['level']);
     }
+
+    /**
+     * Builds a violation fixture with an explicit declaration or aggregate
+     * subject, preserving the production contract without hiding it behind a
+     * legacy fallback.
+     *
+     * @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations
+     */
+    private static function violation(
+        \Qualimetrix\Core\Violation\Location $location,
+        \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
+        string $ruleName,
+        string $violationCode,
+        string $message,
+        \Qualimetrix\Core\Violation\Severity $severity,
+        int|float|null $metricValue = null,
+        ?\Qualimetrix\Core\Rule\RuleLevel $level = null,
+        array $relatedLocations = [],
+        ?string $recommendation = null,
+        int|float|null $threshold = null,
+        ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
+        ?\Qualimetrix\Core\Dependency\DependencyType $dependencyType = null,
+        ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null,
+        ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
+    ): Violation {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File,
+            \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
+            \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath(
+                $symbolPath,
+                $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'),
+                $location->line ?? 0,
+            )),
+        };
+
+        return new Violation(
+            location: $location,
+            subject: $subject,
+            symbolPath: $symbolPath,
+            ruleName: $ruleName,
+            violationCode: $violationCode,
+            message: $message,
+            severity: $severity,
+            metricValue: $metricValue,
+            level: $level,
+            relatedLocations: $relatedLocations,
+            recommendation: $recommendation,
+            threshold: $threshold,
+            dependencyTarget: $dependencyTarget,
+            dependencyType: $dependencyType,
+            acceptedLevel: $acceptedLevel,
+            occurrenceKey: $occurrenceKey,
+        );
+    }
+
+    private static function edgeViolation(
+        string $message,
+        ?SymbolPath $target = null,
+        ?DependencyType $type = null,
+    ): Violation {
+        return self::violation(
+            location: new Location(RelativePath::fromString('src/Foo.php'), 1),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Foo.php')),
+            ruleName: 'r',
+            violationCode: 'r.edge',
+            message: $message,
+            severity: Severity::Warning,
+            dependencyTarget: $target,
+            dependencyType: $type,
+        );
+    }
+
 }

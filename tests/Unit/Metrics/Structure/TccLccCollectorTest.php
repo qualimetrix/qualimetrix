@@ -638,13 +638,13 @@ PHP;
 
         $this->collector->collect(new SplFileInfo(__FILE__), $ast);
 
-        $classes = $this->collector->getClassesWithMetrics();
+        $classes = $this->collector->getClassesWithMetrics(\Qualimetrix\Core\Path\RelativePath::fromString('TestClass.php'));
 
         self::assertCount(1, $classes);
         $class = $classes[0];
 
-        self::assertSame('App', $class->namespace);
-        self::assertSame('TestClass', $class->class);
+        self::assertSame('App', $class->declarationPath->logical->namespace);
+        self::assertSame('TestClass', $class->declarationPath->logical->type);
         self::assertSame(1.0, $class->metrics->get('tcc'));
         self::assertSame(1.0, $class->metrics->get('lcc'));
         // Both methods access $prop → 0 pure methods
@@ -1267,6 +1267,12 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         self::assertNull($metrics->get('pureMethodCount_cohesion:App\SingleMethod'));
+    }
+
+    #[Test]
+    public function itDeliberatelyDoesNotProvideCallableMetrics(): void
+    {
+        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
     private function collectMetrics(string $code): MetricBag

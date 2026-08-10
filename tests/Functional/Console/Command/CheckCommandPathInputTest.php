@@ -59,7 +59,7 @@ final class CheckCommandPathInputTest extends TestCase
             'paths' => [$this->tempDir . '/src'],
             '--format' => 'text',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $tester->getStatusCode());
@@ -76,7 +76,7 @@ final class CheckCommandPathInputTest extends TestCase
             'paths' => ['src'],
             '--format' => 'text',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $tester->getStatusCode());
@@ -93,7 +93,7 @@ final class CheckCommandPathInputTest extends TestCase
             'paths' => ['./src'],
             '--format' => 'text',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $tester->getStatusCode());
@@ -110,7 +110,7 @@ final class CheckCommandPathInputTest extends TestCase
             'paths' => ['.'],
             '--format' => 'text',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $tester->getStatusCode());
@@ -128,7 +128,7 @@ final class CheckCommandPathInputTest extends TestCase
             'paths' => [$link],
             '--format' => 'text',
             '--no-progress' => true,
-            '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+            '--disable-rule' => ['computed.health', 'architecture.layer-violation', 'coupling.class-rank'],
         ]);
 
         self::assertSame(0, $tester->getStatusCode());

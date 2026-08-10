@@ -89,8 +89,8 @@ final class ErrorSuppressionRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
 
         $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.error_suppression', ['line' => 8])
-            ->withEntry('codeSmell.error_suppression', ['line' => 22]);
+            ->withEntry('codeSmell.error_suppression', ['subjectKind' => 'file', 'line' => 8])
+            ->withEntry('codeSmell.error_suppression', ['subjectKind' => 'file', 'line' => 22]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -118,7 +118,7 @@ final class ErrorSuppressionRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/File.php'), null);
 
         $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.error_suppression', ['line' => 10, 'extra' => 'fopen']);
+            ->withEntry('codeSmell.error_suppression', ['subjectKind' => 'file', 'line' => 10, 'extra' => 'fopen']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -144,9 +144,9 @@ final class ErrorSuppressionRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/File.php'), null);
 
         $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.error_suppression', ['line' => 10, 'extra' => 'fopen'])
-            ->withEntry('codeSmell.error_suppression', ['line' => 20, 'extra' => 'exec'])
-            ->withEntry('codeSmell.error_suppression', ['line' => 30]); // no function name
+            ->withEntry('codeSmell.error_suppression', ['subjectKind' => 'file', 'line' => 10, 'extra' => 'fopen'])
+            ->withEntry('codeSmell.error_suppression', ['subjectKind' => 'file', 'line' => 20, 'extra' => 'exec'])
+            ->withEntry('codeSmell.error_suppression', ['subjectKind' => 'file', 'line' => 30]); // no function name
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -172,7 +172,7 @@ final class ErrorSuppressionRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/File.php'), null);
 
         $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.error_suppression', ['line' => 10, 'extra' => '']);
+            ->withEntry('codeSmell.error_suppression', ['subjectKind' => 'file', 'line' => 10, 'extra' => '']);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -202,7 +202,7 @@ final class ErrorSuppressionRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/File.php'), null);
 
         $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.error_suppression', ['line' => 5]); // no extra = method call or other
+            ->withEntry('codeSmell.error_suppression', ['subjectKind' => 'file', 'line' => 5]); // no extra = method call or other
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')

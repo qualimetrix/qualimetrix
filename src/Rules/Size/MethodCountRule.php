@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Size;
 
+use LogicException;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
@@ -87,8 +90,12 @@ final class MethodCountRule extends AbstractRule
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
-            $metrics = $context->metrics->get($classInfo->symbolPath);
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            $subject = $classInfo->subject ?? throw new LogicException('Method count findings require an exact class declaration subject');
+            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+                continue;
+            }
+            $metrics = $context->metrics->get($subject->toSymbolPath());
             $methodCount = $metrics->get(MetricName::STRUCTURE_METHOD_COUNT);
 
             if ($methodCount === null) {
@@ -97,26 +104,40 @@ final class MethodCountRule extends AbstractRule
 
             $methodCountValue = (int) $methodCount;
             /** @var MethodCountOptions $effectiveOptions */
-            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $classInfo->file, $classInfo->line ?? 1);
-            $severity = $effectiveOptions->getSeverity($methodCountValue);
-
-            if ($severity !== null) {
-                $threshold = $severity === Severity::Error ? $effectiveOptions->error : $effectiveOptions->warning;
-
-                $violations[] = new Violation(
-                    location: new Location($classInfo->file, $classInfo->line),
-                    symbolPath: $classInfo->symbolPath,
-                    ruleName: $this->getName(),
-                    violationCode: self::NAME,
-                    message: \sprintf('Method count is %d, exceeds threshold of %d. Consider splitting into smaller focused classes', $methodCountValue, $threshold),
-                    severity: $severity,
-                    metricValue: $methodCountValue,
-                    recommendation: \sprintf('Methods: %d (threshold: %d) — too many methods', $methodCountValue, $threshold),
-                    threshold: $threshold,
-                );
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+            $violation = $this->violationForClass($classInfo, $subject, $methodCountValue, $effectiveOptions);
+            if ($violation !== null) {
+                $violations[] = $violation;
             }
         }
 
         return $violations;
+    }
+
+    private function violationForClass(
+        SymbolInfo $classInfo,
+        MetricSubject $subject,
+        int $methodCount,
+        MethodCountOptions $options,
+    ): ?Violation {
+        $severity = $options->getSeverity($methodCount);
+        if ($severity === null) {
+            return null;
+        }
+
+        $threshold = $severity === Severity::Error ? $options->error : $options->warning;
+
+        return new Violation(
+            location: new Location($classInfo->file, $classInfo->line),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
+            ruleName: $this->getName(),
+            violationCode: self::NAME,
+            message: \sprintf('Method count is %d, exceeds threshold of %d. Consider splitting into smaller focused classes', $methodCount, $threshold),
+            severity: $severity,
+            metricValue: $methodCount,
+            recommendation: \sprintf('Methods: %d (threshold: %d) — too many methods', $methodCount, $threshold),
+            threshold: $threshold,
+        );
     }
 }

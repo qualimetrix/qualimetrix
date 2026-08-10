@@ -67,7 +67,7 @@ final class RuleOptionsFactory
         $fileOptions = $this->normalizeScalarConfig($configFileOptions[$ruleName] ?? []);
         $normalizedFileOptions = $this->normalizeKeys($fileOptions);
 
-        // Expand dot notation (e.g., 'method.warning' => ['method' => ['warning' => ...]])
+        // Expand dot notation (e.g., 'callable.warning' => ['callable' => ['warning' => ...]])
         $cliOptions = $this->registry->getCliOptions();
         $cliRuleOptions = $this->expandDotNotation($cliOptions[$ruleName] ?? []);
 
@@ -289,7 +289,7 @@ final class RuleOptionsFactory
     /**
      * Expands dot notation keys into nested arrays.
      *
-     * E.g., ['method.warning' => 5] becomes ['method' => ['warning' => 5]]
+     * E.g., ['callable.warning' => 5] becomes ['callable' => ['warning' => 5]]
      *
      * @param array<string, mixed> $options
      *
@@ -515,7 +515,7 @@ final class RuleOptionsFactory
      * vice versa) instead of letting both survive into the array
      * {@see \Qualimetrix\Core\Rule\RuleOptionsInterface::fromArray()}
      * receives. Applied recursively, so hierarchical rule levels (e.g.
-     * `method:`/`class:`) get eviction scoped to the level the conflicting
+     * `callable:`/`class:`) get eviction scoped to the level the conflicting
      * keys actually live at — `$path` tracks the dot-joined nesting (`''`,
      * `'method'`, `'class'`, ...) consulted by
      * {@see RuleThresholdKeyGroupRegistry}. A conflict where $override

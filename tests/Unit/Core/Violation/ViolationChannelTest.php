@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -47,6 +49,11 @@ final class ViolationChannelTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/App.php'), 1),
             symbolPath: SymbolPath::forClass('App', 'App'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App', 'App'),
+                RelativePath::fromString('src/App.php'),
+                1,
+            )),
             ruleName: 'architecture.unreachable-layer',
             violationCode: 'architecture.unreachable-layer',
             message: 'Layer never matched',
@@ -71,7 +78,7 @@ final class ViolationChannelTest extends TestCase
     #[Test]
     public function itDistinguishesTwoCodesUnderOneRuleName(): void
     {
-        $method = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+        $method = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
         $class = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.class');
 
         self::assertFalse($method->equals($class));
@@ -81,8 +88,8 @@ final class ViolationChannelTest extends TestCase
     #[Test]
     public function itIsEqualToAnIdenticallyAddressedChannel(): void
     {
-        $a = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
-        $b = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+        $a = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
+        $b = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
 
         self::assertTrue($a->equals($b));
         self::assertSame($a->toKey(), $b->toKey());
@@ -91,16 +98,16 @@ final class ViolationChannelTest extends TestCase
     #[Test]
     public function itRendersAsItsKey(): void
     {
-        $channel = new ViolationChannel('rules.a', 'rules.a.method');
+        $channel = new ViolationChannel('rules.a', 'rules.a.callable');
 
-        self::assertSame('rules.a#rules.a.method', $channel->toKey());
+        self::assertSame('rules.a#rules.a.callable', $channel->toKey());
         self::assertSame($channel->toKey(), (string) $channel);
     }
 
     #[Test]
     public function itParsesAKeyBackIntoTheSameChannel(): void
     {
-        $original = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.method');
+        $original = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
 
         $parsed = ViolationChannel::fromKey($original->toKey());
 

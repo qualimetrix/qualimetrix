@@ -15,6 +15,9 @@ use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\NamespaceMetricProviderInterface;
 use Qualimetrix\Core\Metric\NamespaceWithMetrics;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
@@ -118,7 +121,7 @@ final class LocCollector extends AbstractCollector implements ClassMetricsProvid
     /**
      * @return list<ClassWithMetrics>
      */
-    public function getClassesWithMetrics(): array
+    public function getClassesWithMetrics(RelativePath $file): array
     {
         \assert($this->visitor instanceof LocVisitor);
 
@@ -131,8 +134,7 @@ final class LocCollector extends AbstractCollector implements ClassMetricsProvid
                 ->with(MetricName::SIZE_CLASS_LOC, $classLoc);
 
             $result[] = new ClassWithMetrics(
-                namespace: $range['namespace'],
-                class: $range['className'],
+                declarationPath: new DeclarationPath(SymbolPath::forClass($range['namespace'] ?? '', $range['className']), $file, $range['startFilePos']),
                 line: $range['startLine'],
                 metrics: $bag,
             );

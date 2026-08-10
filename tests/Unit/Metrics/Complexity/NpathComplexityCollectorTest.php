@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\Complexity\NpathComplexityCollector;
 use Qualimetrix\Metrics\Complexity\NpathComplexityVisitor;
 use SplFileInfo;
@@ -46,7 +47,7 @@ final class NpathComplexityCollectorTest extends TestCase
 
         self::assertCount(1, $definitions);
         self::assertSame('npath', $definitions[0]->name);
-        self::assertSame(SymbolLevel::Method, $definitions[0]->collectedAt);
+        self::assertSame(SymbolLevel::Callable, $definitions[0]->collectedAt);
         self::assertSame(
             [AggregationStrategy::Max, AggregationStrategy::Average],
             $definitions[0]->aggregations[SymbolLevel::Class_->value],
@@ -94,6 +95,162 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         self::assertSame(1, $metrics->get('npath:App\Service\Calculator::add'));
+    }
+
+    #[Test]
+    public function itIncludesTheCallableStatementBaseForNullsafeAccesses(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function ordinary(object $service): mixed
+    {
+        return $service->find();
+    }
+
+    public function isolated(object $service): mixed
+    {
+        return $service?->find();
+    }
+
+    public function expression(object $service): void
+    {
+        $service?->find();
+    }
+
+    public function chained(object $service): mixed
+    {
+        return $service?->find()?->name;
+    }
+
+    public function ternary(bool $flag): int
+    {
+        return $flag ? 1 : 0;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // The expression calculator is zero-based: each ?-> adds one branch.
+        // The enclosing return statement supplies its own base path.
+        self::assertSame(1, $metrics->get('npath:App\\Test::ordinary'));
+        self::assertSame(2, $metrics->get('npath:App\\Test::isolated'));
+        self::assertSame(2, $metrics->get('npath:App\\Test::expression'));
+        self::assertSame(3, $metrics->get('npath:App\\Test::chained'));
+        self::assertSame(2, $metrics->get('npath:App\\Test::ternary'));
+    }
+
+    #[Test]
+    public function itAddsNullsafeHopsAtEveryCallableExpressionBoundary(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public object $service;
+
+    public function callWrapper(): mixed
+    {
+        return consume($this->service?->find());
+    }
+
+    public function assignmentWrapper(): void
+    {
+        $result = $this->service?->find();
+    }
+
+    public function propertyWrapper(): mixed
+    {
+        return $this->service?->find()->name;
+    }
+
+    public function echoWrapper(): void
+    {
+        echo $this->service?->find();
+    }
+
+    public function coalesceWrapper(mixed $fallback): mixed
+    {
+        return $this->service?->find() ?? $fallback;
+    }
+
+    public function ternaryWrapper(bool $flag, mixed $fallback): mixed
+    {
+        return $flag ? $this->service?->find() : $fallback;
+    }
+
+    public function ternaryArgument(bool $flag): mixed
+    {
+        return $this->service?->find($flag ? 1 : 0);
+    }
+
+    public function coalesceArgument(mixed $fallback): mixed
+    {
+        return $this->service?->find($fallback ?? 'default');
+    }
+
+    public function arrow(): \Closure
+    {
+        return fn (): mixed => consume($this->service?->find());
+    }
+
+    public mixed $hooked {
+        get => consume($this->service?->find());
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // One callable statement base plus one nullsafe hop.
+        self::assertSame(2, $metrics->get('npath:App\\Test::callWrapper'));
+        self::assertSame(2, $metrics->get('npath:App\\Test::assignmentWrapper'));
+        self::assertSame(2, $metrics->get('npath:App\\Test::propertyWrapper'));
+        self::assertSame(2, $metrics->get('npath:App\\Test::echoWrapper'));
+        self::assertSame(2, $metrics->get('npath:App\\Test::coalesceWrapper'));
+        self::assertSame(3, $metrics->get('npath:App\\Test::ternaryWrapper'));
+        self::assertSame(3, $metrics->get('npath:App\\Test::ternaryArgument'));
+        self::assertSame(2, $metrics->get('npath:App\\Test::coalesceArgument'));
+        self::assertSame(2, $metrics->get('npath:App\\Test::{closure#1}'));
+        self::assertSame(2, $metrics->get('npath:App\\Test::hooked::get'));
+    }
+
+    #[Test]
+    public function itDoesNotAddTheCallableBaseTwiceForRootNullsafeAccesses(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public object $service;
+
+    public function ternaryArgument(bool $flag): mixed
+    {
+        return $this->service?->find($flag ? 1 : 0);
+    }
+
+    public function coalesceArgument(mixed $fallback): mixed
+    {
+        return $this->service?->find($fallback ?? 'default');
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(3, $metrics->get('npath:App\\Test::ternaryArgument'));
+        self::assertSame(2, $metrics->get('npath:App\\Test::coalesceArgument'));
     }
 
     #[Test]
@@ -1114,7 +1271,7 @@ PHP;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $methods = $visitor->getMethodsWithMetrics();
+        $methods = $visitor->getCallablesWithMetrics(RelativePath::fromString('src/Test.php'));
         self::assertCount(1, $methods);
 
         $entries = $methods[0]->metrics->entries('npath-complexity.factors');

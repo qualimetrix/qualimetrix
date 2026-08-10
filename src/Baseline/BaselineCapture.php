@@ -24,6 +24,24 @@ final readonly class BaselineCapture
     ) {}
 
     /**
+     * @param list<array{identity: BaselineIdentity, reason: UncapturedReason, memberCount: positive-int}> $rejected
+     */
+    public static function fromRejectedGroups(Baseline $baseline, array $rejected): self
+    {
+        return new self(
+            $baseline,
+            array_map(
+                static fn(array $group): UncapturedGroup => new UncapturedGroup(
+                    $group['identity'],
+                    $group['reason'],
+                    $group['memberCount'],
+                ),
+                $rejected,
+            ),
+        );
+    }
+
+    /**
      * The distinct channels the refused groups named, sorted — what a report
      * shows next to their count.
      *

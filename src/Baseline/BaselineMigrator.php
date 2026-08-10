@@ -121,7 +121,7 @@ final readonly class BaselineMigrator
         $counts = [];
 
         foreach ($baseline->entries as $entry) {
-            $pairKey = self::pairKey($entry->identity->symbolKey, $entry->identity->channel->ruleName);
+            $pairKey = self::pairKey($entry->identity->subjectKey, $entry->identity->channel->ruleName);
 
             $counts[$pairKey] = ($counts[$pairKey] ?? 0) + 1;
         }

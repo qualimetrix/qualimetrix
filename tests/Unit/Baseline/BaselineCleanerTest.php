@@ -130,8 +130,8 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itRemovesExactlyTheNamedEntryAndLeavesItsNeighbours(): void
     {
-        $kept = new BaselineEntry(new BaselineIdentity('method:App\Foo::kept', self::gotoChannel()), null, 1);
-        $removed = new BaselineEntry(new BaselineIdentity('method:App\Foo::gone', self::gotoChannel()), null, 1);
+        $kept = new BaselineEntry(new BaselineIdentity('callable:App\Foo::kept', self::gotoChannel()), null, 1);
+        $removed = new BaselineEntry(new BaselineIdentity('callable:App\Foo::gone', self::gotoChannel()), null, 1);
         $selector = $removed->selector();
 
         $baseline = self::baselineOf($kept, $removed);
@@ -154,12 +154,12 @@ final class BaselineCleanerTest extends TestCase
     {
         $channel = new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation');
         $toConnection = new BaselineEntry(
-            new BaselineIdentity('class:App\Web\Controller', $channel, new BaselineEdge('class:App\Db\Connection', DependencyType::New_)),
+            new BaselineIdentity('class:App\Web\Controller', $channel, null, new BaselineEdge('class:App\Db\Connection', DependencyType::New_)),
             null,
             1,
         );
         $toStatement = new BaselineEntry(
-            new BaselineIdentity('class:App\Web\Controller', $channel, new BaselineEdge('class:App\Db\Statement', DependencyType::New_)),
+            new BaselineIdentity('class:App\Web\Controller', $channel, null, new BaselineEdge('class:App\Db\Statement', DependencyType::New_)),
             null,
             1,
         );
@@ -174,7 +174,7 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itReportsASelectorThatNamesNothing(): void
     {
-        $entry = new BaselineEntry(new BaselineIdentity('method:App\Foo::bar', self::gotoChannel()), null, 1);
+        $entry = new BaselineEntry(new BaselineIdentity('callable:App\Foo::bar', self::gotoChannel()), null, 1);
         $baseline = self::baselineOf($entry);
 
         $unknown = EntrySelector::fromString('000000000000');
@@ -210,7 +210,7 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itClassifiesEachSelectorValueOnlyOnceInFirstOccurrenceOrder(): void
     {
-        $removedEntry = new BaselineEntry(new BaselineIdentity('method:App\Foo::gone', self::gotoChannel()), null, 1);
+        $removedEntry = new BaselineEntry(new BaselineIdentity('callable:App\Foo::gone', self::gotoChannel()), null, 1);
         $removed = $removedEntry->selector();
         $notFound = EntrySelector::fromString('000000000000');
         $ambiguous = EntrySelector::fromString('aaaaaaaaaaaa');
@@ -242,7 +242,7 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itLeavesTheBaselineEntriesUnchangedWhenGivenNoSelectors(): void
     {
-        $entry = new BaselineEntry(new BaselineIdentity('method:App\Foo::bar', self::gotoChannel()), null, 1);
+        $entry = new BaselineEntry(new BaselineIdentity('callable:App\Foo::bar', self::gotoChannel()), null, 1);
         $baseline = self::baselineOf($entry);
 
         $result = $this->cleaner()->remove($baseline, []);
@@ -254,7 +254,7 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itStampsTheWrittenBaselineFromTheInjectedClock(): void
     {
-        $entry = new BaselineEntry(new BaselineIdentity('method:App\Foo::bar', self::gotoChannel()), null, 1);
+        $entry = new BaselineEntry(new BaselineIdentity('callable:App\Foo::bar', self::gotoChannel()), null, 1);
         $baseline = self::baselineOf($entry);
 
         $result = $this->cleaner()->remove($baseline, [$entry->selector()]);
@@ -265,7 +265,7 @@ final class BaselineCleanerTest extends TestCase
     #[Test]
     public function itCarriesTheSourceContentHashForward(): void
     {
-        $entry = new BaselineEntry(new BaselineIdentity('method:App\Foo::bar', self::gotoChannel()), null, 1);
+        $entry = new BaselineEntry(new BaselineIdentity('callable:App\Foo::bar', self::gotoChannel()), null, 1);
         $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [$entry], sourceContentHash: 'abc123');
 
         $result = $this->cleaner()->remove($baseline, []);
@@ -291,7 +291,7 @@ final class BaselineCleanerTest extends TestCase
     private static function inertEntry(string $symbolKey, InertEntryReason $reason, ?EntrySelector $selector = null): InertBaselineEntry
     {
         return new InertBaselineEntry(
-            symbolKey: $symbolKey,
+            subjectKey: $symbolKey,
             channelKey: null,
             identity: null,
             selector: $selector ?? EntrySelector::forKey($symbolKey),

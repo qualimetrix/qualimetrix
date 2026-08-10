@@ -7,12 +7,15 @@ namespace Qualimetrix\Tests\Unit\Metrics\Structure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Metrics\Structure\DitGlobalCollector;
@@ -30,8 +33,8 @@ final class DitGlobalCollectorTest extends TestCase
     private function createExtends(string $childFqn, string $parentFqn): Dependency
     {
         return new Dependency(
-            source: SymbolPath::fromClassFqn($childFqn),
-            target: SymbolPath::fromClassFqn($parentFqn),
+            source: new DeclarationPath(SymbolPath::fromClassFqn($childFqn), RelativePath::fromString('test.php'), 0),
+            target: new LogicalClassPath(SymbolPath::fromClassFqn($parentFqn)),
             type: DependencyType::Extends,
             location: new Location(RelativePath::fromString('test.php'), 1),
         );
@@ -59,7 +62,7 @@ final class DitGlobalCollectorTest extends TestCase
     public function classWithNoParent_ditZero(): void
     {
         $repository = new InMemoryMetricRepository();
-        $graph = (new DependencyGraphBuilder())->build([]);
+        $graph = $this->graph([]);
 
         $path = SymbolPath::forClass('App', 'Root');
         $repository->add($path, new MetricBag(), RelativePath::fromString('root.php'), 1);
@@ -73,7 +76,7 @@ final class DitGlobalCollectorTest extends TestCase
     public function classExtendsStandardPhpClass_ditOne(): void
     {
         $repository = new InMemoryMetricRepository();
-        $graph = (new DependencyGraphBuilder())->build([
+        $graph = $this->graph([
             $this->createExtends('App\\MyException', 'RuntimeException'),
         ]);
 
@@ -90,7 +93,7 @@ final class DitGlobalCollectorTest extends TestCase
     {
         // A extends B extends C (C is root, each in different "file")
         $repository = new InMemoryMetricRepository();
-        $graph = (new DependencyGraphBuilder())->build([
+        $graph = $this->graph([
             $this->createExtends('App\\Child', 'App\\Parent'),
             $this->createExtends('App\\Parent', 'App\\GrandParent'),
         ]);
@@ -116,7 +119,7 @@ final class DitGlobalCollectorTest extends TestCase
     public function threeLevelInheritance_crossFile_ditThree(): void
     {
         $repository = new InMemoryMetricRepository();
-        $graph = (new DependencyGraphBuilder())->build([
+        $graph = $this->graph([
             $this->createExtends('App\\D', 'App\\C'),
             $this->createExtends('App\\C', 'App\\B'),
             $this->createExtends('App\\B', 'App\\A'),
@@ -147,7 +150,7 @@ final class DitGlobalCollectorTest extends TestCase
     {
         // D extends C extends B extends Exception (standard)
         $repository = new InMemoryMetricRepository();
-        $graph = (new DependencyGraphBuilder())->build([
+        $graph = $this->graph([
             $this->createExtends('App\\D', 'App\\C'),
             $this->createExtends('App\\C', 'App\\B'),
             $this->createExtends('App\\B', 'Exception'),
@@ -173,7 +176,7 @@ final class DitGlobalCollectorTest extends TestCase
     public function preservesExistingMetrics(): void
     {
         $repository = new InMemoryMetricRepository();
-        $graph = (new DependencyGraphBuilder())->build([
+        $graph = $this->graph([
             $this->createExtends('App\\Child', 'App\\Parent'),
         ]);
 
@@ -196,7 +199,7 @@ final class DitGlobalCollectorTest extends TestCase
     public function crossNamespaceInheritance(): void
     {
         $repository = new InMemoryMetricRepository();
-        $graph = (new DependencyGraphBuilder())->build([
+        $graph = $this->graph([
             $this->createExtends('App\\Service\\Handler', 'Vendor\\Base\\AbstractHandler'),
             $this->createExtends('Vendor\\Base\\AbstractHandler', 'Vendor\\Core\\Component'),
         ]);
@@ -215,5 +218,16 @@ final class DitGlobalCollectorTest extends TestCase
         self::assertSame(0, $repository->get($componentPath)->get('dit'));
         self::assertSame(1, $repository->get($abstractPath)->get('dit'));
         self::assertSame(2, $repository->get($handlerPath)->get('dit'));
+    }
+
+    /** @param list<Dependency> $dependencies */
+    private function graph(array $dependencies): DependencyGraph
+    {
+        $universe = array_map(
+            static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
+            $dependencies,
+        );
+
+        return (new DependencyGraphBuilder())->build($dependencies, $universe);
     }
 }

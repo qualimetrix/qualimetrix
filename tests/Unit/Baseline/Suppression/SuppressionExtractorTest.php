@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Baseline\Suppression;
 
+use LogicException;
 use PhpParser\Comment;
 use PhpParser\Comment\Doc;
 use PhpParser\Node\Stmt\Class_;
@@ -12,7 +13,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Suppression\SuppressionExtractor;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Suppression\SuppressionType;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(SuppressionExtractor::class)]
 final class SuppressionExtractorTest extends TestCase
@@ -40,7 +45,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
@@ -65,7 +70,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
@@ -90,7 +95,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(2, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
@@ -115,7 +120,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('*', $suppressions[0]->rule);
@@ -138,7 +143,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
@@ -151,7 +156,7 @@ final class SuppressionExtractorTest extends TestCase
         $docComment = new Doc(
             <<<'DOC'
             /**
-             * @qmx-ignore complexity.cyclomatic.method Complex logic
+             * @qmx-ignore complexity.cyclomatic.callable Complex logic
              */
             DOC,
             10,
@@ -161,10 +166,10 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
-        self::assertSame('complexity.cyclomatic.method', $suppressions[0]->rule);
+        self::assertSame('complexity.cyclomatic.callable', $suppressions[0]->rule);
         self::assertSame('Complex logic', $suppressions[0]->reason);
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
     }
@@ -185,7 +190,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('code-smell.boolean-argument', $suppressions[0]->rule);
@@ -197,7 +202,7 @@ final class SuppressionExtractorTest extends TestCase
     {
         $node = new Class_('Foo');
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertEmpty($suppressions);
     }
@@ -220,7 +225,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertEmpty($suppressions);
     }
@@ -285,7 +290,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('*', $suppressions[0]->rule);
@@ -308,7 +313,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
@@ -334,7 +339,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
@@ -359,7 +364,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo', [], ['startLine' => 13, 'endLine' => 50]);
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
@@ -382,7 +387,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo', [], ['startLine' => 13, 'endLine' => 50]);
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame(SuppressionType::NextLine, $suppressions[0]->type);
@@ -405,7 +410,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo', [], ['startLine' => 4, 'endLine' => 50]);
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame(SuppressionType::File, $suppressions[0]->type);
@@ -449,7 +454,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         // Should not match as file-level, nor as symbol or next-line
         self::assertEmpty($suppressions);
@@ -471,7 +476,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertEmpty($suppressions);
     }
@@ -492,7 +497,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
@@ -512,7 +517,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
@@ -537,22 +542,18 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(3, $suppressions);
 
-        // Collect by type for easier assertion (order may vary due to separate regex passes)
-        $byType = [];
-        foreach ($suppressions as $s) {
-            $byType[$s->type->value] = $s;
-        }
-
-        self::assertArrayHasKey('file', $byType);
-        self::assertArrayHasKey('next-line', $byType);
-        self::assertArrayHasKey('symbol', $byType);
-        self::assertSame('size', $byType['file']->rule);
-        self::assertSame('coupling', $byType['next-line']->rule);
-        self::assertSame('complexity', $byType['symbol']->rule);
+        self::assertSame(
+            [SuppressionType::File, SuppressionType::NextLine, SuppressionType::Symbol],
+            array_map(static fn($suppression): SuppressionType => $suppression->type, $suppressions),
+        );
+        self::assertSame(['size', 'coupling', 'complexity'], array_map(
+            static fn($suppression): string => $suppression->rule,
+            $suppressions,
+        ));
     }
 
     // ---- Regular comment support tests ----
@@ -569,7 +570,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new ClassMethod('doSomething', [], ['startLine' => 11, 'endLine' => 20]);
         $node->setAttribute('comments', [$comment]);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
@@ -591,7 +592,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new ClassMethod('doSomething', [], ['startLine' => 11, 'endLine' => 20]);
         $node->setAttribute('comments', [$comment]);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
@@ -610,7 +611,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new ClassMethod('doSomething', [], ['startLine' => 16, 'endLine' => 25]);
         $node->setAttribute('comments', [$comment]);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
@@ -651,7 +652,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new ClassMethod('doSomething', [], ['startLine' => 11, 'endLine' => 20]);
         $node->setAttribute('comments', [$comment]);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
@@ -670,7 +671,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo', [], ['startLine' => 11, 'endLine' => 50]);
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
@@ -697,7 +698,7 @@ final class SuppressionExtractorTest extends TestCase
         // Set both: regular comment + docblock
         $node->setAttribute('comments', [$lineComment, $docComment]);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(2, $suppressions);
 
@@ -712,7 +713,7 @@ final class SuppressionExtractorTest extends TestCase
     {
         $node = new ClassMethod('doSomething');
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertEmpty($suppressions);
     }
@@ -752,7 +753,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new ClassMethod('doSomething', [], ['startLine' => 13, 'endLine' => 25]);
         $node->setAttribute('comments', [$comment]);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity.cyclomatic', $suppressions[0]->rule);
@@ -773,7 +774,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new ClassMethod('doSomething', [], ['startLine' => 11, 'endLine' => 20]);
         $node->setAttribute('comments', [$comment]);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertEmpty($suppressions);
     }
@@ -794,7 +795,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertEmpty($suppressions);
     }
@@ -816,7 +817,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertEmpty($suppressions);
     }
@@ -858,7 +859,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo');
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertEmpty($suppressions);
     }
@@ -880,7 +881,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo', [], ['startLine' => 14, 'endLine' => 30]);
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
@@ -888,7 +889,55 @@ final class SuppressionExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itUnpairedBacktickDoesNotSuppressTag(): void
+    public function itRejectsADeclarationControlFromTheExplicitPhysicalOnlyPath(): void
+    {
+        $node = new Class_('Foo');
+        $node->setDocComment(new Doc('/** @qmx-ignore complexity */', 1, 1));
+
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('requires an explicit declaration binding');
+
+        $this->extractor->extractPhysical($node);
+    }
+
+    #[Test]
+    public function itProjectsFileAndNextLineControlsFromThePhysicalPathInFixedOrder(): void
+    {
+        $node = new Class_('Foo');
+        $node->setDocComment(new Doc(
+            "/**\n * @qmx-ignore-next-line coupling\n * @qmx-ignore-file size\n */",
+            startLine: 10,
+            endLine: 13,
+        ));
+
+        $suppressions = $this->extractor->extractPhysical($node);
+
+        self::assertSame([SuppressionType::File, SuppressionType::NextLine], array_map(
+            static fn($suppression): SuppressionType => $suppression->type,
+            $suppressions,
+        ));
+        self::assertSame([10, 13], array_map(static fn($suppression): int => $suppression->line, $suppressions));
+    }
+
+    #[Test]
+    public function itSilentlyProjectsOnlyFileControlsFromTheFileOnlyPath(): void
+    {
+        $node = new Class_('Foo');
+        $node->setDocComment(new Doc(
+            "/**\n * @qmx-ignore complexity\n * @qmx-ignore-next-line coupling\n * @qmx-ignore-file size\n */",
+            startLine: 10,
+            endLine: 14,
+        ));
+
+        $suppressions = $this->extractor->extractFileLevelSuppressions($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame(SuppressionType::File, $suppressions[0]->type);
+        self::assertSame('size', $suppressions[0]->rule);
+    }
+
+    #[Test]
+    public function itKeepsATagVisibleAfterAnUnpairedBacktick(): void
     {
         $docComment = new Doc(
             <<<'DOC'
@@ -904,7 +953,7 @@ final class SuppressionExtractorTest extends TestCase
         $node = new Class_('Foo', [], ['startLine' => 14, 'endLine' => 30]);
         $node->setDocComment($docComment);
 
-        $suppressions = $this->extractor->extract($node);
+        $suppressions = $this->extract($node);
 
         self::assertCount(1, $suppressions);
         self::assertSame('complexity', $suppressions[0]->rule);
@@ -925,5 +974,15 @@ final class SuppressionExtractorTest extends TestCase
         $suppressions = $this->extractor->extractFileLevelSuppressions($node);
 
         self::assertEmpty($suppressions);
+    }
+
+    /** @return list<\Qualimetrix\Core\Suppression\Suppression> */
+    private function extract(\PhpParser\Node $node): array
+    {
+        return $this->extractor->extract(
+            $node,
+            MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php'))),
+            ControlScope::Callable,
+        );
     }
 }

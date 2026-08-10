@@ -282,6 +282,21 @@ PHP;
         self::assertFalse($locations[0]->promoted);
     }
 
+    #[Test]
+    public function itDoesNotTreatPropertyHookSetterValueAsBooleanArgument(): void
+    {
+        $code = <<<'PHP'
+<?php
+class Profile {
+    public bool $enabled {
+        set (bool $value) => $value;
+    }
+}
+PHP;
+
+        self::assertCount(0, $this->traverse($code));
+    }
+
     /**
      * @return list<CodeSmellLocation>
      */

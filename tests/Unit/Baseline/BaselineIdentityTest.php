@@ -12,8 +12,11 @@ use Qualimetrix\Baseline\BaselineEdge;
 use Qualimetrix\Baseline\BaselineIdentity;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\OccurrenceKey;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Core\Violation\ViolationChannel;
@@ -24,14 +27,14 @@ use Qualimetrix\Tests\Support\Violation\ViolationFactory;
 final class BaselineIdentityTest extends TestCase
 {
     #[Test]
-    public function itTakesTheSymbolAndChannelOfAViolation(): void
+    public function itTakesTheExactSubjectAndChannelOfAViolation(): void
     {
         $identity = BaselineIdentity::forViolation(
             ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15),
         );
 
-        self::assertSame('method:App\Foo::bar', $identity->symbolKey);
-        self::assertSame('complexity.cyclomatic#complexity.cyclomatic.method', $identity->channel->toKey());
+        self::assertSame('declaration:callable:App\Foo::bar@src/Foo.php:42', $identity->subjectKey);
+        self::assertSame('complexity.cyclomatic#complexity.cyclomatic.callable', $identity->channel->toKey());
         self::assertNull($identity->edge);
     }
 
@@ -81,6 +84,23 @@ final class BaselineIdentityTest extends TestCase
     }
 
     #[Test]
+    public function itRetainsTargetOnlyEdgesAndSeparatesThemFromTypedEdges(): void
+    {
+        $source = SymbolPath::forClass('App\\Web', 'Controller');
+        $alpha = self::targetOnlyEdge($source, SymbolPath::forClass('App', 'Alpha'));
+        $beta = self::targetOnlyEdge($source, SymbolPath::forClass('App', 'Beta'));
+        $typedAlpha = ViolationFactory::edge($source, SymbolPath::forClass('App', 'Alpha'));
+
+        $alphaIdentity = BaselineIdentity::forViolation($alpha);
+
+        self::assertNotNull($alphaIdentity->edge);
+        self::assertSame('class:App\\Alpha', $alphaIdentity->edge->target);
+        self::assertNull($alphaIdentity->edge->type);
+        self::assertNotSame($alphaIdentity->key(), BaselineIdentity::forViolation($beta)->key());
+        self::assertNotSame($alphaIdentity->key(), BaselineIdentity::forViolation($typedAlpha)->key());
+    }
+
+    #[Test]
     public function itSeparatesTwoChannelsOnOneSymbol(): void
     {
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
@@ -91,8 +111,59 @@ final class BaselineIdentityTest extends TestCase
         );
     }
 
+    private static function targetOnlyEdge(SymbolPath $source, SymbolPath $target): Violation
+    {
+        return new Violation(
+            location: new Location(RelativePath::fromString('src/Foo.php'), 11),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                $source,
+                RelativePath::fromString('src/Foo.php'),
+                11,
+            )),
+            symbolPath: $source,
+            ruleName: 'architecture.layer-violation',
+            violationCode: 'architecture.layer-violation',
+            message: 'untyped forbidden dependency',
+            severity: Severity::Error,
+            dependencyTarget: $target,
+        );
+    }
+
     #[Test]
-    public function itRejectsAnEmptySymbolKey(): void
+    public function itSeparatesSemanticOccurrencesAtTheSameSubject(): void
+    {
+        $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
+        $subject = MetricSubject::declaration(new DeclarationPath($symbol, RelativePath::fromString('src/Foo.php'), 10));
+
+        $first = new Violation(
+            location: new Location(RelativePath::fromString('src/Foo.php'), 20),
+            subject: $subject,
+            symbolPath: $symbol,
+            ruleName: 'code-smell.debug-code',
+            violationCode: 'code-smell.debug-code',
+            message: 'first presentation',
+            severity: Severity::Warning,
+            occurrenceKey: OccurrenceKey::semantic('debug-code', ['kind' => 'var_dump']),
+        );
+        $second = new Violation(
+            location: new Location(RelativePath::fromString('src/Foo.php'), 200),
+            subject: $subject,
+            symbolPath: $symbol,
+            ruleName: 'code-smell.debug-code',
+            violationCode: 'code-smell.debug-code',
+            message: 'second presentation',
+            severity: Severity::Warning,
+            occurrenceKey: OccurrenceKey::semantic('debug-code', ['kind' => 'print_r']),
+        );
+
+        self::assertNotSame(
+            BaselineIdentity::forViolation($first)->key(),
+            BaselineIdentity::forViolation($second)->key(),
+        );
+    }
+
+    #[Test]
+    public function itRejectsAnEmptySubjectKey(): void
     {
         $this->expectException(InvalidArgumentException::class);
 
@@ -100,42 +171,45 @@ final class BaselineIdentityTest extends TestCase
     }
 
     /**
-     * ADR 0017, decided in P2: symbol keys are names, not locations, and the
-     * collisions that follow are accepted rather than discriminated away.
-     *
-     * Two declarations of one FQN — which PHP itself cannot load — produce
-     * one identity, so their findings form one group whose ceiling bounds
-     * their sum. That errs toward reporting: a member added to either
-     * declaration breaches.
+     * Exact declaration subjects deliberately preserve same-FQN collisions.
      */
     #[Test]
-    public function itMergesTwoSameFqnDeclarationsIntoOneIdentity(): void
+    public function itSeparatesTwoSameFqnDeclarations(): void
     {
         $symbol = SymbolPath::forMethod('App', 'Duplicated', 'run');
 
         $fromFirstFile = new Violation(
             location: new Location(RelativePath::fromString('src/a/Duplicated.php'), 10),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                $symbol,
+                RelativePath::fromString('src/a/Duplicated.php'),
+                100,
+            )),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'from the first declaration',
             severity: Severity::Warning,
             metricValue: 12,
         );
         $fromSecondFile = new Violation(
             location: new Location(RelativePath::fromString('src/b/Duplicated.php'), 10),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                $symbol,
+                RelativePath::fromString('src/b/Duplicated.php'),
+                100,
+            )),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'from the second declaration',
             severity: Severity::Warning,
             metricValue: 30,
         );
 
-        self::assertSame(
+        self::assertNotSame(
             BaselineIdentity::forViolation($fromFirstFile)->key(),
             BaselineIdentity::forViolation($fromSecondFile)->key(),
-            'The file a finding was reported from is not part of the identity.',
         );
     }
 
@@ -155,8 +229,8 @@ final class BaselineIdentityTest extends TestCase
         $parent = new BaselineIdentity(SymbolPath::forNamespace('App')->toCanonical(), $channel);
         $child = new BaselineIdentity(SymbolPath::forNamespace('App\Service')->toCanonical(), $channel);
 
-        self::assertSame('ns:App', $parent->symbolKey);
-        self::assertSame('ns:App\Service', $child->symbolKey);
+        self::assertSame('ns:App', $parent->subjectKey);
+        self::assertSame('ns:App\Service', $child->subjectKey);
         self::assertNotSame($parent->key(), $child->key());
     }
 
@@ -184,7 +258,7 @@ final class BaselineIdentityTest extends TestCase
         ));
 
         self::assertSame(
-            'class:App\Web\Controller architecture.layer-violation#architecture.layer-violation'
+            'declaration:class:App\Web\Controller@src/Foo.php:11 architecture.layer-violation#architecture.layer-violation'
             . ' -> class:App\Db\Connection (new)',
             $identity->describe(),
         );

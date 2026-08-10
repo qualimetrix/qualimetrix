@@ -384,13 +384,24 @@ Summary-oriented JSON for AI agents, CI/CD, and programmatic consumption. Includ
   "health": { "complexity": { "score": 65, "label": "Fair", "threshold": { "warning": 50, "error": 25 }, "decomposition": [...] } },
   "worstNamespaces": [{ "symbolPath": "App\\Payment", "healthOverall": 31, "reason": "low cohesion, high complexity" }],
   "worstClasses": [{ "symbolPath": "App\\Payment\\PaymentService", "file": "src/...", "healthOverall": 28, "metrics": {...} }],
-  "violations": [{ "file": "src/...", "line": 42, "symbol": "...", "namespace": "App\\Service", "rule": "complexity.cyclomatic", "code": "complexity.cyclomatic.method", "severity": "error", "message": "...", "metricValue": 15, "threshold": 10, "acceptedLevel": null }]
+  "violations": [{ "file": "src/...", "line": 42, "symbol": "...", "namespace": "App\\Service", "rule": "complexity.cyclomatic", "code": "complexity.cyclomatic.callable", "severity": "error", "message": "...", "metricValue": 15, "threshold": 10, "acceptedLevel": null }]
 }
 ```
 
 **Options:** `--format-opt=violations=all|0|N` (default: 50), `--format-opt=top=N` (default: 10 offenders). `--detail` shows violations (default limit: 200, `--detail=all` for unlimited). `--namespace`/`--class` filters violations and worst offenders. `coverage` always states whether the result is complete; policy and health results from an incomplete run are not authoritative.
 
 **`acceptedLevel`:** `null` unless the violation is a measured baseline breach (see [Accepted level](#accepted-level-baseline-breach) below), in which case it is `{ "shape": "magnitude" | "occurrence", "describe": "25", "count": 1 }`. For a `magnitude` channel, the current value is the sibling `metricValue` field — not duplicated here.
+
+**Identity fields:** `symbol` remains the logical/display projection. Stable
+machine identity is `channel + subject + optional occurrence + optional edge`:
+`subject` is the canonical typed declaration or aggregate subject,
+`occurrence` distinguishes semantic evidence within a channel, and `edge`
+contains a required logical dependency target plus an optional reference
+`type`. A target-only edge is emitted as `{ "target": "..." }`; a typed edge
+is `{ "type": "...", "target": "..." }`. JSON ordering and formatter
+fingerprints use that tuple, not source line or display text. Target-only
+fingerprints therefore differ by target and from a typed edge to the same
+target. Established no-edge and fully typed fingerprints remain unchanged.
 
 ---
 

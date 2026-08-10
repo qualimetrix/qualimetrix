@@ -30,8 +30,12 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -97,7 +101,10 @@ final class ChannelCoverageTest extends TestCase
 
         $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Smelly.php'));
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
-        $metricBag = (new MetricBag())->withEntry('codeSmell.goto', ['line' => 50]);
+        $metricBag = (new MetricBag())->withEntry('codeSmell.goto', [
+            'line' => 50,
+            ...MetricSubjectCodec::encodeFile(),
+        ]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -115,13 +122,12 @@ final class ChannelCoverageTest extends TestCase
     {
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
-        $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::callableInfo('calculate');
         $metricBag = (new MetricBag())->with('mi', 10.0)->with('methodStatementCount', 50);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$methodInfo]);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $violations = $rule->analyze(new AnalysisContext($repository));
         self::assertCount(1, $violations);
@@ -134,16 +140,14 @@ final class ChannelCoverageTest extends TestCase
     {
         $rule = new ComplexityRule(new ComplexityOptions());
 
-        $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::callableInfo('calculate');
         $metricBag = (new MetricBag())->with('ccn', 25)->with('cognitive', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
-        $violations = $rule->analyzeLevel(RuleLevel::Method, new AnalysisContext($repository));
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, new AnalysisContext($repository));
         self::assertCount(1, $violations);
 
         self::assertDeclared($violations[0]->channel());
@@ -154,14 +158,12 @@ final class ChannelCoverageTest extends TestCase
     {
         $rule = new ConstructorOverinjectionRule(new ConstructorOverinjectionOptions(warning: 8, error: 12));
 
-        $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', '__construct');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::callableInfo('__construct');
         $metricBag = (new MetricBag())->with('parameterCount', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')->willReturn($metricBag);
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')->willReturn($metricBag);
 
         $violations = $rule->analyze(new AnalysisContext($repository));
         self::assertCount(1, $violations);
@@ -195,14 +197,14 @@ final class ChannelCoverageTest extends TestCase
     {
         $rule = new ClassRankRule(new ClassRankOptions());
 
-        $symbolPath = SymbolPath::forClass('App', 'CriticalHub');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/CriticalHub.php'), 10);
+        $classInfo = self::classInfo('CriticalHub', RelativePath::fromString('src/CriticalHub.php'));
         // With one class, computeScaleFactor(1) = sqrt(1/100) = 0.1, so the
         // default error threshold (0.05) scales to 0.5 — 0.9 clears it.
         $metricBag = (new MetricBag())->with('classRank', 0.9);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $violations = $rule->analyze(new AnalysisContext($repository));
@@ -216,8 +218,7 @@ final class ChannelCoverageTest extends TestCase
     {
         $rule = new TypeCoverageRule(new TypeCoverageOptions(paramWarning: 80.0, paramError: 50.0));
 
-        $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/TestClass.php'), 5);
+        $classInfo = self::classInfo('TestClass', RelativePath::fromString('src/TestClass.php'));
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 10)
             ->with('typeCoverage.paramTyped', 7)
@@ -226,7 +227,7 @@ final class ChannelCoverageTest extends TestCase
             ->with('typeCoverage.propertyTotal', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $violations = $rule->analyze(new AnalysisContext($repository));
@@ -251,6 +252,7 @@ final class ChannelCoverageTest extends TestCase
                     ],
                     lines: 100,
                     tokens: 200,
+                    contentHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
                 ),
             ],
         );
@@ -268,7 +270,11 @@ final class ChannelCoverageTest extends TestCase
 
         $symbolPath = SymbolPath::forFile(RelativePath::fromString('src/Shell.php'));
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Shell.php'), null);
-        $metricBag = (new MetricBag())->withEntry('security.command_injection', ['line' => 20, 'superglobal' => '']);
+        $metricBag = (new MetricBag())->withEntry('security.command_injection', [
+            'line' => 20,
+            'superglobal' => '',
+            ...MetricSubjectCodec::encodeFile(),
+        ]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -311,7 +317,15 @@ final class ChannelCoverageTest extends TestCase
             new CollectionPhaseOutput(
                 new CollectionResult([], [], thresholdOverrides: [
                     'src/Foo.php' => [
-                        new ThresholdOverride('code-smell.boolean-argument', 50.0, 100.0, 10, 50),
+                        new ThresholdOverride(
+                            rulePattern: 'code-smell.boolean-argument',
+                            warning: 50.0,
+                            error: 100.0,
+                            line: 10,
+                            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php'))),
+                            controlScope: ControlScope::Class_,
+                            endLine: 50,
+                        ),
                     ],
                 ]),
                 [],
@@ -368,6 +382,7 @@ final class ChannelCoverageTest extends TestCase
                     'src/Foo.php' => [
                         new ThresholdDiagnostic(
                             line: 10,
+                            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php'))),
                             message: '@qmx-threshold complexity.cyclomatic: warning (20) must not exceed error (10)',
                             code: 'warning_exceeds_error',
                         ),
@@ -420,6 +435,29 @@ final class ChannelCoverageTest extends TestCase
             'annotation.invalid-threshold#annotation.invalid-threshold',
             self::readExcludedFixtureKeys(),
             'excluded.txt must document the annotation.invalid-threshold family.',
+        );
+    }
+
+    private static function callableInfo(string $member): SymbolInfo
+    {
+        $file = RelativePath::fromString('src/Service/UserService.php');
+        $logical = SymbolPath::forMethod('App\\Service', 'UserService', $member);
+
+        return new SymbolInfo(
+            MetricSubject::declaration(new DeclarationPath($logical, $file, 100)),
+            $file,
+            10,
+        );
+    }
+
+    private static function classInfo(string $class, RelativePath $file): SymbolInfo
+    {
+        $logical = SymbolPath::forClass('App', $class);
+
+        return new SymbolInfo(
+            MetricSubject::declaration(new DeclarationPath($logical, $file, 100)),
+            $file,
+            10,
         );
     }
 

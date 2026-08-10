@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Collection\CollectionResult;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
@@ -26,6 +27,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Profiler\ProfilerInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Core\Rule\InMemoryRuleChannelRegistry;
@@ -34,6 +36,7 @@ use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -74,9 +77,9 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
     public function analyze(AbsolutePath|array $paths, ?FileDiscoveryInterface $discovery = null): AnalysisResult
     {
         $startTime = microtime(true);
-        $profiler = $this->profilerHolder?->get(); // @phpstan-ignore staticMethod.dynamicCall
+        $profiler = $this->profilerHolder?->get() ?? ProfilerHolder::get(); // @phpstan-ignore staticMethod.dynamicCall
 
-        $profiler?->start('analysis', 'pipeline');
+        $profiler->start('analysis', 'pipeline');
 
         $pathList = $paths instanceof AbsolutePath ? [$paths] : array_values($paths);
 
@@ -88,7 +91,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $discovery ??= $this->defaultDiscovery;
 
         // Phase 1: Discovery
-        $profiler?->start('discovery', 'pipeline');
+        $profiler->start('discovery', 'pipeline');
         $config = $this->configurationProvider->getConfiguration();
         [$files, $generatedExcludedFiles, $discoveredCount] = self::discoverAnalysisFiles(
             $discovery,
@@ -97,7 +100,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             $config->includeGenerated,
         );
 
-        $profiler?->stop('discovery');
+        $profiler->stop('discovery');
 
         $this->logger->info('Discovered files', ['count' => $discoveredCount]);
 
@@ -109,10 +112,10 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $phaseStartTime = microtime(true);
         $this->logger->debug('Starting collection phase', ['files' => \count($files)]);
 
-        $profiler?->start('collection', 'pipeline');
+        $profiler->start('collection', 'pipeline');
         $collectionOutput = $this->collectionOrchestrator->collect($files, $repository, $config->projectRoot);
         $collectionResult = $collectionOutput->result;
-        $profiler?->stop('collection');
+        $profiler->stop('collection');
 
         $collectionTime = microtime(true) - $phaseStartTime;
         $this->logger->info('Collection completed', [
@@ -127,10 +130,13 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $this->logger->debug('Building dependency graph', [
             'dependencies' => \count($collectionOutput->dependencies),
         ]);
-        $profiler?->start('dependency', 'pipeline');
-        $graph = $this->graphBuilder->build($collectionOutput->dependencies);
+        $profiler->start('dependency', 'pipeline');
+        $graph = $this->buildDependencyGraph(
+            $collectionOutput->dependencies,
+            $repository,
+        );
         unset($collectionOutput); // Free raw dependencies — no longer needed
-        $profiler?->stop('dependency');
+        $profiler->stop('dependency');
 
         // Phase 2.6: Prepare ArchitectureProcessor with this run's graph and
         // class set (ADR 0008). The processor expands template layers (when
@@ -149,16 +155,13 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         // prepare(). Production wiring (RuntimeConfigurator) binds before this
         // pipeline runs. Tests that construct AnalysisPipeline directly must
         // provide an already-bound processor — TestPipelineBuilder handles this.
-        if ($this->ruleSelector->isProducerEnabled(
-            LayerViolationRule::NAME,
+        $this->prepareArchitectureForRun(
+            $graph,
+            $repository,
             $config->onlyRules,
             $config->disabledRules,
-        )) {
-            $profiler?->start('architecture-prepare', 'pipeline');
-            $classSet = new ClassSet(self::collectClassPaths($repository), new ClassContextFactory());
-            $this->architectureProcessor->prepare($graph, $classSet);
-            $profiler?->stop('architecture-prepare');
-        }
+            $profiler,
+        );
 
         // Phases 3-3.8: Enrichment (aggregation, global collectors, computed metrics,
         // circular dependency detection, duplication detection)
@@ -173,32 +176,9 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $phaseStartTime = microtime(true);
         $this->logger->debug('Starting analysis phase');
 
-        $profiler?->start('rules', 'pipeline');
-        $context = new AnalysisContext(
-            $repository,
-            $this->configurationProvider->getRuleOptions(),
-            $graph,
-            $enrichmentResult->cycles,
-            $enrichmentResult->duplicateBlocks,
-            $enrichmentResult->namespaceTree,
-            $collectionResult->thresholdOverrides,
-        );
-        $violations = $this->ruleExecutor->execute($context);
-
-        // Convert threshold annotation diagnostics to violations
-        $diagnosticViolations = self::buildDiagnosticViolations($collectionResult->thresholdDiagnostics);
-
-        // Warn about `@qmx-threshold` annotations targeting rules that don't support overrides
-        $unsupportedViolations = $this->buildUnsupportedOverrideViolations(
-            $collectionResult->thresholdOverrides,
-        );
-
-        $extraViolations = array_merge($diagnosticViolations, $unsupportedViolations);
-        if ($extraViolations !== []) {
-            $violations = array_merge($violations, $extraViolations);
-        }
-
-        $profiler?->stop('rules');
+        $profiler->start('rules', 'pipeline');
+        $violations = $this->executeRulesForRun($repository, $graph, $enrichmentResult, $collectionResult);
+        $profiler->stop('rules');
 
         $analysisTime = microtime(true) - $phaseStartTime;
         $this->logger->info('Analysis completed', [
@@ -224,7 +204,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             'files_skipped' => $coverage->skippedFilesCount(),
         ]);
 
-        $profiler?->stop('analysis');
+        $profiler->stop('analysis');
 
         return new AnalysisResult(
             violations: $violations,
@@ -235,6 +215,60 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             namespaceTree: $enrichmentResult->namespaceTree,
             thresholdOverrides: $collectionResult->thresholdOverrides,
         );
+    }
+
+    /** @param list<\Qualimetrix\Core\Dependency\Dependency> $dependencies */
+    private function buildDependencyGraph(
+        array $dependencies,
+        MetricRepositoryInterface $repository,
+    ): DependencyGraph {
+        return $this->graphBuilder->build($dependencies, self::collectLogicalClassPaths($repository));
+    }
+
+    /**
+     * @param list<string> $onlyRules
+     * @param list<string> $disabledRules
+     */
+    private function prepareArchitectureForRun(
+        DependencyGraph $graph,
+        MetricRepositoryInterface $repository,
+        array $onlyRules,
+        array $disabledRules,
+        ProfilerInterface $profiler,
+    ): void {
+        if (!$this->ruleSelector->isProducerEnabled(LayerViolationRule::NAME, $onlyRules, $disabledRules)) {
+            return;
+        }
+
+        $profiler->start('architecture-prepare', 'pipeline');
+        $classSet = new ClassSet(self::collectClassPaths($repository), new ClassContextFactory());
+        $this->architectureProcessor->prepare($graph, $classSet);
+        $profiler->stop('architecture-prepare');
+    }
+
+    /** @return list<Violation> */
+    private function executeRulesForRun(
+        MetricRepositoryInterface $repository,
+        DependencyGraph $graph,
+        EnrichmentResult $enrichmentResult,
+        CollectionResult $collectionResult,
+    ): array {
+        $context = new AnalysisContext(
+            $repository,
+            $this->configurationProvider->getRuleOptions(),
+            $graph,
+            $enrichmentResult->cycles,
+            $enrichmentResult->duplicateBlocks,
+            $enrichmentResult->namespaceTree,
+            $collectionResult->thresholdOverrides,
+        );
+        $violations = $this->ruleExecutor->execute($context);
+        $extraViolations = array_merge(
+            self::buildDiagnosticViolations($collectionResult->thresholdDiagnostics),
+            $this->buildUnsupportedOverrideViolations($collectionResult->thresholdOverrides),
+        );
+
+        return $extraViolations === [] ? $violations : array_merge($violations, $extraViolations);
     }
 
     /**
@@ -276,6 +310,20 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         }
 
         return [$files, $generatedExcludedFiles, \count($filesByPath)];
+    }
+
+    /** @return list<LogicalClassPath> */
+    private static function collectLogicalClassPaths(MetricRepositoryInterface $repository): array
+    {
+        $classes = [];
+        foreach ($repository->allLogicalClasses() as $info) {
+            $logicalClass = $info->subject?->logicalClassPath();
+            if ($logicalClass !== null) {
+                $classes[$logicalClass->toCanonical()] = $logicalClass;
+            }
+        }
+
+        return array_values($classes);
     }
 
     /**
@@ -368,7 +416,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
                 if (!$this->overrideMatchesSupportedRule($override, $supportedRules)) {
                     $violations[] = new Violation(
                         location: new Location($relFile, $override->line, precise: true),
-                        symbolPath: SymbolPath::forFile($relFile),
+                        subject: $override->subject,
+                        symbolPath: $override->subject->toSymbolPath(),
                         ruleName: 'annotation.unsupported-threshold',
                         violationCode: 'annotation.unsupported-threshold',
                         message: \sprintf(
@@ -391,15 +440,13 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
      */
     private function collectThresholdSupportedRuleNames(): array
     {
-        $supported = [];
-
-        foreach ($this->ruleExecutor->getAllRules() as $rule) {
-            if ($this->ruleSupportsThresholdOverrides($rule::getOptionsClass())) {
-                $supported[] = $rule->getName();
-            }
-        }
-
-        return $supported;
+        return array_values(array_map(
+            static fn($rule): string => $rule->getName(),
+            array_filter(
+                $this->ruleExecutor->getAllRules(),
+                fn($rule): bool => $this->ruleSupportsThresholdOverrides($rule::getOptionsClass()),
+            ),
+        ));
     }
 
     /**
@@ -433,13 +480,10 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
      */
     private function overrideMatchesSupportedRule(ThresholdOverride $override, array $supportedRules): bool
     {
-        foreach ($supportedRules as $ruleName) {
-            if (RuleMatcher::matches($override->rulePattern, $ruleName)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(
+            $supportedRules,
+            static fn(string $ruleName): bool => RuleMatcher::matches($override->rulePattern, $ruleName),
+        );
     }
 
     /**
@@ -487,7 +531,8 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
 
                 $violations[] = new Violation(
                     location: new Location($relFile, $diagnostic->line, precise: true),
-                    symbolPath: SymbolPath::forFile($relFile),
+                    subject: $diagnostic->subject,
+                    symbolPath: $diagnostic->subject->toSymbolPath(),
                     ruleName: 'annotation.invalid-threshold',
                     violationCode: $violationCode,
                     message: $diagnostic->message,

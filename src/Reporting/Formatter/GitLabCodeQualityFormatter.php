@@ -71,19 +71,14 @@ final class GitLabCodeQualityFormatter implements FormatterInterface
     /**
      * Generates stable fingerprint for GitLab to track issues across MRs.
      *
-     * Format: md5(violationCode|symbolPath|line|message)
-     * Message is included to distinguish multiple violations of the same type on the same line.
+     * Format: md5(channel|subject|occurrence|edge)
+     *
+     * Locations and messages are presentation data. They must not participate
+     * in the identity GitLab uses to track a finding across revisions.
      */
     private function generateFingerprint(Violation $violation): string
     {
-        $parts = [
-            $violation->violationCode,
-            $violation->symbolPath->toCanonical(),
-            (string) ($violation->location->line ?? 0),
-            $violation->message,
-        ];
-
-        return md5(implode('|', $parts));
+        return md5($violation->getFingerprint());
     }
 
     /**

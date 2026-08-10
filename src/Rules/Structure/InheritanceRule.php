@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Structure;
 
+use LogicException;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
@@ -64,8 +67,12 @@ final class InheritanceRule extends AbstractRule
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
-            $metrics = $context->metrics->get($classInfo->symbolPath);
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            $subject = $classInfo->subject ?? throw new LogicException('Inheritance findings require an exact class declaration subject');
+            if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+                continue;
+            }
+            $metrics = $context->metrics->get($subject->toSymbolPath());
             $dit = $metrics->get(MetricName::STRUCTURE_DIT);
 
             if ($dit === null) {
@@ -74,33 +81,48 @@ final class InheritanceRule extends AbstractRule
 
             $ditValue = (int) $dit;
             /** @var InheritanceOptions $effectiveOptions */
-            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $classInfo->file, $classInfo->line ?? 1);
-            $severity = $effectiveOptions->getSeverity($ditValue);
-
-            if ($severity !== null) {
-                $threshold = $severity === Severity::Error
-                    ? $effectiveOptions->error
-                    : $effectiveOptions->warning;
-
-                $violations[] = new Violation(
-                    location: new Location($classInfo->file, $classInfo->line),
-                    symbolPath: $classInfo->symbolPath,
-                    ruleName: $this->getName(),
-                    violationCode: self::NAME,
-                    message: \sprintf(
-                        'DIT (Depth of Inheritance) is %d, exceeds threshold of %d. Prefer composition over deep inheritance',
-                        $ditValue,
-                        $threshold,
-                    ),
-                    severity: $severity,
-                    metricValue: $ditValue,
-                    recommendation: \sprintf('DIT: %d (threshold: %d) — deep inheritance, fragile hierarchy', $ditValue, $threshold),
-                    threshold: $threshold,
-                );
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+            $violation = $this->violationForClass($classInfo, $subject, $ditValue, $effectiveOptions);
+            if ($violation !== null) {
+                $violations[] = $violation;
             }
         }
 
         return $violations;
+    }
+
+    private function violationForClass(
+        SymbolInfo $classInfo,
+        MetricSubject $subject,
+        int $ditValue,
+        InheritanceOptions $options,
+    ): ?Violation {
+        if ($ditValue >= $options->error) {
+            $severity = Severity::Error;
+            $threshold = $options->error;
+        } elseif ($ditValue >= $options->warning) {
+            $severity = Severity::Warning;
+            $threshold = $options->warning;
+        } else {
+            return null;
+        }
+
+        return new Violation(
+            location: new Location($classInfo->file, $classInfo->line),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
+            ruleName: $this->getName(),
+            violationCode: self::NAME,
+            message: \sprintf(
+                'DIT (Depth of Inheritance) is %d, exceeds threshold of %d. Prefer composition over deep inheritance',
+                $ditValue,
+                $threshold,
+            ),
+            severity: $severity,
+            metricValue: $ditValue,
+            recommendation: \sprintf('DIT: %d (threshold: %d) — deep inheritance, fragile hierarchy', $ditValue, $threshold),
+            threshold: $threshold,
+        );
     }
 
     /**

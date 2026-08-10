@@ -9,14 +9,13 @@ use Qualimetrix\Architecture\Domain\CoverageMode;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\LayerMatch;
 use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
-use Qualimetrix\Architecture\Domain\Layer\MatchedCriterion;
-use Qualimetrix\Architecture\Domain\Layer\MatchedCriterionKind;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
@@ -208,7 +207,8 @@ final class LayerViolationRule extends AbstractRule
         [$layerHits, $shadowEvidence] = $this->collectClassEvidence($registry, $context);
 
         // Per-edge violations + coverage state (also local).
-        [$edgeViolations, $coverageState, $edgeLayerHits] = $this->collectEdgeViolations($architecture, $context);
+        $ownedTargets = OwnedLayerTargets::fromDeclarations($context->metrics->allDeclarations());
+        [$edgeViolations, $coverageState, $edgeLayerHits] = $this->collectEdgeViolations($architecture, $context, $ownedTargets);
 
         // A layer matched only as one end of a dependency edge (e.g. a vendor
         // namespace outside `paths:`, never a class in the analysed set) is
@@ -267,6 +267,7 @@ final class LayerViolationRule extends AbstractRule
         foreach ($emptyTemplateNames as $template) {
             $diagnostics[] = new Violation(
                 location: Location::none(),
+                subject: MetricSubject::aggregate(SymbolPath::forProject()),
                 symbolPath: SymbolPath::forProject(),
                 ruleName: self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
                 violationCode: self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
@@ -306,7 +307,7 @@ final class LayerViolationRule extends AbstractRule
      * accumulator would leak counts. The dedicated statelessness regression
      * test pins this contract.
      *
-     * @return array{0: array<string, int>, 1: array<string, array<string, list<array{fqn: string, assignedCriterion: MatchedCriterion, shadowedCriterion: MatchedCriterion}>>>}
+     * @return array{0: array<string, int>, 1: array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Architecture\Domain\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Architecture\Domain\Layer\MatchedCriterion}>>>}
      */
     private function collectClassEvidence(LayerRegistry $registry, AnalysisContext $context): array
     {
@@ -315,7 +316,7 @@ final class LayerViolationRule extends AbstractRule
             $layerHits[$layerName] = 0;
         }
 
-        /** @var array<string, array<string, list<array{fqn: string, assignedCriterion: MatchedCriterion, shadowedCriterion: MatchedCriterion}>>> $shadowEvidence */
+        /** @var array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Architecture\Domain\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Architecture\Domain\Layer\MatchedCriterion}>>> $shadowEvidence */
         $shadowEvidence = [];
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classSymbol) {
@@ -365,7 +366,7 @@ final class LayerViolationRule extends AbstractRule
      *
      * @return array{0: list<Violation>, 1: array{sourceEdges: int, targetEdges: int, classes: array<string, string>}, 2: array<string, int>}
      */
-    private function collectEdgeViolations(ArchitectureConfiguration $architecture, AnalysisContext $context): array
+    private function collectEdgeViolations(ArchitectureConfiguration $architecture, AnalysisContext $context, OwnedLayerTargets $ownedTargets): array
     {
         $violations = [];
         $sourceEdges = 0;
@@ -380,28 +381,34 @@ final class LayerViolationRule extends AbstractRule
 
         $registry = $architecture->registry();
         foreach ($graph->getAllDependencies() as $dependency) {
-            $fromMatches = $registry->resolveAll($dependency->source);
-            $toMatches = $registry->resolveAll($dependency->target);
+            $fromMatches = $registry->resolveAll($dependency->sourceLogical());
+            $toMatches = $registry->resolveAll($dependency->targetLogical());
 
             $fromMatch = $fromMatches[0] ?? null;
             $toMatch = $toMatches[0] ?? null;
 
             if ($fromMatch === null) {
                 $sourceEdges++;
-                $classes[$dependency->source->toCanonical()] = $dependency->source->toString();
+                $classes[$dependency->sourceLogical()->toCanonical()] = $dependency->sourceLogical()->toString();
             } else {
                 $edgeLayerHits[$fromMatch->layerName] = ($edgeLayerHits[$fromMatch->layerName] ?? 0) + 1;
             }
 
             if ($toMatch === null) {
                 $targetEdges++;
-                $classes[$dependency->target->toCanonical()] = $dependency->target->toString();
+                $classes[$dependency->targetLogical()->toCanonical()] = $dependency->targetLogical()->toString();
             } else {
                 $edgeLayerHits[$toMatch->layerName] = ($edgeLayerHits[$toMatch->layerName] ?? 0) + 1;
             }
 
-            $violation = $this->buildViolation($dependency, $fromMatch, $toMatch, $architecture);
-            if ($violation !== null) {
+            $edgeViolations = $this->buildViolations(
+                $dependency,
+                $fromMatch,
+                $toMatch,
+                $architecture,
+                $ownedTargets->forLogical($dependency->targetLogical()),
+            );
+            foreach ($edgeViolations as $violation) {
                 $violations[] = $violation;
             }
         }
@@ -433,83 +440,40 @@ final class LayerViolationRule extends AbstractRule
         return $diagnostic === null ? [] : [$diagnostic];
     }
 
-    private function buildViolation(
+    /**
+     * @param list<MetricSubject> $ownedTargets
+     *
+     * @return list<Violation>
+     */
+    private function buildViolations(
         Dependency $dependency,
         ?LayerMatch $fromMatch,
         ?LayerMatch $toMatch,
         ArchitectureConfiguration $architecture,
-    ): ?Violation {
+        array $ownedTargets,
+    ): array {
         if ($fromMatch === null || $toMatch === null) {
-            return null;
+            return [];
         }
 
         $fromLayer = $fromMatch->layerName;
         $toLayer = $toMatch->layerName;
 
         if ($architecture->policy()->isAllowed($fromLayer, $toLayer, $dependency->type)) {
-            return null;
+            return [];
         }
 
         \assert($this->options instanceof LayerViolationOptions);
 
-        return new Violation(
-            location: $dependency->location,
-            symbolPath: $dependency->source,
+        return (new LayerViolationFinding(
+            dependency: $dependency,
+            fromMatch: $fromMatch,
+            toMatch: $toMatch,
+            ownedTargets: $ownedTargets,
             ruleName: self::NAME,
-            violationCode: self::NAME,
-            message: \sprintf(
-                'Layer "%s" must not depend on layer "%s" (%s → %s, %s)%s',
-                $fromLayer,
-                $toLayer,
-                $dependency->source->toString(),
-                $dependency->target->toString(),
-                $dependency->type->description(),
-                self::describeMatchTrailer($fromMatch, $toMatch),
-            ),
             severity: $this->options->severity,
             recommendation: $this->buildRecommendation($dependency, $fromLayer, $toLayer, $architecture),
-            dependencyTarget: $dependency->target,
-            dependencyType: $dependency->type,
-        );
-    }
-
-    /**
-     * Appends a "[matched by ...]" trailer to the violation message when at
-     * least one side was assigned via a non-pattern criterion or when the
-     * match was multi-criterion (Phase 2 direction 1 diagnostic specificity).
-     *
-     * For Phase-1-shape patterns-only configs both sides always carry a
-     * single Pattern criterion — in that case the trailer collapses to an
-     * empty string, leaving the legacy message format byte-for-byte stable.
-     */
-    private static function describeMatchTrailer(LayerMatch $fromMatch, LayerMatch $toMatch): string
-    {
-        if (self::isPlainPatternMatch($fromMatch) && self::isPlainPatternMatch($toMatch)) {
-            return '';
-        }
-
-        return \sprintf(
-            ' [source matched by %s; target matched by %s]',
-            self::describeCriteriaList($fromMatch->matchedCriteria),
-            self::describeCriteriaList($toMatch->matchedCriteria),
-        );
-    }
-
-    private static function isPlainPatternMatch(LayerMatch $match): bool
-    {
-        return \count($match->matchedCriteria) === 1
-            && $match->matchedCriteria[0]->kind === MatchedCriterionKind::Pattern;
-    }
-
-    /**
-     * @param list<MatchedCriterion> $criteria
-     */
-    private static function describeCriteriaList(array $criteria): string
-    {
-        return implode(', ', array_map(
-            static fn(MatchedCriterion $criterion): string => $criterion->describe(),
-            $criteria,
-        ));
+        ))->toViolations();
     }
 
     /**
@@ -595,8 +559,8 @@ final class LayerViolationRule extends AbstractRule
             [
                 'fromLayer' => $fromLayer,
                 'toLayer' => $toLayer,
-                'source' => $dependency->source->toString(),
-                'target' => $dependency->target->toString(),
+                'source' => $dependency->sourceLogical()->toString(),
+                'target' => $dependency->targetLogical()->toString(),
                 'type' => $dependency->type->value,
             ],
             \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR,
@@ -667,6 +631,7 @@ final class LayerViolationRule extends AbstractRule
 
         return new Violation(
             location: Location::none(),
+            subject: MetricSubject::aggregate(SymbolPath::forProject()),
             symbolPath: SymbolPath::forProject(),
             ruleName: self::COVERAGE_DIAGNOSTIC_NAME,
             violationCode: self::COVERAGE_DIAGNOSTIC_NAME,
@@ -713,6 +678,7 @@ final class LayerViolationRule extends AbstractRule
 
             $violations[] = new Violation(
                 location: Location::none(),
+                subject: MetricSubject::aggregate(SymbolPath::forProject()),
                 symbolPath: SymbolPath::forProject(),
                 ruleName: self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
                 violationCode: self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
@@ -740,7 +706,7 @@ final class LayerViolationRule extends AbstractRule
      * on each side (recorded during `collectClassEvidence()`), so no second
      * walk over the layer list is necessary at emission time.
      *
-     * @param array<string, array<string, list<array{fqn: string, assignedCriterion: MatchedCriterion, shadowedCriterion: MatchedCriterion}>>> $shadowEvidence
+     * @param array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Architecture\Domain\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Architecture\Domain\Layer\MatchedCriterion}>>> $shadowEvidence
      *
      * @return list<Violation>
      */
@@ -803,6 +769,7 @@ final class LayerViolationRule extends AbstractRule
 
             $violations[] = new Violation(
                 location: Location::none(),
+                subject: MetricSubject::aggregate(SymbolPath::forProject()),
                 symbolPath: SymbolPath::forProject(),
                 ruleName: self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
                 violationCode: self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,

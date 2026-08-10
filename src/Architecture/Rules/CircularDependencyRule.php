@@ -9,8 +9,11 @@ use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\OccurrenceKey;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
@@ -68,25 +71,18 @@ final class CircularDependencyRule extends AbstractRule
         }
 
         $violations = [];
+        $projectSubject = MetricSubject::aggregate(SymbolPath::forProject());
 
         foreach ($context->cycles as $cycle) {
-            $severity = $this->getEffectiveSeverity($context, $this->options, null, 1, $cycle->getSize());
+            $severity = $this->getEffectiveSeverity($context, $this->options, $projectSubject, $cycle->getSize());
             if ($severity === null) {
                 continue; // Cycle too large or filtered out
             }
 
-            // CircularDependencyDetector only emits cycles for SCCs of size > 1,
-            // so the class list is guaranteed non-empty by construction. The
-            // assert documents the invariant for static analysis and surfaces
-            // any future regression in debug builds.
-            //
-            // The classes are sorted by canonical key, so the first one is the
-            // cycle representative — a stable identity that does not shift when
-            // unrelated files change the graph traversal order. Using anything
-            // else here would make baseline hashes order-dependent.
             $classes = $cycle->getClasses();
             \assert($classes !== [], 'CircularDependencyRule invariant: cycle has at least one class');
-            $representative = $classes[0];
+            $memberCanonicals = array_map(static fn(SymbolPath $class): string => $class->toCanonical(), $classes);
+            sort($memberCanonicals);
 
             $category = $cycle->getSizeCategory();
             $size = $cycle->getSize();
@@ -106,13 +102,17 @@ final class CircularDependencyRule extends AbstractRule
 
             $violations[] = new Violation(
                 location: Location::none(),
-                symbolPath: $representative,
+                subject: $projectSubject,
+                symbolPath: SymbolPath::forProject(),
                 ruleName: $this->getName(),
                 violationCode: self::NAME,
                 message: $message,
                 severity: $severity,
                 metricValue: $size,
                 recommendation: $recommendation,
+                occurrenceKey: OccurrenceKey::semantic(self::NAME, [
+                    'members' => implode(',', $memberCanonicals),
+                ]),
             );
         }
 

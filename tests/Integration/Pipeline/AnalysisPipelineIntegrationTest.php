@@ -34,6 +34,8 @@ use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -78,8 +80,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // Arrange: create dependencies between two classes
         $dependencies = [
             new Dependency(
-                SymbolPath::fromClassFqn('App\Service\OrderService'),
-                SymbolPath::fromClassFqn('App\Repository\OrderRepository'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\Service\OrderService'), RelativePath::fromString('tmp/OrderService.php'), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\OrderRepository')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/OrderService.php'), 10),
             ),
@@ -131,14 +133,14 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // Arrange: A circular dependency A -> B -> A
         $dependencies = [
             new Dependency(
-                SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA'),
-                SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB'),
+                new DeclarationPath(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA'), RelativePath::fromString('tmp/ServiceA.php'), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/ServiceA.php'), 10),
             ),
             new Dependency(
-                SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB'),
-                SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA'),
+                new DeclarationPath(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB'), RelativePath::fromString('tmp/ServiceB.php'), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/ServiceB.php'), 10),
             ),
@@ -146,7 +148,10 @@ final class AnalysisPipelineIntegrationTest extends TestCase
 
         // Verify the detector itself works (sanity check)
         $graphBuilder = new DependencyGraphBuilder();
-        $graph = $graphBuilder->build($dependencies);
+        $graph = $graphBuilder->build(
+            $dependencies,
+            array_map(static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()), $dependencies),
+        );
         $detector = new CircularDependencyDetector();
         $cycles = $detector->detect($graph);
         self::assertNotEmpty($cycles, 'Sanity check: CircularDependencyDetector should find cycles');
@@ -210,14 +215,14 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // Arrange: two classes in the same namespace with cross-namespace dependencies
         $dependencies = [
             new Dependency(
-                SymbolPath::fromClassFqn('App\Service\OrderService'),
-                SymbolPath::fromClassFqn('App\Repository\OrderRepository'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\Service\OrderService'), RelativePath::fromString('tmp/OrderService.php'), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\OrderRepository')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/OrderService.php'), 10),
             ),
             new Dependency(
-                SymbolPath::fromClassFqn('App\Service\PaymentService'),
-                SymbolPath::fromClassFqn('App\Repository\PaymentRepository'),
+                new DeclarationPath(SymbolPath::fromClassFqn('App\Service\PaymentService'), RelativePath::fromString('tmp/PaymentService.php'), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\PaymentRepository')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/PaymentService.php'), 10),
             ),

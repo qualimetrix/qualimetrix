@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Design;
 
+use LogicException;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -74,13 +75,24 @@ final class DataClassRule extends AbstractRule
      */
     public function analyze(AnalysisContext $context): array
     {
+        return $this->analyzeEligibleClasses($context);
+    }
+
+    /**
+     * @return list<Violation>
+     */
+    private function analyzeEligibleClasses(AnalysisContext $context): array
+    {
         if (!$this->options instanceof DataClassOptions || !$this->options->isEnabled()) {
             return [];
         }
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            if ($classInfo->subject?->toSymbolPath()->getType() !== SymbolType::Class_) {
+                continue;
+            }
             $violation = $this->evaluateClass($context, $classInfo);
             if ($violation !== null) {
                 $violations[] = $violation;
@@ -92,14 +104,14 @@ final class DataClassRule extends AbstractRule
 
     private function evaluateClass(AnalysisContext $context, SymbolInfo $classInfo): ?Violation
     {
-        $metrics = $context->metrics->get($classInfo->symbolPath);
+        $subject = $classInfo->subject ?? throw new LogicException('Data class findings require an exact class declaration subject');
+        $metrics = $context->metrics->get($subject->toSymbolPath());
 
         // Apply @qmx-threshold overrides for this class
         $effectiveOptions = $this->getEffectiveOptions(
             $context,
             $this->options,
-            $classInfo->file,
-            $classInfo->line ?? 1,
+            $subject,
         );
         \assert($effectiveOptions instanceof DataClassOptions);
 
@@ -122,7 +134,8 @@ final class DataClassRule extends AbstractRule
 
         return new Violation(
             location: new Location($classInfo->file, $classInfo->line),
-            symbolPath: $classInfo->symbolPath,
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             violationCode: self::NAME,
             message: \sprintf(

@@ -21,7 +21,8 @@ use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
-use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -131,12 +132,43 @@ final class CboRuleTest extends TestCase
     }
 
     #[Test]
+    public function itReturnsEmptyForTheUnsupportedCallableDispatchWithoutReadingMetrics(): void
+    {
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->expects(self::never())->method('allDeclarations');
+        $repository->expects(self::never())->method('all');
+
+        self::assertSame([], (new CboRule(new CboOptions()))
+            ->analyzeLevel(RuleLevel::Callable, new AnalysisContext($repository)));
+    }
+
+    #[Test]
+    public function itReadsCouplingPresentationMetricsThroughTheAnalysisContext(): void
+    {
+        $symbolPath = SymbolPath::forClass('App', 'ContextOwned');
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/ContextOwned.php'), 10);
+        $repository = $this->createMock(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->expects(self::exactly(2))
+            ->method('get')
+            ->with($symbolPath)
+            ->willReturn((new MetricBag())->with('cbo', 18)->with('ca', 8)->with('ce', 10));
+
+        $violations = (new CboRule(new CboOptions()))
+            ->analyzeLevel(RuleLevel::Class_, new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertSame($classInfo->subject?->toCanonical(), $violations[0]->subject->toCanonical());
+    }
+
+    #[Test]
     public function itReturnsEmptyWhenNoClasses(): void
     {
         $rule = new CboRule(new CboOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -150,12 +182,12 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -171,7 +203,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 10, below warning threshold (14)
         $metricBag = (new MetricBag())
@@ -180,7 +212,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -197,7 +229,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 18, above warning (14), below error (20)
         $metricBag = (new MetricBag())
@@ -206,7 +238,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -229,7 +261,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 25, above error threshold (20)
         $metricBag = (new MetricBag())
@@ -238,7 +270,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -265,7 +297,7 @@ final class CboRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 12, above custom warning (10), below custom error (15)
         $metricBag = (new MetricBag())
@@ -274,7 +306,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 6);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -295,7 +327,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Core', 'OutputInterface');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Core/OutputInterface.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Core/OutputInterface.php'), 5);
 
         // Ca=44, Ce=1 — strongly afferent
         $metricBag = (new MetricBag())
@@ -304,7 +336,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -324,7 +356,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'GodService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/GodService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/GodService.php'), 10);
 
         // Ca=3, Ce=22 — strongly efferent
         $metricBag = (new MetricBag())
@@ -333,7 +365,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 22);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -353,7 +385,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'MixedService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/MixedService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/MixedService.php'), 10);
 
         // Ca=10, Ce=10 — balanced
         $metricBag = (new MetricBag())
@@ -362,7 +394,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -401,7 +433,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // CBO = 16
         $metricBag = (new MetricBag())
@@ -432,7 +464,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // CBO = 25
         $metricBag = (new MetricBag())
@@ -463,7 +495,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // classCount.sum = 1, below default minClassCount (3)
         $metricBag = (new MetricBag())
@@ -492,10 +524,10 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $nsPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($nsPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($nsPath, RelativePath::fromString('src/Service'), null);
 
         $classBag = (new MetricBag())
             ->with('cbo', 18)
@@ -514,6 +546,7 @@ final class CboRuleTest extends TestCase
                 SymbolType::Namespace_ => [$nsInfo],
                 default => [],
             });
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturnCallback(fn(SymbolPath $path) => match ($path) {
                 $classPath => $classBag,
@@ -605,9 +638,9 @@ final class CboRuleTest extends TestCase
         $options = new CboOptions();
 
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('Level method is not supported by CboRule');
+        self::expectExceptionMessage('Level callable is not supported by CboRule');
 
-        $options->forLevel(RuleLevel::Method);
+        $options->forLevel(RuleLevel::Callable);
     }
 
     #[Test]
@@ -668,7 +701,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'GodService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/GodService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/GodService.php'), 10);
 
         // CBO = 25, Ce = 22 — efferent dominant
         $metricBag = (new MetricBag())
@@ -677,7 +710,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 22);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -686,16 +719,16 @@ final class CboRuleTest extends TestCase
 
         // Create mock dependencies — 7 unique targets with varying occurrence counts
         $deps = [
-            new Dependency($symbolPath, SymbolPath::forClass('App\Repository', 'UserRepository'), DependencyType::TypeHint, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Repository', 'UserRepository'), DependencyType::New_, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Repository', 'UserRepository'), DependencyType::TypeHint, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Service', 'Logger'), DependencyType::TypeHint, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Service', 'Logger'), DependencyType::TypeHint, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Dto', 'UserDto'), DependencyType::New_, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Event', 'UserCreated'), DependencyType::New_, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Contract', 'EventDispatcher'), DependencyType::TypeHint, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Validator', 'EmailValidator'), DependencyType::New_, $location),
-            new Dependency($symbolPath, SymbolPath::forClass('App\Cache', 'CacheManager'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Repository', 'UserRepository'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Repository', 'UserRepository'), DependencyType::New_, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Repository', 'UserRepository'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Service', 'Logger'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Service', 'Logger'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Dto', 'UserDto'), DependencyType::New_, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Event', 'UserCreated'), DependencyType::New_, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Contract', 'EventDispatcher'), DependencyType::TypeHint, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Validator', 'EmailValidator'), DependencyType::New_, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('App\Cache', 'CacheManager'), DependencyType::TypeHint, $location),
         ];
 
         $graph = self::createStub(DependencyGraphInterface::class);
@@ -719,7 +752,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'HugeService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/HugeService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/HugeService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('cbo', 25)
@@ -727,7 +760,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 22);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -738,7 +771,7 @@ final class CboRuleTest extends TestCase
         $deps = [];
         $classes = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf'];
         foreach ($classes as $className) {
-            $deps[] = new Dependency(
+            $deps[] = $this->dependency(
                 $symbolPath,
                 SymbolPath::forClass('App\Deps', $className),
                 DependencyType::TypeHint,
@@ -763,7 +796,7 @@ final class CboRuleTest extends TestCase
             self::fail('Top dependencies pattern not found in: ' . $recommendation);
         }
         $listedDeps = explode(', ', $matches[1]);
-        self::assertCount(5, $listedDeps);
+        self::assertSame(['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo'], $listedDeps);
 
         // Foxtrot and Golf should NOT be in the list (they are 6th and 7th)
         self::assertStringNotContainsString('Foxtrot', $recommendation);
@@ -776,7 +809,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('cbo', 25)
@@ -784,7 +817,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -804,7 +837,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'Isolated');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/Isolated.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/Isolated.php'), 10);
 
         // CBO from afferent only
         $metricBag = (new MetricBag())
@@ -813,7 +846,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -837,7 +870,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         $metricBag = (new MetricBag())
             ->with('cbo', 25)
@@ -867,7 +900,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule(new CboOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'MyService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/MyService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/MyService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('cbo', 20)
@@ -875,7 +908,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 17);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -884,7 +917,7 @@ final class CboRuleTest extends TestCase
 
         // Dependency on a global class (no namespace)
         $deps = [
-            new Dependency($symbolPath, SymbolPath::forClass('', 'stdClass'), DependencyType::New_, $location),
+            $this->dependency($symbolPath, SymbolPath::forClass('', 'stdClass'), DependencyType::New_, $location),
         ];
 
         $graph = self::createStub(DependencyGraphInterface::class);
@@ -917,7 +950,7 @@ final class CboRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'Test');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
             ->with('cbo', $cbo)
@@ -925,7 +958,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', $cbo - 5);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -973,7 +1006,7 @@ final class CboRuleTest extends TestCase
         $rule = new CboRule($options);
 
         $symbolPath = SymbolPath::forClass('App\\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
         $metricBag = (new MetricBag())
             ->with('cbo', 30)
             ->with('cbo_app', 7)
@@ -981,7 +1014,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 25)
             ->with('ce_framework', 23);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $violations = $rule->analyzeLevel(RuleLevel::Class_, new AnalysisContext($repository));
@@ -1007,7 +1040,7 @@ final class CboRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 15 (above error), CBO_APP = 3 (below warning)
         // With scope=application, should use CBO_APP → no violation
@@ -1018,7 +1051,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -1043,7 +1076,7 @@ final class CboRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 30, CBO_APP = 7 (between warning=5 and error=10), CE_FRAMEWORK = 23
         $metricBag = (new MetricBag())
@@ -1054,7 +1087,7 @@ final class CboRuleTest extends TestCase
             ->with('ce_framework', 23);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -1086,7 +1119,7 @@ final class CboRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // CBO = 15 (above error), CBO_APP = 3 (below warning)
         // Default scope=all should use CBO → error
@@ -1097,7 +1130,7 @@ final class CboRuleTest extends TestCase
             ->with('ce', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -1161,5 +1194,57 @@ final class CboRuleTest extends TestCase
         ]);
 
         self::assertSame('all', $options->class->scope);
+    }
+
+    #[Test]
+    public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([
+            self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('get')->willReturn(
+            (new MetricBag())->with('cbo', 18)->with('ca', 8)->with('ce', 10),
+        );
+
+        $violations = (new CboRule(new CboOptions()))
+            ->analyzeLevel(RuleLevel::Class_, new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:class:App\\Service\\Twin@src/A.php:100',
+            'declaration:class:App\\Service\\Twin@src/B.php:200',
+        ], $subjects);
+    }
+
+    private function dependency(SymbolPath $source, SymbolPath $target, DependencyType $type, Location $location): Dependency
+    {
+        return new Dependency(
+            new DeclarationPath($source, $location->file ?? RelativePath::fromString('test.php'), 0),
+            new LogicalClassPath($target),
+            $type,
+            $location,
+        );
+    }
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            $file,
+            $line,
+            $kind,
+        );
     }
 }

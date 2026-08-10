@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Coupling;
 
+use LogicException;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
@@ -78,49 +80,62 @@ final class ClassRankRule extends AbstractRule
 
         $violations = [];
 
-        foreach ($classes as $classInfo) {
-            $metrics = $context->metrics->get($classInfo->symbolPath);
-            $classRank = $metrics->get(MetricName::COUPLING_CLASS_RANK);
-
-            if ($classRank === null) {
-                continue;
-            }
-
-            $rankValue = (float) $classRank;
-
-            // Apply `@qmx-threshold` overrides and re-scale
-            /** @var ClassRankOptions $effectiveOptions */
-            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $classInfo->file, $classInfo->line ?? 1);
-            $effectiveScaledWarning = $effectiveOptions->warning / $scaleFactor;
-            $effectiveScaledError = $effectiveOptions->error / $scaleFactor;
-
-            $severity = self::getSeverityForScaledThresholds($rankValue, $effectiveScaledWarning, $effectiveScaledError);
-
-            if ($severity !== null) {
-                $threshold = $severity === Severity::Error
-                    ? $effectiveScaledError
-                    : $effectiveScaledWarning;
-
-                $violations[] = new Violation(
-                    location: new Location($classInfo->file, $classInfo->line),
-                    symbolPath: $classInfo->symbolPath,
-                    ruleName: $this->getName(),
-                    violationCode: self::NAME,
-                    message: \sprintf(
-                        'ClassRank is %.4f, exceeds threshold of %.4f (scaled for %d classes). This class is a critical hub — changes have wide impact',
-                        $rankValue,
-                        $threshold,
-                        $classCount,
-                    ),
-                    severity: $severity,
-                    metricValue: $rankValue,
-                    recommendation: \sprintf('ClassRank: %.4f (threshold: %.4f) — coupling hotspot, many depend on this', $rankValue, $threshold),
-                    threshold: $threshold,
-                );
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            $violation = $this->violationForClass($classInfo, $context, $scaleFactor, $classCount);
+            if ($violation !== null) {
+                $violations[] = $violation;
             }
         }
 
         return $violations;
+    }
+
+    private function violationForClass(
+        SymbolInfo $classInfo,
+        AnalysisContext $context,
+        float $scaleFactor,
+        int $classCount,
+    ): ?Violation {
+        $subject = $classInfo->subject ?? throw new LogicException('ClassRank findings require an exact class declaration subject');
+        if ($subject->toSymbolPath()->getType() !== SymbolType::Class_) {
+            return null;
+        }
+
+        $classRank = $context->metrics->get($subject->toSymbolPath())->get(MetricName::COUPLING_CLASS_RANK);
+        if ($classRank === null) {
+            return null;
+        }
+
+        $rankValue = (float) $classRank;
+
+        /** @var ClassRankOptions $effectiveOptions */
+        $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+        $effectiveScaledWarning = $effectiveOptions->warning / $scaleFactor;
+        $effectiveScaledError = $effectiveOptions->error / $scaleFactor;
+        $severity = self::getSeverityForScaledThresholds($rankValue, $effectiveScaledWarning, $effectiveScaledError);
+        if ($severity === null) {
+            return null;
+        }
+
+        $threshold = $severity === Severity::Error ? $effectiveScaledError : $effectiveScaledWarning;
+
+        return new Violation(
+            location: new Location($classInfo->file, $classInfo->line),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
+            ruleName: $this->getName(),
+            violationCode: self::NAME,
+            message: \sprintf(
+                'ClassRank is %.4f, exceeds threshold of %.4f (scaled for %d classes). This class is a critical hub — changes have wide impact',
+                $rankValue,
+                $threshold,
+                $classCount,
+            ),
+            severity: $severity,
+            metricValue: $rankValue,
+            recommendation: \sprintf('ClassRank: %.4f (threshold: %.4f) — coupling hotspot, many depend on this', $rankValue, $threshold),
+            threshold: $threshold,
+        );
     }
 
     /**

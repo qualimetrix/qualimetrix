@@ -258,11 +258,11 @@ final class YamlNormalizationCharacterizationTest extends TestCase
 
         yield 'rules: nested option subtree normalizes recursively' => [
             'rules.*.complexity.method.warning — nested options camelCased at every level below the identifier',
-            "rules:\n  complexity:\n    method:\n      warning_threshold: 12\n",
+            "rules:\n  complexity:\n    callable:\n      warning_threshold: 12\n",
             [
                 'rules' => [
                     'complexity' => [
-                        'method' => [
+                        'callable' => [
                             'warningThreshold' => 12,
                         ],
                     ],

@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Collection\Dependency;
 
+use LogicException;
 use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
-use PhpParser\Node\Stmt\Enum_;
+use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\GroupUse;
-use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Namespace_;
-use PhpParser\Node\Stmt\Trait_;
 use PhpParser\Node\Stmt\Use_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\CatchInstanceofHandler;
@@ -24,6 +23,8 @@ use Qualimetrix\Analysis\Collection\Dependency\Handler\StaticAccessHandler;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\TraitUseHandler;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
  * Visitor that collects all class dependencies from AST.
@@ -99,59 +100,19 @@ final class DependencyVisitor extends NodeVisitorAbstract
 
     public function enterNode(Node $node): ?int
     {
-        if ($node instanceof Namespace_) {
-            // Reset imports when entering a new namespace block to prevent
-            // use-imports from one namespace leaking into another
-            $this->resolver->reset();
-            $this->resolver->setNamespace($node->name?->toString());
-
+        if ($this->consumeNamespaceOrImport($node)) {
             return null;
         }
 
-        if ($node instanceof Use_) {
-            $this->resolver->addUseStatement($node);
-
+        if ($this->enterNamedClassLike($node)) {
             return null;
         }
 
-        if ($node instanceof GroupUse) {
-            $this->resolver->addGroupUseStatement($node);
-
+        if ($this->consumeAnonymousClass($node)) {
             return null;
         }
 
-        $className = $this->extractClassLikeName($node);
-        if ($className !== null) {
-            $this->currentClass = $this->resolver->getNamespace() !== null
-                ? $this->resolver->getNamespace() . '\\' . $className
-                : $className;
-
-            $this->currentContext = new DependencyContext(
-                $this->resolver,
-                $this->file,
-                $this->currentClass,
-            );
-
-            $this->classLikeHandler->handle($node, $this->currentContext);
-
-            return null;
-        }
-
-        // Anonymous class: extract extends/implements dependencies into the enclosing class context
-        if ($node instanceof Class_ && $node->name === null && $this->currentContext !== null) {
-            $this->classLikeHandler->handle($node, $this->currentContext);
-
-            return null;
-        }
-
-        if ($this->currentClass === null || $this->currentContext === null) {
-            return null;
-        }
-
-        $handler = $this->dispatchTable[$node::class] ?? null;
-        if ($handler !== null) {
-            $handler->handle($node, $this->currentContext);
-        }
+        $this->dispatchInCurrentContext($node);
 
         return null;
     }
@@ -160,7 +121,7 @@ final class DependencyVisitor extends NodeVisitorAbstract
     {
         // Only reset class scope for named classes (skip anonymous classes —
         // they don't set currentClass on enter, so leaving them shouldn't clear it)
-        if ($this->isClassLikeNode($node) && $this->extractClassLikeName($node) !== null) {
+        if ($node instanceof ClassLike && $node->name !== null) {
             if ($this->currentContext !== null) {
                 array_push($this->dependencies, ...$this->currentContext->getDependencies());
             }
@@ -171,23 +132,77 @@ final class DependencyVisitor extends NodeVisitorAbstract
         return null;
     }
 
-    private function extractClassLikeName(Node $node): ?string
+    private function consumeNamespaceOrImport(Node $node): bool
     {
-        return match (true) {
-            $node instanceof Class_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Interface_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Trait_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Enum_ && $node->name !== null => $node->name->toString(),
-            default => null,
-        };
+        if ($node instanceof Namespace_) {
+            $this->resolver->reset();
+            $this->resolver->setNamespace($node->name?->toString());
+
+            return true;
+        }
+
+        if ($node instanceof Use_) {
+            $this->resolver->addUseStatement($node);
+
+            return true;
+        }
+
+        if ($node instanceof GroupUse) {
+            $this->resolver->addGroupUseStatement($node);
+
+            return true;
+        }
+
+        return false;
     }
 
-    private function isClassLikeNode(Node $node): bool
+    private function enterNamedClassLike(Node $node): bool
     {
-        return $node instanceof Class_
-            || $node instanceof Interface_
-            || $node instanceof Trait_
-            || $node instanceof Enum_;
+        if (!$node instanceof ClassLike || $node->name === null) {
+            return false;
+        }
+
+        $className = $node->name->toString();
+        $this->currentClass = $this->resolver->getNamespace() !== null
+            ? $this->resolver->getNamespace() . '\\' . $className
+            : $className;
+
+        if ($this->file === null) {
+            throw new LogicException('DependencyVisitor requires a relative file path before traversing declarations');
+        }
+
+        $this->currentContext = new DependencyContext(
+            $this->resolver,
+            $this->file,
+            new DeclarationPath(
+                SymbolPath::fromClassFqn($this->currentClass),
+                $this->file,
+                $node->getStartFilePos(),
+            ),
+        );
+        $this->classLikeHandler->handle($node, $this->currentContext);
+
+        return true;
+    }
+
+    private function consumeAnonymousClass(Node $node): bool
+    {
+        if (!$node instanceof Class_ || $node->name !== null || $this->currentContext === null) {
+            return false;
+        }
+
+        $this->classLikeHandler->handle($node, $this->currentContext);
+
+        return true;
+    }
+
+    private function dispatchInCurrentContext(Node $node): void
+    {
+        if ($this->currentClass === null || $this->currentContext === null) {
+            return;
+        }
+
+        ($this->dispatchTable[$node::class] ?? null)?->handle($node, $this->currentContext);
     }
 
     /**

@@ -311,20 +311,18 @@ Stale- и inert-записи сообщаются, но не завершают 
 
 ### Lifecycle-команды baseline
 
-Ниже приведена единственная поверхность команд для записи и миграции baseline:
+Ниже приведена полная поверхность команд для записи и проверки baseline:
 
 ```text
 bin/qmx baseline:generate <baseline> [<paths>...] [--mode=MODE] [--force]
-bin/qmx baseline:migrate  <baseline> [<paths>...] [--force]
 bin/qmx baseline:update   <baseline> [<paths>...] [--force]
 bin/qmx baseline:cleanup  <baseline> [<paths>...] [--remove=REMOVE]... [--force]
 bin/qmx baseline:explain  <symbol> [<paths>...] [--baseline=BASELINE] [--channel=CHANNEL]
 ```
 
-Все пять команд принимают `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=DISABLE-RULE`, `--only-rule=ONLY-RULE` и `--rule-opt=RULE-OPT`. Ни одна не принимает опции исключения или suppression.
+Все четыре команды принимают `--config=CONFIG`, `--preset=PRESET`, `--disable-rule=DISABLE-RULE`, `--only-rule=ONLY-RULE` и `--rule-opt=RULE-OPT`. Ни одна не принимает опции исключения или suppression.
 
 - `baseline:generate` захватывает текущие измеряемые нарушения. По умолчанию используется `--mode=ratchet`; `--mode=suppress` записывает безусловное принятие захваченных идентичностей. Его `--force` перезаписывает существующий файл.
-- `baseline:migrate` конвертирует только файл v5, создавая свежий v10 capture. Его `--force` заменяет свежим capture путь назначения, который не является v5.
 - `baseline:update` только ужесточает существующие записи. Его `--force` снимает проверку покрытия записанной области.
 - `baseline:cleanup` по умолчанию выводит кандидатов и удаляет только повторяемые селекторы `--remove=REMOVE`. Его `--force` также снимает проверку области.
 - `baseline:explain` показывает порог из конфигурации, принятую величину baseline и override из исходника для канонического символа; `--channel=CHANNEL` сужает ответ.
@@ -333,6 +331,13 @@ bin/qmx baseline:explain  <symbol> [<paths>...] [--baseline=BASELINE] [--channel
 неполном анализе и завершаются с кодом 4. `--force` снимает только ограничения
 файла/области; он не делает частичный набор измерений допустимым. Существующий
 файл остаётся побайтово неизменным, а `baseline:generate` не создаёт отсутствующий файл.
+
+Загружается только baseline версии 11. Версии 5 и 10 не позволяют вывести
+точные subjects деклараций, семантические occurrences и рёбра зависимостей.
+Запусти свежий анализ, осознанно сопоставь или раздели ранее принятые группы,
+проверь результат и запиши новый файл v11. Удалённая команда миграции не имеет
+alias или compatibility shim; `baseline:generate --force` заменяет байты, но
+не выводит и не конвертирует старую идентичность.
 
 Удалённые опции `--generate-baseline` и `--baseline-ignore-stale` не имеют алиасов. Используй вместо них `baseline:generate` и явный `baseline:cleanup --remove`.
 

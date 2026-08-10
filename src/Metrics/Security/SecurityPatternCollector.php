@@ -70,6 +70,7 @@ final class SecurityPatternCollector extends AbstractCollector
                 $bag = $bag->withEntry("security.{$type}", [
                     'line' => $location->line,
                     'superglobal' => $this->extractSuperglobalName($location->context),
+                    ...$this->visitor->getSubjectComponents($location),
                 ]);
             }
         }

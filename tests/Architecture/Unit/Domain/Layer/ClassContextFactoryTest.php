@@ -12,6 +12,9 @@ use Qualimetrix\Architecture\Domain\Layer\ClassContextFactory;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 
@@ -219,7 +222,12 @@ final class ClassContextFactoryTest extends TestCase
     {
         $deps = [];
         foreach ($edges as [$source, $target, $type]) {
-            $deps[] = new Dependency($source, $target, $type, Location::none());
+            $deps[] = new Dependency(
+                new DeclarationPath($source, RelativePath::fromString('test.php'), 0),
+                new LogicalClassPath($target),
+                $type,
+                Location::none(),
+            );
         }
 
         return new readonly class ($deps) implements DependencyGraphInterface {

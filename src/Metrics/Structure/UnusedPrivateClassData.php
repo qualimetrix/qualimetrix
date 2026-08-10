@@ -43,6 +43,7 @@ final class UnusedPrivateClassData
         public readonly ?string $namespace,
         public readonly string $className,
         public readonly int $line,
+        public readonly int $startFilePos = 0,
     ) {}
 
     /**

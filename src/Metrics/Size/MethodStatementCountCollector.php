@@ -7,17 +7,18 @@ namespace Qualimetrix\Metrics\Size;
 use Override;
 use PhpParser\Node;
 use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableMetricsProviderInterface;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
 /** Collects formatting-independent statement counts for methods and functions. */
-final class MethodStatementCountCollector extends AbstractCollector implements MethodMetricsProviderInterface
+final class MethodStatementCountCollector extends AbstractCollector implements CallableMetricsProviderInterface
 {
     private const NAME = 'method-statement-count';
 
@@ -42,25 +43,24 @@ final class MethodStatementCountCollector extends AbstractCollector implements M
     {
         $bag = new MetricBag();
 
-        foreach ($this->getMethodsWithMetrics() as $method) {
-            $fqn = ($method->namespace !== null ? $method->namespace . '\\' : '')
-                . ($method->class !== null ? $method->class . '::' : '')
-                . $method->method;
+        \assert($this->visitor instanceof MethodStatementCountVisitor);
+
+        foreach ($this->visitor->getStatementCounts() as $fqn => $count) {
             $bag = $bag->with(
                 MetricName::SIZE_METHOD_STATEMENT_COUNT . ':' . $fqn,
-                $method->metrics->get(MetricName::SIZE_METHOD_STATEMENT_COUNT) ?? 0,
+                $count,
             );
         }
 
         return $bag;
     }
 
-    /** @return list<MethodWithMetrics> */
-    public function getMethodsWithMetrics(): array
+    /** @return list<CallableWithMetrics> */
+    public function getCallablesWithMetrics(RelativePath $file): array
     {
         \assert($this->visitor instanceof MethodStatementCountVisitor);
 
-        return $this->visitor->getMethodsWithMetrics();
+        return $this->visitor->getCallablesWithMetrics($file);
     }
 
     /** @return list<MetricDefinition> */
@@ -76,7 +76,7 @@ final class MethodStatementCountCollector extends AbstractCollector implements M
         return [
             new MetricDefinition(
                 name: MetricName::SIZE_METHOD_STATEMENT_COUNT,
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: [
                     SymbolLevel::Class_->value => $aggregations,
                     SymbolLevel::Namespace_->value => $aggregations,

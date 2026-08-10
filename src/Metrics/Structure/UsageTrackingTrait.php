@@ -18,7 +18,7 @@ use PhpParser\Node\Name;
  * Shared logic for classifying AST nodes as member usages.
  *
  * Recognises five patterns:
- * - $this->method()           → usedMethods
+ * - $this->method() / $sameClass->method() → usedMethods
  * - self::method() / static:: → usedMethods
  * - $this->property           → usedProperties
  * - self::$prop / static::    → usedProperties
@@ -29,12 +29,15 @@ trait UsageTrackingTrait
     /**
      * Classify a single AST node and record the referenced member in $data.
      */
-    private function trackUsage(Node $node, UnusedPrivateClassData $data): void
+    /**
+     * @param array<string, true> $sameClassReceiverVariables
+     */
+    private function trackUsage(Node $node, UnusedPrivateClassData $data, array $sameClassReceiverVariables = []): void
     {
-        // $this->method()
+        // $this->method() / a receiver proven to be a new self/static instance
         if ($node instanceof MethodCall
             && $node->var instanceof Variable
-            && $node->var->name === 'this'
+            && ($node->var->name === 'this' || (\is_string($node->var->name) && isset($sameClassReceiverVariables[$node->var->name])))
             && $node->name instanceof Identifier
         ) {
             $data->usedMethods[$node->name->toString()] = true;

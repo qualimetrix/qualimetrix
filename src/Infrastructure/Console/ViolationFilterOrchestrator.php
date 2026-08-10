@@ -107,7 +107,7 @@ final readonly class ViolationFilterOrchestrator
      *
      * There is deliberately no `baseline:cleanup` suggestion. That command
      * selects on a different predicate — whether the `file:` a key names is
-     * gone — so for a `method:`, `class:`, `ns:` or `project:` entry it is a
+     * gone — so for a `callable:`, `class:`, `ns:` or `project:` entry it is a
      * guaranteed no-op, and advising it would send a user round a loop with
      * no exit. Removal by identity arrives with `cleanup --remove` in P4.
      */

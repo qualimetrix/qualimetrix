@@ -14,6 +14,7 @@ use Qualimetrix\Baseline\BaselineEntryParser;
 use Qualimetrix\Baseline\InertBaselineEntry;
 use Qualimetrix\Baseline\InertEntryReason;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Violation\OccurrenceKey;
 use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
 
 /**
@@ -34,8 +35,8 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itParsesAMagnitudeEntry(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
-            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.method',
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
+            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable',
             'magnitudes' => [25],
             'count' => 1,
         ]);
@@ -60,9 +61,30 @@ final class BaselineEntryParserTest extends TestCase
     }
 
     #[Test]
+    public function itParsesSemanticOccurrencesAsDistinctSelectorBearingIdentities(): void
+    {
+        $firstKey = OccurrenceKey::semantic('goto', ['line' => 10])->value;
+        $secondKey = OccurrenceKey::semantic('goto', ['line' => 20])->value;
+        $raw = [
+            'channel' => 'code-smell.goto#code-smell.goto',
+            'count' => 1,
+        ];
+
+        $first = $this->parser->parse('file:src/Foo.php', [...$raw, 'occurrence' => $firstKey]);
+        $second = $this->parser->parse('file:src/Foo.php', [...$raw, 'occurrence' => $secondKey]);
+
+        self::assertInstanceOf(BaselineEntry::class, $first);
+        self::assertInstanceOf(BaselineEntry::class, $second);
+        self::assertSame($firstKey, $first->identity->occurrenceKey);
+        self::assertSame($secondKey, $second->identity->occurrenceKey);
+        self::assertNotSame($first->identity->key(), $second->identity->key());
+        self::assertNotSame($first->selector()->value, $second->selector()->value);
+    }
+
+    #[Test]
     public function itParsesTheSuppressMode(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
             'channel' => 'code-smell.goto#code-smell.goto',
             'count' => 2,
             'mode' => 'suppress',
@@ -75,15 +97,24 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAnEntryThatIsNotAnObjectInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', 'not an object');
+        $entry = $this->parser->parse('callable:App\Foo::bar', 'not an object');
 
         self::assertInertFor($entry, InertEntryReason::Malformed);
     }
 
     #[Test]
+    public function itTurnsAJsonListAtTheEntryBoundaryInert(): void
+    {
+        $entry = $this->parser->parse('callable:App\Foo::bar', []);
+
+        self::assertInstanceOf(InertBaselineEntry::class, $entry);
+        self::assertSame('entry must be a JSON object', $entry->detail);
+    }
+
+    #[Test]
     public function itTurnsAnEntryWithoutAChannelInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', ['count' => 1]);
+        $entry = $this->parser->parse('callable:App\Foo::bar', ['count' => 1]);
 
         self::assertInertFor($entry, InertEntryReason::Malformed);
     }
@@ -91,7 +122,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAnEntryWithAnUnparseableChannelInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', ['channel' => 'no-separator', 'count' => 1]);
+        $entry = $this->parser->parse('callable:App\Foo::bar', ['channel' => 'no-separator', 'count' => 1]);
 
         self::assertInertFor($entry, InertEntryReason::Malformed);
     }
@@ -99,7 +130,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAnEntryWithoutACountInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', ['channel' => 'code-smell.goto#code-smell.goto']);
+        $entry = $this->parser->parse('callable:App\Foo::bar', ['channel' => 'code-smell.goto#code-smell.goto']);
 
         self::assertInertFor($entry, InertEntryReason::Malformed);
     }
@@ -116,7 +147,7 @@ final class BaselineEntryParserTest extends TestCase
     #[TestWith([-1])]
     public function itTurnsANonPositiveCountInert(int $count): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
             'channel' => 'code-smell.goto#code-smell.goto',
             'count' => $count,
         ]);
@@ -129,8 +160,8 @@ final class BaselineEntryParserTest extends TestCase
     {
         // JSON has no literal for infinity, but an overflowing exponent
         // decodes to one.
-        $entry = $this->parser->parse('method:App\Foo::bar', json_decode(
-            '{"channel":"complexity.cyclomatic#complexity.cyclomatic.method","magnitudes":[1e400],"count":1}',
+        $entry = $this->parser->parse('callable:App\Foo::bar', json_decode(
+            '{"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[1e400],"count":1}',
             true,
             512,
             \JSON_THROW_ON_ERROR,
@@ -142,8 +173,8 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAMagnitudeListThatDisagreesWithTheCountInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
-            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.method',
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
+            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable',
             'magnitudes' => [10, 20],
             'count' => 3,
         ]);
@@ -154,7 +185,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAnUndeclaredChannelInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
             'channel' => 'nobody.declares#this.channel',
             'count' => 1,
         ]);
@@ -166,8 +197,8 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAMagnitudeChannelWithoutMagnitudesInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
-            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.method',
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
+            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable',
             'count' => 1,
         ]);
 
@@ -177,7 +208,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAnOccurrenceChannelWithMagnitudesInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
             'channel' => 'code-smell.goto#code-smell.goto',
             'magnitudes' => [1.0],
             'count' => 1,
@@ -189,7 +220,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itTurnsAnUnrecognizedModeInert(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
             'channel' => 'code-smell.goto#code-smell.goto',
             'count' => 1,
             'mode' => 'ceiling',
@@ -210,6 +241,42 @@ final class BaselineEntryParserTest extends TestCase
         self::assertInertFor($entry, InertEntryReason::Malformed);
     }
 
+    #[Test]
+    public function itRejectsAJsonListWhereEdgeRequiresAnObject(): void
+    {
+        $entry = $this->parser->parse('class:App\\Web\\Controller', [
+            'channel' => 'architecture.layer-violation#architecture.layer-violation',
+            'edge' => [],
+            'count' => 1,
+        ]);
+
+        self::assertInstanceOf(InertBaselineEntry::class, $entry);
+        self::assertSame(InertEntryReason::Malformed, $entry->reason);
+        self::assertSame('"edge" must be a JSON object', $entry->detail);
+    }
+
+    #[Test]
+    public function itRejectsWrongOptionalAndRequiredJsonShapesWithoutLosingRawInput(): void
+    {
+        $cases = [
+            ['channel' => 12, 'count' => 1],
+            ['channel' => 'code-smell.goto#code-smell.goto', 'occurrence' => [], 'count' => 1],
+            ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 1.0],
+            ['channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable', 'magnitudes' => ['value' => 1], 'count' => 1],
+            ['channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable', 'magnitudes' => ['one'], 'count' => 1],
+            ['channel' => 'architecture.layer-violation#architecture.layer-violation', 'edge' => ['target' => ''], 'count' => 1],
+            ['channel' => 'architecture.layer-violation#architecture.layer-violation', 'edge' => ['target' => 'class:App\\Target', 'type' => 1], 'count' => 1],
+        ];
+
+        foreach ($cases as $raw) {
+            $entry = $this->parser->parse('callable:App\Foo::bar', $raw);
+
+            self::assertInertFor($entry, InertEntryReason::Malformed);
+            self::assertInstanceOf(InertBaselineEntry::class, $entry);
+            self::assertSame($raw, $entry->raw);
+        }
+    }
+
     /**
      * An inert entry whose identity parsed carries the same selector a valid
      * entry for that identity would, so the handle a user is shown is the
@@ -218,8 +285,8 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itGivesAnInertEntryWithAnIdentityThatIdentitysSelector(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', [
-            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.method',
+        $entry = $this->parser->parse('callable:App\Foo::bar', [
+            'channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable',
             'count' => 1,
         ]);
 
@@ -231,7 +298,7 @@ final class BaselineEntryParserTest extends TestCase
     #[Test]
     public function itGivesAnUnreadableEntryASelectorAnyway(): void
     {
-        $entry = $this->parser->parse('method:App\Foo::bar', ['nonsense' => true]);
+        $entry = $this->parser->parse('callable:App\Foo::bar', ['nonsense' => true]);
 
         self::assertInstanceOf(InertBaselineEntry::class, $entry);
         self::assertMatchesRegularExpression('/^[0-9a-f]{12}$/', $entry->selector->value);
@@ -242,7 +309,7 @@ final class BaselineEntryParserTest extends TestCase
     {
         $raw = ['channel' => 'nobody.declares#this.channel', 'count' => 1];
 
-        $entry = $this->parser->parse('method:App\Foo::bar', $raw);
+        $entry = $this->parser->parse('callable:App\Foo::bar', $raw);
 
         self::assertInstanceOf(InertBaselineEntry::class, $entry);
         self::assertSame($raw, $entry->raw);

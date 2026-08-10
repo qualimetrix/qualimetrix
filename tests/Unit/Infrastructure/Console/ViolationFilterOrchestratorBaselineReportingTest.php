@@ -21,6 +21,8 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -108,7 +110,10 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
     #[Test]
     public function itReportsAnInertEntryNamingSymbolChannelSelectorAndReasonWithoutFailing(): void
     {
-        $symbolKey = SymbolPath::forClass('App\\Legacy', 'Bootstrap')->toCanonical();
+        $symbol = SymbolPath::forClass('App\\Legacy', 'Bootstrap');
+        $symbolKey = MetricSubject::declaration(
+            new DeclarationPath($symbol, RelativePath::fromString('src/Legacy/Bootstrap.php'), 0),
+        )->toCanonical();
 
         $baselinePath = $this->writeBaseline([
             $symbolKey => [
@@ -235,9 +240,13 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
 
     private static function gotoViolation(string $file): Violation
     {
+        $path = RelativePath::fromString($file);
+        $symbol = SymbolPath::forFile($path);
+
         return new Violation(
-            location: new Location(RelativePath::fromString($file), 12),
-            symbolPath: SymbolPath::forFile(RelativePath::fromString($file)),
+            location: new Location($path, 12),
+            subject: MetricSubject::aggregate($symbol),
+            symbolPath: $symbol,
             ruleName: 'code-smell.goto',
             violationCode: 'code-smell.goto',
             message: 'Avoid goto',
@@ -255,7 +264,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         $this->tempFiles[] = $path;
 
         file_put_contents($path, json_encode([
-            'version' => 10,
+            'version' => 11,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => $scope,
             'entries' => $entries,

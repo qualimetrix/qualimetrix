@@ -35,7 +35,7 @@ final class SarifRuleCollectorTest extends TestCase
     #[Test]
     public function itCollectsRulesWithCorrectStructure(): void
     {
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
@@ -61,7 +61,7 @@ final class SarifRuleCollectorTest extends TestCase
     #[Test]
     public function itDeduplicatesRulesByViolationCode(): void
     {
-        $v1 = new Violation(
+        $v1 = self::violation(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
@@ -70,7 +70,7 @@ final class SarifRuleCollectorTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $v2 = new Violation(
+        $v2 = self::violation(
             location: new Location(RelativePath::fromString('b.php'), 5),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'complexity.cyclomatic',
@@ -87,7 +87,7 @@ final class SarifRuleCollectorTest extends TestCase
     #[Test]
     public function itCollectsMultipleDistinctRuleCodes(): void
     {
-        $v1 = new Violation(
+        $v1 = self::violation(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
@@ -96,7 +96,7 @@ final class SarifRuleCollectorTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $v2 = new Violation(
+        $v2 = self::violation(
             location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'size.loc',
@@ -116,7 +116,7 @@ final class SarifRuleCollectorTest extends TestCase
     #[Test]
     public function itPromotesRulesToErrorSeverity(): void
     {
-        $warning = new Violation(
+        $warning = self::violation(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
@@ -125,7 +125,7 @@ final class SarifRuleCollectorTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $error = new Violation(
+        $error = self::violation(
             location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'complexity.cyclomatic',
@@ -219,4 +219,61 @@ final class SarifRuleCollectorTest extends TestCase
     {
         self::assertSame('warning', $this->collector->mapLevel(Severity::Warning));
     }
+
+    /**
+     * Builds a violation fixture with an explicit declaration or aggregate
+     * subject, preserving the production contract without hiding it behind a
+     * legacy fallback.
+     *
+     * @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations
+     */
+    private static function violation(
+        \Qualimetrix\Core\Violation\Location $location,
+        \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
+        string $ruleName,
+        string $violationCode,
+        string $message,
+        \Qualimetrix\Core\Violation\Severity $severity,
+        int|float|null $metricValue = null,
+        ?\Qualimetrix\Core\Rule\RuleLevel $level = null,
+        array $relatedLocations = [],
+        ?string $recommendation = null,
+        int|float|null $threshold = null,
+        ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
+        ?\Qualimetrix\Core\Dependency\DependencyType $dependencyType = null,
+        ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null,
+        ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
+    ): Violation {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File,
+            \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
+            \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath(
+                $symbolPath,
+                $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'),
+                $location->line ?? 0,
+            )),
+        };
+
+        return new Violation(
+            location: $location,
+            subject: $subject,
+            symbolPath: $symbolPath,
+            ruleName: $ruleName,
+            violationCode: $violationCode,
+            message: $message,
+            severity: $severity,
+            metricValue: $metricValue,
+            level: $level,
+            relatedLocations: $relatedLocations,
+            recommendation: $recommendation,
+            threshold: $threshold,
+            dependencyTarget: $dependencyTarget,
+            dependencyType: $dependencyType,
+            acceptedLevel: $acceptedLevel,
+            occurrenceKey: $occurrenceKey,
+        );
+    }
+
 }

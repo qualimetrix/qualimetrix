@@ -20,6 +20,9 @@ use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
@@ -47,6 +50,8 @@ final class NpathSaturationCeilingTest extends TestCase
         self::assertSame(1_000_000_000, $recorded->metricValue);
         self::assertSame(1_000_000_000, $current->metricValue);
         self::assertNotSame(self::source(30), self::source(31));
+        self::assertSame($recorded->subject->toCanonical(), $current->subject->toCanonical());
+        self::assertSame($recorded->occurrenceKey?->value, $current->occurrenceKey?->value);
 
         $baseline = new Baseline(
             generated: new DateTimeImmutable('2026-08-07T12:00:00+00:00'),
@@ -55,7 +60,7 @@ final class NpathSaturationCeilingTest extends TestCase
         );
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $declarations->declare(
-            'complexity.npath#complexity.npath.method',
+            'complexity.npath#complexity.npath.callable',
             ChannelDeclaration::magnitude(WorseDirection::Higher),
         );
         $stage = new BaselineCeilingStage($baseline, $declarations);
@@ -77,15 +82,20 @@ final class NpathSaturationCeilingTest extends TestCase
         self::assertIsInt($npath);
 
         $symbol = SymbolPath::forMethod('App', 'Subject', 'explode');
+        $subject = MetricSubject::declaration(new DeclarationPath(
+            $symbol,
+            RelativePath::fromString('src/Subject.php'),
+            8,
+        ));
         $metrics = (new MetricBag())->with(MetricName::COMPLEXITY_NPATH, $npath);
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([
-            new SymbolInfo($symbol, RelativePath::fromString('src/Subject.php'), 8),
+        $repository->method('allCallables')->willReturn([
+            new SymbolInfo($subject, RelativePath::fromString('src/Subject.php'), 8, CallableKind::Method),
         ]);
-        $repository->method('get')->willReturn($metrics);
+        $repository->method('getSubject')->willReturn($metrics);
 
         $violations = (new NpathComplexityRule(new NpathComplexityOptions()))
-            ->analyzeLevel(RuleLevel::Method, new AnalysisContext($repository));
+            ->analyzeLevel(RuleLevel::Callable, new AnalysisContext($repository));
 
         self::assertCount(1, $violations);
 

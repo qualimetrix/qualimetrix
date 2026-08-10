@@ -91,7 +91,7 @@ final class MaintainabilityIndexCollector implements DerivedCollectorInterface, 
         return [
             new MetricDefinition(
                 name: MetricName::MAINTAINABILITY_MI,
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: [
                     SymbolLevel::Class_->value => [
                         AggregationStrategy::Average,

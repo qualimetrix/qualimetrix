@@ -10,8 +10,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\ClassWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\Structure\MethodCountCollector;
 use Qualimetrix\Metrics\Structure\MethodCountMetrics;
 use Qualimetrix\Metrics\Structure\MethodCountVisitor;
@@ -857,6 +859,101 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         self::assertSame(0, $metrics->get('woc:App\EmptyWoc'));
+    }
+
+    #[Test]
+    public function itDoesNotCountPropertyHooksAsMethods(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Profile
+{
+    public string $name {
+        get => $this->name;
+        set (string $value) => $value;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->get('methodCount:App\Profile'));
+        self::assertSame(0, $metrics->get('methodCountTotal:App\Profile'));
+    }
+
+    #[Test]
+    public function itDeliberatelyDoesNotProvideCallableMetrics(): void
+    {
+        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
+    }
+
+    #[Test]
+    public function itProjectsTheSameClassMetricsAsTheFileBagIncludingZeroTotalWoc(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class EmptyClass {}
+
+class ConstructorAccessors
+{
+    public function __construct() {}
+    public function getName(): string { return ''; }
+    public function setName(string $name): void {}
+}
+
+class MixedPromoted
+{
+    public function __construct(
+        public string $name,
+        private int $id,
+    ) {}
+
+    public function getName(): string { return $this->name; }
+    protected function compute(): void {}
+    private function validate(): void {}
+}
+
+class SecondClass
+{
+    private function work(): void {}
+}
+PHP;
+
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($this->collector->getVisitor());
+        $traverser->traverse($ast);
+
+        $fileBag = $this->collector->collect(new SplFileInfo(__FILE__), $ast);
+        $classes = $this->collector->getClassesWithMetrics(RelativePath::fromString('fixtures/MethodCount.php'));
+        $classNames = array_map(
+            static fn(ClassWithMetrics $class): string => $class->subject->toSymbolPath()->toString(),
+            $classes,
+        );
+
+        self::assertSame(
+            ['App\EmptyClass', 'App\ConstructorAccessors', 'App\MixedPromoted', 'App\SecondClass'],
+            $classNames,
+        );
+        self::assertSame(0, $classes[0]->metrics->get('woc'));
+
+        foreach ($classes as $index => $class) {
+            foreach ($this->collector->provides() as $metricName) {
+                self::assertSame(
+                    $fileBag->get($metricName . ':' . $classNames[$index]),
+                    $class->metrics->get($metricName),
+                    $classNames[$index] . ' ' . $metricName,
+                );
+            }
+        }
     }
 
     private function collectMetrics(string $code): MetricBag

@@ -387,10 +387,10 @@ final class YamlKeyReachabilityTest extends TestCase
             20,
         ];
 
-        yield 'rules: nested hierarchical option preserved.method.warning' => [
-            'rules.complexity.method.warning',
-            "rules:\n  complexity:\n    method:\n      warning: 12\n",
-            ['rules', 'complexity', 'method', 'warning'],
+        yield 'rules: nested hierarchical option preserved.callable.warning' => [
+            'rules.complexity.callable.warning',
+            "rules:\n  complexity:\n    callable:\n      warning: 12\n",
+            ['rules', 'complexity', 'callable', 'warning'],
             12,
         ];
 

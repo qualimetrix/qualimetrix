@@ -121,7 +121,7 @@ Each rule defines severity levels. When a metric exceeds a threshold, a violatio
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       warning: 15
       error: 25
 ```
@@ -135,7 +135,7 @@ If you want a single pass/fail threshold (all violations become errors), use the
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       threshold: 15    # warning=15, error=15 → all violations are errors
 
   size.method-count:
@@ -159,7 +159,7 @@ rules:
 bin/qmx check src/ --rule-opt=size.method-count:threshold=25
 ```
 
-The same applies in the other direction (a lower layer's `threshold` overridden by a higher layer's `warning`/`error`), and to hierarchical rules at the level the keys are set (e.g. `complexity.cyclomatic`'s `method:`/`class:`).
+The same applies in the other direction (a lower layer's `threshold` overridden by a higher layer's `warning`/`error`), and to hierarchical rules at the level the keys are set (e.g. `complexity.cyclomatic`'s `callable:`/`class:`).
 
 `coupling.cbo` and `coupling.instability` accept the same bare `threshold` shorthand at their own top level too, but with a different effect than `complexity.cyclomatic`'s: since their `class`/`namespace` defaults already match, a top-level `threshold` applies uniformly to BOTH levels at once, instead of only the more granular one:
 
@@ -189,7 +189,7 @@ rules:
     exclude_namespaces:
       - App\Tests
       - App\Legacy
-    method:
+    callable:
       warning: 15
       error: 25
 
@@ -270,7 +270,7 @@ class ComplexStateMachine
 }
 ```
 
-The class-level override also applies to method evaluations inside the class; a narrower method-level override takes precedence.
+The class-level override also applies to method evaluations inside the class; a narrower callable-level override takes precedence.
 
 See [Baseline > @qmx-threshold](../usage/baseline.md#per-symbol-threshold-overrides-with-qmx-threshold) for full syntax and examples.
 <!-- llms:skip-end -->
@@ -527,7 +527,7 @@ rules:
       - App\Tests
     exclude_paths:
       - src/Generated
-    method:
+    callable:
       warning: 15
       error: 25
 

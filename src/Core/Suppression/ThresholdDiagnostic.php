@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Suppression;
 
+use Qualimetrix\Core\Symbol\MetricSubject;
+
 /**
  * Represents a validation diagnostic for an invalid `@qmx-threshold` annotation.
  *
@@ -22,6 +24,7 @@ final readonly class ThresholdDiagnostic
 {
     public function __construct(
         public int $line,
+        public MetricSubject $subject,
         public string $message,
         public ?string $code = null,
         public ?string $hint = null,

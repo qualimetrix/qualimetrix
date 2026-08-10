@@ -6,12 +6,13 @@ namespace Qualimetrix\Metrics\CodeSmell;
 
 use PhpParser\Node;
 use PhpParser\Node\Stmt\ClassMethod;
-use PhpParser\Node\Stmt\Function_;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Metrics\VisitorCallableScope;
 use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
@@ -19,7 +20,7 @@ use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
  *
  * Counts the number of parameters for each method and function.
  * Closures are intentionally skipped as they don't have meaningful
- * SymbolPath for method-level metrics.
+ * SymbolPath for callable-level metrics.
  */
 final class ParameterCountVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
@@ -31,33 +32,19 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
     /** @var array<string, bool> Method/function FQN => is VO constructor */
     private array $voConstructors = [];
 
-    /** @var array<string, array{namespace: ?string, class: ?string, method: string, line: int}> FQN => method info */
-    private array $methodInfos = [];
-
-    private ?string $currentNamespace = null;
-    private ?string $currentClass = null;
-    private int $closureCounter = 0;
-
-    /** @var list<string|null> Stack of class names for nested class-like scopes */
-    private array $classStack = [];
+    /** @var array<string, VisitorCallableScope> */
+    private array $scopes = [];
 
     /** @var list<bool> Stack of readonly flags matching classStack */
     private array $readonlyStack = [];
-
-    /** @var int Depth of anonymous class nesting (methods inside anonymous classes are skipped) */
-    private int $anonymousClassDepth = 0;
 
     public function reset(): void
     {
         $this->parameterCounts = [];
         $this->voConstructors = [];
-        $this->methodInfos = [];
-        $this->currentNamespace = null;
-        $this->currentClass = null;
-        $this->closureCounter = 0;
-        $this->classStack = [];
+        $this->scopes = [];
+        $this->resetVisitorMethodContext();
         $this->readonlyStack = [];
-        $this->anonymousClassDepth = 0;
     }
 
     /**
@@ -65,7 +52,10 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
      */
     public function getParameterCounts(): array
     {
-        return $this->parameterCounts;
+        /** @var array<string, int> $projected */
+        $projected = $this->projectLogicalMetricMap($this->parameterCounts, $this->scopes);
+
+        return $projected;
     }
 
     /**
@@ -78,40 +68,38 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
      */
     public function getVoConstructors(): array
     {
-        return $this->voConstructors;
+        /** @var array<string, bool> $projected */
+        $projected = $this->projectLogicalMetricMap($this->voConstructors, $this->scopes);
+
+        return $projected;
     }
 
     /**
-     * @return array<string, array{namespace: ?string, class: ?string, method: string, line: int}>
+     * @return array<string, VisitorCallableScope>
      */
     public function getMethodInfos(): array
     {
-        return $this->methodInfos;
+        return $this->scopes;
     }
 
     /**
      * Returns structured method metrics for each analyzed method.
      *
-     * @return list<MethodWithMetrics>
+     * @return list<CallableWithMetrics>
      */
-    public function getMethodsWithMetrics(): array
+    public function getCallablesWithMetrics(RelativePath $file): array
     {
         $result = [];
 
-        foreach ($this->methodInfos as $fqn => $info) {
+        $ordinals = $this->callableCollisionOrdinals($this->scopes);
+        foreach ($this->scopes as $fqn => $scope) {
             $metrics = (new MetricBag())->with(MetricName::CODE_SMELL_PARAMETER_COUNT, $this->parameterCounts[$fqn] ?? 0);
 
             if (isset($this->voConstructors[$fqn])) {
                 $metrics = $metrics->with(MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR, 1);
             }
 
-            $result[] = new MethodWithMetrics(
-                namespace: $info['namespace'],
-                class: $info['class'],
-                method: $info['method'],
-                line: $info['line'],
-                metrics: $metrics,
-            );
+            $result[] = $this->createCallableWithMetrics($scope, $file, $metrics, $ordinals[$fqn]);
         }
 
         return $result;
@@ -119,61 +107,27 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
 
     public function enterNode(Node $node): ?int
     {
-        // Track namespace
-        if ($node instanceof Node\Stmt\Namespace_) {
-            $this->currentNamespace = $node->name?->toString() ?? '';
-        }
-
-        // Track class-like types with stack for nested anonymous classes
-        $className = $this->extractClassLikeName($node);
-        if ($className !== null) {
-            $this->currentClass = $className;
-            $this->classStack[] = $className;
+        if ($node instanceof Node\Stmt\ClassLike) {
             $this->readonlyStack[] = $node instanceof Node\Stmt\Class_ && $node->isReadonly();
-        } elseif ($this->isClassLikeNode($node)) {
-            // Anonymous class — push null to track scope depth
-            $this->classStack[] = null;
-            $this->readonlyStack[] = false;
-            if ($node instanceof Node\Stmt\Class_ && $node->name === null) {
-                ++$this->anonymousClassDepth;
-            }
         }
-
-        // Class method (skip if inside anonymous class)
-        if ($node instanceof ClassMethod) {
-            if ($this->anonymousClassDepth === 0) {
-                $fqn = $this->buildMethodFqn($node->name->toString());
-                $this->parameterCounts[$fqn] = \count($node->params);
-                $this->methodInfos[$fqn] = [
-                    'namespace' => $this->currentNamespace,
-                    'class' => $this->currentClass,
-                    'method' => $node->name->toString(),
-                    'line' => $node->getStartLine(),
-                ];
-
-                // Detect VO constructor: readonly class + __construct + all promoted + empty body
-                if ($node->name->toString() === '__construct' && $this->isCurrentClassReadonly()) {
-                    if ($this->isVoConstructor($node)) {
-                        $this->voConstructors[$fqn] = true;
-                    }
-                }
-            }
-
+        $scope = $this->enterVisitorMethodContext($node);
+        if ($scope === null) {
+            return null;
+        }
+        if (!$node instanceof Node\FunctionLike) {
             return null;
         }
 
-        // Global function
-        if ($node instanceof Function_) {
-            $fqn = $this->buildFunctionFqn($node->name->toString());
-            $this->parameterCounts[$fqn] = \count($node->params);
-            $this->methodInfos[$fqn] = [
-                'namespace' => $this->currentNamespace,
-                'class' => null,
-                'method' => $node->name->toString(),
-                'line' => $node->getStartLine(),
-            ];
+        $fqn = $scope->traversalKey;
+        $this->scopes[$fqn] = $scope;
+        $this->parameterCounts[$fqn] = \count($node->getParams());
 
-            return null;
+        if ($node instanceof ClassMethod
+            && $scope->member === '__construct'
+            && $this->isCurrentClassReadonly()
+            && $this->isVoConstructor($node)
+        ) {
+            $this->voConstructors[$fqn] = true;
         }
 
         return null;
@@ -181,19 +135,9 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
 
     public function leaveNode(Node $node): ?int
     {
-        // Exit class-like scope — pop stack and restore previous class context
-        if ($this->isClassLikeNode($node)) {
-            if ($node instanceof Node\Stmt\Class_ && $node->name === null) {
-                --$this->anonymousClassDepth;
-            }
-            array_pop($this->classStack);
+        $this->leaveVisitorMethodContext($node);
+        if ($node instanceof Node\Stmt\ClassLike) {
             array_pop($this->readonlyStack);
-            $this->currentClass = $this->classStack !== [] ? $this->classStack[array_key_last($this->classStack)] : null;
-        }
-
-        // Exit namespace scope
-        if ($node instanceof Node\Stmt\Namespace_) {
-            $this->currentNamespace = null;
         }
 
         return null;

@@ -13,7 +13,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Design\DataClassOptions;
@@ -129,7 +128,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('all');
+        $repository->expects(self::never())->method('allDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -142,12 +141,12 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(minMethods: 3));
 
         $symbolPath = SymbolPath::forClass('App\Service', 'SmallClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/SmallClass.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/SmallClass.php'), 10);
 
         $metricBag = $this->makeMetricBag(['methodCount' => 2]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -161,12 +160,12 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(excludeReadonly: true));
 
         $symbolPath = SymbolPath::forClass('App\Dto', 'ReadonlyDto');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/ReadonlyDto.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Dto/ReadonlyDto.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isReadonly' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -180,12 +179,12 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(excludeReadonly: false));
 
         $symbolPath = SymbolPath::forClass('App\Dto', 'ReadonlyDto');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/ReadonlyDto.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Dto/ReadonlyDto.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isReadonly' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -201,12 +200,12 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(excludePromotedOnly: true));
 
         $symbolPath = SymbolPath::forClass('App\Dto', 'PromotedDto');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/PromotedDto.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Dto/PromotedDto.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isPromotedPropertiesOnly' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -220,12 +219,12 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(excludePromotedOnly: false));
 
         $symbolPath = SymbolPath::forClass('App\Dto', 'PromotedDto');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/PromotedDto.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Dto/PromotedDto.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isPromotedPropertiesOnly' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -241,12 +240,12 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Dto', 'PureDto');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Dto/PureDto.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Dto/PureDto.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isDataClass' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -260,12 +259,12 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = $this->makeMetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -288,12 +287,12 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'GoodClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/GoodClass.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/GoodClass.php'), 10);
 
         $metricBag = $this->makeMetricBag(['woc' => 50]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -307,12 +306,12 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'ComplexClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/ComplexClass.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/ComplexClass.php'), 10);
 
         $metricBag = $this->makeMetricBag(['wmc' => 15]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -326,7 +325,7 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'NoWocClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/NoWocClass.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/NoWocClass.php'), 10);
 
         // Omit 'woc' key entirely to get null
         $metricBag = (new MetricBag())
@@ -341,7 +340,7 @@ final class DataClassRuleTest extends TestCase
             ->with('isException', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -357,12 +356,12 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Contract', 'NodeVisitor');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Contract/NodeVisitor.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Contract/NodeVisitor.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isInterface' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -376,12 +375,12 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Base', 'AbstractHandler');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Base/AbstractHandler.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Base/AbstractHandler.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isAbstract' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -395,12 +394,12 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'StatelessService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/StatelessService.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/StatelessService.php'), 5);
 
         $metricBag = $this->makeMetricBag(['propertyCount' => 0]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -414,12 +413,12 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(excludeExceptions: true));
 
         $symbolPath = SymbolPath::forClass('App\Exception', 'FileNotFoundException');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Exception/FileNotFoundException.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Exception/FileNotFoundException.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isException' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -433,12 +432,12 @@ final class DataClassRuleTest extends TestCase
         $rule = new DataClassRule(new DataClassOptions(excludeExceptions: false));
 
         $symbolPath = SymbolPath::forClass('App\Exception', 'FileNotFoundException');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Exception/FileNotFoundException.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Exception/FileNotFoundException.php'), 5);
 
         $metricBag = $this->makeMetricBag(['isException' => 1]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$classInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('get')->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -512,5 +511,45 @@ final class DataClassRuleTest extends TestCase
         $options = DataClassOptions::fromArray([]);
 
         self::assertFalse($options->enabled);
+    }
+    #[Test]
+    public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([
+            self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('get')->willReturn($this->makeMetricBag());
+
+        $violations = (new DataClassRule(new DataClassOptions()))
+            ->analyze(new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:class:App\\Service\\Twin@src/A.php:100',
+            'declaration:class:App\\Service\\Twin@src/B.php:200',
+        ], $subjects);
+    }
+
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            $file,
+            $line,
+            $kind,
+        );
     }
 }

@@ -100,6 +100,14 @@ Qualimetrix implements **bidirectional coupling** consistent with Chidamber & Ke
 - **Self-references excluded:** References to `self`, `static`, and `parent` within the same class are not counted as coupling.
 - **PHP built-in classes excluded:** Dependencies on classes from the PHP distribution (php-src) are excluded from CBO, Ca, and Ce — this includes core classes (`Exception`, `DateTime`, `Closure`), SPL (`ArrayIterator`, `SplFileInfo`), and bundled extensions (`PDO`, `DOMDocument`, `Random\Randomizer`, `CurlHandle`, etc.). Coupling to stable, PHP-maintained types does not increase architectural risk. Classes from PECL extensions (e.g., `Redis`, `Memcached`, `MongoDB\Driver\Manager`) are **not** excluded and count toward CBO as regular dependencies. Structural dependencies (`extends`) are always preserved for DIT calculations.
 
+!!! info "Deviation from original spec"
+    The graph universe includes every named project class, interface, trait, and
+    enum, even when it has no edges. CBO, Ca, and Ce deduplicate logical
+    endpoints and retain undeclared external targets; degree-zero declarations
+    therefore receive known zero values instead of missing metrics. A logical
+    class score is projected to each exact owned declaration so declaration
+    controls, baseline identities, and fingerprints remain independent.
+
 <!-- llms:skip-end -->
 
 ### Configuration
@@ -140,7 +148,7 @@ bin/qmx check src/ --rule-opt="coupling.cbo:scope=application"
 rule's own top level -- not nested under `class:`/`namespace:` -- sets
 `warning`/`error` to the same value on **both** the class and namespace
 dimensions in one go. This differs from `complexity.cyclomatic`'s top-level
-`threshold`, which applies to the method level only: CBO's class/namespace
+`threshold`, which applies to the callable level only: CBO's class/namespace
 defaults already match (14/20), so there is no single "primary" level to
 prefer.
 
@@ -542,6 +550,11 @@ Qualimetrix uses the standard PageRank algorithm with the following parameters:
 - **Convergence epsilon:** 1e-6
 
 Ranks are normalized so they sum to 1.0 across all project classes. Vendor classes are excluded from the graph. Isolated classes (no incoming or outgoing dependencies) receive the base rank of `(1 - d) / N`, where `d` is the damping factor and `N` is the total number of classes.
+
+Each graph vertex is a logical class. Its one ClassRank score is projected to
+every exact declaration owned by that logical class; the score and graph remain
+logical while controls, findings, baseline identity, and fingerprints remain
+declaration-scoped.
 
 **Sqrt scaling for project size:** Because ranks sum to 1.0, individual ClassRank values naturally decrease as the number of classes grows (dilution effect). To keep thresholds meaningful across different project sizes, Qualimetrix applies a `sqrt(classCount / 100)` scaling factor: thresholds remain unchanged for a 100-class project, loosen for larger projects, and tighten for smaller ones.
 

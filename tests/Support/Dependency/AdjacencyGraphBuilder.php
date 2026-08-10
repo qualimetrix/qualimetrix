@@ -8,6 +8,8 @@ use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 
@@ -46,8 +48,8 @@ final readonly class AdjacencyGraphBuilder
                 $classMap[$targetKey] = $targetPath;
 
                 $dependency = new Dependency(
-                    source: $sourcePath,
-                    target: $targetPath,
+                    source: new DeclarationPath($sourcePath, RelativePath::fromString('test.php'), 0),
+                    target: new LogicalClassPath($targetPath),
                     type: DependencyType::TypeHint,
                     location: new Location(RelativePath::fromString('test.php'), 1),
                 );

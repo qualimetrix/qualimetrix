@@ -329,7 +329,7 @@ configuration error.
 - `evictOverriddenMode(array $base, array $overlay): array` — static; removes
   `$base` keys whose threshold-mode group is overridden by `$overlay`, at the
   array's current nesting level (callers recurse for hierarchical rule levels
-  like `method:`/`class:`)
+  like `callable:`/`class:`)
 
 > **Grouping:** a key is a threshold-mode marker when it ends in `threshold`,
 > `warning`, or `error` (case-insensitively, ignoring `_`/`-`); the prefix
@@ -376,7 +376,7 @@ exclude_paths:
 rules:
   complexity.cyclomatic:
     enabled: true
-    method:
+    callable:
       warning: 10
       error: 20
     class:
@@ -477,7 +477,7 @@ computed_metrics:
 ```yaml
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       warning: 15
 ```
 

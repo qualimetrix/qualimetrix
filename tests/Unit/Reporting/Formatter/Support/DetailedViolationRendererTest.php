@@ -62,7 +62,7 @@ final class DetailedViolationRendererTest extends TestCase
     public function itGroupsByFileByDefaultInDetailMode(): void
     {
         $violations = [
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
@@ -70,7 +70,7 @@ final class DetailedViolationRendererTest extends TestCase
                 message: 'Test msg',
                 severity: Severity::Error,
             ),
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Bar.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'Bar'),
                 ruleName: 'test',
@@ -92,7 +92,7 @@ final class DetailedViolationRendererTest extends TestCase
     public function itRendersFlatWhenGroupByNoneIsExplicit(): void
     {
         $violations = [
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
@@ -115,15 +115,15 @@ final class DetailedViolationRendererTest extends TestCase
     public function itGroupsByRuleWhenGroupByRuleIsExplicit(): void
     {
         $violations = [
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Bar.php'), 5),
                 symbolPath: SymbolPath::forClass('App', 'Bar'),
                 ruleName: 'size.method-count',
@@ -144,11 +144,11 @@ final class DetailedViolationRendererTest extends TestCase
     public function itUsesHumanMessageWhenAvailable(): void
     {
         $violations = [
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 15,
@@ -167,11 +167,11 @@ final class DetailedViolationRendererTest extends TestCase
     public function itFallsBackToMessageWhenHumanMessageNull(): void
     {
         $violations = [
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 15,
@@ -188,7 +188,7 @@ final class DetailedViolationRendererTest extends TestCase
     public function itShowsSeverityTagOnViolation(): void
     {
         $violations = [
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
@@ -196,7 +196,7 @@ final class DetailedViolationRendererTest extends TestCase
                 message: 'Error msg',
                 severity: Severity::Error,
             ),
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'test',
@@ -217,11 +217,11 @@ final class DetailedViolationRendererTest extends TestCase
     public function itShowsRuleCodeOnViolation(): void
     {
         $violations = [
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Foo'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Test',
                 severity: Severity::Error,
             ),
@@ -230,14 +230,14 @@ final class DetailedViolationRendererTest extends TestCase
         $context = new FormatterContext(useColor: false);
         $output = $this->renderer->render($violations, $context);
 
-        self::assertStringContainsString('[complexity.cyclomatic.method]', $output);
+        self::assertStringContainsString('[complexity.cyclomatic.callable]', $output);
     }
 
     #[Test]
     public function itShowsSymbolNameOnViolation(): void
     {
         $violations = [
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'test',
@@ -257,23 +257,23 @@ final class DetailedViolationRendererTest extends TestCase
     public function itShowsDebtBreakdownByRule(): void
     {
         $violations = [
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'a'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 20),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'b'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Bar.php'), 5),
                 symbolPath: SymbolPath::forClass('App', 'Bar'),
                 ruleName: 'design.lcom',
@@ -297,17 +297,17 @@ final class DetailedViolationRendererTest extends TestCase
     public function itUsesAllViolationsForDebtBreakdownWhenProvided(): void
     {
         $displayed = [
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'a'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complex',
                 severity: Severity::Error,
             ),
         ];
 
-        $extra = new Violation(
+        $extra = self::violation(
             location: new Location(RelativePath::fromString('src/Bar.php'), 5),
             symbolPath: SymbolPath::forClass('App', 'Bar'),
             ruleName: 'design.lcom',
@@ -330,11 +330,11 @@ final class DetailedViolationRendererTest extends TestCase
     public function itShowsTheAcceptedLevelOnABreach(): void
     {
         $violations = [
-            (new Violation(
+            (self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complexity is 31',
                 severity: Severity::Warning,
                 metricValue: 31,
@@ -351,11 +351,11 @@ final class DetailedViolationRendererTest extends TestCase
     public function itOmitsTheAcceptedLevelFragmentWhenAbsent(): void
     {
         $violations = [
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complexity is 31',
                 severity: Severity::Warning,
                 metricValue: 31,
@@ -372,7 +372,7 @@ final class DetailedViolationRendererTest extends TestCase
     public function itShowsProjectLevelViolationGroupHeader(): void
     {
         $violations = [
-            new Violation(
+            self::violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forNamespace('App\\Service'),
                 ruleName: 'architecture.circular-dependency',
@@ -386,6 +386,15 @@ final class DetailedViolationRendererTest extends TestCase
         $output = $this->renderer->render($violations, $context);
 
         self::assertStringContainsString('[project]', $output);
+    }
+    /** @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations */
+    private static function violation(\Qualimetrix\Core\Violation\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Core\Violation\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Core\Rule\RuleLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Core\Dependency\DependencyType $dependencyType = null, ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), $location->line ?? 0)),
+        };
+        return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
     }
 
 }

@@ -22,8 +22,8 @@ final readonly class FileProcessingResult
     }
 
     /**
-     * @param array<string, array{symbolPath: \Qualimetrix\Core\Symbol\SymbolPath, metrics: MetricBag, line: int}> $methodMetrics
-     * @param array<string, array{symbolPath: \Qualimetrix\Core\Symbol\SymbolPath, metrics: MetricBag, line: int}> $classMetrics
+     * @param list<\Qualimetrix\Core\Metric\CallableWithMetrics> $callableMetrics
+     * @param array<string, array{subject: \Qualimetrix\Core\Symbol\MetricSubject, metrics: MetricBag, line: int}> $classMetrics
      * @param array<string, array{symbolPath: \Qualimetrix\Core\Symbol\SymbolPath, metrics: MetricBag, line: int}> $namespaceMetrics
      * @param list<\Qualimetrix\Core\Dependency\Dependency> $dependencies
      * @param list<\Qualimetrix\Core\Suppression\Suppression> $suppressions
@@ -33,7 +33,7 @@ final readonly class FileProcessingResult
     public static function success(
         RelativePath $filePath,
         MetricBag $fileBag,
-        array $methodMetrics = [],
+        array $callableMetrics = [],
         array $classMetrics = [],
         array $namespaceMetrics = [],
         array $dependencies = [],
@@ -45,7 +45,7 @@ final readonly class FileProcessingResult
             $filePath,
             new CollectedFileData(
                 $fileBag,
-                $methodMetrics,
+                $callableMetrics,
                 $classMetrics,
                 $namespaceMetrics,
                 $dependencies,

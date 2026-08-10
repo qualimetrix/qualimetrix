@@ -15,6 +15,7 @@ final readonly class InheritanceClassInfo
         public ?string $namespace,
         public string $className,
         public int $line,
+        public int $startFilePos,
         public ?string $parentFqn,
     ) {}
 }

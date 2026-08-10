@@ -6,7 +6,6 @@ namespace Qualimetrix\Baseline;
 
 use Qualimetrix\Core\Time\ClockInterface;
 use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Core\Violation\ChannelShape;
 use Qualimetrix\Core\Violation\Violation;
 
 /**
@@ -48,7 +47,43 @@ final readonly class BaselineGenerator
      */
     public function generate(array $violations, array $scope): BaselineCapture
     {
-        /** @var array<string, array{identity: BaselineIdentity, violations: list<Violation>}> $groups */
+        $groups = self::groupViolations($violations);
+        $generated = $this->clock->now();
+
+        $entries = [];
+        $rejected = [];
+
+        foreach ($groups as $group) {
+            $entry = $this->captureGroup($group['identity'], $group['violations']);
+
+            if ($entry instanceof BaselineEntry) {
+                $entries[] = $entry;
+            } else {
+                $rejected[] = [
+                    'identity' => $group['identity'],
+                    'reason' => $entry,
+                    'memberCount' => \count($group['violations']),
+                ];
+            }
+        }
+
+        return BaselineCapture::fromRejectedGroups(
+            new Baseline(
+                generated: $generated,
+                scope: $scope,
+                entries: $entries,
+            ),
+            $rejected,
+        );
+    }
+
+    /**
+     * @param list<Violation> $violations
+     *
+     * @return array<string, array{identity: BaselineIdentity, violations: non-empty-list<Violation>}>
+     */
+    private static function groupViolations(array $violations): array
+    {
         $groups = [];
 
         foreach ($violations as $violation) {
@@ -59,33 +94,13 @@ final readonly class BaselineGenerator
             $groups[$key]['violations'][] = $violation;
         }
 
-        $entries = [];
-        $uncaptured = [];
-
-        foreach ($groups as $group) {
-            $entry = $this->captureGroup($group['identity'], $group['violations']);
-
-            if ($entry instanceof BaselineEntry) {
-                $entries[] = $entry;
-            } else {
-                $uncaptured[] = new UncapturedGroup($group['identity'], $entry, \count($group['violations']));
-            }
-        }
-
-        return new BaselineCapture(
-            new Baseline(
-                generated: $this->clock->now(),
-                scope: $scope,
-                entries: $entries,
-            ),
-            $uncaptured,
-        );
+        return $groups;
     }
 
     /**
      * The entry for a group, or the reason there is none.
      *
-     * @param list<Violation> $group
+     * @param non-empty-list<Violation> $group
      */
     private function captureGroup(BaselineIdentity $identity, array $group): BaselineEntry|UncapturedReason
     {
@@ -95,7 +110,7 @@ final readonly class BaselineGenerator
             return UncapturedReason::UndeclaredChannel;
         }
 
-        if ($declaration->shape === ChannelShape::Occurrence) {
+        if ($declaration->direction === null) {
             return new BaselineEntry($identity, null, \count($group));
         }
 

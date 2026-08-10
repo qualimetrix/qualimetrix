@@ -57,11 +57,11 @@ final class TextVerboseFormatterTest extends TestCase
     public function itDelegatesToTextFormatterWithDetailEnabled(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 42),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Cyclomatic complexity is 15',
                 severity: Severity::Error,
                 metricValue: 15,
@@ -159,11 +159,11 @@ final class TextVerboseFormatterTest extends TestCase
     public function itUsesHumanMessageWhenAvailable(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 42),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Cyclomatic complexity is 25, exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -184,11 +184,11 @@ final class TextVerboseFormatterTest extends TestCase
     public function itFallsBackToMessageWhenHumanMessageNull(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 42),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic.method',
+                violationCode: 'complexity.cyclomatic.callable',
                 message: 'Cyclomatic complexity is 25, exceeds threshold of 10',
                 severity: Severity::Error,
                 metricValue: 25,
@@ -208,7 +208,7 @@ final class TextVerboseFormatterTest extends TestCase
     public function itOutputsDebtBreakdown(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 10),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'doWork'),
                 ruleName: 'complexity.cyclomatic',
@@ -217,7 +217,7 @@ final class TextVerboseFormatterTest extends TestCase
                 severity: Severity::Error,
                 metricValue: 25,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Foo.php'), 20),
                 symbolPath: SymbolPath::forMethod('App', 'Foo', 'process'),
                 ruleName: 'complexity.cyclomatic',
@@ -226,7 +226,7 @@ final class TextVerboseFormatterTest extends TestCase
                 severity: Severity::Warning,
                 metricValue: 15,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Bar.php'), 5),
                 symbolPath: SymbolPath::forClass('App', 'Bar'),
                 ruleName: 'design.lcom',
@@ -252,7 +252,7 @@ final class TextVerboseFormatterTest extends TestCase
     private function buildMultiFileReport(): Report
     {
         return ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('b.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'B'),
                 ruleName: 'lcom',
@@ -260,15 +260,15 @@ final class TextVerboseFormatterTest extends TestCase
                 message: 'LCOM is 5',
                 severity: Severity::Warning,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('a.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A1'),
                 ruleName: 'complexity',
-                violationCode: 'complexity.method',
+                violationCode: 'complexity.callable',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('a.php'), 5),
                 symbolPath: SymbolPath::forClass('App', 'A2'),
                 ruleName: 'complexity',
@@ -281,4 +281,15 @@ final class TextVerboseFormatterTest extends TestCase
             ->duration(0.05)
             ->build();
     }
+
+    /** @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations */
+    private static function violation(\Qualimetrix\Core\Violation\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Core\Violation\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Core\Rule\RuleLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Core\Dependency\DependencyType $dependencyType = null, ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), $location->line ?? 0)),
+        };
+        return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+    }
+
 }

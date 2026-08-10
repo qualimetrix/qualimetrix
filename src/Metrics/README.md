@@ -9,6 +9,19 @@ Metrics are collectors that gather metrics from the AST. Each collector:
 
 Collectors **do not interpret** metrics — they only collect them. Interpretation happens in Rules.
 
+## Visitor context foundation
+
+The exact root `Metrics/` primitives are cross-category traversal contracts:
+
+- `VisitorFileEntryScope.php` owns all mutable per-file lexical state, file-entry subjects, closure numbering, and callable traversal ordinals; entering a callable produces one typed scope and leaving returns that same scope before popping it.
+- `VisitorCallableScope.php` is the immutable eleven-field callable identity passed from traversal to metric projection. It carries lexical, logical, positional, callable-kind, anonymous-syntax, and anonymous-class-lineage facts without parser nodes or metric state.
+- `VisitorCallableMetadata.php` is stateless and projects `VisitorCallableScope` values into immutable callable metrics, collision ordinals, and logical metric maps.
+- `VisitorMethodContext.php` composes the live scope and stateless metadata contracts for every consumer through `VisitorMethodTrackingTrait`; category visitors retain only their metric-specific state.
+
+The complete consumer set is `CodeSmellVisitor`, `IdenticalSubExpressionVisitor`, `ParameterCountVisitor`, `UnreachableCodeVisitor`, `CognitiveComplexityVisitor`, `CyclomaticComplexityVisitor`, `NpathComplexityVisitor`, `HalsteadVisitor`, `HardcodedCredentialsVisitor`, `SecurityPatternVisitor`, `SensitiveParameterVisitor`, and `MethodStatementCountVisitor`. Each visitor keeps metric state locally and pairs context entry and exit for every AST node.
+
+Semantic policy stays in category subjects. `CodeSmell/ControlFlow/ControlFlowSmells.php`, `CodeSmell/Debug/DebugCodeSmells.php`, and `CodeSmell/BooleanArgument/BooleanArgumentSmells.php` return `CodeSmellLocation`; the complete `CodeSmell/RepeatedExpression/` stack owns repeated-expression findings. `Security/Credential/` owns credential literal classification and locations, while `Security/SensitiveNameMatcher.php` remains the shared Security matcher.
+
 ---
 
 ## Metrics Table
@@ -51,7 +64,7 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 | `unreachableCode`, `unreachableCode.firstLine`                       | Code Smell      | Method           | Unreachable code count after terminal statements and first unreachable line                                                                                                       |
 | `identicalSubExpression.{type}` (entries)                            | Code Smell      | File             | Identical sub-expression findings per type via DataBag entries (`identical_operands`, `duplicate_condition`, `identical_ternary`, `duplicate_match_arm`, `duplicate_switch_case`) |
 | **Design**                                                           |                 |                  |                                                                                                                                                                                   |
-| `typeCoverage.param`, `typeCoverage.return`, `typeCoverage.property` | Design          | Class            | Type declaration coverage percentages (0-100) for parameters, return types, properties                                                                                            |
+| `typeCoverage.param`, `typeCoverage.return`, `typeCoverage.property` | Design          | Class            | Type declaration coverage percentages (0-100) for parameters, return types, properties; property hooks contribute only explicitly declared parameters                             |
 | `typeCoverage.pct`                                                   | Design          | Class            | Overall type coverage percentage (derived from typed/total counts)                                                                                                                |
 | `typeCoverage.paramTotal`, `typeCoverage.paramTyped`                 | Design          | Class            | Raw counts: total and typed parameters                                                                                                                                            |
 | `typeCoverage.returnTotal`, `typeCoverage.returnTyped`               | Design          | Class            | Raw counts: total and typed return declarations                                                                                                                                   |
@@ -76,6 +89,49 @@ Collectors **do not interpret** metrics — they only collect them. Interpretati
 - **[Design/](Design/)** — Type coverage metrics, type coverage percentage (derived)
 - **[ComputedMetric/](ComputedMetric/)** — Computed metric evaluator (health scores via Expression Language); `ComputedMetricDependencyGraphCalculator` sorts definitions into dependency order (Kahn's algorithm, phase-separated: graph construction, in-degree counting, queue traversal, cycle detection)
 - **[Security/](Security/)** — Hardcoded credentials, security pattern detection (SQL injection, XSS, command injection), sensitive parameter detection. Pattern detectors: `CommandInjectionDetector`, `SqlInjectionDetector`, `XssDetector`, `SuperglobalAnalyzer` (extracted from SecurityPatternVisitor)
+
+### Credential subject
+
+`Security/Credential/` owns the complete hardcoded-credential collection stack:
+
+- `CredentialLocation.php` is the immutable `{line, pattern, subjectId}` result
+  produced for one detected literal.
+- `HardcodedCredentialsVisitor.php` owns traversal and reset lifecycle, delegates
+  literal policy to `CredentialLiterals`, and maps each location's `subjectId`
+  through the shared visitor-context foundation.
+- `HardcodedCredentialsCollector.php` adapts those locations to
+  `security.hardcodedCredentials` DataBag entries with exact file or declaration
+  subject components; it depends on `AbstractCollector`, the visitor, and the
+  cross-security `SensitiveNameMatcher`, and deliberately exposes no callable
+  metric provider contract.
+
+The dependency direction is root Metrics traversal foundation and
+`Security/SensitiveNameMatcher` into the Credential subject; no other metric
+category is imported. `HardcodedCredentialsVisitorTest` directly covers
+detection, traversal state, subject tracking, and reset behavior;
+`HardcodedCredentialsCollectorTest` directly covers metric projection, exact
+file/class ownership, reset, and the absent callable-provider surface.
+`DogfoodingTopologyTest` fixes the four-file subject inventory and its allowed
+dependencies.
+
+### Foundation coverage
+
+The complete consumer set is `CodeSmellVisitor`,
+`IdenticalSubExpressionVisitor`, `ParameterCountVisitor`,
+`UnreachableCodeVisitor`, `CognitiveComplexityVisitor`,
+`CyclomaticComplexityVisitor`, `NpathComplexityVisitor`, `HalsteadVisitor`,
+`HardcodedCredentialsVisitor`, `SecurityPatternVisitor`,
+`SensitiveParameterVisitor`, and `MethodStatementCountVisitor`. The foundation
+depends only on Core; metric categories depend on it, never on each other.
+Focused coverage is in `CodeSmellVisitorTest`,
+`IdenticalSubExpressionVisitorTest`, `ParameterCountCollectorTest`,
+`UnreachableCodeCollectorTest`, `CognitiveComplexityVisitorTest`,
+`CyclomaticComplexityVisitorTest`, `NpathComplexityCollectorTest`,
+`HalsteadCollectorTest`, `HardcodedCredentialsVisitorTest`,
+`SecurityPatternVisitorTest`, `SensitiveParameterVisitorTest`,
+`MethodStatementCountCollectorTest`, and
+`PropertyHookControlPrecedenceTest`; `GoldenFileAggregationTest` is the
+read-only aggregation oracle.
 
 ---
 
@@ -134,7 +190,7 @@ counts therefore remain exact for dependent metrics and rule gates.
 - `reset(): void` — state reset between files
 
 **Optional interfaces:**
-- `MethodMetricsProviderInterface` — provides method-level metrics
+- `CallableMetricsProviderInterface` — provides callable-level metrics
 - `ClassMetricsProviderInterface` — provides class-level metrics
 - `NamespaceMetricProviderInterface` — provides source-owned namespace contributions for file metrics
 - `DerivedCollectorInterface` — derived metrics (require other collectors)
@@ -162,7 +218,7 @@ Describes a metric and its aggregation strategies.
 ```php
 new MetricDefinition(
     name: 'ccn',
-    collectedAt: SymbolLevel::Method,
+    collectedAt: SymbolLevel::Callable,
     aggregations: [
         SymbolLevel::Class_->value => [Sum, Average, Max],
         SymbolLevel::Namespace_->value => [Sum, Average, Max],
@@ -183,7 +239,7 @@ new MetricDefinition(
 4. [ ] Implement `getMetricDefinitions(): array` — aggregation descriptions
 5. [ ] Implement `collect()` — metric collection from visitor
 6. [ ] For class-level metrics: implement `ClassMetricsProviderInterface`
-7. [ ] For method-level metrics: implement `MethodMetricsProviderInterface`
+7. [ ] For callable-level metrics: implement `CallableMetricsProviderInterface`
 8. [ ] Add `qmx.collector` DI tag (automatically via autoconfiguration)
 9. [ ] Write unit tests (including a test for getMetricDefinitions)
 10. [ ] Add value hints to `src/Reporting/Template/src/hints.js` (`METRIC_HINTS` map) — range-based interpretations for the HTML report

@@ -117,6 +117,14 @@ Qualimetrix uses the **Rabin-Karp rolling hash** algorithm for efficient detecti
 
 Because function/method/class names are preserved during normalization, the detector will **not** flag two methods that call completely different APIs, even if their control flow structure is identical.
 
+!!! info "Deviation from original spec"
+    A duplicate group uses the full SHA-256 of the complete normalized matched
+    token sequence plus token count as its semantic occurrence. The project is
+    the finding subject; primary-file choice, source lines, discovery order, and
+    related-copy order are presentation only. Adding a lexically earlier copy
+    therefore does not re-key an existing baseline entry or formatter
+    fingerprint.
+
 !!! info "Constant and property arrays are always excluded"
     A duplicate block that lies **entirely** inside a `const` declaration or a static/instance property's array-literal initializer is never reported. Rows of a lookup table (e.g. `'key' => ['a' => ..., 'b' => ...]` repeated with different values) normalize to identical token sequences, but "extract a shared method" is not actionable advice for a data table — repeating the same field shape across rows is the normal, correct form of that table. A block spanning both a data declaration and executable code (or lying entirely in a method body) is still reported. This suppression is unconditional and cannot be turned off.
 

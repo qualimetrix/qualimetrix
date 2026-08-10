@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
@@ -245,10 +247,15 @@ final class NamespaceDrillDownTest extends TestCase
             ],
         );
 
-        // Two violations: one class-level, one method-level (both count toward the class)
+        // Two violations: one class-level, one callable-level (both count toward the class)
         $violations = [
             new Violation(
                 location: new Location(RelativePath::fromString('src/Service/Foo.php'), 10),
+                subject: MetricSubject::declaration(new DeclarationPath(
+                    $classPath,
+                    RelativePath::fromString('src/Service/Foo.php'),
+                    0,
+                )),
                 symbolPath: $classPath,
                 ruleName: 'test.rule',
                 violationCode: 'T001',
@@ -257,6 +264,11 @@ final class NamespaceDrillDownTest extends TestCase
             ),
             new Violation(
                 location: new Location(RelativePath::fromString('src/Service/Foo.php'), 20),
+                subject: MetricSubject::declaration(new DeclarationPath(
+                    $methodPath,
+                    RelativePath::fromString('src/Service/Foo.php'),
+                    0,
+                )),
                 symbolPath: $methodPath,
                 ruleName: 'test.rule',
                 violationCode: 'T002',
@@ -292,6 +304,7 @@ final class NamespaceDrillDownTest extends TestCase
         $violations = [
             new Violation(
                 location: new Location(RelativePath::fromString('src/Service/Foo.php'), 10),
+                subject: MetricSubject::aggregate($nsPath),
                 symbolPath: $nsPath,
                 ruleName: 'test.rule',
                 violationCode: 'T001',

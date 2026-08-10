@@ -23,6 +23,8 @@ final class CompositeCollector
     /** @var list<DerivedCollectorInterface> */
     private readonly array $derivedCollectors;
 
+    private readonly DerivedCollectorRunner $derivedCollectorRunner;
+
     /**
      * Optional dependency visitor to collect dependencies in the same traversal.
      */
@@ -41,6 +43,9 @@ final class CompositeCollector
         $this->derivedCollectors = $derivedCollectors instanceof Traversable
             ? iterator_to_array($derivedCollectors, false)
             : array_values($derivedCollectors);
+        $this->derivedCollectorRunner = new DerivedCollectorRunner(
+            $this->derivedCollectors,
+        );
     }
 
     /**
@@ -78,49 +83,14 @@ final class CompositeCollector
             return new CollectionOutput(new MetricBag(), []);
         }
 
-        // Create traverser with all visitors
         $traverser = new NodeTraverser();
-
-        foreach ($this->collectors as $collector) {
-            $traverser->addVisitor($collector->getVisitor());
-        }
-
-        // Add dependency visitor if configured. The file path comes pre-relativized
-        // from FileProcessor (same key shape used for `filePath` and the per-file
-        // suppression dict). Without this, dependency-derived violations
-        // (e.g. `architecture.layer-violation`) carry an absolute path that never
-        // matches the relative-keyed suppression map, so `@qmx-ignore` tags on
-        // classes can't drop them.
-        if ($this->dependencyVisitor !== null) {
-            if ($filePath === null) {
-                throw new LogicException(
-                    'filePath is required when a dependency visitor is configured (CompositeCollector::collect)',
-                );
-            }
-            $this->dependencyVisitor->setFile($filePath);
-            $traverser->addVisitor($this->dependencyVisitor);
-        }
-
-        // Single AST traversal for both metrics and dependencies
+        $this->configureTraverser($traverser, $filePath);
         $traverser->traverse($ast);
 
-        // Collect and merge metrics from all collectors
-        $result = new MetricBag();
-
-        foreach ($this->collectors as $collector) {
-            $metrics = $collector->collect($file, $ast);
-            $result = $result->merge($metrics);
-        }
-
-        // Apply derived collectors
-        if ($this->derivedCollectors !== []) {
-            $result = $this->applyDerivedCollectors($result);
-        }
-
-        // Collect dependencies
-        $dependencies = $this->dependencyVisitor?->getDependencies() ?? [];
-
-        return new CollectionOutput($result, array_values($dependencies));
+        return new CollectionOutput(
+            $this->collectMetrics($file, $ast, $filePath),
+            array_values($this->dependencyVisitor?->getDependencies() ?? []),
+        );
     }
 
     /**
@@ -149,157 +119,37 @@ final class CompositeCollector
         return $this->derivedCollectors;
     }
 
-    /**
-     * Applies derived collectors to compute derived metrics.
-     *
-     * Derived collectors are sorted topologically based on their requires()/provides()
-     * dependencies, and results are accumulated so each collector can see outputs
-     * of previously executed collectors.
-     *
-     * Optimized: indexes metrics by FQN in a single pass (O(M)),
-     * then applies derived collectors for each FQN (O(N × K)).
-     * Total complexity: O(M + N × K) instead of O(N × M × K).
-     */
-    private function applyDerivedCollectors(MetricBag $baseBag): MetricBag
+    private function configureTraverser(NodeTraverser $traverser, ?RelativePath $filePath): void
     {
-        // Index metrics by FQN in single pass — O(M)
-        $metricsByFqn = $this->indexMetricsByFqn($baseBag);
-
-        if ($metricsByFqn === []) {
-            return $baseBag;
+        foreach ($this->collectors as $collector) {
+            $traverser->addVisitor($collector->getVisitor());
         }
 
-        // Sort derived collectors topologically so each can see previous outputs
-        $sortedCollectors = $this->sortDerivedCollectors($this->derivedCollectors);
-
-        $result = $baseBag;
-
-        // Apply derived collectors for each FQN — O(N × K)
-        // Accumulate results so each derived collector can see previous outputs
-        foreach ($metricsByFqn as $fqn => $workingMetrics) {
-            foreach ($sortedCollectors as $derivedCollector) {
-                $derivedMetrics = $derivedCollector->calculate($workingMetrics);
-
-                // Accumulate into working metrics so next collector can see these results
-                $workingMetrics = $workingMetrics->merge($derivedMetrics);
-
-                foreach ($derivedMetrics->all() as $name => $value) {
-                    $result = $result->with($name . ':' . $fqn, $value);
-                }
+        if ($this->dependencyVisitor !== null) {
+            if ($filePath === null) {
+                throw new LogicException('filePath is required when a dependency visitor is configured (CompositeCollector::collect)');
             }
+            $this->dependencyVisitor->setFile($filePath);
+            $traverser->addVisitor($this->dependencyVisitor);
         }
-
-        return $result;
     }
 
-    /**
-     * Sorts derived collectors topologically using Kahn's algorithm.
-     *
-     * @param list<DerivedCollectorInterface> $collectors
-     *
-     * @return list<DerivedCollectorInterface>
-     */
-    private function sortDerivedCollectors(array $collectors): array
+    /** @param Node[] $ast */
+    private function collectMetrics(SplFileInfo $file, array $ast, ?RelativePath $filePath): MetricBag
     {
-        if (\count($collectors) <= 1) {
-            return $collectors;
+        $result = new MetricBag();
+        foreach ($this->collectors as $collector) {
+            $result = $result->merge($collector->collect($file, $ast));
         }
 
-        // Build mapping: collector name → collector index
-        $indexByName = [];
-        foreach ($collectors as $index => $collector) {
-            $indexByName[$collector->getName()] = $index;
+        if ($this->derivedCollectors === []) {
+            return $result;
+        }
+        if ($filePath === null) {
+            throw new LogicException('filePath is required when derived collectors are configured (CompositeCollector::collect)');
         }
 
-        // Calculate in-degree and build dependency graph
-        $inDegree = array_fill(0, \count($collectors), 0);
-        $dependents = array_fill(0, \count($collectors), []);
-
-        foreach ($collectors as $index => $collector) {
-            $seen = [];
-            foreach ($collector->requires() as $required) {
-                // requires() returns collector names, not metric names
-                if (isset($indexByName[$required]) && !isset($seen[$required])) {
-                    $seen[$required] = true;
-                    $providerIndex = $indexByName[$required];
-                    $inDegree[$index]++;
-                    $dependents[$providerIndex][] = $index;
-                }
-            }
-        }
-
-        // Kahn's algorithm
-        $queue = [];
-        foreach ($inDegree as $index => $degree) {
-            if ($degree === 0) {
-                $queue[] = $index;
-            }
-        }
-
-        $sorted = [];
-        while ($queue !== []) {
-            $current = array_shift($queue);
-            $sorted[] = $collectors[$current];
-
-            foreach ($dependents[$current] as $dependentIndex) {
-                $inDegree[$dependentIndex]--;
-                if ($inDegree[$dependentIndex] === 0) {
-                    $queue[] = $dependentIndex;
-                }
-            }
-        }
-
-        // If not all sorted, there is a cyclic dependency
-        if (\count($sorted) !== \count($collectors)) {
-            $unsorted = array_filter(
-                $collectors,
-                static fn(DerivedCollectorInterface $c): bool => !\in_array($c, $sorted, true),
-            );
-            $names = array_map(
-                static fn(DerivedCollectorInterface $c): string => $c->getName(),
-                array_values($unsorted),
-            );
-
-            throw new LogicException(\sprintf(
-                'Cyclic dependency detected between derived collectors: %s',
-                implode(', ', $names),
-            ));
-        }
-
-        return $sorted;
+        return $this->derivedCollectorRunner->apply($result, $this->collectors, $filePath);
     }
 
-    /**
-     * Indexes all metrics by FQN in a single pass.
-     *
-     * Metric keys are in format: metricName:fqn
-     * Returns array of FQN => MetricBag with base metric names.
-     *
-     * @return array<string, MetricBag>
-     */
-    private function indexMetricsByFqn(MetricBag $bag): array
-    {
-        /** @var array<string, array<string, int|float>> $byFqn */
-        $byFqn = [];
-
-        foreach ($bag->all() as $key => $value) {
-            $colonPos = strpos($key, ':');
-            if ($colonPos === false) {
-                continue;
-            }
-
-            $metricName = substr($key, 0, $colonPos);
-            $fqn = substr($key, $colonPos + 1);
-
-            $byFqn[$fqn][$metricName] = $value;
-        }
-
-        // Convert arrays to MetricBags
-        $result = [];
-        foreach ($byFqn as $fqn => $metrics) {
-            $result[$fqn] = MetricBag::fromArray($metrics);
-        }
-
-        return $result;
-    }
 }

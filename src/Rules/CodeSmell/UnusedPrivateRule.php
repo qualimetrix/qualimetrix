@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\CodeSmell;
 
+use LogicException;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
@@ -69,35 +71,58 @@ final class UnusedPrivateRule extends AbstractRule
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Class_) as $classInfo) {
-            $metrics = $context->metrics->get($classInfo->symbolPath);
-            $total = (int) ($metrics->get(MetricName::STRUCTURE_UNUSED_PRIVATE_TOTAL) ?? 0);
+        foreach ($context->metrics->allDeclarations() as $classInfo) {
+            $violations = [...$violations, ...$this->violationsForDeclaration($classInfo, $context)];
+        }
 
-            if ($total === 0) {
-                continue;
-            }
+        return $violations;
+    }
 
-            foreach (self::ENTRY_KEYS as $entryKey => $label) {
-                foreach ($metrics->entries($entryKey) as $entry) {
-                    $line = (int) $entry['line'];
-                    $name = isset($entry['name']) ? (string) $entry['name'] : null;
-                    $message = $name !== null ? \sprintf('%s `%s`', $label, $name) : $label;
+    /**
+     * @return list<Violation>
+     */
+    private function violationsForDeclaration(SymbolInfo $classInfo, AnalysisContext $context): array
+    {
+        $subject = $classInfo->subject ?? throw new LogicException('Unused private findings require an exact class subject');
+        $declaration = $subject->declarationPath() ?? throw new LogicException('Unused private findings require a declaration subject');
+        if ($declaration->logical->getType() !== SymbolType::Class_) {
+            return [];
+        }
 
-                    $violations[] = new Violation(
-                        location: new Location($classInfo->file, $line, precise: true),
-                        symbolPath: $classInfo->symbolPath,
-                        ruleName: $this->getName(),
-                        violationCode: $this->getName(),
-                        message: $message,
-                        severity: Severity::Warning,
-                        metricValue: $total,
-                        recommendation: 'Remove the unused symbol to reduce dead code.',
-                    );
-                }
+        $metrics = $context->metrics->getSubject($subject);
+        $total = (int) ($metrics->get(MetricName::STRUCTURE_UNUSED_PRIVATE_TOTAL) ?? 0);
+        if ($total === 0) {
+            return [];
+        }
+
+        $violations = [];
+        foreach (self::ENTRY_KEYS as $entryKey => $label) {
+            foreach ($metrics->entries($entryKey) as $entry) {
+                $line = (int) $entry['line'];
+
+                $violations[] = new Violation(
+                    location: new Location($classInfo->file, $line, precise: true),
+                    subject: $subject,
+                    symbolPath: $declaration->logical,
+                    ruleName: $this->getName(),
+                    violationCode: $this->getName(),
+                    message: $this->entryMessage($label, $entry),
+                    severity: Severity::Warning,
+                    metricValue: $total,
+                    recommendation: 'Remove the unused symbol to reduce dead code.',
+                );
             }
         }
 
         return $violations;
+    }
+
+    /**
+     * @param array<string, scalar> $entry
+     */
+    private function entryMessage(string $label, array $entry): string
+    {
+        return isset($entry['name']) ? \sprintf('%s `%s`', $label, (string) $entry['name']) : $label;
     }
 
     public static function getOptionsClass(): string

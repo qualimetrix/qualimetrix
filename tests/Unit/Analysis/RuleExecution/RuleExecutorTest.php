@@ -20,6 +20,8 @@ use Qualimetrix\Core\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Rule\RuleSelector;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\RuleExclusionCaptureHolder;
@@ -351,14 +353,14 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itFiltersViolationsByViolationCodeDuringExecute(): void
     {
-        $methodViolation = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic.method');
+        $methodViolation = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic.callable');
         $classViolation = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic.class');
 
         $rule = $this->createHierarchicalRule(
             'complexity.cyclomatic',
-            [RuleLevel::Method, RuleLevel::Class_],
+            [RuleLevel::Callable, RuleLevel::Class_],
             [
-                RuleLevel::Method->value => [$methodViolation],
+                RuleLevel::Callable->value => [$methodViolation],
                 RuleLevel::Class_->value => [$classViolation],
             ],
         );
@@ -426,14 +428,14 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itExecutesHierarchicalRuleWithAllLevelsEnabled(): void
     {
-        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.method', level: RuleLevel::Method);
+        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.callable', level: RuleLevel::Callable);
         $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
 
         $rule = $this->createHierarchicalRule(
             'complexity',
-            [RuleLevel::Method, RuleLevel::Class_],
+            [RuleLevel::Callable, RuleLevel::Class_],
             [
-                RuleLevel::Method->value => [$methodViolation],
+                RuleLevel::Callable->value => [$methodViolation],
                 RuleLevel::Class_->value => [$classViolation],
             ],
         );
@@ -452,14 +454,14 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itExecutesHierarchicalRuleWithSpecificViolationCodeDisabled(): void
     {
-        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.method', level: RuleLevel::Method);
+        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.callable', level: RuleLevel::Callable);
         $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
 
         $rule = $this->createHierarchicalRule(
             'complexity',
-            [RuleLevel::Method, RuleLevel::Class_],
+            [RuleLevel::Callable, RuleLevel::Class_],
             [
-                RuleLevel::Method->value => [$methodViolation],
+                RuleLevel::Callable->value => [$methodViolation],
                 RuleLevel::Class_->value => [$classViolation],
             ],
         );
@@ -482,9 +484,9 @@ final class RuleExecutorTest extends TestCase
     {
         $rule = $this->createHierarchicalRule(
             'complexity',
-            [RuleLevel::Method, RuleLevel::Class_],
+            [RuleLevel::Callable, RuleLevel::Class_],
             [
-                RuleLevel::Method->value => [$this->createViolation('complexity', violationCode: 'complexity.method')],
+                RuleLevel::Callable->value => [$this->createViolation('complexity', violationCode: 'complexity.callable')],
                 RuleLevel::Class_->value => [$this->createViolation('complexity', violationCode: 'complexity.class')],
             ],
         );
@@ -503,20 +505,20 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itAppliesOnlyRulesFilterToHierarchicalRule(): void
     {
-        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.method', level: RuleLevel::Method);
+        $methodViolation = $this->createViolation('complexity', violationCode: 'complexity.callable', level: RuleLevel::Callable);
         $classViolation = $this->createViolation('complexity', violationCode: 'complexity.class', level: RuleLevel::Class_);
 
         $rule = $this->createHierarchicalRule(
             'complexity',
-            [RuleLevel::Method, RuleLevel::Class_],
+            [RuleLevel::Callable, RuleLevel::Class_],
             [
-                RuleLevel::Method->value => [$methodViolation],
+                RuleLevel::Callable->value => [$methodViolation],
                 RuleLevel::Class_->value => [$classViolation],
             ],
         );
 
-        // Only enable method-level violations
-        $config = new AnalysisConfiguration(onlyRules: ['complexity.method']);
+        // Only enable callable-level violations
+        $config = new AnalysisConfiguration(onlyRules: ['complexity.callable']);
         $provider = $this->createConfiguredProvider($config);
         $executor = new RuleExecutor([$rule], $provider);
 
@@ -658,6 +660,11 @@ final class RuleExecutorTest extends TestCase
         $classCohesion = new Violation(
             location: new Location(RelativePath::fromString('src/Metrics/Collector.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Metrics', 'Collector'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App\\Metrics', 'Collector'),
+                RelativePath::fromString('src/Metrics/Collector.php'),
+                10,
+            )),
             ruleName: 'computed.health',
             violationCode: 'health.cohesion',
             message: 'Class cohesion health is low',
@@ -694,6 +701,7 @@ final class RuleExecutorTest extends TestCase
         $projectCohesion = new Violation(
             location: Location::none(),
             symbolPath: SymbolPath::forProject(),
+            subject: MetricSubject::aggregate(SymbolPath::forProject()),
             ruleName: 'computed.health',
             violationCode: 'health.cohesion',
             message: 'Project cohesion health is low',
@@ -844,6 +852,7 @@ final class RuleExecutorTest extends TestCase
                 line: 1,
             ),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('test/file.php')),
+            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('test/file.php'))),
             ruleName: $ruleName,
             violationCode: $violationCode ?? $ruleName,
             message: "Violation from $ruleName",
@@ -863,6 +872,7 @@ final class RuleExecutorTest extends TestCase
                 line: 1,
             ),
             symbolPath: SymbolPath::forNamespace($namespace),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace($namespace)),
             ruleName: $ruleName,
             violationCode: $violationCode ?? $ruleName,
             message: "Violation from $ruleName in $namespace",
@@ -945,6 +955,7 @@ final class RuleExecutorTest extends TestCase
                 line: 1,
             ),
             symbolPath: SymbolPath::forFile($symbolPathFile),
+            subject: MetricSubject::aggregate(SymbolPath::forFile($symbolPathFile)),
             ruleName: $ruleName,
             violationCode: $ruleName,
             message: "Violation from $ruleName in $file",

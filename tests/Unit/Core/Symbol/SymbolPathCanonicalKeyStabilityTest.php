@@ -90,7 +90,7 @@ final class SymbolPathCanonicalKeyStabilityTest extends TestCase
 
         // Method
         self::assertSame(
-            'method:App\\Service\\UserService::calculate',
+            'callable:App\\Service\\UserService::calculate',
             SymbolPath::forMethod('App\\Service', 'UserService', 'calculate')->toCanonical(),
         );
 

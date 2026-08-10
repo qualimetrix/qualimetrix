@@ -87,6 +87,249 @@ PHP;
     }
 
     #[Test]
+    public function itRecognizesPrivateMethodCalledOnNewSelfInstance(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class InMemoryMetricRepository
+{
+    public function merge(): void
+    {
+        $merged = new self();
+        $merged->rebuildTypedIndexes();
+    }
+
+    private function rebuildTypedIndexes(): void
+    {
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\InMemoryMetricRepository'));
+    }
+
+    #[Test]
+    public function itRecognizesPrivateMethodCalledOnNewStaticInstance(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class StaticFactory
+{
+    public function merge(): void
+    {
+        $merged = new static();
+        $merged->rebuildTypedIndexes();
+    }
+
+    private function rebuildTypedIndexes(): void
+    {
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\StaticFactory'));
+    }
+
+    #[Test]
+    public function itDoesNotTreatForeignReceiverAsSameClassInstance(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class ForeignReceiver
+{
+    public function useOther(Other $other): void
+    {
+        $other->privateMethod();
+    }
+
+    private function privateMethod(): void
+    {
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.method:App\ForeignReceiver'));
+    }
+
+    #[Test]
+    public function itDoesNotShareSameClassReceiverProofWithNestedClosure(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class ClosureReceiverScope
+{
+    public function createCallback(): \Closure
+    {
+        $same = new self();
+
+        return function (object $same): void {
+            $same->privateMethod();
+        };
+    }
+
+    private function privateMethod(): void
+    {
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.method:App\ClosureReceiverScope'));
+    }
+
+    #[Test]
+    public function itDoesNotLeakNestedClosureReceiverProofToOuterMethod(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class ClosureAssignmentScope
+{
+    public function execute(Other $same): void
+    {
+        $callback = function (): void {
+            $same = new self();
+            $same->usedInsideClosure();
+        };
+
+        $same->mustRemainUnused();
+    }
+
+    private function usedInsideClosure(): void
+    {
+    }
+
+    private function mustRemainUnused(): void
+    {
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+        $entries = $metrics->entries('unusedPrivate.method:App\ClosureAssignmentScope');
+
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.method:App\ClosureAssignmentScope'));
+        self::assertSame('mustRemainUnused', $entries[0]['name']);
+    }
+
+    #[Test]
+    public function itRecognizesClosureLocalSameClassReceiver(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class ClosureLocalReceiver
+{
+    public function createCallback(): \Closure
+    {
+        return function (): void {
+            $same = new self();
+            $same->privateMethod();
+        };
+    }
+
+    private function privateMethod(): void
+    {
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(0, $metrics->entryCount('unusedPrivate.method:App\ClosureLocalReceiver'));
+    }
+
+    #[Test]
+    public function itDoesNotShareSameClassReceiverProofWithArrowFunction(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class ArrowFunctionReceiverScope
+{
+    public function createCallback(): \Closure
+    {
+        $same = new self();
+
+        return fn (object $same): null => $same->privateMethod();
+    }
+
+    private function privateMethod(): void
+    {
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.method:App\ArrowFunctionReceiverScope'));
+    }
+
+    #[Test]
+    public function itScopesSameClassReceiverProofToPropertyHook(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class PropertyHookReceiverScope
+{
+    public int $value {
+        set {
+            $same = new self();
+            $same->usedInsideHook();
+        }
+    }
+
+    public function execute(Other $same): void
+    {
+        $same->mustRemainUnused();
+    }
+
+    private function usedInsideHook(): void
+    {
+    }
+
+    private function mustRemainUnused(): void
+    {
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+        $entries = $metrics->entries('unusedPrivate.method:App\PropertyHookReceiverScope');
+
+        self::assertSame(1, $metrics->entryCount('unusedPrivate.method:App\PropertyHookReceiverScope'));
+        self::assertSame('mustRemainUnused', $entries[0]['name']);
+    }
+
+    #[Test]
     public function itDetectsUnusedPrivateMethod(): void
     {
         $code = <<<'PHP'
@@ -857,13 +1100,13 @@ PHP;
 
         $this->parseAndTraverse($code);
 
-        $classMetrics = $this->collector->getClassesWithMetrics();
+        $classMetrics = $this->collector->getClassesWithMetrics(\Qualimetrix\Core\Path\RelativePath::fromString('MyClass.php'));
 
         self::assertCount(1, $classMetrics);
 
         $class = $classMetrics[0];
-        self::assertSame('App', $class->namespace);
-        self::assertSame('MyClass', $class->class);
+        self::assertSame('App', $class->declarationPath->logical->namespace);
+        self::assertSame('MyClass', $class->declarationPath->logical->type);
 
         // Metrics without FQN prefix (ClassWithMetrics pattern)
         self::assertSame(1, $class->metrics->entryCount('unusedPrivate.method'));
@@ -1196,6 +1439,12 @@ PHP;
         $metrics = $this->collectMetrics($code);
 
         self::assertSame(0, $metrics->entryCount('unusedPrivate.method:MyClass'));
+    }
+
+    #[Test]
+    public function itDeliberatelyDoesNotProvideCallableMetrics(): void
+    {
+        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
     private function collectMetrics(string $code): MetricBag

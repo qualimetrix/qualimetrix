@@ -14,7 +14,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Rule\RuleLevel;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Severity;
@@ -78,7 +77,7 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
-        self::assertSame([RuleLevel::Method, RuleLevel::Class_], $rule->getSupportedLevels());
+        self::assertSame([RuleLevel::Callable, RuleLevel::Class_], $rule->getSupportedLevels());
     }
 
     // Method-level tests
@@ -88,7 +87,7 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
-                method: new MethodNpathComplexityOptions(enabled: false),
+                callable: new MethodNpathComplexityOptions(enabled: false),
             ),
         );
 
@@ -97,7 +96,7 @@ final class NpathComplexityRuleTest extends TestCase
 
         $context = new AnalysisContext($repository);
 
-        self::assertSame([], $rule->analyzeLevel(RuleLevel::Method, $context));
+        self::assertSame([], $rule->analyzeLevel(RuleLevel::Callable, $context));
     }
 
     #[Test]
@@ -106,12 +105,14 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
+            ->willReturn([]);
+        $repository->method('allDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
 
-        self::assertSame([], $rule->analyzeLevel(RuleLevel::Method, $context));
+        self::assertSame([], $rule->analyzeLevel(RuleLevel::Callable, $context));
     }
 
     #[Test]
@@ -120,25 +121,29 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('npath', 250); // Above warning (200), below error (1000)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Warning, $violations[0]->severity);
         self::assertSame('NPath complexity (execution paths) is 250 (moderate), exceeds threshold of 200. Reduce branching or extract methods', $violations[0]->message);
         self::assertSame(250, $violations[0]->metricValue);
         self::assertSame('complexity.npath', $violations[0]->ruleName);
-        self::assertSame(RuleLevel::Method, $violations[0]->level);
+        self::assertSame(RuleLevel::Callable, $violations[0]->level);
     }
 
     #[Test]
@@ -147,18 +152,22 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('npath', 1200); // Above error (1000)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame(Severity::Error, $violations[0]->severity);
@@ -194,13 +203,17 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('npath.max', 600); // Above warning (500), below error (1000)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$classInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -224,13 +237,17 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('npath.max', 1200); // Above error (1000)
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$classInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -249,27 +266,26 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
-                method: new MethodNpathComplexityOptions(enabled: true),
+                callable: new MethodNpathComplexityOptions(enabled: true),
                 class: new ClassNpathComplexityOptions(enabled: true),
             ),
         );
 
         $methodPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($methodPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($methodPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 5);
+        $classInfo = self::subjectInfo($classPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $methodBag = (new MetricBag())->with('npath', 250); // Warning
         $classBag = (new MetricBag())->with('npath.max', 600); // Warning
 
         $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
         $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => match ($type) {
-                SymbolType::Method => [$methodInfo],
-                SymbolType::Class_ => [$classInfo],
-                default => [],
-            });
+            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Class_ ? [$classInfo] : []);
+        $repository->method('getSubject')->willReturn($methodBag);
         $repository->method('get')
             ->willReturnCallback(fn(SymbolPath $path) => match ($path) {
                 $methodPath => $methodBag,
@@ -281,7 +297,7 @@ final class NpathComplexityRuleTest extends TestCase
         $violations = $rule->analyze($context);
 
         self::assertCount(2, $violations);
-        self::assertSame(RuleLevel::Method, $violations[0]->level);
+        self::assertSame(RuleLevel::Callable, $violations[0]->level);
         self::assertSame(RuleLevel::Class_, $violations[1]->level);
     }
 
@@ -293,18 +309,22 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('npath', 2_500_000); // > 1M
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame('NPath complexity (execution paths) is > 1M (extreme), exceeds threshold of 1000. Reduce branching or extract methods', $violations[0]->message);
@@ -365,7 +385,7 @@ final class NpathComplexityRuleTest extends TestCase
     public function itNpathComplexityOptionsFromHierarchicalArray(): void
     {
         $options = NpathComplexityOptions::fromArray([
-            'method' => [
+            'callable' => [
                 'warning' => 150,
                 'error' => 400,
             ],
@@ -377,8 +397,8 @@ final class NpathComplexityRuleTest extends TestCase
         ]);
 
         self::assertTrue($options->isEnabled());
-        self::assertTrue($options->method->isEnabled());
-        self::assertSame(150, $options->method->warning);
+        self::assertTrue($options->callable->isEnabled());
+        self::assertSame(150, $options->callable->warning);
         self::assertTrue($options->class->isEnabled());
         self::assertSame(300, $options->class->maxWarning);
     }
@@ -393,9 +413,9 @@ final class NpathComplexityRuleTest extends TestCase
         ]);
 
         self::assertTrue($options->isEnabled());
-        self::assertTrue($options->method->isEnabled());
-        self::assertSame(180, $options->method->warning);
-        self::assertSame(450, $options->method->error);
+        self::assertTrue($options->callable->isEnabled());
+        self::assertSame(180, $options->callable->warning);
+        self::assertSame(450, $options->callable->error);
         // Legacy format disables class level
         self::assertFalse($options->class->isEnabled());
     }
@@ -405,7 +425,7 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $options = new NpathComplexityOptions();
 
-        self::assertSame($options->method, $options->forLevel(RuleLevel::Method));
+        self::assertSame($options->callable, $options->forLevel(RuleLevel::Callable));
         self::assertSame($options->class, $options->forLevel(RuleLevel::Class_));
     }
 
@@ -413,11 +433,11 @@ final class NpathComplexityRuleTest extends TestCase
     public function itNpathComplexityOptionsIsLevelEnabled(): void
     {
         $options = new NpathComplexityOptions(
-            method: new MethodNpathComplexityOptions(enabled: true),
+            callable: new MethodNpathComplexityOptions(enabled: true),
             class: new ClassNpathComplexityOptions(enabled: false),
         );
 
-        self::assertTrue($options->isLevelEnabled(RuleLevel::Method));
+        self::assertTrue($options->isLevelEnabled(RuleLevel::Callable));
         self::assertFalse($options->isLevelEnabled(RuleLevel::Class_));
     }
 
@@ -431,7 +451,7 @@ final class NpathComplexityRuleTest extends TestCase
     ): void {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
-                method: new MethodNpathComplexityOptions(
+                callable: new MethodNpathComplexityOptions(
                     warning: $warning,
                     error: $error,
                 ),
@@ -439,18 +459,22 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath', $npath);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         if ($expectedSeverity === null) {
             self::assertCount(0, $violations);
@@ -480,7 +504,7 @@ final class NpathComplexityRuleTest extends TestCase
             'warningThreshold' => 200,
         ]);
 
-        self::assertSame(1000, $options->method->error);
+        self::assertSame(1000, $options->callable->error);
     }
 
     #[Test]
@@ -490,8 +514,8 @@ final class NpathComplexityRuleTest extends TestCase
             'errorThreshold' => 800,
         ]);
 
-        self::assertSame(200, $options->method->warning);
-        self::assertSame(800, $options->method->error);
+        self::assertSame(200, $options->callable->warning);
+        self::assertSame(800, $options->callable->error);
     }
 
     #[Test]
@@ -516,7 +540,7 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
-                method: new MethodNpathComplexityOptions(
+                callable: new MethodNpathComplexityOptions(
                     warning: 1,
                     error: 2,
                 ),
@@ -524,18 +548,22 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath', $npath);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertStringContainsString(\sprintf('(%s)', $expectedCategory), $violations[0]->message);
@@ -556,13 +584,17 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'Test');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath.max', $npath);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$classInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -615,13 +647,17 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 5);
 
         $metricBag = (new MetricBag())->with('npath.max', 2_500_000); // > 1M
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$classInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -641,7 +677,7 @@ final class NpathComplexityRuleTest extends TestCase
     {
         $rule = new NpathComplexityRule(
             new NpathComplexityOptions(
-                method: new MethodNpathComplexityOptions(
+                callable: new MethodNpathComplexityOptions(
                     warning: 200,
                     error: 1000,
                 ),
@@ -649,18 +685,22 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath', 1_500_000);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertSame(
@@ -683,13 +723,17 @@ final class NpathComplexityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'Test');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('npath.max', 1_500_000);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$classInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$classInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -718,7 +762,7 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('npath', 1296)
@@ -727,13 +771,17 @@ final class NpathComplexityRuleTest extends TestCase
             ->withEntry('npath-complexity.factors', ['type' => 'switch', 'line' => 20, 'factor' => 3]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         // Top 3 by factor: ×6 if/else, ×4 match, ×3 switch
@@ -750,20 +798,89 @@ final class NpathComplexityRuleTest extends TestCase
         $rule = new NpathComplexityRule(new NpathComplexityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())->with('npath', 1200);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
-        $violations = $rule->analyzeLevel(RuleLevel::Method, $context);
+        $violations = $rule->analyzeLevel(RuleLevel::Callable, $context);
 
         self::assertCount(1, $violations);
         self::assertStringNotContainsString('Chain:', $violations[0]->message);
+    }
+    #[Test]
+    public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([
+            self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('get')->willReturn((new MetricBag())->with('npath.max', 600));
+        $rule = new NpathComplexityRule(new NpathComplexityOptions(
+            class: new ClassNpathComplexityOptions(enabled: true),
+        ));
+
+        $violations = $rule->analyzeLevel(RuleLevel::Class_, new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:class:App\\Service\\Twin@src/A.php:100',
+            'declaration:class:App\\Service\\Twin@src/B.php:200',
+        ], $subjects);
+    }
+
+    #[Test]
+    public function itProjectsDuplicateLogicalCallableScoresToIndependentExactDeclarations(): void
+    {
+        $method = SymbolPath::forMethod('App\\Service', 'Twin', 'run');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([
+            self::subjectInfo($method, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($method, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('npath', 300));
+
+        $violations = (new NpathComplexityRule(new NpathComplexityOptions()))
+            ->analyzeLevel(RuleLevel::Callable, new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:callable:App\\Service\\Twin::run@src/A.php:100',
+            'declaration:callable:App\\Service\\Twin::run@src/B.php:200',
+        ], $subjects);
+    }
+
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            $file,
+            $line,
+            $kind,
+        );
     }
 }

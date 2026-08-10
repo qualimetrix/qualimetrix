@@ -12,10 +12,12 @@ use PhpParser\Node\Expr\NullsafeMethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Identifier;
 use PhpParser\Node\Name;
+use PhpParser\Node\PropertyHook;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Enum_;
 use PhpParser\Node\Stmt\Interface_;
+use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
@@ -61,14 +63,14 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
      * Track method nesting depth (to count external calls).
      * Using a counter instead of boolean to handle closures/anonymous classes inside methods.
      */
-    private int $insideMethodDepth = 0;
+    private int $insideCallableDepth = 0;
 
     public function reset(): void
     {
         $this->classes = [];
         $this->currentNamespace = null;
         $this->classStack = [];
-        $this->insideMethodDepth = 0;
+        $this->insideCallableDepth = 0;
     }
 
     /**
@@ -104,15 +106,15 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
             return null;
         }
 
-        // Track method entry
-        if ($node instanceof ClassMethod) {
-            $this->insideMethodDepth++;
+        // Property hooks are class-rollable RFC callables, alongside methods.
+        if ($node instanceof ClassMethod || $node instanceof PropertyHook) {
+            $this->insideCallableDepth++;
 
             return null;
         }
 
-        // Track external calls (only inside methods of named classes)
-        if ($this->insideMethodDepth > 0 && $this->getCurrentClass() !== null) {
+        // Track external calls only inside class-rollable callables of named classes.
+        if ($this->insideCallableDepth > 0 && $this->getCurrentClass() !== null) {
             $this->handleExternalCall($node);
         }
 
@@ -131,6 +133,7 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
                 namespace: $this->currentNamespace,
                 className: $className,
                 line: $node->getStartLine(),
+                startFilePos: $node->getStartFilePos(),
             );
 
             // Collect own methods
@@ -138,8 +141,9 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
                 // Interface methods are always abstract, but they ARE own methods of the interface
                 $this->collectInterfaceMethods($node, $fqn);
             } elseif ($node instanceof Class_ || $node instanceof Trait_ || $node instanceof Enum_) {
-                // Class_, Trait_, and Enum_: only non-abstract methods
+                // Class_, Trait_, and Enum_: only non-abstract methods and property hooks
                 $this->collectOwnMethods($node, $fqn);
+                $this->collectOwnPropertyHooks($node, $fqn);
             }
         }
     }
@@ -160,6 +164,29 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
         }
     }
 
+    private function collectOwnPropertyHooks(Class_|Trait_|Enum_ $class, string $fqn): void
+    {
+        foreach ($class->stmts as $stmt) {
+            if ($stmt instanceof Property) {
+                $this->addOwnPropertyHooks($stmt->hooks, $fqn);
+            }
+
+            if ($stmt instanceof ClassMethod) {
+                foreach ($stmt->params as $param) {
+                    $this->addOwnPropertyHooks($param->hooks, $fqn);
+                }
+            }
+        }
+    }
+
+    /** @param array<PropertyHook> $hooks */
+    private function addOwnPropertyHooks(array $hooks, string $fqn): void
+    {
+        foreach ($hooks as $hook) {
+            $this->classes[$fqn]->addOwnMethod($hook->name->toString());
+        }
+    }
+
     private function handleExternalCall(Node $node): void
     {
         $currentClass = $this->getCurrentClass();
@@ -169,6 +196,10 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
 
         $fqn = $this->buildClassFqn($currentClass);
 
+        if ($this->isNonExecutingCallableExpression($node)) {
+            return;
+        }
+
         match (true) {
             $node instanceof MethodCall => $this->handleMethodCall($node, $fqn),
             $node instanceof NullsafeMethodCall => $this->handleNullsafeMethodCall($node, $fqn),
@@ -177,6 +208,23 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
             $node instanceof New_ => $this->handleConstructorCall($node, $fqn),
             default => null,
         };
+    }
+
+    /**
+     * First-class callable captures and PHP 8.5 clone-with expressions create
+     * values; neither invokes an external RFC response target.
+     */
+    private function isNonExecutingCallableExpression(Node $node): bool
+    {
+        return ($node instanceof FuncCall && ($node->isFirstClassCallable() || $this->isCloneWithCall($node)))
+            || ($node instanceof MethodCall && $node->isFirstClassCallable())
+            || ($node instanceof StaticCall && $node->isFirstClassCallable());
+    }
+
+    private function isCloneWithCall(FuncCall $node): bool
+    {
+        return $node->name instanceof Name
+            && strtolower($node->name->toString()) === 'clone';
     }
 
     private function handleMethodCall(MethodCall $node, string $fqn): void
@@ -252,9 +300,9 @@ final class RfcVisitor extends NodeVisitorAbstract implements ResettableVisitorI
 
     public function leaveNode(Node $node): ?int
     {
-        // Exit method
-        if ($node instanceof ClassMethod) {
-            $this->insideMethodDepth--;
+        // Exit a class-rollable callable.
+        if ($node instanceof ClassMethod || $node instanceof PropertyHook) {
+            $this->insideCallableDepth--;
 
             return null;
         }
@@ -354,6 +402,7 @@ final class ClassRfcData
         public readonly ?string $namespace = null,
         public readonly string $className = '',
         public readonly int $line = 0,
+        public readonly int $startFilePos = 0,
     ) {}
 
     public function addOwnMethod(string $name): void

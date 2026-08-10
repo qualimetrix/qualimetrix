@@ -205,7 +205,7 @@ final class V5BaselineReaderTest extends TestCase
     public function itRejectsAVersionTenFileAndNamesWhy(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessageMatches('/already version 10/');
+        $this->expectExceptionMessageMatches('/got version 10/');
 
         $this->readJson(<<<'JSON'
             {"version": 10, "generated": "2026-01-01T00:00:00+00:00", "scope": [], "entries": {}}

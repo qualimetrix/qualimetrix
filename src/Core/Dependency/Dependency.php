@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Dependency;
 
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 
@@ -16,14 +18,14 @@ use Qualimetrix\Core\Violation\Location;
 final readonly class Dependency
 {
     /**
-     * @param SymbolPath $source Class-level SymbolPath of the class that has the dependency
-     * @param SymbolPath $target Class-level SymbolPath of the class being depended upon
+     * @param DeclarationPath $source Exact source declaration identity
+     * @param LogicalClassPath $target Logical class identity of the dependency target
      * @param DependencyType $type The type of dependency relationship
      * @param Location $location Where in the source code this dependency occurs
      */
     public function __construct(
-        public SymbolPath $source,
-        public SymbolPath $target,
+        public DeclarationPath $source,
+        public LogicalClassPath $target,
         public DependencyType $type,
         public Location $location,
     ) {}
@@ -33,7 +35,7 @@ final readonly class Dependency
      */
     public function isCrossNamespace(): bool
     {
-        return $this->source->namespace !== $this->target->namespace;
+        return $this->sourceLogical()->namespace !== $this->targetLogical()->namespace;
     }
 
     /**
@@ -51,10 +53,22 @@ final readonly class Dependency
     {
         return \sprintf(
             '%s %s %s at %s',
-            $this->source->toString(),
+            $this->sourceLogical()->toString(),
             $this->type->description(),
-            $this->target->toString(),
+            $this->targetLogical()->toString(),
             $this->location->toString(),
         );
+    }
+
+    /** Logical source projection used by graph and coupling consumers. */
+    public function sourceLogical(): SymbolPath
+    {
+        return $this->source->logical;
+    }
+
+    /** Logical target projection used by graph and coupling consumers. */
+    public function targetLogical(): SymbolPath
+    {
+        return $this->target->symbolPath;
     }
 }

@@ -57,7 +57,7 @@ Show the BAD code, not the solution. Add inline comments showing the metric coun
 {Include this section when:
 - The algorithm differs from the industry standard
 - Users comparing values with other tools would see discrepancies
-- The formula or scope needs clarification (e.g., method-level vs class-level)
+- The formula or scope needs clarification (e.g., callable-level vs class-level)
 
 Content: which variant/algorithm is used, how it differs, why the choice was made.}
 

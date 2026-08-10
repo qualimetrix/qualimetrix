@@ -5,92 +5,70 @@ declare(strict_types=1);
 namespace Qualimetrix\Metrics;
 
 use PhpParser\Node;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
+use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Path\RelativePath;
 
-/**
- * Provides common FQN-building and class-like node detection methods
- * for metric visitors that track methods, functions, and closures.
- *
- * Expects the using class to declare these properties:
- * - ?string $currentNamespace
- * - ?string $currentClass
- * - int $closureCounter
- */
+/** Routes shared lexical and callable identity through one resettable context. */
 trait VisitorMethodTrackingTrait
 {
-    private function buildMethodFqn(string $methodName): string
+    private ?VisitorMethodContext $visitorMethodContext = null;
+
+    private function resetVisitorMethodContext(): void
     {
-        $parts = [];
-
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            $parts[] = $this->currentNamespace;
-        }
-
-        if ($this->currentClass !== null) {
-            if ($parts !== []) {
-                $parts[] = '\\';
-            }
-            $parts[] = $this->currentClass;
-        }
-
-        $parts[] = '::';
-        $parts[] = $methodName;
-
-        return implode('', $parts);
+        $this->visitorMethodContext = new VisitorMethodContext();
+        $this->visitorMethodContext->reset();
     }
 
-    private function buildFunctionFqn(string $functionName): string
+    protected function visitorMethodContext(): VisitorMethodContext
     {
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            return $this->currentNamespace . '\\' . $functionName;
-        }
-
-        return $functionName;
+        return $this->visitorMethodContext ??= new VisitorMethodContext();
     }
 
-    private function buildClosureFqn(): string
+    private function enterVisitorMethodContext(Node $node): ?VisitorCallableScope
     {
-        $parts = [];
+        return $this->visitorMethodContext()->enter($node);
+    }
 
-        if ($this->currentNamespace !== null && $this->currentNamespace !== '') {
-            $parts[] = $this->currentNamespace;
-        }
+    private function leaveVisitorMethodContext(Node $node): ?VisitorCallableScope
+    {
+        return $this->visitorMethodContext()->leave($node);
+    }
 
-        if ($this->currentClass !== null) {
-            if ($parts !== []) {
-                $parts[] = '\\';
-            }
-            $parts[] = $this->currentClass;
-        }
-
-        $parts[] = '::';
-        $parts[] = '{closure#' . $this->closureCounter . '}';
-
-        return implode('', $parts);
+    private function createCallableWithMetrics(VisitorCallableScope $scope, RelativePath $file, MetricBag $metrics, ?int $ordinal = null): CallableWithMetrics
+    {
+        return $this->visitorMethodContext()->createCallableWithMetrics($scope, $file, $metrics, $ordinal);
     }
 
     /**
-     * Extracts class name from class-like nodes (class, interface, trait, enum).
-     * Returns null for anonymous classes or non-class-like nodes.
+     * @param array<string, VisitorCallableScope> $scopes
+     *
+     * @return array<string, int|null>
      */
-    private function extractClassLikeName(Node $node): ?string
+    private function callableCollisionOrdinals(array $scopes): array
     {
-        return match (true) {
-            $node instanceof Node\Stmt\Class_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Node\Stmt\Interface_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Node\Stmt\Trait_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Node\Stmt\Enum_ && $node->name !== null => $node->name->toString(),
-            default => null,
-        };
+        return $this->visitorMethodContext()->callableCollisionOrdinals($scopes);
     }
 
     /**
-     * Checks if node is a class-like type (class, interface, trait, enum).
+     * @param array<string, mixed> $metrics
+     * @param array<string, VisitorCallableScope> $scopes
+     *
+     * @return array<string, mixed>
      */
-    private function isClassLikeNode(Node $node): bool
+    private function projectLogicalMetricMap(array $metrics, array $scopes): array
     {
-        return $node instanceof Node\Stmt\Class_
-            || $node instanceof Node\Stmt\Interface_
-            || $node instanceof Node\Stmt\Trait_
-            || $node instanceof Node\Stmt\Enum_;
+        return $this->visitorMethodContext()->projectLogicalMetricMap($metrics, $scopes);
+    }
+
+    private function currentFileEntrySubjectId(): string
+    {
+        return $this->visitorMethodContext()->currentFileEntrySubjectId();
+    }
+
+    /** @return array<string, int|string> */
+    protected function fileEntrySubjectComponents(string $subjectId): array
+    {
+        return $this->visitorMethodContext()->fileEntrySubjectComponents($subjectId);
     }
 }

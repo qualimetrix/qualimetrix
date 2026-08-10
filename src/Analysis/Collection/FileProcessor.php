@@ -5,33 +5,29 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Collection;
 
 use LogicException;
-use PhpParser\Node;
-use PhpParser\NodeFinder;
+use Qualimetrix\Analysis\Collection\Declaration\DeclarationBindings;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Collection\SourceControl\SourceControls;
 use Qualimetrix\Baseline\Suppression\SuppressionExtractor;
 use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
+use Qualimetrix\Core\Metric\CallableMetricsProviderInterface;
 use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
-use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\NamespaceMetricProviderInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
-use Qualimetrix\Core\Suppression\Suppression;
-use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
-use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
 /**
- * Processes a single PHP file.
- *
- * Responsible for:
- * - Parsing the file into AST
- * - Collecting metrics and dependencies via CompositeCollector (single AST traversal)
- * - Extracting method/class-level metrics
- * - Memory cleanup after processing
+ * Processes a source file while keeping parsing, collection, and
+ * collection-wire assembly. Declaration binding and source
+ * control extraction are immutable downstream results: they receive the AST
+ * and collected metrics but do not invoke collectors or alter
+ * the FileProcessingResult transport. Parse failures remain terminal
+ * results, so sequential and parallel callers preserve the contract.
  */
 final class FileProcessor implements FileProcessorInterface
 {
@@ -64,25 +60,21 @@ final class FileProcessor implements FileProcessorInterface
         $relativePath = PathFactory::bestEffortRelative($file->getPathname(), $this->projectRoot);
 
         try {
-            // 1. Parse AST
             $ast = $this->parser->parse($file);
-
-            // 2. Reset collectors & collect metrics + dependencies (single traversal)
             $this->collector->reset();
             $output = $this->collector->collect($file, $ast, $relativePath);
 
-            // 3. Extract method/class metrics
-            $methodMetrics = $this->extractMethodMetrics();
-            $classMetrics = $this->extractClassMetrics();
+            $callableMetrics = $this->extractCallableMetrics($relativePath);
+            $classMetrics = $this->extractClassMetrics($relativePath);
             $namespaceMetrics = $this->extractNamespaceMetrics();
+            $bindings = DeclarationBindings::from($ast, $relativePath, $callableMetrics, $classMetrics);
+            $controls = SourceControls::extract(
+                $ast,
+                $bindings,
+                $this->suppressionExtractor,
+                $this->thresholdOverrideExtractor,
+            );
 
-            // 4. Extract suppression tags from AST nodes
-            $suppressions = $this->extractSuppressions($ast);
-
-            // 5. Extract threshold override annotations from AST nodes
-            [$thresholdOverrides, $thresholdDiagnostics] = $this->extractThresholdOverrides($ast);
-
-            // 6. Cleanup AST to free memory
             unset($ast);
             if (gc_enabled()) {
                 gc_collect_cycles();
@@ -91,13 +83,13 @@ final class FileProcessor implements FileProcessorInterface
             return FileProcessingResult::success(
                 filePath: $relativePath,
                 fileBag: $output->metrics,
-                methodMetrics: $methodMetrics,
+                callableMetrics: $callableMetrics,
                 classMetrics: $classMetrics,
                 namespaceMetrics: $namespaceMetrics,
                 dependencies: $output->dependencies,
-                suppressions: $suppressions,
-                thresholdOverrides: $thresholdOverrides,
-                thresholdDiagnostics: $thresholdDiagnostics,
+                suppressions: $controls->suppressions,
+                thresholdOverrides: $controls->thresholdOverrides,
+                thresholdDiagnostics: $controls->thresholdDiagnostics,
             );
         } catch (ParseException $e) {
             return FileProcessingResult::failure(
@@ -109,67 +101,74 @@ final class FileProcessor implements FileProcessorInterface
     }
 
     /**
-     * Extracts method-level metrics from collectors.
+     * Extracts callable-level metrics from collectors without collapsing
+     * distinct declarations that share a logical FQN.
      *
-     * @return array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}>
+     * @return list<\Qualimetrix\Core\Metric\CallableWithMetrics>
      */
-    private function extractMethodMetrics(): array
+    private function extractCallableMetrics(\Qualimetrix\Core\Path\RelativePath $file): array
     {
-        $methodMetrics = [];
+        /** @var array<string, \Qualimetrix\Core\Metric\CallableWithMetrics> $callables */
+        $callables = [];
 
         foreach ($this->collector->getCollectors() as $collector) {
-            if ($collector instanceof MethodMetricsProviderInterface) {
-                foreach ($collector->getMethodsWithMetrics() as $methodWithMetrics) {
-                    $symbolPath = $methodWithMetrics->getSymbolPath();
+            if (!$collector instanceof CallableMetricsProviderInterface) {
+                continue;
+            }
 
-                    // Skip closures and other symbols without stable identity
-                    if ($symbolPath === null) {
-                        continue;
-                    }
-
-                    $key = $this->symbolPathToKey($symbolPath);
-
-                    // Merge metrics if symbol already exists
-                    if (isset($methodMetrics[$key])) {
-                        $methodMetrics[$key]['metrics'] = $methodMetrics[$key]['metrics']->merge(
-                            $methodWithMetrics->metrics,
-                        );
-                    } else {
-                        $methodMetrics[$key] = [
-                            'symbolPath' => $symbolPath,
-                            'metrics' => $methodWithMetrics->metrics,
-                            'line' => $methodWithMetrics->line,
-                        ];
-                    }
-                }
+            foreach ($collector->getCallablesWithMetrics($file) as $callable) {
+                $key = $callable->declarationPath->toCanonical();
+                $callables[$key] = isset($callables[$key])
+                    ? $this->mergeCallableMetrics($callables[$key], $callable, $key)
+                    : $callable;
             }
         }
 
-        return $methodMetrics;
+        return array_values($callables);
+    }
+
+    private function mergeCallableMetrics(
+        \Qualimetrix\Core\Metric\CallableWithMetrics $existing,
+        \Qualimetrix\Core\Metric\CallableWithMetrics $callable,
+        string $key,
+    ): \Qualimetrix\Core\Metric\CallableWithMetrics {
+        if ($existing->sourceLine !== null
+            && $callable->sourceLine !== null
+            && $existing->sourceLine !== $callable->sourceLine
+        ) {
+            throw new LogicException(\sprintf(
+                'Callable collectors disagree on source line for %s',
+                $key,
+            ));
+        }
+
+        return new \Qualimetrix\Core\Metric\CallableWithMetrics(
+            $existing->declarationPath,
+            $existing->kind,
+            $existing->anonymousSyntax,
+            $existing->lexicalClassContext,
+            $existing->classAggregationOwner,
+            $existing->metrics->merge($callable->metrics),
+            $existing->sourceLine ?? $callable->sourceLine,
+        );
     }
 
     /**
-     * Extracts class-level metrics from collectors.
-     *
-     * @return array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}>
+     * @return array<string, array{subject: \Qualimetrix\Core\Symbol\MetricSubject, metrics: MetricBag, line: int}>
      */
-    private function extractClassMetrics(): array
+    private function extractClassMetrics(\Qualimetrix\Core\Path\RelativePath $file): array
     {
         $classMetrics = [];
 
         foreach ($this->collector->getCollectors() as $collector) {
             if ($collector instanceof ClassMetricsProviderInterface) {
-                foreach ($collector->getClassesWithMetrics() as $classWithMetrics) {
-                    $key = $this->symbolPathToKey($classWithMetrics->getSymbolPath());
-
-                    // Merge metrics if symbol already exists
+                foreach ($collector->getClassesWithMetrics($file) as $classWithMetrics) {
+                    $key = $classWithMetrics->subject->toCanonical();
                     if (isset($classMetrics[$key])) {
-                        $classMetrics[$key]['metrics'] = $classMetrics[$key]['metrics']->merge(
-                            $classWithMetrics->metrics,
-                        );
+                        $classMetrics[$key]['metrics'] = $classMetrics[$key]['metrics']->merge($classWithMetrics->metrics);
                     } else {
                         $classMetrics[$key] = [
-                            'symbolPath' => $classWithMetrics->getSymbolPath(),
+                            'subject' => $classWithMetrics->subject,
                             'metrics' => $classWithMetrics->metrics,
                             'line' => $classWithMetrics->line,
                         ];
@@ -196,11 +195,8 @@ final class FileProcessor implements FileProcessorInterface
             foreach ($collector->getNamespacesWithMetrics() as $namespaceWithMetrics) {
                 $symbolPath = $namespaceWithMetrics->getSymbolPath();
                 $key = $symbolPath->toCanonical();
-
                 if (isset($namespaceMetrics[$key])) {
-                    $namespaceMetrics[$key]['metrics'] = $namespaceMetrics[$key]['metrics']->merge(
-                        $namespaceWithMetrics->metrics,
-                    );
+                    $namespaceMetrics[$key]['metrics'] = $namespaceMetrics[$key]['metrics']->merge($namespaceWithMetrics->metrics);
                 } else {
                     $namespaceMetrics[$key] = [
                         'symbolPath' => $symbolPath,
@@ -212,117 +208,5 @@ final class FileProcessor implements FileProcessorInterface
         }
 
         return $namespaceMetrics;
-    }
-
-    /**
-     * Extracts suppression tags from all relevant AST nodes.
-     *
-     * Scans nodes that can have docblocks or regular comments containing `@qmx-ignore`:
-     * classes, methods, functions, properties, enum cases, constants, expressions,
-     * and any statement preceded by a suppression comment.
-     *
-     * @param array<Node> $ast Top-level AST statements
-     *
-     * @return list<Suppression>
-     */
-    private function extractSuppressions(array $ast): array
-    {
-        $suppressions = [];
-
-        // Extract file-level suppressions from the first statement's comments
-        if ($ast !== []) {
-            foreach ($this->suppressionExtractor->extractFileLevelSuppressions($ast[0]) as $suppression) {
-                $suppressions[] = $suppression;
-            }
-        }
-
-        // Find all nodes that can carry suppression comments (docblocks or regular comments)
-        $nodeFinder = new NodeFinder();
-        $nodesWithSuppressions = $nodeFinder->find($ast, static function (Node $node): bool {
-            // Node types that can carry docblock suppressions
-            if ($node instanceof Node\Stmt\ClassLike
-                || $node instanceof Node\Stmt\ClassMethod
-                || $node instanceof Node\Stmt\Function_
-                || $node instanceof Node\Stmt\Property
-                || $node instanceof Node\Stmt\EnumCase
-                || $node instanceof Node\Stmt\ClassConst
-                || $node instanceof Node\Stmt\Expression) {
-                return true;
-            }
-
-            // Any node with a regular comment containing `@qmx-ignore`
-            foreach ($node->getComments() as $comment) {
-                if (!$comment instanceof \PhpParser\Comment\Doc
-                    && str_contains($comment->getText(), '@qmx-ignore')) {
-                    return true;
-                }
-            }
-
-            return false;
-        });
-
-        foreach ($nodesWithSuppressions as $node) {
-            foreach ($this->suppressionExtractor->extract($node) as $suppression) {
-                $suppressions[] = $suppression;
-            }
-        }
-
-        return $suppressions;
-    }
-
-    /**
-     * Extracts threshold override annotations from all relevant AST nodes.
-     *
-     * Scans nodes that can have docblocks: classes, methods, functions.
-     *
-     * @param array<Node> $ast Top-level AST statements
-     *
-     * @return array{list<ThresholdOverride>, list<ThresholdDiagnostic>}
-     */
-    private function extractThresholdOverrides(array $ast): array
-    {
-        $overrides = [];
-        $diagnostics = [];
-
-        $nodeFinder = new NodeFinder();
-        $nodesWithDocblocks = $nodeFinder->find($ast, static fn(Node $node): bool => $node instanceof Node\Stmt\ClassLike
-                || $node instanceof Node\Stmt\ClassMethod
-                || $node instanceof Node\Stmt\Function_);
-
-        foreach ($nodesWithDocblocks as $node) {
-            $result = $this->thresholdOverrideExtractor->extractWithDiagnostics($node);
-
-            foreach ($result->overrides as $override) {
-                $overrides[] = $override;
-            }
-
-            foreach ($result->diagnostics as $diagnostic) {
-                $diagnostics[] = $diagnostic;
-            }
-        }
-
-        return [$overrides, $diagnostics];
-    }
-
-    /**
-     * Converts SymbolPath to unique string key.
-     */
-    private function symbolPathToKey(SymbolPath $symbolPath): string
-    {
-        $parts = [];
-
-        if ($symbolPath->namespace !== null) {
-            $parts[] = $symbolPath->namespace;
-        }
-
-        if ($symbolPath->type !== null) {
-            $parts[] = $symbolPath->type;
-        }
-
-        if ($symbolPath->member !== null) {
-            $parts[] = $symbolPath->member;
-        }
-
-        return implode('::', $parts);
     }
 }

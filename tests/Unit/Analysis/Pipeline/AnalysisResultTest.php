@@ -12,12 +12,18 @@ use Qualimetrix\Analysis\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\SuppressionType;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -146,21 +152,25 @@ final class AnalysisResultTest extends TestCase
     {
         $repo1 = new InMemoryMetricRepository();
         $metrics1 = (new MetricBag())->with('ccn', 5);
-        $repo1->add(
-            SymbolPath::forMethod('App', 'ServiceA', 'method1'),
+        $repo1->addCallable(new CallableWithMetrics(
+            new DeclarationPath(SymbolPath::forMethod('App', 'ServiceA', 'method1'), RelativePath::fromString('ServiceA.php'), 100),
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath(SymbolPath::forClass('App', 'ServiceA')),
             $metrics1,
-            RelativePath::fromString('ServiceA.php'),
-            10,
-        );
+        ));
 
         $repo2 = new InMemoryMetricRepository();
         $metrics2 = (new MetricBag())->with('ccn', 10);
-        $repo2->add(
-            SymbolPath::forMethod('App', 'ServiceB', 'method2'),
+        $repo2->addCallable(new CallableWithMetrics(
+            new DeclarationPath(SymbolPath::forMethod('App', 'ServiceB', 'method2'), RelativePath::fromString('ServiceB.php'), 200),
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath(SymbolPath::forClass('App', 'ServiceB')),
             $metrics2,
-            RelativePath::fromString('ServiceB.php'),
-            20,
-        );
+        ));
 
         $result1 = new AnalysisResult([], 1.0, $repo1, self::coverage(5));
         $result2 = new AnalysisResult([], 2.0, $repo2, self::coverage(3, prefix: 'other'));
@@ -241,9 +251,32 @@ final class AnalysisResultTest extends TestCase
     #[Test]
     public function itMergesSuppressionsForOverlappingFiles(): void
     {
-        $suppression1 = new Suppression('complexity', null, 10, SuppressionType::Symbol);
+        $sharedSubject = MetricSubject::declaration(new DeclarationPath(
+            SymbolPath::forMethod('App', 'Service', 'calculate'),
+            RelativePath::fromString('shared.php'),
+            10,
+        ));
+        $suppression1 = new Suppression(
+            'complexity',
+            null,
+            10,
+            SuppressionType::Symbol,
+            subject: $sharedSubject,
+            controlScope: ControlScope::Callable,
+        );
         $suppression2 = new Suppression('size', null, 20, SuppressionType::NextLine);
-        $suppression3 = new Suppression('lcom', null, 30, SuppressionType::Symbol);
+        $suppression3 = new Suppression(
+            'lcom',
+            null,
+            30,
+            SuppressionType::Symbol,
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forMethod('App', 'Service', 'measure'),
+                RelativePath::fromString('shared.php'),
+                30,
+            )),
+            controlScope: ControlScope::Callable,
+        );
 
         $result1 = new AnalysisResult(
             violations: [],
@@ -276,9 +309,14 @@ final class AnalysisResultTest extends TestCase
     #[Test]
     public function itMergesThresholdOverridesForOverlappingFiles(): void
     {
-        $override1 = new ThresholdOverride('complexity.cyclomatic', 15, 25, 10);
-        $override2 = new ThresholdOverride('coupling.cbo', 10, 20, 20);
-        $override3 = new ThresholdOverride('size.method-count', 5, 10, 30);
+        $subject = MetricSubject::declaration(new DeclarationPath(
+            SymbolPath::forMethod('App', 'Service', 'calculate'),
+            RelativePath::fromString('shared.php'),
+            10,
+        ));
+        $override1 = new ThresholdOverride('complexity.cyclomatic', 15, 25, 10, $subject, ControlScope::Callable);
+        $override2 = new ThresholdOverride('coupling.cbo', 10, 20, 20, $subject, ControlScope::Callable);
+        $override3 = new ThresholdOverride('size.method-count', 5, 10, 30, $subject, ControlScope::Callable);
 
         $result1 = new AnalysisResult(
             violations: [],
@@ -367,6 +405,7 @@ final class AnalysisResultTest extends TestCase
         return new Violation(
             location: new Location($relFile, $line),
             symbolPath: SymbolPath::forFile($relFile),
+            subject: MetricSubject::aggregate(SymbolPath::forFile($relFile)),
             ruleName: 'test-rule',
             violationCode: 'test-rule',
             message: 'Test message',

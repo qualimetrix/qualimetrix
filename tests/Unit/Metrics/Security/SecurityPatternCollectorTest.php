@@ -67,6 +67,19 @@ PHP;
     }
 
     #[Test]
+    public function itAssignsAPatternInsideAMethodToThatMethodWithoutSerializingContext(): void
+    {
+        $metrics = $this->collectMetrics('<?php namespace App; class Query { public function run(): void { echo $_GET["id"]; } }');
+        $entry = $metrics->entries('security.xss')[0];
+
+        self::assertSame('declaration', $entry['subjectKind']);
+        self::assertSame('method', $entry['logicalKind']);
+        self::assertSame('Query', $entry['class']);
+        self::assertSame('run', $entry['member']);
+        self::assertArrayNotHasKey('context', $entry);
+    }
+
+    #[Test]
     public function itCollectsWithNoFindings(): void
     {
         $code = <<<'PHP'
@@ -94,6 +107,12 @@ PHP;
         $metrics = $this->collectMetrics($code2);
 
         self::assertSame(0, $metrics->entryCount('security.xss'));
+    }
+
+    #[Test]
+    public function itDeliberatelyDoesNotProvideCallableMetrics(): void
+    {
+        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
     private function collectMetrics(string $code): MetricBag

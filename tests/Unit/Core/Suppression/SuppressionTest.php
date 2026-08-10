@@ -7,8 +7,12 @@ namespace Qualimetrix\Tests\Unit\Core\Suppression;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\SuppressionType;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(Suppression::class)]
 final class SuppressionTest extends TestCase
@@ -21,6 +25,8 @@ final class SuppressionTest extends TestCase
             reason: 'Legacy code',
             line: 10,
             type: SuppressionType::Symbol,
+            subject: $this->subject(),
+            controlScope: ControlScope::Callable,
         );
 
         self::assertTrue($suppression->matches('complexity.cyclomatic'));
@@ -35,12 +41,14 @@ final class SuppressionTest extends TestCase
             reason: 'Legacy code',
             line: 10,
             type: SuppressionType::Symbol,
+            subject: $this->subject(),
+            controlScope: ControlScope::Callable,
         );
 
         // Prefix matching: 'complexity' matches all complexity.* violations
         self::assertTrue($suppression->matches('complexity'));
         self::assertTrue($suppression->matches('complexity.cyclomatic'));
-        self::assertTrue($suppression->matches('complexity.cyclomatic.method'));
+        self::assertTrue($suppression->matches('complexity.cyclomatic.callable'));
         self::assertFalse($suppression->matches('coupling'));
     }
 
@@ -83,6 +91,8 @@ final class SuppressionTest extends TestCase
             reason: null,
             line: 42,
             type: SuppressionType::Symbol,
+            subject: $this->subject(),
+            controlScope: ControlScope::Callable,
         );
 
         self::assertNull($suppression->reason);
@@ -92,14 +102,21 @@ final class SuppressionTest extends TestCase
     public function itReverseDoesNotMatch(): void
     {
         $suppression = new Suppression(
-            rule: 'complexity.cyclomatic.method',
+            rule: 'complexity.cyclomatic.callable',
             reason: null,
             line: 10,
             type: SuppressionType::Symbol,
+            subject: $this->subject(),
+            controlScope: ControlScope::Callable,
         );
 
         // More specific pattern does NOT match less specific subject
         self::assertFalse($suppression->matches('complexity.cyclomatic'));
         self::assertFalse($suppression->matches('complexity'));
+    }
+
+    private function subject(): MetricSubject
+    {
+        return MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php')));
     }
 }

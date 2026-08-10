@@ -8,10 +8,12 @@ use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Metrics\VisitorCallableScope;
 use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
@@ -32,100 +34,57 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
 {
     use VisitorMethodTrackingTrait;
 
-    /** @var array<string, array{namespace: ?string, class: ?string, method: string, line: int, count: int}> */
-    private array $methodInfos = [];
+    /** @var array<string, VisitorCallableScope> */
+    private array $scopes = [];
+
+    /** @var array<string, int> */
+    private array $counts = [];
 
     /** @var list<string> */
     private array $methodStack = [];
 
-    private ?string $currentNamespace = null;
-    private ?string $currentClass = null;
-    private int $closureCounter = 0;
-    private int $anonymousClassDepth = 0;
-
     public function reset(): void
     {
-        $this->methodInfos = [];
+        $this->scopes = [];
+        $this->counts = [];
         $this->methodStack = [];
-        $this->currentNamespace = null;
-        $this->currentClass = null;
-        $this->closureCounter = 0;
-        $this->anonymousClassDepth = 0;
+        $this->resetVisitorMethodContext();
     }
 
     /**
-     * @return list<MethodWithMetrics>
+     * @return list<CallableWithMetrics>
      */
-    public function getMethodsWithMetrics(): array
+    public function getCallablesWithMetrics(RelativePath $file): array
     {
         $result = [];
 
-        foreach ($this->methodInfos as $info) {
-            $result[] = new MethodWithMetrics(
-                namespace: $info['namespace'],
-                class: $info['class'],
-                method: $info['method'],
-                line: $info['line'],
-                metrics: (new MetricBag())->with(MetricName::SIZE_METHOD_STATEMENT_COUNT, $info['count']),
+        $ordinals = $this->callableCollisionOrdinals($this->scopes);
+        foreach ($this->scopes as $key => $scope) {
+            $result[] = $this->createCallableWithMetrics(
+                $scope,
+                $file,
+                (new MetricBag())->with(MetricName::SIZE_METHOD_STATEMENT_COUNT, $this->counts[$key]),
+                $ordinals[$key],
             );
         }
 
         return $result;
     }
 
+    /** @return array<string, int> */
+    public function getStatementCounts(): array
+    {
+        /** @var array<string, int> $counts */
+        $counts = $this->projectLogicalMetricMap($this->counts, $this->scopes);
+
+        return $counts;
+    }
+
     public function enterNode(Node $node): ?int
     {
-        if ($node instanceof Stmt\Namespace_) {
-            $this->currentNamespace = $node->name?->toString() ?? '';
-        }
-
-        if ($node instanceof Stmt\Class_) {
-            if ($node->name === null) {
-                ++$this->anonymousClassDepth;
-            } else {
-                $this->currentClass = $node->name->toString();
-            }
-        } elseif ($this->isClassLikeNode($node)) {
-            $className = $this->extractClassLikeName($node);
-            if ($className !== null) {
-                $this->currentClass = $className;
-            }
-        }
-
-        if ($node instanceof Stmt\ClassMethod) {
-            if ($this->anonymousClassDepth === 0) {
-                $this->startMethod(
-                    $this->buildMethodFqn($node->name->toString()),
-                    $node->name->toString(),
-                    $node->getStartLine(),
-                );
-            }
-
-            return null;
-        }
-
-        if ($node instanceof Stmt\Function_) {
-            if ($this->anonymousClassDepth > 0) {
-                return null;
-            }
-
-            $this->startMethod(
-                $this->buildFunctionFqn($node->name->toString()),
-                $node->name->toString(),
-                $node->getStartLine(),
-            );
-
-            return null;
-        }
-
-        if ($node instanceof Expr\Closure || $node instanceof Expr\ArrowFunction) {
-            if ($this->anonymousClassDepth > 0) {
-                return null;
-            }
-
-            ++$this->closureCounter;
-            $name = '{closure#' . $this->closureCounter . '}';
-            $this->startMethod($this->buildClosureFqn(), $name, $node->getStartLine());
+        $scope = $this->enterVisitorMethodContext($node);
+        if ($scope !== null) {
+            $this->startMethod($scope);
 
             if ($node instanceof Expr\ArrowFunction) {
                 $this->incrementCurrentMethod();
@@ -134,7 +93,7 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
             return null;
         }
 
-        if ($this->anonymousClassDepth === 0 && $this->isCountedStatement($node)) {
+        if ($this->isCountedStatement($node)) {
             $this->incrementCurrentMethod();
         }
 
@@ -143,57 +102,25 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
 
     public function leaveNode(Node $node): ?int
     {
-        if ($node instanceof Stmt\ClassMethod) {
-            if ($this->anonymousClassDepth === 0) {
-                array_pop($this->methodStack);
-            }
-
-            return null;
-        }
-
-        if ($node instanceof Stmt\Function_) {
-            if ($this->anonymousClassDepth === 0) {
-                array_pop($this->methodStack);
-            }
-
-            return null;
-        }
-
-        if ($node instanceof Expr\Closure || $node instanceof Expr\ArrowFunction) {
-            if ($this->anonymousClassDepth === 0) {
-                array_pop($this->methodStack);
-            }
-
-            return null;
-        }
-
-        if ($node instanceof Stmt\Class_) {
-            if ($node->name === null) {
-                --$this->anonymousClassDepth;
-            } else {
-                $this->currentClass = null;
-            }
-        } elseif ($this->isClassLikeNode($node)) {
-            $this->currentClass = null;
-        }
-
-        if ($node instanceof Stmt\Namespace_) {
-            $this->currentNamespace = null;
+        $scope = $this->leaveVisitorMethodContext($node);
+        if ($scope !== null) {
+            $this->endMethod($scope);
         }
 
         return null;
     }
 
-    private function startMethod(string $fqn, string $method, int $line): void
+    private function startMethod(VisitorCallableScope $scope): void
     {
-        $this->methodInfos[$fqn] = [
-            'namespace' => $this->currentNamespace,
-            'class' => $this->currentClass,
-            'method' => $method,
-            'line' => $line,
-            'count' => 0,
-        ];
+        $fqn = $scope->traversalKey;
+        $this->scopes[$fqn] = $scope;
+        $this->counts[$fqn] = 0;
         $this->methodStack[] = $fqn;
+    }
+
+    private function endMethod(VisitorCallableScope $scope): void
+    {
+        array_pop($this->methodStack);
     }
 
     private function incrementCurrentMethod(): void
@@ -203,7 +130,7 @@ final class MethodStatementCountVisitor extends NodeVisitorAbstract implements R
         }
 
         $fqn = $this->methodStack[array_key_last($this->methodStack)];
-        ++$this->methodInfos[$fqn]['count'];
+        ++$this->counts[$fqn];
     }
 
     private function isCountedStatement(Node $node): bool

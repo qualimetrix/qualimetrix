@@ -25,19 +25,29 @@ use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Pipeline\MetricEnricher;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
+use Qualimetrix\Architecture\Domain\Layer\ClassSet;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
+use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Profiler\ProfilerInterface;
 use Qualimetrix\Core\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Core\Rule\RuleSelector;
+use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -135,7 +145,12 @@ final class AnalysisPipelineTest extends TestCase
     {
         $files = [new SplFileInfo('/tmp/test.php')];
         $dependencies = [
-            new Dependency(SymbolPath::fromClassFqn('App\Foo'), SymbolPath::fromClassFqn('App\Bar'), DependencyType::New_, new Location(RelativePath::fromString('tmp/test.php'), 10)),
+            new Dependency(
+                new DeclarationPath(SymbolPath::fromClassFqn('App\Foo'), RelativePath::fromString('tmp/test.php'), 0),
+                new LogicalClassPath(SymbolPath::fromClassFqn('App\Bar')),
+                DependencyType::New_,
+                new Location(RelativePath::fromString('tmp/test.php'), 10),
+            ),
         ];
 
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator($files));
@@ -280,7 +295,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $overrides = [
             'src/Foo.php' => [
-                new ThresholdOverride('complexity.cyclomatic', 15.0, 25.0, 10),
+                self::thresholdOverride('complexity.cyclomatic', 15.0, 25.0, 10),
             ],
         ];
 
@@ -441,7 +456,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $overrides = [
             'src/Foo.php' => [
-                new ThresholdOverride('code-smell.boolean-argument', 50.0, 100.0, 10, 50),
+                self::thresholdOverride('code-smell.boolean-argument', 50.0, 100.0, 10, 50),
             ],
         ];
 
@@ -479,7 +494,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $overrides = [
             'src/Foo.php' => [
-                new ThresholdOverride('complexity.cyclomatic', 15.0, 25.0, 10, 50),
+                self::thresholdOverride('complexity.cyclomatic', 15.0, 25.0, 10, 50),
             ],
         ];
 
@@ -634,7 +649,7 @@ final class AnalysisPipelineTest extends TestCase
 
         $overrides = [
             'src/Foo.php' => [
-                new ThresholdOverride('*', 15.0, 25.0, 10, 50),
+                self::thresholdOverride('*', 15.0, 25.0, 10, 50),
             ],
         ];
 
@@ -653,6 +668,183 @@ final class AnalysisPipelineTest extends TestCase
         $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
 
         self::assertSame([], $result->violations);
+    }
+
+    #[Test]
+    public function itKeepsCollectionArchitectureEnrichmentAndRulesInExactOrderForDegreeZeroClasses(): void
+    {
+        $events = [];
+        $root = (new AnalysisConfiguration())->projectRoot;
+        $file = RelativePath::fromString('src/DegreeZero.php');
+        $class = SymbolPath::fromClassFqn('App\\DegreeZero');
+        $discovered = new SplFileInfo($root->value() . '/' . $file->value());
+        $capturedRepository = null;
+
+        $discovery = self::createStub(FileDiscoveryInterface::class);
+        $discovery->method('discover')->willReturn(new ArrayIterator([$discovered]));
+
+        $collection = $this->createMock(CollectionOrchestratorInterface::class);
+        $collection->expects(self::once())->method('collect')->willReturnCallback(
+            static function (array $files, MetricRepositoryInterface $repository) use (
+                &$events,
+                &$capturedRepository,
+                $class,
+                $file,
+                $discovered,
+            ): CollectionPhaseOutput {
+                self::assertSame([$discovered], $files);
+                $events[] = 'Collection';
+                $capturedRepository = $repository;
+                $repository->add($class, MetricBag::fromArray(['base' => 1]), $file, 1);
+
+                return new CollectionPhaseOutput(new CollectionResult([$file], []), []);
+            },
+        );
+
+        $architecture = $this->createMock(ArchitectureProcessorInterface::class);
+        $architecture->expects(self::once())->method('prepare')->willReturnCallback(
+            static function (DependencyGraphInterface $graph, ClassSet $classSet) use (&$events, $class): void {
+                $events[] = 'Architecture';
+                self::assertSame([$class], $graph->getAllClasses());
+                self::assertSame([$class], $classSet->classes());
+            },
+        );
+        $architecture->bind(ArchitectureConfiguration::empty());
+
+        $globalCollector = self::createStub(GlobalContextCollectorInterface::class);
+        $globalCollector->method('getName')->willReturn('order-fixture');
+        $globalCollector->method('provides')->willReturn(['enriched']);
+        $globalCollector->method('requires')->willReturn([]);
+        $globalCollector->method('getMetricDefinitions')->willReturn([]);
+        $globalCollector->method('calculate')->willReturnCallback(
+            static function (DependencyGraphInterface $graph, MetricRepositoryInterface $repository) use (&$events, $class): void {
+                $events[] = 'Enrichment';
+                self::assertSame([$class], $graph->getAllClasses());
+                $repository->addScalar($class, 'enriched', 1);
+            },
+        );
+        $enricher = new MetricEnricher(
+            compositeCollector: $this->compositeCollector,
+            globalCollectorRunner: new GlobalCollectorRunner([$globalCollector]),
+            configurationProvider: $this->configurationProvider,
+            logger: $this->logger,
+        );
+
+        $rules = $this->createMock(RuleExecutorInterface::class);
+        $rules->expects(self::once())->method('execute')->willReturnCallback(
+            static function (\Qualimetrix\Core\Rule\AnalysisContext $context) use (&$events, $class): array {
+                $events[] = 'RuleExecution';
+                self::assertSame(1, $context->metrics->get($class)->get('enriched'));
+                self::assertNotNull($context->dependencyGraph);
+                self::assertSame([$class], $context->dependencyGraph->getAllClasses());
+
+                return [];
+            },
+        );
+
+        $result = TestPipelineBuilder::create()
+            ->withDefaultDiscovery($discovery)
+            ->withCollectionOrchestrator($collection)
+            ->withRuleExecutor($rules)
+            ->withConfigurationProvider($this->configurationProvider)
+            ->withMetricEnricher($enricher)
+            ->withArchitectureProcessor($architecture)
+            ->withLogger($this->logger)
+            ->build()
+            ->analyze($root);
+
+        self::assertSame(['Collection', 'Architecture', 'Enrichment', 'RuleExecution'], $events);
+        self::assertSame([], $result->violations);
+        self::assertSame(1, $result->filesAnalyzed);
+        self::assertSame(0, $result->filesSkipped);
+        self::assertTrue($result->coverage->isComplete());
+        self::assertSame(1, $result->coverage->discoveredFiles());
+        self::assertSame($capturedRepository, $result->metrics);
+        self::assertSame(1, $result->metrics->get($class)->get('enriched'));
+        self::assertNotNull($result->namespaceTree);
+        self::assertSame([], $result->suppressions);
+        self::assertSame([], $result->thresholdOverrides);
+    }
+
+    #[Test]
+    public function itUsesOneResolvedProfilerEvenWhenDiscoveryReplacesTheGlobalHolder(): void
+    {
+        $primaryEvents = [];
+        $replacementEvents = [];
+        $primary = self::createStub(ProfilerInterface::class);
+        $primary->method('start')->willReturnCallback(
+            static function (string $name) use (&$primaryEvents): void {
+                $primaryEvents[] = 'start:' . $name;
+            },
+        );
+        $primary->method('stop')->willReturnCallback(
+            static function (string $name) use (&$primaryEvents): void {
+                $primaryEvents[] = 'stop:' . $name;
+            },
+        );
+        $replacement = self::createStub(ProfilerInterface::class);
+        $replacement->method('start')->willReturnCallback(
+            static function (string $name) use (&$replacementEvents): void {
+                $replacementEvents[] = 'start:' . $name;
+            },
+        );
+        $replacement->method('stop')->willReturnCallback(
+            static function (string $name) use (&$replacementEvents): void {
+                $replacementEvents[] = 'stop:' . $name;
+            },
+        );
+
+        ProfilerHolder::set($primary);
+        try {
+            $discovery = self::createStub(FileDiscoveryInterface::class);
+            $discovery->method('discover')->willReturnCallback(static function () use ($replacement): ArrayIterator {
+                ProfilerHolder::reset();
+                ProfilerHolder::set($replacement);
+
+                return new ArrayIterator([]);
+            });
+            $this->collectionOrchestrator->method('collect')->willReturn(
+                new CollectionPhaseOutput(new CollectionResult([], []), []),
+            );
+            $architecture = $this->createMock(ArchitectureProcessorInterface::class);
+            $architecture->expects(self::once())->method('prepare');
+            $architecture->bind(ArchitectureConfiguration::empty());
+
+            TestPipelineBuilder::create()
+                ->withDefaultDiscovery($discovery)
+                ->withCollectionOrchestrator($this->collectionOrchestrator)
+                ->withRuleExecutor($this->ruleExecutor)
+                ->withConfigurationProvider($this->configurationProvider)
+                ->withMetricEnricher(new MetricEnricher(
+                    compositeCollector: $this->compositeCollector,
+                    globalCollectorRunner: $this->globalCollectorRunner,
+                    configurationProvider: $this->configurationProvider,
+                    logger: $this->logger,
+                ))
+                ->withArchitectureProcessor($architecture)
+                ->withLogger($this->logger)
+                ->withProfilerHolder(new ProfilerHolder())
+                ->build()
+                ->analyze(AbsolutePath::fromString('/path/to/src'));
+        } finally {
+            ProfilerHolder::reset();
+        }
+
+        self::assertSame([
+            'start:analysis',
+            'start:discovery',
+            'stop:discovery',
+            'start:collection',
+            'stop:collection',
+            'start:dependency',
+            'stop:dependency',
+            'start:architecture-prepare',
+            'stop:architecture-prepare',
+            'start:rules',
+            'stop:rules',
+            'stop:analysis',
+        ], $primaryEvents);
+        self::assertSame([], $replacementEvents);
     }
 
     private function createPipeline(
@@ -697,6 +889,26 @@ final class AnalysisPipelineTest extends TestCase
                 $projectRoot,
             ),
             $files,
+        );
+    }
+
+    private static function thresholdOverride(
+        string $rulePattern,
+        int|float $warning,
+        int|float $error,
+        int $line,
+        ?int $endLine = null,
+    ): ThresholdOverride {
+        $file = RelativePath::fromString('src/Foo.php');
+
+        return new ThresholdOverride(
+            $rulePattern,
+            $warning,
+            $error,
+            $line,
+            MetricSubject::aggregate(SymbolPath::forFile($file)),
+            ControlScope::Class_,
+            $endLine,
         );
     }
 }

@@ -51,8 +51,8 @@ final class JsonGraphExporter implements GraphExporterInterface
         $edgeMap = [];
 
         foreach ($graph->getAllDependencies() as $dependency) {
-            $sourceKey = $dependency->source->toCanonical();
-            $targetKey = $dependency->target->toCanonical();
+            $sourceKey = $dependency->sourceLogical()->toCanonical();
+            $targetKey = $dependency->targetLogical()->toCanonical();
 
             // Only include edges where both nodes are in filtered set
             if (!isset($classSet[$sourceKey]) || !isset($classSet[$targetKey])) {
@@ -63,8 +63,8 @@ final class JsonGraphExporter implements GraphExporterInterface
 
             if (!isset($edgeMap[$edgeKey])) {
                 $edgeMap[$edgeKey] = [
-                    'from' => $dependency->source->toString(),
-                    'to' => $dependency->target->toString(),
+                    'from' => $dependency->sourceLogical()->toString(),
+                    'to' => $dependency->targetLogical()->toString(),
                     'types' => [],
                     'count' => 0,
                 ];

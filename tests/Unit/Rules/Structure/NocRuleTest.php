@@ -15,7 +15,8 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
-use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Suppression\ControlScope;
+use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Structure\NocOptions;
@@ -86,7 +87,7 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('all');
+        $repository->expects(self::never())->method('allDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -99,7 +100,7 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -113,13 +114,13 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'LeafClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/LeafClass.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/LeafClass.php'), 10);
 
         // NOC of 0 means no children (should be skipped)
         $metricBag = (new MetricBag())->with('noc', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -136,13 +137,13 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'BaseService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/BaseService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/BaseService.php'), 10);
 
         // NOC of 12 is above warning threshold (10) but below error (15)
         $metricBag = (new MetricBag())->with('noc', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -165,13 +166,13 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'VeryPopularBase');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/VeryPopularBase.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/VeryPopularBase.php'), 10);
 
         // NOC of 20 is above error threshold (15)
         $metricBag = (new MetricBag())->with('noc', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -190,13 +191,13 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'ReasonableBase');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/ReasonableBase.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/ReasonableBase.php'), 10);
 
         // NOC of 3 is normal (below warning threshold 7)
         $metricBag = (new MetricBag())->with('noc', 3);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -213,13 +214,13 @@ final class NocRuleTest extends TestCase
         $rule = new NocRule(new NocOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'SomeClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/SomeClass.php'), 10);
 
         // No 'noc' metric
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -228,6 +229,31 @@ final class NocRuleTest extends TestCase
         $violations = $rule->analyze($context);
 
         self::assertCount(0, $violations);
+    }
+
+    #[Test]
+    public function itAppliesAnExactSubjectOverrideAtEquality(): void
+    {
+        $classInfo = self::subjectInfo(SymbolPath::forClass('App', 'ParentClass'), RelativePath::fromString('src/ParentClass.php'), 10);
+        $subject = $classInfo->subject;
+        self::assertNotNull($subject);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('get')->willReturn((new MetricBag())->with('noc', 6));
+        $context = new AnalysisContext(
+            metrics: $repository,
+            thresholdOverrides: [
+                'src/ParentClass.php' => [new ThresholdOverride('design.noc', 5, 6, 1, $subject, ControlScope::Class_, 100)],
+            ],
+        );
+
+        $violations = (new NocRule(new NocOptions(warning: 7, error: 15)))->analyze($context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertSame(6, $violations[0]->threshold);
+        self::assertSame('NOC (Number of Children) is 6, exceeds threshold of 6. Consider using interfaces instead of inheritance', $violations[0]->message);
+        self::assertSame($subject->toCanonical(), $violations[0]->subject->toCanonical());
     }
 
     // Options tests
@@ -280,12 +306,12 @@ final class NocRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())->with('noc', $noc);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -323,5 +349,45 @@ final class NocRuleTest extends TestCase
         self::assertArrayHasKey('noc-error', $aliases);
         self::assertSame('warning', $aliases['noc-warning']);
         self::assertSame('error', $aliases['noc-error']);
+    }
+    #[Test]
+    public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([
+            self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('get')->willReturn((new MetricBag())->with('noc', 12));
+
+        $violations = (new NocRule(new NocOptions()))
+            ->analyze(new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:class:App\\Service\\Twin@src/A.php:100',
+            'declaration:class:App\\Service\\Twin@src/B.php:200',
+        ], $subjects);
+    }
+
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            $file,
+            $line,
+            $kind,
+        );
     }
 }

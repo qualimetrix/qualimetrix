@@ -7,10 +7,14 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Json;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\OccurrenceKey;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
@@ -44,7 +48,7 @@ final class JsonViolationSectionTest extends TestCase
     #[Test]
     public function itFormatsSingleViolation(): void
     {
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'process'),
             ruleName: 'complexity.cyclomatic',
@@ -79,9 +83,60 @@ final class JsonViolationSectionTest extends TestCase
     }
 
     #[Test]
+    public function itProjectsCanonicalIdentityWithoutParsingTheSubject(): void
+    {
+        $logical = SymbolPath::forMethod('App\\Service', 'ExampleService', 'run');
+        $subject = MetricSubject::declaration(new DeclarationPath(
+            $logical,
+            RelativePath::fromString('src/Service/ExampleService.php'),
+            99,
+        ));
+        $target = SymbolPath::forClass('App\\Dependency', 'Target');
+
+        $result = $this->section->format([self::violation(
+            location: new Location(RelativePath::fromString('src/Service/ExampleService.php'), 15),
+            subject: $subject,
+            symbolPath: $logical,
+            ruleName: 'architecture.layer-violation',
+            violationCode: 'architecture.layer-violation',
+            message: 'Forbidden dependency',
+            severity: Severity::Error,
+            dependencyTarget: $target,
+            dependencyType: DependencyType::New_,
+            occurrenceKey: OccurrenceKey::semantic('dependency', ['name' => 'target']),
+        )], new FormatterContext());
+
+        self::assertSame($subject->toCanonical(), $result[0]['subject']);
+        self::assertSame($logical->toString(), $result[0]['symbol']);
+        self::assertSame('architecture.layer-violation#architecture.layer-violation', $result[0]['channel']);
+        self::assertSame(OccurrenceKey::semantic('dependency', ['name' => 'target'])->value, $result[0]['occurrence']);
+        self::assertSame([
+            'type' => DependencyType::New_->value,
+            'target' => $target->toCanonical(),
+        ], $result[0]['edge']);
+    }
+
+    #[Test]
+    public function itProjectsATargetOnlyEdgeWithoutInventingAType(): void
+    {
+        $target = SymbolPath::forClass('App', 'Target');
+        $result = $this->section->format([self::violation(
+            location: new Location(RelativePath::fromString('src/Foo.php'), 10),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Foo.php')),
+            ruleName: 'r',
+            violationCode: 'r.edge',
+            message: 'target only',
+            severity: Severity::Warning,
+            dependencyTarget: $target,
+        )], new FormatterContext());
+
+        self::assertSame(['target' => 'class:App\\Target'], $result[0]['edge']);
+    }
+
+    #[Test]
     public function itIncludesTheAcceptedLevelOnAMagnitudeBreach(): void
     {
-        $violation = (new Violation(
+        $violation = (self::violation(
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
             symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'process'),
             ruleName: 'complexity.cyclomatic',
@@ -104,7 +159,7 @@ final class JsonViolationSectionTest extends TestCase
     #[Test]
     public function itIncludesTheAcceptedLevelOnAnOccurrenceBreachWithoutMetricValue(): void
     {
-        $violation = (new Violation(
+        $violation = (self::violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 5),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Foo.php')),
             ruleName: 'code-smell.goto',
@@ -124,7 +179,7 @@ final class JsonViolationSectionTest extends TestCase
     #[Test]
     public function itFormatsViolationWithNoneLocation(): void
     {
-        $violation = new Violation(
+        $violation = self::violation(
             location: Location::none(),
             symbolPath: SymbolPath::forNamespace('App\\Cycle'),
             ruleName: 'architecture.circular-dependency',
@@ -143,7 +198,7 @@ final class JsonViolationSectionTest extends TestCase
     #[Test]
     public function itFormatsViolationWithEmptyNamespace(): void
     {
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/helpers.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/helpers.php')),
             ruleName: 'size.loc',
@@ -162,7 +217,7 @@ final class JsonViolationSectionTest extends TestCase
     #[Test]
     public function itSanitizesNonFiniteMetricValues(): void
     {
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Bad.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Bad'),
             ruleName: 'complexity.cyclomatic',
@@ -183,9 +238,9 @@ final class JsonViolationSectionTest extends TestCase
     // --- sort ---
 
     #[Test]
-    public function itSortsErrorsBeforeWarnings(): void
+    public function itSortsByCanonicalSubjectAfterChannel(): void
     {
-        $warning = new Violation(
+        $warning = self::violation(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'size.loc',
@@ -194,7 +249,7 @@ final class JsonViolationSectionTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $error = new Violation(
+        $error = self::violation(
             location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'size.loc',
@@ -205,14 +260,14 @@ final class JsonViolationSectionTest extends TestCase
 
         $sorted = $this->section->sort([$warning, $error]);
 
-        self::assertSame(Severity::Error, $sorted[0]->severity);
-        self::assertSame(Severity::Warning, $sorted[1]->severity);
+        self::assertSame(Severity::Warning, $sorted[0]->severity);
+        self::assertSame(Severity::Error, $sorted[1]->severity);
     }
 
     #[Test]
-    public function itSortsByExceedanceDescending(): void
+    public function itSortsByCanonicalSubjectInsteadOfExceedance(): void
     {
-        $low = new Violation(
+        $low = self::violation(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
@@ -223,7 +278,7 @@ final class JsonViolationSectionTest extends TestCase
             threshold: 10,
         );
 
-        $high = new Violation(
+        $high = self::violation(
             location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'complexity.cyclomatic',
@@ -236,14 +291,14 @@ final class JsonViolationSectionTest extends TestCase
 
         $sorted = $this->section->sort([$low, $high]);
 
-        self::assertSame('high exceedance', $sorted[0]->message);
-        self::assertSame('low exceedance', $sorted[1]->message);
+        self::assertSame('low exceedance', $sorted[0]->message);
+        self::assertSame('high exceedance', $sorted[1]->message);
     }
 
     #[Test]
-    public function itSortsByFileThenLineThenCode(): void
+    public function itSortsByChannelSubjectOccurrenceAndEdge(): void
     {
-        $v1 = new Violation(
+        $v1 = self::violation(
             location: new Location(RelativePath::fromString('b.php'), 10),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'r',
@@ -252,7 +307,7 @@ final class JsonViolationSectionTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $v2 = new Violation(
+        $v2 = self::violation(
             location: new Location(RelativePath::fromString('a.php'), 20),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'r',
@@ -261,26 +316,80 @@ final class JsonViolationSectionTest extends TestCase
             severity: Severity::Warning,
         );
 
-        $v3 = new Violation(
+        $v3 = self::violation(
             location: new Location(RelativePath::fromString('a.php'), 10),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'r',
             violationCode: 'r.a',
             message: 'v3',
             severity: Severity::Warning,
+            occurrenceKey: OccurrenceKey::semantic('test', ['id' => 1]),
         );
 
-        $sorted = $this->section->sort([$v1, $v2, $v3]);
+        $v4 = self::violation(
+            location: new Location(RelativePath::fromString('a.php'), 5),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
+            ruleName: 'r',
+            violationCode: 'r.a',
+            message: 'v4',
+            severity: Severity::Warning,
+            occurrenceKey: OccurrenceKey::semantic('test', ['id' => 1]),
+            dependencyTarget: SymbolPath::forClass('App', 'Target'),
+            dependencyType: DependencyType::New_,
+        );
 
-        self::assertSame('v3', $sorted[0]->message); // a.php:10
-        self::assertSame('v2', $sorted[1]->message); // a.php:20
-        self::assertSame('v1', $sorted[2]->message); // b.php:10
+        $sorted = $this->section->sort([$v1, $v4, $v3, $v2]);
+
+        self::assertSame('v2', $sorted[0]->message);
+        self::assertSame('v3', $sorted[1]->message);
+        self::assertSame('v4', $sorted[2]->message);
+        self::assertSame('v1', $sorted[3]->message);
     }
 
     #[Test]
-    public function itSortsWithNonFiniteExceedancesTreatedAsZero(): void
+    public function itSortsTheExactNoEdgeUntypedAndTypedMatrix(): void
     {
-        $inf = new Violation(
+        $make = static fn(
+            string $message,
+            ?SymbolPath $target = null,
+            ?DependencyType $type = null,
+        ): Violation => self::violation(
+            location: new Location(RelativePath::fromString('matrix.php'), 1),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('matrix.php')),
+            ruleName: 'r',
+            violationCode: 'r.edge',
+            message: $message,
+            severity: Severity::Warning,
+            dependencyTarget: $target,
+            dependencyType: $type,
+        );
+        $alpha = SymbolPath::forClass('App', 'Alpha');
+        $beta = SymbolPath::forClass('App', 'Beta');
+        $zulu = SymbolPath::forClass('App', 'Zulu');
+
+        $sorted = $this->section->sort([
+            $make('type_hint/Alpha', $alpha, DependencyType::TypeHint),
+            $make('untyped/Beta', $beta),
+            $make('new/Zulu', $zulu, DependencyType::New_),
+            $make('no-edge'),
+            $make('new/Alpha', $alpha, DependencyType::New_),
+            $make('untyped/Alpha', $alpha),
+        ]);
+
+        self::assertSame([
+            'no-edge',
+            'untyped/Alpha',
+            'untyped/Beta',
+            'new/Alpha',
+            'new/Zulu',
+            'type_hint/Alpha',
+        ], array_map(static fn(Violation $violation): string => $violation->message, $sorted));
+    }
+
+    #[Test]
+    public function itSortsByChannelWithoutReadingMetricValues(): void
+    {
+        $inf = self::violation(
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'r',
@@ -291,7 +400,7 @@ final class JsonViolationSectionTest extends TestCase
             threshold: 10,
         );
 
-        $normal = new Violation(
+        $normal = self::violation(
             location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'r',
@@ -304,9 +413,8 @@ final class JsonViolationSectionTest extends TestCase
 
         $sorted = $this->section->sort([$inf, $normal]);
 
-        // INF exceedance is 0.0 (non-finite guard), so normal (exceedance=10) comes first
-        self::assertSame('normal', $sorted[0]->message);
-        self::assertSame('inf', $sorted[1]->message);
+        self::assertSame('inf', $sorted[0]->message);
+        self::assertSame('normal', $sorted[1]->message);
     }
 
     // --- countByRule ---
@@ -320,7 +428,7 @@ final class JsonViolationSectionTest extends TestCase
     #[Test]
     public function itCountsByRuleGroupsAndSortsDescending(): void
     {
-        $makeViolation = static fn(string $rule): Violation => new Violation(
+        $makeViolation = static fn(string $rule): Violation => self::violation(
             location: new Location(RelativePath::fromString('f.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('f.php')),
             ruleName: $rule,
@@ -341,4 +449,61 @@ final class JsonViolationSectionTest extends TestCase
 
         self::assertSame(['size.loc' => 3, 'complexity.cyclomatic' => 2], $counts);
     }
+
+    /**
+     * Builds a violation fixture with an explicit declaration or aggregate
+     * subject, preserving the production contract without hiding it behind a
+     * legacy fallback.
+     *
+     * @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations
+     */
+    private static function violation(
+        \Qualimetrix\Core\Violation\Location $location,
+        \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
+        string $ruleName,
+        string $violationCode,
+        string $message,
+        \Qualimetrix\Core\Violation\Severity $severity,
+        int|float|null $metricValue = null,
+        ?\Qualimetrix\Core\Rule\RuleLevel $level = null,
+        array $relatedLocations = [],
+        ?string $recommendation = null,
+        int|float|null $threshold = null,
+        ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
+        ?\Qualimetrix\Core\Dependency\DependencyType $dependencyType = null,
+        ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null,
+        ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
+    ): Violation {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File,
+            \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
+            \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath(
+                $symbolPath,
+                $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'),
+                $location->line ?? 0,
+            )),
+        };
+
+        return new Violation(
+            location: $location,
+            subject: $subject,
+            symbolPath: $symbolPath,
+            ruleName: $ruleName,
+            violationCode: $violationCode,
+            message: $message,
+            severity: $severity,
+            metricValue: $metricValue,
+            level: $level,
+            relatedLocations: $relatedLocations,
+            recommendation: $recommendation,
+            threshold: $threshold,
+            dependencyTarget: $dependencyTarget,
+            dependencyType: $dependencyType,
+            acceptedLevel: $acceptedLevel,
+            occurrenceKey: $occurrenceKey,
+        );
+    }
+
 }

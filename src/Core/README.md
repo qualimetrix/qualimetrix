@@ -21,8 +21,8 @@ Core/
 │   ├── MetricCollectorInterface.php
 │   ├── MetricDefinition.php              # VO for aggregation descriptions
 │   ├── MetricRepositoryInterface.php
-│   ├── MethodMetricsProviderInterface.php
-│   ├── MethodWithMetrics.php
+│   ├── CallableMetricsProviderInterface.php
+│   ├── CallableWithMetrics.php
 │   ├── ClassMetricsProviderInterface.php  # Provider for class-level metrics
 │   ├── ClassWithMetrics.php               # VO for class with metrics
 │   ├── NamespaceMetricProviderInterface.php # Provider for namespace-owned contributions
@@ -56,6 +56,11 @@ Core/
 │   └── Attribute/
 │       └── CliAlias.php                   # Repeatable attribute declaring a rule's CLI aliases
 ├── Symbol/
+│   ├── CallableKind.php                   # PHP callable declaration kind enum
+│   ├── DeclarationPath.php                # Durable source declaration identity
+│   ├── LogicalClassPath.php               # Validated class-level logical identity
+│   ├── MetricSubject.php                  # Declaration, class, or aggregate metric subject
+│   ├── MetricSubjectCodec.php             # Scalar wire codec for metric subjects
 │   ├── SymbolType.php
 │   ├── SymbolPath.php                     # Stable symbol identifier (moved from Violation/)
 │   ├── SymbolInfo.php
@@ -77,6 +82,7 @@ Core/
 │   └── DuplicateLocation.php              # VO: a single location within a duplicate block
 ├── Violation/
 │   ├── Violation.php
+│   ├── OccurrenceKey.php                 # Stable SHA-256 discriminator for one semantic occurrence
 │   ├── ViolationChannel.php               # VO: (ruleName, violationCode) — the address of a kind of finding
 │   ├── ChannelShape.php                   # Enum: magnitude / occurrence — what a channel's metricValue means for baseline purposes
 │   ├── ChannelDeclaration.php             # VO: a channel's shape plus, for magnitude channels, its WorseDirection
@@ -107,6 +113,7 @@ Core/
 │   ├── ComputedMetricDefinitionHolder.php # Static runtime holder for resolved definitions
 │   └── HealthDimension.php               # Enum: health dimension identifiers (complexity, cohesion, etc.)
 ├── Suppression/
+│   ├── ControlScope.php                  # Declaration scope and precedence: hook > property > callable > class
 │   ├── Suppression.php                    # VO: suppression tag from docblock (@qmx-ignore)
 │   ├── SuppressionType.php                # Enum: suppression scope (symbol/next-line/file)
 │   └── ThresholdOverride.php              # VO: threshold override from docblock (@qmx-threshold)
@@ -181,23 +188,23 @@ Marker interface for collectors that can be safely instantiated in parallel work
 - Must not depend on external services
 - All state must be self-contained and resettable via `reset()`
 
-### MethodMetricsProviderInterface
+### CallableMetricsProviderInterface
 
-Optional interface for collectors that provide method/function-level metrics.
+Optional interface for collectors that provide callable-level metrics.
 
 Allows Analyzer to extract detailed metrics without knowledge of specific collector types.
 This ensures proper layer separation: Analysis depends on Core abstractions, not on Metrics implementations.
 
 **Methods:**
-- `getMethodsWithMetrics(): list<MethodWithMetrics>` — returns method metrics after AST traversal
+- `getCallablesWithMetrics(RelativePath $file): list<CallableWithMetrics>` — returns declaration-scoped callable metrics after AST traversal. Each payload carries its exact `DeclarationPath`, `CallableKind`, anonymous syntax metadata where applicable, lexical class context, and nullable class aggregation owner.
 
-**Usage:** Implemented by collectors that gather method-level metrics (e.g., CyclomaticComplexityCollector).
+**Usage:** Implemented by collectors that gather callable-level metrics (e.g., CyclomaticComplexityCollector).
 
 ### ClassMetricsProviderInterface
 
 Optional interface for collectors that provide class-level metrics.
 
-Analogous to `MethodMetricsProviderInterface` but for class-level data. Allows extracting class metrics without knowing concrete collector types.
+Analogous to `CallableMetricsProviderInterface` but for class-level data. Allows extracting class metrics without knowing concrete collector types.
 
 **Methods:**
 - `getClassesWithMetrics(): list<ClassWithMetrics>` — returns class metrics after AST traversal
@@ -210,19 +217,17 @@ Optional interface for collectors that can attribute file-collected metrics to
 individual namespace source blocks. `NamespaceWithMetrics` carries the namespace,
 source line, and contribution bag through sequential and parallel collection.
 
-### MethodWithMetrics
+### CallableWithMetrics
 
-Value Object — a method/function with collected metrics.
+Value Object — one concrete callable declaration with collected metrics.
 
 **Fields:**
-- `namespace: ?string` — namespace (null for global functions)
-- `class: ?string` — class name (null for functions)
-- `method: string` — method/function name
-- `line: int` — line number
+- `declarationPath: DeclarationPath` — exact source declaration identity, including file and byte offset
+- `kind: CallableKind` — method, function, property hook, or anonymous callable
+- `anonymousSyntax: ?string` — `closure` or `arrow` for anonymous callables
+- `lexicalClassContext: ?DeclarationPath` — enclosing class declaration where applicable
+- `classAggregationOwner: ?LogicalClassPath` — explicit owner for method/property-hook class roll-up
 - `metrics: MetricBag` — collected metrics
-
-**Methods:**
-- `getSymbolPath(): ?SymbolPath` — creates SymbolPath (null for closures)
 
 ### ClassWithMetrics
 
@@ -254,14 +259,18 @@ Value Object — metric container for a single entity (file/class/method).
 
 ### MetricRepositoryInterface
 
-Access to collected metrics for rules. Uses `SymbolPath` for unified access.
+Access to collected metrics for rules. Aggregate APIs remain `SymbolPath`-based;
+typed APIs preserve declaration and logical-class identity without collapsing them.
 
 **Methods:**
 - `get(SymbolPath $symbol): MetricBag` — metrics for any symbol
 - `all(SymbolType $type): iterable<SymbolInfo>` — iterator over symbols of a given type
 - `has(SymbolPath $symbol): bool` — check if metrics exist
+- `getSubject(MetricSubject $subject): MetricBag` / `hasSubject(...)` — typed lookup
+- `addSubject(...)` and `addCallable(CallableWithMetrics $callable)` — typed writes
+- `allDeclarations()`, `allCallables()`, `allLogicalClasses()` — typed iteration
 
-All symbol levels (Method, Class, File, Namespace, Project) return `MetricBag`.
+All symbol levels (Callable, Class, File, Namespace, Project) return `MetricBag`.
 Aggregated metrics use naming convention: `{metric}.{strategy}` (e.g., `ccn.sum`, `loc.avg`).
 
 **SymbolType (Enum):**
@@ -278,9 +287,12 @@ enum SymbolType: string {
 
 **Usage examples:**
 ```php
-// Method metrics (raw)
-$metrics = $repository->get(SymbolPath::forMethod('App\Service', 'UserService', 'calculate'));
-$ccn = $metrics->get('ccn'); // int
+// Exact callable metrics (raw; duplicate logical declarations stay distinct)
+foreach ($repository->allCallables() as $callableInfo) {
+    $subject = $callableInfo->subject
+        ?? throw new LogicException('Callable metrics require an exact declaration subject');
+    $ccn = $repository->getSubject($subject)->get('ccn'); // int|null
+}
 
 // Namespace metrics (aggregated)
 $nsMetrics = $repository->get(SymbolPath::forNamespace('App\Service'));
@@ -288,10 +300,6 @@ $avgCcn = $nsMetrics->get('ccn.avg'); // float
 $totalLoc = $nsMetrics->get('loc.sum'); // int
 $classCount = $nsMetrics->get('classCount.sum'); // int
 
-// Iterate over all methods
-foreach ($repository->all(SymbolType::Method) as $methodInfo) {
-    $metrics = $repository->get($methodInfo->symbolPath);
-}
 ```
 
 **Advantages of a unified API:**
@@ -316,13 +324,13 @@ Defines how metrics are aggregated when transitioning to a higher level.
 
 Hierarchy level of a symbol in the aggregation tree.
 
-| Value        | Description                   |
-| ------------ | ----------------------------- |
-| `Method`     | Method or function (leaf)     |
-| `Class_`     | Class, interface, trait, enum |
-| `File`       | File                          |
-| `Namespace_` | Namespace                     |
-| `Project`    | Project (root)                |
+| Value        | Description                       |
+| ------------ | --------------------------------- |
+| `Callable`   | Callable (PHP method or function) |
+| `Class_`     | Class, interface, trait, enum     |
+| `File`       | File                              |
+| `Namespace_` | Namespace                         |
+| `Project`    | Project (root)                    |
 
 ### MetricDefinition
 
@@ -342,7 +350,7 @@ Value Object — describes a metric and its aggregation strategies.
 ```php
 new MetricDefinition(
     name: 'ccn',
-    collectedAt: SymbolLevel::Method,
+    collectedAt: SymbolLevel::Callable,
     aggregations: [
         'class' => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
         'namespace' => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
@@ -353,16 +361,16 @@ new MetricDefinition(
 
 ### Metric Aggregation Model
 
-Metrics are aggregated **upward** through the symbol hierarchy: Method → Class → Namespace → Project.
+Metrics are aggregated **upward** through the symbol hierarchy: Callable → Class → Namespace → Project.
 Each level aggregates only from its **direct children** (flat aggregation):
 
-- **Class** metrics = aggregated from its methods (e.g., `ccn.sum` = sum of all method CCN values)
-- **Namespace** metrics = aggregated from methods/classes directly in the namespace (not from nested namespaces). For method-collected metrics (CCN, Cognitive, NPath, MI), `.max`/`.avg`/`.p95` reflect per-method values.
+- **Class** metrics = aggregated from its callables (e.g., `ccn.sum` = sum of all callable CCN values)
+- **Namespace** metrics = aggregated from callables/classes directly in the namespace (not from nested namespaces). For callable-collected metrics (CCN, Cognitive, NPath, MI), `.max`/`.avg`/`.p95` reflect per-callable values.
 - **Project** metrics = aggregated from all namespaces
 
 This means namespace metrics describe the namespace **as an organizational unit**, not its entire subtree.
-For example, `App\Payment` with `ccn.avg = 4` reflects only methods in classes directly in `App\Payment`,
-not methods in `App\Payment\Gateway` or other sub-namespaces.
+For example, `App\Payment` with `ccn.avg = 4` reflects only callables in classes directly in `App\Payment`,
+not callables in `App\Payment\Gateway` or other sub-namespaces.
 
 **Hierarchical (subtree) aggregation** — recursive roll-up across nested namespaces — is not part of the
 core metric system. It is a presentation concern, computed on the client side (e.g., JS in the HTML report)
@@ -423,7 +431,7 @@ are assembled and consumed.
 
 ### HierarchicalRuleInterface
 
-Extends `RuleInterface` for rules that operate on multiple levels of code hierarchy (method, class, namespace), with different thresholds and logic for each level.
+Extends `RuleInterface` for rules that operate on multiple levels of code hierarchy (callable, class, namespace), with different thresholds and logic for each level.
 
 **Methods:**
 - `getSupportedLevels(): list<RuleLevel>` — levels at which this rule operates
@@ -478,7 +486,7 @@ Levels of code hierarchy at which rules can operate.
 
 | Value        | Description |
 | ------------ | ----------- |
-| `Method`     | Method      |
+| `Callable`   | Callable    |
 | `Class_`     | Class       |
 | `Namespace_` | Namespace   |
 
@@ -586,6 +594,20 @@ Stable symbol identifier for baseline. Does not depend on line number. Located i
 - `App\Service` — namespace
 - `::globalFunction` — global function
 
+### MetricSubjectCodec
+
+`MetricSubjectCodec` is the canonical scalar wire grammar for metric subjects.
+Collectors encode file, class, method, and function identity without serializing
+paths or identity objects through IPC. Rules decode those components with the
+authoritative container `RelativePath`.
+
+`decodeEntry(array<string, scalar>, RelativePath): MetricSubject` is the DataBag
+ingress. It selects exactly `subjectKind`, `logicalKind`, `namespace`, `class`,
+`member`, `startFilePos`, and `collisionOrdinal`, retains only `int|string`, and
+delegates all grammar validation to `decode()`. Unrelated entry data is ignored;
+a retained bool or float is dropped and therefore fails when the component is
+required. Entry data can never replace the caller-supplied container path.
+
 ### Violation
 
 A rule violation.
@@ -602,12 +624,28 @@ A rule violation.
 - `relatedLocations: list<Location>` — additional locations related to this violation (e.g., other occurrences of duplicated code)
 - `recommendation: ?string` — human-readable message for summary/detail formatters (e.g., "Cyclomatic complexity: 15 (threshold: 10) — too many code paths")
 - `threshold: int|float|null` — threshold that was exceeded (for programmatic comparison)
-- `dependencyTarget: ?SymbolPath` — target symbol of the offending dependency edge (for dependency-based rules such as `architecture.layer-violation`); null for non-dependency rules
-- `dependencyType: ?DependencyType` — type of the offending dependency edge; null for non-dependency rules. Both fields are included in the baseline hash when non-null, enabling per-edge baseline identity that survives line drift
+- `dependencyTarget: ?SymbolPath` — target symbol of the offending dependency edge (for dependency-based rules such as `architecture.layer-violation`); target presence defines whether an edge exists
+- `dependencyType: ?DependencyType` — optional reference type for a target-bearing edge; a target without a type is a valid untyped edge
+- `occurrenceKey: ?OccurrenceKey` — stable semantic discriminator for repeated findings on one channel and subject
 
 **Methods:**
-- `getFingerprint(): string` — unique identifier for baseline (`ruleName:symbolPath`)
+- `getFingerprint(): string` — formatter identity built from channel, exact subject, optional occurrence, and optional edge. No-edge and fully typed edge bytes retain their established forms; a target-only edge uses the collision-safe `untyped-edge:<byte-length>:<canonical-target>` component. Baseline identity is owned separately by `BaselineIdentity`.
 - `channel(): ViolationChannel` — the `(ruleName, violationCode)` pair this violation was emitted on
+
+### OccurrenceKey
+
+Immutable semantic discriminator for occurrence-shaped findings that share a
+channel and metric subject. `semantic(string $kind, array $scalarEvidence):
+self` sorts the named evidence, serializes `{kind, evidence}` with stable JSON
+flags, and exposes the resulting 64-character SHA-256 digest through the
+readonly `value` field. The kind and every evidence name must be non-empty;
+evidence values are scalar. Invalid input throws `InvalidArgumentException`.
+
+The type depends only on PHP scalar/JSON/hash primitives and
+`InvalidArgumentException`; it does not depend on Baseline or Reporting.
+`OccurrenceKeyTest` directly covers order-independent canonicalization,
+kind/evidence separation, digest shape, and an empty-kind rejection. Baseline identity and
+serialization are integration consumers, not owners of this contract.
 
 ### ViolationChannel
 
@@ -834,6 +872,19 @@ Matches namespaces against patterns. Same dual-mode logic as `PathMatcher` but u
 ---
 
 ## Suppression Value Objects
+
+### ControlScope (Enum)
+
+Declaration-ranked scope carried by symbol suppressions and threshold
+overrides. Its cases are `Hook`, `Property`, `Callable`, and `Class_`;
+`specificity(): int` returns `4`, `3`, `2`, and `1` respectively. Physical
+file and next-line controls remain represented by `SuppressionType` and never
+enter this precedence enum.
+
+`ControlScope` has no dependencies beyond PHP. `DeclarationBindingsTest` and
+`PropertyHookControlPrecedenceTest` cover production binding and the exact
+hook-over-property-over-class precedence, while `SourceControlsTest` verifies
+that controls with different declaration scopes remain distinct.
 
 ### Suppression
 

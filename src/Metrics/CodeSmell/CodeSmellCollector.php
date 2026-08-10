@@ -75,7 +75,10 @@ final class CodeSmellCollector extends AbstractCollector
             $locations = $this->visitor->getLocationsByType($type);
 
             foreach ($locations as $location) {
-                $entry = ['line' => $location->line];
+                $entry = [
+                    'line' => $location->line,
+                    ...$this->visitor->getSubjectComponents($location),
+                ];
 
                 if ($location->extra !== null) {
                     $entry['extra'] = $location->extra;

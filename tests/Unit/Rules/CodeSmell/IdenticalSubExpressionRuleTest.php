@@ -92,7 +92,7 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
         $metricBag = (new MetricBag())
-            ->withEntry('identicalSubExpression.identical_operands', ['line' => 10]);
+            ->withEntry('identicalSubExpression.identical_operands', ['subjectKind' => 'file', 'line' => 10, 'detail' => '']);
 
         $context = $this->createContext($metricBag);
         $violations = $rule->analyze($context);
@@ -111,7 +111,7 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
         $metricBag = (new MetricBag())
-            ->withEntry('identicalSubExpression.duplicate_condition', ['line' => 5]);
+            ->withEntry('identicalSubExpression.duplicate_condition', ['subjectKind' => 'file', 'line' => 5, 'detail' => '']);
 
         $context = $this->createContext($metricBag);
         $violations = $rule->analyze($context);
@@ -126,7 +126,7 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
         $metricBag = (new MetricBag())
-            ->withEntry('identicalSubExpression.identical_ternary', ['line' => 3]);
+            ->withEntry('identicalSubExpression.identical_ternary', ['subjectKind' => 'file', 'line' => 3, 'detail' => '']);
 
         $context = $this->createContext($metricBag);
         $violations = $rule->analyze($context);
@@ -141,7 +141,7 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
         $metricBag = (new MetricBag())
-            ->withEntry('identicalSubExpression.duplicate_match_arm', ['line' => 7]);
+            ->withEntry('identicalSubExpression.duplicate_match_arm', ['subjectKind' => 'file', 'line' => 7, 'detail' => '']);
 
         $context = $this->createContext($metricBag);
         $violations = $rule->analyze($context);
@@ -156,9 +156,9 @@ final class IdenticalSubExpressionRuleTest extends TestCase
         $rule = new IdenticalSubExpressionRule(new IdenticalSubExpressionOptions());
 
         $metricBag = (new MetricBag())
-            ->withEntry('identicalSubExpression.identical_operands', ['line' => 5])
-            ->withEntry('identicalSubExpression.identical_operands', ['line' => 8])
-            ->withEntry('identicalSubExpression.duplicate_condition', ['line' => 12]);
+            ->withEntry('identicalSubExpression.identical_operands', ['subjectKind' => 'file', 'line' => 5, 'detail' => ''])
+            ->withEntry('identicalSubExpression.identical_operands', ['subjectKind' => 'file', 'line' => 8, 'detail' => ''])
+            ->withEntry('identicalSubExpression.duplicate_condition', ['subjectKind' => 'file', 'line' => 12, 'detail' => '']);
 
         $context = $this->createContext($metricBag);
         $violations = $rule->analyze($context);

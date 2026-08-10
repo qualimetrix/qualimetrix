@@ -20,12 +20,13 @@ final readonly class CodeSmellLocation
         public string $type,
         public int $line,
         public int $column,
+        public string $subjectId,
         public ?string $extra = null,
         public ?bool $promoted = null,
     ) {}
 
     /**
-     * @return array{type: string, line: int, column: int, extra: ?string, promoted: ?bool}
+     * @return array{type: string, line: int, column: int, subjectId: string, extra: ?string, promoted: ?bool}
      */
     public function toArray(): array
     {
@@ -33,6 +34,7 @@ final readonly class CodeSmellLocation
             'type' => $this->type,
             'line' => $this->line,
             'column' => $this->column,
+            'subjectId' => $this->subjectId,
             'extra' => $this->extra,
             'promoted' => $this->promoted,
         ];

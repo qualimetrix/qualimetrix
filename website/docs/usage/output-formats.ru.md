@@ -84,7 +84,7 @@ bin/qmx check src/ --detail=50
 **Пример вывода:**
 
 ```
-src/Service/UserService.php:42: error[complexity.cyclomatic.method]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
+src/Service/UserService.php:42: error[complexity.cyclomatic.callable]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
 src/Service/UserService.php:87: warning[size.method-count.class]: Class has 22 methods, max recommended is 20 (UserService)
 src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max allowed is 15 (OrderRepository)
 
@@ -181,10 +181,14 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
         {
             "file": "src/Service/UserService.php",
             "line": 42,
+            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php:1234",
             "symbol": "App\\Service\\UserService::calculate",
+            "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
+            "occurrence": null,
+            "edge": null,
             "namespace": "App\\Service",
             "rule": "complexity.cyclomatic",
-            "code": "complexity.cyclomatic.method",
+            "code": "complexity.cyclomatic.callable",
             "severity": "error",
             "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
             "recommendation": null,
@@ -208,6 +212,18 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
 <!-- llms:skip-end -->
 
 Записи `worstNamespaces` и `worstClasses` включают поле `violationDensity` -- количество нарушений на 100 строк кода -- для нормализованной по размеру оценки качества кода.
+
+Для машинной идентичности используй `channel + subject + optional occurrence +
+optional edge`. `symbol` — логическая проекция для отображения; строка исходника,
+сообщение и порядок вывода не являются стабильной идентичностью. `subject`
+различает точные декларации, логические и агрегатные subjects, `occurrence`
+различает семантические свидетельства внутри канала, а `edge` содержит
+обязательную цель зависимости и необязательный `type` ссылки. Нетипизированное
+ребро имеет вид `{"target": "class:App\\Dependency"}`, типизированное —
+`{"type": "new", "target": "class:App\\Dependency"}`. Fingerprints форматтеров
+используют ту же комбинацию, поэтому target-only рёбра различаются по цели и
+отличаются от типизированного ребра к той же цели. Существующие fingerprints
+без ребра и с полностью типизированным ребром не меняются.
 
 При использовании `--group-by=class` или `--group-by=namespace` нарушения организуются в объект `violationGroups`, где ключами являются FQCN класса или пространство имён. Каждая группа содержит массив нарушений и сводные счётчики (`errorCount`, `warningCount`, `violationDensity`).
 
@@ -250,11 +266,11 @@ bin/qmx check src/ --format=json --no-progress > report.json
 
 ## metrics
 
-Необработанные значения метрик для каждого символа (файл, класс, метод, пространство имён). В отличие от `json`, который выводит нарушения, `metrics` экспортирует исходные данные метрик, которые оценивают правила.
+Необработанные значения метрик для каждого символа (файл, класс, callable, пространство имён). В отличие от `json`, который выводит нарушения, `metrics` экспортирует исходные данные метрик, которые оценивают правила.
 
 **Когда использовать:** Пользовательские дашборды, анализ трендов, пайплайны data science или создание собственных критериев качества на основе сырых метрик.
 
-**Ключи верхнего уровня:** `version`, `package`, `timestamp`, `symbols[]` (каждый с `type`: file/class/method/namespace, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`.
+**Ключи верхнего уровня:** `version`, `package`, `timestamp`, `symbols[]` (каждый с `type`: file/class/callable/namespace, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`.
 
 <!-- llms:skip-begin -->
 **Пример вывода (сокращённо):**
@@ -343,7 +359,7 @@ Checkstyle 3.0 XML: `<file name="...">` с вложенными `<error line="" 
     <error line="42"
            severity="error"
            message="Cyclomatic complexity is 15, max allowed is 10"
-           source="qmx.complexity.cyclomatic.method"/>
+           source="qmx.complexity.cyclomatic.callable"/>
     <error line="87"
            severity="warning"
            message="Class has 22 methods, max recommended is 20"
@@ -387,7 +403,7 @@ SARIF 2.1.0: `runs[].results[]` с `ruleId`, `level` (error/warning), `message.t
             },
             "results": [
                 {
-                    "ruleId": "complexity.cyclomatic.method",
+                    "ruleId": "complexity.cyclomatic.callable",
                     "level": "error",
                     "message": {
                         "text": "Cyclomatic complexity is 15, max allowed is 10"
@@ -443,7 +459,7 @@ SARIF 2.1.0: `runs[].results[]` с `ruleId`, `level` (error/warning), `message.t
 [
     {
         "description": "Cyclomatic complexity is 15, max allowed is 10",
-        "check_name": "complexity.cyclomatic.method",
+        "check_name": "complexity.cyclomatic.callable",
         "fingerprint": "a1b2c3d4e5f6...",
         "severity": "critical",
         "location": {
@@ -486,7 +502,7 @@ code_quality:
 
 ```
 ::warning file=src/Service/UserService.php,line=87,title=size.method-count.class::Class has 22 methods, max recommended is 20
-::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic.method::Cyclomatic complexity is 15, max allowed is 10
+::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic.callable::Cyclomatic complexity is 15, max allowed is 10
 ```
 
 **Использование в CI (GitHub Actions):**

@@ -14,6 +14,7 @@ use Qualimetrix\Architecture\Rules\CircularDependencyOptions;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Baseline\BaselineIdentity;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
@@ -23,11 +24,9 @@ use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
  *
  * The detected SCC partition is unique, but the order of members inside an SCC
  * used to fall out of the traversal order — which follows file discovery order.
- * Since the first member becomes the violation's symbol path, and the symbol
- * path feeds {@see BaselineIdentity::forViolation()}, adding an unrelated file
- * could silently re-key an existing baseline entry: the recorded violation
- * would look resolved and a "new" one would appear in its place for the very
- * same cycle.
+ * Findings use the project aggregate for their subject/display and a sorted
+ * complete member-list occurrence key. Adding an unrelated file must not
+ * re-key the existing baseline identity, while a different member set must.
  */
 #[CoversClass(CircularDependencyDetector::class)]
 #[CoversClass(CircularDependencyRule::class)]
@@ -51,19 +50,45 @@ final class CycleIdentityStabilityTest extends TestCase
     ];
 
     #[Test]
-    public function itKeepsTheViolationSymbolPathStableAcrossNodeInsertionOrders(): void
+    public function itKeepsTheProjectSubjectAndOccurrenceStableAcrossNodeInsertionOrders(): void
     {
         $symbolPaths = [];
+        $occurrences = [];
+        $fingerprints = [];
 
         foreach (self::CYCLE_PERMUTATIONS as $adjacencyList) {
-            $symbolPaths[] = $this->violationFor($adjacencyList)->symbolPath->toCanonical();
+            $violation = $this->violationFor($adjacencyList);
+            $symbolPaths[] = $violation->symbolPath->toCanonical();
+            $occurrences[] = $violation->occurrenceKey?->value;
+            $fingerprints[] = $violation->getFingerprint();
         }
 
         self::assertSame(
-            array_fill(0, \count(self::CYCLE_PERMUTATIONS), 'class:App\Alpha'),
+            array_fill(0, \count(self::CYCLE_PERMUTATIONS), SymbolPath::forProject()->toCanonical()),
             $symbolPaths,
-            'The cycle representative must be the smallest canonical key, whatever the insertion order',
+            'Cycle findings use the project aggregate as their display projection.',
         );
+        self::assertSame(array_fill(0, \count(self::CYCLE_PERMUTATIONS), $occurrences[0]), $occurrences);
+        self::assertSame(array_fill(0, \count(self::CYCLE_PERMUTATIONS), $fingerprints[0]), $fingerprints);
+    }
+
+    #[Test]
+    public function itDistinguishesFindingsWithDifferentCompleteMemberSets(): void
+    {
+        $twoMembers = $this->violationFor([
+            'App\Alpha' => ['App\Beta'],
+            'App\Beta' => ['App\Alpha'],
+        ]);
+        $threeMembers = $this->violationFor([
+            'App\Alpha' => ['App\Beta'],
+            'App\Beta' => ['App\Gamma'],
+            'App\Gamma' => ['App\Alpha'],
+        ]);
+
+        self::assertSame(MetricSubject::aggregate(SymbolPath::forProject())->toCanonical(), $twoMembers->subject->toCanonical());
+        self::assertSame($twoMembers->subject->toCanonical(), $threeMembers->subject->toCanonical());
+        self::assertNotSame($twoMembers->occurrenceKey?->value, $threeMembers->occurrenceKey?->value);
+        self::assertNotSame($twoMembers->getFingerprint(), $threeMembers->getFingerprint());
     }
 
     #[Test]
@@ -246,6 +271,7 @@ final class CycleIdentityStabilityTest extends TestCase
 
         self::assertSame($single->message, $repeated->message);
         self::assertSame($single->symbolPath->toCanonical(), $repeated->symbolPath->toCanonical());
+        self::assertSame($single->occurrenceKey?->value, $repeated->occurrenceKey?->value);
     }
 
     /**

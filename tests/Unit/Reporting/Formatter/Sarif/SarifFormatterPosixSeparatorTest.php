@@ -30,11 +30,11 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
     {
         $formatter = new SarifFormatter(new SarifRuleCollector());
 
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Sub/Dir/Foo.php'), 42, true),
             symbolPath: SymbolPath::forClass('App\\Sub\\Dir', 'Foo'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'too complex',
             severity: Severity::Warning,
         );
@@ -58,7 +58,7 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
         $formatter = new SarifFormatter(new SarifRuleCollector());
 
         $related = new Location(RelativePath::fromString('src/Other/Bar.php'), 7, true);
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Main/Foo.php'), 12, true),
             symbolPath: SymbolPath::forClass('App\\Main', 'Foo'),
             ruleName: 'architecture.layer-violation',
@@ -84,4 +84,61 @@ final class SarifFormatterPosixSeparatorTest extends TestCase
         self::assertStringNotContainsString('\\', $mainUri);
         self::assertStringNotContainsString('\\', $relatedUri);
     }
+
+    /**
+     * Builds a violation fixture with an explicit declaration or aggregate
+     * subject, preserving the production contract without hiding it behind a
+     * legacy fallback.
+     *
+     * @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations
+     */
+    private static function violation(
+        \Qualimetrix\Core\Violation\Location $location,
+        \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
+        string $ruleName,
+        string $violationCode,
+        string $message,
+        \Qualimetrix\Core\Violation\Severity $severity,
+        int|float|null $metricValue = null,
+        ?\Qualimetrix\Core\Rule\RuleLevel $level = null,
+        array $relatedLocations = [],
+        ?string $recommendation = null,
+        int|float|null $threshold = null,
+        ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
+        ?\Qualimetrix\Core\Dependency\DependencyType $dependencyType = null,
+        ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null,
+        ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
+    ): Violation {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File,
+            \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
+            \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath(
+                $symbolPath,
+                $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'),
+                $location->line ?? 0,
+            )),
+        };
+
+        return new Violation(
+            location: $location,
+            subject: $subject,
+            symbolPath: $symbolPath,
+            ruleName: $ruleName,
+            violationCode: $violationCode,
+            message: $message,
+            severity: $severity,
+            metricValue: $metricValue,
+            level: $level,
+            relatedLocations: $relatedLocations,
+            recommendation: $recommendation,
+            threshold: $threshold,
+            dependencyTarget: $dependencyTarget,
+            dependencyType: $dependencyType,
+            acceptedLevel: $acceptedLevel,
+            occurrenceKey: $occurrenceKey,
+        );
+    }
+
 }

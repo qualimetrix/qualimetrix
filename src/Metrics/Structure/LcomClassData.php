@@ -63,6 +63,7 @@ final class LcomClassData
         public readonly ?string $namespace = null,
         public readonly string $className = '',
         public readonly int $line = 0,
+        public readonly int $startFilePos = 0,
     ) {}
 
     public function addMethod(string $methodName): void

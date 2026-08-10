@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Coupling;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Coupling\FrameworkNamespaces;
@@ -17,6 +18,8 @@ use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Metrics\Coupling\CouplingCollector;
@@ -164,7 +167,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Foo', 'Vendor\\Baz'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Foo');
 
@@ -188,7 +191,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Baz', 'App\\Bar'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Foo');
         $this->registerClass($repository, 'App\\Baz');
@@ -216,7 +219,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Service', 'Vendor\\B'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Controller');
         $this->registerClass($repository, 'App\\Service');
@@ -241,7 +244,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Baz', 'Vendor\\Qux'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Foo');
         $this->registerClass($repository, 'App\\Baz');
@@ -266,7 +269,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Foo', 'App\\Bar'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Foo');
         $this->registerClass($repository, 'App\\Bar');
@@ -283,13 +286,69 @@ final class CouplingCollectorTest extends TestCase
     }
 
     #[Test]
+    public function itKeepsDegreeZeroClassAndNamespaceCouplingMetricsExplicit(): void
+    {
+        $isolated = new LogicalClassPath(SymbolPath::forClass('App\\Isolated', 'Standalone'));
+        $graph = $this->graph([], [$isolated]);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Isolated\\Standalone');
+        $this->registerNamespace($repository, 'App\\Isolated');
+
+        $this->collector->calculate($graph, $repository);
+
+        $classMetrics = $repository->get(SymbolPath::forClass('App\\Isolated', 'Standalone'));
+        self::assertSame(0, $classMetrics->get('ca'));
+        self::assertSame(0, $classMetrics->get('ce'));
+        self::assertSame(0, $classMetrics->get('cbo'));
+        self::assertSame(0.0, $classMetrics->get('instability'));
+
+        $namespaceMetrics = $repository->get(SymbolPath::forNamespace('App\\Isolated'));
+        self::assertSame(0, $namespaceMetrics->get('ca'));
+        self::assertSame(0, $namespaceMetrics->get('ce'));
+        self::assertSame(0, $namespaceMetrics->get('cbo'));
+        self::assertSame(0.0, $namespaceMetrics->get('instability'));
+    }
+
+    #[Test]
+    public function itDeduplicatesExactSourcesWhileRetainingExternalLogicalTargets(): void
+    {
+        $source = SymbolPath::forClass('App', 'Consumer');
+        $externalTarget = SymbolPath::forClass('Vendor', 'Gateway');
+        $dependencies = [
+            new Dependency(
+                new DeclarationPath($source, RelativePath::fromString('src/ConsumerA.php'), 10),
+                new LogicalClassPath($externalTarget),
+                DependencyType::New_,
+                new Location(RelativePath::fromString('src/ConsumerA.php'), 12),
+            ),
+            new Dependency(
+                new DeclarationPath($source, RelativePath::fromString('src/ConsumerB.php'), 20),
+                new LogicalClassPath($externalTarget),
+                DependencyType::New_,
+                new Location(RelativePath::fromString('src/ConsumerB.php'), 22),
+            ),
+        ];
+        $graph = $this->graph($dependencies);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Consumer');
+
+        $this->collector->calculate($graph, $repository);
+
+        $metrics = $repository->get($source);
+        self::assertSame(1, $metrics->get('ce'));
+        self::assertSame(1, $metrics->get('cbo'));
+        self::assertSame(1, $metrics->get('cbo_app'));
+        self::assertSame(1, $metrics->get('ce_packages'));
+    }
+
+    #[Test]
     public function calculate_handlesGlobalNamespaceClasses(): void
     {
         $deps = [
             $this->dep('GlobalClass', 'Vendor\\Service'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'GlobalClass');
 
@@ -317,7 +376,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Service', 'Vendor\\B'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Controller');
         $this->registerClass($repository, 'App\\Service');
@@ -343,7 +402,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\B', 'App\\A'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
@@ -374,7 +433,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Foo', 'App\\Bar'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Foo');
         $this->registerClass($repository, 'App\\Bar');
@@ -407,7 +466,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Service', 'Vendor\\Z'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
@@ -434,7 +493,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Baz', 'Vendor\\Qux'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Foo');
         $this->registerClass($repository, 'App\\Baz');
@@ -462,7 +521,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('B\\Baz', 'A\\Qux'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'A\\Foo');
         $this->registerClass($repository, 'A\\Qux');
@@ -497,7 +556,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Foo', 'Vendor\\Bar'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Foo');
 
@@ -518,7 +577,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Foo', 'Vendor\\Bar'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Foo');
         $this->registerNamespace($repository, 'App');
@@ -545,7 +604,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Foo', 'Psr\\Log'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Foo');
 
@@ -567,7 +626,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Service\\Foo', 'PhpParser\\Lexer'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Service\\Foo');
 
@@ -588,7 +647,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Service\\Foo', 'App\\Model\\Baz'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Service\\Foo');
         $this->registerClass($repository, 'App\\Repository\\Bar');
@@ -610,7 +669,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Foo', 'App\\Bar'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Foo');
         $this->registerClass($repository, 'App\\Bar');
@@ -641,7 +700,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Controller', 'App\\Service'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Service');
         $this->registerClass($repository, 'App\\Repository');
@@ -669,7 +728,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Service', 'App\\Repository'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Service');
         $this->registerClass($repository, 'App\\Repository');
@@ -699,7 +758,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Service', 'App\\Repository'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Service');
         $this->registerClass($repository, 'App\\Repository');
@@ -725,7 +784,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Service', 'PsrExtended\\Custom\\Class_'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Service');
 
@@ -755,7 +814,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Service', 'App\\Model'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Service');
         $this->registerClass($repository, 'App\\Repository');
@@ -788,7 +847,7 @@ final class CouplingCollectorTest extends TestCase
             $this->dep('App\\Other', 'App\\Service'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Service');
         $this->registerClass($repository, 'App\\Other');
@@ -808,11 +867,27 @@ final class CouplingCollectorTest extends TestCase
     private function dep(string $source, string $target): Dependency
     {
         return new Dependency(
-            SymbolPath::fromClassFqn($source),
-            SymbolPath::fromClassFqn($target),
+            new DeclarationPath(SymbolPath::fromClassFqn($source), RelativePath::fromString('test.php'), 0),
+            new LogicalClassPath(SymbolPath::fromClassFqn($target)),
             DependencyType::New_,
             new Location(RelativePath::fromString('test.php'), 1),
         );
+    }
+
+    /**
+     * @param list<Dependency> $dependencies
+     * @param list<LogicalClassPath> $universe
+     */
+    private function graph(array $dependencies, array $universe = []): DependencyGraph
+    {
+        if ($universe === []) {
+            $universe = array_map(
+                static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
+                $dependencies,
+            );
+        }
+
+        return $this->graphBuilder->build($dependencies, $universe);
     }
 
     private function registerClass(InMemoryMetricRepository $repository, string $fqn): void

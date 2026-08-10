@@ -10,10 +10,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\Override\IndependentAxisValidator;
 use Qualimetrix\Core\Rule\Override\InvertedOverrideValidator;
 use Qualimetrix\Core\Rule\Override\StandardOverrideValidator;
 use Qualimetrix\Core\Rule\Override\WarningOnlyValidator;
+use Qualimetrix\Core\Suppression\ControlScope;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Rules\Complexity\ComplexityOptions;
 use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Qualimetrix\Rules\Design\DataClassOptions;
@@ -215,7 +219,7 @@ final class ThresholdAnnotationParserPathTest extends TestCase
         // parser actually receives a validator for complexity.cyclomatic
         // instead of silently skipping it.
         $rootOptions = ComplexityOptions::fromArray([]);
-        $levelOptions = $rootOptions->forLevel(\Qualimetrix\Core\Rule\RuleLevel::Method);
+        $levelOptions = $rootOptions->forLevel(\Qualimetrix\Core\Rule\RuleLevel::Callable);
         self::assertInstanceOf(\Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface::class, $levelOptions);
         $validator = $levelOptions::getOverrideValidator();
         self::assertSame(StandardOverrideValidator::instance(), $validator);
@@ -259,6 +263,10 @@ final class ThresholdAnnotationParserPathTest extends TestCase
 
         $extractor = new ThresholdOverrideExtractor([$ruleName => $validator]);
 
-        return $extractor->extractWithDiagnostics($node);
+        return $extractor->extractWithDiagnostics(
+            $node,
+            MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/TestClass.php'))),
+            ControlScope::Class_,
+        );
     }
 }

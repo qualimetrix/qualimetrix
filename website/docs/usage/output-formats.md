@@ -84,7 +84,7 @@ Compact, one-line-per-violation output. Compatible with GCC/Clang error format, 
 **Example output:**
 
 ```
-src/Service/UserService.php:42: error[complexity.cyclomatic.method]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
+src/Service/UserService.php:42: error[complexity.cyclomatic.callable]: Cyclomatic complexity is 15, max allowed is 10 (calculate)
 src/Service/UserService.php:87: warning[size.method-count.class]: Class has 22 methods, max recommended is 20 (UserService)
 src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max allowed is 15 (OrderRepository)
 
@@ -181,10 +181,14 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         {
             "file": "src/Service/UserService.php",
             "line": 42,
+            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php:1234",
             "symbol": "App\\Service\\UserService::calculate",
+            "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
+            "occurrence": null,
+            "edge": null,
             "namespace": "App\\Service",
             "rule": "complexity.cyclomatic",
-            "code": "complexity.cyclomatic.method",
+            "code": "complexity.cyclomatic.callable",
             "severity": "error",
             "message": "Cyclomatic complexity: 15 (threshold: 10) — too many code paths",
             "recommendation": null,
@@ -208,6 +212,18 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
 <!-- llms:skip-end -->
 
 The `worstNamespaces` and `worstClasses` entries include a `violationDensity` field -- violations per 100 lines of code -- providing a size-normalized view of code quality.
+
+For machine identity, use `channel + subject + optional occurrence + optional
+edge`. `symbol` is the logical display projection; source line, message, and
+display order are not stable identity. `subject` distinguishes exact
+declarations from logical and aggregate subjects, `occurrence` distinguishes
+semantic evidence within one channel, and `edge` contains a required dependency
+target plus an optional reference `type`. An untyped edge is
+`{"target": "class:App\\Dependency"}`; a typed edge is
+`{"type": "new", "target": "class:App\\Dependency"}`. Formatter fingerprints
+use the same tuple, so target-only edges differ by target and from a typed edge
+to the same target. Existing no-edge and fully typed fingerprints are
+unchanged.
 
 When using `--group-by=class` or `--group-by=namespace`, violations are organized into a `violationGroups` object keyed by class FQCN or namespace. Each group contains its violations array and summary counts (`errorCount`, `warningCount`, `violationDensity`).
 
@@ -250,11 +266,11 @@ bin/qmx check src/ --format=json --no-progress > report.json
 
 ## metrics
 
-Raw metric values for every symbol (file, class, method, namespace). Unlike `json` which outputs violations, `metrics` exports the underlying metric data that rules evaluate.
+Raw metric values for every symbol (file, class, callable, namespace). Unlike `json` which outputs violations, `metrics` exports the underlying metric data that rules evaluate.
 
 **When to use:** Custom dashboards, trend analysis, data science pipelines, or building your own quality gates on raw metrics.
 
-**Top-level keys:** `version`, `package`, `timestamp`, `symbols[]` (each with `type`: file/class/method/namespace, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`.
+**Top-level keys:** `version`, `package`, `timestamp`, `symbols[]` (each with `type`: file/class/callable/namespace, `name`, `file`, `line`, `metrics: {...}`), `coverage`, `summary`.
 
 <!-- llms:skip-begin -->
 **Example output (abbreviated):**
@@ -343,7 +359,7 @@ Checkstyle 3.0 XML: `<file name="...">` with nested `<error line="" severity="er
     <error line="42"
            severity="error"
            message="Cyclomatic complexity is 15, max allowed is 10"
-           source="qmx.complexity.cyclomatic.method"/>
+           source="qmx.complexity.cyclomatic.callable"/>
     <error line="87"
            severity="warning"
            message="Class has 22 methods, max recommended is 20"
@@ -387,7 +403,7 @@ SARIF 2.1.0 spec — `runs[].results[]` entries with `ruleId`, `level` (error/wa
             },
             "results": [
                 {
-                    "ruleId": "complexity.cyclomatic.method",
+                    "ruleId": "complexity.cyclomatic.callable",
                     "level": "error",
                     "message": {
                         "text": "Cyclomatic complexity is 15, max allowed is 10"
@@ -443,7 +459,7 @@ Array of objects with `description`, `check_name`, `fingerprint`, `severity` (cr
 [
     {
         "description": "Cyclomatic complexity is 15, max allowed is 10",
-        "check_name": "complexity.cyclomatic.method",
+        "check_name": "complexity.cyclomatic.callable",
         "fingerprint": "a1b2c3d4e5f6...",
         "severity": "critical",
         "location": {
@@ -486,7 +502,7 @@ Workflow command format: `::<level> file=<path>,line=<n>,title=<rule>::<message>
 
 ```
 ::warning file=src/Service/UserService.php,line=87,title=size.method-count.class::Class has 22 methods, max recommended is 20
-::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic.method::Cyclomatic complexity is 15, max allowed is 10
+::error file=src/Service/UserService.php,line=42,title=complexity.cyclomatic.callable::Cyclomatic complexity is 15, max allowed is 10
 ```
 
 **CI usage (GitHub Actions):**

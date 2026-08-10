@@ -99,6 +99,7 @@ final class BaselineEntryTest extends TestCase
         $identity = new BaselineIdentity(
             'class:App\Web\Controller',
             new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation'),
+            null,
             new BaselineEdge('class:App\Db\Connection', DependencyType::New_),
         );
 
@@ -150,7 +151,7 @@ final class BaselineEntryTest extends TestCase
     private static function identity(): BaselineIdentity
     {
         return new BaselineIdentity(
-            'method:App\Foo::bar',
+            'callable:App\Foo::bar',
             new ViolationChannel('code-smell.goto', 'code-smell.goto'),
         );
     }

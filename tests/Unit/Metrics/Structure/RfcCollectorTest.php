@@ -338,13 +338,13 @@ PHP;
         $traverser->addVisitor($this->collector->getVisitor());
         $traverser->traverse($ast);
 
-        $classesWithMetrics = $this->collector->getClassesWithMetrics();
+        $classesWithMetrics = $this->collector->getClassesWithMetrics(\Qualimetrix\Core\Path\RelativePath::fromString('UserService.php'));
 
         self::assertCount(1, $classesWithMetrics);
 
         $classMetrics = $classesWithMetrics[0];
-        self::assertSame('App\Service', $classMetrics->namespace);
-        self::assertSame('UserService', $classMetrics->class);
+        self::assertSame('App\Service', $classMetrics->declarationPath->logical->namespace);
+        self::assertSame('UserService', $classMetrics->declarationPath->logical->type);
 
         $bag = $classMetrics->metrics;
         self::assertSame(3, $bag->get('rfc')); // 1 own + 2 external
@@ -439,6 +439,12 @@ PHP;
         self::assertSame(11, $metrics->get('rfc:App\Service\OrderProcessor')); // 1 own + 10 external
         self::assertSame(1, $metrics->get('rfc_own:App\Service\OrderProcessor'));
         self::assertSame(10, $metrics->get('rfc_external:App\Service\OrderProcessor'));
+    }
+
+    #[Test]
+    public function itDeliberatelyDoesNotProvideCallableMetrics(): void
+    {
+        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
     private function collectMetrics(string $code): MetricBag

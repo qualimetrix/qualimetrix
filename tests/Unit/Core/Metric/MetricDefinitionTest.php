@@ -25,12 +25,12 @@ final class MetricDefinitionTest extends TestCase
 
         $definition = new MetricDefinition(
             name: 'ccn',
-            collectedAt: SymbolLevel::Method,
+            collectedAt: SymbolLevel::Callable,
             aggregations: $aggregations,
         );
 
         self::assertSame('ccn', $definition->name);
-        self::assertSame(SymbolLevel::Method, $definition->collectedAt);
+        self::assertSame(SymbolLevel::Callable, $definition->collectedAt);
         self::assertSame($aggregations, $definition->aggregations);
     }
 
@@ -53,7 +53,7 @@ final class MetricDefinitionTest extends TestCase
     {
         $definition = new MetricDefinition(
             name: $metricName,
-            collectedAt: SymbolLevel::Method,
+            collectedAt: SymbolLevel::Callable,
         );
 
         self::assertSame($expected, $definition->aggregatedName($strategy));
@@ -78,7 +78,7 @@ final class MetricDefinitionTest extends TestCase
     {
         $definition = new MetricDefinition(
             name: 'ccn',
-            collectedAt: SymbolLevel::Method,
+            collectedAt: SymbolLevel::Callable,
             aggregations: [
                 SymbolLevel::Class_->value => [
                     AggregationStrategy::Sum,
@@ -104,7 +104,7 @@ final class MetricDefinitionTest extends TestCase
     {
         $definition = new MetricDefinition(
             name: 'ccn',
-            collectedAt: SymbolLevel::Method,
+            collectedAt: SymbolLevel::Callable,
             aggregations: [
                 SymbolLevel::Class_->value => [AggregationStrategy::Sum],
             ],
@@ -119,7 +119,7 @@ final class MetricDefinitionTest extends TestCase
     {
         $definition = new MetricDefinition(
             name: 'ccn',
-            collectedAt: SymbolLevel::Method,
+            collectedAt: SymbolLevel::Callable,
             aggregations: [
                 SymbolLevel::Class_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
             ],
@@ -133,7 +133,7 @@ final class MetricDefinitionTest extends TestCase
     {
         $definition = new MetricDefinition(
             name: 'ccn',
-            collectedAt: SymbolLevel::Method,
+            collectedAt: SymbolLevel::Callable,
             aggregations: [
                 SymbolLevel::Class_->value => [AggregationStrategy::Sum],
             ],
@@ -148,7 +148,7 @@ final class MetricDefinitionTest extends TestCase
     {
         $definition = new MetricDefinition(
             name: 'ccn',
-            collectedAt: SymbolLevel::Method,
+            collectedAt: SymbolLevel::Callable,
             aggregations: [
                 SymbolLevel::Class_->value => [],
             ],

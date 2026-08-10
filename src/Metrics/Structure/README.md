@@ -147,7 +147,7 @@ class Service
 RFC = |RS|
 
 Where RS (Response Set) includes:
-- All class methods (public, protected, private)
+- All class methods (public, protected, private) and property hooks
 - All external calls from class methods:
   - Method calls on dependencies ($this->repo->find())
   - Static method calls (Logger::info())
@@ -159,11 +159,11 @@ Where RS (Response Set) includes:
 
 ### Components
 
-| Metric         | Description              |
-| -------------- | ------------------------ |
-| `rfc_own`      | Class's own methods      |
-| `rfc_external` | Unique external calls    |
-| `rfc`          | `rfc_own + rfc_external` |
+| Metric         | Description                            |
+| -------------- | -------------------------------------- |
+| `rfc_own`      | Class's own methods and property hooks |
+| `rfc_external` | Unique external calls                  |
+| `rfc`          | `rfc_own + rfc_external`               |
 
 ### Example
 
@@ -199,7 +199,7 @@ class OrderProcessor
 **Source:** Aggregated metric (sum of method CCN values)
 **Level:** Class
 
-WMC is not collected by a dedicated collector. It is computed as `ccn.sum` — the sum of cyclomatic complexity of all class methods, aggregated from method-level CCN metrics.
+WMC is not collected by a dedicated collector. It is computed as `ccn.sum` — the sum of cyclomatic complexity of all class methods, aggregated from callable-level CCN metrics.
 
 ### Interpretation
 

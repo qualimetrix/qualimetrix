@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\CodeSmell;
 
+use LogicException;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
@@ -23,6 +25,8 @@ use Qualimetrix\Rules\AbstractRule;
  *
  * Too many parameters indicate a method may need a parameter object
  * or the method is doing too much.
+ *
+ * @qmx-ignore health.cohesion -- Interface metadata methods getCategory() and requires() return external enum/metric constants beside one cohesive analysis/projection component; LCOM4 cannot merge those stateless protocol methods.
  */
 #[CliAlias('long-parameter-list-warning', 'warning')]
 #[CliAlias('long-parameter-list-error', 'error')]
@@ -96,43 +100,57 @@ final class LongParameterListRule extends AbstractRule
             return [];
         }
 
+        return $this->analyzeEnabledSymbols($context);
+    }
+
+    /**
+     * @return list<Violation>
+     */
+    private function analyzeEnabledSymbols(AnalysisContext $context): array
+    {
+        \assert($this->options instanceof LongParameterListOptions);
+        $options = $this->options;
         $violations = [];
 
-        foreach ([SymbolType::Method, SymbolType::Function_] as $type) {
-            foreach ($context->metrics->all($type) as $symbolInfo) {
-                $violation = $this->checkSymbol($symbolInfo, $type, $context);
+        foreach ($context->metrics->allCallables() as $symbolInfo) {
+            $subject = $symbolInfo->subject ?? throw new LogicException('Long parameter list findings require an exact callable subject');
+            $declaration = $subject->declarationPath() ?? throw new LogicException('Long parameter list findings require a declaration subject');
+            $symbolType = $declaration->logical->getType();
 
-                if ($violation !== null) {
-                    $violations[] = $violation;
-                }
+            if ($symbolType !== SymbolType::Method && $symbolType !== SymbolType::Function_) {
+                continue;
+            }
+
+            $metrics = $context->metrics->getSubject($subject);
+            $parameterCount = $metrics->get(MetricName::CODE_SMELL_PARAMETER_COUNT);
+            if ($parameterCount === null) {
+                continue;
+            }
+
+            $parameterCountValue = (int) $parameterCount;
+            $isVoConstructor = $metrics->get(MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR) === 1;
+            $violation = $isVoConstructor
+                ? $this->checkVoConstructor($symbolInfo, $subject, $parameterCountValue, $context, $options)
+                : $this->checkSymbol($symbolInfo, $subject, $parameterCountValue, $symbolType, $context, $options);
+
+            if ($violation !== null) {
+                $violations[] = $violation;
             }
         }
 
         return $violations;
     }
 
-    private function checkSymbol(SymbolInfo $symbolInfo, SymbolType $symbolType, AnalysisContext $context): ?Violation
-    {
-        /** @var LongParameterListOptions $options */
-        $options = $this->options;
-
-        $metrics = $context->metrics->get($symbolInfo->symbolPath);
-        $parameterCount = $metrics->get(MetricName::CODE_SMELL_PARAMETER_COUNT);
-
-        if ($parameterCount === null) {
-            return null;
-        }
-
-        $parameterCountValue = (int) $parameterCount;
-        $isVoConstructor = $metrics->get(MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR) === 1;
-
-        // VO constructors use relaxed thresholds since many promoted properties is valid design
-        if ($isVoConstructor) {
-            return $this->checkVoConstructor($symbolInfo, $parameterCountValue, $context, $options);
-        }
-
+    private function checkSymbol(
+        SymbolInfo $symbolInfo,
+        MetricSubject $subject,
+        int $parameterCountValue,
+        SymbolType $symbolType,
+        AnalysisContext $context,
+        LongParameterListOptions $options,
+    ): ?Violation {
         /** @var LongParameterListOptions $effectiveOptions */
-        $effectiveOptions = $this->getEffectiveOptions($context, $options, $symbolInfo->file, $symbolInfo->line ?? 1);
+        $effectiveOptions = $this->getEffectiveOptions($context, $options, $subject);
         $severity = $effectiveOptions->getSeverity($parameterCountValue);
 
         if ($severity === null) {
@@ -144,7 +162,8 @@ final class LongParameterListRule extends AbstractRule
 
         return new Violation(
             location: new Location($symbolInfo->file, $symbolInfo->line),
-            symbolPath: $symbolInfo->symbolPath,
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             violationCode: self::NAME,
             message: \sprintf('%s has %d parameters, exceeds threshold of %d. Consider introducing a parameter object', $kind, $parameterCountValue, $threshold),
@@ -157,11 +176,12 @@ final class LongParameterListRule extends AbstractRule
 
     private function checkVoConstructor(
         SymbolInfo $symbolInfo,
+        MetricSubject $subject,
         int $parameterCount,
         AnalysisContext $context,
         LongParameterListOptions $options,
     ): ?Violation {
-        $override = $context->getThresholdOverride($this->getName(), $symbolInfo->file, $symbolInfo->line ?? 1);
+        $override = $context->getThresholdOverride($this->getName(), $subject);
         $effectiveOptions = $override === null
             ? $options
             : $options->withVoOverride($override->warning, $override->error);
@@ -175,7 +195,8 @@ final class LongParameterListRule extends AbstractRule
 
         return new Violation(
             location: new Location($symbolInfo->file, $symbolInfo->line),
-            symbolPath: $symbolInfo->symbolPath,
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             violationCode: self::NAME,
             message: \sprintf('VO constructor has %d promoted parameters, exceeds threshold of %d. Consider splitting the value object', $parameterCount, $threshold),

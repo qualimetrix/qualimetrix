@@ -18,7 +18,7 @@ final class NpathComplexityOptionsTest extends TestCase
         $options = NpathComplexityOptions::fromArray(['enabled' => false]);
 
         self::assertFalse($options->isEnabled());
-        self::assertFalse($options->method->isEnabled());
+        self::assertFalse($options->callable->isEnabled());
         self::assertFalse($options->class->isEnabled());
     }
 

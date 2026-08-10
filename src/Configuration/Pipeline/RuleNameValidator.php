@@ -23,7 +23,7 @@ final class RuleNameValidator
      *
      * Throws ConfigLoadException if any rule name does not match a registered rule.
      * Matching follows prefix logic: exact match, forward prefix ("complexity" matches
-     * "complexity.cyclomatic"), and reverse prefix ("complexity.cyclomatic.method" refines
+     * "complexity.cyclomatic"), and reverse prefix ("complexity.cyclomatic.callable" refines
      * "complexity.cyclomatic").
      *
      * For each unknown name, suggests the closest known rule name via Levenshtein distance

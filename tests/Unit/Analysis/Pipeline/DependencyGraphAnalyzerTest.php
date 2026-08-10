@@ -65,8 +65,44 @@ final class DependencyGraphAnalyzerTest extends TestCase
             $result->coverage->analyzedFiles,
         ));
         self::assertCount(1, $result->graph->getAllDependencies());
-        self::assertSame('class:App\\Service', $result->graph->getAllDependencies()[0]->source->toCanonical());
-        self::assertSame('class:Domain\\Model', $result->graph->getAllDependencies()[0]->target->toCanonical());
+        self::assertSame('declaration:class:App\\Service@Service.php:39', $result->graph->getAllDependencies()[0]->source->toCanonical());
+        self::assertSame('class:Domain\\Model', $result->graph->getAllDependencies()[0]->targetLogical()->toCanonical());
+    }
+
+    #[Test]
+    public function itBuildsTheCanonicalUniverseForEveryNamedClassLikeAndExternalTarget(): void
+    {
+        file_put_contents($this->tempDir . '/Kinds.php', <<<'PHP'
+<?php
+namespace { class GlobalType {} }
+namespace App {
+    use Vendor\External;
+    class Service extends External { public function make(): object { return new class {}; } }
+    interface Port {}
+    trait Shared {}
+    enum State {}
+}
+PHP);
+
+        $result = $this->createAnalyzer($this->parser())->analyze(
+            [AbsolutePath::fromString($this->tempDir)],
+            AbsolutePath::fromString($this->tempDir),
+        );
+        $classes = array_map(
+            static fn($path): string => $path->toCanonical(),
+            $result->graph->getAllClasses(),
+        );
+        sort($classes);
+
+        self::assertTrue($result->coverage->isComplete());
+        self::assertSame([
+            'class:App\Port',
+            'class:App\Service',
+            'class:App\Shared',
+            'class:App\State',
+            'class:GlobalType',
+            'class:Vendor\External',
+        ], $classes);
     }
 
     #[Test]

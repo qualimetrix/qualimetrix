@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Baseline;
 
 use InvalidArgumentException;
-use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
-use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Violation;
@@ -30,32 +28,19 @@ use Qualimetrix\Core\Violation\ViolationChannel;
  * takes the resolved numbers as data instead of reaching for the
  * `Configuration` layer itself.
  *
- * **Why the `@qmx-threshold` match is not reimplemented here.**
- * {@see AnalysisContext::getThresholdOverride()} already picks the
- * smallest-scope override for a rule, file and line — the same rule
- * ADR 0017 asks `explain` to reuse rather than restate. It is Core, so this
- * package may call it; the only friction is that `AnalysisContext` also
- * demands a {@see MetricRepositoryInterface}, which the override lookup
- * never touches — {@see self::nullMetrics()} is that unused argument, not a
- * second metrics source.
- *
- * **Why the symbol's location does not come from its findings alone.** That
- * lookup needs a file and a line, and taking them from the symbol's current
- * violations answers only for symbols that are currently violating something.
- * The example ADR 0017 gives — "`qmx.yaml` says 10; annotation raises it to 40" —
- * is the opposite case: the annotation is usually *why* the rule no longer
- * fires, so exactly when it is most worth printing there is no finding left
- * to read a location off. {@see $symbolLocations} is the second source, and
- * the run's own metric repository is where every symbol it measured records
- * its declaration site.
+ * Annotation ownership is resolved by exact typed subject. A current
+ * violation is the first source even when its occurrence or dependency edge
+ * differs from the baseline identity; the repository supplies the same exact
+ * subject when no current finding does. Logical projections never invent a
+ * declaration subject.
  */
 final readonly class BoundaryExplanationService
 {
     /**
      * @param list<Violation> $measuredViolations the measured set (ADR 0017) this run produced —
      *                                            both the "currently compared" magnitudes of
-     *                                            ADR 0017 and the symbol's file/line for matching
-     *                                            `@qmx-threshold` annotations come from here
+     *                                            ADR 0017 and the first exact typed subject for
+     *                                            annotation ownership come from here
      * @param array<string, list<ThresholdOverride>> $thresholdOverridesByFile per-file
      *                                                                         `@qmx-threshold`
      *                                                                         overrides — read
@@ -67,16 +52,13 @@ final readonly class BoundaryExplanationService
      *                                                       a channel absent from this map
      *                                                       reports {@see EffectiveBoundary::$configuredThreshold}
      *                                                       as `null`
-     * @param ?MetricRepositoryInterface $symbolLocations the run's measured symbols — read only
-     *                                                    for the declaration site of a symbol
-     *                                                    that reports no violation, which is
-     *                                                    the case an `@qmx-threshold` usually
-     *                                                    causes. `null` limits the annotation
-     *                                                    lookup to symbols that are currently
-     *                                                    violating something
+     * @param ?MetricRepositoryInterface $symbolLocations the run's measured exact subjects;
+     *                                                    repository evidence is the fallback
+     *                                                    when no current violation has that
+     *                                                    canonical subject
      */
     public function explain(
-        string $symbolKey,
+        string $subjectKey,
         ?ViolationChannel $channelFilter,
         ?Baseline $baseline,
         array $measuredViolations,
@@ -84,8 +66,9 @@ final readonly class BoundaryExplanationService
         array $configuredThresholds,
         ?MetricRepositoryInterface $symbolLocations = null,
     ): BoundaryExplanation {
-        $identities = self::relevantIdentities($symbolKey, $channelFilter, $baseline, $measuredViolations);
-        $location = self::locationForSymbol($symbolKey, $measuredViolations, $symbolLocations);
+        $identities = self::relevantIdentities($subjectKey, $channelFilter, $baseline, $measuredViolations);
+        $repositoryIndex = self::repositoryIndex($symbolLocations);
+        $repositoryRecord = self::repositoryRecord($subjectKey, $repositoryIndex);
 
         $boundaries = [];
         foreach ($identities as $identity) {
@@ -95,62 +78,45 @@ final readonly class BoundaryExplanationService
                 $measuredViolations,
                 $thresholdOverridesByFile,
                 $configuredThresholds,
-                $location,
+                $repositoryRecord,
             );
         }
 
         return new BoundaryExplanation(
-            $symbolKey,
+            $subjectKey,
             $boundaries,
-            self::statusFor($symbolKey, $baseline, $measuredViolations, $symbolLocations),
+            self::statusFor($subjectKey, $baseline, $measuredViolations, $repositoryRecord),
         );
     }
 
-    /** @param list<Violation> $measuredViolations */
+    /**
+     * @param list<Violation> $measuredViolations
+     * @param ?array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}} $repositoryRecord
+     */
     private static function statusFor(
         string $symbolKey,
         ?Baseline $baseline,
         array $measuredViolations,
-        ?MetricRepositoryInterface $symbolLocations,
+        ?array $repositoryRecord,
     ): BoundaryExplanationStatus {
-        foreach ($measuredViolations as $violation) {
-            if ($violation->symbolPath->toCanonical() === $symbolKey) {
-                return BoundaryExplanationStatus::Current;
-            }
-        }
-
-        if ($symbolLocations !== null && self::repositoryContains($symbolKey, $symbolLocations)) {
+        if ($repositoryRecord !== null || array_any(
+            $measuredViolations,
+            static fn(Violation $violation): bool => $violation->subject->toCanonical() === $symbolKey,
+        )) {
             return BoundaryExplanationStatus::Current;
         }
 
-        if ($baseline !== null) {
-            foreach ($baseline->entries as $entry) {
-                if ($entry->identity->symbolKey === $symbolKey) {
-                    return BoundaryExplanationStatus::BaselineOnly;
-                }
-            }
-
-            foreach ($baseline->inertEntries as $entry) {
-                if ($entry->symbolKey === $symbolKey) {
-                    return BoundaryExplanationStatus::BaselineOnly;
-                }
-            }
+        if ($baseline !== null && (array_any(
+            $baseline->entries,
+            static fn(BaselineEntry $entry): bool => $entry->identity->subjectKey === $symbolKey,
+        ) || array_any(
+            $baseline->inertEntries,
+            static fn(InertBaselineEntry $entry): bool => $entry->subjectKey === $symbolKey,
+        ))) {
+            return BoundaryExplanationStatus::BaselineOnly;
         }
 
         return BoundaryExplanationStatus::Unknown;
-    }
-
-    private static function repositoryContains(string $symbolKey, MetricRepositoryInterface $repository): bool
-    {
-        foreach (SymbolType::cases() as $type) {
-            foreach ($repository->all($type) as $info) {
-                if ($info->symbolPath->toCanonical() === $symbolKey) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -179,7 +145,7 @@ final readonly class BoundaryExplanationService
             foreach ($baseline->entries as $entry) {
                 $identity = $entry->identity;
 
-                if ($identity->symbolKey !== $symbolKey) {
+                if ($identity->subjectKey !== $symbolKey) {
                     continue;
                 }
 
@@ -192,7 +158,7 @@ final readonly class BoundaryExplanationService
         }
 
         foreach ($measuredViolations as $violation) {
-            if ($violation->symbolPath->toCanonical() !== $symbolKey) {
+            if ($violation->subject->toCanonical() !== $symbolKey) {
                 continue;
             }
 
@@ -217,7 +183,7 @@ final readonly class BoundaryExplanationService
      * @param list<Violation> $measuredViolations
      * @param array<string, list<ThresholdOverride>> $thresholdOverridesByFile
      * @param array<string, int|float> $configuredThresholds
-     * @param ?array{RelativePath, int} $location
+     * @param ?array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}} $repositoryRecord
      */
     private static function explainIdentity(
         BaselineIdentity $identity,
@@ -225,13 +191,14 @@ final readonly class BoundaryExplanationService
         array $measuredViolations,
         array $thresholdOverridesByFile,
         array $configuredThresholds,
-        ?array $location,
+        ?array $repositoryRecord,
     ): EffectiveBoundary {
         $baselineSource = self::baselineSourceFor($identity, $baseline, $measuredViolations);
         $configuredThreshold = $configuredThresholds[$identity->channel->toKey()] ?? null;
 
-        $annotation = $location !== null
-            ? self::findAnnotationOverride($identity->channel, $thresholdOverridesByFile, $location[0], $location[1])
+        $subject = self::subjectForIdentity($identity, $measuredViolations, $repositoryRecord);
+        $annotation = $subject !== null
+            ? self::annotationFor($identity->channel, $thresholdOverridesByFile, $subject)
             : null;
 
         return new EffectiveBoundary($identity, $baselineSource, $configuredThreshold, $annotation);
@@ -285,136 +252,106 @@ final readonly class BoundaryExplanationService
     }
 
     /**
-     * The declaration site of the symbol, from its findings if it has any and
-     * from the run's measured symbols otherwise.
-     *
-     * This is what {@see AnalysisContext::getThresholdOverride()} expects for
-     * its `$file`/`$line` arguments: rules pass the symbol's own declaration
-     * line (e.g. `$methodInfo->line`), not a violation's precise offending
-     * line, so both sources answer the same question — a violation carries
-     * the value the rule was given, and {@see MetricRepositoryInterface}
-     * carries the value the collector recorded, which is where the rule got
-     * it from.
-     *
-     * **The second source is not a fallback for tidiness; it is the case the
-     * feature exists for.** An `@qmx-threshold` that raised a limit is
-     * normally the reason the rule stopped firing, so the symbol most likely
-     * to carry one is precisely the symbol with no violation to read a
-     * location off. Consulting only the findings made `explain` silent about
-     * the annotation in exactly the example ADR 0017 gives for it.
-     *
-     * `null` — and so no annotation reported — when neither source knows
-     * where the symbol is declared: a symbol nothing measured, or an
-     * aggregate (`ns:`, `project:`, and any `file:`-level metric recorded
-     * without a line) that has no declaration line to scope an annotation by.
-     *
-     * @param list<Violation> $measuredViolations
-     *
-     * @return ?array{RelativePath, int}
+     * @return array<string, array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}}>
      */
-    private static function locationForSymbol(
-        string $symbolKey,
-        array $measuredViolations,
-        ?MetricRepositoryInterface $symbolLocations,
-    ): ?array {
-        foreach ($measuredViolations as $violation) {
-            if ($violation->symbolPath->toCanonical() !== $symbolKey) {
-                continue;
-            }
+    private static function repositoryIndex(?MetricRepositoryInterface $repository): array
+    {
+        if ($repository === null) {
+            return [];
+        }
 
-            $file = $violation->location->file;
-            $line = $violation->location->line;
+        $index = [];
+        foreach ([$repository->allDeclarations(), $repository->allCallables()] as $symbols) {
+            $exactRows = iterator_to_array($symbols);
+            array_walk($exactRows, static function ($info) use (&$index): void {
+                $subject = $info->subject ?? throw new InvalidArgumentException(
+                    'Exact repository rows must retain their typed subject.',
+                );
+                $index[$subject->toCanonical()] ??= self::recordFor($subject, $info->file, $info->line);
+            });
+        }
 
-            if ($file !== null && $line !== null) {
-                return [$file, $line];
+        $projectedSources = [$repository->allLogicalClasses()];
+        foreach (SymbolType::cases() as $type) {
+            $projectedSources[] = $repository->all($type);
+        }
+
+        foreach ($projectedSources as $symbols) {
+            foreach ($symbols as $info) {
+                $key = $info->subject?->toCanonical() ?? $info->symbolPath->toCanonical();
+                $index[$key] ??= self::recordFor($info->subject, $info->file, $info->line);
             }
         }
 
-        return $symbolLocations === null ? null : self::declarationSite($symbolKey, $symbolLocations);
+        return $index;
+    }
+
+    /** @return array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}} */
+    private static function recordFor(?MetricSubject $subject, ?RelativePath $file, ?int $line): array
+    {
+        return [
+            'subject' => $subject,
+            'location' => $file !== null && $line !== null ? [$file, $line] : null,
+        ];
     }
 
     /**
-     * Where the run recorded this symbol's declaration, or `null` when it
-     * recorded no usable site for it.
+     * @param array<string, array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}}> $index
      *
-     * Every symbol type is searched rather than the one the key's prefix
-     * names: the prefix is parsed nowhere else in this package, and a scan
-     * that compares whole canonical keys cannot mis-parse one. The cost is a
-     * pass over the run's symbols for a single-symbol command.
-     *
-     * @return ?array{RelativePath, int}
+     * @return ?array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}}
      */
-    private static function declarationSite(string $symbolKey, MetricRepositoryInterface $symbolLocations): ?array
+    private static function repositoryRecord(string $subjectKey, array $index): ?array
     {
-        foreach (SymbolType::cases() as $type) {
-            foreach ($symbolLocations->all($type) as $info) {
-                if ($info->symbolPath->toCanonical() !== $symbolKey) {
-                    continue;
-                }
-
-                if ($info->file !== null && $info->line !== null) {
-                    return [$info->file, $info->line];
-                }
-            }
-        }
-
-        return null;
+        return $index[$subjectKey] ?? null;
     }
 
     /**
      * @param array<string, list<ThresholdOverride>> $thresholdOverridesByFile
      */
-    private static function findAnnotationOverride(
+    private static function annotationFor(
         ViolationChannel $channel,
         array $thresholdOverridesByFile,
-        RelativePath $file,
-        int $line,
+        MetricSubject $subject,
     ): ?ThresholdOverride {
-        $context = new AnalysisContext(
-            metrics: self::nullMetrics(),
-            thresholdOverrides: $thresholdOverridesByFile,
-        );
+        $matches = [];
+        foreach ($thresholdOverridesByFile as $overrides) {
+            $matches = [...$matches, ...array_values(array_filter(
+                $overrides,
+                static fn(ThresholdOverride $override): bool => $override->subject->toCanonical() === $subject->toCanonical()
+                    && $override->matches($channel->ruleName),
+            ))];
+        }
 
-        return $context->getThresholdOverride($channel->ruleName, $file, $line);
+        usort($matches, static function (ThresholdOverride $left, ThresholdOverride $right): int {
+            $specificity = $right->controlScope->specificity() <=> $left->controlScope->specificity();
+            if ($specificity !== 0) {
+                return $specificity;
+            }
+
+            $leftSpan = $left->endLine === null ? \PHP_INT_MAX : max(0, $left->endLine - $left->line);
+            $rightSpan = $right->endLine === null ? \PHP_INT_MAX : max(0, $right->endLine - $right->line);
+
+            return $leftSpan <=> $rightSpan;
+        });
+
+        return $matches[0] ?? null;
     }
 
     /**
-     * A {@see MetricRepositoryInterface} that answers nothing — the argument
-     * {@see AnalysisContext} requires but {@see AnalysisContext::getThresholdOverride()}
-     * never reads. Building one here is cheaper and safer than duplicating
-     * that method's smallest-scope-wins matching a second time.
+     * @param list<Violation> $measuredViolations
+     * @param ?array{subject: ?MetricSubject, location: ?array{0: RelativePath, 1: int}} $repositoryRecord
      */
-    private static function nullMetrics(): MetricRepositoryInterface
-    {
-        return new class implements MetricRepositoryInterface {
-            public function get(SymbolPath $symbol): MetricBag
-            {
-                return new MetricBag();
+    private static function subjectForIdentity(
+        BaselineIdentity $identity,
+        array $measuredViolations,
+        ?array $repositoryRecord,
+    ): ?MetricSubject {
+        foreach ($measuredViolations as $violation) {
+            if ($violation->subject->toCanonical() === $identity->subjectKey) {
+                return $violation->subject;
             }
+        }
 
-            public function all(SymbolType $type): iterable
-            {
-                return [];
-            }
-
-            public function has(SymbolPath $symbol): bool
-            {
-                return false;
-            }
-
-            public function add(SymbolPath $symbol, MetricBag $metrics, ?RelativePath $file, ?int $line): void {}
-
-            public function addScalar(SymbolPath $symbol, string $key, int|float $value): void {}
-
-            public function getNamespaces(): array
-            {
-                return [];
-            }
-
-            public function forNamespace(string $namespace): array
-            {
-                return [];
-            }
-        };
+        return $repositoryRecord['subject'] ?? null;
     }
 }

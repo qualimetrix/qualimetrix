@@ -27,7 +27,7 @@ only_rules:
 
 rules:
   complexity.cyclomatic:
-    method:
+    callable:
       warning: 10
       error: 20
 ```

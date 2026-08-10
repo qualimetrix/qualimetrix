@@ -21,6 +21,8 @@ use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -255,8 +257,8 @@ final class CoverageDiagnosticsTest extends TestCase
         DependencyType $type = DependencyType::New_,
     ): Dependency {
         return new Dependency(
-            source: SymbolPath::forClass($sourceNamespace, $sourceClass),
-            target: SymbolPath::forClass($targetNamespace, $targetClass),
+            source: new DeclarationPath(SymbolPath::forClass($sourceNamespace, $sourceClass), RelativePath::fromString('src/dummy.php'), 0),
+            target: new LogicalClassPath(SymbolPath::forClass($targetNamespace, $targetClass)),
             type: $type,
             location: new Location(RelativePath::fromString('src/dummy.php'), 1),
         );

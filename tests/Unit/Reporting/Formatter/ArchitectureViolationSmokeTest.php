@@ -421,7 +421,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
 
         $violations = [
             // architecture.layer-violation — per-class, with dependency metadata
-            new Violation(
+            self::violation(
                 location: new Location(RelativePath::fromString(self::SOURCE_FILE), self::SOURCE_LINE, precise: true),
                 symbolPath: $sourcePath,
                 ruleName: LayerViolationRule::NAME,
@@ -439,7 +439,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
             ),
 
             // architecture.circular-dependency — per-class, no dependency metadata
-            new Violation(
+            self::violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forClass('App\\Service', 'A'),
                 ruleName: CircularDependencyRule::NAME,
@@ -451,7 +451,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
             ),
 
             // architecture.coverage — project-level diagnostic
-            new Violation(
+            self::violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forProject(),
                 ruleName: LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME,
@@ -462,7 +462,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
             ),
 
             // architecture.empty-template — project-level diagnostic
-            new Violation(
+            self::violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forProject(),
                 ruleName: LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
@@ -473,7 +473,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
             ),
 
             // architecture.unreachable-layer — project-level diagnostic
-            new Violation(
+            self::violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forProject(),
                 ruleName: LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
@@ -484,7 +484,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
             ),
 
             // architecture.potential-shadow — project-level diagnostic (per shadow pair)
-            new Violation(
+            self::violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forProject(),
                 ruleName: LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
@@ -522,4 +522,15 @@ final class ArchitectureViolationSmokeTest extends TestCase
     {
         return \count($this->expectedRuleNames());
     }
+
+    /** @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations */
+    private static function violation(\Qualimetrix\Core\Violation\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Core\Violation\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Core\Rule\RuleLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Core\Dependency\DependencyType $dependencyType = null, ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), $location->line ?? 0)),
+        };
+        return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+    }
+
 }

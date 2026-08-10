@@ -79,20 +79,7 @@ final class DotExporter implements GraphExporterInterface
 
         $lines[] = '';
 
-        // Edges
-        $lines[] = '    // Edges';
-        foreach ($graph->getAllDependencies() as $dependency) {
-            // Only include edges where both nodes are in filtered set
-            if (!isset($classSet[$dependency->source->toCanonical()]) || !isset($classSet[$dependency->target->toCanonical()])) {
-                continue;
-            }
-
-            $lines[] = \sprintf(
-                '    "%s" -> "%s";',
-                $this->escape($dependency->source->toString()),
-                $this->escape($dependency->target->toString()),
-            );
-        }
+        $this->appendEdges($lines, $graph, $classSet);
 
         return $lines;
     }
@@ -136,22 +123,31 @@ final class DotExporter implements GraphExporterInterface
             $lines[] = '';
         }
 
-        // Edges (outside clusters)
+        $this->appendEdges($lines, $graph, $classSet);
+
+        return $lines;
+    }
+
+    /**
+     * @param array<string> $lines
+     * @param array<string, true> $classSet
+     */
+    private function appendEdges(array &$lines, DependencyGraphInterface $graph, array $classSet): void
+    {
         $lines[] = '    // Edges';
+
         foreach ($graph->getAllDependencies() as $dependency) {
             // Only include edges where both nodes are in filtered set
-            if (!isset($classSet[$dependency->source->toCanonical()]) || !isset($classSet[$dependency->target->toCanonical()])) {
+            if (!isset($classSet[$dependency->sourceLogical()->toCanonical()]) || !isset($classSet[$dependency->targetLogical()->toCanonical()])) {
                 continue;
             }
 
             $lines[] = \sprintf(
                 '    "%s" -> "%s";',
-                $this->escape($dependency->source->toString()),
-                $this->escape($dependency->target->toString()),
+                $this->escape($dependency->sourceLogical()->toString()),
+                $this->escape($dependency->targetLogical()->toString()),
             );
         }
-
-        return $lines;
     }
 
     private function getLabel(string $fqcn): string

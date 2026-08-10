@@ -6,15 +6,16 @@ namespace Qualimetrix\Tests\Unit\Rules\Design;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Design\TypeCoverageOptions;
@@ -110,7 +111,7 @@ final class TypeCoverageRuleTest extends TestCase
         $rule = new TypeCoverageRule(new TypeCoverageOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('all');
+        $repository->expects(self::never())->method('allDeclarations');
 
         $context = new AnalysisContext($repository);
 
@@ -123,7 +124,7 @@ final class TypeCoverageRuleTest extends TestCase
         $rule = new TypeCoverageRule(new TypeCoverageOptions());
 
         $symbolPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 5)
@@ -137,7 +138,7 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.property', 100.0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -156,7 +157,7 @@ final class TypeCoverageRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 5);
 
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 10)
@@ -166,7 +167,7 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.propertyTotal', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -190,7 +191,7 @@ final class TypeCoverageRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 5);
 
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 10)
@@ -200,7 +201,7 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.propertyTotal', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -222,7 +223,7 @@ final class TypeCoverageRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 5);
 
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 0)
@@ -232,7 +233,7 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.propertyTotal', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -254,7 +255,7 @@ final class TypeCoverageRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forClass('App', 'TestClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 5);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 5);
 
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 0)
@@ -264,7 +265,7 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.property', 60.0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -290,7 +291,7 @@ final class TypeCoverageRuleTest extends TestCase
         ));
 
         $symbolPath = SymbolPath::forClass('App', 'BadClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 10)
@@ -304,7 +305,7 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.property', 0.0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -324,7 +325,7 @@ final class TypeCoverageRuleTest extends TestCase
         $rule = new TypeCoverageRule(new TypeCoverageOptions());
 
         $symbolPath = SymbolPath::forClass('App', 'EmptyClass');
-        $classInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
             ->with('typeCoverage.paramTotal', 0)
@@ -332,7 +333,7 @@ final class TypeCoverageRuleTest extends TestCase
             ->with('typeCoverage.propertyTotal', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allDeclarations')
             ->willReturn([$classInfo]);
         $repository->method('get')
             ->willReturn($metricBag);
@@ -415,5 +416,125 @@ final class TypeCoverageRuleTest extends TestCase
 
         // Generic getSeverity always returns null
         self::assertNull($options->getSeverity(30.0));
+    }
+
+    #[Test]
+    #[DataProvider('coverageBoundaryProvider')]
+    public function itPreservesStrictBoundariesForEveryCoverageDimension(
+        string $totalMetric,
+        string $coverageMetric,
+        string $code,
+        float $coverage,
+        ?Severity $expectedSeverity,
+        ?float $expectedThreshold,
+    ): void {
+        $symbolPath = SymbolPath::forClass('App\\Service', 'TypedService');
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/TypedService.php'), 17);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('get')->willReturn(
+            MetricBag::fromArray([$totalMetric => 1, $coverageMetric => $coverage]),
+        );
+
+        $violations = (new TypeCoverageRule(new TypeCoverageOptions()))
+            ->analyze(new AnalysisContext($repository));
+
+        if ($expectedSeverity === null) {
+            self::assertSame([], $violations);
+            return;
+        }
+
+        self::assertCount(1, $violations);
+        self::assertSame('design.type-coverage.' . $code, $violations[0]->violationCode);
+        self::assertSame($expectedSeverity, $violations[0]->severity);
+        self::assertSame($expectedThreshold, $violations[0]->threshold);
+        self::assertSame($classInfo->subject?->toCanonical(), $violations[0]->subject->toCanonical());
+        self::assertSame(17, $violations[0]->location->line);
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string, float, ?Severity, ?float}>
+     */
+    public static function coverageBoundaryProvider(): iterable
+    {
+        $dimensions = [
+            'param' => [MetricName::TYPE_COVERAGE_PARAM_TOTAL, MetricName::TYPE_COVERAGE_PARAM],
+            'return' => [MetricName::TYPE_COVERAGE_RETURN_TOTAL, MetricName::TYPE_COVERAGE_RETURN],
+            'property' => [MetricName::TYPE_COVERAGE_PROPERTY_TOTAL, MetricName::TYPE_COVERAGE_PROPERTY],
+        ];
+
+        foreach ($dimensions as $code => [$totalMetric, $coverageMetric]) {
+            yield $code . ' just below warning' => [$totalMetric, $coverageMetric, $code, 79.9, Severity::Warning, 80.0];
+            yield $code . ' at warning' => [$totalMetric, $coverageMetric, $code, 80.0, null, null];
+            yield $code . ' just below error' => [$totalMetric, $coverageMetric, $code, 49.9, Severity::Error, 50.0];
+            yield $code . ' at error' => [$totalMetric, $coverageMetric, $code, 50.0, Severity::Warning, 80.0];
+        }
+    }
+
+    #[Test]
+    public function itTreatsMissingCoverageAsZeroWhenTheDimensionHasSubjects(): void
+    {
+        $symbolPath = SymbolPath::forClass('App\\Service', 'UntypedService');
+        $classInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/UntypedService.php'), 19);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([$classInfo]);
+        $repository->method('get')->willReturn(
+            MetricBag::fromArray([MetricName::TYPE_COVERAGE_PARAM_TOTAL => 2]),
+        );
+
+        $violations = (new TypeCoverageRule(new TypeCoverageOptions()))
+            ->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame('design.type-coverage.param', $violations[0]->violationCode);
+        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertSame(0.0, $violations[0]->metricValue);
+    }
+
+    #[Test]
+    public function itProjectsDuplicateLogicalClassScoresToIndependentExactDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([
+            self::subjectInfo($class, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($class, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('get')->willReturn(
+            (new MetricBag())
+                ->with('typeCoverage.paramTotal', 4)
+                ->with('typeCoverage.param', 25.0)
+                ->with('typeCoverage.returnTotal', 0)
+                ->with('typeCoverage.propertyTotal', 0),
+        );
+
+        $violations = (new TypeCoverageRule(new TypeCoverageOptions()))
+            ->analyze(new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:class:App\\Service\\Twin@src/A.php:100',
+            'declaration:class:App\\Service\\Twin@src/B.php:200',
+        ], $subjects);
+    }
+
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            $file,
+            $line,
+            $kind,
+        );
     }
 }

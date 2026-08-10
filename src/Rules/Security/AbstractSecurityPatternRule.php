@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Security;
 
+use LogicException;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
-use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Core\Violation\ViolationChannel;
@@ -85,8 +85,8 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
 
     /**
      * All three concrete subclasses emit their channel through the loop in
-     * {@see analyze()} below with a fixed `1.0` occurrence marker
-     * (`metricValue: 1.0`) and a fixed `getSeverity()` constant — never a
+     * {@see analyze()} below with a fixed `1.0` occurrence marker projected
+     * by {@see SecurityPatternFinding} and a fixed `getSeverity()` constant — never a
      * measured magnitude — so `occurrence` is the correct shape uniformly.
      * `static::NAME` resolves per concrete subclass via late static
      * binding; {@see \Qualimetrix\Core\Rule\ChannelDeclarationReader} reads
@@ -123,26 +123,19 @@ abstract class AbstractSecurityPatternRule extends AbstractRule
             }
 
             foreach ($entries as $entry) {
-                $line = (int) $entry['line'];
-                $superglobal = (string) ($entry['superglobal'] ?? '');
-
-                $message = $superglobal !== ''
-                    ? \sprintf('%s ($%s)', $this->getMessageTemplate(), $superglobal)
-                    : $this->getMessageTemplate();
-
-                $violations[] = new Violation(
-                    location: new Location($fileInfo->file, $line, precise: true),
-                    symbolPath: $fileInfo->symbolPath,
-                    ruleName: $this->getName(),
-                    violationCode: $this->getName(),
-                    message: $message,
-                    severity: $this->getSeverity(),
-                    metricValue: 1.0,
-                    recommendation: $this->getRecommendation(),
+                $file = $fileInfo->file ?? throw new LogicException('File symbol must carry a relative path');
+                $violations[] = SecurityPatternFinding::fromEntry($entry, $file)->toViolation(
+                    $fileInfo->symbolPath,
+                    $this->getName(),
+                    $type,
+                    $this->getSeverity(),
+                    $this->getMessageTemplate(),
+                    $this->getRecommendation(),
                 );
             }
         }
 
         return $violations;
     }
+
 }

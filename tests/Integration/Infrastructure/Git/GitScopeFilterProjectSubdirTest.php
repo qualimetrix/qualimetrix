@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -101,6 +102,7 @@ final class GitScopeFilterProjectSubdirTest extends TestCase
         $rightViolation = new Violation(
             location: new Location(RelativePath::fromString('src/Other.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\Right'),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Right')),
             ruleName: 'size',
             violationCode: 'size',
             message: 'Namespace too large',
@@ -112,6 +114,7 @@ final class GitScopeFilterProjectSubdirTest extends TestCase
         $wrongViolation = new Violation(
             location: new Location(RelativePath::fromString('src/Other.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\Wrong'),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Wrong')),
             ruleName: 'size',
             violationCode: 'size',
             message: 'Namespace too large',
@@ -174,6 +177,7 @@ final class GitScopeFilterProjectSubdirTest extends TestCase
         $explicit = new Violation(
             location: new Location(RelativePath::fromString('src/Other.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\ExplicitRoot'),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\ExplicitRoot')),
             ruleName: 'size',
             violationCode: 'size',
             message: 'Namespace too large',
@@ -182,6 +186,7 @@ final class GitScopeFilterProjectSubdirTest extends TestCase
         $gitClientRoots = new Violation(
             location: new Location(RelativePath::fromString('src/Other.php'), null),
             symbolPath: SymbolPath::forNamespace('App\\GitClientRoot'),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\GitClientRoot')),
             ruleName: 'size',
             violationCode: 'size',
             message: 'Namespace too large',

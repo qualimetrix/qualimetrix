@@ -10,9 +10,12 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\RuleLevel;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\AcceptedLevel;
 use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\OccurrenceKey;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Core\Violation\ViolationChannel;
@@ -27,6 +30,7 @@ final class ViolationTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+            subject: self::subject(),
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             ruleName: 'cyclomatic-complexity',
             violationCode: 'cyclomatic-complexity',
@@ -36,7 +40,7 @@ final class ViolationTest extends TestCase
         );
 
         self::assertSame(
-            'cyclomatic-complexity:method:App\Service\UserService::calculate',
+            'cyclomatic-complexity#cyclomatic-complexity:file:src/test.php',
             $violation->getFingerprint(),
         );
     }
@@ -46,6 +50,7 @@ final class ViolationTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
+            subject: self::subject(),
             symbolPath: SymbolPath::forClass('App\Service', 'UserService'),
             ruleName: 'class-size',
             violationCode: 'class-size',
@@ -54,7 +59,7 @@ final class ViolationTest extends TestCase
         );
 
         self::assertSame(
-            'class-size:class:App\Service\UserService',
+            'class-size#class-size:file:src/test.php',
             $violation->getFingerprint(),
         );
     }
@@ -64,6 +69,7 @@ final class ViolationTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service/UserService.php')),
+            subject: self::subject(),
             symbolPath: SymbolPath::forNamespace('App\Service'),
             ruleName: 'namespace-size',
             violationCode: 'namespace-size',
@@ -73,7 +79,7 @@ final class ViolationTest extends TestCase
         );
 
         self::assertSame(
-            'namespace-size:ns:App\Service',
+            'namespace-size#namespace-size:file:src/test.php',
             $violation->getFingerprint(),
         );
     }
@@ -83,6 +89,7 @@ final class ViolationTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/bootstrap.php')),
+            subject: self::subject(),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/bootstrap.php')),
             ruleName: 'file-length',
             violationCode: 'file-length',
@@ -91,7 +98,7 @@ final class ViolationTest extends TestCase
         );
 
         self::assertSame(
-            'file-length:file:src/bootstrap.php',
+            'file-length#file-length:file:src/test.php',
             $violation->getFingerprint(),
         );
     }
@@ -101,6 +108,7 @@ final class ViolationTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/functions.php'), 5),
+            subject: self::subject(),
             symbolPath: SymbolPath::forGlobalFunction('', 'myFunction'),
             ruleName: 'cyclomatic-complexity',
             violationCode: 'cyclomatic-complexity',
@@ -109,7 +117,7 @@ final class ViolationTest extends TestCase
         );
 
         self::assertSame(
-            'cyclomatic-complexity:func::myFunction',
+            'cyclomatic-complexity#cyclomatic-complexity:file:src/test.php',
             $violation->getFingerprint(),
         );
     }
@@ -122,6 +130,7 @@ final class ViolationTest extends TestCase
 
         $violation = new Violation(
             location: $location,
+            subject: self::subject(),
             symbolPath: $symbolPath,
             ruleName: 'test-rule',
             violationCode: 'test-rule',
@@ -143,6 +152,7 @@ final class ViolationTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/test.php')),
+            subject: self::subject(),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/test.php')),
             ruleName: 'test-rule',
             violationCode: 'test-rule',
@@ -158,16 +168,17 @@ final class ViolationTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
+            subject: self::subject(),
             symbolPath: SymbolPath::forMethod('App\Service', 'UserService', 'calculate'),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Method has complexity of 15',
             severity: Severity::Warning,
             metricValue: 15,
-            level: RuleLevel::Method,
+            level: RuleLevel::Callable,
         );
 
-        self::assertSame(RuleLevel::Method, $violation->level);
+        self::assertSame(RuleLevel::Callable, $violation->level);
     }
 
     #[Test]
@@ -175,6 +186,7 @@ final class ViolationTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/test.php')),
+            subject: self::subject(),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/test.php')),
             ruleName: 'test-rule',
             violationCode: 'test-rule',
@@ -190,9 +202,10 @@ final class ViolationTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/test.php'), 10),
+            subject: self::subject(),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'complexity',
-            violationCode: 'complexity.method',
+            violationCode: 'complexity.callable',
             message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
             severity: Severity::Error,
             recommendation: 'Cyclomatic complexity: 15 (threshold: 10) — too many code paths',
@@ -209,9 +222,10 @@ final class ViolationTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/test.php'), 10),
+            subject: self::subject(),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'complexity',
-            violationCode: 'complexity.method',
+            violationCode: 'complexity.callable',
             message: 'Cyclomatic complexity is 15, exceeds threshold of 10',
             severity: Severity::Error,
         );
@@ -227,6 +241,7 @@ final class ViolationTest extends TestCase
     {
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/test.php'), 10),
+            subject: self::subject(),
             symbolPath: SymbolPath::forClass('App', 'Foo'),
             ruleName: 'architecture.layer-violation',
             violationCode: 'architecture.coverage',
@@ -260,6 +275,63 @@ final class ViolationTest extends TestCase
         self::assertSame($level, $promoted->acceptedLevel);
     }
 
+    #[Test]
+    public function itUsesSubjectOccurrenceAndEdgeRatherThanLocationOrMessageForFingerprint(): void
+    {
+        $path = RelativePath::fromString('src/Foo.php');
+        $subject = MetricSubject::declaration(new DeclarationPath(
+            SymbolPath::forMethod('App', 'Foo', 'run'),
+            $path,
+            120,
+        ));
+        $occurrence = OccurrenceKey::semantic('dependency', ['target' => 'Vendor\\Api']);
+        $violation = new Violation(
+            location: new Location($path, 900),
+            subject: $subject,
+            symbolPath: SymbolPath::forMethod('App', 'Foo', 'run'),
+            ruleName: 'architecture.layer-violation',
+            violationCode: 'architecture.layer-violation',
+            message: 'Human-readable display text',
+            severity: Severity::Warning,
+            occurrenceKey: $occurrence,
+            dependencyTarget: SymbolPath::forClass('Vendor', 'Api'),
+            dependencyType: DependencyType::New_,
+        );
+
+        self::assertSame(
+            'architecture.layer-violation#architecture.layer-violation:'
+            . $subject->toCanonical() . ':' . $occurrence->value . ':new:class:Vendor\\Api',
+            $violation->getFingerprint(),
+        );
+    }
+
+    #[Test]
+    public function itFingerprintsEverySupportedDependencyEdgeShapeWithoutChangingExistingBytes(): void
+    {
+        $target = SymbolPath::forClass('App', 'Alpha');
+        $occurrence = OccurrenceKey::semantic('dependency', ['id' => 1]);
+        $prefix = 'rule#code:' . self::subject()->toCanonical() . ':' . $occurrence->value;
+
+        $noEdge = self::fingerprintViolation(null, null, $occurrence);
+        $typeWithoutTarget = self::fingerprintViolation(null, DependencyType::New_, $occurrence);
+        $untyped = self::fingerprintViolation($target, null, $occurrence);
+        $typed = self::fingerprintViolation($target, DependencyType::New_, $occurrence);
+
+        self::assertSame($prefix, $noEdge->getFingerprint());
+        self::assertSame($prefix, $typeWithoutTarget->getFingerprint());
+        self::assertSame($prefix . ':untyped-edge:15:class:App\\Alpha', $untyped->getFingerprint());
+        self::assertSame($prefix . ':new:class:App\\Alpha', $typed->getFingerprint());
+        self::assertNotSame(
+            $untyped->getFingerprint(),
+            self::fingerprintViolation(SymbolPath::forClass('App', 'Beta'), null, $occurrence)->getFingerprint(),
+        );
+        self::assertNotSame($untyped->getFingerprint(), $typed->getFingerprint());
+        self::assertNotContains('untyped-edge', array_map(
+            static fn(DependencyType $type): string => $type->value,
+            DependencyType::cases(),
+        ));
+    }
+
     /**
      * Every field {@see Violation::reportedAsBreach()} is supposed to carry
      * across, asserted one by one — **and the list itself checked against the
@@ -282,6 +354,7 @@ final class ViolationTest extends TestCase
         /** @var array<string, array{mixed, mixed}> $copied */
         $copied = [
             'location' => [$original->location, $promoted->location],
+            'subject' => [$original->subject, $promoted->subject],
             'symbolPath' => [$original->symbolPath, $promoted->symbolPath],
             'ruleName' => [$original->ruleName, $promoted->ruleName],
             'violationCode' => [$original->violationCode, $promoted->violationCode],
@@ -293,6 +366,7 @@ final class ViolationTest extends TestCase
             'threshold' => [$original->threshold, $promoted->threshold],
             'dependencyTarget' => [$original->dependencyTarget, $promoted->dependencyTarget],
             'dependencyType' => [$original->dependencyType, $promoted->dependencyType],
+            'occurrenceKey' => [$original->occurrenceKey, $promoted->occurrenceKey],
         ];
 
         foreach ($copied as $field => [$before, $after]) {
@@ -335,18 +409,43 @@ final class ViolationTest extends TestCase
     {
         return new Violation(
             location: new Location(RelativePath::fromString('src/test.php'), 10),
+            subject: self::subject(),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Cyclomatic complexity is 31',
             severity: Severity::Warning,
             metricValue: 31,
-            level: RuleLevel::Method,
+            level: RuleLevel::Callable,
             relatedLocations: [new Location(RelativePath::fromString('src/other.php'), 3)],
             recommendation: 'Split the method',
             threshold: 10,
             dependencyTarget: SymbolPath::forClass('App', 'Bar'),
             dependencyType: DependencyType::New_,
         );
+    }
+
+    private static function fingerprintViolation(
+        ?SymbolPath $target,
+        ?DependencyType $type,
+        ?OccurrenceKey $occurrence = null,
+    ): Violation {
+        return new Violation(
+            location: new Location(RelativePath::fromString('src/test.php'), 10),
+            subject: self::subject(),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/test.php')),
+            ruleName: 'rule',
+            violationCode: 'code',
+            message: 'edge shape',
+            severity: Severity::Warning,
+            dependencyTarget: $target,
+            dependencyType: $type,
+            occurrenceKey: $occurrence,
+        );
+    }
+
+    private static function subject(): MetricSubject
+    {
+        return MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/test.php')));
     }
 }

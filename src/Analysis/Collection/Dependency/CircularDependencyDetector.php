@@ -130,7 +130,7 @@ class CircularDependencyDetector
         // Visit all dependencies
         $nodePath = $this->symbolPathMap[$nodeKey];
         foreach ($graph->getClassDependencies($nodePath) as $dependency) {
-            $targetKey = $dependency->target->toCanonical();
+            $targetKey = $dependency->targetLogical()->toCanonical();
 
             if (!isset($this->indices[$targetKey])) {
                 // Target not visited yet
@@ -241,7 +241,7 @@ class CircularDependencyDetector
     {
         $targets = [];
         foreach ($graph->getClassDependencies($this->symbolPathMap[$nodeKey]) as $dependency) {
-            $targetKey = $dependency->target->toCanonical();
+            $targetKey = $dependency->targetLogical()->toCanonical();
 
             if (isset($sccSet[$targetKey])) {
                 $targets[$targetKey] = true;

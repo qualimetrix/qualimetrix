@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Maintainability;
 
+use LogicException;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -68,13 +70,14 @@ final class MaintainabilityRule extends AbstractRule
 
         $violations = [];
 
-        foreach ($context->metrics->all(SymbolType::Method) as $methodInfo) {
+        foreach ($context->metrics->allCallables() as $methodInfo) {
+            $subject = $methodInfo->subject ?? throw new LogicException('Maintainability findings require an exact callable subject');
             // Skip test files if configured
             if ($this->options->excludeTests && $this->isTestFile($methodInfo->file)) {
                 continue;
             }
 
-            $metrics = $context->metrics->get($methodInfo->symbolPath);
+            $metrics = $context->metrics->getSubject($subject);
 
             // Skip methods with too few statements.
             $statementCount = (int) ($metrics->get(MetricName::SIZE_METHOD_STATEMENT_COUNT) ?? 0);
@@ -90,33 +93,45 @@ final class MaintainabilityRule extends AbstractRule
 
             $miValue = (float) $mi;
             /** @var MaintainabilityOptions $effectiveOptions */
-            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $methodInfo->file, $methodInfo->line ?? 1);
-            $severity = $effectiveOptions->getSeverity($miValue);
-
-            if ($severity !== null) {
-                $threshold = $severity === Severity::Error
-                    ? $effectiveOptions->error
-                    : $effectiveOptions->warning;
-
-                $violations[] = new Violation(
-                    location: new Location($methodInfo->file, $methodInfo->line),
-                    symbolPath: $methodInfo->symbolPath,
-                    ruleName: $this->getName(),
-                    violationCode: self::NAME,
-                    message: \sprintf(
-                        'Maintainability Index is %.1f, below threshold of %.1f. Reduce complexity and size to improve maintainability',
-                        $miValue,
-                        $threshold,
-                    ),
-                    severity: $severity,
-                    metricValue: round($miValue, 1),
-                    recommendation: \sprintf('MI: %.1f (threshold: %.1f) — code is hard to change safely', $miValue, $threshold),
-                    threshold: $threshold,
-                );
+            $effectiveOptions = $this->getEffectiveOptions($context, $this->options, $subject);
+            $violation = $this->violationForMetric($methodInfo, $subject, $miValue, $effectiveOptions);
+            if ($violation !== null) {
+                $violations[] = $violation;
             }
         }
 
         return $violations;
+    }
+
+    private function violationForMetric(
+        SymbolInfo $methodInfo,
+        MetricSubject $subject,
+        float $miValue,
+        MaintainabilityOptions $options,
+    ): ?Violation {
+        $severity = $options->getSeverity($miValue);
+        if ($severity === null) {
+            return null;
+        }
+
+        $threshold = $severity === Severity::Error ? $options->error : $options->warning;
+
+        return new Violation(
+            location: new Location($methodInfo->file, $methodInfo->line),
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
+            ruleName: $this->getName(),
+            violationCode: self::NAME,
+            message: \sprintf(
+                'Maintainability Index is %.1f, below threshold of %.1f. Reduce complexity and size to improve maintainability',
+                $miValue,
+                $threshold,
+            ),
+            severity: $severity,
+            metricValue: round($miValue, 1),
+            recommendation: \sprintf('MI: %.1f (threshold: %.1f) — code is hard to change safely', $miValue, $threshold),
+            threshold: $threshold,
+        );
     }
 
     /**

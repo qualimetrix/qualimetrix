@@ -12,7 +12,10 @@ use Qualimetrix\Baseline\BaselineIdentity;
 use Qualimetrix\Baseline\Filter\BaselineCeilingStage;
 use Qualimetrix\Baseline\InertBaselineEntry;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -91,6 +94,7 @@ trait CeilingStageFixtures
     ): Violation {
         return new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), $line),
+            subject: self::subjectFor($symbolPath),
             symbolPath: $symbolPath,
             ruleName: $ruleName,
             violationCode: $violationCode,
@@ -98,6 +102,16 @@ trait CeilingStageFixtures
             severity: $severity,
             metricValue: $metricValue,
         );
+    }
+
+    private static function subjectFor(SymbolPath $symbolPath): MetricSubject
+    {
+        return match ($symbolPath->getType()) {
+            SymbolType::File, SymbolType::Namespace_, SymbolType::Project => MetricSubject::aggregate($symbolPath),
+            SymbolType::Class_, SymbolType::Method, SymbolType::Function_ => MetricSubject::declaration(
+                new DeclarationPath($symbolPath, RelativePath::fromString('src/Foo.php'), 0),
+            ),
+        };
     }
 
     /**

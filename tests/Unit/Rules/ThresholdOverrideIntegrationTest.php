@@ -13,23 +13,30 @@ use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
+use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\CodeSmell\LongParameterListOptions;
 use Qualimetrix\Rules\Complexity\ClassNpathComplexityOptions;
 use Qualimetrix\Rules\Complexity\ComplexityOptions;
 use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Qualimetrix\Rules\Complexity\MethodComplexityOptions;
+use Qualimetrix\Rules\Coupling\CboOptions;
+use Qualimetrix\Rules\Coupling\CboRule;
 use Qualimetrix\Rules\Coupling\ClassCboOptions;
 use Qualimetrix\Rules\Coupling\DistanceOptions;
 use Qualimetrix\Rules\Coupling\NamespaceInstabilityOptions;
 use Qualimetrix\Rules\Design\DataClassOptions;
 use Qualimetrix\Rules\Design\GodClassOptions;
 use Qualimetrix\Rules\Design\TypeCoverageOptions;
+use Qualimetrix\Rules\Design\TypeCoverageRule;
 use Qualimetrix\Rules\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Rules\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Rules\Size\MethodCountOptions;
@@ -114,10 +121,11 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     public function itAppliesOverriddenThresholdInMethodCountRule(): void
     {
         $symbolPath = SymbolPath::forClass('App\\Service', 'BigService');
-        $symbolInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/BigService.php'), 10);
+        $subject = self::declarationSubject($symbolPath, 'src/Service/BigService.php', 100);
+        $symbolInfo = new SymbolInfo($subject, RelativePath::fromString('src/Service/BigService.php'), 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$symbolInfo]);
+        $repository->method('allDeclarations')->willReturn([$symbolInfo]);
         $repository->method('get')->willReturn(
             MetricBag::fromArray([MetricName::STRUCTURE_METHOD_COUNT => 25]),
         );
@@ -137,7 +145,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             metrics: $repository,
             thresholdOverrides: [
                 'src/Service/BigService.php' => [
-                    new ThresholdOverride('size.method-count', 30, 40, 1, 100),
+                    self::override('size.method-count', 30, 40, $subject, ControlScope::Class_, 1, 100),
                 ],
             ],
         );
@@ -151,21 +159,22 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         // Class-level annotation scope: line 10-50
         // Method at line 20 falls within scope
         $methodPath = SymbolPath::forMethod('App\\Service', 'BigService', 'doStuff');
-        $methodInfo = new SymbolInfo($methodPath, RelativePath::fromString('src/Service/BigService.php'), 20);
+        $subject = self::declarationSubject($methodPath, 'src/Service/BigService.php', 200);
+        $methodInfo = new SymbolInfo(
+            $subject,
+            RelativePath::fromString('src/Service/BigService.php'),
+            20,
+            CallableKind::Method,
+        );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturnCallback(function (SymbolType $type) use ($methodInfo) {
-            return match ($type) {
-                SymbolType::Method => [$methodInfo],
-                default => [],
-            };
-        });
-        $repository->method('get')->willReturn(
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')->willReturn(
             MetricBag::fromArray([MetricName::COMPLEXITY_CCN => 15, MetricName::COMPLEXITY_COGNITIVE => 5]),
         );
 
         $options = new ComplexityOptions(
-            method: new MethodComplexityOptions(warning: 10, error: 20),
+            callable: new MethodComplexityOptions(warning: 10, error: 20),
         );
         $rule = new ComplexityRule($options);
 
@@ -180,7 +189,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             metrics: $repository,
             thresholdOverrides: [
                 'src/Service/BigService.php' => [
-                    new ThresholdOverride('complexity.cyclomatic', 20, 30, 10, 50),
+                    self::override('complexity.cyclomatic', 20, 30, $subject, ControlScope::Class_, 10, 50),
                 ],
             ],
         );
@@ -192,24 +201,31 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     public function itAppliesMethodLevelOverrideOnlyToSpecificMethod(): void
     {
         $method1Path = SymbolPath::forMethod('App\\Service', 'Service', 'complexMethod');
-        $method1Info = new SymbolInfo($method1Path, RelativePath::fromString('src/Service/Service.php'), 20);
+        $method1Subject = self::declarationSubject($method1Path, 'src/Service/Service.php', 200);
+        $method1Info = new SymbolInfo(
+            $method1Subject,
+            RelativePath::fromString('src/Service/Service.php'),
+            20,
+            CallableKind::Method,
+        );
 
         $method2Path = SymbolPath::forMethod('App\\Service', 'Service', 'otherMethod');
-        $method2Info = new SymbolInfo($method2Path, RelativePath::fromString('src/Service/Service.php'), 60);
+        $method2Subject = self::declarationSubject($method2Path, 'src/Service/Service.php', 600);
+        $method2Info = new SymbolInfo(
+            $method2Subject,
+            RelativePath::fromString('src/Service/Service.php'),
+            60,
+            CallableKind::Method,
+        );
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturnCallback(function (SymbolType $type) use ($method1Info, $method2Info) {
-            return match ($type) {
-                SymbolType::Method => [$method1Info, $method2Info],
-                default => [],
-            };
-        });
-        $repository->method('get')->willReturn(
+        $repository->method('allCallables')->willReturn([$method1Info, $method2Info]);
+        $repository->method('getSubject')->willReturn(
             MetricBag::fromArray([MetricName::COMPLEXITY_CCN => 15, MetricName::COMPLEXITY_COGNITIVE => 5]),
         );
 
         $options = new ComplexityOptions(
-            method: new MethodComplexityOptions(warning: 10, error: 20),
+            callable: new MethodComplexityOptions(warning: 10, error: 20),
         );
         $rule = new ComplexityRule($options);
 
@@ -218,7 +234,15 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             metrics: $repository,
             thresholdOverrides: [
                 'src/Service/Service.php' => [
-                    new ThresholdOverride('complexity.cyclomatic', 20, 30, 18, 40),
+                    self::override(
+                        'complexity.cyclomatic',
+                        20,
+                        30,
+                        $method1Subject,
+                        ControlScope::Callable,
+                        18,
+                        40,
+                    ),
                 ],
             ],
         );
@@ -546,10 +570,11 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     public function itIncludesOverriddenThresholdInViolationMessage(): void
     {
         $symbolPath = SymbolPath::forClass('App\\Service', 'BigService');
-        $symbolInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/BigService.php'), 10);
+        $subject = self::declarationSubject($symbolPath, 'src/Service/BigService.php', 100);
+        $symbolInfo = new SymbolInfo($subject, RelativePath::fromString('src/Service/BigService.php'), 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$symbolInfo]);
+        $repository->method('allDeclarations')->willReturn([$symbolInfo]);
         $repository->method('get')->willReturn(
             MetricBag::fromArray([MetricName::STRUCTURE_METHOD_COUNT => 35]),
         );
@@ -562,7 +587,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             metrics: $repository,
             thresholdOverrides: [
                 'src/Service/BigService.php' => [
-                    new ThresholdOverride('size.method-count', 40, 50, 1, 100),
+                    self::override('size.method-count', 40, 50, $subject, ControlScope::Class_, 1, 100),
                 ],
             ],
         );
@@ -576,7 +601,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             metrics: $repository,
             thresholdOverrides: [
                 'src/Service/BigService.php' => [
-                    new ThresholdOverride('size.method-count', 30, 50, 1, 100),
+                    self::override('size.method-count', 30, 50, $subject, ControlScope::Class_, 1, 100),
                 ],
             ],
         );
@@ -592,16 +617,24 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     #[Test]
     public function itPrioritizesMethodLevelOverrideInRule(): void
     {
-        $symbolPath = SymbolPath::forClass('App\\Service', 'BigService');
-        $symbolInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/BigService.php'), 20);
-
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([$symbolInfo]);
-        $repository->method('get')->willReturn(
-            MetricBag::fromArray([MetricName::STRUCTURE_METHOD_COUNT => 25]),
+        $symbolPath = SymbolPath::forMethod('App\\Service', 'BigService', 'doStuff');
+        $subject = self::declarationSubject($symbolPath, 'src/Service/BigService.php', 200);
+        $symbolInfo = new SymbolInfo(
+            $subject,
+            RelativePath::fromString('src/Service/BigService.php'),
+            20,
+            CallableKind::Method,
         );
 
-        $rule = new MethodCountRule(new MethodCountOptions(warning: 20, error: 30));
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([$symbolInfo]);
+        $repository->method('getSubject')->willReturn(
+            MetricBag::fromArray([MetricName::COMPLEXITY_CCN => 25, MetricName::COMPLEXITY_COGNITIVE => 5]),
+        );
+
+        $rule = new ComplexityRule(new ComplexityOptions(
+            callable: new MethodComplexityOptions(warning: 20, error: 30),
+        ));
 
         // Class-level override (line 10-100): warning=30 (would suppress violation)
         // Method-level override (line 15-40): warning=22 (should still trigger)
@@ -609,8 +642,8 @@ final class ThresholdOverrideIntegrationTest extends TestCase
             metrics: $repository,
             thresholdOverrides: [
                 'src/Service/BigService.php' => [
-                    new ThresholdOverride('size.method-count', 30, 50, 10, 100),
-                    new ThresholdOverride('size.method-count', 22, 50, 15, 40),
+                    self::override('complexity.cyclomatic', 30, 50, $subject, ControlScope::Class_, 10, 100),
+                    self::override('complexity.cyclomatic', 22, 50, $subject, ControlScope::Callable, 15, 40),
                 ],
             ],
         );
@@ -623,6 +656,64 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     }
 
     #[Test]
+    public function itAppliesTheExactCboSelectorBeforeSeverityProjection(): void
+    {
+        $symbolPath = SymbolPath::forClass('App\\Service', 'Hub');
+        $subject = self::declarationSubject($symbolPath, 'src/Service/Hub.php', 100);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([
+            new SymbolInfo($subject, RelativePath::fromString('src/Service/Hub.php'), 10),
+        ]);
+        $repository->method('get')->willReturn(
+            MetricBag::fromArray([MetricName::COUPLING_CBO => 18, MetricName::COUPLING_CA => 8, MetricName::COUPLING_CE => 10]),
+        );
+        $context = new AnalysisContext(
+            metrics: $repository,
+            thresholdOverrides: [
+                'src/Service/Hub.php' => [
+                    self::override('coupling.cbo', 10, 15, $subject, ControlScope::Class_, 1, 100),
+                ],
+            ],
+        );
+
+        $violations = (new CboRule(new CboOptions()))->analyzeLevel(RuleLevel::Class_, $context);
+
+        self::assertCount(1, $violations);
+        self::assertSame(Severity::Error, $violations[0]->severity);
+        self::assertSame(15, $violations[0]->threshold);
+        self::assertSame($subject->toCanonical(), $violations[0]->subject->toCanonical());
+    }
+
+    #[Test]
+    public function itAppliesTheExactTypeCoverageSelectorToAllClosedDimensions(): void
+    {
+        $symbolPath = SymbolPath::forClass('App\\Service', 'TypedService');
+        $subject = self::declarationSubject($symbolPath, 'src/Service/TypedService.php', 100);
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allDeclarations')->willReturn([
+            new SymbolInfo($subject, RelativePath::fromString('src/Service/TypedService.php'), 10),
+        ]);
+        $repository->method('get')->willReturn(MetricBag::fromArray([
+            MetricName::TYPE_COVERAGE_PARAM_TOTAL => 1,
+            MetricName::TYPE_COVERAGE_PARAM => 70.0,
+            MetricName::TYPE_COVERAGE_RETURN_TOTAL => 1,
+            MetricName::TYPE_COVERAGE_RETURN => 70.0,
+            MetricName::TYPE_COVERAGE_PROPERTY_TOTAL => 1,
+            MetricName::TYPE_COVERAGE_PROPERTY => 70.0,
+        ]));
+        $context = new AnalysisContext(
+            metrics: $repository,
+            thresholdOverrides: [
+                'src/Service/TypedService.php' => [
+                    self::override('design.type-coverage', 60.0, 40.0, $subject, ControlScope::Class_, 1, 100),
+                ],
+            ],
+        );
+
+        self::assertSame([], (new TypeCoverageRule(new TypeCoverageOptions()))->analyze($context));
+    }
+
+    #[Test]
     public function itAppliesPrefixOverrideToMultipleRules(): void
     {
         $options = new MethodComplexityOptions(warning: 10, error: 20);
@@ -630,9 +721,32 @@ final class ThresholdOverrideIntegrationTest extends TestCase
         self::assertInstanceOf(ThresholdAwareOptionsInterface::class, $options); // @phpstan-ignore staticMethod.alreadyNarrowedType
 
         // A 'complexity' prefix override should match 'complexity.cyclomatic'
-        $override = new ThresholdOverride('complexity', 20, 30, 1, null);
+        $subject = self::declarationSubject(
+            SymbolPath::forClass('App\\Service', 'BigService'),
+            'src/Service/BigService.php',
+            100,
+        );
+        $override = self::override('complexity', 20, 30, $subject, ControlScope::Class_, 1, null);
         self::assertTrue($override->matches('complexity.cyclomatic'));
         self::assertTrue($override->matches('complexity.cognitive'));
         self::assertFalse($override->matches('coupling.cbo'));
+    }
+    private static function declarationSubject(SymbolPath $logical, string $file, int $startFilePos): MetricSubject
+    {
+        return MetricSubject::declaration(
+            new DeclarationPath($logical, RelativePath::fromString($file), $startFilePos),
+        );
+    }
+
+    private static function override(
+        string $rule,
+        int|float|null $warning,
+        int|float|null $error,
+        MetricSubject $subject,
+        ControlScope $scope,
+        int $line,
+        ?int $endLine,
+    ): ThresholdOverride {
+        return new ThresholdOverride($rule, $warning, $error, $line, $subject, $scope, $endLine);
     }
 }

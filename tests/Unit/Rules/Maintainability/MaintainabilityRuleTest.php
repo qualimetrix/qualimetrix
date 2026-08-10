@@ -17,7 +17,6 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Metrics\Halstead\HalsteadCollector;
@@ -104,7 +103,9 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
+            ->willReturn([]);
+        $repository->method('allDeclarations')
             ->willReturn([]);
 
         $context = new AnalysisContext($repository);
@@ -118,7 +119,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // MI of 30 is below warning threshold (40) but above error (20)
         $metricBag = (new MetricBag())
@@ -126,8 +127,12 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('methodStatementCount', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -147,7 +152,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // MI of 15 is below error threshold (20) - very poor maintainability
         $metricBag = (new MetricBag())
@@ -155,8 +160,12 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('methodStatementCount', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -174,7 +183,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'simple');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // MI of 90 is good (above warning threshold 65)
         $metricBag = (new MetricBag())
@@ -182,8 +191,12 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('methodStatementCount', 12);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -199,15 +212,19 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('mi', 25.67)
             ->with('methodStatementCount', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -225,14 +242,18 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // No 'mi' metric
         $metricBag = new MetricBag();
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -292,15 +313,19 @@ final class MaintainabilityRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forMethod('App', 'Test', 'method');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('test.php'), 1);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('test.php'), 1);
 
         $metricBag = (new MetricBag())
             ->with('mi', $mi)
             ->with('methodStatementCount', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -375,15 +400,19 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions(excludeTests: true));
 
         $symbolPath = SymbolPath::forMethod('App\Tests\Helpers', 'AssertionHelper', 'assertThing');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('tests/Helpers/AssertionHelper.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('tests/Helpers/AssertionHelper.php'), 10);
 
         $metricBag = (new MetricBag())
             ->with('mi', 15.0)
             ->with('methodStatementCount', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -399,7 +428,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions(excludeTests: true));
 
         $symbolPath = SymbolPath::forMethod('App\Tests', 'UserServiceTest', 'testCalculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('tests/Service/UserServiceTest.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('tests/Service/UserServiceTest.php'), 10);
 
         // Low MI that would normally trigger a violation
         $metricBag = (new MetricBag())
@@ -407,8 +436,12 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('methodStatementCount', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -425,7 +458,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions(excludeTests: false));
 
         $symbolPath = SymbolPath::forMethod('App\Tests', 'UserServiceTest', 'testCalculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('tests/Service/UserServiceTest.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('tests/Service/UserServiceTest.php'), 10);
 
         // Low MI that would trigger a violation
         $metricBag = (new MetricBag())
@@ -433,8 +466,12 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('methodStatementCount', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -452,7 +489,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions(minStatements: 15));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // Low MI and too few statements.
         $metricBag = (new MetricBag())
@@ -460,8 +497,12 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('methodStatementCount', 10);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -478,7 +519,7 @@ final class MaintainabilityRuleTest extends TestCase
         $rule = new MaintainabilityRule(new MaintainabilityOptions(minStatements: 15));
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'calculate');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
 
         // Low MI and enough statements.
         $metricBag = (new MetricBag())
@@ -486,8 +527,12 @@ final class MaintainabilityRuleTest extends TestCase
             ->with('methodStatementCount', 20);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
+        $repository->method('allCallables')
             ->willReturn([$methodInfo]);
+        $repository->method('allDeclarations')
+            ->willReturn([$methodInfo]);
+        $repository->method('getSubject')
+            ->willReturn($metricBag);
         $repository->method('get')
             ->willReturn($metricBag);
 
@@ -540,17 +585,42 @@ PHP;
             minStatements: 3,
         ));
         $symbol = SymbolPath::forMethod('', 'Example', 'run');
-        $method = new SymbolInfo($symbol, RelativePath::fromString('src/Example.php'), 1);
+        $method = self::subjectInfo($symbol, RelativePath::fromString('src/Example.php'), 1);
         $eligibility = [];
 
         foreach ([$oneLineMetrics, $multiLineMetrics] as $metrics) {
             $repository = self::createStub(MetricRepositoryInterface::class);
-            $repository->method('all')->willReturn([$method]);
-            $repository->method('get')->willReturn($metrics);
+            $repository->method('allCallables')->willReturn([$method]);
+            $repository->method('getSubject')->willReturn($metrics);
             $eligibility[] = \count($rule->analyze(new AnalysisContext($repository)));
         }
 
         self::assertSame([1, 1], $eligibility);
+    }
+
+    #[Test]
+    public function itProjectsDuplicateLogicalCallableScoresToIndependentExactDeclarations(): void
+    {
+        $method = SymbolPath::forMethod('App\\Service', 'Twin', 'run');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([
+            self::subjectInfo($method, RelativePath::fromString('src/A.php'), 100),
+            self::subjectInfo($method, RelativePath::fromString('src/B.php'), 200),
+        ]);
+        $repository->method('getSubject')->willReturn(
+            (new MetricBag())->with('mi', 30.0)->with('methodStatementCount', 15),
+        );
+
+        $violations = (new MaintainabilityRule(new MaintainabilityOptions()))
+            ->analyze(new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
+        sort($subjects);
+        self::assertSame([
+            'declaration:callable:App\\Service\\Twin::run@src/A.php:100',
+            'declaration:callable:App\\Service\\Twin::run@src/B.php:200',
+        ], $subjects);
     }
 
     private function calculateMaintainabilityMetrics(string $code): MetricBag
@@ -565,12 +635,29 @@ PHP;
         $traverser->addVisitor($statements->getVisitor());
         $traverser->traverse($ast);
 
-        $halsteadMetrics = $halstead->getMethodsWithMetrics()[0]->metrics;
-        $statementMetrics = $statements->getMethodsWithMetrics()[0]->metrics;
+        $halsteadMetrics = $halstead->getCallablesWithMetrics(RelativePath::fromString('src/Example.php'))[0]->metrics;
+        $statementMetrics = $statements->getCallablesWithMetrics(RelativePath::fromString('src/Example.php'))[0]->metrics;
         $source = $halsteadMetrics
             ->merge($statementMetrics)
             ->with('ccn', 2);
 
         return $source->merge((new MaintainabilityIndexCollector())->calculate($source));
+    }
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            $file,
+            $line,
+            $kind,
+        );
     }
 }

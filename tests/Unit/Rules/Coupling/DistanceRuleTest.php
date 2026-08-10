@@ -14,13 +14,13 @@ use Qualimetrix\Analysis\Aggregator\AggregationHelper;
 use Qualimetrix\Analysis\Aggregator\MetricAggregator;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
-use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Metrics\Size\ClassCountCollector;
@@ -119,7 +119,7 @@ final class DistanceRuleTest extends TestCase
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         $metricBag = new MetricBag();
 
@@ -140,7 +140,7 @@ final class DistanceRuleTest extends TestCase
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // 0.35 is above warning (0.3), below error (0.5)
         $metricBag = (new MetricBag())
@@ -173,7 +173,7 @@ final class DistanceRuleTest extends TestCase
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // 0.6 is above error (0.5)
         $metricBag = (new MetricBag())
@@ -201,7 +201,7 @@ final class DistanceRuleTest extends TestCase
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // Distance close to 0 = on main sequence
         $metricBag = (new MetricBag())
@@ -227,10 +227,10 @@ final class DistanceRuleTest extends TestCase
         $rule = new DistanceRule(new DistanceOptions(includeNamespaces: ['App'], minClassCount: 0));
 
         $nsPath1 = SymbolPath::forNamespace('App\Service');
-        $nsInfo1 = new SymbolInfo($nsPath1, RelativePath::fromString('src/Service'), null);
+        $nsInfo1 = self::subjectInfo($nsPath1, RelativePath::fromString('src/Service'), null);
 
         $nsPath2 = SymbolPath::forNamespace('App\Controller');
-        $nsInfo2 = new SymbolInfo($nsPath2, RelativePath::fromString('src/Controller'), null);
+        $nsInfo2 = self::subjectInfo($nsPath2, RelativePath::fromString('src/Controller'), null);
 
         $nsBag1 = (new MetricBag())
             ->with('distance', 0.4) // Warning
@@ -323,7 +323,7 @@ final class DistanceRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('App');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src'), null);
 
         $metricBag = (new MetricBag())
             ->with('distance', $distance)
@@ -368,7 +368,7 @@ final class DistanceRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // classCount.sum=2 is below minClassCount=3, so no violation despite high distance
         $metricBag = (new MetricBag())
@@ -397,7 +397,7 @@ final class DistanceRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // classCount.sum=3 meets minClassCount=3, so violation is reported
         $metricBag = (new MetricBag())
@@ -468,7 +468,7 @@ final class DistanceRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         // No classCount.sum metric at all, but minClassCount=0 so it should still be analyzed
         $metricBag = (new MetricBag())
@@ -549,7 +549,7 @@ final class DistanceRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('Vendor\Package');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('vendor/package/src'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('vendor/package/src'), null);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -575,7 +575,7 @@ final class DistanceRuleTest extends TestCase
         );
 
         $symbolPath = SymbolPath::forNamespace('App\Service');
-        $nsInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service'), null);
+        $nsInfo = self::subjectInfo($symbolPath, RelativePath::fromString('src/Service'), null);
 
         $metricBag = (new MetricBag())
             ->with('distance', 0.1)
@@ -635,10 +635,10 @@ final class DistanceRuleTest extends TestCase
         );
 
         $nsPath1 = SymbolPath::forNamespace('Vendor\PackageA');
-        $nsInfo1 = new SymbolInfo($nsPath1, RelativePath::fromString('vendor/a/src'), null);
+        $nsInfo1 = self::subjectInfo($nsPath1, RelativePath::fromString('vendor/a/src'), null);
 
         $nsPath2 = SymbolPath::forNamespace('Vendor\PackageB');
-        $nsInfo2 = new SymbolInfo($nsPath2, RelativePath::fromString('vendor/b/src'), null);
+        $nsInfo2 = self::subjectInfo($nsPath2, RelativePath::fromString('vendor/b/src'), null);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')
@@ -648,5 +648,85 @@ final class DistanceRuleTest extends TestCase
         $violations = $rule->analyze($context);
 
         self::assertSame([], $violations);
+    }
+
+    #[Test]
+    public function itGivesExplicitIncludesPrecedenceWithExactPrefixBoundaries(): void
+    {
+        $resolver = $this->createMock(ProjectNamespaceResolverInterface::class);
+        $resolver->expects(self::never())->method('isProjectNamespace');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([
+            self::subjectInfo(SymbolPath::forNamespace('App'), RelativePath::fromString('src/App'), null),
+            self::subjectInfo(SymbolPath::forNamespace('App\\Service'), RelativePath::fromString('src/Service'), null),
+            self::subjectInfo(SymbolPath::forNamespace('Application'), RelativePath::fromString('src/Application'), null),
+        ]);
+        $repository->method('get')->willReturn(
+            MetricBag::fromArray([
+                MetricName::COUPLING_DISTANCE => 0.4,
+                MetricName::COUPLING_ABSTRACTNESS => 0.2,
+                MetricName::COUPLING_INSTABILITY => 0.6,
+            ]),
+        );
+
+        $violations = (new DistanceRule(
+            new DistanceOptions(includeNamespaces: ['App\\'], minClassCount: 0),
+            $resolver,
+        ))->analyze(new AnalysisContext($repository));
+
+        self::assertCount(2, $violations);
+        self::assertSame(
+            ['ns:App', 'ns:App\\Service'],
+            array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations),
+        );
+    }
+
+    #[Test]
+    public function itCountsEveryMatchedNamespaceWhenSmallMissingOrBelowThreshold(): void
+    {
+        $smallPath = SymbolPath::forNamespace('App\\Small');
+        $missingPath = SymbolPath::forNamespace('App\\Missing');
+        $belowPath = SymbolPath::forNamespace('App\\Below');
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([
+            self::subjectInfo($smallPath, RelativePath::fromString('src/Small'), null),
+            self::subjectInfo($missingPath, RelativePath::fromString('src/Missing'), null),
+            self::subjectInfo($belowPath, RelativePath::fromString('src/Below'), null),
+        ]);
+        $bags = [
+            $smallPath->toCanonical() => MetricBag::fromArray(['classCount.sum' => 2, 'distance' => 0.8]),
+            $missingPath->toCanonical() => MetricBag::fromArray(['classCount.sum' => 3]),
+            $belowPath->toCanonical() => MetricBag::fromArray(['classCount.sum' => 3, 'distance' => 0.1]),
+        ];
+        $repository->method('get')->willReturnCallback(
+            static fn(SymbolPath $path): MetricBag => $bags[$path->toCanonical()],
+        );
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects(self::never())->method('warning');
+
+        $violations = (new DistanceRule(
+            new DistanceOptions(includeNamespaces: ['App'], minClassCount: 3),
+            logger: $logger,
+        ))->analyze(new AnalysisContext($repository));
+
+        self::assertSame([], $violations);
+    }
+
+    private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo
+    {
+        $type = $symbolPath->getType();
+        if (\in_array($type, [\Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project], true)) {
+            return new \Qualimetrix\Core\Symbol\SymbolInfo(\Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath), $file, $line);
+        }
+
+        \assert($file !== null);
+        $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
+
+        return new \Qualimetrix\Core\Symbol\SymbolInfo(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            $file,
+            $line,
+            $kind,
+        );
     }
 }

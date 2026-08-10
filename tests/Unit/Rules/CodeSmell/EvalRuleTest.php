@@ -89,7 +89,7 @@ final class EvalRuleTest extends TestCase
         $fileInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Smelly.php'), null);
 
         $metricBag = (new MetricBag())
-            ->withEntry('codeSmell.eval', ['line' => 42]);
+            ->withEntry('codeSmell.eval', ['subjectKind' => 'file', 'line' => 42]);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('all')

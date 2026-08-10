@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Unit\Metrics\Coupling;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Dependency\Dependency;
@@ -15,6 +16,8 @@ use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
@@ -73,7 +76,7 @@ final class ClassRankCollectorTest extends TestCase
     #[Test]
     public function calculate_emptyGraph_writesNoMetrics(): void
     {
-        $graph = $this->graphBuilder->build([]);
+        $graph = $this->graph([]);
         $repository = new InMemoryMetricRepository();
 
         $this->collector->calculate($graph, $repository);
@@ -90,7 +93,7 @@ final class ClassRankCollectorTest extends TestCase
             $this->dep('App\\Foo', 'Vendor\\Bar'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\Foo');
 
@@ -103,6 +106,56 @@ final class ClassRankCollectorTest extends TestCase
     }
 
     #[Test]
+    public function itAssignsRankToAnIsolatedDeclaredLogicalClass(): void
+    {
+        $isolated = new LogicalClassPath(SymbolPath::forClass('App\\Isolated', 'Standalone'));
+        $graph = $this->graph([], [$isolated]);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Isolated\\Standalone');
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(
+            1.0,
+            $repository->get(SymbolPath::forClass('App\\Isolated', 'Standalone'))->get('classRank'),
+        );
+    }
+
+    #[Test]
+    public function itCalculatesOneLogicalRankForDuplicateClassDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $graph = $this->graph([], [new LogicalClassPath($class)]);
+        $repository = new InMemoryMetricRepository();
+        $repository->addSubject(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new DeclarationPath(
+                $class,
+                RelativePath::fromString('src/FirstTwin.php'),
+                10,
+            )),
+            new MetricBag(),
+            RelativePath::fromString('src/FirstTwin.php'),
+            10,
+        );
+        $repository->addSubject(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new DeclarationPath(
+                $class,
+                RelativePath::fromString('src/SecondTwin.php'),
+                20,
+            )),
+            new MetricBag(),
+            RelativePath::fromString('src/SecondTwin.php'),
+            20,
+        );
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertCount(1, iterator_to_array($repository->allLogicalClasses()));
+        self::assertCount(2, iterator_to_array($repository->allDeclarations()));
+        self::assertSame(1.0, $repository->get($class)->get('classRank'));
+    }
+
+    #[Test]
     public function calculate_simpleGraph_dependedClassHasHigherRank(): void
     {
         // A->B, C->B: B has the most incoming links, so B should have the highest rank
@@ -111,7 +164,7 @@ final class ClassRankCollectorTest extends TestCase
             $this->dep('App\\C', 'App\\B'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
@@ -142,7 +195,7 @@ final class ClassRankCollectorTest extends TestCase
             $this->dep('App\\B', 'App\\C'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
@@ -166,7 +219,7 @@ final class ClassRankCollectorTest extends TestCase
             $this->dep('App\\A', 'Vendor\\Bar'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\A');
 
@@ -193,7 +246,7 @@ final class ClassRankCollectorTest extends TestCase
             $this->dep('App\\A', 'App\\B'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
@@ -218,7 +271,7 @@ final class ClassRankCollectorTest extends TestCase
             $this->dep('App\\B', 'Vendor\\Y'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
@@ -246,7 +299,7 @@ final class ClassRankCollectorTest extends TestCase
             $this->dep('App\\C', 'App\\A'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
@@ -270,7 +323,7 @@ final class ClassRankCollectorTest extends TestCase
             $this->dep('App\\B', 'App\\A'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
@@ -295,7 +348,7 @@ final class ClassRankCollectorTest extends TestCase
             $this->dep('App\\D', 'App\\Center'),
         ];
 
-        $graph = $this->graphBuilder->build($deps);
+        $graph = $this->graph($deps);
         $repository = new InMemoryMetricRepository();
         $this->registerClass($repository, 'App\\A');
         $this->registerClass($repository, 'App\\B');
@@ -315,11 +368,27 @@ final class ClassRankCollectorTest extends TestCase
     private function dep(string $source, string $target): Dependency
     {
         return new Dependency(
-            SymbolPath::fromClassFqn($source),
-            SymbolPath::fromClassFqn($target),
+            new DeclarationPath(SymbolPath::fromClassFqn($source), RelativePath::fromString('test.php'), 0),
+            new LogicalClassPath(SymbolPath::fromClassFqn($target)),
             DependencyType::New_,
             new Location(RelativePath::fromString('test.php'), 1),
         );
+    }
+
+    /**
+     * @param list<Dependency> $dependencies
+     * @param list<LogicalClassPath> $universe
+     */
+    private function graph(array $dependencies, array $universe = []): DependencyGraph
+    {
+        if ($universe === []) {
+            $universe = array_map(
+                static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
+                $dependencies,
+            );
+        }
+
+        return $this->graphBuilder->build($dependencies, $universe);
     }
 
     private function registerClass(InMemoryMetricRepository $repository, string $fqn): void

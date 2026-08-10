@@ -7,12 +7,11 @@ namespace Qualimetrix\Metrics\Structure;
 use PhpParser\Node;
 use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\ClassMethod;
-use PhpParser\Node\Stmt\Enum_;
 use PhpParser\Node\Stmt\GroupUse;
 use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Property;
-use PhpParser\Node\Stmt\Trait_;
 use PhpParser\Node\Stmt\Use_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
@@ -153,8 +152,8 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         }
 
         // Track class-like types
-        if ($this->isClassLikeNode($node)) {
-            $className = $this->extractClassLikeName($node);
+        if ($node instanceof ClassLike) {
+            $className = $node->name?->toString();
             // Push to stack (null for anonymous classes)
             $this->classStack[] = $className;
 
@@ -165,6 +164,7 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
                     namespace: $this->currentNamespace,
                     className: $className,
                     line: $node->getStartLine(),
+                    startFilePos: $node->getStartFilePos(),
                 );
 
                 // Track interface flag
@@ -207,7 +207,7 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
     public function leaveNode(Node $node): ?int
     {
         // Exit class-like scope
-        if ($this->isClassLikeNode($node)) {
+        if ($node instanceof ClassLike) {
             array_pop($this->classStack);
         }
 
@@ -324,32 +324,6 @@ final class MethodCountVisitor extends NodeVisitorAbstract implements Resettable
         }
 
         return false;
-    }
-
-    /**
-     * Extracts class name from class-like nodes (class, interface, trait, enum).
-     * Returns null for anonymous classes or non-class-like nodes.
-     */
-    private function extractClassLikeName(Node $node): ?string
-    {
-        return match (true) {
-            $node instanceof Class_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Interface_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Trait_ && $node->name !== null => $node->name->toString(),
-            $node instanceof Enum_ && $node->name !== null => $node->name->toString(),
-            default => null,
-        };
-    }
-
-    /**
-     * Checks if node is a class-like type (class, interface, trait, enum).
-     */
-    private function isClassLikeNode(Node $node): bool
-    {
-        return $node instanceof Class_
-            || $node instanceof Interface_
-            || $node instanceof Trait_
-            || $node instanceof Enum_;
     }
 
     private function buildClassFqn(string $className): string

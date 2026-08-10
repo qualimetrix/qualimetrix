@@ -50,11 +50,11 @@ final class ResidualLimitationsCoverageTest extends TestCase
         ]],
         8 => [[
             'class' => \Qualimetrix\Tests\Functional\Console\Command\BaselineLifecycleTest::class,
-            'method' => 'itReportsARekeyedDuplicateAfterTheAlphabeticallyFirstCopyWasRemoved',
+            'method' => 'itKeepsADuplicateAcceptedWhenThePrimaryCopyChanges',
         ]],
         9 => [[
             'class' => \Qualimetrix\Tests\Unit\Baseline\BaselineGeneratorTest::class,
-            'method' => 'itMergesFindingsOfOneIdentityReportedFromDifferentFiles',
+            'method' => 'itSeparatesSameFqnFindingsWithDifferentDeclarationSubjects',
         ]],
         10 => [[
             'class' => CboAggregateBreachTest::class,

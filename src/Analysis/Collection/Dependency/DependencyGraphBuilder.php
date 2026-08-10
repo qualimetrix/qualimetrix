@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Collection\Dependency;
 use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Util\StringSet;
@@ -28,18 +29,64 @@ final class DependencyGraphBuilder
      * Builds a dependency graph from a collection of dependencies.
      *
      * @param array<Dependency> $dependencies
+     * @param iterable<LogicalClassPath> $logicalClassUniverse
      */
-    public function build(array $dependencies): DependencyGraph
+    public function build(array $dependencies, iterable $logicalClassUniverse): DependencyGraph
     {
-        // Filter dependencies targeting PHP built-in classes, keeping only
-        // extends edges (needed by DitGlobalCollector for DIT, NocCollector for NOC).
-        // All other types (implements, type hints, catch, instanceof, new, etc.)
-        // are filtered — coupling to stable built-in types is not architectural risk.
-        $dependencies = array_values(array_filter(
+        $dependencies = $this->retainGraphDependencies($dependencies);
+        $indexes = $this->indexGraphInputs($dependencies, $logicalClassUniverse);
+        [$canonicalNamespaceMap, $parentNamespaces] = $this->expandNamespaceUniverse($indexes['leafNamespaces']);
+        $namespaceCouplings = $this->computeNamespaceCouplings($dependencies, $canonicalNamespaceMap);
+
+        if ($parentNamespaces !== []) {
+            $this->computeParentNamespaceCouplings(
+                $dependencies,
+                $parentNamespaces,
+                $namespaceCouplings['ce'],
+                $namespaceCouplings['ca'],
+            );
+        }
+
+        return new DependencyGraph(
             $dependencies,
-            fn(Dependency $dep): bool => $dep->type === DependencyType::Extends
-                || !$this->isPhpBuiltinClass($dep->target),
+            $indexes['bySource'],
+            $indexes['byTarget'],
+            array_values($indexes['classes']),
+            array_values($canonicalNamespaceMap),
+            $namespaceCouplings['ce'],
+            $namespaceCouplings['ca'],
+            $this->computeClassCe($indexes['bySource']),
+            $this->computeClassCa($indexes['byTarget']),
+        );
+    }
+
+    /**
+     * @param array<Dependency> $dependencies
+     *
+     * @return list<Dependency>
+     */
+    private function retainGraphDependencies(array $dependencies): array
+    {
+        return array_values(array_filter(
+            $dependencies,
+            fn(Dependency $dependency): bool => $dependency->type === DependencyType::Extends
+                || !$this->isPhpBuiltinClass($dependency->targetLogical()),
         ));
+    }
+
+    /**
+     * @param list<Dependency> $dependencies
+     * @param iterable<LogicalClassPath> $logicalClassUniverse
+     *
+     * @return array{
+     *     bySource: array<string, list<Dependency>>,
+     *     byTarget: array<string, list<Dependency>>,
+     *     classes: array<string, SymbolPath>,
+     *     leafNamespaces: array<string, SymbolPath>
+     * }
+     */
+    private function indexGraphInputs(array $dependencies, iterable $logicalClassUniverse): array
+    {
         $bySource = [];
         $byTarget = [];
         /** @var array<string, SymbolPath> $classMap */
@@ -47,30 +94,32 @@ final class DependencyGraphBuilder
         /** @var array<string, SymbolPath> $namespaceMap */
         $namespaceMap = [];
 
-        // Index dependencies and collect unique classes/namespaces
-        foreach ($dependencies as $dep) {
-            $sourceKey = $dep->source->toCanonical();
-            $targetKey = $dep->target->toCanonical();
-
-            // Index by source
-            if (!isset($bySource[$sourceKey])) {
-                $bySource[$sourceKey] = [];
+        foreach ($logicalClassUniverse as $logicalClass) {
+            $classPath = $logicalClass->symbolPath;
+            $classMap[$classPath->toCanonical()] = $classPath;
+            $namespace = $classPath->namespace;
+            if ($namespace !== null && !isset($namespaceMap[$namespace])) {
+                $namespaceMap[$namespace] = SymbolPath::forNamespace($namespace);
             }
+        }
+
+        foreach ($dependencies as $dep) {
+            $source = $dep->sourceLogical();
+            $target = $dep->targetLogical();
+            $sourceKey = $source->toCanonical();
+            $targetKey = $target->toCanonical();
+
             $bySource[$sourceKey][] = $dep;
 
-            // Index by target
-            if (!isset($byTarget[$targetKey])) {
-                $byTarget[$targetKey] = [];
-            }
             $byTarget[$targetKey][] = $dep;
 
             // Collect unique classes
-            $classMap[$sourceKey] = $dep->source;
-            $classMap[$targetKey] = $dep->target;
+            $classMap[$sourceKey] = $source;
+            $classMap[$targetKey] = $target;
 
             // Collect unique namespaces (deduplicate via array key)
-            $sourceNs = $dep->source->namespace;
-            $targetNs = $dep->target->namespace;
+            $sourceNs = $source->namespace;
+            $targetNs = $target->namespace;
 
             if ($sourceNs !== null && !isset($namespaceMap[$sourceNs])) {
                 $namespaceMap[$sourceNs] = SymbolPath::forNamespace($sourceNs);
@@ -80,14 +129,27 @@ final class DependencyGraphBuilder
             }
         }
 
-        // Re-key namespaceMap by canonical path for downstream consumers
+        return [
+            'bySource' => $bySource,
+            'byTarget' => $byTarget,
+            'classes' => $classMap,
+            'leafNamespaces' => $namespaceMap,
+        ];
+    }
+
+    /**
+     * @param array<string, SymbolPath> $leafNamespaces
+     *
+     * @return array{array<string, SymbolPath>, array<string, SymbolPath>}
+     */
+    private function expandNamespaceUniverse(array $leafNamespaces): array
+    {
         $canonicalNamespaceMap = [];
-        foreach ($namespaceMap as $nsPath) {
+        foreach ($leafNamespaces as $nsPath) {
             $canonicalNamespaceMap[$nsPath->toCanonical()] = $nsPath;
         }
 
-        // Discover parent namespaces from leaf namespaces
-        $tree = new NamespaceTree(array_keys($namespaceMap));
+        $tree = new NamespaceTree(array_keys($leafNamespaces));
         $parentNamespaces = [];
         foreach ($tree->getParentNamespaces() as $parentNs) {
             $parentNamespaces[$parentNs] = SymbolPath::forNamespace($parentNs);
@@ -96,131 +158,50 @@ final class DependencyGraphBuilder
             $canonicalNamespaceMap[$nsPath->toCanonical()] = $nsPath;
         }
 
-        // Precompute namespace Ce/Ca (leaf namespaces)
-        $namespaceCe = $this->computeNamespaceCe($dependencies, $canonicalNamespaceMap);
-        $namespaceCa = $this->computeNamespaceCa($dependencies, $canonicalNamespaceMap);
-
-        // Compute Ce/Ca for parent namespaces (prefix-based internal/external semantics)
-        if ($parentNamespaces !== []) {
-            $this->computeParentNamespaceCouplings(
-                $dependencies,
-                $parentNamespaces,
-                $namespaceCe,
-                $namespaceCa,
-            );
-        }
-
-        // Precompute class-level Ce/Ca (unique targets/sources per class)
-        $classCe = $this->computeClassCe($bySource);
-        $classCa = $this->computeClassCa($byTarget);
-
-        return new DependencyGraph(
-            $dependencies,
-            $bySource,
-            $byTarget,
-            array_values($classMap),
-            array_values($canonicalNamespaceMap),
-            $namespaceCe,
-            $namespaceCa,
-            $classCe,
-            $classCa,
-        );
+        return [$canonicalNamespaceMap, $parentNamespaces];
     }
 
     /**
-     * Computes Efferent Coupling (Ce) for each namespace.
-     *
-     * Ce = unique external classes that classes in this namespace depend on.
-     *
-     * @param array<Dependency> $dependencies
+     * @param list<Dependency> $dependencies
      * @param array<string, SymbolPath> $namespaceMap
      *
-     * @return array<string, StringSet>
+     * @return array{ce: array<string, StringSet>, ca: array<string, StringSet>}
      */
-    private function computeNamespaceCe(array $dependencies, array $namespaceMap): array
+    private function computeNamespaceCouplings(array $dependencies, array $namespaceMap): array
     {
-        /** @var array<string, StringSet> $result */
-        $result = [];
+        $ce = [];
+        $ca = [];
 
-        // Initialize all namespaces with empty sets
         foreach ($namespaceMap as $canonicalKey => $nsPath) {
-            $result[$canonicalKey] = new StringSet();
+            $ce[$canonicalKey] = new StringSet();
+            $ca[$canonicalKey] = new StringSet();
         }
 
-        // Cache for SymbolPath::forNamespace()->toCanonical() calls
         /** @var array<string, string> $nsCanonicalCache */
         $nsCanonicalCache = [];
 
-        // For each dependency, if source is in namespace and target is outside,
-        // add target to namespace's Ce
         foreach ($dependencies as $dep) {
-            $sourceNs = $dep->source->namespace;
-            $targetNs = $dep->target->namespace;
+            $source = $dep->sourceLogical();
+            $target = $dep->targetLogical();
+            $sourceNs = $source->namespace;
+            $targetNs = $target->namespace;
 
-            // Skip file-level symbols (namespace is null only for file-level SymbolPaths)
-            if ($sourceNs === null) {
-                continue;
-            }
-
-            // Skip if target is in same namespace (internal dependency)
             if ($sourceNs === $targetNs) {
                 continue;
             }
 
-            // Add target class to namespace's Ce
-            $nsKey = $nsCanonicalCache[$sourceNs] ??= SymbolPath::forNamespace($sourceNs)->toCanonical();
-            $result[$nsKey] = $result[$nsKey]->add($dep->target->toCanonical());
-        }
-
-        return $result;
-    }
-
-    /**
-     * Computes Afferent Coupling (Ca) for each namespace.
-     *
-     * Ca = unique external classes that depend on classes in this namespace.
-     *
-     * @param array<Dependency> $dependencies
-     * @param array<string, SymbolPath> $namespaceMap
-     *
-     * @return array<string, StringSet>
-     */
-    private function computeNamespaceCa(array $dependencies, array $namespaceMap): array
-    {
-        /** @var array<string, StringSet> $result */
-        $result = [];
-
-        // Initialize all namespaces with empty sets
-        foreach ($namespaceMap as $canonicalKey => $nsPath) {
-            $result[$canonicalKey] = new StringSet();
-        }
-
-        // Cache for SymbolPath::forNamespace()->toCanonical() calls
-        /** @var array<string, string> $nsCanonicalCache */
-        $nsCanonicalCache = [];
-
-        // For each dependency, if target is in namespace and source is outside,
-        // add source to namespace's Ca
-        foreach ($dependencies as $dep) {
-            $sourceNs = $dep->source->namespace;
-            $targetNs = $dep->target->namespace;
-
-            // Skip file-level symbols (namespace is null only for file-level SymbolPaths)
-            if ($targetNs === null) {
-                continue;
+            if ($sourceNs !== null) {
+                $sourceKey = $nsCanonicalCache[$sourceNs] ??= SymbolPath::forNamespace($sourceNs)->toCanonical();
+                $ce[$sourceKey] = $ce[$sourceKey]->add($target->toCanonical());
             }
 
-            // Skip if source is in same namespace (internal dependency)
-            if ($sourceNs === $targetNs) {
-                continue;
+            if ($targetNs !== null) {
+                $targetKey = $nsCanonicalCache[$targetNs] ??= SymbolPath::forNamespace($targetNs)->toCanonical();
+                $ca[$targetKey] = $ca[$targetKey]->add($source->toCanonical());
             }
-
-            // Add source class to namespace's Ca
-            $nsKey = $nsCanonicalCache[$targetNs] ??= SymbolPath::forNamespace($targetNs)->toCanonical();
-            $result[$nsKey] = $result[$nsKey]->add($dep->source->toCanonical());
         }
 
-        return $result;
+        return ['ce' => $ce, 'ca' => $ca];
     }
 
     /**
@@ -254,8 +235,10 @@ final class DependencyGraphBuilder
         }
 
         foreach ($dependencies as $dep) {
-            $sourceNs = $dep->source->namespace;
-            $targetNs = $dep->target->namespace;
+            $source = $dep->sourceLogical();
+            $target = $dep->targetLogical();
+            $sourceNs = $source->namespace;
+            $targetNs = $target->namespace;
 
             if ($sourceNs === null || $targetNs === null) {
                 continue;
@@ -279,10 +262,10 @@ final class DependencyGraphBuilder
 
                 if ($sourceInside) {
                     // Efferent: source inside parent, target outside
-                    $namespaceCe[$canonical] = $namespaceCe[$canonical]->add($dep->target->toCanonical());
+                    $namespaceCe[$canonical] = $namespaceCe[$canonical]->add($target->toCanonical());
                 } else {
                     // Afferent: target inside parent, source outside
-                    $namespaceCa[$canonical] = $namespaceCa[$canonical]->add($dep->source->toCanonical());
+                    $namespaceCa[$canonical] = $namespaceCa[$canonical]->add($source->toCanonical());
                 }
             }
         }
@@ -304,7 +287,7 @@ final class DependencyGraphBuilder
         foreach ($bySource as $sourceKey => $deps) {
             $targets = [];
             foreach ($deps as $dep) {
-                $targets[$dep->target->toCanonical()] = true;
+                $targets[$dep->targetLogical()->toCanonical()] = true;
             }
             $result[$sourceKey] = \count($targets);
         }
@@ -328,7 +311,7 @@ final class DependencyGraphBuilder
         foreach ($byTarget as $targetKey => $deps) {
             $sources = [];
             foreach ($deps as $dep) {
-                $sources[$dep->source->toCanonical()] = true;
+                $sources[$dep->sourceLogical()->toCanonical()] = true;
             }
             $result[$targetKey] = \count($sources);
         }

@@ -11,9 +11,13 @@ use Qualimetrix\Analysis\Aggregator\AggregationHelper;
 use Qualimetrix\Analysis\Aggregator\MetricAggregator;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\AggregationMeta;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricCollectorInterface;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Metrics\Size\ClassCountCollector;
@@ -29,7 +33,8 @@ final class MetricAggregatorTest extends TestCase
 
         // Add methods with CCN
         $method1Metrics = (new MetricBag())->with('ccn', 5);
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod('App\\Service', 'UserService', 'find'),
             $method1Metrics,
             RelativePath::fromString('src/Service/UserService.php'),
@@ -37,7 +42,8 @@ final class MetricAggregatorTest extends TestCase
         );
 
         $method2Metrics = (new MetricBag())->with('ccn', 3);
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod('App\\Service', 'UserService', 'save'),
             $method2Metrics,
             RelativePath::fromString('src/Service/UserService.php'),
@@ -70,7 +76,8 @@ final class MetricAggregatorTest extends TestCase
 
         // Class with 3 methods
         $method1 = (new MetricBag())->with('ccn', 2);
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod('App\\Service', 'OrderService', 'create'),
             $method1,
             RelativePath::fromString('src/Service/OrderService.php'),
@@ -78,7 +85,8 @@ final class MetricAggregatorTest extends TestCase
         );
 
         $method2 = (new MetricBag())->with('ccn', 5);
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod('App\\Service', 'OrderService', 'update'),
             $method2,
             RelativePath::fromString('src/Service/OrderService.php'),
@@ -86,7 +94,8 @@ final class MetricAggregatorTest extends TestCase
         );
 
         $method3 = (new MetricBag())->with('ccn', 8);
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod('App\\Service', 'OrderService', 'delete'),
             $method3,
             RelativePath::fromString('src/Service/OrderService.php'),
@@ -115,7 +124,8 @@ final class MetricAggregatorTest extends TestCase
 
         // Namespace 1
         $method1 = (new MetricBag())->with('ccn', 4);
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod('App\\Service', 'ServiceA', 'execute'),
             $method1,
             RelativePath::fromString('src/Service/ServiceA.php'),
@@ -124,7 +134,8 @@ final class MetricAggregatorTest extends TestCase
 
         // Namespace 2
         $method2 = (new MetricBag())->with('ccn', 6);
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod('App\\Repository', 'RepoA', 'find'),
             $method2,
             RelativePath::fromString('src/Repository/RepoA.php'),
@@ -278,7 +289,8 @@ final class MetricAggregatorTest extends TestCase
 
         // Add some data
         $method1 = (new MetricBag())->with('test', 1);
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod('App', 'Service', 'method'),
             $method1,
             RelativePath::fromString('test.php'),
@@ -323,7 +335,8 @@ final class MetricAggregatorTest extends TestCase
 
         // Add class in global namespace (empty namespace)
         $method = (new MetricBag())->with('ccn', 5);
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod('', 'GlobalClass', 'method'),
             $method,
             RelativePath::fromString('global.php'),
@@ -352,7 +365,8 @@ final class MetricAggregatorTest extends TestCase
 
         // Add test data
         $method = (new MetricBag())->with('ccn', 3);
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod('App', 'Test', 'method'),
             $method,
             RelativePath::fromString('test.php'),
@@ -373,7 +387,8 @@ final class MetricAggregatorTest extends TestCase
 
         // Namespace 1 with 2 classes
         $method1 = (new MetricBag())->with('ccn', 5);
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod('App\\Service', 'ServiceA', 'execute'),
             $method1,
             RelativePath::fromString('src/Service/ServiceA.php'),
@@ -381,7 +396,8 @@ final class MetricAggregatorTest extends TestCase
         );
 
         $method2 = (new MetricBag())->with('ccn', 3);
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod('App\\Service', 'ServiceB', 'run'),
             $method2,
             RelativePath::fromString('src/Service/ServiceB.php'),
@@ -390,7 +406,8 @@ final class MetricAggregatorTest extends TestCase
 
         // Namespace 2 with 1 class
         $method3 = (new MetricBag())->with('ccn', 8);
-        $repository->add(
+        $this->addCallable(
+            $repository,
             SymbolPath::forMethod('App\\Repository', 'UserRepo', 'find'),
             $method3,
             RelativePath::fromString('src/Repository/UserRepo.php'),
@@ -423,5 +440,17 @@ final class MetricAggregatorTest extends TestCase
             new ClassCountCollector(),
             new LocCollector(),
         ]));
+    }
+
+    private function addCallable(InMemoryMetricRepository $repository, SymbolPath $symbol, MetricBag $metrics, RelativePath $file, int $startFilePos): void
+    {
+        $repository->addCallable(new CallableWithMetrics(
+            new DeclarationPath($symbol, $file, $startFilePos),
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')),
+            $metrics,
+        ));
     }
 }

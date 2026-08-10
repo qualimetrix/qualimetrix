@@ -21,18 +21,24 @@ final readonly class DuplicateBlock
      * @param list<DuplicateLocation> $locations At least 2 locations (sorted deterministically)
      * @param int $lines Number of lines in the duplicated block
      * @param int $tokens Number of tokens in the duplicated block
+     * @param string $contentHash Full SHA-256 of the normalized matched token sequence and token count
      * @param string|null $hint Short content preview (~80 chars) of the duplicated code
      */
     public function __construct(
         array $locations,
         public int $lines,
         public int $tokens,
+        public string $contentHash,
         public ?string $hint = null,
     ) {
         if (\count($locations) < 2) {
             throw new InvalidArgumentException(
                 \sprintf('DuplicateBlock requires at least 2 locations, got %d', \count($locations)),
             );
+        }
+
+        if (preg_match('/^[a-f0-9]{64}$/', $contentHash) !== 1) {
+            throw new InvalidArgumentException('DuplicateBlock contentHash must be a full lowercase SHA-256 digest');
         }
 
         // Sort locations deterministically so primaryLocation() is stable

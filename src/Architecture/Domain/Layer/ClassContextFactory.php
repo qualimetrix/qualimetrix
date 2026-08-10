@@ -165,8 +165,8 @@ final class ClassContextFactory
         $attributes = [];
 
         foreach ($this->graph->getAllDependencies() as $dependency) {
-            $sourceFqn = $this->fqnFor($dependency->source);
-            $targetFqn = $this->fqnFor($dependency->target);
+            $sourceFqn = $this->fqnFor($dependency->sourceLogical());
+            $targetFqn = $this->fqnFor($dependency->targetLogical());
             if ($sourceFqn === null || $targetFqn === null) {
                 continue;
             }

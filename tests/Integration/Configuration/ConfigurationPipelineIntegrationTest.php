@@ -378,11 +378,11 @@ YAML;
         $configYaml = <<<YAML
 rules:
   complexity:
-    method:
+    callable:
       warning: 15
       error: 25
   cognitive:
-    method:
+    callable:
       warning: 20
 YAML;
         file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
@@ -398,9 +398,9 @@ YAML;
         // Assert: Rule options should be available
         self::assertArrayHasKey('complexity', $resolved->ruleOptions);
         self::assertArrayHasKey('cognitive', $resolved->ruleOptions);
-        self::assertSame(15, $resolved->ruleOptions['complexity']['method']['warning']);
-        self::assertSame(25, $resolved->ruleOptions['complexity']['method']['error']);
-        self::assertSame(20, $resolved->ruleOptions['cognitive']['method']['warning']);
+        self::assertSame(15, $resolved->ruleOptions['complexity']['callable']['warning']);
+        self::assertSame(25, $resolved->ruleOptions['complexity']['callable']['error']);
+        self::assertSame(20, $resolved->ruleOptions['cognitive']['callable']['warning']);
     }
 
     #[Test]

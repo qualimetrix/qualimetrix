@@ -115,7 +115,7 @@ final class ComputedMetricDefaults
             HealthDimension::Overall->value => new ComputedMetricDefinition(
                 name: HealthDimension::Overall->value,
                 formulas: [
-                    // Maintainability excluded at class level: MI is method-level,
+                    // Maintainability excluded at class level: MI is callable-level,
                     // and its signal is already captured by complexity and cohesion sub-scores.
                     // Typing weight reduced from 0.20→0.15 (inflates legacy code scores).
                     'class' => 'clamp((health__complexity ?? 75) * 0.35 + (health__cohesion ?? 75) * 0.25 + (health__coupling ?? 75) * 0.25 + (health__typing ?? 75) * 0.15, 0, 100)',

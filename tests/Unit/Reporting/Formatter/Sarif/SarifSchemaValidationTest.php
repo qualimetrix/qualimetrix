@@ -57,7 +57,7 @@ final class SarifSchemaValidationTest extends TestCase
     public function reportWithMixedSeverityViolations_conformsToSarif2_1_0Schema(): void
     {
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'complexity.cyclomatic',
@@ -66,7 +66,7 @@ final class SarifSchemaValidationTest extends TestCase
                 severity: Severity::Error,
                 metricValue: 25,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/OrderService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\\Service', 'OrderService', 'processOrder'),
                 ruleName: 'design.lcom',
@@ -75,7 +75,7 @@ final class SarifSchemaValidationTest extends TestCase
                 severity: Severity::Warning,
                 metricValue: 8,
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Controller/HomeController.php'), 15),
                 symbolPath: SymbolPath::forClass('App\\Controller', 'HomeController'),
                 ruleName: 'architecture.coverage',
@@ -101,7 +101,7 @@ final class SarifSchemaValidationTest extends TestCase
     {
         // Exercises the relatedLocations branch (duplication detector shape).
         $report = ReportBuilder::create()
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 10),
                 symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service/UserService.php')),
                 ruleName: 'duplication.code-duplication',
@@ -114,7 +114,7 @@ final class SarifSchemaValidationTest extends TestCase
                     new Location(RelativePath::fromString('src/Service/PaymentService.php'), 88),
                 ],
             ))
-            ->addViolation(new Violation(
+            ->addViolation(self::violation(
                 location: Location::none(),
                 symbolPath: SymbolPath::forNamespace('App'),
                 ruleName: 'architecture.circular-dependency',
@@ -141,7 +141,7 @@ final class SarifSchemaValidationTest extends TestCase
         // The accepted level rides in message.text (ADR 0017); confirms that
         // appending it doesn't break schema conformance.
         $report = ReportBuilder::create()
-            ->addViolation((new Violation(
+            ->addViolation((self::violation(
                 location: new Location(RelativePath::fromString('src/Service/UserService.php'), 42),
                 symbolPath: SymbolPath::forMethod('App\\Service', 'UserService', 'calculateDiscount'),
                 ruleName: 'complexity.cyclomatic',
@@ -207,4 +207,61 @@ final class SarifSchemaValidationTest extends TestCase
 
         return "\n  - " . implode("\n  - ", $lines);
     }
+
+    /**
+     * Builds a violation fixture with an explicit declaration or aggregate
+     * subject, preserving the production contract without hiding it behind a
+     * legacy fallback.
+     *
+     * @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations
+     */
+    private static function violation(
+        \Qualimetrix\Core\Violation\Location $location,
+        \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
+        string $ruleName,
+        string $violationCode,
+        string $message,
+        \Qualimetrix\Core\Violation\Severity $severity,
+        int|float|null $metricValue = null,
+        ?\Qualimetrix\Core\Rule\RuleLevel $level = null,
+        array $relatedLocations = [],
+        ?string $recommendation = null,
+        int|float|null $threshold = null,
+        ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
+        ?\Qualimetrix\Core\Dependency\DependencyType $dependencyType = null,
+        ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null,
+        ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
+    ): Violation {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File,
+            \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
+            \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath(
+                $symbolPath,
+                $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'),
+                $location->line ?? 0,
+            )),
+        };
+
+        return new Violation(
+            location: $location,
+            subject: $subject,
+            symbolPath: $symbolPath,
+            ruleName: $ruleName,
+            violationCode: $violationCode,
+            message: $message,
+            severity: $severity,
+            metricValue: $metricValue,
+            level: $level,
+            relatedLocations: $relatedLocations,
+            recommendation: $recommendation,
+            threshold: $threshold,
+            dependencyTarget: $dependencyTarget,
+            dependencyType: $dependencyType,
+            acceptedLevel: $acceptedLevel,
+            occurrenceKey: $occurrenceKey,
+        );
+    }
+
 }

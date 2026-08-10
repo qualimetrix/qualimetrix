@@ -7,12 +7,13 @@ namespace Qualimetrix\Metrics\Complexity;
 use Override;
 use PhpParser\Node;
 use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\MethodMetricsProviderInterface;
-use Qualimetrix\Core\Metric\MethodWithMetrics;
+use Qualimetrix\Core\Metric\CallableMetricsProviderInterface;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
@@ -27,7 +28,7 @@ use SplFileInfo;
  *
  * @see https://www.sonarsource.com/docs/CognitiveComplexity.pdf
  */
-final class CognitiveComplexityCollector extends AbstractCollector implements MethodMetricsProviderInterface
+final class CognitiveComplexityCollector extends AbstractCollector implements CallableMetricsProviderInterface
 {
     private const NAME = 'cognitive-complexity';
 
@@ -66,13 +67,13 @@ final class CognitiveComplexityCollector extends AbstractCollector implements Me
     }
 
     /**
-     * @return list<MethodWithMetrics>
+     * @return list<CallableWithMetrics>
      */
-    public function getMethodsWithMetrics(): array
+    public function getCallablesWithMetrics(RelativePath $file): array
     {
         \assert($this->visitor instanceof CognitiveComplexityVisitor);
 
-        return $this->visitor->getMethodsWithMetrics();
+        return $this->visitor->getCallablesWithMetrics($file);
     }
 
     /**
@@ -84,7 +85,7 @@ final class CognitiveComplexityCollector extends AbstractCollector implements Me
         return [
             new MetricDefinition(
                 name: MetricName::COMPLEXITY_COGNITIVE,
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: [
                     SymbolLevel::Class_->value => [
                         AggregationStrategy::Sum,

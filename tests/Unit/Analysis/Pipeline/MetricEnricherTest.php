@@ -20,6 +20,8 @@ use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Rules\Duplication\CodeDuplicationRule;
@@ -210,8 +212,8 @@ final class MetricEnricherTest extends TestCase
         $classB = SymbolPath::forClass('App', 'ClassB');
         $location = new Location(RelativePath::fromString('test.php'), 1);
 
-        $depAtoB = new Dependency($classA, $classB, DependencyType::TypeHint, $location);
-        $depBtoA = new Dependency($classB, $classA, DependencyType::TypeHint, $location);
+        $depAtoB = new Dependency(new DeclarationPath($classA, RelativePath::fromString('test.php'), 0), new LogicalClassPath($classB), DependencyType::TypeHint, $location);
+        $depBtoA = new Dependency(new DeclarationPath($classB, RelativePath::fromString('test.php'), 0), new LogicalClassPath($classA), DependencyType::TypeHint, $location);
 
         $graph = self::createStub(DependencyGraphInterface::class);
         $graph->method('getAllClasses')->willReturn([$classA, $classB]);

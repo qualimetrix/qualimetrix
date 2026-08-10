@@ -9,7 +9,7 @@ use RuntimeException;
 /**
  * PaymentService - additional fixture for namespace-level aggregation testing
  *
- * Expected method-level metrics:
+ * Expected callable-level metrics:
  * - authorize():  CCN=4 (1 + 1 if + 1 if + 1 if)
  * - charge():     CCN=6 (1 + 1 if + 1 if + 1 switch with 3 cases)
  *

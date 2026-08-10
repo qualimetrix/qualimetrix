@@ -48,8 +48,8 @@ final class SensitiveParameterRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.sensitiveParameter', ['line' => 1])
-                ->withEntry('security.sensitiveParameter', ['line' => 2]),
+                ->withEntry('security.sensitiveParameter', ['subjectKind' => 'file', 'line' => 1, 'paramName' => 'password'])
+                ->withEntry('security.sensitiveParameter', ['subjectKind' => 'file', 'line' => 2, 'paramName' => 'password']),
         );
 
         self::assertCount(0, $rule->analyze($context));
@@ -72,7 +72,7 @@ final class SensitiveParameterRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.sensitiveParameter', ['line' => 12]),
+                ->withEntry('security.sensitiveParameter', ['subjectKind' => 'file', 'line' => 12, 'paramName' => 'password']),
         );
 
         $violations = $rule->analyze($context);
@@ -91,9 +91,9 @@ final class SensitiveParameterRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.sensitiveParameter', ['line' => 5])
-                ->withEntry('security.sensitiveParameter', ['line' => 10])
-                ->withEntry('security.sensitiveParameter', ['line' => 22]),
+                ->withEntry('security.sensitiveParameter', ['subjectKind' => 'file', 'line' => 5, 'paramName' => 'password'])
+                ->withEntry('security.sensitiveParameter', ['subjectKind' => 'file', 'line' => 10, 'paramName' => 'password'])
+                ->withEntry('security.sensitiveParameter', ['subjectKind' => 'file', 'line' => 22, 'paramName' => 'password']),
         );
 
         $violations = $rule->analyze($context);

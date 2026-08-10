@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Metrics\Security;
 
+use LogicException;
 use PhpParser\Node;
 use PhpParser\Node\Expr\BinaryOp\Concat;
 use PhpParser\Node\Expr\FuncCall;
@@ -11,6 +12,7 @@ use PhpParser\Node\Expr\Print_;
 use PhpParser\Node\Scalar\InterpolatedString;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
  * AST visitor that detects security patterns: SQL injection, XSS, command injection.
@@ -24,6 +26,8 @@ use Qualimetrix\Metrics\ResettableVisitorInterface;
  */
 final class SecurityPatternVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
 {
+    use VisitorMethodTrackingTrait;
+
     /** @var list<SecurityPatternLocation> */
     private array $locations = [];
 
@@ -50,10 +54,12 @@ final class SecurityPatternVisitor extends NodeVisitorAbstract implements Resett
         $this->locations = [];
         $this->concatDepth = 0;
         $this->sqlFuncCallDepth = 0;
+        $this->resetVisitorMethodContext();
     }
 
     public function enterNode(Node $node): ?int
     {
+        $this->enterVisitorMethodContext($node);
         // echo statement: check for XSS
         if ($node instanceof Node\Stmt\Echo_) {
             $this->addLocations($this->xssDetector->detectInEcho($node));
@@ -109,6 +115,8 @@ final class SecurityPatternVisitor extends NodeVisitorAbstract implements Resett
             $this->sqlFuncCallDepth--;
         }
 
+        $this->leaveVisitorMethodContext($node);
+
         return null;
     }
 
@@ -139,7 +147,22 @@ final class SecurityPatternVisitor extends NodeVisitorAbstract implements Resett
     private function addLocations(array $locations): void
     {
         foreach ($locations as $location) {
-            $this->locations[] = $location;
+            $this->locations[] = new SecurityPatternLocation(
+                type: $location->type,
+                line: $location->line,
+                context: $location->context,
+                subjectId: $this->currentFileEntrySubjectId(),
+            );
         }
+    }
+
+    /** @return array<string, int|string> */
+    public function getSubjectComponents(SecurityPatternLocation $location): array
+    {
+        if ($location->subjectId === null) {
+            throw new LogicException('Security pattern location is missing its subject reference');
+        }
+
+        return $this->fileEntrySubjectComponents($location->subjectId);
     }
 }

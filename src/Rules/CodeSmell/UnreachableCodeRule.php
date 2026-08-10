@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\CodeSmell;
 
+use LogicException;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclaration;
 use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\AbstractRule;
@@ -85,46 +88,55 @@ final class UnreachableCodeRule extends AbstractRule
             return [];
         }
 
+        return $this->violationsForReachableSymbols($context);
+    }
+
+    /**
+     * @return list<Violation>
+     */
+    private function violationsForReachableSymbols(AnalysisContext $context): array
+    {
+        \assert($this->options instanceof UnreachableCodeOptions);
         $violations = [];
 
-        foreach ([SymbolType::Method, SymbolType::Function_] as $type) {
-            foreach ($context->metrics->all($type) as $symbolInfo) {
-                $violation = $this->checkSymbol($symbolInfo, $context);
-
-                if ($violation !== null) {
-                    $violations[] = $violation;
-                }
+        foreach ($context->metrics->allCallables() as $symbolInfo) {
+            $subject = $symbolInfo->subject ?? throw new LogicException('Unreachable code findings require an exact callable subject');
+            $declaration = $subject->declarationPath() ?? throw new LogicException('Unreachable code findings require a declaration subject');
+            if (!\in_array($declaration->logical->getType(), [SymbolType::Method, SymbolType::Function_], true)) {
+                continue;
             }
+
+            $metrics = $context->metrics->getSubject($subject);
+            $unreachableCount = $metrics->get(MetricName::CODE_SMELL_UNREACHABLE_CODE);
+            if ($unreachableCount === null) {
+                continue;
+            }
+
+            $unreachableCountValue = (int) $unreachableCount;
+            $severity = $this->getEffectiveSeverity($context, $this->options, $subject, $unreachableCountValue);
+            if ($severity === null) {
+                continue;
+            }
+
+            $firstLine = $metrics->get(MetricName::CODE_SMELL_UNREACHABLE_CODE_FIRST_LINE);
+            $line = \is_int($firstLine) ? $firstLine : ($symbolInfo->line ?? 1);
+            $violations[] = $this->checkSymbol($symbolInfo, $subject, $line, $unreachableCountValue, $severity);
         }
 
         return $violations;
     }
 
-    private function checkSymbol(SymbolInfo $symbolInfo, AnalysisContext $context): ?Violation
-    {
-        /** @var UnreachableCodeOptions $options */
-        $options = $this->options;
-
-        $metrics = $context->metrics->get($symbolInfo->symbolPath);
-        $unreachableCount = $metrics->get(MetricName::CODE_SMELL_UNREACHABLE_CODE);
-
-        if ($unreachableCount === null) {
-            return null;
-        }
-
-        $unreachableCountValue = (int) $unreachableCount;
-        $severity = $this->getEffectiveSeverity($context, $options, $symbolInfo->file, $symbolInfo->line ?? 1, $unreachableCountValue);
-
-        if ($severity === null) {
-            return null;
-        }
-
-        $firstLine = $metrics->get(MetricName::CODE_SMELL_UNREACHABLE_CODE_FIRST_LINE);
-        $line = $firstLine !== null ? (int) $firstLine : $symbolInfo->line;
-
+    private function checkSymbol(
+        SymbolInfo $symbolInfo,
+        MetricSubject $subject,
+        int $line,
+        int $unreachableCountValue,
+        Severity $severity,
+    ): Violation {
         return new Violation(
             location: new Location($symbolInfo->file, $line, precise: true),
-            symbolPath: $symbolInfo->symbolPath,
+            subject: $subject,
+            symbolPath: $subject->toSymbolPath(),
             ruleName: $this->getName(),
             violationCode: self::NAME,
             message: \sprintf(

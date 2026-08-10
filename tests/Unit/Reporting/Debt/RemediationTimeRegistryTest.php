@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -231,6 +233,11 @@ final class RemediationTimeRegistryTest extends TestCase
     ): Violation {
         return new Violation(
             location: new Location(RelativePath::fromString('src/Test.php'), 1),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App', 'TestClass'),
+                RelativePath::fromString('src/Test.php'),
+                0,
+            )),
             symbolPath: SymbolPath::forClass('App', 'TestClass'),
             ruleName: $ruleName,
             violationCode: $ruleName,

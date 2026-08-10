@@ -76,7 +76,7 @@ final class ConfigDataNormalizerTest extends TestCase
     #[Test]
     public function normalizesRulesAsIs(): void
     {
-        $rules = ['complexity.cyclomatic' => ['method' => ['warning' => 7]]];
+        $rules = ['complexity.cyclomatic' => ['callable' => ['warning' => 7]]];
 
         $result = ConfigDataNormalizer::normalize(['rules' => $rules]);
 

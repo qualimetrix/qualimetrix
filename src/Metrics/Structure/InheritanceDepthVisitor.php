@@ -119,6 +119,7 @@ final class InheritanceDepthVisitor extends NodeVisitorAbstract implements Reset
                 namespace: $this->currentNamespace,
                 className: $className,
                 line: $node->getStartLine(),
+                startFilePos: $node->getStartFilePos(),
                 parentFqn: $parentFqn,
             );
 

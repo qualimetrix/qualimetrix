@@ -11,11 +11,15 @@ use Qualimetrix\Analysis\Aggregator\TreeAwareNamespaceAggregator;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\AggregationMeta;
 use Qualimetrix\Core\Metric\AggregationStrategy;
+use Qualimetrix\Core\Metric\CallableWithMetrics;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(TreeAwareNamespaceAggregator::class)]
@@ -26,7 +30,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     {
         $repository = new InMemoryMetricRepository();
 
-        // Simulate class symbols in two leaf namespaces (with method-level raw values)
+        // Simulate class symbols in two leaf namespaces (with callable-level raw values)
         $this->addClassWithCcn($repository, 'App\\Service', 'UserService', 'src/Service/UserService.php', 5);
         $this->addMethodMetric($repository, 'App\\Service', 'UserService', 'handle', 'src/Service/UserService.php', 'ccn', 5);
         $this->addClassWithCcn($repository, 'App\\Domain', 'Entity', 'src/Domain/Entity.php', 3);
@@ -89,7 +93,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         $definitions = [
             new MetricDefinition(
                 name: 'ccn',
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: [
                     SymbolLevel::Class_->value => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
@@ -142,7 +146,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     {
         $repository = new InMemoryMetricRepository();
 
-        // App has its own classes (2 classes direct) with method-level raw values
+        // App has its own classes (2 classes direct) with callable-level raw values
         $repository->add(
             SymbolPath::forClass('App', 'Bootstrap'),
             (new MetricBag())->with('ccn.sum', 3),
@@ -279,12 +283,14 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
             RelativePath::fromString('src/S/Svc2.php'),
             1,
         );
-        $repository->add(
-            SymbolPath::forMethod('App\\Service', 'Svc1', 'doIt'),
+        $repository->addCallable(new CallableWithMetrics(
+            new DeclarationPath(SymbolPath::forMethod('App\\Service', 'Svc1', 'doIt'), RelativePath::fromString('src/S/Svc1.php'), 50),
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath(SymbolPath::forClass('App\\Service', 'Svc1')),
             new MetricBag(),
-            RelativePath::fromString('src/S/Svc1.php'),
-            5,
-        );
+        ));
         $this->addNamespaceBag($repository, 'App\\Service', []);
 
         $tree = new NamespaceTree(['App\\Service']);
@@ -320,7 +326,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
     }
 
     /**
-     * Helper: add a method-level metric.
+     * Helper: add a callable-level metric.
      */
     private function addMethodMetric(
         InMemoryMetricRepository $repository,
@@ -331,12 +337,14 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         string $metric,
         int|float $value,
     ): void {
-        $repository->add(
-            SymbolPath::forMethod($namespace, $class, $method),
+        $repository->addCallable(new CallableWithMetrics(
+            new DeclarationPath(SymbolPath::forMethod($namespace, $class, $method), RelativePath::fromString($file), 10),
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath(SymbolPath::forClass($namespace, $class)),
             (new MetricBag())->with($metric, $value),
-            RelativePath::fromString($file),
-            1,
-        );
+        ));
     }
 
     /**
@@ -401,7 +409,7 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         return [
             new MetricDefinition(
                 name: 'ccn',
-                collectedAt: SymbolLevel::Method,
+                collectedAt: SymbolLevel::Callable,
                 aggregations: [
                     SymbolLevel::Class_->value => [AggregationStrategy::Sum],
                     SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],

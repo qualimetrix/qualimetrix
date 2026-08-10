@@ -1307,15 +1307,15 @@ final class RuleOptionsFactoryTest extends TestCase
     {
         $this->registry->setConfigFileOptions([
             'complexity.cyclomatic' => [
-                'method' => ['threshold' => 15],
+                'callable' => ['threshold' => 15],
             ],
         ]);
 
         /** @var ComplexityOptions $options */
         $options = $this->factory->create('complexity.cyclomatic', ComplexityOptions::class);
 
-        self::assertSame(15, $options->method->warning);
-        self::assertSame(15, $options->method->error);
+        self::assertSame(15, $options->callable->warning);
+        self::assertSame(15, $options->callable->error);
         // Untouched sibling level keeps its own defaults.
         self::assertSame(30, $options->class->maxWarning);
         self::assertSame(50, $options->class->maxError);
@@ -1551,20 +1551,20 @@ final class RuleOptionsFactoryTest extends TestCase
     public function cliThresholdOverridesConfigFileWarningAndErrorAtNestedLevel(): void
     {
         // Hierarchical rule (complexity.cyclomatic): eviction must be
-        // scoped to the `method:` nesting level, not the rule's top level.
+        // scoped to the `callable:` nesting level, not the rule's top level.
         $this->registry->setConfigFileOptions([
             'complexity.cyclomatic' => [
-                'method' => ['warning' => 10, 'error' => 20],
+                'callable' => ['warning' => 10, 'error' => 20],
                 'class' => ['max_warning' => 30, 'max_error' => 50],
             ],
         ]);
-        $this->registry->addCliOption('complexity.cyclomatic', 'method.threshold', 15);
+        $this->registry->addCliOption('complexity.cyclomatic', 'callable.threshold', 15);
 
         /** @var ComplexityOptions $options */
         $options = $this->factory->create('complexity.cyclomatic', ComplexityOptions::class);
 
-        self::assertSame(15, $options->method->warning);
-        self::assertSame(15, $options->method->error);
+        self::assertSame(15, $options->callable->warning);
+        self::assertSame(15, $options->callable->error);
         // Untouched sibling level keeps its own config-file values.
         self::assertSame(30, $options->class->maxWarning);
         self::assertSame(50, $options->class->maxError);
@@ -1709,7 +1709,7 @@ final class RuleOptionsFactoryTest extends TestCase
         /** @var ComplexityOptions $options */
         $options = $this->factory->create('complexity.cyclomatic', ComplexityOptions::class);
 
-        self::assertSame(15, $options->method->warning);
-        self::assertSame(15, $options->method->error);
+        self::assertSame(15, $options->callable->warning);
+        self::assertSame(15, $options->callable->error);
     }
 }

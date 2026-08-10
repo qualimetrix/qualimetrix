@@ -20,6 +20,8 @@ use Qualimetrix\Baseline\InertBaselineEntry;
 use Qualimetrix\Baseline\InertEntryReason;
 use Qualimetrix\Baseline\RunScope;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Severity;
@@ -78,7 +80,12 @@ final class BaselineUpdaterTest extends TestCase
     {
         $symbol = SymbolPath::forClass('App', 'Service');
         $stored = new BaselineEntry(
-            new BaselineIdentity($symbol->toCanonical(), self::maintainabilityChannel()),
+            BaselineIdentity::forViolation(ViolationFactory::magnitude(
+                $symbol,
+                40,
+                'maintainability.index',
+                'maintainability.index.class',
+            )),
             [40],
             1,
         );
@@ -124,7 +131,7 @@ final class BaselineUpdaterTest extends TestCase
     public function itCarriesInertEntriesForwardVerbatim(): void
     {
         $inert = new InertBaselineEntry(
-            symbolKey: 'file:src/Legacy.php',
+            subjectKey: 'file:src/Legacy.php',
             channelKey: null,
             identity: null,
             selector: EntrySelector::forKey('file:src/Legacy.php'),
@@ -288,9 +295,10 @@ final class BaselineUpdaterTest extends TestCase
 
         $noNumber = new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
+            subject: MetricSubject::declaration(new DeclarationPath($symbol, RelativePath::fromString('src/Foo.php'), 42)),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic.method',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'no magnitude reported',
             severity: Severity::Warning,
         );
@@ -368,11 +376,6 @@ final class BaselineUpdaterTest extends TestCase
     private static function duplicationChannel(): ViolationChannel
     {
         return new ViolationChannel('duplication.code-duplication', 'duplication.code-duplication');
-    }
-
-    private static function maintainabilityChannel(): ViolationChannel
-    {
-        return new ViolationChannel('maintainability.index', 'maintainability.index.class');
     }
 
     private static function gotoChannel(): ViolationChannel

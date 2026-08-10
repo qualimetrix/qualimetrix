@@ -8,8 +8,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Core\Violation\OccurrenceKey;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Formatter\Html\HtmlTreeNode;
@@ -43,7 +46,7 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
@@ -64,7 +67,7 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $classNode = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 25),
             symbolPath: SymbolPath::forMethod('App', 'Service', 'calculate'),
             ruleName: 'complexity.cognitive',
@@ -85,7 +88,7 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $nsNode = new HtmlTreeNode('App\\Service', 'App\\Service', 'namespace');
 
-        $violation = new Violation(
+        $violation = self::violation(
             location: Location::none(),
             symbolPath: SymbolPath::forNamespace('App\\Service'),
             ruleName: 'size.namespace-size',
@@ -105,7 +108,7 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $classNode = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/helpers.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('src/helpers.php')),
             ruleName: 'size.loc',
@@ -124,7 +127,7 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $nsNode = new HtmlTreeNode('App', 'App', 'namespace');
 
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forMethod('App', 'Service', 'calculate'),
             ruleName: 'complexity.cyclomatic',
@@ -146,7 +149,7 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $nsNode = new HtmlTreeNode('App', 'App', 'namespace');
 
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
@@ -164,7 +167,7 @@ final class HtmlViolationPartitionerTest extends TestCase
     #[Test]
     public function itDropsMethodViolationWhenNoClassAndNoNamespaceNode(): void
     {
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forMethod('App', 'Service', 'calculate'),
             ruleName: 'complexity.cyclomatic',
@@ -184,7 +187,7 @@ final class HtmlViolationPartitionerTest extends TestCase
         $classA = new HtmlTreeNode('ClassA', 'App\\A\\ClassA', 'class');
         $classB = new HtmlTreeNode('ClassB', 'App\\B\\ClassB', 'class');
 
-        $v1 = new Violation(
+        $v1 = self::violation(
             location: new Location(RelativePath::fromString('src/A/ClassA.php'), 10),
             symbolPath: SymbolPath::forClass('App\\A', 'ClassA'),
             ruleName: 'r1',
@@ -192,7 +195,7 @@ final class HtmlViolationPartitionerTest extends TestCase
             message: 'm1',
             severity: Severity::Error,
         );
-        $v2 = new Violation(
+        $v2 = self::violation(
             location: new Location(RelativePath::fromString('src/A/ClassA.php'), 20),
             symbolPath: SymbolPath::forMethod('App\\A', 'ClassA', 'foo'),
             ruleName: 'r2',
@@ -200,7 +203,7 @@ final class HtmlViolationPartitionerTest extends TestCase
             message: 'm2',
             severity: Severity::Warning,
         );
-        $v3 = new Violation(
+        $v3 = self::violation(
             location: new Location(RelativePath::fromString('src/B/ClassB.php'), 5),
             symbolPath: SymbolPath::forClass('App\\B', 'ClassB'),
             ruleName: 'r3',
@@ -242,7 +245,7 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
@@ -276,11 +279,72 @@ final class HtmlViolationPartitionerTest extends TestCase
     }
 
     #[Test]
+    public function itPreservesCanonicalSubjectAndOccurrenceInHtmlPayload(): void
+    {
+        $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
+        $logical = SymbolPath::forMethod('App', 'Service', 'run');
+        $subject = MetricSubject::declaration(new DeclarationPath($logical, RelativePath::fromString('src/Service.php'), 101));
+        $occurrence = OccurrenceKey::semantic('test', ['id' => 1]);
+        $violation = self::violation(new Location(RelativePath::fromString('src/Service.php'), 10), $logical, 'r', 'r', 'message', Severity::Warning, occurrenceKey: $occurrence, subject: $subject);
+
+        $this->partitioner->attach(['App\\Service' => $node], ['App\\Service' => [$violation]], new FormatterContext());
+
+        self::assertSame($subject->toCanonical(), $node->violations[0]['subject']);
+        self::assertSame($occurrence->value, $node->violations[0]['occurrence']);
+        self::assertSame($logical->toString(), $node->violations[0]['symbolPath']);
+    }
+
+    #[Test]
+    public function itKeepsDuplicateLogicalDeclarationsAsDistinctHtmlPayloadRows(): void
+    {
+        $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
+        $logical = SymbolPath::forMethod('App', 'Service', 'run');
+        $firstSubject = MetricSubject::declaration(
+            new DeclarationPath($logical, RelativePath::fromString('src/Service.php'), 101),
+        );
+        $secondSubject = MetricSubject::declaration(
+            new DeclarationPath($logical, RelativePath::fromString('src/Service.php'), 202),
+        );
+
+        $this->partitioner->attach(
+            ['App\\Service' => $node],
+            ['App\\Service' => [
+                self::violation(
+                    new Location(RelativePath::fromString('src/Service.php'), 10),
+                    $logical,
+                    'r',
+                    'r',
+                    'first declaration',
+                    Severity::Warning,
+                    subject: $firstSubject,
+                ),
+                self::violation(
+                    new Location(RelativePath::fromString('src/Service.php'), 20),
+                    $logical,
+                    'r',
+                    'r',
+                    'second declaration',
+                    Severity::Warning,
+                    subject: $secondSubject,
+                ),
+            ]],
+            new FormatterContext(),
+        );
+
+        self::assertCount(2, $node->violations);
+        self::assertSame(
+            [$firstSubject->toCanonical(), $secondSubject->toCanonical()],
+            array_column($node->violations, 'subject'),
+        );
+        self::assertSame([$logical->toString(), $logical->toString()], array_column($node->violations, 'symbolPath'));
+    }
+
+    #[Test]
     public function itNullsNanAndInfMetricValuesOnAttach(): void
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $nanViolation = new Violation(
+        $nanViolation = self::violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'r1',
@@ -290,7 +354,7 @@ final class HtmlViolationPartitionerTest extends TestCase
             metricValue: \NAN,
         );
 
-        $infViolation = new Violation(
+        $infViolation = self::violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 20),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'r2',
@@ -316,7 +380,7 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
 
-        $violation = new Violation(
+        $violation = self::violation(
             location: new Location(RelativePath::fromString('src/Other.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Other'),
             ruleName: 'r1',
@@ -339,7 +403,7 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $node = new HtmlTreeNode('NS', 'App', 'namespace');
 
-        $violation = new Violation(
+        $violation = self::violation(
             location: Location::none(),
             symbolPath: SymbolPath::forNamespace('App'),
             ruleName: 'arch.circular',
@@ -358,4 +422,15 @@ final class HtmlViolationPartitionerTest extends TestCase
         self::assertSame('', $node->violations[0]['file']);
         self::assertNull($node->violations[0]['line']);
     }
+
+    /** @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations */
+    private static function violation(\Qualimetrix\Core\Violation\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Core\Violation\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Core\Rule\RuleLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Core\Dependency\DependencyType $dependencyType = null, ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    {
+        $subject ??= match ($symbolPath->getType()) {
+            \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), $location->line ?? 0)),
+        };
+        return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
+    }
+
 }

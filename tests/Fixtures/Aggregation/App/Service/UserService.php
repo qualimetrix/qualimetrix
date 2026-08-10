@@ -9,7 +9,7 @@ use InvalidArgumentException;
 /**
  * UserService - fixture for testing metric aggregation
  *
- * Expected method-level metrics:
+ * Expected callable-level metrics:
  * - findById():   CCN=2 (1 + 1 if statement)
  * - findByEmail(): CCN=3 (1 + 1 if + 1 foreach)
  * - create():     CCN=5 (1 + 2 if + 1 foreach + 1 if inside foreach)

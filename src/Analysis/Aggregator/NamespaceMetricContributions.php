@@ -40,9 +40,7 @@ final class NamespaceMetricContributions
             $values[$definition->name] = [];
         }
 
-        self::collectFromMethods($repository, $symbolInfos, $definitions, $values);
-        self::collectFromClasses($repository, $symbolInfos, $definitions, $values);
-        self::collectFromFunctions($repository, $symbolInfos, $definitions, $values);
+        self::collectFromSymbols($repository, $symbolInfos, $definitions, $values);
         $namespaceProvided = self::collectExplicitNamespaceValues(
             $repository,
             $symbolInfos,
@@ -62,13 +60,21 @@ final class NamespaceMetricContributions
     {
         $map = [];
 
-        foreach ([SymbolType::Class_, SymbolType::Method, SymbolType::Function_] as $symbolType) {
-            foreach ($repository->all($symbolType) as $info) {
-                $namespace = $info->symbolPath->namespace;
+        foreach ($repository->allDeclarations() as $info) {
+            $namespace = $info->subject?->toSymbolPath()->namespace;
 
-                if ($namespace !== null && $info->file !== null) {
-                    $map[$info->file->value()][$namespace] = $namespace;
-                }
+            if ($namespace !== null && $info->file !== null) {
+                $map[$info->file->value()][$namespace] = $namespace;
+            }
+        }
+
+        // Aggregate-only class records still own their physical file. They have
+        // no declaration subject, but must keep that file eligible for file LOC.
+        foreach ($repository->allLogicalClasses() as $info) {
+            $namespace = $info->subject?->toSymbolPath()->namespace;
+
+            if ($namespace !== null && $info->file !== null) {
+                $map[$info->file->value()][$namespace] = $namespace;
             }
         }
 
@@ -104,7 +110,7 @@ final class NamespaceMetricContributions
      * @param list<MetricDefinition> $definitions
      * @param array<string, list<int|float>> $values
      */
-    private static function collectFromMethods(
+    private static function collectFromSymbols(
         MetricRepositoryInterface $repository,
         array $symbolInfos,
         array $definitions,
@@ -113,53 +119,17 @@ final class NamespaceMetricContributions
         foreach ($symbolInfos as $info) {
             $path = $info->symbolPath;
 
-            if ($path->type === null || $path->member === null) {
+            $sourceLevel = match (true) {
+                $path->getType() === SymbolType::Function_ => SymbolLevel::Callable,
+                $path->type !== null && $path->member !== null => SymbolLevel::Callable,
+                $path->type !== null => SymbolLevel::Class_,
+                default => null,
+            };
+            if ($sourceLevel === null) {
                 continue;
             }
 
-            self::appendValues($repository, $info, $definitions, $values, SymbolLevel::Method);
-        }
-    }
-
-    /**
-     * @param list<SymbolInfo> $symbolInfos
-     * @param list<MetricDefinition> $definitions
-     * @param array<string, list<int|float>> $values
-     */
-    private static function collectFromClasses(
-        MetricRepositoryInterface $repository,
-        array $symbolInfos,
-        array $definitions,
-        array &$values,
-    ): void {
-        foreach ($symbolInfos as $info) {
-            $path = $info->symbolPath;
-
-            if ($path->type === null || $path->member !== null) {
-                continue;
-            }
-
-            self::appendValues($repository, $info, $definitions, $values, SymbolLevel::Class_);
-        }
-    }
-
-    /**
-     * @param list<SymbolInfo> $symbolInfos
-     * @param list<MetricDefinition> $definitions
-     * @param array<string, list<int|float>> $values
-     */
-    private static function collectFromFunctions(
-        MetricRepositoryInterface $repository,
-        array $symbolInfos,
-        array $definitions,
-        array &$values,
-    ): void {
-        foreach ($symbolInfos as $info) {
-            if ($info->symbolPath->getType() !== SymbolType::Function_) {
-                continue;
-            }
-
-            self::appendValues($repository, $info, $definitions, $values, SymbolLevel::Method);
+            self::appendValues($repository, $info, $definitions, $values, $sourceLevel);
         }
     }
 
@@ -278,7 +248,9 @@ final class NamespaceMetricContributions
         array &$values,
         SymbolLevel $sourceLevel,
     ): void {
-        $bag = $repository->get($info->symbolPath);
+        $bag = $info->subject === null
+            ? $repository->get($info->symbolPath)
+            : $repository->getSubject($info->subject);
 
         foreach ($definitions as $definition) {
             if ($definition->collectedAt !== $sourceLevel) {

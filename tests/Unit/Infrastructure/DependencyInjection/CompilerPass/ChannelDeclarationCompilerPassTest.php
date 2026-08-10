@@ -95,7 +95,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         $declarations = $container->getDefinition(ChannelDeclarationRegistry::class)
             ->getArgument('$staticDeclarations');
 
-        self::assertArrayHasKey('complexity.cyclomatic#complexity.cyclomatic.method', $declarations);
+        self::assertArrayHasKey('complexity.cyclomatic#complexity.cyclomatic.callable', $declarations);
     }
 
     #[Test]

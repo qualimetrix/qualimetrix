@@ -23,6 +23,8 @@ use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
@@ -229,7 +231,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
         );
 
         return self::tester($command, [
-            'symbol' => self::symbol()->toCanonical(),
+            'subject' => self::subject()->toCanonical(),
             'paths' => ['src'],
             '--baseline' => $this->baselinePath,
         ]);
@@ -287,7 +289,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
                 generated: (new FixedClock())->now(),
                 scope: ['src'],
                 entries: [new BaselineEntry(
-                    new BaselineIdentity(self::symbol()->toCanonical(), ViolationChannel::fromKey(self::CHANNEL)),
+                    new BaselineIdentity(self::subject()->toCanonical(), ViolationChannel::fromKey(self::CHANNEL)),
                     [25.0],
                     1,
                 )],
@@ -305,15 +307,24 @@ final class BaselineRunBeforeLoadTest extends TestCase
     private static function finding(): Violation
     {
         $channel = ViolationChannel::fromKey(self::CHANNEL);
+        $path = RelativePath::fromString(self::SOURCE_FILE);
 
         return new Violation(
-            location: new Location(RelativePath::fromString(self::SOURCE_FILE), 1),
+            location: new Location($path, 1),
+            subject: self::subject(),
             symbolPath: self::symbol(),
             ruleName: $channel->ruleName,
             violationCode: $channel->violationCode,
             message: 'finding',
             severity: Severity::Warning,
             metricValue: 12.0,
+        );
+    }
+
+    private static function subject(): MetricSubject
+    {
+        return MetricSubject::declaration(
+            new DeclarationPath(self::symbol(), RelativePath::fromString(self::SOURCE_FILE), 1),
         );
     }
 

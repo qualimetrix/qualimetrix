@@ -91,8 +91,8 @@ final class DitGlobalCollector implements GlobalContextCollectorInterface
                 continue;
             }
 
-            $childFqn = $this->symbolPathToFqn($dependency->source);
-            $parentFqn = $this->symbolPathToFqn($dependency->target);
+            $childFqn = $this->symbolPathToFqn($dependency->sourceLogical());
+            $parentFqn = $this->symbolPathToFqn($dependency->targetLogical());
 
             if ($childFqn !== null && $parentFqn !== null) {
                 $parentMap[$childFqn] = $parentFqn;

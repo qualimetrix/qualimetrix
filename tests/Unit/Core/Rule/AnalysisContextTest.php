@@ -135,7 +135,7 @@ final class AnalysisContextTest extends TestCase
         $metrics = self::createStub(MetricRepositoryInterface::class);
         $ruleOptions = [
             'hierarchical-rule' => [
-                'method' => [
+                'callable' => [
                     'threshold' => 10,
                     'severity' => 'warning',
                 ],
@@ -149,9 +149,9 @@ final class AnalysisContextTest extends TestCase
         $context = new AnalysisContext($metrics, $ruleOptions);
 
         $options = $context->getOptionsForRule('hierarchical-rule');
-        self::assertArrayHasKey('method', $options);
+        self::assertArrayHasKey('callable', $options);
         self::assertArrayHasKey('class', $options);
-        self::assertSame(10, $options['method']['threshold']);
+        self::assertSame(10, $options['callable']['threshold']);
         self::assertSame('error', $options['class']['severity']);
     }
 }

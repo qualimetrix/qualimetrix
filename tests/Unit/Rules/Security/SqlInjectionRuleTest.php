@@ -47,7 +47,7 @@ final class SqlInjectionRuleTest extends TestCase
         $rule = new SqlInjectionRule(new SecurityPatternOptions(enabled: false));
 
         $context = $this->createContext(
-            (new MetricBag())->withEntry('security.sql_injection', ['line' => 1, 'superglobal' => '']),
+            (new MetricBag())->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 1, 'superglobal' => '']),
         );
 
         self::assertCount(0, $rule->analyze($context));
@@ -70,7 +70,7 @@ final class SqlInjectionRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.sql_injection', ['line' => 15, 'superglobal' => '']),
+                ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 15, 'superglobal' => '']),
         );
 
         $violations = $rule->analyze($context);
@@ -79,7 +79,10 @@ final class SqlInjectionRuleTest extends TestCase
         self::assertSame(15, $violations[0]->location->line);
         self::assertSame(Severity::Error, $violations[0]->severity);
         self::assertSame('security.sql-injection', $violations[0]->ruleName);
-        self::assertStringContainsString('SQL injection', $violations[0]->message);
+        self::assertSame('Potential SQL injection — use parameterized queries instead of direct superglobal interpolation', $violations[0]->message);
+        self::assertSame('file:src/Controller/UserController.php', $violations[0]->subject->toCanonical());
+        self::assertSame('Use parameterized queries or prepared statements.', $violations[0]->recommendation);
+        self::assertTrue($violations[0]->location->precise);
     }
 
     #[Test]
@@ -89,9 +92,9 @@ final class SqlInjectionRuleTest extends TestCase
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.sql_injection', ['line' => 10, 'superglobal' => ''])
-                ->withEntry('security.sql_injection', ['line' => 25, 'superglobal' => ''])
-                ->withEntry('security.sql_injection', ['line' => 42, 'superglobal' => '']),
+                ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 10, 'superglobal' => ''])
+                ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 25, 'superglobal' => ''])
+                ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 42, 'superglobal' => '']),
         );
 
         $violations = $rule->analyze($context);
@@ -103,13 +106,28 @@ final class SqlInjectionRuleTest extends TestCase
     }
 
     #[Test]
+    public function itGroupsOnlySemanticPatternEvidenceRatherThanLinesOrRawContext(): void
+    {
+        $rule = new SqlInjectionRule(new SecurityPatternOptions());
+        $violations = $rule->analyze($this->createContext(
+            (new MetricBag())
+                ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 10, 'superglobal' => '_GET'])
+                ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 20, 'superglobal' => '_GET'])
+                ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 30, 'superglobal' => '_POST']),
+        ));
+
+        self::assertSame($violations[0]->occurrenceKey?->value, $violations[1]->occurrenceKey?->value);
+        self::assertNotSame($violations[0]->occurrenceKey?->value, $violations[2]->occurrenceKey?->value);
+    }
+
+    #[Test]
     public function itIncludesSuperglobalInViolationMessage(): void
     {
         $rule = new SqlInjectionRule(new SecurityPatternOptions());
 
         $context = $this->createContext(
             (new MetricBag())
-                ->withEntry('security.sql_injection', ['line' => 15, 'superglobal' => '_GET']),
+                ->withEntry('security.sql_injection', ['subjectKind' => 'file', 'line' => 15, 'superglobal' => '_GET']),
         );
 
         $violations = $rule->analyze($context);

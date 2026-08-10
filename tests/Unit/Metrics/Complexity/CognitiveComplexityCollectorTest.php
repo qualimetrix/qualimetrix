@@ -484,7 +484,7 @@ PHP;
 
         $cognitiveDefinition = $definitions[0];
         self::assertSame('cognitive', $cognitiveDefinition->name);
-        self::assertSame(SymbolLevel::Method, $cognitiveDefinition->collectedAt);
+        self::assertSame(SymbolLevel::Callable, $cognitiveDefinition->collectedAt);
 
         // Check Class_ level aggregations
         $classStrategies = $cognitiveDefinition->getStrategiesForLevel(SymbolLevel::Class_);

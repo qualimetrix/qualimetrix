@@ -14,9 +14,10 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
 use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\CodeSmell\UnreachableCodeOptions;
 use Qualimetrix\Rules\CodeSmell\UnreachableCodeRule;
@@ -101,7 +102,7 @@ final class UnreachableCodeRuleTest extends TestCase
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions(enabled: false));
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
-        $repository->expects(self::never())->method('all');
+        $repository->expects(self::never())->method('allCallables');
 
         $context = new AnalysisContext($repository);
 
@@ -114,14 +115,13 @@ final class UnreachableCodeRuleTest extends TestCase
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = (new MetricBag())->with('unreachableCode', 0);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -135,16 +135,15 @@ final class UnreachableCodeRuleTest extends TestCase
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = (new MetricBag())
             ->with('unreachableCode', 2)
             ->with('unreachableCode.firstLine', 15);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -165,14 +164,13 @@ final class UnreachableCodeRuleTest extends TestCase
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
 
         $symbolPath = SymbolPath::forMethod('App\Service', 'UserService', 'create');
-        $methodInfo = new SymbolInfo($symbolPath, RelativePath::fromString('src/Service/UserService.php'), 10);
+        $methodInfo = $this->exactDeclarationInfo($symbolPath, 'src/Service/UserService.php', 10);
 
         $metricBag = (new MetricBag())->with('unreachableCode', 1);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')
-            ->willReturnCallback(fn(SymbolType $type) => $type === SymbolType::Method ? [$methodInfo] : []);
-        $repository->method('get')
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')
             ->willReturn($metricBag);
 
         $context = new AnalysisContext($repository);
@@ -180,6 +178,31 @@ final class UnreachableCodeRuleTest extends TestCase
 
         self::assertCount(1, $violations);
         self::assertSame(10, $violations[0]->location->line);
+    }
+
+    #[Test]
+    public function itFallsBackToTheFirstLineWhenCallableMetadataHasNoLine(): void
+    {
+        $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
+        $file = RelativePath::fromString('src/Service/UserService.php');
+        $methodInfo = new SymbolInfo(
+            MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forMethod('App\\Service', 'UserService', 'create'),
+                $file,
+                10,
+            )),
+            $file,
+            null,
+        );
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('allCallables')->willReturn([$methodInfo]);
+        $repository->method('getSubject')->willReturn((new MetricBag())->with('unreachableCode', 1));
+
+        $violations = $rule->analyze(new AnalysisContext($repository));
+
+        self::assertCount(1, $violations);
+        self::assertSame(1, $violations[0]->location->line);
     }
 
     #[Test]
@@ -230,5 +253,16 @@ final class UnreachableCodeRuleTest extends TestCase
         self::assertSame(Severity::Warning, $options->getSeverity(1));
         // 2+ unreachable: error
         self::assertSame(Severity::Error, $options->getSeverity(2));
+    }
+
+    private function exactDeclarationInfo(SymbolPath $symbolPath, string $file, int $line): SymbolInfo
+    {
+        $relativePath = RelativePath::fromString($file);
+
+        return new SymbolInfo(
+            MetricSubject::declaration(new DeclarationPath($symbolPath, $relativePath, $line)),
+            $relativePath,
+            $line,
+        );
     }
 }

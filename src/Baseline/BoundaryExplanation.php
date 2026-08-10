@@ -12,15 +12,15 @@ namespace Qualimetrix\Baseline;
 final readonly class BoundaryExplanation
 {
     /**
-     * @param string $symbolKey the canonical symbol key ({@see \Qualimetrix\Core\Symbol\SymbolPath::toCanonical()})
-     *                          this explanation is about
+     * @param string $subjectKey the opaque canonical metric-subject key
+     *                           this explanation is about
      * @param list<EffectiveBoundary> $boundaries one entry per identity found relevant —
      *                                            every baseline entry and every currently-firing
      *                                            channel for this symbol, narrowed to a single
      *                                            channel when the caller asked for one
      */
     public function __construct(
-        public string $symbolKey,
+        public string $subjectKey,
         public array $boundaries,
         public BoundaryExplanationStatus $status,
     ) {}

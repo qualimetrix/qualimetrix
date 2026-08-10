@@ -43,6 +43,8 @@ src/Architecture/
 │   └── LayerExpansionException.php
 ├── Rules/              # User-facing rules — slice's only outward consumers
 │   ├── LayerViolationRule.php
+│   ├── OwnedLayerTargets.php                # Logical target -> exact owned declaration projection
+│   ├── LayerViolationFinding.php             # Immutable exact-subject Violation construction
 │   ├── LayerViolationOptions.php
 │   ├── CircularDependencyRule.php
 │   └── CircularDependencyOptions.php
@@ -208,6 +210,20 @@ The slice's user-facing consumers.
   `LayerViolationOptions` below) — e.g. raising `unreachable-layer` to `error`
   makes a `patterns:` typo that silently swallows a layer visible to CI
   without also raising every other info-level diagnostic via `fail_on: info`.
+- `OwnedLayerTargets` — resolves the dependency graph's logical target class
+  to exact owned declaration subjects from `MetricRepositoryInterface`. Its
+  declaration/logical-class input has a deterministic canonical-order output
+  of zero, one, or many targets; it neither evaluates policy nor creates a
+  finding.
+- `LayerViolationFinding` — immutable construction boundary for one forbidden
+  dependency edge and one finding subject. It receives exact declaration,
+  logical target, source/target layer matches, ready ordered owned targets,
+  severity, and policy-derived recommendation, then emits zero-target source
+  fallback or one finding per owned target with source use-site location,
+  logical edge fields, and location-independent semantic occurrence identity.
+  `LayerViolationRule` retains policy evaluation. Declaration controls consequently resolve per finding
+  subject, while physical `NextLine`/`File` controls stay at the source
+  use-site.
 - `LayerViolationOptions` — the rule's Options DTO: `enabled`, `severity`
   (for `architecture.layer-violation`), and three independent severity knobs
   for the sub-diagnostics — `unreachableLayerSeverity`, `potentialShadowSeverity`,
@@ -265,7 +281,9 @@ Pure-PHP tests of single classes. No DI, no fixtures on disk. Mirrors the
   (`ArchitectureProcessorTest`, `LayerExpansionStageTest`,
   `LayerInstantiatorTest`, `TupleExtractorTest`).
 - `Unit/Rules/` — Rules with mocked `AnalysisContext`
-  (`LayerViolationRuleTest`, `LayerViolationOptionsTest`,
+  (`LayerViolationRuleTest` covers 0/1/N target projection, canonical
+  duplicate order, declaration and physical controls, structured edges, and
+  occurrence identity; `LayerViolationOptionsTest`,
   `CircularDependencyRuleTest`, `CoverageDiagnosticsTest`).
 - `Unit/Configuration/` — Loaders and validators
   (`ArchitectureConfigurationFactoryTest`, `Validation/*Test`,
@@ -286,7 +304,10 @@ Architecture prepare → RuleExecution).
 
 Use these to verify cross-class behaviour: layer assignment under
 template expansion, allow-list filtering, relations filter, coverage
-diagnostics, inline suppression. The fixture per behaviour is the
+diagnostics, inline suppression. `LayerViolationIntegrationTest` pins the
+real-pipeline projection and `InlineSuppressionLayerViolationIntegrationTest`
+proves that a source declaration control cannot suppress a target-attributed
+finding. The fixture per behaviour is the
 testability axis — adding a new behaviour usually means adding a new
 fixture sample directory plus one integration test class.
 
