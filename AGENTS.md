@@ -55,12 +55,13 @@ modular monolith** accepted in
 ADR 0012's substantial/thin hybrid direction; ADR 0010 is the historical
 Architecture pilot and ADR 0016 remains the governing subject-cohesion rule.
 
-Migration packages P1-P8 have not landed. The tree below describes the current
-physical layout. P0 governance has landed: the versioned internal manifest is
-authoritative for all 695 current declarations and 37 semantic owners, and it
+P1 has landed the Duplication capability; P2-P8 remain pending. The tree below
+describes the current physical layout. P0 governance remains live: the
+versioned internal manifest is authoritative for all 697 current declarations
+and 37 semantic owners, and it
 generates a coarse qmx projection with 37 owner layers, 14 singleton enforcement
 seams and final `external` (52 layers and 296 allow edges in this snapshot).
-That enforcement does not mean the planned P1-P8 namespace moves have landed.
+That enforcement does not mean the planned P2-P8 namespace moves have landed.
 
 ```
 src/
@@ -73,7 +74,10 @@ src/
 ├── Metrics/{Category}/     # Thin metric features (layered)
 ├── Rules/{Category}/       # Thin rule features (layered)
 ├── Baseline/          # Baseline support and @qmx-ignore suppression
-├── Analysis/          # Orchestration (pipeline, discovery, collection)
+├── Analysis/          # Orchestration plus taxonomy-only capability grouping
+│   ├── Evidence/
+│   │   └── Duplication/ # Landed P1 leaf: detection, result, rule and one contract
+│   └── {Pipeline,Collection,...}/ # Unmigrated Run orchestration until P3
 ├── Reporting/         # Output formatters (cross-cutting)
 ├── Configuration/     # Cross-cutting config infrastructure (loader, schema, pipeline)
 └── Infrastructure/    # Adapters (CLI, DI, cache, git, profiler) — adapters for any feature live here
@@ -108,8 +112,8 @@ Two corollaries that settle recurring arguments:
 - "This feature has many adapters" is **not** an argument for a vertical slice:
   adapters live in `Infrastructure/` either way.
 
-The following ADR 0022 rules define the accepted target layout; do not treat the
-still-pending P1-P8 namespace moves as implemented architecture:
+The following ADR 0022 rules define the accepted target layout. P1 is current
+architecture; do not treat the still-pending P2-P8 namespace moves as landed:
 
 - A leaf module is a subject with one owner and lifecycle. Internal folders
   follow the subject; do not create an empty role skeleton.
@@ -129,10 +133,10 @@ still-pending P1-P8 namespace moves as implemented architecture:
 - Every production namespace has one explicit leaf owner. Do not use an
   open-ended owner template that silently enrols a future sibling.
 
-Existing `Metrics/` and `Rules/` role buckets are migration inputs, not evidence
-that the target physical layout has landed. Follow the manifest-backed current
-ownership and the P0 plan; do not claim or simulate later package moves before
-the review gates.
+Existing `Metrics/` and the remaining `Rules/` role buckets are migration
+inputs, not evidence that the rest of the target physical layout has landed.
+Follow the manifest-backed current ownership and the migration plan; do not
+claim or simulate later package moves before their review gates.
 
 ### Adapter-exclusion principle
 
@@ -350,8 +354,9 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 
 **Adding a new rule:**
 
-Decide between the **layered** and **vertical-slice** layouts per ADR 0010
-/ ADR 0012:
+Place the rule with its owning subject per ADR 0016 / ADR 0022. The remaining
+layered layout is a migration input, while an independent capability owns its
+rule directly:
 
 - **Thin rule** (computes from pre-existing metrics, no Analysis-time
   preparation, no companion debug command):
@@ -365,23 +370,22 @@ Decide between the **layered** and **vertical-slice** layouts per ADR 0010
      `RuleOptionsInterface`
   6. The class is registered **automatically** by `RuleConfigurator` — no
      need to modify `ContainerFactory`
-- **Complex domain rule** (the feature meets the ADR 0010 criteria —
-  cross-layer-consuming rule AND independent-lifecycle adapter, or
-  analogous-complexity per ADR 0012):
-  - Place the rule under `src/{Feature}/Rules/{Rule}.php` together with
-    the rest of the feature's slice (`Domain/`, `Configuration/`,
-    `Processing/`)
-  - Add (or extend) a `{Feature}Configurator` in
-    `src/Infrastructure/DependencyInjection/Configurator/` that scans the
-    slice's `Rules/`, `Processing/`, and `Configuration/Validation/`
-    directories
-  - Current example: `src/Architecture/Rules/` registered via
-    `ArchitectureConfigurator`
+- **Capability-owned rule** (the feature has its own lifecycle or otherwise
+  meets the subject-cohesion criteria):
+  - Place the rule with its owning capability according to that module's
+    subject-driven layout; a `Rules/` subdirectory is not mandatory
+  - Add (or extend) the capability's configurator under
+    `src/Infrastructure/DependencyInjection/Configurator/` so it registers the
+    exact implementation root without publishing module internals
+  - Current examples: `src/Architecture/Rules/` via
+    `ArchitectureConfigurator`, and
+    `src/Analysis/Evidence/Duplication/CodeDuplicationRule.php` via
+    `DuplicationConfigurator`
 
 **How rule registration works:**
 1. `RuleConfigurator::registerClasses()` scans `src/Rules/**/*Rule.php` for
-   layered rules; each feature's own configurator (e.g.
-   `ArchitectureConfigurator`) scans its slice's `Rules/` directory
+   layered rules; each capability's configurator registers its exact rule root
+   (currently `ArchitectureConfigurator` and `DuplicationConfigurator`)
 2. `registerForAutoconfiguration(RuleInterface::class)` adds the `qmx.rule`
    tag in either case
 3. `RuleOptionsCompilerPass` automatically registers Options via
@@ -669,6 +673,7 @@ Key rules:
 ### Component Documentation (in src/)
 - [src/Core/README.md](src/Core/README.md) — contracts and primitives
 - [src/Architecture/README.md](src/Architecture/README.md) — Architecture vertical slice (layer policy + circular dependency, ADR 0010 pilot)
+- [src/Analysis/Evidence/Duplication/README.md](src/Analysis/Evidence/Duplication/README.md) — Duplication capability boundary, lifecycle, contract and tests
 - [src/Metrics/README.md](src/Metrics/README.md) — metric collectors
 - [src/Rules/README.md](src/Rules/README.md) — analysis rules
 - [src/Analysis/README.md](src/Analysis/README.md) — orchestration

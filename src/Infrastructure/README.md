@@ -79,6 +79,8 @@ Infrastructure/
 │   │   ├── ParserConfigurator.php
 │   │   ├── CollectorConfigurator.php
 │   │   ├── RuleConfigurator.php
+│   │   ├── ArchitectureConfigurator.php
+│   │   ├── DuplicationConfigurator.php
 │   │   ├── AnalysisConfigurator.php
 │   │   └── OutputConfigurator.php
 │   └── CompilerPass/
@@ -174,7 +176,9 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
 - `ConfigurationConfigurator` — configuration pipeline and providers
 - `ParserConfigurator` — AST parser and caching
 - `CollectorConfigurator` — metric collectors registration
-- `RuleConfigurator` — rules and rule options
+- `RuleConfigurator` — remaining layered rules under `src/Rules/`
+- `ArchitectureConfigurator` — Architecture capability services and rules
+- `DuplicationConfigurator` — Duplication detector/provider wiring, contract alias, and capability-owned rule registration
 - `AnalysisConfigurator` — analysis pipeline, repository, strategies
 - `OutputConfigurator` — formatters and output
 

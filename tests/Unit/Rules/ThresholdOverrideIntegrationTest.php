@@ -8,6 +8,7 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricName;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -37,7 +38,6 @@ use Qualimetrix\Rules\Design\DataClassOptions;
 use Qualimetrix\Rules\Design\GodClassOptions;
 use Qualimetrix\Rules\Design\TypeCoverageOptions;
 use Qualimetrix\Rules\Design\TypeCoverageRule;
-use Qualimetrix\Rules\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Rules\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Rules\Size\MethodCountOptions;
 use Qualimetrix\Rules\Size\MethodCountRule;
@@ -459,37 +459,43 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     #[Test]
     public function itPreservesAllFieldsViaReflectionForAllThresholdAwareOptions(): void
     {
-        $optionsDir = \dirname(__DIR__, 3) . '/src/Rules';
-        $optionsFiles = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($optionsDir, FilesystemIterator::SKIP_DOTS),
-        );
+        $optionsDirs = [
+            \dirname(__DIR__, 3) . '/src/Rules',
+            \dirname(__DIR__, 3) . '/src/Analysis/Evidence/Duplication',
+        ];
 
         $testedClasses = 0;
 
-        foreach ($optionsFiles as $file) {
-            if (!str_ends_with($file->getFilename(), 'Options.php')) {
-                continue;
-            }
+        foreach ($optionsDirs as $optionsDir) {
+            $optionsFiles = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($optionsDir, FilesystemIterator::SKIP_DOTS),
+            );
 
-            $content = file_get_contents($file->getPathname());
-            \assert($content !== false);
-
-            if (preg_match('/^namespace\s+([\w\\\\]+);/m', $content, $nsMatch) === 1
-                && preg_match('/^final\s+readonly\s+class\s+(\w+)/m', $content, $classMatch) === 1) {
-                $fqcn = $nsMatch[1] . '\\' . $classMatch[1];
-
-                if (!class_exists($fqcn)) {
+            foreach ($optionsFiles as $file) {
+                if (!str_ends_with($file->getFilename(), 'Options.php')) {
                     continue;
                 }
 
-                $reflection = new ReflectionClass($fqcn);
+                $content = file_get_contents($file->getPathname());
+                \assert($content !== false);
 
-                if ($reflection->isAbstract() || !$reflection->implementsInterface(ThresholdAwareOptionsInterface::class)) {
-                    continue;
+                if (preg_match('/^namespace\s+([\w\\\\]+);/m', $content, $nsMatch) === 1
+                    && preg_match('/^final\s+readonly\s+class\s+(\w+)/m', $content, $classMatch) === 1) {
+                    $fqcn = $nsMatch[1] . '\\' . $classMatch[1];
+
+                    if (!class_exists($fqcn)) {
+                        continue;
+                    }
+
+                    $reflection = new ReflectionClass($fqcn);
+
+                    if ($reflection->isAbstract() || !$reflection->implementsInterface(ThresholdAwareOptionsInterface::class)) {
+                        continue;
+                    }
+
+                    $this->assertWithOverridePreservesAllProperties($reflection); // @phpstan-ignore argument.type
+                    ++$testedClasses;
                 }
-
-                $this->assertWithOverridePreservesAllProperties($reflection); // @phpstan-ignore argument.type
-                ++$testedClasses;
             }
         }
 

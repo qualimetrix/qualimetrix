@@ -675,48 +675,32 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Duplication\\ContentHintExtractor": {
-      "path": "src/Analysis/Duplication/ContentHintExtractor.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationOptions": {
+      "path": "src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "closure_package": "P1",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Duplication\\DataDeclarationTagger": {
-      "path": "src/Analysis/Duplication/DataDeclarationTagger.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationRule": {
+      "path": "src/Analysis/Evidence/Duplication/CodeDuplicationRule.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "closure_package": "P1",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Duplication\\DuplicateBlockFinder": {
-      "path": "src/Analysis/Duplication/DuplicateBlockFinder.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\ContentHintExtractor": {
+      "path": "src/Analysis/Evidence/Duplication/ContentHintExtractor.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "closure_package": "P1",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Duplication\\DuplicateSearchRequest": {
-      "path": "src/Analysis/Duplication/DuplicateSearchRequest.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.Duplication",
-      "visibility": "internal",
-      "closure_package": "P1",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Duplication\\DuplicationDetector": {
-      "path": "src/Analysis/Duplication/DuplicationDetector.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.Duplication",
-      "visibility": "internal",
-      "closure_package": "P1",
-      "consumers": []
-    },
-    "Qualimetrix\\Analysis\\Duplication\\DuplicationDetectorInterface": {
-      "path": "src/Analysis/Duplication/DuplicationDetectorInterface.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\Contract\\DuplicationInspectionInterface": {
+      "path": "src/Analysis/Evidence/Duplication/Contract/DuplicationInspectionInterface.php",
       "kind": "interface",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "contract",
@@ -724,8 +708,8 @@
       "consumers": [
         {
           "owner": "Analysis.Run",
-          "source_fqcn": null,
-          "closes_in": null
+          "source_fqcn": "Qualimetrix\\Analysis\\Pipeline\\MetricEnricher",
+          "closes_in": "P3"
         },
         {
           "owner": "Infrastructure.DependencyInjection",
@@ -734,56 +718,112 @@
         }
       ]
     },
-    "Qualimetrix\\Analysis\\Duplication\\HashIndexBuildResult": {
-      "path": "src/Analysis/Duplication/HashIndexBuildResult.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DataDeclarationTagger": {
+      "path": "src/Analysis/Evidence/Duplication/DataDeclarationTagger.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "closure_package": "P1",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Duplication\\HashIndexBuilder": {
-      "path": "src/Analysis/Duplication/HashIndexBuilder.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicateBlock": {
+      "path": "src/Analysis/Evidence/Duplication/DuplicateBlock.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "closure_package": "P1",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Duplication\\NormalizedToken": {
-      "path": "src/Analysis/Duplication/NormalizedToken.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicateBlockFinder": {
+      "path": "src/Analysis/Evidence/Duplication/DuplicateBlockFinder.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "closure_package": "P1",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Duplication\\PackedPosition": {
-      "path": "src/Analysis/Duplication/PackedPosition.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicateLocation": {
+      "path": "src/Analysis/Evidence/Duplication/DuplicateLocation.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "closure_package": "P1",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Duplication\\RetokenizedFiles": {
-      "path": "src/Analysis/Duplication/RetokenizedFiles.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicateSearchRequest": {
+      "path": "src/Analysis/Evidence/Duplication/DuplicateSearchRequest.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "closure_package": "P1",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Duplication\\SaturatingCandidateFilter": {
-      "path": "src/Analysis/Duplication/SaturatingCandidateFilter.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicationDetector": {
+      "path": "src/Analysis/Evidence/Duplication/DuplicationDetector.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
       "closure_package": "P1",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Duplication\\TokenNormalizer": {
-      "path": "src/Analysis/Duplication/TokenNormalizer.php",
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicationResultProvider": {
+      "path": "src/Analysis/Evidence/Duplication/DuplicationResultProvider.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Duplication",
+      "visibility": "internal",
+      "closure_package": "P1",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\HashIndexBuildResult": {
+      "path": "src/Analysis/Evidence/Duplication/HashIndexBuildResult.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Duplication",
+      "visibility": "internal",
+      "closure_package": "P1",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\HashIndexBuilder": {
+      "path": "src/Analysis/Evidence/Duplication/HashIndexBuilder.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Duplication",
+      "visibility": "internal",
+      "closure_package": "P1",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\NormalizedToken": {
+      "path": "src/Analysis/Evidence/Duplication/NormalizedToken.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Duplication",
+      "visibility": "internal",
+      "closure_package": "P1",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\PackedPosition": {
+      "path": "src/Analysis/Evidence/Duplication/PackedPosition.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Duplication",
+      "visibility": "internal",
+      "closure_package": "P1",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\RetokenizedFiles": {
+      "path": "src/Analysis/Evidence/Duplication/RetokenizedFiles.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Duplication",
+      "visibility": "internal",
+      "closure_package": "P1",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\SaturatingCandidateFilter": {
+      "path": "src/Analysis/Evidence/Duplication/SaturatingCandidateFilter.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.Duplication",
+      "visibility": "internal",
+      "closure_package": "P1",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\Duplication\\TokenNormalizer": {
+      "path": "src/Analysis/Evidence/Duplication/TokenNormalizer.php",
       "kind": "class",
       "owner": "Analysis.Evidence.Duplication",
       "visibility": "internal",
@@ -2962,22 +3002,6 @@
       "owner": "Analysis.Evidence.DependencyModel",
       "visibility": "internal",
       "closure_package": "P2",
-      "consumers": []
-    },
-    "Qualimetrix\\Core\\Duplication\\DuplicateBlock": {
-      "path": "src/Core/Duplication/DuplicateBlock.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.Duplication",
-      "visibility": "internal",
-      "closure_package": "P1",
-      "consumers": []
-    },
-    "Qualimetrix\\Core\\Duplication\\DuplicateLocation": {
-      "path": "src/Core/Duplication/DuplicateLocation.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.Duplication",
-      "visibility": "internal",
-      "closure_package": "P1",
       "consumers": []
     },
     "Qualimetrix\\Core\\Exception\\ParseException": {
@@ -6958,6 +6982,14 @@
       "closure_package": "P8",
       "consumers": []
     },
+    "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\DuplicationConfigurator": {
+      "path": "src/Infrastructure/DependencyInjection/Configurator/DuplicationConfigurator.php",
+      "kind": "class",
+      "owner": "Infrastructure.DependencyInjection",
+      "visibility": "internal",
+      "closure_package": "P1",
+      "consumers": []
+    },
     "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator": {
       "path": "src/Infrastructure/DependencyInjection/Configurator/OutputConfigurator.php",
       "kind": "class",
@@ -9407,28 +9439,6 @@
       "closure_package": "P7",
       "consumers": []
     },
-    "Qualimetrix\\Rules\\Duplication\\CodeDuplicationOptions": {
-      "path": "src/Rules/Duplication/CodeDuplicationOptions.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.Duplication",
-      "visibility": "internal",
-      "closure_package": "P1",
-      "consumers": []
-    },
-    "Qualimetrix\\Rules\\Duplication\\CodeDuplicationRule": {
-      "path": "src/Rules/Duplication/CodeDuplicationRule.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.Duplication",
-      "visibility": "contract",
-      "closure_package": "P1",
-      "consumers": [
-        {
-          "owner": "Analysis.Run",
-          "source_fqcn": null,
-          "closes_in": null
-        }
-      ]
-    },
     "Qualimetrix\\Rules\\Maintainability\\MaintainabilityOptions": {
       "path": "src/Rules/Maintainability/MaintainabilityOptions.php",
       "kind": "class",
@@ -9799,13 +9809,6 @@
       "owner": "Analysis.Run",
       "rationale": "Temporary composition-root access to a current internal declaration during modular migration.",
       "closes_in": "P3"
-    },
-    {
-      "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator",
-      "target_fqcn": "Qualimetrix\\Analysis\\Duplication\\DuplicationDetector",
-      "owner": "Analysis.Evidence.Duplication",
-      "rationale": "Temporary composition-root access to a current internal declaration during modular migration.",
-      "closes_in": "P1"
     },
     {
       "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator",

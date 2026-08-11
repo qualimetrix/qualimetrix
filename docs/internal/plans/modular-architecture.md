@@ -272,7 +272,7 @@ Before moving thin checks, use the exact declaration rows in `production-ownersh
 
 ### P0 — Establish authoritative ownership and fail-closed enforcement — Completed
 
-**Status:** Completed. Final verification is green: the manifest covers 695 declarations in 693 files and 37 semantic owners; the generated projection has 14 singleton seams, 52 total layers and 296 allow edges; all 85 exact internal grants project to 16 coarse edges. Full PHPUnit passed with 7,200 tests and 21,118 assertions, and architecture governance plus selfcheck are green. P1 is next; no P1-P8 physical move or P3 phase-port contract is implied by P0 completion.
+**Status:** Completed. Final verification is green: the manifest covers 695 declarations in 693 files and 37 semantic owners; the generated projection has 14 singleton seams, 52 total layers and 296 allow edges; all 85 exact internal grants project to 16 coarse edges. Full PHPUnit passed with 7,200 tests and 21,118 assertions, and architecture governance plus selfcheck are green. P1 has since completed; no later P2-P8 physical move or P3 phase-port contract was implied by P0 completion alone.
 
 P0 was split into executable, non-overlapping file slices. The manifest and its qmx projection form one atomic enforcement package. Shared outputs belong to that slice only; later slices consume them read-only.
 
@@ -339,20 +339,139 @@ Files: this plan only. P0-D read P0-A evidence, P0-B's staged docs, P0-C evidenc
 
 DoD: the review confirmed manifest/AST 1:1 coverage, all 85 exact internal import-pair checks and their 16 coarse owner projections, all 771 explicit/used structured consumers with valid permanent owner-wide or temporary exact-source lifecycle, 37 non-empty owner layers + 14 inclusion-minimal seams + external, 245-edge internal and 296-edge final DAGs, non-inferred imports, used closure-named exact grants, narrow manifest JSON ignore exceptions, `composer check` freshness enforcement and the complete topology fixture matrix. Documentation inventory discovery is committable/reproducible, root instructions and shared governance documents have explicit non-migration dispositions, and no generated P1-P8 row contradicts a P0/shared owner. P0-A, P0-B, P0-C and P0-D are complete; the generated 52-layer projection is current enforcement, while the rejected 41-layer draft and rejected 60/9 status projection remain historical evidence only.
 
-For every P1–P8 package, the authoritative executable file set is the set of rows bearing exactly that P1–P8 closure in the generated production, test and documentation inventories. Documentation rows marked `P0-D`, `permanent`, or `shared` are governance/lifecycle dispositions, not ownership grants to a migration package. The package first updates declarations/consumers/grants and closes its named seams in the manifest, then regenerates the 37-owner/remaining-seam qmx projection and every inventory, proves the new projection DAG and every remaining seam necessary, and finally runs the generator in `--check` mode. Generated TSVs enumerate scope and verify freshness; they are not runtime manifests or DI registries.
+For every P1–P8 package, rows bearing that closure in the generated production, test and documentation inventories are the authoritative enumeration of artifacts whose **semantic ownership or physical location migrates** in that package. They are not the complete executable edit set. Each package must additionally enumerate its exact integration consumers, DI adapters, discovery guards, governance inputs/outputs and current-layout documentation; touching those files does not change their later semantic owner or closure package. Documentation rows marked `P0-D`, `permanent`, or `shared` remain governance/lifecycle dispositions, but a package updates them when its landed current state would otherwise make them false. The package first changes manifest policy deliberately, applies its physical and integration edits, regenerates the 37-owner/remaining-seam qmx projection and every inventory, proves the new projection DAG and every remaining seam necessary, and finally runs the generator in `--check` mode. Generated TSVs enumerate migration-owned moves and verify freshness; they are not runtime manifests, DI registries or substitutes for the package's explicit integration list.
 
-### P1 — Co-locate Analysis\Evidence\Duplication as the low-risk boundary pilot
+### P1 — Co-locate Analysis\Evidence\Duplication and isolate its run-scoped result
 
-Files: all current `src/Analysis/Duplication/*.php`, `src/Core/Duplication/*.php`, `src/Rules/Duplication/*.php`; their direct tests; `src/Analysis/Pipeline/{EnrichmentResult,MetricEnricher}.php`; `src/Core/Rule/AnalysisContext.php`; exact Duplication DI configurators/container entries; `qmx.yaml`; listed READMEs/docs.
+**Status:** Completed. Implementation, review fixes and final re-review are complete. P1 deliberately absorbs the Duplication-specific isolation formerly deferred to P3. It does not introduce a generic phase participant or bind any of P3's proposed Run-owned ports. The final post-P1 snapshot contains 697 declarations in 695 files, retains 37 semantic owners and 14 singleton seams, and projects 84 exact internal grants to 15 coarse edges. Full PHPUnit passes with 7,206 tests, 21,273 assertions and one skip; architecture generation/check, selfcheck, full CS, P1-scoped PHPStan, cross-tool tests, strict documentation build and leak checks are green. Baseline reconciliation is complete without accepting new debt. Full PHPStan and therefore aggregate `composer check` remain red only for the pre-existing unrelated `LoggerFactory.php:72` `missingType.iterableValue` finding; this is not claimed as P1-green evidence. P2 is now the next package and has not started.
 
-- Move the 17 known feature files under `src/Analysis/Evidence/Duplication/` and declare exact public/internal namespaces. Create `Contract/` only for the external types still required after the move.
-- Apply the P1 manifest rows before moving them, regenerate qmx/inventories, and reject any unlisted production/test/documentation path discovered by the move.
-- Preserve current orchestration through temporary contract-consumer relations for exactly `Analysis\Pipeline\MetricEnricher`, `Analysis\Pipeline\EnrichmentResult`, and `Core\Rule\AnalysisContext`. On each imported Duplication contract FQCN, materialise an entry with that exact source FQCN, its semantic owner and `closes_in: P3`; these are not internal grants and no fourth declaration of the same owner is authorised. Do not invent the generic phase seam during a namespace move.
-- Treat `DuplicateBlock`/`DuplicateLocation` as module-owned contract only while external consumers exist; target removal from universal context in P3.
+#### Boundary and lifecycle
 
-DoD: all direct duplication tests, memory-limit process test, registry/channel wiring, topology fixtures and `composer check` pass; only the three exact source FQCNs named above import their listed Duplication contract declarations and nobody imports internals; every structured entry's owner matches its source semantic owner and names `closes_in: P3`; a fourth source declaration from the same owner fails; neither `analysis` nor `evidence` is an allow target.
+- Move the 17 existing declarations to the leaf module and add one internal run-scoped result provider. `DuplicateBlock`, `DuplicateLocation`, the provider, detector implementation, rule and options are internal module types.
+- Replace the current returning detector contract with the one narrow external inspection contract required by `Analysis\Pipeline\MetricEnricher`. Its inspection operation replaces the provider's complete result for that run; a reset operation clears prior state before the enabled/disabled decision. The exact signatures are `reset(): void` and `inspect(array $files): void`, with `@param list<SplFileInfo> $files` on the contract. The rule receives the internal provider by constructor injection and reads `list<DuplicateBlock>` from it; neither Run nor `AnalysisContext` transports that list.
+- Remove `duplicateBlocks` from `EnrichmentResult`, `AnalysisContext` and the `AnalysisPipeline` projection in P1. An enabled run followed by a disabled or no-match run must expose an empty provider result, never the previous run's blocks. The disabled path performs only the provider reset: no tokenisation, hash index, duplicate block or candidate-filter allocation.
+- Publish only `Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface`. Its sole temporary exact application consumer is `Qualimetrix\Analysis\Pipeline\MetricEnricher` (`owner: Analysis.Run`, `closes_in: P3`). `Infrastructure.DependencyInjection` retains a permanent owner-wide consumer for composition wiring. The dedicated configurator may scan/register internals but no production declaration outside the module imports an internal Duplication FQCN.
+- Do not add PHPDoc-only consumer semantics, transitive contract closure, a qmx seam or a generic phase port in P1. Removing the universal payload eliminates the earlier need to expose `DuplicateBlock`/`DuplicateLocation` and keeps the existing manifest observation model intact.
 
-### P2 — Extract Analysis\Evidence\DependencyModel and Reporting graph projections
+#### Exact production move map
+
+| Current declaration/file                                    | Target file                                                                     | Target visibility |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------- |
+| `src/Analysis/Duplication/ContentHintExtractor.php`         | `src/Analysis/Evidence/Duplication/ContentHintExtractor.php`                    | internal          |
+| `src/Analysis/Duplication/DataDeclarationTagger.php`        | `src/Analysis/Evidence/Duplication/DataDeclarationTagger.php`                   | internal          |
+| `src/Analysis/Duplication/DuplicateBlockFinder.php`         | `src/Analysis/Evidence/Duplication/DuplicateBlockFinder.php`                    | internal          |
+| `src/Analysis/Duplication/DuplicateSearchRequest.php`       | `src/Analysis/Evidence/Duplication/DuplicateSearchRequest.php`                  | internal          |
+| `src/Analysis/Duplication/DuplicationDetector.php`          | `src/Analysis/Evidence/Duplication/DuplicationDetector.php`                     | internal          |
+| `src/Analysis/Duplication/DuplicationDetectorInterface.php` | `src/Analysis/Evidence/Duplication/Contract/DuplicationInspectionInterface.php` | contract          |
+| `src/Analysis/Duplication/HashIndexBuildResult.php`         | `src/Analysis/Evidence/Duplication/HashIndexBuildResult.php`                    | internal          |
+| `src/Analysis/Duplication/HashIndexBuilder.php`             | `src/Analysis/Evidence/Duplication/HashIndexBuilder.php`                        | internal          |
+| `src/Analysis/Duplication/NormalizedToken.php`              | `src/Analysis/Evidence/Duplication/NormalizedToken.php`                         | internal          |
+| `src/Analysis/Duplication/PackedPosition.php`               | `src/Analysis/Evidence/Duplication/PackedPosition.php`                          | internal          |
+| `src/Analysis/Duplication/RetokenizedFiles.php`             | `src/Analysis/Evidence/Duplication/RetokenizedFiles.php`                        | internal          |
+| `src/Analysis/Duplication/SaturatingCandidateFilter.php`    | `src/Analysis/Evidence/Duplication/SaturatingCandidateFilter.php`               | internal          |
+| `src/Analysis/Duplication/TokenNormalizer.php`              | `src/Analysis/Evidence/Duplication/TokenNormalizer.php`                         | internal          |
+| `src/Core/Duplication/DuplicateBlock.php`                   | `src/Analysis/Evidence/Duplication/DuplicateBlock.php`                          | internal          |
+| `src/Core/Duplication/DuplicateLocation.php`                | `src/Analysis/Evidence/Duplication/DuplicateLocation.php`                       | internal          |
+| `src/Rules/Duplication/CodeDuplicationOptions.php`          | `src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php`                  | internal          |
+| `src/Rules/Duplication/CodeDuplicationRule.php`             | `src/Analysis/Evidence/Duplication/CodeDuplicationRule.php`                     | internal          |
+| new                                                         | `src/Analysis/Evidence/Duplication/DuplicationResultProvider.php`               | internal          |
+
+The four Run/Finding integration files are exact and retain their later owners:
+
+| File                                         | P1 responsibility                                                                             |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `src/Analysis/Pipeline/MetricEnricher.php`   | Reset the inspection contract every run; invoke inspection only when the producer is enabled. |
+| `src/Analysis/Pipeline/EnrichmentResult.php` | Remove the Duplication payload.                                                               |
+| `src/Analysis/Pipeline/AnalysisPipeline.php` | Stop projecting Duplication state into rule execution.                                        |
+| `src/Core/Rule/AnalysisContext.php`          | Remove the universal `duplicateBlocks` field/constructor argument.                            |
+
+The exact DI/composition, production discovery-comment and runtime-port integration slice is:
+
+| File                                                                              | P1 responsibility                                                                                                     |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `src/Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php`    | Remove concrete/internal Duplication registration and inject only the contract into Run.                              |
+| `src/Infrastructure/DependencyInjection/Configurator/DuplicationConfigurator.php` | New composition adapter: scan detector/provider/rule, alias the contract and preserve `qmx.rule` autoconfiguration.   |
+| `src/Infrastructure/DependencyInjection/Configurator/RuleConfigurator.php`        | Update comments that otherwise imply every non-Architecture rule lives under `src/Rules/**`.                          |
+| `src/Infrastructure/DependencyInjection/ContainerFactory.php`                     | Invoke the new configurator in deterministic configuration order.                                                     |
+| `src/Configuration/ConfigurationProviderInterface.php`                            | Record the real one-consumer CBO fan-in increase at the stable runtime configuration port without hiding the DI edge. |
+| `src/Configuration/RuleThresholdKeyGroupRegistry.php`                             | Update comments that otherwise imply every Options class lives under `src/Rules/**`; runtime keys stay unchanged.     |
+| `tests/Integration/DependencyInjection/ContainerFactoryTest.php`                  | Prove detector alias, provider injection, rule registration and channel/registry visibility.                          |
+
+#### Exact test and discovery scope
+
+The eight migration-owned tests move to `tests/Analysis/Evidence/Duplication/Unit/`; their generated current total is exactly 75 discovered test cases:
+
+| Current test                                                            | Target test                                                                      | Cases |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ----: |
+| `tests/Unit/Analysis/Duplication/ContentHintExtractorTest.php`          | `tests/Analysis/Evidence/Duplication/Unit/ContentHintExtractorTest.php`          | 14    |
+| `tests/Unit/Analysis/Duplication/DataDeclarationTaggerTest.php`         | `tests/Analysis/Evidence/Duplication/Unit/DataDeclarationTaggerTest.php`         | 15    |
+| `tests/Unit/Analysis/Duplication/DuplicationDetectorTest.php`           | `tests/Analysis/Evidence/Duplication/Unit/DuplicationDetectorTest.php`           | 16    |
+| `tests/Unit/Analysis/Duplication/DuplicationMemoryLimitProcessTest.php` | `tests/Analysis/Evidence/Duplication/Unit/DuplicationMemoryLimitProcessTest.php` | 2     |
+| `tests/Unit/Analysis/Duplication/SaturatingCandidateFilterTest.php`     | `tests/Analysis/Evidence/Duplication/Unit/SaturatingCandidateFilterTest.php`     | 2     |
+| `tests/Unit/Analysis/Duplication/TokenNormalizerTest.php`               | `tests/Analysis/Evidence/Duplication/Unit/TokenNormalizerTest.php`               | 10    |
+| `tests/Unit/Core/Duplication/DuplicateBlockIdentityTest.php`            | `tests/Analysis/Evidence/Duplication/Unit/DuplicateBlockIdentityTest.php`        | 2     |
+| `tests/Unit/Rules/Duplication/CodeDuplicationRuleTest.php`              | `tests/Analysis/Evidence/Duplication/Unit/CodeDuplicationRuleTest.php`           | 14    |
+
+The process memory test must stop deriving the repository root from its legacy directory depth. Its target regression resolves the repository root stably, proves `vendor/autoload.php` and `bin/qmx` exist there, and keeps both the 24 MB candidate-index probe and full CLI duplicate-detection probe green.
+
+The following integration/discovery files stay in place and appear only once in the executable scope:
+
+| File                                                                                                | Guard changed by P1                                                           |
+| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `tests/Unit/Analysis/Pipeline/AnalysisPipelineTest.php`                                             | No Duplication payload reaches `AnalysisContext`.                             |
+| `tests/Unit/Analysis/Pipeline/MetricEnricherTest.php`                                               | Reset/replace lifecycle, enabled inspection and disabled zero-work path.      |
+| `tests/Integration/Violation/ChannelCoverageTest.php`                                               | Moved rule still declares and emits the same channel.                         |
+| `tests/Unit/Rules/ThresholdOverrideIntegrationTest.php`                                             | Moved options retain override behaviour; also a rule/options discovery guard. |
+| `tests/Integration/Documentation/DocumentationConsistencyTest.php`                                  | Rule discovery includes capability-owned rules outside `src/Rules/**`.        |
+| `tests/Unit/Configuration/RuleThresholdKeyGroupRegistryDriftTest.php`                               | Threshold call-site discovery includes the moved rule/options.                |
+| `tests/Unit/Rules/ThresholdValidatorAssignmentTest.php`                                             | Threshold-aware Options discovery includes the moved class.                   |
+| `tests/Unit/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPassTest.php` | Its production-rule discovery contract/comments name all current rule roots.  |
+
+`phpunit.xml.dist` adds the exact target Unit directory. The discovery gate compares the before/after `--list-tests` inventory: all 75 existing migrated test IDs remain in the Unit suite exactly once and the old eight paths disappear. P1 adds exactly two lifecycle regressions in `MetricEnricherTest`: `itClearsDuplicationResultsWhenTheNextRunDisablesTheRule` (enabled -> disabled) and `itReplacesDuplicationResultsWhenTheNextEnabledRunFindsNoMatches` (enabled -> no match). Live discovery disproved the earlier `7,200 + 2` estimate because P1-A also adds `itEncodesThePostP1DuplicationBoundary`, `itClassifiesLegacyAndTargetDuplicationTestsWithoutACatchAll` and `itClassifiesTheP1DuplicationModuleReadmeExactly`, while P1-D adds `itWiresTheDuplicationCapabilityThroughItsContractAndRegistries`. The complete six-case delta is those four integration/governance cases plus the two lifecycle cases, for 7,206 full-project cases; any further delta blocks P1.
+
+#### Exact documentation and governance scope
+
+Documentation reviewed/updated atomically with the landed current state:
+
+| File                                                                        | Required update                                                                                                                       |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/Analysis/Evidence/Duplication/README.md`                               | New leaf README: subject, one contract, provider lifecycle, dependencies, owned tests, registration and P3 closure.                   |
+| `src/Analysis/README.md`                                                    | Remove the legacy Duplication subtree and universal payload description.                                                              |
+| `src/Core/README.md`                                                        | Remove `Core/Duplication`.                                                                                                            |
+| `src/Rules/README.md`                                                       | Point Duplication rule/options to their capability owner.                                                                             |
+| `src/Infrastructure/README.md`                                              | Add `DuplicationConfigurator` and its exact registration responsibility.                                                              |
+| `website/docs/rules/duplication.md`, `website/docs/rules/duplication.ru.md` | Preserve user behaviour while aligning implementation notes/owned location.                                                           |
+| `docs/ARCHITECTURE.md`, `AGENTS.md`                                         | Mark P1's physical leaf and result isolation as current without claiming P2+.                                                         |
+| `docs/adr/0022-capability-oriented-modular-monolith.md`                     | Record P1 as landed evidence; keep P3 ports non-binding.                                                                              |
+| `CHANGELOG.md`                                                              | Add the complete Breaking migration mapping, including FQCN moves, removed universal constructor fields and detector contract change. |
+| `docs/internal/plans/modular-architecture.md`                               | Mark P1 complete only after package E's final evidence/review.                                                                        |
+
+Governance edits/outputs are exact: `docs/internal/modular-architecture-manifest.json`; `scripts/generate-modular-architecture-production-inventory.php`; `scripts/generate-modular-architecture-test-inventory.php`; `phpunit.xml.dist`; `qmx.yaml`; `qmx-baseline.json`; all 12 files under `docs/internal/generated/modular-architecture/`; and `tests/Architecture/Integration/ModularArchitectureGovernanceIntegrationTest.php`. The schema and coordinator script are reviewed but unchanged unless their current contracts actually fail. The manifest removes the P1 internal concrete-detector grant, publishes only the inspection contract, records its one temporary exact Run consumer plus permanent Infrastructure consumer, and keeps all other Duplication declarations internal.
+
+Baseline reconciliation is evidence-driven: generate a current candidate and compare it structurally with the pre-P1 ratchet. Re-key the moved `DataDeclarationTagger` FQCN/path/offset entry only if its WMC facts and magnitude/count are unchanged. Classify the existing `MetricEnricher` entry separately as unchanged, identity-re-keyed, resolved by the P1 refactor, or a regression; only the first three outcomes may land, with evidence for the chosen classification. The `ConfigurationProviderInterface` CBO change from 21 to 22 is real and legitimate: `DuplicationConfigurator` adds one explicit consumer to this stable runtime configuration port. Preserve that DI edge, remove the old CBO 21 baseline row, and use the source-level inclusive threshold 23 with a reason; current fan-in 22 passes with no headroom, while the next consumer at 23 fails. Do not accept new debt, bulk-regenerate unrelated entries or require a preset delta count. Cache/serialization compatibility is evidence, not assumed work: the inventory must remain empty for Duplication types in cache, parallel collection and serializer payloads; the P1 move therefore changes no cache key or wire schema.
+
+#### P1 execution packages
+
+```text
+P1-A governance intent
+  -> P1-B module move
+  -> {P1-C Run/Finding isolation || P1-D DI/discovery wiring}
+  -> P1-E generated/docs/baseline/validation/review closure
+```
+
+- **P1-A — governance intent — Completed:** the only writer of `docs/internal/modular-architecture-manifest.json`, the production/test inventory generator inputs and `ModularArchitectureGovernanceIntegrationTest`. It establishes the reviewed declaration/visibility/consumer/grant policy but does not write generated artifacts or claim a green intermediate generator before B/C/D land.
+- **P1-B — module move — Completed:** the 17 moves, new provider, eight owned tests and module README.
+- **P1-C — Run/Finding isolation — Completed:** the four Run/Finding production files and the four downstream tests (`AnalysisPipelineTest`, `MetricEnricherTest`, `ChannelCoverageTest`, `ThresholdOverrideIntegrationTest`).
+- **P1-D — DI/discovery wiring — Completed:** the seven exact DI/composition, production discovery-comment and runtime-port integration files, including the justified inclusive CBO threshold 23 on `ConfigurationProviderInterface`; `src/Infrastructure/README.md`; the three remaining named discovery guards; and `ChannelDeclarationCompilerPassTest`. It does not edit any B/C path.
+- **P1-E — serial integration — Completed:** the only writer of all 12 generated artifacts, `qmx.yaml`, `phpunit.xml.dist`, evidence-driven `qmx-baseline.json` reconciliation (including removal of the old `ConfigurationProviderInterface` CBO 21 row) and the remaining shared documentation/CHANGELOG; it also owns full validation and required review. It runs only after B, C and D all complete and their diffs are independently verified.
+
+B starts only after A. C and D are file-disjoint and may execute in parallel only after B; E starts after both and is the sole generated/qmx/PHPUnit/baseline/remaining-shared-docs writer. No agent uses git operations or runs dependency-mutating commands in the shared tree.
+
+DoD: all 75 existing migrated IDs run exactly once; the six named P1 additions are the two lifecycle, three governance boundary/classification and one DI wiring regressions; and the final full-project count is 7,206. The memory-limit process tests resolve the new root and pass; the dedicated configurator registers the detector, provider and rule, and channel/rule/options registries discover the moved classes. Two runs on one container prove no stale provider state (enabled then disabled, and enabled then no matches). The disabled path performs exactly one O(1) provider reset and zero inspection calls, tokenisation, hashing, duplicate-block creation or candidate-filter allocation. `EnrichmentResult`, `AnalysisContext` and `AnalysisPipeline` have no `duplicateBlocks` field/argument/transport. Exactly one temporary contract consumer exists (`MetricEnricher -> DuplicationInspectionInterface`, `closes_in: P3`), Infrastructure is its permanent composition consumer, and no production declaration outside the module imports a Duplication internal. The internal grant closes, no new seam or taxonomy allow target appears, the generated DAG and every remaining seam pass, baseline reconciliation contains no accepted debt and records the evidence-backed `DataDeclarationTagger` and `MetricEnricher` classifications, cache/wire inventory stays empty, Breaking migration notes are complete, and full PHPUnit, architecture check, selfcheck, full CS, P1-scoped PHPStan, docs build and focused process/registry/topology tests pass. Aggregate `composer check` remains blocked only by the unrelated pre-existing `LoggerFactory.php:72` PHPStan finding recorded in the completed status evidence.
+
+### P2 — Extract Analysis\Evidence\DependencyModel and Reporting graph projections — Not started
+
+**Status:** Not started. P1 is complete, so P2 is the next executable package; its own design and review gates below still apply.
 
 Files: current `Core/Dependency/**`; `Analysis/Collection/Dependency/**` except the cycle detector/result files assigned by P0 to CircularDependency; dependency graph exporters; graph-export command/adapters; affected Analysis/Coupling imports; DI; docs/tests/qmx.
 
@@ -365,20 +484,20 @@ Files: current `Core/Dependency/**`; `Analysis/Collection/Dependency/**` except 
 
 DoD: no feature imports graph implementation; DependencyModel has no feature or Reporting dependency; graph exporters import only `dependency-model-contract`; graph construction, DOT/JSON output and command behaviour retain direct regressions; no taxonomy namespace is an allow target.
 
-### P3 — Move the complete Run/Configuration kernel, introduce phase contracts and finish Duplication isolation
+### P3 — Move the complete Run/Configuration kernel and introduce phase contracts
 
 Files: current `src/Analysis/{Aggregator,Collection,Discovery,Exception,Lifecycle,Namespace_,Pipeline,Repository,RuleExecution}/**` after the P1/P2 extractions; target `src/Analysis/Run/**`; the P0-classified neutral subset of current `src/Configuration/**`; target `src/Analysis/Configuration/**`; DI compiler/configurator files; focused tests and READMEs. P0 materialises the exact file list and assigns every remaining feature-specific Configuration file to P4–P7 before this package is executable.
 
 - Move every remaining Analysis orchestration class under `Analysis\Run`; do not leave production types directly in the `Analysis` taxonomy.
-- Apply the P3 manifest rows, regenerate qmx/inventories, require every P1 temporary contract-consumer entry to disappear rather than become permanent or be inferred from remaining imports, and remove the `DeferredWarning` singleton seam only after returning it to `Analysis.Configuration` leaves the projected graph acyclic.
+- Apply the P3 manifest rows, regenerate qmx/inventories, require P1's one temporary `MetricEnricher -> DuplicationInspectionInterface` consumer to disappear rather than become permanent or be inferred from remaining imports, and remove the `DeferredWarning` singleton seam only after returning it to `Analysis.Configuration` leaves the projected graph acyclic.
 - Extract the three phase-specific ports above and deterministic participant composites.
 - Replace feature-specific orchestration in `AnalysisPipeline`/`MetricEnricher` with these ports while adapters still delegate to existing services.
 - Execute participants in stable id order and reject duplicate ids. Implement only the independence or typed earlier-phase dependencies proven by P0; do not add a generic participant dependency graph.
 - Keep observable pipeline order and skip-disabled-feature behaviour identical.
-- Convert Duplication to `FileSetInspectionParticipantInterface`, inject its run-scoped result provider into its rule, remove duplicate blocks from `AnalysisContext`/`EnrichmentResult`, and close all three P1 temporary contract-consumer relations.
+- Adapt the already-isolated Duplication inspector to the accepted Run-owned `FileSetInspectionParticipantInterface`, replace `MetricEnricher`'s direct capability call, and close the single P1 temporary consumer. P3 does not recreate or relocate the provider, rule injection or universal-context removal completed in P1.
 - Move neutral configuration source/schema/merge mechanics to `Analysis\Configuration`; leave no production types directly in the `Analysis` taxonomy.
 
-DoD and named gate — **P3 phase-port contract gate**: no production PHP file remains directly under the `Analysis` taxonomy or an unassigned legacy Analysis subdirectory; `AnalysisPipeline` and `MetricEnricher` import no Duplication implementation/rule classes; binding interface contract tests prove stable order, every P0-recorded dependency, reset between two runs, disabled-step skip and duplicate-id failure; all P1 temporary contract consumers close; every current Configuration class is either moved to the neutral owner or assigned to a named later package. P4+ is blocked until this gate passes and the accepted signatures are reflected in the manifest and ADR.
+DoD and named gate — **P3 phase-port contract gate**: no production PHP file remains directly under the `Analysis` taxonomy or an unassigned legacy Analysis subdirectory; `AnalysisPipeline` and `MetricEnricher` import no Duplication implementation or capability-owned inspection contract; binding interface contract tests prove stable order, every P0-recorded dependency, reset between two runs, disabled-step skip and duplicate-id failure; P1's single temporary consumer closes; every current Configuration class is either moved to the neutral owner or assigned to a named later package. P4+ is blocked until this gate passes and the accepted signatures are reflected in the manifest and ADR.
 
 ### P4 — Isolate Architecture policy and CircularDependency evidence
 
@@ -454,12 +573,12 @@ DoD: no temporary contract consumer, temporary internal grant or singleton seam 
 
 ```text
 [complete] P0-A -> P0-B -> P0-C -> P0-D -> P0 completion gate
-[next] P1 (opens three Duplication consumers through P3) -> P2 -> P3 (closes them) -> phase-port contract gate -> P4 -> P5 -> P6 -> P7 -> P8
+[complete] P1-A -> P1-B -> {P1-C || P1-D} -> P1-E -> P1 completion gate -> [next, not started] P2 -> P3 (closes P1's MetricEnricher consumer) -> phase-port contract gate -> P4 -> P5 -> P6 -> P7 -> P8
 ```
 
-P0 completed discovery, decision and enforcement; it does not authorise the unchanged remainder automatically. P0-A atomically established authority, generated qmx enforcement, reproducible evidence and freshness checks, including ownership of the qmx topology header immediately adjacent to its generated region. P0-B closed decision/general documentation, P0-C reconciled the baseline, and P0-D completed final review and shared-document dispositions. P1 is now the next package. Generated rows bearing an exact P1–P8 closure, rather than duplicated prose lists, are the authoritative migration enumerations; documentation rows marked `P0-D`, `permanent`, or `shared` do not grant later package ownership. Phase-port signatures remain non-binding until P3's contract gate.
+P0 completed discovery, decision and enforcement; it does not authorise the unchanged remainder automatically. P0-A atomically established authority, generated qmx enforcement, reproducible evidence and freshness checks, including ownership of the qmx topology header immediately adjacent to its generated region. P0-B closed decision/general documentation, P0-C reconciled the baseline, and P0-D completed final review and shared-document dispositions. P1-A through P1-E and the final P1 re-review are complete; P2 is now next and has not started. Generated rows bearing an exact P1–P8 closure are the authoritative migration-owned move enumerations; the explicit package tables add integration, DI, discovery, governance and current-documentation edits without changing those files' later owners. Documentation rows marked `P0-D`, `permanent`, or `shared` do not grant later package ownership and still change when the landed current state would otherwise make them false. Phase-port signatures remain non-binding until P3's contract gate.
 
-Packages P1–P6 then land sequentially because they share Run, DI, configuration and topology seams. P1's three temporary Duplication contract-consumer relations create an explicit lifecycle dependency on P3; P3 must remove them rather than silently make them permanent. DependencyModel lands before P3 binds Run's graph-aware phase ports, and the P3 gate passes before Architecture/CircularDependency consumes them. Each package owns a disjoint, P0-materialised set of production files, tests, fixtures, support code and documentation; moving production without its owned tests is an incomplete package. P7 batches may be delegated in parallel only after an execution plan enumerates exact non-overlapping production/tests/docs files; shared DI, `qmx.yaml`, `phpunit.xml.dist`, Composer dev-autoload/classmaps, root docs and generated inventories form a named serial integration package. No package described with `**` is eligible for parallel execution as-is.
+Packages P1–P6 then land sequentially because they share Run, DI, configuration and topology seams. P1's single temporary `MetricEnricher -> DuplicationInspectionInterface` relation creates the explicit lifecycle dependency on P3; P3 must replace that direct call with its accepted Run-owned port and remove the relation rather than silently make it permanent. DependencyModel lands before P3 binds Run's graph-aware phase ports, and the P3 gate passes before Architecture/CircularDependency consumes them. Migration-owned artifacts come from the generated rows, while each package's explicit integration tables name the additional consumers and guards it may edit without stealing their later ownership; moving production without its owned tests is an incomplete package. P7 batches may be delegated in parallel only after an execution plan enumerates exact non-overlapping production/tests/docs files; shared DI, `qmx.yaml`, `phpunit.xml.dist`, Composer dev-autoload/classmaps, root docs and generated inventories form a named serial integration package. No package described with `**` is eligible for parallel execution as-is.
 
 Each package is behavioural-preservation first: move + contract + architecture tests in one package, no compatibility shim. Validate focused tests after every package, then `composer check`; run standard/extended review according to changed contracts and inspect seams explicitly.
 

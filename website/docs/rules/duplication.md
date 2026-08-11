@@ -117,6 +117,11 @@ Qualimetrix uses the **Rabin-Karp rolling hash** algorithm for efficient detecti
 
 Because function/method/class names are preserved during normalization, the detector will **not** flag two methods that call completely different APIs, even if their control flow structure is identical.
 
+The implementation is owned by the `Analysis.Evidence.Duplication` capability,
+which keeps detection, its per-run result and the rule together. Run
+orchestration triggers the capability through a narrow reset/inspect contract;
+this ownership change does not alter the rule id, options, algorithm or output.
+
 !!! info "Deviation from original spec"
     A duplicate group uses the full SHA-256 of the complete normalized matched
     token sequence plus token count as its semantic occurrence. The project is

@@ -36,8 +36,8 @@ Analysis/
 │   ├── DependencyGraphAnalyzerInterface.php # Complete discovery-to-graph contract
 │   ├── DependencyGraphAnalyzer.php       # Graph-only analysis orchestration with terminal-state coverage
 │   ├── DependencyGraphAnalysisResult.php # Graph plus canonical coverage result
-│   ├── MetricEnricher.php               # Enrichment phases (aggregation, global collectors, computed metrics, cycles, duplication)
-│   └── EnrichmentResult.php             # VO: cycles and duplicate blocks from the enrichment phase
+│   ├── MetricEnricher.php               # Enrichment phases and capability inspection sequencing
+│   └── EnrichmentResult.php             # VO: namespace tree and cycles from the enrichment phase
 │
 ├── Discovery/                           # File discovery
 │   ├── FileDiscoveryInterface.php       # Discovery contract
@@ -107,20 +107,17 @@ Analysis/
 │   ├── GlobalCollectorRunner.php        # Runs global (cross-file) collectors
 │   └── GlobalCollectorSorter.php        # Topological sort of global collectors
 │
-├── Duplication/                         # Rabin-Karp duplicate detection, split by phase (see DuplicationDetector docblock)
-│   ├── NormalizedToken.php              # VO: normalized token for comparison (carries an isData flag)
-│   ├── TokenNormalizer.php              # Normalizes PHP tokens for duplicate detection
-│   ├── DataDeclarationTagger.php        # Flags tokens inside const/property-array data declarations
-│   ├── ContentHintExtractor.php         # Extracts a short content preview for a duplicate block
-│   ├── PackedPosition.php               # Bit-packing helper for (fileIdx, tokenOffset) positions
-│   ├── SaturatingCandidateFilter.php    # Fixed-size two-bit candidate pre-filter for rolling hashes
-│   ├── HashIndexBuilder.php             # Bounded pre-pass, then exact candidate-position index
-│   ├── HashIndexBuildResult.php         # VO: exact candidate index + file paths
-│   ├── RetokenizedFiles.php             # VO: pass 2 output (tokens/sources of files with hash matches)
-│   ├── DuplicateSearchRequest.php       # VO: bundles pass-2 inputs for DuplicateBlockFinder::find()
-│   ├── DuplicateBlockFinder.php         # Verifies matches, extends blocks, applies data/self-dup filters
-│   ├── DuplicationDetectorInterface.php # Contract for duplicate block detection
-│   └── DuplicationDetector.php          # Thin orchestrator composing the phases above (config via DI)
+├── Evidence/                            # Navigation taxonomy; contains no PHP types
+│   └── Duplication/                     # Duplication capability; see its module README
+│       ├── Contract/
+│       │   └── DuplicationInspectionInterface.php # Run-facing reset/inspect contract
+│       ├── DuplicationDetector.php      # Token/block inspection orchestrator
+│       ├── DuplicationResultProvider.php # Per-run complete-result owner
+│       ├── DuplicateBlock.php           # Internal duplicate group
+│       ├── DuplicateLocation.php        # Internal occurrence location
+│       ├── CodeDuplicationRule.php      # Capability-owned rule
+│       ├── CodeDuplicationOptions.php   # Rule options
+│       └── ...                          # Normalization, hashing and matching internals
 │
 ├── RuleExecution/
 │   ├── RuleExecutorInterface.php        # Rule executor contract
@@ -152,9 +149,14 @@ Enforced by the project's own `qmx.yaml` as `analysis-*` sub-layers
 
 Analysis sub-packages follow layered dependency rules:
 
-- **Leaf** (no Analysis siblings): Exception, Discovery, Namespace\_, Repository, Duplication
+- **Leaf** (no legacy Analysis siblings): Exception, Discovery, Namespace\_, Repository
 - **Mid**: Aggregator depends on Exception; RuleExecution is standalone; Collection depends on Exception
 - **Orchestrator**: Pipeline depends on all sub-layers
+
+`Analysis/Evidence` is a navigation taxonomy rather than an Analysis layer.
+Its [`Duplication`](Evidence/Duplication/README.md) leaf is an independently
+owned capability. Run orchestration imports only its inspection contract;
+the rule, result provider and detection entities remain module-internal.
 
 ---
 
@@ -214,7 +216,7 @@ Finding PHP files via `FileDiscoveryInterface`.
 - Running duplication detection — token-based duplicate code block detection across analyzed files (skipped when `duplication.code-duplication` rule is disabled; this phase is memory-intensive on large codebases)
 
 **Phase 4: RuleExecution**
-- Creating `AnalysisContext` with repository, dependency graph, circular dependency results, duplicate blocks, and rule options
+- Creating `AnalysisContext` with repository, dependency graph, circular dependency results, namespace tree, threshold overrides, and rule options
 - Executing all rules via `RuleExecutor`
 - Applying filters (Baseline, Suppression)
 
@@ -462,6 +464,13 @@ fixed-size saturating filter retains no positions: hash collisions can only add 
 A second full pass rebuilds every position for those candidates, then token comparison in
 `DuplicateBlockFinder` verifies equality. Consequently a true repeated hash is never lost,
 while first-pass memory is independent of the number of token windows.
+
+The complete result is owned by the capability's run-scoped
+`DuplicationResultProvider`, not by `AnalysisContext` or `EnrichmentResult`.
+`MetricEnricher` resets the inspection contract before every enabled/disabled
+decision, so a later run cannot observe blocks from an earlier run. See the
+[Duplication module README](Evidence/Duplication/README.md) for its boundary,
+lifecycle and test ownership.
 
 **Naming convention:** `{metric}.{strategy}` (e.g.: `ccn.sum`, `ccn.avg`, `loc.sum`)
 

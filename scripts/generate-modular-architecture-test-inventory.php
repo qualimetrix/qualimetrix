@@ -21,12 +21,21 @@ $outputDirectoryArguments = array_values(array_filter(
     array_slice($arguments, 1),
     static fn(string $argument): bool => str_starts_with($argument, '--output-directory='),
 ));
+$classificationProbeArguments = array_values(array_filter(
+    array_slice($arguments, 1),
+    static fn(string $argument): bool => str_starts_with($argument, '--classification-probe='),
+));
 if (count($outputDirectoryArguments) > 1) {
     fail('Only one --output-directory path may be provided.');
 }
+if (count($classificationProbeArguments) > 1) {
+    fail('Only one classification probe path may be provided.');
+}
 $unknownArguments = array_values(array_filter(
     array_slice($arguments, 1),
-    static fn(string $argument): bool => $argument !== '--check' && !str_starts_with($argument, '--output-directory='),
+    static fn(string $argument): bool => $argument !== '--check'
+        && !str_starts_with($argument, '--output-directory=')
+        && !str_starts_with($argument, '--classification-probe='),
 ));
 if ($unknownArguments !== []) {
     fail('Unknown argument: ' . implode(', ', $unknownArguments));
@@ -50,6 +59,20 @@ const EXPLICIT_PATH_DISPOSITIONS = [
 $projectRoot = realpath(__DIR__ . '/..');
 if ($projectRoot === false) {
     fail('Cannot resolve the project root.');
+}
+
+if ($classificationProbeArguments !== []) {
+    $path = substr($classificationProbeArguments[0], strlen('--classification-probe='));
+    [$owner, $closurePackage] = classifyOwner($path);
+    $currentSuite = currentSuite($path);
+    $targetSuite = $currentSuite === 'Infrastructure' ? 'Unit' : $currentSuite;
+    fwrite(STDOUT, implode("\t", [
+        $owner,
+        $closurePackage,
+        $currentSuite,
+        targetPath($path, 'phpunit-test-class', $owner, $targetSuite),
+    ]) . "\n");
+    exit(0);
 }
 
 $worktreePaths = commandLines(
@@ -386,7 +409,12 @@ function classifyOwner(string $path): array
     if ($path === 'tests/Fixtures/AnonymousClassContext.php') {
         return ['Analysis/Evidence/Measurement', 'P7'];
     }
-    if (str_starts_with($path, 'tests/Unit/Analysis/Duplication/') || str_starts_with($path, 'tests/Unit/Core/Duplication/') || str_starts_with($path, 'tests/Unit/Rules/Duplication/')) {
+    if (
+        str_starts_with($path, 'tests/Analysis/Evidence/Duplication/Unit/')
+        || str_starts_with($path, 'tests/Unit/Analysis/Duplication/')
+        || str_starts_with($path, 'tests/Unit/Core/Duplication/')
+        || str_starts_with($path, 'tests/Unit/Rules/Duplication/')
+    ) {
         return ['Analysis/Evidence/Duplication', 'P1'];
     }
     if (str_starts_with($path, 'tests/Unit/Analysis/Collection/Dependency/Export/')) {
@@ -547,7 +575,7 @@ function classifyKind(string $path, array $discoveredClasses): string
 function currentSuite(string $path): string
 {
     return match (true) {
-        str_starts_with($path, 'tests/Architecture/Unit/'), str_starts_with($path, 'tests/Unit/') => 'Unit',
+        str_starts_with($path, 'tests/Architecture/Unit/'), str_starts_with($path, 'tests/Analysis/Evidence/Duplication/Unit/'), str_starts_with($path, 'tests/Unit/') => 'Unit',
         str_starts_with($path, 'tests/Architecture/Integration/'), str_starts_with($path, 'tests/Integration/') => 'Integration',
         str_starts_with($path, 'tests/Functional/') => 'Functional',
         str_starts_with($path, 'tests/Infrastructure/') => 'Infrastructure',

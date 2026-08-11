@@ -242,23 +242,24 @@ architecture:
         - 'Qualimetrix\Rules\Structure\NocRule'
     - name: analysis-evidence-duplication
       patterns:
-        - 'Qualimetrix\Analysis\Duplication\ContentHintExtractor'
-        - 'Qualimetrix\Analysis\Duplication\DataDeclarationTagger'
-        - 'Qualimetrix\Analysis\Duplication\DuplicateBlockFinder'
-        - 'Qualimetrix\Analysis\Duplication\DuplicateSearchRequest'
-        - 'Qualimetrix\Analysis\Duplication\DuplicationDetector'
-        - 'Qualimetrix\Analysis\Duplication\DuplicationDetectorInterface'
-        - 'Qualimetrix\Analysis\Duplication\HashIndexBuildResult'
-        - 'Qualimetrix\Analysis\Duplication\HashIndexBuilder'
-        - 'Qualimetrix\Analysis\Duplication\NormalizedToken'
-        - 'Qualimetrix\Analysis\Duplication\PackedPosition'
-        - 'Qualimetrix\Analysis\Duplication\RetokenizedFiles'
-        - 'Qualimetrix\Analysis\Duplication\SaturatingCandidateFilter'
-        - 'Qualimetrix\Analysis\Duplication\TokenNormalizer'
-        - 'Qualimetrix\Core\Duplication\DuplicateBlock'
-        - 'Qualimetrix\Core\Duplication\DuplicateLocation'
-        - 'Qualimetrix\Rules\Duplication\CodeDuplicationOptions'
-        - 'Qualimetrix\Rules\Duplication\CodeDuplicationRule'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\ContentHintExtractor'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\DataDeclarationTagger'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlockFinder'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateSearchRequest'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\HashIndexBuildResult'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\HashIndexBuilder'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\NormalizedToken'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\PackedPosition'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\RetokenizedFiles'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\SaturatingCandidateFilter'
+        - 'Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer'
     - name: analysis-evidence-maintainability
       patterns:
         - 'Qualimetrix\Metrics\Halstead\HalsteadCollector'
@@ -683,6 +684,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\ConfigurationConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\ContainerConfiguratorInterface'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\CoreServicesConfigurator'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\DuplicationConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\OutputConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator'
@@ -1331,6 +1333,7 @@ rules:
     min_tokens: 100
     exclude_paths:
       - src/Rules/**/*Options.php
+      - src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php
       - src/Metrics/Complexity/CognitiveComplexityVisitor.php
 
   complexity.cyclomatic:

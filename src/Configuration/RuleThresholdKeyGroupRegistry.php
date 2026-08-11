@@ -23,13 +23,12 @@ namespace Qualimetrix\Configuration;
  * (preset -> config file, config file -> CLI), which happens before any
  * rule's `Options::fromArray()` is ever invoked — it cannot ask
  * `ThresholdParser::parse()` "which keys did you use" at the point it needs
- * the answer, since that call hasn't happened yet. Worse: `Options` classes
- * live in `src/Rules/{Category}/`, and `Configuration` may not depend on
- * `Rules` — see the `configuration: [core, architecture]` allow-list in the
- * project's own `qmx.yaml` (`rules` is deliberately absent), enforced by
- * `architecture.layer-violation`. So the Options class cannot simply
- * implement an interface the resolver calls at merge time either, not
- * without introducing a `Configuration -> Rules` edge.
+ * the answer, since that call hasn't happened yet. Worse: Options classes
+ * live with their owning rule capability (most remain under
+ * `src/Rules/{Category}/`; Duplication is capability-owned), and
+ * `Configuration` may not depend on those evidence owners. So the Options
+ * class cannot simply implement an interface the resolver calls at merge
+ * time either, not without reversing the module dependency direction.
  *
  * This registry is the closest available equivalent to "the class declares
  * its own keys" that stays inside the `Configuration` layer: it lives next

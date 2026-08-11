@@ -11,6 +11,8 @@ use RuntimeException;
  *
  * This interface allows setting configuration at runtime (e.g., from CLI options)
  * instead of requiring synthetic DI services.
+ *
+ * @qmx-threshold coupling.cbo 23 -- This stable runtime configuration port intentionally centralizes fan-in from analysis, runtime, and composition consumers; that fan-in is its boundary responsibility.
  */
 interface ConfigurationProviderInterface
 {

@@ -27,16 +27,18 @@ phase ports under `Analysis\Run` are non-binding hypotheses until the P3
 contract gate proves their typed inputs, outputs and actual dependencies;
 implementations and prepared state would stay with their capability.
 
-`Analysis`, `Analysis\Evidence`, and `Analysis\Policy` are target navigation
+`Analysis`, `Analysis\Evidence`, and `Analysis\Policy` are navigation
 taxonomies, never modules or allow-list targets. `Core` is limited to neutral
 primitives, `Infrastructure` to delivery/composition, and `Reporting` to output
-projection. This is the accepted migration target: current `Metrics`, `Rules`,
-`Configuration` and Analysis sub-namespaces remain in their physical legacy
-locations, while the current manifest assigns each declaration an explicit
-semantic owner. Packages P1-P8 have not moved them.
+projection. P1 has landed `Analysis\Evidence\Duplication` as the first migrated
+leaf: it owns detection, its run-scoped result provider, entities, options,
+rule, tests and documentation, and exposes only
+`Contract\DuplicationInspectionInterface`. The remaining `Metrics`, `Rules`,
+`Configuration` and Analysis sub-namespaces stay in their physical legacy
+locations until P2-P8.
 
 P0 governance implements the current enforcement model. The versioned internal
-manifest covers all 695 declarations in 693 files and names 37 semantic
+manifest covers all 697 declarations in 695 files and names 37 semantic
 owners. It generates a coarse qmx projection with 37 owner layers, 14 singleton
 enforcement seams and final `external`: 52 layers and 296 allow edges in the
 reviewed snapshot. `external` excludes `Qualimetrix\**`; `coverage: error` makes
@@ -163,9 +165,13 @@ composer test      # unit/integration tests
 
 ### Add a New Rule
 
-1. Create a rule in `src/Rules/{Category}/`
-2. Implement `RuleInterface` + create an Options class
-3. **Done** — automatic registration via DI
+1. Identify the owning subject; do not create a role bucket for an independent capability
+2. Put a thin legacy-layout rule in `src/Rules/{Category}/`, or co-locate a capability-owned rule with its subject
+3. Implement `RuleInterface` + create an Options class
+4. Register a capability root through its Infrastructure configurator; layered rules remain automatic
+
+Current capability examples are Architecture and
+[`Analysis.Evidence.Duplication`](../src/Analysis/Evidence/Duplication/README.md).
 
 ### Add a New Output Format
 

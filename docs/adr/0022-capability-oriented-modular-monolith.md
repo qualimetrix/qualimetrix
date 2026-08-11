@@ -38,11 +38,20 @@ verified DI discovery and generated topology together. The architectural
 boundary is always a leaf such as
 `Analysis\Evidence\Duplication` or `Analysis\Policy\Architecture`.
 
-This decision establishes the target layout; it is not a claim that packages
-P1-P8 have completed. P0 governance is live: the versioned internal manifest is
-authoritative for the current declarations and semantic owners, and its
-generated qmx projection enforces their coarse topology. The physical P1-P8
-migration remains future work.
+This decision establishes the target layout. P0 governance is live, and P1 has
+landed `Analysis\Evidence\Duplication` as physical evidence for the leaf model;
+P2-P8 remain future work. The versioned internal manifest is authoritative for
+the current declarations and semantic owners, and its generated qmx projection
+enforces their coarse topology. P1's implementation is present in the current
+snapshot while its final migration-plan review remains pending.
+
+The P1 leaf co-locates 18 declarations: detection, duplicate entities, options,
+the rule and an internal per-run result provider. Its only published type is
+`Contract\DuplicationInspectionInterface`, consumed temporarily by the exact
+Run source `MetricEnricher` and permanently by Infrastructure composition.
+`AnalysisContext` and `EnrichmentResult` no longer transport duplicate blocks;
+the detector resets and atomically replaces provider-owned results through the
+capability contract. No compatibility aliases or generic phase port were added.
 
 ### Contracts require named consumers
 
@@ -88,7 +97,7 @@ this decision does not legitimise them by analogy.
   not the manifest and not an independent source of ownership truth.
 
 Every current production declaration has one explicit semantic owner in the
-internal manifest. The reviewed snapshot contains 695 declarations in 693 files
+internal manifest. The post-P1 snapshot contains 697 declarations in 695 files
 and 37 owners. The generator projects that intent into a coarse qmx owner/seam
 block and review inventories. Open-ended owner templates such as a category
 wildcard are prohibited because a new sibling would be silently enrolled.
@@ -148,7 +157,7 @@ architectural allow edge must be removed or pointed in the dependency direction.
   migrated before analysis can start.
 - Fail-closed ownership detects both edge-connected and isolated unowned code.
 - The internal owner manifest remains the source for generated qmx ownership
-  and inventories while P1-P8 close its temporary grants and seams. Generated
+  and inventories while P2-P8 close the remaining temporary grants and seams. Generated
   inventories remain auditable projections and can be deleted and regenerated
   without affecting runtime behaviour.
 

@@ -7,16 +7,15 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 - They do not store state between calls
 - A single `analyze()` method is the only entry point
 
-> **Note.** Most rules live under `src/Rules/{Category}/` (this directory).
-> The Architecture rules (`architecture.layer-violation`,
-> `architecture.circular-dependency`) live in the Architecture vertical slice
-> at [`src/Architecture/Rules/`](../Architecture/README.md) — they qualify
-> for the slice per [ADR 0010](../../docs/adr/0010-architecture-vertical-slice.md)
-> because the layer-violation rule needs Analysis-time prepared state and
-> the feature carries an independent-lifecycle debug command. See
-> [ADR 0012](../../docs/adr/0012-hybrid-architectural-direction.md) for the
-> hybrid model. User-facing documentation of both rules is still in this
-> README (Layer Violation Rule, Circular Dependency Rule).
+> **Note.** [ADR 0022](../../docs/adr/0022-capability-oriented-modular-monolith.md)
+> makes the owning subject, not rule size or technical role, the placement
+> boundary. Architecture owns its rules under
+> [`src/Architecture/Rules/`](../Architecture/README.md), while Duplication
+> owns `CodeDuplicationRule` and its options under
+> [`src/Analysis/Evidence/Duplication/`](../Analysis/Evidence/Duplication/README.md).
+> The remaining rules under `src/Rules/{Category}/` are the current layered
+> migration input, not the target architectural model. User-facing rule
+> documentation remains consolidated in this README.
 
 ### Rule Types
 
@@ -924,7 +923,7 @@ Detects duplicate code blocks across analyzed files using token-based comparison
 
 Blocks entirely tagged as data by `DataDeclarationTagger` (`const`
 declarations and property array-literal initializers — see
-`src/Analysis/Duplication/DataDeclarationTagger.php`) are unconditionally
+`src/Analysis/Evidence/Duplication/DataDeclarationTagger.php`) are unconditionally
 suppressed, since duplicated data tables rarely benefit from "extract a
 shared method" advice. There is no option to disable this suppression.
 
@@ -939,8 +938,12 @@ rules:
 **CLI:** `--duplication-min-lines=5 --duplication-min-tokens=70`
 
 **Files:**
-- `src/Rules/Duplication/CodeDuplicationRule.php` — rule implementation
-- `src/Rules/Duplication/CodeDuplicationOptions.php` — rule options
+- `src/Analysis/Evidence/Duplication/CodeDuplicationRule.php` — capability-owned rule implementation
+- `src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php` — capability-owned rule options
+
+Detection, its per-run result and this rule are co-located under the
+[`Analysis.Evidence.Duplication`](../Analysis/Evidence/Duplication/README.md)
+leaf. The public rule id, options and emitted channel are unchanged.
 
 ---
 
@@ -1275,11 +1278,13 @@ final class ExampleRule extends AbstractRule {
 **Automatic registration:**
 - Rules are registered automatically via Symfony DI (autoconfiguration)
 - No need to modify `ContainerFactory` manually
-- Thin layered rules belong in `src/Rules/{Category}/*Rule.php` — they are
+- Remaining layered rules under `src/Rules/{Category}/*Rule.php` are
   registered by [`RuleConfigurator`](../Infrastructure/DependencyInjection/Configurator/RuleConfigurator.php)
-- Rules that belong to a vertical slice (currently
-  `src/Architecture/Rules/`) are registered by their feature's configurator
-  — see [`ArchitectureConfigurator`](../Infrastructure/DependencyInjection/Configurator/ArchitectureConfigurator.php).
+- Capability-owned rules are registered by their Infrastructure configurator:
+  [`ArchitectureConfigurator`](../Infrastructure/DependencyInjection/Configurator/ArchitectureConfigurator.php)
+  registers `src/Architecture/Rules/`, and
+  [`DuplicationConfigurator`](../Infrastructure/DependencyInjection/Configurator/DuplicationConfigurator.php)
+  registers `src/Analysis/Evidence/Duplication/`.
   Both registrations share the same `qmx.rule` autoconfiguration tag; the
   rule is otherwise indistinguishable to the rest of the pipeline.
 

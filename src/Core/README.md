@@ -77,9 +77,6 @@ Core/
 │   ├── CycleInterface.php
 │   ├── DependencyType.php                 # Dependency type enum
 │   └── EmptyDependencyGraph.php           # No-op graph implementation
-├── Duplication/
-│   ├── DuplicateBlock.php                 # VO: a group of duplicate code locations
-│   └── DuplicateLocation.php              # VO: a single location within a duplicate block
 ├── Violation/
 │   ├── Violation.php
 │   ├── OccurrenceKey.php                 # Stable SHA-256 discriminator for one semantic occurrence

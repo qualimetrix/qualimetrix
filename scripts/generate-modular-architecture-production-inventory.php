@@ -321,7 +321,7 @@ function phaseParticipants(): array
         ['phase' => 'global reaggregation', 'participant' => 'MetricAggregator(global definitions)', 'inputs' => 'MetricRepositoryInterface, NamespaceTree', 'outputs' => 'namespace/project aggregates', 'state_owner' => 'Analysis.Run and Measurement', 'dependency' => 'after all global collectors', 'source' => 'src/Analysis/Pipeline/MetricEnricher.php'],
         ['phase' => 'computed derivation', 'participant' => 'ComputedMetricEvaluator', 'inputs' => 'MetricRepositoryInterface, list<ComputedMetricDefinition>', 'outputs' => 'configured computed metrics', 'state_owner' => 'Analysis.Evidence.ComputedMetrics', 'dependency' => 'definition DAG; static definition holder; skipped without files/definitions', 'source' => 'src/Metrics/ComputedMetric/ComputedMetricEvaluator.php'],
         ['phase' => 'graph inspection', 'participant' => 'CircularDependencyDetector', 'inputs' => 'DependencyGraphInterface', 'outputs' => 'list<Cycle>', 'state_owner' => 'Analysis.Evidence.CircularDependency', 'dependency' => 'rule-selection gated; result consumed by CircularDependencyRule', 'source' => 'src/Analysis/Collection/Dependency/CircularDependencyDetector.php'],
-        ['phase' => 'file-set inspection', 'participant' => 'DuplicationDetectorInterface', 'inputs' => 'list<SplFileInfo>', 'outputs' => 'list<DuplicateBlock>', 'state_owner' => 'Analysis.Evidence.Duplication', 'dependency' => 'rule-selection gated; result consumed by CodeDuplicationRule', 'source' => 'src/Analysis/Duplication/DuplicationDetectorInterface.php'],
+        ['phase' => 'file-set inspection', 'participant' => 'DuplicationInspectionInterface', 'inputs' => 'list<SplFileInfo>', 'outputs' => 'replaced run-scoped DuplicationResultProvider state', 'state_owner' => 'Analysis.Evidence.Duplication', 'dependency' => 'rule-selection gated; provider consumed by CodeDuplicationRule', 'source' => 'src/Analysis/Evidence/Duplication/Contract/DuplicationInspectionInterface.php'],
         ['phase' => 'rule execution', 'participant' => '41 RuleInterface implementations', 'inputs' => 'AnalysisContext', 'outputs' => 'list<Violation> and last RuleExclusionStats', 'state_owner' => 'Analysis.Finding and feature rules', 'dependency' => 'producer selection then per-rule exclusions and channel selection', 'source' => 'src/Analysis/RuleExecution/RuleExecutor.php'],
         ['phase' => 'report policy pipeline', 'participant' => 'ViolationFilterPipeline stages', 'inputs' => 'list<Violation> plus suppression/config/baseline/git scope', 'outputs' => 'ViolationFilterResult', 'state_owner' => 'Inline, Baseline, Reporting', 'dependency' => 'suppression -> path -> namespace -> baseline -> git', 'source' => 'src/Infrastructure/Console/ViolationFilterPipeline.php'],
         ['phase' => 'report enrichment', 'participant' => 'SummaryEnricher', 'inputs' => 'Report', 'outputs' => 'health/debt/impact summary', 'state_owner' => 'mixed ComputedMetrics/Prioritization/Reporting seam', 'dependency' => 'cross-capability orchestration before formatters', 'source' => 'src/Reporting/Health/SummaryEnricher.php'],
@@ -425,7 +425,8 @@ $documentationProbe = $documentationProbeArguments === []
 
 $manifest = loadAndValidateManifest($manifestPath, $schemaPath);
 if ($documentationProbe !== null) {
-    documentationDisposition($documentationProbe);
+    fwrite(STDOUT, implode("\t", documentationDisposition($documentationProbe)) . "\n");
+    exit(0);
 }
 $rows = declarations($root);
 if ($rows === []) {
@@ -1138,6 +1139,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0017-baseline-ceiling.md' => ['Analysis.Policy.Baseline', 'P6'],
         'docs/adr/0021-declaration-scoped-callable-identity-and-dependency-projections.md' => ['Analysis.Evidence.DependencyModel', 'P2'],
         'src/Analysis/README.md' => ['Analysis.Run', 'P3'],
+        'src/Analysis/Evidence/Duplication/README.md' => ['Analysis.Evidence.Duplication', 'P1'],
         'src/Baseline/README.md' => ['Analysis.Policy.Baseline', 'P6'],
         'website/docs/getting-started/configuration.md' => ['Analysis.Run', 'P3'],
         'website/docs/getting-started/configuration.ru.md' => ['Analysis.Run', 'P3'],

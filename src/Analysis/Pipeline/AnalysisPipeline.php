@@ -254,13 +254,12 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         CollectionResult $collectionResult,
     ): array {
         $context = new AnalysisContext(
-            $repository,
-            $this->configurationProvider->getRuleOptions(),
-            $graph,
-            $enrichmentResult->cycles,
-            $enrichmentResult->duplicateBlocks,
-            $enrichmentResult->namespaceTree,
-            $collectionResult->thresholdOverrides,
+            metrics: $repository,
+            ruleOptions: $this->configurationProvider->getRuleOptions(),
+            dependencyGraph: $graph,
+            cycles: $enrichmentResult->cycles,
+            namespaceTree: $enrichmentResult->namespaceTree,
+            thresholdOverrides: $collectionResult->thresholdOverrides,
         );
         $violations = $this->ruleExecutor->execute($context);
         $extraViolations = array_merge(

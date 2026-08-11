@@ -40,6 +40,7 @@ docs/internal/plans/diff-mode-new-only.md	Architecture.Governance	shared	"Shared
 docs/internal/plans/global-functions-graph.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/modular-architecture.md	Architecture.Governance	P0-D	"P0 governance documentation; review with the manifest and generated topology."
 docs/internal/plans/phpdoc-dependencies.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
+src/Analysis/Evidence/Duplication/README.md	Analysis.Evidence.Duplication	P1	"Move or update atomically with the named migration package."
 src/Analysis/README.md	Analysis.Run	P3	"Move or update atomically with the named migration package."
 src/Architecture/README.md	Architecture.Governance	P0-D	"P0 governance documentation; review with the manifest and generated topology."
 src/Baseline/README.md	Analysis.Policy.Baseline	P6	"Move or update atomically with the named migration package."

@@ -30,7 +30,7 @@ use Symfony\Component\Finder\Finder;
  * its rule/level is deleted, or a call site's key spelling changes without
  * the registry following. Each of those three drifts is undetectable by
  * reading the registry alone — they only show up by comparing it against the
- * real `src/Rules/**` source and the real `Options::fromArray()` behavior.
+ * real rule capability roots and the real `Options::fromArray()` behavior.
  *
  * This test derives its expectations entirely from the real code, the same
  * way {@see \Qualimetrix\Tests\Architecture\Unit\Configuration\Allow\AllowAliasExpanderTest}'s
@@ -39,8 +39,8 @@ use Symfony\Component\Finder\Finder;
  * keys.
  *
  * - **Discovery** (which (rule, path) pairs need an entry, and how many
- *   groups): glob `src/Rules/**\/*Rule.php` (the same glob `RuleConfigurator`
- *   uses to register rules), read each rule's `NAME` constant via
+ *   groups): scan the explicit layered and capability-owned rule roots (the
+ *   same roots their configurators register), read each rule's `NAME` via
  *   {@see RuleNameReader} and its Options class via `getOptionsClass()`
  *   (both real, no hand list), then — for hierarchical Options classes —
  *   walk `getSupportedLevels()`/`forLevel()` to find each nested Options
@@ -336,9 +336,9 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
     }
 
     /**
-     * Globs `src/Rules/**\/*Rule.php` — the same pattern
-     * `RuleConfigurator::registerRules()` uses to auto-register rules — so
-     * this discovery never drifts from what the container actually wires up.
+     * Scans the explicit rule roots registered by RuleConfigurator and
+     * DuplicationConfigurator, so capability extraction cannot silently
+     * remove a threshold rule from this drift guard.
      *
      * @return list<class-string<RuleInterface>>
      */
@@ -349,31 +349,33 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
             return $cache;
         }
 
-        $rulesDir = \dirname(__DIR__, 3) . '/src/Rules';
         $classes = [];
+        $srcDir = \dirname(__DIR__, 3) . '/src';
+        $roots = [
+            [$srcDir . '/Rules', 'Qualimetrix\\Rules\\'],
+            [$srcDir . '/Analysis/Evidence/Duplication', 'Qualimetrix\\Analysis\\Evidence\\Duplication\\'],
+        ];
 
-        $finder = (new Finder())->files()->in($rulesDir)->name('*Rule.php')->notName('AbstractRule.php');
+        foreach ($roots as [$rulesDir, $namespace]) {
+            $finder = (new Finder())->files()->in($rulesDir)->name('*Rule.php')->notName('AbstractRule.php');
 
-        foreach ($finder as $file) {
-            $class = 'Qualimetrix\\Rules\\' . str_replace('/', '\\', substr($file->getRelativePathname(), 0, -4));
+            foreach ($finder as $file) {
+                $class = $namespace . str_replace('/', '\\', substr($file->getRelativePathname(), 0, -4));
 
-            if (!class_exists($class) || !is_a($class, RuleInterface::class, true)) {
-                continue;
+                if (!class_exists($class) || !is_a($class, RuleInterface::class, true)) {
+                    continue;
+                }
+
+                // Matches the service-registration Abstract*.php exclusion,
+                // generalized via reflection so nested abstract bases are
+                // skipped without a second name catalog.
+                if ((new ReflectionClass($class))->isAbstract()) {
+                    continue;
+                }
+
+                /** @var class-string<RuleInterface> $class */
+                $classes[] = $class;
             }
-
-            // Matches the same exclusion CLAUDE.md documents for service
-            // registration ("Abstract*.php — abstract classes"), generalized
-            // via reflection instead of a `notName()` glob so any abstract
-            // base rule (not just the top-level AbstractRule.php) is skipped
-            // — e.g. Security\AbstractSecurityPatternRule, which matches
-            // `*Rule.php` but declares no NAME constant since it's never
-            // instantiated directly.
-            if ((new ReflectionClass($class))->isAbstract()) {
-                continue;
-            }
-
-            /** @var class-string<RuleInterface> $class */
-            $classes[] = $class;
         }
 
         return $cache = $classes;

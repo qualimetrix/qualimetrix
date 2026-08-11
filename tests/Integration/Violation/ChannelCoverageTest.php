@@ -16,14 +16,17 @@ use Qualimetrix\Analysis\Collection\CollectionResult;
 use Qualimetrix\Analysis\Collection\Dependency\Cycle;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
+use Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock;
+use Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation;
+use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
 use Qualimetrix\Analysis\Pipeline\MetricEnricher;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
 use Qualimetrix\Architecture\Rules\CircularDependencyOptions;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Core\Duplication\DuplicateBlock;
-use Qualimetrix\Core\Duplication\DuplicateLocation;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -53,8 +56,6 @@ use Qualimetrix\Rules\Coupling\ClassRankOptions;
 use Qualimetrix\Rules\Coupling\ClassRankRule;
 use Qualimetrix\Rules\Design\TypeCoverageOptions;
 use Qualimetrix\Rules\Design\TypeCoverageRule;
-use Qualimetrix\Rules\Duplication\CodeDuplicationOptions;
-use Qualimetrix\Rules\Duplication\CodeDuplicationRule;
 use Qualimetrix\Rules\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Rules\Maintainability\MaintainabilityRule;
 use Qualimetrix\Rules\Security\CommandInjectionRule;
@@ -239,23 +240,22 @@ final class ChannelCoverageTest extends TestCase
     #[Test]
     public function theCodeDuplicationMagnitudeChannelIsDeclared(): void
     {
-        $rule = new CodeDuplicationRule(new CodeDuplicationOptions());
+        $resultProvider = new DuplicationResultProvider();
+        $resultProvider->replace([
+            new DuplicateBlock(
+                locations: [
+                    new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
+                    new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
+                ],
+                lines: 100,
+                tokens: 200,
+                contentHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            ),
+        ]);
+        $rule = new CodeDuplicationRule(new CodeDuplicationOptions(), $resultProvider);
 
         $repository = self::createStub(MetricRepositoryInterface::class);
-        $context = new AnalysisContext(
-            $repository,
-            duplicateBlocks: [
-                new DuplicateBlock(
-                    locations: [
-                        new DuplicateLocation(RelativePath::fromString('src/A.php'), 10, 25),
-                        new DuplicateLocation(RelativePath::fromString('src/B.php'), 30, 45),
-                    ],
-                    lines: 100,
-                    tokens: 200,
-                    contentHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-                ),
-            ],
-        );
+        $context = new AnalysisContext($repository);
 
         $violations = $rule->analyze($context);
         self::assertCount(1, $violations);

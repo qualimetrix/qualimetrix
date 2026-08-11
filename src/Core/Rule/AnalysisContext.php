@@ -6,7 +6,6 @@ namespace Qualimetrix\Core\Rule;
 
 use Qualimetrix\Core\Dependency\CycleInterface;
 use Qualimetrix\Core\Dependency\DependencyGraphInterface;
-use Qualimetrix\Core\Duplication\DuplicateBlock;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
@@ -17,7 +16,6 @@ final readonly class AnalysisContext
     /**
      * @param array<string, mixed> $ruleOptions
      * @param list<CycleInterface> $cycles Detected circular dependency cycles
-     * @param list<DuplicateBlock> $duplicateBlocks Detected code duplication blocks
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides Per-file threshold overrides
      */
     public function __construct(
@@ -25,7 +23,6 @@ final readonly class AnalysisContext
         public array $ruleOptions = [],
         public ?DependencyGraphInterface $dependencyGraph = null,
         public array $cycles = [],
-        public array $duplicateBlocks = [],
         public ?NamespaceTree $namespaceTree = null,
         public array $thresholdOverrides = [],
     ) {}

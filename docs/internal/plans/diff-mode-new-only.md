@@ -5,7 +5,7 @@
 символьные — информационно)
 **Дата:** 2026-07-28
 **Область:** `src/Core/Violation`, `src/Baseline/Comparison` (новый), `src/Architecture/Rules`,
-`src/Rules/Duplication`, `src/Infrastructure/Git`, `src/Infrastructure/Comparison` (новый),
+`src/Analysis/Evidence/Duplication`, `src/Infrastructure/Git`, `src/Infrastructure/Comparison` (новый),
 `src/Infrastructure/Console`, `src/Infrastructure/Cache`, `src/Infrastructure/DependencyInjection`,
 `src/Configuration`
 
@@ -1539,10 +1539,10 @@ final class RuntimeConfigurator {
 
 **Файлы (правка):** `src/Architecture/Rules/CircularDependencyRule.php`,
 `src/Architecture/Rules/LayerViolationRule.php`,
-`src/Rules/Duplication/CodeDuplicationRule.php`,
+`src/Analysis/Evidence/Duplication/CodeDuplicationRule.php`,
 `src/Architecture/README.md`, `src/Rules/README.md`
 **Тесты:** `tests/Architecture/Unit/Rules/*` (дополнение),
-`tests/Unit/Rules/Duplication/CodeDuplicationRuleTest.php`
+`tests/Analysis/Evidence/Duplication/Unit/CodeDuplicationRuleTest.php`
 **Зависимости:** П1 · **Параллельно с:** П5
 
 **DoD:**

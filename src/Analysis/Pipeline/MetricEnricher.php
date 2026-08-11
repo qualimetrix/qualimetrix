@@ -11,7 +11,7 @@ use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
 use Qualimetrix\Analysis\Aggregator\MetricAggregator;
 use Qualimetrix\Analysis\Collection\Dependency\CircularDependencyDetector;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
-use Qualimetrix\Analysis\Duplication;
+use Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
@@ -19,10 +19,10 @@ use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Metric\MetricDefinition;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Profiler\ProfilerInterface;
 use Qualimetrix\Core\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Metrics\ComputedMetric\ComputedMetricEvaluator;
-use Qualimetrix\Rules\Duplication\CodeDuplicationRule;
 use SplFileInfo;
 
 /**
@@ -38,6 +38,8 @@ use SplFileInfo;
  */
 final class MetricEnricher
 {
+    private const string DUPLICATION_RULE = 'duplication.code-duplication';
+
     /** @var list<MetricDefinition> */
     private readonly array $allDefinitions;
 
@@ -50,7 +52,7 @@ final class MetricEnricher
         private readonly ConfigurationProviderInterface $configurationProvider,
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly ?ProfilerHolder $profilerHolder = null,
-        private readonly ?Duplication\DuplicationDetectorInterface $duplicationDetector = null,
+        private readonly ?DuplicationInspectionInterface $duplicationInspection = null,
         private readonly ?ComputedMetricEvaluator $computedMetricEvaluator = null,
         private readonly RuleSelector $ruleSelector = new RuleSelector(new InMemoryRuleChannelRegistry()),
     ) {
@@ -76,12 +78,10 @@ final class MetricEnricher
      * Enriches the metric repository with aggregated, global, and computed metrics.
      *
      * The CCN here counts enrichment phases, not nesting: the method is a linear
-     * sequence of optional steps (aggregate, global collectors, duplication,
-     * computed metrics), each guarded by its own independent feature check.
-     * Cognitive complexity is 7 against a CCN of 22 — the branches sit side by
-     * side rather than inside one another. Extracting each guard into its own
-     * method would hide the pipeline order, which is the one thing a reader of
-     * this method needs to see.
+     * sequence of optional steps, each guarded by its own independent feature
+     * check. Duplication's reset and selection form one lifecycle operation;
+     * its helper keeps that invariant local while this method retains the
+     * visible phase order.
      *
      * @param list<SplFileInfo> $files Files for duplication detection
      * @param int $filesAnalyzed Number of files successfully analyzed
@@ -151,21 +151,36 @@ final class MetricEnricher
         }
 
         // Phase 3.8: Detect code duplication
-        $duplicateBlocks = [];
-        if ($this->duplicationDetector !== null && $this->ruleSelector->isProducerEnabled(
-            CodeDuplicationRule::NAME,
-            $config->onlyRules,
-            $config->disabledRules,
-        )) {
-            $profiler?->start('duplication', 'pipeline');
-            $duplicateBlocks = $this->duplicationDetector->detect($files);
-            $profiler?->stop('duplication');
+        $this->inspectDuplicationForRun($files, $config->onlyRules, $config->disabledRules, $profiler);
 
-            $this->logger->info('Duplication detection completed', [
-                'blocks' => \count($duplicateBlocks),
-            ]);
+        return new EnrichmentResult($namespaceTree, $cycles);
+    }
+
+    /**
+     * @param list<SplFileInfo> $files
+     * @param list<string> $onlyRules
+     * @param list<string> $disabledRules
+     */
+    private function inspectDuplicationForRun(
+        array $files,
+        array $onlyRules,
+        array $disabledRules,
+        ?ProfilerInterface $profiler,
+    ): void {
+        $this->duplicationInspection?->reset();
+
+        if ($this->duplicationInspection === null || !$this->ruleSelector->isProducerEnabled(
+            self::DUPLICATION_RULE,
+            $onlyRules,
+            $disabledRules,
+        )) {
+            return;
         }
 
-        return new EnrichmentResult($namespaceTree, $cycles, $duplicateBlocks);
+        $profiler?->start('duplication', 'pipeline');
+        $this->duplicationInspection->inspect($files);
+        $profiler?->stop('duplication');
+
+        $this->logger->info('Duplication detection completed');
     }
 }

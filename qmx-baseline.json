@@ -185,14 +185,14 @@
                 "count": 1
             }
         ],
-        "declaration:callable:Qualimetrix\\Analysis\\Pipeline\\AnalysisPipeline::discoverAnalysisFiles@src/Analysis/Pipeline/AnalysisPipeline.php:12002": [
+        "declaration:callable:Qualimetrix\\Analysis\\Pipeline\\AnalysisPipeline::discoverAnalysisFiles@src/Analysis/Pipeline/AnalysisPipeline.php:12036": [
             {
                 "channel": "code-smell.boolean-argument#code-smell.boolean-argument",
                 "occurrence": "ae7138a920341c7413fe1dee96e77ddb915f9da225f6034dee5175012b35aa92",
                 "count": 1
             }
         ],
-        "declaration:callable:Qualimetrix\\Analysis\\Pipeline\\MetricEnricher::__construct@src/Analysis/Pipeline/MetricEnricher.php:1705": [
+        "declaration:callable:Qualimetrix\\Analysis\\Pipeline\\MetricEnricher::__construct@src/Analysis/Pipeline/MetricEnricher.php:1825": [
             {
                 "channel": "code-smell.constructor-overinjection#code-smell.constructor-overinjection",
                 "magnitudes": [
@@ -592,7 +592,7 @@
                 "count": 1
             }
         ],
-        "declaration:callable:Qualimetrix\\Core\\Rule\\AnalysisContext::getThresholdOverride@src/Core/Rule/AnalysisContext.php:1753": [
+        "declaration:callable:Qualimetrix\\Core\\Rule\\AnalysisContext::getThresholdOverride@src/Core/Rule/AnalysisContext.php:1575": [
             {
                 "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
                 "magnitudes": [
@@ -1521,7 +1521,7 @@
                 "count": 1
             }
         ],
-        "declaration:class:Qualimetrix\\Analysis\\Duplication\\DataDeclarationTagger@src/Analysis/Duplication/DataDeclarationTagger.php:2469": [
+        "declaration:class:Qualimetrix\\Analysis\\Evidence\\Duplication\\DataDeclarationTagger@src/Analysis/Evidence/Duplication/DataDeclarationTagger.php:2478": [
             {
                 "channel": "complexity.wmc#complexity.wmc",
                 "magnitudes": [
@@ -1530,7 +1530,7 @@
                 "count": 1
             }
         ],
-        "declaration:class:Qualimetrix\\Analysis\\Pipeline\\MetricEnricher@src/Analysis/Pipeline/MetricEnricher.php:1501": [
+        "declaration:class:Qualimetrix\\Analysis\\Pipeline\\MetricEnricher@src/Analysis/Pipeline/MetricEnricher.php:1544": [
             {
                 "channel": "computed.health#health.maintainability",
                 "magnitudes": [
@@ -1722,15 +1722,6 @@
                 "count": 1
             }
         ],
-        "declaration:class:Qualimetrix\\Configuration\\ConfigurationProviderInterface@src/Configuration/ConfigurationProviderInterface.php:302": [
-            {
-                "channel": "coupling.cbo#coupling.cbo.class",
-                "magnitudes": [
-                    21
-                ],
-                "count": 1
-            }
-        ],
         "declaration:class:Qualimetrix\\Configuration\\Loader\\YamlConfigLoader@src/Configuration/Loader/YamlConfigLoader.php:270": [
             {
                 "channel": "complexity.wmc#complexity.wmc",
@@ -1799,7 +1790,7 @@
                 "count": 1
             }
         ],
-        "declaration:class:Qualimetrix\\Core\\Rule\\AnalysisContext@src/Core/Rule/AnalysisContext.php:420": [
+        "declaration:class:Qualimetrix\\Core\\Rule\\AnalysisContext@src/Core/Rule/AnalysisContext.php:371": [
             {
                 "channel": "computed.health#health.cohesion",
                 "magnitudes": [
@@ -1943,7 +1934,7 @@
                 "count": 1
             }
         ],
-        "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator@src/Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php:2401": [
+        "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator@src/Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php:2363": [
             {
                 "channel": "computed.health#health.maintainability",
                 "magnitudes": [

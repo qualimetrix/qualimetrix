@@ -80,35 +80,37 @@ final class ThresholdValidatorAssignmentTest extends TestCase
      */
     private function discoverThresholdAwareOptions(): iterable
     {
-        $optionsDir = \dirname(__DIR__, 3) . '/src/Rules';
-        $files = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($optionsDir, FilesystemIterator::SKIP_DOTS),
-        );
+        $root = \dirname(__DIR__, 3) . '/src';
+        foreach ([$root . '/Rules', $root . '/Analysis/Evidence/Duplication'] as $optionsDir) {
+            $files = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($optionsDir, FilesystemIterator::SKIP_DOTS),
+            );
 
-        foreach ($files as $file) {
-            if (!str_ends_with($file->getFilename(), 'Options.php')) {
-                continue;
+            foreach ($files as $file) {
+                if (!str_ends_with($file->getFilename(), 'Options.php')) {
+                    continue;
+                }
+
+                $content = file_get_contents($file->getPathname());
+                \assert($content !== false);
+
+                if (preg_match('/^namespace\s+([\w\\\\]+);/m', $content, $nsMatch) !== 1
+                    || preg_match('/^final\s+(?:readonly\s+)?class\s+(\w+)/m', $content, $classMatch) !== 1) {
+                    continue;
+                }
+
+                $fqcn = $nsMatch[1] . '\\' . $classMatch[1];
+                if (!class_exists($fqcn)) {
+                    continue;
+                }
+
+                $reflection = new ReflectionClass($fqcn);
+                if ($reflection->isAbstract() || !$reflection->implementsInterface(ThresholdAwareOptionsInterface::class)) {
+                    continue;
+                }
+
+                yield $reflection; // @phpstan-ignore generator.valueType
             }
-
-            $content = file_get_contents($file->getPathname());
-            \assert($content !== false);
-
-            if (preg_match('/^namespace\s+([\w\\\\]+);/m', $content, $nsMatch) !== 1
-                || preg_match('/^final\s+(?:readonly\s+)?class\s+(\w+)/m', $content, $classMatch) !== 1) {
-                continue;
-            }
-
-            $fqcn = $nsMatch[1] . '\\' . $classMatch[1];
-            if (!class_exists($fqcn)) {
-                continue;
-            }
-
-            $reflection = new ReflectionClass($fqcn);
-            if ($reflection->isAbstract() || !$reflection->implementsInterface(ThresholdAwareOptionsInterface::class)) {
-                continue;
-            }
-
-            yield $reflection; // @phpstan-ignore generator.valueType
         }
     }
 

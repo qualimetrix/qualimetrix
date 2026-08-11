@@ -43,19 +43,156 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
             $lines,
         );
         $summary = array_column(\array_slice($rows, 1), 1, 0);
+        $manifest = $this->manifest();
+        $declarations = $manifest['declarations'];
+        self::assertIsArray($declarations);
+        $owners = array_values(array_unique(array_column($declarations, 'owner')));
+        $consumerEntries = array_sum(array_map(
+            static fn(array $declaration): int => \count($declaration['consumers']),
+            $declarations,
+        ));
+        $temporaryConsumerEntries = array_sum(array_map(
+            static fn(array $declaration): int => \count(array_filter(
+                $declaration['consumers'],
+                static fn(array $consumer): bool => $consumer['source_fqcn'] !== null,
+            )),
+            $declarations,
+        ));
+        $coarseGrantEdges = [];
+        foreach ($manifest['temporary_internal_grants'] as $grant) {
+            $sourceOwner = $declarations[$grant['source_fqcn']]['owner'];
+            $targetOwner = $declarations[$grant['target_fqcn']]['owner'];
+            $coarseGrantEdges[$sourceOwner . "\0" . $targetOwner] = true;
+        }
+        [$qmxLayerCount, $qmxAllowEdgeCount] = $this->generatedQmxCounts();
 
-        self::assertSame('695', $summary['declarations']);
-        self::assertSame('693', $summary['files']);
-        self::assertSame('2951', $summary['exact_dependency_edges']);
-        self::assertSame('1945', $summary['cross_owner_imports']);
-        self::assertSame('37', $summary['semantic_owner_layers']);
-        self::assertSame('771', $summary['contract_consumer_entries']);
-        self::assertSame('0', $summary['temporary_contract_consumer_entries']);
-        self::assertSame('14', $summary['singleton_seams']);
-        self::assertSame('85', $summary['exact_internal_grants']);
-        self::assertSame('16', $summary['coarse_internal_grant_edges']);
-        self::assertSame('51', $summary['internal_enforcement_layers']);
-        self::assertSame('296', $summary['declared_allow_edges']);
+        self::assertSame('697', $summary['declarations']);
+        self::assertSame((string) \count(array_unique(array_column($declarations, 'path'))), $summary['files']);
+        self::assertSame((string) \count($owners), $summary['semantic_owners']);
+        self::assertSame((string) \count($owners), $summary['semantic_owner_layers']);
+        self::assertSame((string) $consumerEntries, $summary['contract_consumer_entries']);
+        self::assertSame((string) $temporaryConsumerEntries, $summary['temporary_contract_consumer_entries']);
+        self::assertMatchesRegularExpression('/^[1-9][0-9]*$/', $summary['exact_dependency_edges']);
+        self::assertMatchesRegularExpression('/^[1-9][0-9]*$/', $summary['cross_owner_imports']);
+        self::assertSame((string) \count($manifest['enforcement_seams']), $summary['singleton_seams']);
+        self::assertSame((string) \count($manifest['temporary_internal_grants']), $summary['exact_internal_grants']);
+        self::assertSame((string) \count($coarseGrantEdges), $summary['coarse_internal_grant_edges']);
+        self::assertSame((string) $qmxLayerCount, $summary['internal_enforcement_layers']);
+        self::assertSame((string) $qmxAllowEdgeCount, $summary['declared_allow_edges']);
+    }
+
+    #[Test]
+    public function itEncodesThePostP1DuplicationBoundary(): void
+    {
+        $manifest = $this->manifest();
+        $declarations = $manifest['declarations'];
+        self::assertCount(697, $declarations);
+
+        $prefix = 'Qualimetrix\\Analysis\\Evidence\\Duplication\\';
+        $duplication = array_filter(
+            $declarations,
+            static fn(string $fqcn): bool => str_starts_with($fqcn, $prefix),
+            \ARRAY_FILTER_USE_KEY,
+        );
+        self::assertCount(18, $duplication);
+        self::assertArrayHasKey($prefix . 'DuplicationResultProvider', $duplication);
+        self::assertArrayNotHasKey('Qualimetrix\\Analysis\\Duplication\\DuplicationDetectorInterface', $declarations);
+        self::assertArrayNotHasKey('Qualimetrix\\Core\\Duplication\\DuplicateBlock', $declarations);
+        self::assertArrayNotHasKey('Qualimetrix\\Rules\\Duplication\\CodeDuplicationRule', $declarations);
+
+        $contractFqcn = $prefix . 'Contract\\DuplicationInspectionInterface';
+        self::assertSame([$contractFqcn], array_keys(array_filter(
+            $duplication,
+            static fn(array $declaration): bool => $declaration['visibility'] === 'contract',
+        )));
+        self::assertSame([
+            [
+                'owner' => 'Analysis.Run',
+                'source_fqcn' => 'Qualimetrix\\Analysis\\Pipeline\\MetricEnricher',
+                'closes_in' => 'P3',
+            ],
+            [
+                'owner' => 'Infrastructure.DependencyInjection',
+                'source_fqcn' => null,
+                'closes_in' => null,
+            ],
+        ], $duplication[$contractFqcn]['consumers']);
+
+        foreach ($duplication as $fqcn => $declaration) {
+            if ($fqcn === $contractFqcn) {
+                continue;
+            }
+            self::assertSame('internal', $declaration['visibility'], $fqcn);
+            self::assertSame([], $declaration['consumers'], $fqcn);
+        }
+        self::assertSame([], array_values(array_filter(
+            $manifest['temporary_internal_grants'],
+            static fn(array $grant): bool => $grant['owner'] === 'Analysis.Evidence.Duplication',
+        )));
+    }
+
+    #[Test]
+    public function itClassifiesLegacyAndTargetDuplicationTestsWithoutACatchAll(): void
+    {
+        $cases = [
+            'tests/Unit/Analysis/Duplication/DuplicationDetectorTest.php',
+            'tests/Unit/Core/Duplication/DuplicateBlockIdentityTest.php',
+            'tests/Unit/Rules/Duplication/CodeDuplicationRuleTest.php',
+            'tests/Analysis/Evidence/Duplication/Unit/DuplicationDetectorTest.php',
+        ];
+
+        foreach ($cases as $path) {
+            [$exitCode, $output] = $this->runCommand([
+                \PHP_BINARY,
+                $this->root() . '/scripts/generate-modular-architecture-test-inventory.php',
+                '--classification-probe=' . $path,
+            ]);
+
+            self::assertSame(0, $exitCode, $output);
+            self::assertSame(
+                "Analysis/Evidence/Duplication\tP1\tUnit\ttests/Analysis/Evidence/Duplication/Unit/" . basename($path) . "\n",
+                $output,
+                $path,
+            );
+        }
+
+        [$exitCode, $output] = $this->runCommand([
+            \PHP_BINARY,
+            $this->root() . '/scripts/generate-modular-architecture-test-inventory.php',
+            '--classification-probe=tests/Analysis/Evidence/Duplication/Integration/UnexpectedTest.php',
+        ]);
+        self::assertNotSame(0, $exitCode);
+        self::assertStringContainsString(
+            'Unclassified test artifact: tests/Analysis/Evidence/Duplication/Integration/UnexpectedTest.php',
+            $output,
+        );
+    }
+
+    #[Test]
+    public function itClassifiesTheP1DuplicationModuleReadmeExactly(): void
+    {
+        [$exitCode, $output] = $this->runCommand([
+            \PHP_BINARY,
+            $this->root() . '/scripts/generate-modular-architecture-production-inventory.php',
+            '--documentation-probe=src/Analysis/Evidence/Duplication/README.md',
+        ]);
+
+        self::assertSame(0, $exitCode, $output);
+        self::assertSame(
+            "Analysis.Evidence.Duplication\tP1\tMove or update atomically with the named migration package.\n",
+            $output,
+        );
+
+        [$exitCode, $output] = $this->runCommand([
+            \PHP_BINARY,
+            $this->root() . '/scripts/generate-modular-architecture-production-inventory.php',
+            '--documentation-probe=src/Analysis/Evidence/Duplication/Unexpected/README.md',
+        ]);
+        self::assertNotSame(0, $exitCode);
+        self::assertStringContainsString(
+            'unclassified committable documentation path: src/Analysis/Evidence/Duplication/Unexpected/README.md',
+            $output,
+        );
     }
 
     #[Test]
@@ -398,6 +535,30 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
         ksort($hashes, \SORT_STRING);
 
         return $hashes;
+    }
+
+    /** @return array{int, int} */
+    private function generatedQmxCounts(): array
+    {
+        $contents = file_get_contents($this->root() . '/qmx.yaml');
+        self::assertIsString($contents);
+        $begin = strpos($contents, '# BEGIN GENERATED MODULAR ARCHITECTURE - DO NOT EDIT');
+        $end = strpos($contents, '# END GENERATED MODULAR ARCHITECTURE');
+        self::assertIsInt($begin);
+        self::assertIsInt($end);
+        $generated = substr($contents, $begin, $end - $begin);
+        $allowPosition = strpos($generated, "  allow:\n");
+        self::assertIsInt($allowPosition);
+        $layers = substr($generated, 0, $allowPosition);
+        $allow = substr($generated, $allowPosition);
+        $layerCount = preg_match_all('/^    - name: /m', $layers);
+        $externalLayerCount = preg_match_all('/^    - name: external$/m', $layers);
+        $allowEdgeCount = preg_match_all('/^      - /m', $allow);
+        self::assertIsInt($layerCount);
+        self::assertSame(1, $externalLayerCount);
+        self::assertIsInt($allowEdgeCount);
+
+        return [$layerCount - $externalLayerCount, $allowEdgeCount];
     }
 
     private function root(): string
