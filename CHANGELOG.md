@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Added shortcut CLI flags for `architecture.layer-violation` diagnostic severities and corrected computed-metric reference examples to use the registered `metrics` output format.
 - Added universal per-rule `exclude_namespace_channels` configuration for suppressing selected namespace-aggregate violation channels without hiding class findings or sibling channels.
+- `architecture.coverage` now includes analysed classes outside every declared layer even when they have no dependency edges, so `coverage: error` can enforce complete project ownership instead of checking only graph endpoints.
 
 ### Fixed
 - AST cache invalidation now fingerprints file contents, so a same-size rewrite with a preserved timestamp cannot reuse stale analysis results.
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `architecture.allow` now rejects every directed cycle made only of exact selectors with `ConfigLoadException`. Exact self-references were previously stripped silently and exact mutual permissions only warned; remove redundant self-edges and break or reorient at least one allow edge in every cycle. Glob and captured selectors remain outside this static DAG check.
 - Callable-level contracts now use `Callable` instead of `Method`, including symbol/rule levels and `*.callable` channels. Update enum cases, configuration selectors, stored channel names, and integrations; there are no `Method` aliases.
 - Baselines now require version 11 typed subjects with optional semantic occurrence and dependency-edge identity. Version 5 and version 10 files are rejected because exact declaration identities cannot be inferred; run a fresh analysis, deliberately map or split accepted entries, and write a reviewed v11 file. The historical `baseline:migrate` command was removed and has no replacement shim.
 - Violation JSON and fingerprints now use exact declaration subjects plus semantic occurrence and dependency edge where present. Consumers that persisted or joined findings by logical `symbol` alone must use `channel + subject + optional occurrence + optional edge`.

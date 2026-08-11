@@ -16,7 +16,7 @@ Each ADR is a Markdown file named `NNNN-short-title.md` (e.g., `0001-html-report
 # NNNN. Short Title
 
 **Date:** YYYY-MM-DD
-**Status:** Accepted | Superseded by NNNN
+**Status:** Proposed | Accepted | Superseded by NNNN
 
 ## Context
 
@@ -52,9 +52,9 @@ What follows from this decision — trade-offs, constraints, future implications
 - [0009 — YAML Loader Normalization Model](0009-yaml-loader-normalization-model.md) — replaces opt-out preservation with explicit per-section `SectionNormalizationPolicy`; closes the leaf-normalization bug class
 - [0010 — Architecture as Vertical Slice (Pilot)](0010-architecture-vertical-slice.md) — `src/Architecture/{Domain,Configuration,Processing,Rules}/`; adapter-exclusion principle (CLI/HTTP/message handlers stay in `Infrastructure`); criteria for applying vertical slice (Part 5 internal freedom superseded by 0016)
 - [0011 — Architecture Rules Errata for 0005 and 0007](0011-architecture-rules-errata.md) — corrects ADR 0005 stale `types:` deferral (shipped as `relations:` per ADR 0007), ADR 0007 D7 template-criteria phrasing, info-vs-warning wording for `empty-template`, and D4 `[` metacharacter handling (rejected per M17)
-- [0012 — Project Architectural Direction: Hybrid](0012-hybrid-architectural-direction.md) — vertical slice for substantial domain features, layered for thin metric/rule features, retained cross-cutting infrastructure layer; Architecture is the pilot (internal sub-namespace freedom superseded by 0016)
+- [0012 — Project Architectural Direction: Hybrid](0012-hybrid-architectural-direction.md) — superseded by ADR 0022; retained as the historical substantial/thin hybrid rationale
 - [0013 — Per-Options Threshold Override Validators](0013-threshold-override-validators.md) — replaces the global `warning ≤ error` parser invariant with a per-Options strategy (Standard / Inverted / IndependentAxis / WarningOnly); fixes a Maintainability bug latent across releases and three Design bugs shipped in v0.18; structural tests close the parser-path coverage gap
-- [0014 — Deptrac Retirement](0014-deptrac-retirement.md) — drops the `deptrac/deptrac` dev-dependency; `qmx.yaml` carries the full architecture topology (27 layers then, 30 since [ADR 0016](0016-subject-cohesion.md) split the Architecture slice) and the `architecture.layer-violation` rule pins it via a structural dogfooding test
+- [0014 — Deptrac Retirement](0014-deptrac-retirement.md) — drops the `deptrac/deptrac` dev-dependency; `qmx.yaml` took over architecture enforcement (27 layers then, later 30 after [ADR 0016](0016-subject-cohesion.md)); current manifest-generated owner topology is documented by ADR 0022
 - [0015 — Typed `AbsolutePath` and `RelativePath` Value Objects](0015-relative-path-vo.md) — replaces ambiguous `string` paths with a two-VO family at every internal boundary (CLI / Git / pipeline / cache / config / reporting); `PathFactory` consolidates string-to-VO conversion; PHPStan `qmx.bannedStringPathProperty` rule guards against regression
 - [0016 — Subject Cohesion](0016-subject-cohesion.md) — directories are subjects rather than technical-role buckets; tests for naming, co-change, and duplication guide placement
 - [0017 — Baseline Reported-Magnitude Ceiling](0017-baseline-ceiling.md) — version 10 baseline entries bound live finding groups by their reported magnitude or count, with fail-safe staleness and explicit lifecycle commands
@@ -62,3 +62,4 @@ What follows from this decision — trade-offs, constraints, future implications
 - [0019 — Namespace Metric Ownership and Attribution](0019-namespace-metric-ownership-and-attribution.md) — explicit namespace source contributions while physical file bags remain the project-total source
 - [0020 — Method Size and NPath Semantics](0020-method-size-and-npath-semantics.md) — dedicated method statement count, MI migration, and recursive expression-path accounting
 - [0021 — Declaration-Scoped Callable Identity and Dependency Projections](0021-declaration-scoped-callable-identity-and-dependency-projections.md) — intrinsic declaration identity, callable ownership, and separate architecture/coupling/ClassRank projections
+- [0022 — Capability-Oriented Modular Monolith](0022-capability-oriented-modular-monolith.md) — accepted capability-oriented direction over current manifest-generated owner enforcement; supersedes ADR 0012, with physical P1-P8 migration still pending

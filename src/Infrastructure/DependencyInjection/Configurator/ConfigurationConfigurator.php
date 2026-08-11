@@ -109,8 +109,8 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
         // ConfigurationPipeline will be populated by ConfigurationStageCompilerPass.
         // The pipeline runs before RuntimeConfigurator::configureLogger() and
         // therefore does NOT receive a logger: any warnings produced during
-        // resolution (currently `mutual-allow` detection in the architecture
-        // factory) are captured as DeferredWarnings inside the
+        // resolution (for example, wildcard self-allow detection) are captured
+        // as DeferredWarnings inside the
         // ResolvedConfiguration and replayed once the user-facing logger is
         // ready. See RuntimeConfigurator::drainDeferredWarnings().
         $container->register(ConfigurationPipeline::class)

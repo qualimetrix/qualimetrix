@@ -44,8 +44,8 @@ final class RuntimeConfigurator
 
         $this->configureLogger($input, $output);
 
-        // Drain warnings captured during configuration resolution (e.g. mutual-allow
-        // detection in ArchitectureConfigurationFactory). These were buffered as
+        // Drain warnings captured during configuration resolution (e.g. wildcard
+        // self-allow detection). These were buffered as
         // DeferredWarning records because the user-facing logger was not yet
         // configured at that point — replay them now that it is.
         $this->drainDeferredWarnings($resolved);
@@ -124,9 +124,8 @@ final class RuntimeConfigurator
      *
      * Configuration resolution happens before {@see self::configureLogger()},
      * so the {@see LoggerHolder} still carries a NullLogger when the
-     * architecture factory runs. To prevent its warnings (currently:
-     * `mutual-allow` detection in the allow-list) from being dropped, the
-     * factory buffers them in
+     * architecture factory runs. To prevent its allow-list warnings from being
+     * dropped, the factory buffers them in
      * {@see \Qualimetrix\Configuration\Pipeline\ResolvedConfiguration::$deferredWarnings};
      * this method drains the buffer through the now-configured logger.
      */

@@ -88,7 +88,7 @@ final class AllowValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function selfReferenceIsSilentlyStripped(): void
+    public function itPreservesSelfReferenceForExactCycleValidation(): void
     {
         $warnings = [];
         $entries = $this->validator->validate(
@@ -97,9 +97,9 @@ final class AllowValidatorTest extends TestCase
             $warnings,
         );
 
-        // 'controller' should not appear in its own explicit target list.
+        // The downstream ExactAllowCycleValidator needs the explicit self-edge.
         self::assertCount(1, $entries);
-        self::assertExactEntry($entries[0], 'controller', ['service']);
+        self::assertExactEntry($entries[0], 'controller', ['controller', 'service']);
         self::assertSame([], $warnings);
     }
 

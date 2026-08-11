@@ -265,19 +265,17 @@ final class ConfigurationPipelineTest extends TestCase
     }
 
     #[Test]
-    public function mutualAllowWarningSurfacesAsDeferredWarning(): void
+    public function wildcardSelfAllowWarningSurfacesAsDeferredWarning(): void
     {
         $pipeline = new ConfigurationPipeline();
 
         $configStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
             'architecture' => [
                 'layers' => [
-                    ['name' => 'a', 'patterns' => ['App\\A']],
-                    ['name' => 'b', 'patterns' => ['App\\B']],
+                    ['name' => 'domain-orders', 'patterns' => ['App\\Domain\\Orders\\**']],
                 ],
                 'allow' => [
-                    'a' => ['b'],
-                    'b' => ['a'],
+                    'domain-*' => ['domain-*'],
                 ],
             ],
         ]));
@@ -287,15 +285,15 @@ final class ConfigurationPipelineTest extends TestCase
         $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
         $resolved = $pipeline->resolve($context);
 
-        $mutualWarnings = array_values(array_filter(
+        $wildcardSelfWarnings = array_values(array_filter(
             $resolved->deferredWarnings,
             static fn(DeferredWarning $w): bool => $w->level === 'warning'
-                && str_contains($w->message, 'mutual-allow'),
+                && str_contains($w->message, 'wildcard-self-allow'),
         ));
 
-        self::assertCount(1, $mutualWarnings);
-        self::assertStringContainsString('a', $mutualWarnings[0]->message);
-        self::assertStringContainsString('b', $mutualWarnings[0]->message);
+        self::assertCount(1, $wildcardSelfWarnings);
+        self::assertStringContainsString("'domain-*'", $wildcardSelfWarnings[0]->message);
+        self::assertStringContainsString('cross-instance edges', $wildcardSelfWarnings[0]->message);
     }
 
     #[Test]

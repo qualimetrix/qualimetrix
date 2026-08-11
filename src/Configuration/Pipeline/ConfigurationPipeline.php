@@ -17,7 +17,7 @@ use Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface;
  * and merges them according to priority order.
  *
  * The architecture configuration factory may emit warnings during resolution
- * (e.g. mutual-allow detection). Because {@see resolve()} runs before
+ * (e.g. wildcard self-allow detection). Because {@see resolve()} runs before
  * {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator::configureLogger()}
  * has wired up the user-facing logger, those warnings are captured in
  * {@see ResolvedConfiguration::$deferredWarnings} via
@@ -83,8 +83,8 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
      */
     private function buildResolved(array $merged, array $appliedSources): ResolvedConfiguration
     {
-        // The architecture factory emits PSR-3-shaped records (e.g. mutual-allow
-        // detection) for downstream replay. They are collected into
+        // The architecture factory emits PSR-3-shaped records (e.g. wildcard
+        // self-allow detection) for downstream replay. They are collected into
         // ResolvedConfiguration::$deferredWarnings and drained by
         // RuntimeConfigurator after the user logger is wired up.
         $factoryResult = $this->architectureConfigurationFactory->fromArray(

@@ -59,20 +59,17 @@ final class DeferredWarningIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function mutualAllowWarningSurvivesPipelineAndReachesConfiguredLogger(): void
+    public function wildcardSelfAllowWarningSurvivesPipelineAndReachesConfiguredLogger(): void
     {
-        // Arrange: a qmx.yaml with a mutual-allow pair that the architecture
+        // Arrange: a qmx.yaml with a glob self-reference that the architecture
         // factory will flag as a deferred warning.
         $configYaml = <<<'YAML'
 architecture:
   layers:
-    - name: a
-      patterns: ['App\A']
-    - name: b
-      patterns: ['App\B']
+    - name: domain-orders
+      patterns: ['App\Domain\Orders\**']
   allow:
-    a: ['b']
-    b: ['a']
+    domain-*: ['domain-*']
 YAML;
         file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
 
@@ -84,16 +81,16 @@ YAML;
         // of dropping it through the NullLogger placeholder.
         $resolved = $pipeline->resolve($context);
 
-        $mutualWarnings = array_values(array_filter(
+        $wildcardSelfWarnings = array_values(array_filter(
             $resolved->deferredWarnings,
             static fn(DeferredWarning $w): bool => $w->level === 'warning'
-                && str_contains($w->message, 'mutual-allow'),
+                && str_contains($w->message, 'wildcard-self-allow'),
         ));
 
         self::assertCount(
             1,
-            $mutualWarnings,
-            'Pipeline must capture mutual-allow as a DeferredWarning instead of routing it to the still-placeholder logger.',
+            $wildcardSelfWarnings,
+            'Pipeline must capture wildcard-self-allow as a DeferredWarning instead of routing it to the still-placeholder logger.',
         );
 
         // Act 2: install a recording logger into the holder BEFORE invoking
@@ -110,8 +107,8 @@ YAML;
         // Assert: the warning landed in the recording logger.
         self::assertCount(1, $recording->records);
         self::assertSame('warning', $recording->records[0]['level']);
-        self::assertStringContainsString('mutual-allow', $recording->records[0]['message']);
-        self::assertStringContainsString('a ↔ b', $recording->records[0]['message']);
+        self::assertStringContainsString('wildcard-self-allow', $recording->records[0]['message']);
+        self::assertStringContainsString("'domain-*'", $recording->records[0]['message']);
     }
 
     #[Test]
@@ -157,13 +154,10 @@ YAML;
         $configYaml = <<<'YAML'
 architecture:
   layers:
-    - name: a
-      patterns: ['App\A']
-    - name: b
-      patterns: ['App\B']
+    - name: domain-orders
+      patterns: ['App\Domain\Orders\**']
   allow:
-    a: ['b']
-    b: ['a']
+    domain-*: ['domain-*']
 YAML;
         file_put_contents($this->tempDir . '/qmx.yaml', $configYaml);
 
@@ -187,13 +181,13 @@ YAML;
         $drain = new ReflectionMethod(RuntimeConfigurator::class, 'drainDeferredWarnings');
         $drain->invoke($runtimeConfigurator, $resolved);
 
-        $mutual = array_values(array_filter(
+        $wildcardSelf = array_values(array_filter(
             $recording->records,
             static fn(array $record): bool => $record['level'] === 'warning'
-                && str_contains($record['message'], 'mutual-allow'),
+                && str_contains($record['message'], 'wildcard-self-allow'),
         ));
-        self::assertCount(1, $mutual, 'Mutual-allow warning must reach the configured logger via the production drain path.');
-        self::assertStringContainsString('a ↔ b', $mutual[0]['message']);
+        self::assertCount(1, $wildcardSelf, 'Wildcard-self-allow warning must reach the configured logger via the production drain path.');
+        self::assertStringContainsString("'domain-*'", $wildcardSelf[0]['message']);
     }
 
     #[Test]

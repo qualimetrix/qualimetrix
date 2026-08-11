@@ -20,7 +20,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * live in {@see \Qualimetrix\Tests\Architecture\Unit\Configuration\Validation}.
  *
  * Cases retained here verify that:
- * - The factory composes the four validators in the expected order.
+ * - The factory composes its validation pipeline in the expected order.
  * - Top-level structural validation (`architecture:` key shape) is enforced.
  * - The result object carries both the {@see ArchitectureConfiguration} and
  *   the deferred-warning list.
@@ -70,7 +70,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
     #[Test]
     public function fullConfigurationIsAssembledFromAllValidators(): void
     {
-        // Exercises layers + allow + coverage + mutual-allow in one shot.
+        // Exercises layers + allow + coverage in one shot.
         $result = $this->factory->fromArray([
             'layers' => [
                 ['name' => 'controller', 'patterns' => ['App\\Controller']],
@@ -78,7 +78,7 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
             ],
             'allow' => [
                 'controller' => ['service'],
-                'service' => ['controller'], // mutual ↔
+                'service' => [],
             ],
             'coverage' => 'warn',
         ]);
@@ -87,16 +87,92 @@ final class ArchitectureConfigurationFactoryTest extends TestCase
         self::assertSame(['controller', 'service'], $config->registry()->layerNames());
         self::assertSame(CoverageMode::Warn, $config->coverage());
         self::assertTrue($config->policy()->isAllowed('controller', 'service'));
-        self::assertTrue($config->policy()->isAllowed('service', 'controller'));
+        self::assertFalse($config->policy()->isAllowed('service', 'controller'));
 
         // Registry resolves classes correctly.
         $registry = $config->registry();
         self::assertSame('controller', $registry->resolveLayer(SymbolPath::forClass('App\\Controller', 'UserController')));
         self::assertSame('service', $registry->resolveLayer(SymbolPath::forClass('App\\Service', 'UserService')));
 
-        // Mutual-allow warning surfaced.
-        self::assertCount(1, $result->warnings);
-        self::assertStringContainsString('mutual-allow', $result->warnings[0]->message);
+        self::assertSame([], $result->warnings);
+    }
+
+    #[Test]
+    public function itRejectsAnExactSelfLoopBeforeAnalysis(): void
+    {
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('directed cycle');
+        $this->expectExceptionMessage('service -> service');
+
+        $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'service', 'patterns' => ['App\\Service']],
+            ],
+            'allow' => [
+                'service' => ['service'],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function itRejectsAnExactTwoLayerCycleBeforeAnalysis(): void
+    {
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('directed cycle');
+        $this->expectExceptionMessage('controller -> service -> controller');
+
+        $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                ['name' => 'service', 'patterns' => ['App\\Service']],
+            ],
+            'allow' => [
+                'controller' => ['service'],
+                'service' => ['controller'],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function itRejectsAnExactTransitiveCycleBeforeAnalysis(): void
+    {
+        $this->expectException(ConfigLoadException::class);
+        $this->expectExceptionMessage('directed cycle');
+        $this->expectExceptionMessage('application -> domain -> persistence -> application');
+
+        $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'application', 'patterns' => ['App\\Application']],
+                ['name' => 'domain', 'patterns' => ['App\\Domain']],
+                ['name' => 'persistence', 'patterns' => ['App\\Persistence']],
+            ],
+            'allow' => [
+                'application' => ['domain'],
+                'domain' => ['persistence'],
+                'persistence' => ['application'],
+            ],
+        ]);
+    }
+
+    #[Test]
+    public function itAcceptsAnExactDirectedAcyclicGraph(): void
+    {
+        $result = $this->factory->fromArray([
+            'layers' => [
+                ['name' => 'application', 'patterns' => ['App\\Application']],
+                ['name' => 'domain', 'patterns' => ['App\\Domain']],
+                ['name' => 'persistence', 'patterns' => ['App\\Persistence']],
+            ],
+            'allow' => [
+                'application' => ['domain', 'persistence'],
+                'domain' => ['persistence'],
+                'persistence' => [],
+            ],
+        ]);
+
+        self::assertTrue($result->configuration->policy()->isAllowed('application', 'domain'));
+        self::assertTrue($result->configuration->policy()->isAllowed('domain', 'persistence'));
+        self::assertFalse($result->configuration->policy()->isAllowed('persistence', 'application'));
     }
 
     #[Test]

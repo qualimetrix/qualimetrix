@@ -112,15 +112,6 @@
                 "count": 1
             }
         ],
-        "declaration:callable:Qualimetrix\\Analysis\\Collection\\FileProcessor::extractCallableMetrics@src/Analysis/Collection/FileProcessor.php:4356": [
-            {
-                "channel": "complexity.cognitive#complexity.cognitive.callable",
-                "magnitudes": [
-                    15
-                ],
-                "count": 1
-            }
-        ],
         "declaration:callable:Qualimetrix\\Analysis\\Discovery\\FinderFileDiscovery::discover@src/Analysis/Discovery/FinderFileDiscovery.php:464": [
             {
                 "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
@@ -313,7 +304,7 @@
                 "count": 1
             }
         ],
-        "declaration:callable:Qualimetrix\\Architecture\\Rules\\LayerViolationRule::collectEdgeViolations@src/Architecture/Rules/LayerViolationRule.php:17931": [
+        "declaration:callable:Qualimetrix\\Architecture\\Rules\\LayerViolationRule::collectEdgeViolations@src/Architecture/Rules/LayerViolationRule.php:18791": [
             {
                 "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
                 "magnitudes": [
@@ -1557,7 +1548,7 @@
                 "count": 1
             }
         ],
-        "declaration:class:Qualimetrix\\Architecture\\Configuration\\ArchitectureConfigurationFactory@src/Architecture/Configuration/ArchitectureConfigurationFactory.php:3198": [
+        "declaration:class:Qualimetrix\\Architecture\\Configuration\\ArchitectureConfigurationFactory@src/Architecture/Configuration/ArchitectureConfigurationFactory.php:3214": [
             {
                 "channel": "coupling.instability#coupling.instability.class",
                 "magnitudes": [
@@ -1602,7 +1593,7 @@
                 "count": 1
             }
         ],
-        "declaration:class:Qualimetrix\\Architecture\\Rules\\LayerViolationRule@src/Architecture/Rules/LayerViolationRule.php:4801": [
+        "declaration:class:Qualimetrix\\Architecture\\Rules\\LayerViolationRule@src/Architecture/Rules/LayerViolationRule.php:4866": [
             {
                 "channel": "coupling.cbo#coupling.cbo.class",
                 "magnitudes": [

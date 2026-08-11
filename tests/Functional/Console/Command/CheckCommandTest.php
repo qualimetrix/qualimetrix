@@ -551,7 +551,7 @@ YAML);
 
     /**
      * Extracts a JSON object document from the captured stdout. Configuration
-     * warnings (e.g. architecture mutual-allow notices) are written to the same
+     * warnings (e.g. architecture wildcard-self-allow notices) are written to the same
      * stream before the document; we anchor on the first byte offset from which
      * {@see json_decode} succeeds.
      */

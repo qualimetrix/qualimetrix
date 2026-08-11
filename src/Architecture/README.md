@@ -1,11 +1,15 @@
-# Architecture (vertical slice)
+# Architecture (ADR 0010 pilot)
 
 Layer-policy and circular-dependency detection for static analysis. This is the
 project's **pilot vertical slice** — the first feature organized as a
 self-contained domain tree rather than scattered across the horizontal layers.
 See [ADR 0010](../../docs/adr/0010-architecture-vertical-slice.md) for the
-pilot rationale and [ADR 0012](../../docs/adr/0012-hybrid-architectural-direction.md)
-for the project-wide hybrid direction.
+historical pilot rationale. [ADR 0022](../../docs/adr/0022-capability-oriented-modular-monolith.md)
+replaces the project-wide hybrid direction with leaf capability ownership and
+supersedes [ADR 0012](../../docs/adr/0012-hybrid-architectural-direction.md).
+The current combined slice remains a migration input: later packages will
+separate declared layer policy from circular-dependency evidence; that move has
+not happened yet.
 
 The slice covers two user-facing rules:
 
@@ -51,27 +55,26 @@ src/Architecture/
 └── README.md           # This file
 ```
 
-## External boundary
+## Governance boundary
 
-Per ADR 0010 the slice has a single explicit boundary:
+The current internal manifest assigns the slice's declarations to the semantic
+owner `Analysis.Policy.Architecture`. `ArchitectureLifecycleHook` is the one
+temporary exception: it retains that true owner and `internal` visibility in
+the manifest, but occupies a singleton qmx enforcement seam until P4 can return
+it without recreating a coarse owner-graph cycle. A seam is not a module or a
+published API.
 
-- **Depends on:** `Core` (cross-cutting primitives — `SymbolPath`, `Violation`,
-  `Severity`, `Dependency*`, `NamespaceMatcher`), `Rules` (only the
-  `AbstractRule` / `RuleInterface` registration contract), `Configuration`
-  (`ConfigLoadException`, `ResolvedConfiguration`), `Analysis.Lifecycle`
-  (`AnalysisLifecycleHookInterface`, implemented by `ArchitectureLifecycleHook`).
-- **Depended on by:** `Analysis.Pipeline` (calls
-  `ArchitectureProcessor::prepare()` between Collection and Enrichment),
-  `Configuration` (consumes `ArchitectureConfigurationFactory` in
-  `ConfigurationPipeline`),
-  `Infrastructure.Console` (`LayerAssignmentCommand`, `RuntimeConfigurator`),
-  `Infrastructure.DI` (`ArchitectureConfigurator`).
+The generated qmx projection enforces coarse semantic-owner/seam dependencies.
+The mandatory manifest checker enforces the exact boundary: contract consumers,
+`internal|contract` visibility and temporary source-FQCN-to-target-FQCN grants.
+It runs through `composer architecture:check` before selfcheck. A direct
+`bin/qmx check` runs the public qmx rule but not this repository-only exact
+manifest policy.
 
-Symfony is a framework dependency, not a layer: it is declared under
-`coupling.framework-namespaces` and never appears in an allow-list.
-
-The project's own `qmx.yaml` enforces this surface (deptrac was retired in
-[ADR 0014](../../docs/adr/0014-deptrac-retirement.md)).
+Current dependencies and consumers are therefore read from the manifest and its
+generated import inventory rather than maintained as a second hand-written
+allow-list here. Symfony remains a framework dependency, not a project owner.
+Deptrac was retired in [ADR 0014](../../docs/adr/0014-deptrac-retirement.md).
 
 Adapters live in Infrastructure:
 
@@ -82,37 +85,31 @@ Adapters live in Infrastructure:
   ADR 0012 rule 4): symfony/console is an infrastructure concern, not a
   domain one.
 
-## Internal boundaries
+## Internal layout and enforcement
 
-The four sub-namespaces are **separate enforced layers**, not one flat
-`architecture` layer. [ADR 0010](../../docs/adr/0010-architecture-vertical-slice.md)
-Part 5 granted the slice internal freedom for the duration of the pilot
-migration; [ADR 0016](../../docs/adr/0016-subject-cohesion.md) expired that
-grant once the migration landed and supersedes Part 5 on this point —
-boundaries are controlled machine-side at every level.
+`Domain/`, `Configuration/`, `Processing/` and `Rules/` are subdivisions of the
+same current semantic owner, not four qmx layers. Same-owner imports therefore
+remain inside one coarse qmx owner layer. Exact publication and cross-owner
+imports are still fail-closed through the manifest checker; directory depth does
+not grant access.
 
-The allowed internal edges form a DAG:
+The current governance tests pin both halves of the model:
 
-| Sub-namespace    | May depend on          |
-| ---------------- | ---------------------- |
-| `Domain/`        | — (nothing in-slice)   |
-| `Configuration/` | `Domain`               |
-| `Processing/`    | `Domain`               |
-| `Rules/`         | `Domain`, `Processing` |
+- `DogfoodingTopologyTest` proves that every manifest declaration resolves to
+  its semantic-owner layer or its declared singleton seam, that the current
+  projection contains 37 owners + 14 seams + `external`, and that its 296-edge
+  allow graph is acyclic;
+- `ModularArchitectureGovernanceIntegrationTest` proves generated freshness and
+  exact manifest enforcement, including rejection of an unlisted internal
+  sibling import even when a coarse owner edge exists;
+- `FailClosedModularTopologyIntegrationTest` proves the coarse qmx model keeps a
+  contract and its internal sibling in one owner layer, plus uncovered
+  taxonomy/root and unlisted child declarations, uncovered endpoints, isolated
+  uncovered classes and actual class-cycle detection.
 
-`qmx.yaml` declares the layers as `architecture-domain`,
-`architecture-configuration`, `architecture-processing` and `architecture-rules`.
-Each of the four additionally carries the *same* external allow-list —
-`[core, rules, configuration, analysis-lifecycle]` — so the slice reaches
-outward exactly as far as it did as one flat layer; ADR 0010 Part 4 fixes that
-boundary and the split deliberately left it alone. Narrowing it per sub-layer
-(only `Processing` actually uses `analysis-lifecycle`, only `Rules` uses `rules`)
-is a separate decision, not a consequence of this one.
-
-`tests/Integration/Architecture/DogfoodingTopologyTest.php` pins the shape: all
-twelve ordered pairs of sub-layers are asserted against the table above, and a
-guard rejects classes placed directly in `src/Architecture/`, which would match
-no sub-layer pattern and so escape enforcement entirely.
+ADR 0022 accepts `Analysis\Policy\Architecture` as the target namespace. The
+current physical `src/Architecture/` layout remains until P4; current semantic
+ownership is not evidence that this namespace move has occurred.
 
 ## Sub-namespaces
 
@@ -152,7 +149,8 @@ Translates the raw YAML `architecture:` map into the `Domain/` types.
 
 - `ArchitectureConfigurationFactory::fromArray()` — produces an
   `ArchitectureFactoryResult` (configuration + deferred warnings such as
-  `mutual-allow` symmetry detection or `wildcard-self-allow`).
+  `wildcard-self-allow`). Exact allow edges are validated separately as a DAG
+  and fail configuration loading rather than becoming deferred warnings.
 - `Allow/AllowAliasExpander` — expands relation aliases (e.g. `inheritance`
   → `extends` + `implements` + `trait_use`) and validates direct
   `DependencyType` tokens reflectively against `DependencyType::cases()`,
@@ -163,10 +161,14 @@ Translates the raw YAML `architecture:` map into the `Domain/` types.
     detection, template-vs-static dispatch.
   - `AllowValidator` — selector parse + cross-reference against declared
     layer names (exact-form only, so glob/captured forms aren't rejected
-    pre-expansion).
+    pre-expansion). Exact self-references remain visible to cycle validation.
   - `CoverageValidator`, `ExcludeBlockValidator`, `LayerCriterionNormalizer`,
-    `LongFormAllowEntryNormalizer`, `MutualAllowDetector`,
-    `WildcardSelfAllowDetector`.
+    `LongFormAllowEntryNormalizer`, `ExactAllowCycleValidator`,
+    `WildcardSelfAllowDetector`. `ExactAllowCycleValidator` projects only
+    exact-source to exact-target entries and rejects self, mutual and longer
+    directed cycles with `ConfigLoadException`. Glob and captured selectors
+    are observation-driven and therefore are not projected statically;
+    wildcard self-shaped entries retain their warning.
 
 The factory's deferred warnings are aggregated by `ConfigurationPipeline`
 into `ResolvedConfiguration::$deferredWarnings`.
@@ -196,10 +198,12 @@ The slice's user-facing consumers.
 - `LayerViolationRule` — pulls the prepared configuration from the
   constructor-injected `ArchitectureProcessorInterface` (ADR 0008), reads its
   registry already bound to the run's dependency graph, then walks all
-  dependency edges. Emits four violation kinds: `architecture.layer-violation`,
+  dependency edges. Emits five violation kinds: `architecture.layer-violation`,
   `architecture.coverage` (when `coverage != ignore`; severity is `warning`
   for `coverage: warn` and `error` for `coverage: error` — the mode name and
-  the emitted severity now match exactly),
+  the emitted severity now match exactly). Coverage includes analysed logical
+  classes outside every layer even when they have no dependency edges, plus
+  dependency edges with unclassified endpoints,
   `architecture.unreachable-layer` (default severity `info` — fires only when
   a layer matched zero classes AND zero dependency-edge ends, so a layer that
   exists purely to classify out-of-tree code, e.g. a vendor namespace like
@@ -266,9 +270,9 @@ add their own hooks without modifying any Infrastructure type. See ADR 0008.
 
 ## Testing approach
 
-The pilot's tests form a three-level pyramid. Future vertical slices should
-mirror this split so the playbook (the `vertical-slice-playbook` memory
-entry) stays applicable.
+The pilot's tests form a three-level pyramid. Under ADR 0022, future tests
+follow their owning subject first; test level is an internal subdivision of
+that capability rather than a reusable vertical-slice skeleton.
 
 ### Unit — `tests/Architecture/Unit/`
 
@@ -350,4 +354,5 @@ that could be integration tests miss bugs that live in the wiring.
 - [ADR 0007 — Phase 2 design (multi-criterion membership, template layers, captures, exclude, relation filters)](../../docs/adr/0007-architecture-rules-phase-2-design.md)
 - [ADR 0008 — ArchitectureProcessor service](../../docs/adr/0008-architecture-processor-service.md)
 - [ADR 0010 — Architecture as vertical slice (pilot)](../../docs/adr/0010-architecture-vertical-slice.md)
-- [ADR 0012 — Hybrid architectural direction](../../docs/adr/0012-hybrid-architectural-direction.md)
+- [ADR 0012 — Hybrid architectural direction (superseded)](../../docs/adr/0012-hybrid-architectural-direction.md)
+- [ADR 0022 — Accepted capability-oriented modular monolith](../../docs/adr/0022-capability-oriented-modular-monolith.md)

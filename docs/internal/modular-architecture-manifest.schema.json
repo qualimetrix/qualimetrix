@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qualimetrix.dev/internal/modular-architecture-manifest.schema.json",
+  "title": "Qualimetrix internal modular architecture manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "owners", "declarations", "temporary_internal_grants", "enforcement_seams"],
+  "properties": {
+    "version": { "const": 1 },
+    "owners": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)*$" }
+    },
+    "declarations": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/declaration" }
+    },
+    "temporary_internal_grants": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/internalGrant" }
+    },
+    "enforcement_seams": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/seam" }
+    }
+  },
+  "$defs": {
+    "declaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "kind", "owner", "visibility", "closure_package", "consumers"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^src/.+\\.php$" },
+        "kind": { "enum": ["class", "interface", "trait", "enum"] },
+        "owner": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)*$" },
+        "visibility": { "enum": ["internal", "contract"] },
+        "closure_package": { "pattern": "^P[1-8]$" },
+        "consumers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/consumer" }
+        }
+      }
+    },
+    "consumer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "source_fqcn", "closes_in"],
+      "properties": {
+        "owner": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)*$" },
+        "source_fqcn": { "type": ["string", "null"] },
+        "closes_in": { "type": ["string", "null"], "pattern": "^P[1-8]$" }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "source_fqcn": { "type": "null" },
+            "closes_in": { "type": "null" }
+          }
+        },
+        {
+          "properties": {
+            "source_fqcn": { "type": "string", "minLength": 1 },
+            "closes_in": { "type": "string", "pattern": "^P[1-8]$" }
+          }
+        }
+      ]
+    },
+    "internalGrant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_fqcn", "target_fqcn", "owner", "rationale", "closes_in"],
+      "properties": {
+        "source_fqcn": { "type": "string", "minLength": 1 },
+        "target_fqcn": { "type": "string", "minLength": 1 },
+        "owner": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)*$" },
+        "rationale": { "type": "string", "minLength": 1 },
+        "closes_in": { "type": "string", "pattern": "^P[1-8]$" }
+      }
+    },
+    "seam": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["semantic_owner", "layer", "closes_in"],
+      "properties": {
+        "semantic_owner": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)*$" },
+        "layer": { "type": "string", "pattern": "^seam-[a-z0-9]+(-[a-z0-9]+)*$" },
+        "closes_in": { "type": "string", "pattern": "^P[1-8]$" }
+      }
+    }
+  }
+}
