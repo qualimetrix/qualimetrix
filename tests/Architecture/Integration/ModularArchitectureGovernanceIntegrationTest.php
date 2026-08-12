@@ -28,6 +28,53 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
 
         self::assertSame(0, $exitCode, $output);
         self::assertSame($before, $this->hashes($paths), '--check must not modify qmx or generated evidence.');
+
+        $discovery = file(
+            $this->root() . '/docs/internal/generated/modular-architecture/test-phpunit-discovery.txt',
+            \FILE_IGNORE_NEW_LINES | \FILE_SKIP_EMPTY_LINES,
+        );
+        self::assertIsArray($discovery);
+        $testIds = array_values(array_filter(
+            $discovery,
+            static fn(string $line): bool => str_starts_with($line, ' - '),
+        ));
+        $sortedTestIds = $testIds;
+        sort($sortedTestIds, \SORT_STRING);
+        self::assertCount(7214, $testIds);
+        self::assertSame($sortedTestIds, $testIds, 'Generated PHPUnit discovery IDs must be canonical across environments.');
+
+        $path = $this->root() . '/docs/internal/generated/modular-architecture/test-phpunit-discovery.txt';
+        $lines = file($path, \FILE_IGNORE_NEW_LINES);
+        self::assertIsArray($lines);
+        self::assertCount(7217, $lines);
+
+        $malformed = $lines;
+        $malformed[3] = ' - not-an-exact-test-id';
+        [$exitCode, $output] = $this->runWithDiscoveryProbe(implode("\n", $malformed) . "\n");
+        self::assertNotSame(0, $exitCode);
+        self::assertStringContainsString('Unexpected PHPUnit discovery output line', $output);
+
+        $interiorBlank = $lines;
+        $interiorBlank[4] = '';
+        [$exitCode, $output] = $this->runWithDiscoveryProbe(implode("\n", $interiorBlank) . "\n");
+        self::assertNotSame(0, $exitCode);
+        self::assertStringContainsString('Unexpected PHPUnit discovery output line', $output);
+
+        [$exitCode, $output] = $this->runWithDiscoveryProbe(implode("\n", $lines) . "\n\n");
+        self::assertNotSame(0, $exitCode);
+        self::assertStringContainsString('Unexpected PHPUnit discovery output line', $output);
+
+        $duplicate = $lines;
+        $duplicate[] = $duplicate[3];
+        [$exitCode, $output] = $this->runWithDiscoveryProbe(implode("\n", $duplicate) . "\n");
+        self::assertNotSame(0, $exitCode);
+        self::assertStringContainsString('Duplicate PHPUnit exact test ID', $output);
+
+        $substituted = $lines;
+        $substituted[3] = ' - Qualimetrix\\Tests\\Synthetic\\ReplacementTest::itLooksLikeARealTest';
+        [$exitCode, $output] = $this->runWithDiscoveryProbe(implode("\n", $substituted) . "\n");
+        self::assertNotSame(0, $exitCode);
+        self::assertStringContainsString('does not match the live exact test IDs', $output);
     }
 
     #[Test]
@@ -732,6 +779,24 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
                 '--check',
                 '--qmx-source=' . $path,
                 '--qmx-output=' . $path,
+            ]);
+        } finally {
+            unlink($path);
+        }
+    }
+
+    /** @return array{int, string} */
+    private function runWithDiscoveryProbe(string $contents): array
+    {
+        $path = tempnam(sys_get_temp_dir(), 'qmx-discovery-');
+        self::assertIsString($path);
+        file_put_contents($path, $contents);
+
+        try {
+            return $this->runCommand([
+                \PHP_BINARY,
+                $this->root() . '/scripts/generate-modular-architecture-test-inventory.php',
+                '--discovery-probe=' . $path,
             ]);
         } finally {
             unlink($path);

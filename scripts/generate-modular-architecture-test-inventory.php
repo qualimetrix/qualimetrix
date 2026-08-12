@@ -25,17 +25,25 @@ $classificationProbeArguments = array_values(array_filter(
     array_slice($arguments, 1),
     static fn(string $argument): bool => str_starts_with($argument, '--classification-probe='),
 ));
+$discoveryProbeArguments = array_values(array_filter(
+    array_slice($arguments, 1),
+    static fn(string $argument): bool => str_starts_with($argument, '--discovery-probe='),
+));
 if (count($outputDirectoryArguments) > 1) {
     fail('Only one --output-directory path may be provided.');
 }
 if (count($classificationProbeArguments) > 1) {
     fail('Only one classification probe path may be provided.');
 }
+if (count($discoveryProbeArguments) > 1) {
+    fail('Only one discovery probe path may be provided.');
+}
 $unknownArguments = array_values(array_filter(
     array_slice($arguments, 1),
     static fn(string $argument): bool => $argument !== '--check'
         && !str_starts_with($argument, '--output-directory=')
-        && !str_starts_with($argument, '--classification-probe='),
+        && !str_starts_with($argument, '--classification-probe=')
+        && !str_starts_with($argument, '--discovery-probe='),
 ));
 if ($unknownArguments !== []) {
     fail('Unknown argument: ' . implode(', ', $unknownArguments));
@@ -93,11 +101,26 @@ $phpunitDiscovery = runCommand(
     ['vendor/bin/phpunit', '--list-tests', '--no-coverage', ...$worktreeTestPaths],
     $projectRoot,
 );
+$parsedPhpunitDiscovery = parsePhpunitDiscovery($phpunitDiscovery);
+$canonicalPhpunitDiscovery = canonicalPhpunitDiscovery($parsedPhpunitDiscovery);
+if ($discoveryProbeArguments !== []) {
+    $probePath = substr($discoveryProbeArguments[0], strlen('--discovery-probe='));
+    $probe = file_get_contents($probePath);
+    if ($probe === false) {
+        fail('Cannot read PHPUnit discovery probe: ' . $probePath);
+    }
+    $parsedProbe = parsePhpunitDiscovery($probe);
+    if ($parsedProbe['exact_ids'] !== $parsedPhpunitDiscovery['exact_ids']) {
+        fail('PHPUnit discovery probe does not match the live exact test IDs.');
+    }
+    fwrite(STDOUT, canonicalPhpunitDiscovery($parsedProbe));
+    exit(0);
+}
 // Verify that the repository's configured suite topology remains readable.
 // The generated suite evidence below is derived from committable worktree
 // files, excluding ignored local files and dependencies.
 runCommand(['vendor/bin/phpunit', '--list-suites', '--no-coverage'], $projectRoot);
-$discoveredCaseCounts = discoveredCaseCounts($phpunitDiscovery);
+$discoveredCaseCounts = discoveredCaseCounts($parsedPhpunitDiscovery['exact_ids']);
 
 $rows = [];
 foreach ($worktreePaths as $path) {
@@ -154,7 +177,7 @@ if (!is_dir($outputDirectory) && !$check && !mkdir($outputDirectory, 0777, true)
 
 emitGenerated($outputDirectory . '/test-ownership.tsv', tsvContents($rows), $check);
 emitGenerated($outputDirectory . '/test-fixture-directories.tsv', tsvContents($fixtureDirectoryRows), $check);
-emitGenerated($outputDirectory . '/test-phpunit-discovery.txt', normalizeOutput($phpunitDiscovery), $check);
+emitGenerated($outputDirectory . '/test-phpunit-discovery.txt', $canonicalPhpunitDiscovery, $check);
 emitGenerated($outputDirectory . '/test-phpunit-suites.txt', worktreeSuiteOutput($rows, $phpunitDiscovery), $check);
 
 $summary = inventorySummary($rows, $fixtureDirectoryRows, $discoveredCaseCounts);
@@ -249,17 +272,15 @@ function drainProcessPipes($stdoutPipe, $stderrPipe): array
 }
 
 /**
+ * @param list<string> $exactIds
+ *
  * @return array<string, int>
  */
-function discoveredCaseCounts(string $output): array
+function discoveredCaseCounts(array $exactIds): array
 {
     $counts = [];
-    foreach (explode("\n", $output) as $line) {
-        if (preg_match('/^ - ([^:]+)::/', $line, $matches) !== 1) {
-            continue;
-        }
-
-        $class = $matches[1];
+    foreach ($exactIds as $exactId) {
+        $class = explode('::', $exactId, 2)[0];
         $counts[$class] = ($counts[$class] ?? 0) + 1;
     }
     ksort($counts, SORT_STRING);
@@ -823,9 +844,48 @@ function writeFileAtomically(string $path, string $contents): void
     }
 }
 
-function normalizeOutput(string $output): string
+/** @return array{version_line: string, exact_ids: list<string>} */
+function parsePhpunitDiscovery(string $output): array
 {
-    return rtrim(str_replace("\r\n", "\n", $output), "\n") . "\n";
+    $normalized = str_replace("\r\n", "\n", $output);
+    if (!str_ends_with($normalized, "\n")) {
+        fail('PHPUnit discovery output must end with a terminal LF.');
+    }
+    $lines = explode("\n", substr($normalized, 0, -1));
+    $versionLine = array_shift($lines);
+    if ($versionLine === null || !str_starts_with($versionLine, 'PHPUnit ')) {
+        fail('Cannot read the PHPUnit version line from discovery output.');
+    }
+    if (array_shift($lines) !== '' || array_shift($lines) !== 'Available tests:') {
+        fail('Cannot read the PHPUnit discovery heading.');
+    }
+
+    if ($lines === []) {
+        fail('PHPUnit discovery output contains no test IDs.');
+    }
+    $exactIds = [];
+    foreach ($lines as $line) {
+        if (preg_match('/^ - ([A-Za-z_][A-Za-z0-9_\\\\]*)::([A-Za-z_][A-Za-z0-9_]*)(?:#[0-9]+|".*")?$/', $line, $matches) !== 1) {
+            fail('Unexpected PHPUnit discovery output line: ' . $line);
+        }
+        $exactId = substr($line, 3);
+        if (isset($exactIds[$exactId])) {
+            fail('Duplicate PHPUnit exact test ID: ' . $exactId);
+        }
+        $exactIds[$exactId] = true;
+    }
+    $exactIds = array_keys($exactIds);
+    sort($exactIds, \SORT_STRING);
+
+    return ['version_line' => $versionLine, 'exact_ids' => $exactIds];
+}
+
+/** @param array{version_line: string, exact_ids: list<string>} $discovery */
+function canonicalPhpunitDiscovery(array $discovery): string
+{
+    $testLines = array_map(static fn(string $exactId): string => ' - ' . $exactId, $discovery['exact_ids']);
+
+    return implode("\n", [$discovery['version_line'], '', 'Available tests:', ...$testLines]) . "\n";
 }
 
 /**
