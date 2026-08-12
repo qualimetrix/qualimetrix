@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Collection\Dependency\Export;
+namespace Qualimetrix\Reporting\GraphProjection;
 
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 
 /**
  * Exports dependency graphs to JSON format.
@@ -15,7 +15,7 @@ use Qualimetrix\Core\Dependency\DependencyGraphInterface;
  * - Statistics (node/edge counts)
  * - Namespace filtering (include/exclude) via shared options
  */
-final class JsonGraphExporter implements GraphExporterInterface
+final class JsonGraphExporter
 {
     /**
      * @param array<string>|null $includeNamespaces
@@ -105,16 +105,6 @@ final class JsonGraphExporter implements GraphExporterInterface
         ];
 
         return json_encode($result, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
-    }
-
-    public function getFormat(): string
-    {
-        return 'json';
-    }
-
-    public function getFileExtension(): string
-    {
-        return 'json';
     }
 
     /**

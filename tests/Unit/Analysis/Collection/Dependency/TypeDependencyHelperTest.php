@@ -147,7 +147,7 @@ PHP;
     }
 
     /**
-     * @return array<\Qualimetrix\Core\Dependency\Dependency>
+     * @return array<\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency>
      */
     private function analyze(string $code): array
     {

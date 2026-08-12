@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Core\Dependency;
+namespace Qualimetrix\Analysis\Evidence\DependencyModel\Contract;
 
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -15,6 +15,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * - Ca (Afferent Coupling): incoming dependencies
  * - Ce (Efferent Coupling): outgoing dependencies
  * - I (Instability): Ce / (Ca + Ce)
+ *
+ * @qmx-threshold coupling.cbo 27 -- HEAD raw 22 rises to current 26 through DependencyGraphBuilderInterface, DependencyGraphBuilder, AnalysisPipeline, and DependencyGraphProjector; stable graph query-port fan-in is this boundary's responsibility.
  */
 interface DependencyGraphInterface
 {

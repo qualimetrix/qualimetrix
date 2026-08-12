@@ -507,7 +507,7 @@ allow:
 
 Bare allow entries (`allow: { domain: [contracts] }`) keep "any relation kind" semantics — fully back-compatible.
 
-Available relation tokens come from two sources. **Direct values** mirror `Qualimetrix\Core\Dependency\DependencyType`:
+Available relation tokens come from two sources. **Direct values** mirror `Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType`:
 
 ```
 extends, implements, trait_use,
@@ -786,7 +786,7 @@ This works because the framework (`RuleOptionsFactory`) extracts `exclude_namesp
 - **`relations:` is a whitelist; aliases expand reflectively.** Long-form allow targets accept a `relations:` list that constrains which `DependencyType` kinds are permitted. Direct values are validated against `DependencyType::cases()` reflectively, so adding a new dependency kind to the collector automatically becomes accepted in YAML. There is no `forbid_relations:` — whitelist-only avoids resolution ambiguity and the maintenance cost of a parallel enum.
 - **Vendor namespaces are first-class layers.** Declare a `doctrine` or `symfony` layer with `Doctrine\**` / `Symfony\**` patterns to write policy against vendor edges (e.g., "only repositories may use Doctrine"). Vendor layers behave identically to project layers.
 - **Same-layer dependencies are always allowed** in the MVP. Sub-module isolation within a single layer is deferred to Phase 2.
-- **Reporting granularity is per use-site.** Each forbidden dependency edge in `Qualimetrix\Analysis\Collection\Dependency\DependencyGraph` produces one violation. If a class violates the policy through five different method calls, you get five violations. Baseline identity collapses them to a single entry (see Suppression above).
+- **Reporting granularity is per use-site.** Each forbidden dependency edge from `Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface` produces one violation. If a class violates the policy through five different method calls, you get five violations. Baseline identity collapses them to a single entry (see Suppression above).
 - **Out-of-layer ends are silently ignored** for layer-violation purposes. Their count is reported separately via the `coverage` mode.
 - **Default-enabled, but inert without layers.** The rule reports `enabled: true` by default and short-circuits when `architecture.layers` is empty, so projects without architecture configuration see zero overhead.
 - **Safety nets, not ambiguity errors.** The previous specificity-based algorithm rejected ambiguous configurations at load time. Under declaration-order matching, ambiguity does not exist — the order disambiguates — but the user can still **misorder** layers. Two diagnostics catch this, both defaulting to `info` severity but individually configurable (`unreachable_layer_severity` / `potential_shadow_severity`, see [Options](#layer-violation-options)): `architecture.unreachable-layer` (a layer that captured nothing) and `architecture.potential-shadow` (an earlier layer that silently stole classes from a later one). See the dedicated sections above.

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
@@ -174,7 +174,7 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(ConfigurationPipeline::class),
                 new Reference(CollectionOrchestratorInterface::class),
-                new Reference(DependencyGraphBuilder::class),
+                new Reference(DependencyGraphBuilderInterface::class),
                 new Reference(ArchitectureProcessorInterface::class),
                 new Reference(MetricRepositoryFactoryInterface::class),
                 new Reference(RuntimeConfigurator::class),

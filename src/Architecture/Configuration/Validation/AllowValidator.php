@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Architecture\Configuration\Validation;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Architecture\Domain\Allow\AllowListEntry;
 use Qualimetrix\Architecture\Domain\Allow\AllowTarget;
 use Qualimetrix\Architecture\Domain\Allow\InvalidSelectorException;
@@ -11,7 +12,6 @@ use Qualimetrix\Architecture\Domain\Allow\LayerSelector;
 use Qualimetrix\Architecture\Domain\Allow\LayerSelectorParser;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
-use Qualimetrix\Core\Dependency\DependencyType;
 
 /**
  * Parses and validates the {@code architecture.allow} sub-tree.

@@ -8,7 +8,7 @@ use LogicException;
 use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Collection\Metric\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Collection\Strategy\StrategySelectorInterface;
-use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Core\Metric\ClassWithMetrics;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;

@@ -179,8 +179,8 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
 - `RuleConfigurator` — remaining layered rules under `src/Rules/`
 - `ArchitectureConfigurator` — Architecture capability services and rules
 - `DuplicationConfigurator` — Duplication detector/provider wiring, contract alias, and capability-owned rule registration
-- `AnalysisConfigurator` — analysis pipeline, repository, strategies
-- `OutputConfigurator` — formatters and output
+- `AnalysisConfigurator` — analysis pipeline, repository and strategies; publishes the DependencyModel builder contract alias
+- `OutputConfigurator` — formatters plus the public GraphProjection contract alias backed by its internal projector
 
 **Method:**
 - `create(): ContainerBuilder` — runs all configurators and returns a compiled container

@@ -7,7 +7,6 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
 use Qualimetrix\Analysis\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\FileProcessor;
 use Qualimetrix\Analysis\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
@@ -15,6 +14,7 @@ use Qualimetrix\Analysis\Collection\Metric\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Collection\Strategy\StrategySelectorInterface;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface;
 use Qualimetrix\Analysis\Namespace_\ProjectNamespaceResolver;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
@@ -118,8 +118,13 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ]);
         $container->setAlias(RuleExecutorInterface::class, RuleExecutor::class);
 
-        // DependencyGraphBuilder for dependency analysis
-        $container->register(DependencyGraphBuilder::class);
+        // DependencyModel publishes the builder only through its contract.
+        $container->register(
+            'dependency_model.graph_builder',
+            'Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraphBuilder',
+        );
+        $container->setAlias(DependencyGraphBuilderInterface::class, 'dependency_model.graph_builder')
+            ->setPublic(true);
 
         // MetricEnricher - handles aggregation, global collectors, computed metrics, cycle/duplication detection
         $container->register(MetricEnricher::class)
@@ -146,8 +151,8 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(ConfigurationProviderInterface::class),
                 new Reference(MetricEnricher::class),
                 new Reference(ArchitectureProcessorInterface::class),
+                new Reference(DependencyGraphBuilderInterface::class),
                 new Reference(MetricRepositoryFactoryInterface::class),
-                new Reference(DependencyGraphBuilder::class),
                 new Reference(DelegatingLogger::class),
                 new Reference(ProfilerHolder::class),
                 new Reference(RuleSelector::class),

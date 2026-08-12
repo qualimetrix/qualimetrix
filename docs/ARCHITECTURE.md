@@ -33,15 +33,19 @@ primitives, `Infrastructure` to delivery/composition, and `Reporting` to output
 projection. P1 has landed `Analysis\Evidence\Duplication` as the first migrated
 leaf: it owns detection, its run-scoped result provider, entities, options,
 rule, tests and documentation, and exposes only
-`Contract\DuplicationInspectionInterface`. The remaining `Metrics`, `Rules`,
-`Configuration` and Analysis sub-namespaces stay in their physical legacy
-locations until P2-P8.
+`Contract\DuplicationInspectionInterface`. P2 has also landed
+`Analysis\Evidence\DependencyModel` and `Reporting\GraphProjection`: graph
+consumers use the model's five contracts, while Console uses Reporting's two
+public projection types and cannot import exporter internals. The remaining
+`Metrics`, `Rules`, `Configuration` and Analysis sub-namespaces stay in their
+physical legacy locations until P3-P8.
 
 P0 governance implements the current enforcement model. The versioned internal
-manifest covers all 697 declarations in 695 files and names 37 semantic
-owners. It generates a coarse qmx projection with 37 owner layers, 14 singleton
-enforcement seams and final `external`: 52 layers and 296 allow edges in the
-reviewed snapshot. `external` excludes `Qualimetrix\**`; `coverage: error` makes
+manifest covers all 701 declarations in 699 files and names 37 semantic
+owners. It generates a coarse qmx projection with 37 owner layers, 12 singleton
+enforcement seams and final `external`: 50 layers and 272 allow edges in the
+reviewed snapshot. The 84 exact internal grants project to 15 coarse edges.
+`external` excludes `Qualimetrix\**`; `coverage: error` makes
 an uncovered project class fail even when it has no dependency edges.
 
 The manifest checker is the exact owner/visibility/import authority. It runs as
@@ -170,8 +174,10 @@ composer test      # unit/integration tests
 3. Implement `RuleInterface` + create an Options class
 4. Register a capability root through its Infrastructure configurator; layered rules remain automatic
 
-Current capability examples are Architecture and
-[`Analysis.Evidence.Duplication`](../src/Analysis/Evidence/Duplication/README.md).
+Current capability examples are Architecture,
+[`Analysis.Evidence.Duplication`](../src/Analysis/Evidence/Duplication/README.md),
+[`Analysis.Evidence.DependencyModel`](../src/Analysis/Evidence/DependencyModel/README.md),
+and [`Reporting.GraphProjection`](../src/Reporting/GraphProjection/README.md).
 
 ### Add a New Output Format
 

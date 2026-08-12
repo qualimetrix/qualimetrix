@@ -215,44 +215,6 @@
       "closure_package": "P4",
       "consumers": []
     },
-    "Qualimetrix\\Analysis\\Collection\\Dependency\\DependencyGraph": {
-      "path": "src/Analysis/Collection/Dependency/DependencyGraph.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.DependencyModel",
-      "visibility": "contract",
-      "closure_package": "P2",
-      "consumers": [
-        {
-          "owner": "Analysis.Run",
-          "source_fqcn": null,
-          "closes_in": null
-        }
-      ]
-    },
-    "Qualimetrix\\Analysis\\Collection\\Dependency\\DependencyGraphBuilder": {
-      "path": "src/Analysis/Collection/Dependency/DependencyGraphBuilder.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.DependencyModel",
-      "visibility": "contract",
-      "closure_package": "P2",
-      "consumers": [
-        {
-          "owner": "Analysis.Run",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Infrastructure.DependencyInjection",
-          "source_fqcn": null,
-          "closes_in": null
-        }
-      ]
-    },
     "Qualimetrix\\Analysis\\Collection\\Dependency\\DependencyResolver": {
       "path": "src/Analysis/Collection/Dependency/DependencyResolver.php",
       "kind": "class",
@@ -286,62 +248,6 @@
         },
         {
           "owner": "Infrastructure.Parallel",
-          "source_fqcn": null,
-          "closes_in": null
-        }
-      ]
-    },
-    "Qualimetrix\\Analysis\\Collection\\Dependency\\Export\\DotExporter": {
-      "path": "src/Analysis/Collection/Dependency/Export/DotExporter.php",
-      "kind": "class",
-      "owner": "Reporting.GraphProjection",
-      "visibility": "contract",
-      "closure_package": "P2",
-      "consumers": [
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": null,
-          "closes_in": null
-        }
-      ]
-    },
-    "Qualimetrix\\Analysis\\Collection\\Dependency\\Export\\DotExporterOptions": {
-      "path": "src/Analysis/Collection/Dependency/Export/DotExporterOptions.php",
-      "kind": "class",
-      "owner": "Reporting.GraphProjection",
-      "visibility": "contract",
-      "closure_package": "P2",
-      "consumers": [
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": null,
-          "closes_in": null
-        }
-      ]
-    },
-    "Qualimetrix\\Analysis\\Collection\\Dependency\\Export\\GraphExporterInterface": {
-      "path": "src/Analysis/Collection/Dependency/Export/GraphExporterInterface.php",
-      "kind": "interface",
-      "owner": "Reporting.GraphProjection",
-      "visibility": "contract",
-      "closure_package": "P2",
-      "consumers": [
-        {
-          "owner": "Infrastructure.Console",
-          "source_fqcn": null,
-          "closes_in": null
-        }
-      ]
-    },
-    "Qualimetrix\\Analysis\\Collection\\Dependency\\Export\\JsonGraphExporter": {
-      "path": "src/Analysis/Collection/Dependency/Export/JsonGraphExporter.php",
-      "kind": "class",
-      "owner": "Reporting.GraphProjection",
-      "visibility": "contract",
-      "closure_package": "P2",
-      "consumers": [
-        {
-          "owner": "Infrastructure.Console",
           "source_fqcn": null,
           "closes_in": null
         }
@@ -674,6 +580,170 @@
           "closes_in": null
         }
       ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\Dependency": {
+      "path": "src/Analysis/Evidence/DependencyModel/Contract/Dependency.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "contract",
+      "closure_package": "P2",
+      "consumers": [
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": null,
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": null,
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphBuilderInterface": {
+      "path": "src/Analysis/Evidence/DependencyModel/Contract/DependencyGraphBuilderInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "contract",
+      "closure_package": "P2",
+      "consumers": [
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": null,
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": null,
+          "closes_in": null
+        },
+        {
+          "owner": "Infrastructure.DependencyInjection",
+          "source_fqcn": null,
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyGraphInterface": {
+      "path": "src/Analysis/Evidence/DependencyModel/Contract/DependencyGraphInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "contract",
+      "closure_package": "P2",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.CircularDependency",
+          "source_fqcn": null,
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Coupling",
+          "source_fqcn": null,
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": null,
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Evidence.Measurement",
+          "source_fqcn": null,
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": null,
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": null,
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": null,
+          "closes_in": null
+        },
+        {
+          "owner": "Reporting.GraphProjection",
+          "source_fqcn": null,
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyLocationInterface": {
+      "path": "src/Analysis/Evidence/DependencyModel/Contract/DependencyLocationInterface.php",
+      "kind": "interface",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "contract",
+      "closure_package": "P2",
+      "consumers": [
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": null,
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyType": {
+      "path": "src/Analysis/Evidence/DependencyModel/Contract/DependencyType.php",
+      "kind": "enum",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "contract",
+      "closure_package": "P2",
+      "consumers": [
+        {
+          "owner": "Analysis.Evidence.Design",
+          "source_fqcn": null,
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Finding",
+          "source_fqcn": null,
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Architecture",
+          "source_fqcn": null,
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Policy.Baseline",
+          "source_fqcn": null,
+          "closes_in": null
+        },
+        {
+          "owner": "Analysis.Run",
+          "source_fqcn": null,
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraph": {
+      "path": "src/Analysis/Evidence/DependencyModel/DependencyGraph.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "internal",
+      "closure_package": "P2",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraphBuilder": {
+      "path": "src/Analysis/Evidence/DependencyModel/DependencyGraphBuilder.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "internal",
+      "closure_package": "P2",
+      "consumers": []
+    },
+    "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\EmptyDependencyGraph": {
+      "path": "src/Analysis/Evidence/DependencyModel/EmptyDependencyGraph.php",
+      "kind": "class",
+      "owner": "Analysis.Evidence.DependencyModel",
+      "visibility": "internal",
+      "closure_package": "P2",
+      "consumers": []
     },
     "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationOptions": {
       "path": "src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php",
@@ -2894,116 +2964,6 @@
       "closure_package": "P4",
       "consumers": []
     },
-    "Qualimetrix\\Core\\Dependency\\Dependency": {
-      "path": "src/Core/Dependency/Dependency.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.DependencyModel",
-      "visibility": "contract",
-      "closure_package": "P2",
-      "consumers": [
-        {
-          "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Run",
-          "source_fqcn": null,
-          "closes_in": null
-        }
-      ]
-    },
-    "Qualimetrix\\Core\\Dependency\\DependencyGraphInterface": {
-      "path": "src/Core/Dependency/DependencyGraphInterface.php",
-      "kind": "interface",
-      "owner": "Analysis.Evidence.DependencyModel",
-      "visibility": "contract",
-      "closure_package": "P2",
-      "consumers": [
-        {
-          "owner": "Analysis.Evidence.CircularDependency",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.Measurement",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Finding",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Run",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Reporting.GraphProjection",
-          "source_fqcn": null,
-          "closes_in": null
-        }
-      ]
-    },
-    "Qualimetrix\\Core\\Dependency\\DependencyType": {
-      "path": "src/Core/Dependency/DependencyType.php",
-      "kind": "enum",
-      "owner": "Analysis.Evidence.DependencyModel",
-      "visibility": "contract",
-      "closure_package": "P2",
-      "consumers": [
-        {
-          "owner": "Analysis.Evidence.Design",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Finding",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Policy.Architecture",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Policy.Baseline",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Run",
-          "source_fqcn": null,
-          "closes_in": null
-        }
-      ]
-    },
-    "Qualimetrix\\Core\\Dependency\\EmptyDependencyGraph": {
-      "path": "src/Core/Dependency/EmptyDependencyGraph.php",
-      "kind": "class",
-      "owner": "Analysis.Evidence.DependencyModel",
-      "visibility": "internal",
-      "closure_package": "P2",
-      "consumers": []
-    },
     "Qualimetrix\\Core\\Exception\\ParseException": {
       "path": "src/Core/Exception/ParseException.php",
       "kind": "class",
@@ -3707,11 +3667,6 @@
       "visibility": "contract",
       "closure_package": "P3",
       "consumers": [
-        {
-          "owner": "Analysis.Evidence.DependencyModel",
-          "source_fqcn": null,
-          "closes_in": null
-        },
         {
           "owner": "Analysis.Evidence.Prioritization",
           "source_fqcn": null,
@@ -5999,11 +5954,6 @@
         },
         {
           "owner": "Analysis.Evidence.Coupling",
-          "source_fqcn": null,
-          "closes_in": null
-        },
-        {
-          "owner": "Analysis.Evidence.DependencyModel",
           "source_fqcn": null,
           "closes_in": null
         },
@@ -8652,6 +8602,66 @@
         }
       ]
     },
+    "Qualimetrix\\Reporting\\GraphProjection\\Contract\\DependencyGraphProjectionInterface": {
+      "path": "src/Reporting/GraphProjection/Contract/DependencyGraphProjectionInterface.php",
+      "kind": "interface",
+      "owner": "Reporting.GraphProjection",
+      "visibility": "contract",
+      "closure_package": "P2",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": null,
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Reporting\\GraphProjection\\Contract\\GraphProjectionRequest": {
+      "path": "src/Reporting/GraphProjection/Contract/GraphProjectionRequest.php",
+      "kind": "class",
+      "owner": "Reporting.GraphProjection",
+      "visibility": "contract",
+      "closure_package": "P2",
+      "consumers": [
+        {
+          "owner": "Infrastructure.Console",
+          "source_fqcn": null,
+          "closes_in": null
+        }
+      ]
+    },
+    "Qualimetrix\\Reporting\\GraphProjection\\DependencyGraphProjector": {
+      "path": "src/Reporting/GraphProjection/DependencyGraphProjector.php",
+      "kind": "class",
+      "owner": "Reporting.GraphProjection",
+      "visibility": "internal",
+      "closure_package": "P2",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\GraphProjection\\DotExporter": {
+      "path": "src/Reporting/GraphProjection/DotExporter.php",
+      "kind": "class",
+      "owner": "Reporting.GraphProjection",
+      "visibility": "internal",
+      "closure_package": "P2",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\GraphProjection\\DotExporterOptions": {
+      "path": "src/Reporting/GraphProjection/DotExporterOptions.php",
+      "kind": "class",
+      "owner": "Reporting.GraphProjection",
+      "visibility": "internal",
+      "closure_package": "P2",
+      "consumers": []
+    },
+    "Qualimetrix\\Reporting\\GraphProjection\\JsonGraphExporter": {
+      "path": "src/Reporting/GraphProjection/JsonGraphExporter.php",
+      "kind": "class",
+      "owner": "Reporting.GraphProjection",
+      "visibility": "internal",
+      "closure_package": "P2",
+      "consumers": []
+    },
     "Qualimetrix\\Reporting\\Health\\ContributorRanker": {
       "path": "src/Reporting/Health/ContributorRanker.php",
       "kind": "class",
@@ -10333,19 +10343,9 @@
       "layer": "seam-deferred-warning",
       "closes_in": "P3"
     },
-    "Qualimetrix\\Core\\Metric\\GlobalContextCollectorInterface": {
-      "semantic_owner": "Analysis.Evidence.Measurement",
-      "layer": "seam-global-context-collector",
-      "closes_in": "P2"
-    },
     "Qualimetrix\\Core\\Rule\\RuleMatcher": {
       "semantic_owner": "Analysis.Finding",
       "layer": "seam-rule-matcher",
-      "closes_in": "P6"
-    },
-    "Qualimetrix\\Core\\Violation\\Location": {
-      "semantic_owner": "Analysis.Finding",
-      "layer": "seam-violation-location",
       "closes_in": "P6"
     },
     "Qualimetrix\\Reporting\\Health\\HealthReasonBuilder": {

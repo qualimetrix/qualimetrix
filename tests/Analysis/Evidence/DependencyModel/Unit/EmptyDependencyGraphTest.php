@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Core\Dependency;
+namespace Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
-use Qualimetrix\Core\Dependency\EmptyDependencyGraph;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\EmptyDependencyGraph;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(EmptyDependencyGraph::class)]

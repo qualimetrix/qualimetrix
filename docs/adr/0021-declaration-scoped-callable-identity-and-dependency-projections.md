@@ -95,10 +95,10 @@ one atomic mechanical `Method`-to-`Callable` rename across every tracked
 consumer, test, fixture, configuration channel, and reference example. Only a
 green, alias-free tree may proceed to visitor semantics and then pipeline
 identity/storage migration; no package relies on an intentionally uncompilable
-intermediate state. The P1 internal callable payload deliberately retains the
-old shape only until P2 atomically installs the final declaration metadata; it
-is not an outward compatibility surface and does not alter this ADR's final
-state.
+intermediate state. P2 has installed the DependencyModel and GraphProjection
+boundaries; the callable payload remains internal and its final Run-owned
+declaration metadata continues with P3. It is not an outward compatibility
+surface and does not alter this ADR's final state.
 
 ## Consequences
 

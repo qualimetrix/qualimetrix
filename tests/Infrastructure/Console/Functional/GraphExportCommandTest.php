@@ -2,20 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Functional\Console\Command;
+namespace Qualimetrix\Tests\Infrastructure\Console\Functional;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Pipeline\DependencyGraphAnalyzer;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
+use Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -52,6 +53,7 @@ final class GraphExportCommandTest extends TestCase
         // Create command
         $command = new GraphExportCommand(
             $this->createAnalyzer(),
+            new DependencyGraphProjector(),
             new NullLogger(),
         );
 
@@ -89,6 +91,7 @@ final class GraphExportCommandTest extends TestCase
         // Create command
         $command = new GraphExportCommand(
             $this->createAnalyzer(),
+            new DependencyGraphProjector(),
             new NullLogger(),
         );
 
@@ -121,6 +124,7 @@ final class GraphExportCommandTest extends TestCase
         // Create command
         $command = new GraphExportCommand(
             $this->createAnalyzer(),
+            new DependencyGraphProjector(),
             new NullLogger(),
         );
 
@@ -152,6 +156,7 @@ final class GraphExportCommandTest extends TestCase
         // Create command
         $command = new GraphExportCommand(
             $this->createAnalyzer(),
+            new DependencyGraphProjector(),
             new NullLogger(),
         );
 
@@ -187,6 +192,7 @@ final class GraphExportCommandTest extends TestCase
         // Create command
         $command = new GraphExportCommand(
             $this->createAnalyzer(),
+            new DependencyGraphProjector(),
             new NullLogger(),
         );
 
@@ -219,6 +225,7 @@ final class GraphExportCommandTest extends TestCase
         // Create command
         $command = new GraphExportCommand(
             $this->createAnalyzer(),
+            new DependencyGraphProjector(),
             new NullLogger(),
         );
 
@@ -358,7 +365,7 @@ final class GraphExportCommandTest extends TestCase
 
     private function createCommandTester(): CommandTester
     {
-        $command = new GraphExportCommand($this->createAnalyzer(), new NullLogger());
+        $command = new GraphExportCommand($this->createAnalyzer(), new DependencyGraphProjector(), new NullLogger());
         $application = new Application();
         $application->addCommand($command);
 

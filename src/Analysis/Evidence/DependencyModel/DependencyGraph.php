@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Collection\Dependency;
+namespace Qualimetrix\Analysis\Evidence\DependencyModel;
 
-use Qualimetrix\Core\Dependency\Dependency;
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Util\StringSet;
 

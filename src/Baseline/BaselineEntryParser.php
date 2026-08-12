@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Baseline;
 
 use InvalidArgumentException;
-use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Core\Violation\ChannelShape;
 use Qualimetrix\Core\Violation\ViolationChannel;

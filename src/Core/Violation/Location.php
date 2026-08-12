@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Violation;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface;
 use Qualimetrix\Core\Path\RelativePath;
 
-final readonly class Location
+final readonly class Location implements DependencyLocationInterface
 {
     /**
      * @param bool $precise When true, the line points to the exact location of the problem

@@ -33,6 +33,15 @@ Reporting/
 ├── CoverageFailure.php                     # One projected parse/processing failure
 ├── FormatterContext.php                    # Context passed to formatters (color, grouping, filters, options)
 ├── GroupBy.php                             # Grouping mode enum (None, File, Rule, Severity)
+├── GraphProjection/                        # Dependency graph output projection
+│   ├── Contract/
+│   │   ├── DependencyGraphProjectionInterface.php # Console-facing projection port
+│   │   └── GraphProjectionRequest.php      # Immutable DOT/JSON projection request
+│   ├── DependencyGraphProjector.php        # Internal format dispatcher
+│   ├── DotExporter.php                     # Internal DOT projection
+│   ├── DotExporterOptions.php              # Internal DOT options
+│   ├── JsonGraphExporter.php               # Internal JSON projection
+│   └── README.md
 ├── Health/                                 # Health scoring module
 │   ├── HealthScoreResolver.php            # Shared health score resolution (project/namespace/class level)
 │   ├── SummaryEnricher.php                # Enriches Report with health scores, worst offenders, tech debt
@@ -98,6 +107,13 @@ Reporting/
 ```
 
 ## Contracts
+
+### GraphProjection
+
+[`GraphProjection`](GraphProjection/README.md) owns dependency-graph rendering.
+Infrastructure injects `DependencyGraphProjectionInterface` and passes a
+`GraphProjectionRequest`; the dispatcher and DOT/JSON exporters are internal.
+The CLI retains analysis paths, destination handling and coverage refusal.
 
 ### FormatterInterface
 

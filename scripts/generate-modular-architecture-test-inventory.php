@@ -417,14 +417,47 @@ function classifyOwner(string $path): array
     ) {
         return ['Analysis/Evidence/Duplication', 'P1'];
     }
-    if (str_starts_with($path, 'tests/Unit/Analysis/Collection/Dependency/Export/')) {
-        return ['Reporting/DependencyGraph', 'P2'];
+    $p2DependencyModelTests = [
+        'tests/Unit/Core/Dependency/DependencyTest.php',
+        'tests/Unit/Core/Dependency/EmptyDependencyGraphTest.php',
+        'tests/Unit/Analysis/Collection/Dependency/DependencyGraphTest.php',
+        'tests/Unit/Analysis/Collection/Dependency/DependencyGraphBuilderTest.php',
+        'tests/Analysis/Evidence/DependencyModel/Unit/DependencyTest.php',
+        'tests/Analysis/Evidence/DependencyModel/Unit/EmptyDependencyGraphTest.php',
+        'tests/Analysis/Evidence/DependencyModel/Unit/DependencyGraphTest.php',
+        'tests/Analysis/Evidence/DependencyModel/Unit/DependencyGraphBuilderTest.php',
+    ];
+    if (in_array($path, $p2DependencyModelTests, true)) {
+        return ['Analysis/Evidence/DependencyModel', 'P2'];
     }
+
+    $p2GraphProjectionTests = [
+        'tests/Unit/Analysis/Collection/Dependency/Export/DotExporterTest.php',
+        'tests/Unit/Analysis/Collection/Dependency/Export/JsonGraphExporterTest.php',
+        'tests/Reporting/GraphProjection/Unit/DotExporterTest.php',
+        'tests/Reporting/GraphProjection/Unit/JsonGraphExporterTest.php',
+        'tests/Reporting/GraphProjection/Unit/DependencyGraphProjectorTest.php',
+    ];
+    if (in_array($path, $p2GraphProjectionTests, true)) {
+        return ['Reporting/GraphProjection', 'P2'];
+    }
+
+    if (in_array($path, [
+        'tests/Functional/Console/Command/GraphExportCommandTest.php',
+        'tests/Infrastructure/Console/Functional/GraphExportCommandTest.php',
+    ], true)) {
+        return ['Infrastructure/Console', 'P2'];
+    }
+
     if (preg_match('#^tests/Unit/Analysis/Collection/Dependency/(CircularDependencyDetector|Cycle)#', $path) === 1) {
         return ['Analysis/Evidence/CircularDependency', 'P4'];
     }
-    if (str_starts_with($path, 'tests/Unit/Analysis/Collection/Dependency/') || str_starts_with($path, 'tests/Unit/Core/Dependency/')) {
-        return ['Analysis/Evidence/DependencyModel', 'P2'];
+    if (in_array($path, [
+        'tests/Unit/Analysis/Collection/Dependency/DependencyResolverTest.php',
+        'tests/Unit/Analysis/Collection/Dependency/DependencyVisitorTest.php',
+        'tests/Unit/Analysis/Collection/Dependency/TypeDependencyHelperTest.php',
+    ], true)) {
+        return ['Analysis/Run', 'P3'];
     }
     if (str_starts_with($path, 'tests/Unit/Analysis/Repository/') || str_starts_with($path, 'tests/Unit/Core/Metric/')) {
         return ['Analysis/Evidence/Measurement', 'P7'];
@@ -511,9 +544,6 @@ function classifyOwner(string $path): array
 
         return ['Infrastructure', 'permanent'];
     }
-    if (str_contains($path, 'GraphExportCommand')) {
-        return ['Infrastructure/Console', 'P2'];
-    }
     if (str_contains($path, 'LayerAssignment')) {
         return ['Infrastructure/Console', 'P4'];
     }
@@ -575,9 +605,13 @@ function classifyKind(string $path, array $discoveredClasses): string
 function currentSuite(string $path): string
 {
     return match (true) {
-        str_starts_with($path, 'tests/Architecture/Unit/'), str_starts_with($path, 'tests/Analysis/Evidence/Duplication/Unit/'), str_starts_with($path, 'tests/Unit/') => 'Unit',
+        str_starts_with($path, 'tests/Architecture/Unit/'),
+        str_starts_with($path, 'tests/Analysis/Evidence/Duplication/Unit/'),
+        str_starts_with($path, 'tests/Analysis/Evidence/DependencyModel/Unit/'),
+        str_starts_with($path, 'tests/Reporting/GraphProjection/Unit/'),
+        str_starts_with($path, 'tests/Unit/') => 'Unit',
         str_starts_with($path, 'tests/Architecture/Integration/'), str_starts_with($path, 'tests/Integration/') => 'Integration',
-        str_starts_with($path, 'tests/Functional/') => 'Functional',
+        str_starts_with($path, 'tests/Functional/'), str_starts_with($path, 'tests/Infrastructure/Console/Functional/') => 'Functional',
         str_starts_with($path, 'tests/Infrastructure/') => 'Infrastructure',
         default => 'none',
     };

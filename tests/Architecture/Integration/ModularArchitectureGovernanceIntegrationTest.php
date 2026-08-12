@@ -66,7 +66,13 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
         }
         [$qmxLayerCount, $qmxAllowEdgeCount] = $this->generatedQmxCounts();
 
-        self::assertSame('697', $summary['declarations']);
+        self::assertCount(12, $manifest['enforcement_seams']);
+        self::assertCount(84, $manifest['temporary_internal_grants']);
+        self::assertCount(15, $coarseGrantEdges);
+        self::assertSame(49, $qmxLayerCount);
+        self::assertSame(272, $qmxAllowEdgeCount);
+
+        self::assertSame('701', $summary['declarations']);
         self::assertSame((string) \count(array_unique(array_column($declarations, 'path'))), $summary['files']);
         self::assertSame((string) \count($owners), $summary['semantic_owners']);
         self::assertSame((string) \count($owners), $summary['semantic_owner_layers']);
@@ -86,7 +92,9 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
     {
         $manifest = $this->manifest();
         $declarations = $manifest['declarations'];
-        self::assertCount(697, $declarations);
+        self::assertCount(701, $declarations);
+        self::assertCount(699, array_unique(array_column($declarations, 'path')));
+        self::assertCount(37, $manifest['owners']);
 
         $prefix = 'Qualimetrix\\Analysis\\Evidence\\Duplication\\';
         $duplication = array_filter(
@@ -193,6 +201,265 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
             'unclassified committable documentation path: src/Analysis/Evidence/Duplication/Unexpected/README.md',
             $output,
         );
+    }
+
+    #[Test]
+    public function itEncodesThePostP2DependencyAndProjectionBoundaries(): void
+    {
+        $manifest = $this->manifest();
+        $declarations = $manifest['declarations'];
+        self::assertCount(701, $declarations);
+
+        $dependencyPrefix = 'Qualimetrix\\Analysis\\Evidence\\DependencyModel\\';
+        $dependencyDeclarations = array_filter(
+            $declarations,
+            static fn(string $fqcn): bool => str_starts_with($fqcn, $dependencyPrefix),
+            \ARRAY_FILTER_USE_KEY,
+        );
+        self::assertSame([
+            $dependencyPrefix . 'Contract\\Dependency',
+            $dependencyPrefix . 'Contract\\DependencyGraphBuilderInterface',
+            $dependencyPrefix . 'Contract\\DependencyGraphInterface',
+            $dependencyPrefix . 'Contract\\DependencyLocationInterface',
+            $dependencyPrefix . 'Contract\\DependencyType',
+            $dependencyPrefix . 'DependencyGraph',
+            $dependencyPrefix . 'DependencyGraphBuilder',
+            $dependencyPrefix . 'EmptyDependencyGraph',
+        ], array_keys($dependencyDeclarations));
+        self::assertSame(5, \count(array_filter(
+            $dependencyDeclarations,
+            static fn(array $declaration): bool => $declaration['visibility'] === 'contract',
+        )));
+        self::assertSame(3, \count(array_filter(
+            $dependencyDeclarations,
+            static fn(array $declaration): bool => $declaration['visibility'] === 'internal',
+        )));
+
+        $projectionPrefix = 'Qualimetrix\\Reporting\\GraphProjection\\';
+        $projectionDeclarations = array_filter(
+            $declarations,
+            static fn(string $fqcn): bool => str_starts_with($fqcn, $projectionPrefix),
+            \ARRAY_FILTER_USE_KEY,
+        );
+        self::assertSame([
+            $projectionPrefix . 'Contract\\DependencyGraphProjectionInterface',
+            $projectionPrefix . 'Contract\\GraphProjectionRequest',
+            $projectionPrefix . 'DependencyGraphProjector',
+            $projectionPrefix . 'DotExporter',
+            $projectionPrefix . 'DotExporterOptions',
+            $projectionPrefix . 'JsonGraphExporter',
+        ], array_keys($projectionDeclarations));
+        self::assertSame(2, \count(array_filter(
+            $projectionDeclarations,
+            static fn(array $declaration): bool => $declaration['visibility'] === 'contract',
+        )));
+        self::assertSame(4, \count(array_filter(
+            $projectionDeclarations,
+            static fn(array $declaration): bool => $declaration['visibility'] === 'internal',
+        )));
+
+        $oldDeclarations = [
+            'Qualimetrix\\Core\\Dependency\\Dependency',
+            'Qualimetrix\\Core\\Dependency\\DependencyType',
+            'Qualimetrix\\Core\\Dependency\\DependencyGraphInterface',
+            'Qualimetrix\\Core\\Dependency\\EmptyDependencyGraph',
+            'Qualimetrix\\Analysis\\Collection\\Dependency\\DependencyGraph',
+            'Qualimetrix\\Analysis\\Collection\\Dependency\\DependencyGraphBuilder',
+            'Qualimetrix\\Analysis\\Collection\\Dependency\\Export\\DotExporter',
+            'Qualimetrix\\Analysis\\Collection\\Dependency\\Export\\DotExporterOptions',
+            'Qualimetrix\\Analysis\\Collection\\Dependency\\Export\\JsonGraphExporter',
+            'Qualimetrix\\Analysis\\Collection\\Dependency\\Export\\GraphExporterInterface',
+        ];
+        foreach ($oldDeclarations as $oldDeclaration) {
+            self::assertArrayNotHasKey($oldDeclaration, $declarations);
+        }
+
+        self::assertSame([
+            'Analysis.Policy.Architecture',
+            'Analysis.Run',
+        ], array_column(
+            $dependencyDeclarations[$dependencyPrefix . 'Contract\\Dependency']['consumers'],
+            'owner',
+        ));
+        self::assertSame([
+            'Analysis.Run',
+            'Infrastructure.Console',
+            'Infrastructure.DependencyInjection',
+        ], array_column(
+            $dependencyDeclarations[$dependencyPrefix . 'Contract\\DependencyGraphBuilderInterface']['consumers'],
+            'owner',
+        ));
+        self::assertSame([
+            'Analysis.Evidence.CircularDependency',
+            'Analysis.Evidence.Coupling',
+            'Analysis.Evidence.Design',
+            'Analysis.Evidence.Measurement',
+            'Analysis.Finding',
+            'Analysis.Policy.Architecture',
+            'Analysis.Run',
+            'Reporting.GraphProjection',
+        ], array_column(
+            $dependencyDeclarations[$dependencyPrefix . 'Contract\\DependencyGraphInterface']['consumers'],
+            'owner',
+        ));
+        self::assertSame(['Analysis.Finding'], array_column(
+            $dependencyDeclarations[$dependencyPrefix . 'Contract\\DependencyLocationInterface']['consumers'],
+            'owner',
+        ));
+        self::assertSame([
+            'Analysis.Evidence.Design',
+            'Analysis.Finding',
+            'Analysis.Policy.Architecture',
+            'Analysis.Policy.Baseline',
+            'Analysis.Run',
+        ], array_column(
+            $dependencyDeclarations[$dependencyPrefix . 'Contract\\DependencyType']['consumers'],
+            'owner',
+        ));
+        foreach ($projectionDeclarations as $fqcn => $declaration) {
+            $expectedConsumers = str_contains($fqcn, '\\Contract\\') ? ['Infrastructure.Console'] : [];
+            self::assertSame($expectedConsumers, array_column($declaration['consumers'], 'owner'), $fqcn);
+        }
+
+        self::assertSame([], array_values(array_filter(
+            $manifest['temporary_internal_grants'],
+            static fn(array $grant): bool => $grant['closes_in'] === 'P2',
+        )));
+        self::assertCount(12, $manifest['enforcement_seams']);
+        self::assertArrayNotHasKey(
+            'Qualimetrix\\Core\\Metric\\GlobalContextCollectorInterface',
+            $manifest['enforcement_seams'],
+        );
+        self::assertArrayNotHasKey(
+            'Qualimetrix\\Core\\Violation\\Location',
+            $manifest['enforcement_seams'],
+        );
+        self::assertNotContains(
+            'Analysis.Evidence.DependencyModel',
+            array_column($declarations['Qualimetrix\\Core\\Namespace_\\NamespaceTree']['consumers'], 'owner'),
+        );
+        self::assertNotContains(
+            'Analysis.Evidence.DependencyModel',
+            array_column($declarations['Qualimetrix\\Core\\Violation\\Location']['consumers'], 'owner'),
+        );
+    }
+
+    #[Test]
+    public function itClassifiesTheSevenP2OwnedTestsWithoutACatchAll(): void
+    {
+        $p2Cases = [
+            'tests/Unit/Core/Dependency/DependencyTest.php' => 'tests/Analysis/Evidence/DependencyModel/Unit/DependencyTest.php',
+            'tests/Unit/Core/Dependency/EmptyDependencyGraphTest.php' => 'tests/Analysis/Evidence/DependencyModel/Unit/EmptyDependencyGraphTest.php',
+            'tests/Unit/Analysis/Collection/Dependency/DependencyGraphTest.php' => 'tests/Analysis/Evidence/DependencyModel/Unit/DependencyGraphTest.php',
+            'tests/Unit/Analysis/Collection/Dependency/DependencyGraphBuilderTest.php' => 'tests/Analysis/Evidence/DependencyModel/Unit/DependencyGraphBuilderTest.php',
+            'tests/Unit/Analysis/Collection/Dependency/Export/DotExporterTest.php' => 'tests/Reporting/GraphProjection/Unit/DotExporterTest.php',
+            'tests/Unit/Analysis/Collection/Dependency/Export/JsonGraphExporterTest.php' => 'tests/Reporting/GraphProjection/Unit/JsonGraphExporterTest.php',
+            'tests/Functional/Console/Command/GraphExportCommandTest.php' => 'tests/Infrastructure/Console/Functional/GraphExportCommandTest.php',
+        ];
+
+        foreach ($p2Cases as $legacyPath => $targetPath) {
+            foreach ([$legacyPath, $targetPath] as $path) {
+                [$exitCode, $output] = $this->runCommand([
+                    \PHP_BINARY,
+                    $this->root() . '/scripts/generate-modular-architecture-test-inventory.php',
+                    '--classification-probe=' . $path,
+                ]);
+
+                self::assertSame(0, $exitCode, $output);
+                $owner = str_contains($targetPath, '/DependencyModel/')
+                    ? 'Analysis/Evidence/DependencyModel'
+                    : (str_contains($targetPath, '/GraphProjection/') ? 'Reporting/GraphProjection' : 'Infrastructure/Console');
+                $suite = str_contains($targetPath, '/Functional/') ? 'Functional' : 'Unit';
+                self::assertSame("{$owner}\tP2\t{$suite}\t{$targetPath}\n", $output, $path);
+            }
+        }
+
+        foreach (['DependencyResolverTest.php', 'DependencyVisitorTest.php', 'TypeDependencyHelperTest.php'] as $test) {
+            $path = 'tests/Unit/Analysis/Collection/Dependency/' . $test;
+            [$exitCode, $output] = $this->runCommand([
+                \PHP_BINARY,
+                $this->root() . '/scripts/generate-modular-architecture-test-inventory.php',
+                '--classification-probe=' . $path,
+            ]);
+            self::assertSame(0, $exitCode, $output);
+            self::assertSame("Analysis/Run\tP3\tUnit\ttests/Analysis/Run/Unit/{$test}\n", $output, $path);
+        }
+
+        foreach (['CircularDependencyDetectorTest.php', 'CycleIdentityStabilityTest.php', 'CycleMemberLabelsTest.php', 'CycleTest.php'] as $test) {
+            $path = 'tests/Unit/Analysis/Collection/Dependency/' . $test;
+            [$exitCode, $output] = $this->runCommand([
+                \PHP_BINARY,
+                $this->root() . '/scripts/generate-modular-architecture-test-inventory.php',
+                '--classification-probe=' . $path,
+            ]);
+            self::assertSame(0, $exitCode, $output);
+            self::assertSame(
+                "Analysis/Evidence/CircularDependency\tP4\tUnit\ttests/Analysis/Evidence/CircularDependency/Unit/{$test}\n",
+                $output,
+                $path,
+            );
+        }
+
+        [$exitCode, $output] = $this->runCommand([
+            \PHP_BINARY,
+            $this->root() . '/scripts/generate-modular-architecture-test-inventory.php',
+            '--classification-probe=tests/Analysis/Evidence/DependencyModel/Unit/UnexpectedTest.php',
+        ]);
+        self::assertNotSame(0, $exitCode);
+        self::assertStringContainsString(
+            'Unclassified test artifact: tests/Analysis/Evidence/DependencyModel/Unit/UnexpectedTest.php',
+            $output,
+        );
+    }
+
+    #[Test]
+    public function itClassifiesTheTwoP2ModuleReadmesExactly(): void
+    {
+        $cases = [
+            'src/Analysis/Evidence/DependencyModel/README.md' => 'Analysis.Evidence.DependencyModel',
+            'src/Reporting/GraphProjection/README.md' => 'Reporting.GraphProjection',
+            'AGENTS.md' => 'Architecture.Governance',
+            'CHANGELOG.md' => 'Architecture.Governance',
+            'docs/ARCHITECTURE.md' => 'Architecture.Governance',
+            'docs/adr/0021-declaration-scoped-callable-identity-and-dependency-projections.md' => 'Analysis.Evidence.DependencyModel',
+            'docs/adr/0022-capability-oriented-modular-monolith.md' => 'Architecture.Governance',
+            'docs/internal/plans/modular-architecture.md' => 'Architecture.Governance',
+            'src/Analysis/README.md' => 'Analysis.Run',
+            'src/Core/README.md' => 'Architecture.Governance',
+            'src/Infrastructure/README.md' => 'Architecture.Governance',
+            'src/Infrastructure/Console/README.md' => 'Architecture.Governance',
+            'src/Reporting/README.md' => 'Architecture.Governance',
+            'website/docs/rules/architecture.md' => 'Architecture.Governance',
+            'website/docs/rules/architecture.ru.md' => 'Architecture.Governance',
+        ];
+
+        foreach ($cases as $path => $owner) {
+            [$exitCode, $output] = $this->runCommand([
+                \PHP_BINARY,
+                $this->root() . '/scripts/generate-modular-architecture-production-inventory.php',
+                '--documentation-probe=' . $path,
+            ]);
+
+            self::assertSame(0, $exitCode, $output);
+            self::assertSame(
+                "{$owner}\tP2\tMove or update atomically with the named migration package.\n",
+                $output,
+                $path,
+            );
+        }
+
+        foreach ([
+            'src/Analysis/Evidence/DependencyModel/Unexpected/README.md',
+            'src/Reporting/GraphProjection/Unexpected/README.md',
+        ] as $path) {
+            [$exitCode, $output] = $this->runCommand([
+                \PHP_BINARY,
+                $this->root() . '/scripts/generate-modular-architecture-production-inventory.php',
+                '--documentation-probe=' . $path,
+            ]);
+            self::assertNotSame(0, $exitCode);
+            self::assertStringContainsString('unclassified committable documentation path: ' . $path, $output);
+        }
     }
 
     #[Test]
@@ -357,7 +624,7 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
             $contents,
         );
         self::assertStringContainsString(
-            "docs/internal/plans/modular-architecture.md\tArchitecture.Governance\tP0-D\t",
+            "docs/internal/plans/modular-architecture.md\tArchitecture.Governance\tP2\t",
             $contents,
         );
     }

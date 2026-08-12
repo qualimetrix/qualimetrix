@@ -2,15 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Analysis\Collection\Dependency;
+namespace Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
-use Qualimetrix\Core\Dependency\Dependency;
-use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -508,7 +509,7 @@ final class DependencyGraphTest extends TestCase
     }
 
     /** @param list<Dependency> $dependencies */
-    private function build(array $dependencies): DependencyGraph
+    private function build(array $dependencies): DependencyGraphInterface
     {
         /** @var array<string, LogicalClassPath> $universe */
         $universe = [];

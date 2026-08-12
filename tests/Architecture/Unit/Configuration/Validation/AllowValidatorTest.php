@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Architecture\Unit\Configuration\Validation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Architecture\Configuration\Allow\AllowAliasExpander;
 use Qualimetrix\Architecture\Configuration\Validation\AllowValidator;
 use Qualimetrix\Architecture\Configuration\Validation\LongFormAllowEntryNormalizer;
@@ -15,7 +16,6 @@ use Qualimetrix\Architecture\Domain\Allow\LayerSelector;
 use Qualimetrix\Architecture\Domain\Allow\SelectorKind;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
-use Qualimetrix\Core\Dependency\DependencyType;
 
 #[CoversClass(AllowValidator::class)]
 #[CoversClass(AllowAliasExpander::class)]

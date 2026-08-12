@@ -55,13 +55,14 @@ modular monolith** accepted in
 ADR 0012's substantial/thin hybrid direction; ADR 0010 is the historical
 Architecture pilot and ADR 0016 remains the governing subject-cohesion rule.
 
-P1 has landed the Duplication capability; P2-P8 remain pending. The tree below
+P1 has landed Duplication and P2 has landed DependencyModel plus GraphProjection;
+P3-P8 remain pending. The tree below
 describes the current physical layout. P0 governance remains live: the
-versioned internal manifest is authoritative for all 697 current declarations
+versioned internal manifest is authoritative for all 701 current declarations
 and 37 semantic owners, and it
-generates a coarse qmx projection with 37 owner layers, 14 singleton enforcement
-seams and final `external` (52 layers and 296 allow edges in this snapshot).
-That enforcement does not mean the planned P2-P8 namespace moves have landed.
+generates a coarse qmx projection with 37 owner layers, 12 singleton enforcement
+seams and final `external` (50 layers and 272 allow edges in this snapshot).
+That enforcement does not mean the planned P3-P8 namespace moves have landed.
 
 ```
 src/
@@ -76,9 +77,10 @@ src/
 ├── Baseline/          # Baseline support and @qmx-ignore suppression
 ├── Analysis/          # Orchestration plus taxonomy-only capability grouping
 │   ├── Evidence/
-│   │   └── Duplication/ # Landed P1 leaf: detection, result, rule and one contract
+│   │   ├── Duplication/ # Landed P1 leaf: detection, result, rule and one contract
+│   │   └── DependencyModel/ # Landed P2 graph model: five contracts, three internals
 │   └── {Pipeline,Collection,...}/ # Unmigrated Run orchestration until P3
-├── Reporting/         # Output formatters (cross-cutting)
+├── Reporting/         # Output formatters plus landed P2 GraphProjection capability
 ├── Configuration/     # Cross-cutting config infrastructure (loader, schema, pipeline)
 └── Infrastructure/    # Adapters (CLI, DI, cache, git, profiler) — adapters for any feature live here
 benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
@@ -113,7 +115,7 @@ Two corollaries that settle recurring arguments:
   adapters live in `Infrastructure/` either way.
 
 The following ADR 0022 rules define the accepted target layout. P1 is current
-architecture; do not treat the still-pending P2-P8 namespace moves as landed:
+architecture; do not treat the still-pending P3-P8 namespace moves as landed:
 
 - A leaf module is a subject with one owner and lifecycle. Internal folders
   follow the subject; do not create an empty role skeleton.
@@ -244,7 +246,7 @@ When documenting deviations: use `!!! info "Deviation from original spec"` block
 - The internal manifest is the current exact owner/visibility/import authority.
   Its checker runs through `composer architecture:check` before selfcheck and
   rejects unlisted exact imports even when a coarse qmx owner edge permits them.
-- Generated `qmx.yaml` contains 37 semantic-owner layers, 14 singleton
+- Generated `qmx.yaml` contains 37 semantic-owner layers, 12 singleton
   enforcement seams and final `external`; `coverage: error` keeps isolated and
   edge-connected project declarations fail-closed. The qmx graph is coarse and
   does not replace the manifest checker.

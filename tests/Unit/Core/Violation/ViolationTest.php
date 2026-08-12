@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Unit\Core\Violation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\RuleLevel;
 use Qualimetrix\Core\Symbol\DeclarationPath;

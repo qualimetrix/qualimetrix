@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Architecture\Processing;
 
 use LogicException;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Domain\Layer\ClassSet;
 use Qualimetrix\Architecture\Domain\Layer\LayerMatch;
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Core\Dependency;
+namespace Qualimetrix\Analysis\Evidence\DependencyModel\Contract;
 
 /**
  * Enumerates all possible types of dependencies between classes/types.

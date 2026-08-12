@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Rule;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Dependency\CycleInterface;
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Suppression\ThresholdOverride;

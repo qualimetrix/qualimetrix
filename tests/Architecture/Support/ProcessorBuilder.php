@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Architecture\Support;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Domain\CoverageMode;
@@ -12,11 +13,10 @@ use Qualimetrix\Architecture\Domain\Layer\ClassSet;
 use Qualimetrix\Architecture\Domain\Layer\LayerPolicy;
 use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
-use Qualimetrix\Core\Dependency\EmptyDependencyGraph;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
 
 /**
  * Helper for unit tests that exercise rules consuming
@@ -51,7 +51,7 @@ final class ProcessorBuilder
 
         $processor->bind($configuration);
         $processor->prepare(
-            $graph ?? new EmptyDependencyGraph(),
+            $graph ?? AdjacencyGraphBuilder::empty(),
             self::classSetFromRepository($repository),
         );
 

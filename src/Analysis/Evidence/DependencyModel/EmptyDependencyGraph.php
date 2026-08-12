@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Core\Dependency;
+namespace Qualimetrix\Analysis\Evidence\DependencyModel;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**

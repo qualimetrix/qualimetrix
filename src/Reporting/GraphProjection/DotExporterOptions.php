@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Collection\Dependency\Export;
+namespace Qualimetrix\Reporting\GraphProjection;
 
 /**
  * Configuration options for DotExporter.

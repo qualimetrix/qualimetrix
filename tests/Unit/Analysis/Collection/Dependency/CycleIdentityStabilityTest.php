@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Dependency\CircularDependencyDetector;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Architecture\Rules\CircularDependencyOptions;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
@@ -299,7 +299,7 @@ final class CycleIdentityStabilityTest extends TestCase
      *
      * @param array<string, list<string>> $adjacencyList
      */
-    private function buildGraph(array $adjacencyList): DependencyGraph
+    private function buildGraph(array $adjacencyList): DependencyGraphInterface
     {
         return AdjacencyGraphBuilder::build($adjacencyList);
     }

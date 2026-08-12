@@ -7,11 +7,10 @@ namespace Qualimetrix\Tests\Unit\Metrics\Structure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
-use Qualimetrix\Core\Dependency\Dependency;
-use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -20,6 +19,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Metrics\Structure\NocCollector;
+use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
 
 #[CoversClass(NocCollector::class)]
 final class NocCollectorTest extends TestCase
@@ -309,13 +309,13 @@ final class NocCollectorTest extends TestCase
     }
 
     /** @param list<Dependency> $dependencies */
-    private function graph(array $dependencies): DependencyGraph
+    private function graph(array $dependencies): DependencyGraphInterface
     {
         $universe = array_map(
             static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
             $dependencies,
         );
 
-        return (new DependencyGraphBuilder())->build($dependencies, $universe);
+        return AdjacencyGraphBuilder::builder()->build($dependencies, $universe);
     }
 }

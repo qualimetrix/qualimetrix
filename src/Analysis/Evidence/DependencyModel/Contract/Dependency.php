@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Core\Dependency;
+namespace Qualimetrix\Analysis\Evidence\DependencyModel\Contract;
 
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Location;
 
 /**
  * Represents a single dependency from one class to another.
@@ -21,13 +20,13 @@ final readonly class Dependency
      * @param DeclarationPath $source Exact source declaration identity
      * @param LogicalClassPath $target Logical class identity of the dependency target
      * @param DependencyType $type The type of dependency relationship
-     * @param Location $location Where in the source code this dependency occurs
+     * @param DependencyLocationInterface $location Where in the source code this dependency occurs
      */
     public function __construct(
         public DeclarationPath $source,
         public LogicalClassPath $target,
         public DependencyType $type,
-        public Location $location,
+        public DependencyLocationInterface $location,
     ) {}
 
     /**

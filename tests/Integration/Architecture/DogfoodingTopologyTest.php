@@ -47,9 +47,9 @@ final class DogfoodingTopologyTest extends TestCase
         sort($expected, \SORT_STRING);
 
         self::assertSame($expected, $declared);
-        self::assertCount(52, $declared);
+        self::assertCount(50, $declared);
         self::assertCount(37, $manifest['owners']);
-        self::assertCount(14, $manifest['enforcement_seams']);
+        self::assertCount(12, $manifest['enforcement_seams']);
 
         $seamMembers = [];
         foreach ($manifest['declarations'] as $fqcn => $declaration) {
@@ -109,7 +109,7 @@ final class DogfoodingTopologyTest extends TestCase
             }
         }
 
-        self::assertSame(296, $edgeCount);
+        self::assertSame(272, $edgeCount);
         self::assertSame([], $graph['external']);
         foreach (array_diff($layers, ['external']) as $source) {
             self::assertContains('external', $graph[$source]);

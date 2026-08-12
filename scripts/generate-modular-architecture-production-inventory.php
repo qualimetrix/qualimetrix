@@ -10,12 +10,12 @@ use PhpParser\ParserFactory;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-const EXPECTED_REPORTING_DECLARATIONS = 59;
+const EXPECTED_REPORTING_DECLARATIONS = 65;
 const EXPECTED_PHASE_PARTICIPANTS = 24;
 
 const EXPECTED_REPORTING_CLASSIFICATION_COUNTS = [
     'evidence computation' => 10,
-    'output projection' => 45,
+    'output projection' => 51,
     'policy application' => 3,
     'run orchestration' => 1,
 ];
@@ -309,7 +309,7 @@ function phaseParticipants(): array
         ['phase' => 'per-file measurement', 'participant' => '21 MetricCollectorInterface implementations', 'inputs' => 'SplFileInfo, Node[]', 'outputs' => 'MetricBag and typed projections', 'state_owner' => 'owning evidence capabilities', 'dependency' => 'same AST traversal; reset per file', 'source' => 'src/Core/Metric/MetricCollectorInterface.php'],
         ['phase' => 'per-file derivation', 'participant' => 'TypeCoveragePercentCollector', 'inputs' => 'MetricBag', 'outputs' => 'MetricBag(typeCoveragePct)', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'requires collector id type-coverage', 'source' => 'src/Metrics/Design/TypeCoveragePercentCollector.php'],
         ['phase' => 'per-file derivation', 'participant' => 'MaintainabilityIndexCollector', 'inputs' => 'MetricBag', 'outputs' => 'MetricBag(maintainabilityIndex)', 'state_owner' => 'Analysis.Evidence.Maintainability', 'dependency' => 'requires halstead, cyclomatic-complexity, method-statement-count', 'source' => 'src/Metrics/Maintainability/MaintainabilityIndexCollector.php'],
-        ['phase' => 'dependency graph', 'participant' => 'DependencyGraphBuilder', 'inputs' => 'list<Dependency>, list<LogicalClassPath>', 'outputs' => 'DependencyGraph', 'state_owner' => 'Analysis.Evidence.DependencyModel', 'dependency' => 'consumes raw collection dependencies', 'source' => 'src/Analysis/Collection/Dependency/DependencyGraphBuilder.php'],
+        ['phase' => 'dependency graph', 'participant' => 'DependencyGraphBuilder', 'inputs' => 'list<Dependency>, list<LogicalClassPath>', 'outputs' => 'DependencyGraphInterface', 'state_owner' => 'Analysis.Evidence.DependencyModel', 'dependency' => 'consumes raw collection dependencies', 'source' => 'src/Analysis/Evidence/DependencyModel/DependencyGraphBuilder.php'],
         ['phase' => 'architecture preparation', 'participant' => 'ArchitectureProcessor', 'inputs' => 'DependencyGraphInterface, ClassSet', 'outputs' => 'retained prepared ArchitectureConfiguration', 'state_owner' => 'Analysis.Policy.Architecture', 'dependency' => 'lifecycle bind first; LayerViolationRule consumes retained state', 'source' => 'src/Architecture/Processing/ArchitectureProcessor.php'],
         ['phase' => 'aggregation', 'participant' => '4 AggregationPhaseInterface implementations', 'inputs' => 'MetricRepositoryInterface, list<MetricDefinition>', 'outputs' => 'repository enrichment and NamespaceTree', 'state_owner' => 'Analysis.Run and Measurement', 'dependency' => 'callable -> class -> namespace tree -> project', 'source' => 'src/Analysis/Aggregator'],
         ['phase' => 'global derivation', 'participant' => 'CouplingCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'CA, CE, CBO, instability', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'no global predecessor', 'source' => 'src/Metrics/Coupling/CouplingCollector.php'],
@@ -1115,38 +1115,44 @@ function commandOutputLines(array $command, string $workingDirectory): array
 function documentationDisposition(string $path): array
 {
     $p0 = [
-        'AGENTS.md',
         'CLAUDE.md',
-        'CHANGELOG.md',
-        'docs/ARCHITECTURE.md',
-        'docs/adr/0022-capability-oriented-modular-monolith.md',
         'docs/adr/README.md',
         'docs/internal/MODULE_README_TEMPLATE.md',
-        'docs/internal/plans/modular-architecture.md',
         'src/Architecture/README.md',
         'src/Configuration/README.md',
         'website/docs/reference/default-thresholds.md',
         'website/docs/reference/default-thresholds.ru.md',
-        'website/docs/rules/architecture.md',
-        'website/docs/rules/architecture.ru.md',
     ];
     if (in_array($path, $p0, true)) {
         return ['Architecture.Governance', 'P0-D', 'P0 governance documentation; review with the manifest and generated topology.'];
     }
 
     $exact = [
+        'AGENTS.md' => ['Architecture.Governance', 'P2'],
+        'CHANGELOG.md' => ['Architecture.Governance', 'P2'],
+        'docs/ARCHITECTURE.md' => ['Architecture.Governance', 'P2'],
         'docs/adr/0001-computed-metrics.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
         'docs/adr/0017-baseline-ceiling.md' => ['Analysis.Policy.Baseline', 'P6'],
         'docs/adr/0021-declaration-scoped-callable-identity-and-dependency-projections.md' => ['Analysis.Evidence.DependencyModel', 'P2'],
-        'src/Analysis/README.md' => ['Analysis.Run', 'P3'],
+        'docs/adr/0022-capability-oriented-modular-monolith.md' => ['Architecture.Governance', 'P2'],
+        'docs/internal/plans/modular-architecture.md' => ['Architecture.Governance', 'P2'],
+        'src/Analysis/README.md' => ['Analysis.Run', 'P2'],
+        'src/Analysis/Evidence/DependencyModel/README.md' => ['Analysis.Evidence.DependencyModel', 'P2'],
         'src/Analysis/Evidence/Duplication/README.md' => ['Analysis.Evidence.Duplication', 'P1'],
         'src/Baseline/README.md' => ['Analysis.Policy.Baseline', 'P6'],
+        'src/Core/README.md' => ['Architecture.Governance', 'P2'],
+        'src/Infrastructure/Console/README.md' => ['Architecture.Governance', 'P2'],
+        'src/Infrastructure/README.md' => ['Architecture.Governance', 'P2'],
+        'src/Reporting/GraphProjection/README.md' => ['Reporting.GraphProjection', 'P2'],
+        'src/Reporting/README.md' => ['Architecture.Governance', 'P2'],
         'website/docs/getting-started/configuration.md' => ['Analysis.Run', 'P3'],
         'website/docs/getting-started/configuration.ru.md' => ['Analysis.Run', 'P3'],
         'website/docs/reference/health-scores.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
         'website/docs/reference/health-scores.ru.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
         'website/docs/rules/duplication.md' => ['Analysis.Evidence.Duplication', 'P1'],
         'website/docs/rules/duplication.ru.md' => ['Analysis.Evidence.Duplication', 'P1'],
+        'website/docs/rules/architecture.md' => ['Architecture.Governance', 'P2'],
+        'website/docs/rules/architecture.ru.md' => ['Architecture.Governance', 'P2'],
         'website/docs/usage/baseline.md' => ['Analysis.Policy.Baseline', 'P6'],
         'website/docs/usage/baseline.ru.md' => ['Analysis.Policy.Baseline', 'P6'],
         'website/docs/usage/output-formats.md' => ['Analysis.Finding', 'P6'],
@@ -1208,14 +1214,10 @@ function documentationDisposition(string $path): array
         'docs/internal/plans/global-functions-graph.md',
         'docs/internal/plans/phpdoc-dependencies.md',
         'src/Core/Path/README.md',
-        'src/Core/README.md',
         'src/Infrastructure/Cache/README.md',
-        'src/Infrastructure/Console/README.md',
         'src/Infrastructure/Git/README.md',
         'src/Infrastructure/Logging/README.md',
         'src/Infrastructure/Profiler/README.md',
-        'src/Infrastructure/README.md',
-        'src/Reporting/README.md',
         'website/docs/changelog.md',
         'website/docs/ci-cd/github-actions.md',
         'website/docs/ci-cd/github-actions.ru.md',

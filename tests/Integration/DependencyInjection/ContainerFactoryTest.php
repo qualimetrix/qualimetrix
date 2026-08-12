@@ -8,6 +8,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface;
@@ -21,7 +23,6 @@ use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationHolder;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -29,6 +30,7 @@ use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -45,6 +47,7 @@ use Qualimetrix\Metrics\Structure\MethodCountCollector;
 use Qualimetrix\Metrics\Structure\RfcCollector;
 use Qualimetrix\Metrics\Structure\TccLccCollector;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
 use Qualimetrix\Rules\AbstractRule;
 use Qualimetrix\Rules\CodeSmell\BooleanArgumentRule;
 use Qualimetrix\Rules\CodeSmell\CountInLoopRule;
@@ -104,6 +107,34 @@ final class ContainerFactoryTest extends TestCase
         $container = $this->factory->create();
 
         self::assertTrue($container->isCompiled());
+    }
+
+    #[Test]
+    public function itWiresDependencyModelAndGraphProjectionThroughPublicContracts(): void
+    {
+        $container = $this->factory->create();
+
+        $graphBuilder = $container->get(DependencyGraphBuilderInterface::class);
+        self::assertInstanceOf(DependencyGraphBuilderInterface::class, $graphBuilder);
+        self::assertSame(
+            'Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraphBuilder',
+            $graphBuilder::class,
+        );
+
+        $pipeline = $container->get(AnalysisPipelineInterface::class);
+        $pipelineBuilder = (new ReflectionProperty(AnalysisPipeline::class, 'graphBuilder'))->getValue($pipeline);
+        self::assertSame($graphBuilder, $pipelineBuilder);
+
+        $projection = $container->get(DependencyGraphProjectionInterface::class);
+        self::assertInstanceOf(DependencyGraphProjectionInterface::class, $projection);
+        self::assertSame(
+            'Qualimetrix\\Reporting\\GraphProjection\\DependencyGraphProjector',
+            $projection::class,
+        );
+
+        $command = $container->get(GraphExportCommand::class);
+        $commandProjection = (new ReflectionProperty(GraphExportCommand::class, 'projection'))->getValue($command);
+        self::assertSame($projection, $commandProjection);
     }
 
     #[Test]

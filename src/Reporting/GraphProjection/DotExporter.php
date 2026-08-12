@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Collection\Dependency\Export;
+namespace Qualimetrix\Reporting\GraphProjection;
 
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -17,7 +17,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * - Namespace filtering (include/exclude)
  * - Proper escaping of special characters
  */
-final class DotExporter implements GraphExporterInterface
+final class DotExporter
 {
     public function __construct(
         private readonly DotExporterOptions $options = new DotExporterOptions(),
@@ -291,13 +291,4 @@ final class DotExporter implements GraphExporterInterface
         return "digraph Dependencies {\n    // No classes to display\n}";
     }
 
-    public function getFormat(): string
-    {
-        return 'dot';
-    }
-
-    public function getFileExtension(): string
-    {
-        return 'dot';
-    }
 }

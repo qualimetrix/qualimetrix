@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Architecture\Unit\Rules;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Domain\CoverageMode;
@@ -20,9 +25,6 @@ use Qualimetrix\Architecture\Rules\LayerViolationOptions;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Architecture\Rules\OwnedLayerTargets;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
-use Qualimetrix\Core\Dependency\Dependency;
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
-use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -1264,6 +1266,55 @@ final class LayerViolationRuleTest extends TestCase
             CoverageMode::Ignore,
             emptyTemplateNames: $emptyTemplateNames,
         );
+    }
+
+    #[Test]
+    public function itPreservesTheDependencyLocationIdentityWhenProjectingAFinding(): void
+    {
+        $source = SymbolPath::forClass('App\\Controller', 'Controller');
+        $target = SymbolPath::forClass('App\\Repository', 'Repository');
+        $location = new Location(RelativePath::fromString('src/Controller.php'), 12);
+        $finding = new LayerViolationFinding(
+            dependency: $this->dependency($source, $target, DependencyType::New_, $location),
+            fromMatch: (new LayerRegistry([new LayerDefinition('controller', new MembershipSpec(['App\\Controller']))]))->resolveAll($source)[0],
+            toMatch: (new LayerRegistry([new LayerDefinition('repository', new MembershipSpec(['App\\Repository']))]))->resolveAll($target)[0],
+            ownedTargets: [],
+            ruleName: LayerViolationRule::NAME,
+            severity: Severity::Warning,
+            recommendation: 'Move the dependency behind an allowed boundary.',
+        );
+
+        self::assertSame($location, $finding->toViolations()[0]->location);
+    }
+
+    #[Test]
+    public function itRejectsANonFindingDependencyLocationAtRuntime(): void
+    {
+        $source = SymbolPath::forClass('App\\Controller', 'Controller');
+        $target = SymbolPath::forClass('App\\Repository', 'Repository');
+        $location = new class implements DependencyLocationInterface {
+            public function toString(): string
+            {
+                return 'foreign-location';
+            }
+        };
+        $finding = new LayerViolationFinding(
+            dependency: new Dependency(
+                new DeclarationPath($source, RelativePath::fromString('src/Controller.php'), 0),
+                new LogicalClassPath($target),
+                DependencyType::New_,
+                $location,
+            ),
+            fromMatch: (new LayerRegistry([new LayerDefinition('controller', new MembershipSpec(['App\\Controller']))]))->resolveAll($source)[0],
+            toMatch: (new LayerRegistry([new LayerDefinition('repository', new MembershipSpec(['App\\Repository']))]))->resolveAll($target)[0],
+            ownedTargets: [],
+            ruleName: LayerViolationRule::NAME,
+            severity: Severity::Warning,
+            recommendation: 'Move the dependency behind an allowed boundary.',
+        );
+
+        $this->expectException(LogicException::class);
+        $finding->toViolations();
     }
 
     /**

@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Analysis\Collection\Dependency;
+namespace Qualimetrix\Analysis\Evidence\DependencyModel;
 
-use Qualimetrix\Core\Dependency\Dependency;
-use Qualimetrix\Core\Dependency\DependencyType;
-use Qualimetrix\Core\Namespace_\NamespaceTree;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -23,15 +24,15 @@ use Qualimetrix\Core\Util\StringSet;
  * architectural risk measured by CBO. Only `extends` edges are preserved
  * (needed by DitGlobalCollector and NocCollector for inheritance metrics).
  */
-final class DependencyGraphBuilder
+final class DependencyGraphBuilder implements DependencyGraphBuilderInterface
 {
     /**
      * Builds a dependency graph from a collection of dependencies.
      *
-     * @param array<Dependency> $dependencies
+     * @param list<Dependency> $dependencies
      * @param iterable<LogicalClassPath> $logicalClassUniverse
      */
-    public function build(array $dependencies, iterable $logicalClassUniverse): DependencyGraph
+    public function build(array $dependencies, iterable $logicalClassUniverse): DependencyGraphInterface
     {
         $dependencies = $this->retainGraphDependencies($dependencies);
         $indexes = $this->indexGraphInputs($dependencies, $logicalClassUniverse);
@@ -149,10 +150,14 @@ final class DependencyGraphBuilder
             $canonicalNamespaceMap[$nsPath->toCanonical()] = $nsPath;
         }
 
-        $tree = new NamespaceTree(array_keys($leafNamespaces));
         $parentNamespaces = [];
-        foreach ($tree->getParentNamespaces() as $parentNs) {
-            $parentNamespaces[$parentNs] = SymbolPath::forNamespace($parentNs);
+        foreach (array_keys($leafNamespaces) as $namespace) {
+            $parentNamespace = $namespace;
+
+            while (($separator = strrpos($parentNamespace, '\\')) !== false) {
+                $parentNamespace = substr($parentNamespace, 0, $separator);
+                $parentNamespaces[$parentNamespace] ??= SymbolPath::forNamespace($parentNamespace);
+            }
         }
         foreach ($parentNamespaces as $nsPath) {
             $canonicalNamespaceMap[$nsPath->toCanonical()] = $nsPath;

@@ -24,11 +24,11 @@ coupling:
     - Psr
     - Amp
 
-# Architecture: generated P0 coarse enforcement projection.
+# Architecture: generated modular-architecture coarse enforcement projection.
 #
-# The live topology contains 37 semantic-owner layers plus 14 exact singleton
-# seams that temporarily keep the declared allow graph acyclic. Membership and
-# allows are generated from the internal manifest and current production AST.
+# The live topology contains 37 semantic-owner layers plus 12 exact singleton
+# seams: 49 internal enforcement layers, or 50 including `external`. Membership
+# and 272 allows are generated from the internal manifest and production AST.
 #
 # qmx layers intentionally enforce only the coarse owner/seam DAG. Exact
 # internal visibility, contract consumers and temporary source-to-target grants
@@ -211,12 +211,14 @@ architecture:
         - 'Qualimetrix\Rules\Coupling\NamespaceInstabilityOptions'
     - name: analysis-evidence-dependencymodel
       patterns:
-        - 'Qualimetrix\Analysis\Collection\Dependency\DependencyGraph'
-        - 'Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder'
-        - 'Qualimetrix\Core\Dependency\Dependency'
-        - 'Qualimetrix\Core\Dependency\DependencyGraphInterface'
-        - 'Qualimetrix\Core\Dependency\DependencyType'
-        - 'Qualimetrix\Core\Dependency\EmptyDependencyGraph'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\EmptyDependencyGraph'
     - name: analysis-evidence-design
       patterns:
         - 'Qualimetrix\Metrics\Design\TypeCoverageCollector'
@@ -281,6 +283,7 @@ architecture:
         - 'Qualimetrix\Core\Metric\CollectorConfigHolder'
         - 'Qualimetrix\Core\Metric\DataBag'
         - 'Qualimetrix\Core\Metric\DerivedCollectorInterface'
+        - 'Qualimetrix\Core\Metric\GlobalContextCollectorInterface'
         - 'Qualimetrix\Core\Metric\MetricBag'
         - 'Qualimetrix\Core\Metric\MetricCollectorInterface'
         - 'Qualimetrix\Core\Metric\MetricDefinition'
@@ -394,6 +397,7 @@ architecture:
         - 'Qualimetrix\Core\Violation\Filter\ViolationFilterStage'
         - 'Qualimetrix\Core\Violation\Filter\ViolationFilterStageInterface'
         - 'Qualimetrix\Core\Violation\Filter\ViolationFilterStageResult'
+        - 'Qualimetrix\Core\Violation\Location'
         - 'Qualimetrix\Core\Violation\OccurrenceKey'
         - 'Qualimetrix\Core\Violation\RuleExclusionCaptureHolder'
         - 'Qualimetrix\Core\Violation\Severity'
@@ -794,10 +798,12 @@ architecture:
         - 'Qualimetrix\Reporting\ReportCoverage'
     - name: reporting-graphprojection
       patterns:
-        - 'Qualimetrix\Analysis\Collection\Dependency\Export\DotExporter'
-        - 'Qualimetrix\Analysis\Collection\Dependency\Export\DotExporterOptions'
-        - 'Qualimetrix\Analysis\Collection\Dependency\Export\GraphExporterInterface'
-        - 'Qualimetrix\Analysis\Collection\Dependency\Export\JsonGraphExporter'
+        - 'Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface'
+        - 'Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest'
+        - 'Qualimetrix\Reporting\GraphProjection\DependencyGraphProjector'
+        - 'Qualimetrix\Reporting\GraphProjection\DotExporter'
+        - 'Qualimetrix\Reporting\GraphProjection\DotExporterOptions'
+        - 'Qualimetrix\Reporting\GraphProjection\JsonGraphExporter'
     - name: seam-architecture-lifecycle-hook
       patterns:
         - 'Qualimetrix\Architecture\Processing\ArchitectureLifecycleHook'
@@ -813,9 +819,6 @@ architecture:
     - name: seam-deferred-warning
       patterns:
         - 'Qualimetrix\Configuration\Pipeline\DeferredWarning'
-    - name: seam-global-context-collector
-      patterns:
-        - 'Qualimetrix\Core\Metric\GlobalContextCollectorInterface'
     - name: seam-health-reason-builder
       patterns:
         - 'Qualimetrix\Reporting\Health\HealthReasonBuilder'
@@ -837,9 +840,6 @@ architecture:
     - name: seam-suppression-filter
       patterns:
         - 'Qualimetrix\Baseline\Suppression\SuppressionFilter'
-    - name: seam-violation-location
-      patterns:
-        - 'Qualimetrix\Core\Violation\Location'
     - name: external
       patterns: ['**']
       exclude:
@@ -860,7 +860,6 @@ architecture:
       - analysis-finding
       - core-neutral
       - core-symbol
-      - seam-violation-location
       - external
     analysis-evidence-codesmell:
       - analysis-evidence-measurement
@@ -868,7 +867,6 @@ architecture:
       - core-neutral
       - core-path
       - core-symbol
-      - seam-violation-location
       - external
     analysis-evidence-cohesion:
       - analysis-evidence-measurement
@@ -876,7 +874,6 @@ architecture:
       - core-neutral
       - core-path
       - core-symbol
-      - seam-violation-location
       - external
     analysis-evidence-complexity:
       - analysis-evidence-measurement
@@ -884,14 +881,12 @@ architecture:
       - core-neutral
       - core-path
       - core-symbol
-      - seam-violation-location
       - external
     analysis-evidence-computedmetrics:
       - analysis-evidence-measurement
       - analysis-finding
       - core-symbol
       - infrastructure-observability
-      - seam-violation-location
       - external
     analysis-evidence-computedmetrics-health:
       - analysis-evidence-computedmetrics
@@ -908,14 +903,10 @@ architecture:
       - core-neutral
       - core-path
       - core-symbol
-      - seam-global-context-collector
-      - seam-violation-location
       - external
     analysis-evidence-dependencymodel:
-      - analysis-evidence-measurement
       - core-neutral
       - core-symbol
-      - seam-violation-location
       - external
     analysis-evidence-design:
       - analysis-evidence-dependencymodel
@@ -924,8 +915,6 @@ architecture:
       - core-neutral
       - core-path
       - core-symbol
-      - seam-global-context-collector
-      - seam-violation-location
       - external
     analysis-evidence-duplication:
       - analysis-configuration
@@ -933,7 +922,6 @@ architecture:
       - core-neutral
       - core-path
       - core-symbol
-      - seam-violation-location
       - external
     analysis-evidence-maintainability:
       - analysis-evidence-measurement
@@ -941,9 +929,9 @@ architecture:
       - core-neutral
       - core-path
       - core-symbol
-      - seam-violation-location
       - external
     analysis-evidence-measurement:
+      - analysis-evidence-dependencymodel
       - core-path
       - core-symbol
       - external
@@ -958,7 +946,6 @@ architecture:
       - analysis-finding
       - core-path
       - core-symbol
-      - seam-violation-location
       - external
     analysis-evidence-size:
       - analysis-evidence-measurement
@@ -966,16 +953,15 @@ architecture:
       - core-neutral
       - core-path
       - core-symbol
-      - seam-violation-location
       - external
     analysis-finding:
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
       - analysis-policy-inline
       - core-neutral
+      - core-path
       - core-symbol
       - seam-rule-matcher
-      - seam-violation-location
       - external
     analysis-policy-architecture:
       - analysis-evidence-dependencymodel
@@ -984,7 +970,6 @@ architecture:
       - core-symbol
       - seam-config-load-exception
       - seam-deferred-warning
-      - seam-violation-location
       - external
     analysis-policy-baseline:
       - analysis-evidence-dependencymodel
@@ -1014,10 +999,8 @@ architecture:
       - core-symbol
       - infrastructure-observability
       - seam-declaration-bindings
-      - seam-global-context-collector
       - seam-rule-matcher
       - seam-source-controls
-      - seam-violation-location
       - external
     core-neutral:
       - core-path
@@ -1087,7 +1070,6 @@ architecture:
       - infrastructure-rule
       - reporting
       - seam-computed-metrics-config-resolver
-      - seam-global-context-collector
       - seam-rule-executor
       - seam-rule-validator-map-factory
       - seam-suppression-filter
@@ -1135,7 +1117,6 @@ architecture:
       - core-symbol
       - seam-health-reason-builder
       - seam-metric-hint-provider
-      - seam-violation-location
       - external
     reporting-graphprojection:
       - analysis-evidence-dependencymodel
@@ -1162,10 +1143,6 @@ architecture:
       - external
     seam-deferred-warning:
       - external
-    seam-global-context-collector:
-      - analysis-evidence-dependencymodel
-      - analysis-evidence-measurement
-      - external
     seam-health-reason-builder:
       - analysis-evidence-computedmetrics
       - seam-metric-hint-provider
@@ -1189,9 +1166,6 @@ architecture:
     seam-suppression-filter:
       - analysis-finding
       - analysis-policy-inline
-      - external
-    seam-violation-location:
-      - core-path
       - external
     external: []
 
@@ -1253,6 +1227,7 @@ rules:
       - Qualimetrix\Core\Metric
       - Qualimetrix\Core\Rule
       - Qualimetrix\Core\Dependency
+      - Qualimetrix\Analysis\Evidence\DependencyModel\Contract
       - Qualimetrix\Core\Path
 
   # Distance: leaf namespaces holding pure value objects, enums, and exceptions
@@ -1260,14 +1235,14 @@ rules:
   # domain-VO sub-namespace. The Architecture/Domain/* tree is the vertical
   # slice's equivalent of the Core leaf VO namespaces (ADR 0010).
   #
-  # Note on scope: `exclude_namespaces` matches by prefix, so the two entries
-  # below are blankets, not leaf selections — `Qualimetrix\Core` covers the whole
+  # Note on scope: plain `exclude_namespaces` entries match by prefix, so the two
+  # entries below are blankets — `Qualimetrix\Core` covers the whole
   # Core tree (including the umbrella namespace itself, D=0.71) and
   # `Architecture\Domain` covers Allow/Layer. Seven child entries used to be listed
   # here as well; they were removed after measuring zero delta — they read as
-  # precision the config does not actually have. Replacing the blankets with true
-  # leaf-only exclusions is not expressible today: there is no "this namespace
-  # only, not its children" form in the config language.
+  # precision the config does not actually have. The character-class form used
+  # for DependencyModel matches the exact owner root without prefix-enrolling its
+  # healthy Contract child.
   coupling.distance:
     exclude_namespaces:
       - Qualimetrix\Core
@@ -1276,6 +1251,9 @@ rules:
       - Qualimetrix\Infrastructure\Serializer
       - Qualimetrix\Reporting\Formatter\Support
       - Qualimetrix\Analysis\Collection\Metric
+      # The stable public contract plus internal graph implementations makes the
+      # owner-root distance structural; `[Q]` avoids excluding the Contract child.
+      - '[Q]ualimetrix\Analysis\Evidence\DependencyModel'
     max_distance_warning: 0.5
     max_distance_error: 0.7
 
@@ -1387,7 +1365,7 @@ rules:
       - src/Reporting/FormatterContext.php
       - src/Reporting/Health/WorstOffender.php
       - src/Analysis/Collection/CollectedFileData.php
-      - src/Analysis/Collection/Dependency/DependencyGraph.php
+      - src/Analysis/Evidence/DependencyModel/DependencyGraph.php
       - src/Analysis/Collection/FileProcessingResult.php
       - src/Analysis/Pipeline/AnalysisPipeline.php
       - src/Analysis/Pipeline/MetricEnricher.php
@@ -1459,3 +1437,6 @@ rules:
         # Coupling collectors expose independent graph calculations; shared-field
         # cohesion is structurally inapplicable to this namespace-level category.
         - Qualimetrix\Metrics\Coupling
+        # The root recursively includes the intentionally data-shaped graph; the
+        # `[Q]` exact-root glob keeps the healthy Contract child under analysis.
+        - '[Q]ualimetrix\Analysis\Evidence\DependencyModel'

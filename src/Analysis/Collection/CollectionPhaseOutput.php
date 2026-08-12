@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Collection;
 
-use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 
 /**
  * Complete output of the collection phase.

@@ -28,6 +28,8 @@
             <directory>tests/Unit</directory>
             <directory>tests/Architecture/Unit</directory>
             <directory>tests/Analysis/Evidence/Duplication/Unit</directory>
+            <directory>tests/Analysis/Evidence/DependencyModel/Unit</directory>
+            <directory>tests/Reporting/GraphProjection/Unit</directory>
         </testsuite>
         <testsuite name="Integration">
             <directory>tests/Integration</directory>

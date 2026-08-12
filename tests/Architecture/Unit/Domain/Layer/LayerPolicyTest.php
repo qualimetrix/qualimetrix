@@ -7,12 +7,12 @@ namespace Qualimetrix\Tests\Architecture\Unit\Domain\Layer;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Architecture\Domain\Allow\AllowListEntry;
 use Qualimetrix\Architecture\Domain\Allow\AllowTarget;
 use Qualimetrix\Architecture\Domain\Allow\LayerSelector;
 use Qualimetrix\Architecture\Domain\Allow\LayerSelectorParser;
 use Qualimetrix\Architecture\Domain\Layer\LayerPolicy;
-use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
 
 #[CoversClass(LayerPolicy::class)]

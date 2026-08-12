@@ -1,6 +1,69 @@
 PHPUnit 12.5.25 by Sebastian Bergmann and contributors.
 
 Available tests:
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itKeepsDegreeZeroDeclarationsAndUndeclaredExternalTargets
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itFiltersBuiltinCouplingButRetainsBuiltinInheritance
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itDeduplicatesClassAndNamespaceCouplingEndpoints
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphBuilderTest::itTreatsSiblingEdgesAsInternalToTheirParentAndExternalEdgesAsBoundaryCrossings
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::getClassDependencies_returnsOutgoingDependencies
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::getClassDependents_returnsIncomingDependencies
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::getClassCe_countsUniqueTargets
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::getClassCa_countsUniqueSources
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::getNamespaceCe_countsExternalDependencies
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::getNamespaceCa_countsExternalDependents
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::getAllClasses_returnsAllUniqueClasses
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::getAllNamespaces_returnsAllUniqueNamespaces
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::getAllDependencies_returnsAllDependencies
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::emptyGraph_returnsEmptyResults
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::itSeedsDegreeZeroClassesFromTheExplicitUniverse
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::handlesGlobalNamespace
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::build_excludesNonStructuralBuiltinDependencies
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::build_preservesExtendsDependencyToBuiltinClass
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::build_excludesNamespacedPhpBuiltins
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::build_keepsUserClassesInGlobalNamespace
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::build_keepsNamespacedClassesEvenIfNameMatchesBuiltin
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::build_excludesBuiltinFromCeCount
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::build_excludesBuiltinFromNamespaceCe
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::build_keepsImplementsForUserDefinedInterface
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::build_excludesBuiltinInterfaces
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::parent_namespace_ce_deps_between_children_are_internal
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::parent_namespace_ce_external_deps_cross_boundary
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::parent_namespace_ca_external_deps_cross_boundary
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::parent_namespace_mixed_internal_and_external_deps
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::parent_namespace_deep_nesting_propagates_ce
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::leaf_namespace_ce_ca_not_affected_by_parent_ns_addition
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyGraphTest::parent_namespace_with_all_internal_deps_has_zero_coupling
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itConstructorWithAllProperties
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsCrossNamespace"same namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsCrossNamespace"different namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsCrossNamespace"both global namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsCrossNamespace"source global, target namespaced"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsCrossNamespace"source namespaced, target global"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsCrossNamespace"deep same namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"extends is strong"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"implements is strong"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"trait use is strong"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"new is not strong"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"static call is not strong"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"type hint is not strong"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itIsStrongCoupling"attribute is not strong"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itToString"new dependency with line"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itToString"extends dependency"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itToString"implements dependency"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itToString"dependency without line"
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\DependencyTest::itDependencyIsReadonly
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\EmptyDependencyGraphTest::itImplementsDependencyGraphInterface
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\EmptyDependencyGraphTest::itGetClassDependenciesReturnsEmptyArray
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\EmptyDependencyGraphTest::itGetClassDependentsReturnsEmptyArray
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\EmptyDependencyGraphTest::itGetClassCeReturnsZero
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\EmptyDependencyGraphTest::itGetClassCaReturnsZero
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\EmptyDependencyGraphTest::itGetNamespaceCeReturnsZero
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\EmptyDependencyGraphTest::itGetNamespaceCaReturnsZero
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\EmptyDependencyGraphTest::itGetAllClassesReturnsEmptyArray
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\EmptyDependencyGraphTest::itGetAllNamespacesReturnsEmptyArray
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\EmptyDependencyGraphTest::itGetAllDependenciesReturnsEmptyArray
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\EmptyDependencyGraphTest::itMultipleCallsReturnConsistentResults
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\EmptyDependencyGraphTest::itDifferentInstancesReturnSameResults
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::nameAndDescriptionAreCorrect
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::optionsClassIsCorrect
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\CodeDuplicationRuleTest::disabledRuleReturnsNoViolations
@@ -109,6 +172,9 @@ Available tests:
  - Qualimetrix\Tests\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itEncodesThePostP1DuplicationBoundary
  - Qualimetrix\Tests\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itClassifiesLegacyAndTargetDuplicationTestsWithoutACatchAll
  - Qualimetrix\Tests\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itClassifiesTheP1DuplicationModuleReadmeExactly
+ - Qualimetrix\Tests\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itEncodesThePostP2DependencyAndProjectionBoundaries
+ - Qualimetrix\Tests\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itClassifiesTheSevenP2OwnedTestsWithoutACatchAll
+ - Qualimetrix\Tests\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itClassifiesTheTwoP2ModuleReadmesExactly
  - Qualimetrix\Tests\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itRejectsAnUnlistedExactInternalPairBehindACoarseOwnerEdge
  - Qualimetrix\Tests\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itRejectsGeneratedLayerNameCollisions
  - Qualimetrix\Tests\Architecture\Integration\ModularArchitectureGovernanceIntegrationTest::itRejectsNonCanonicalSegmentedSeamLayerNames
@@ -769,6 +835,8 @@ Available tests:
  - Qualimetrix\Tests\Architecture\Unit\Rules\LayerViolationRuleTest::itDefaultsEmptyTemplateSeverityToWarning
  - Qualimetrix\Tests\Architecture\Unit\Rules\LayerViolationRuleTest::itAllowsConfiguringEmptyTemplateSeverity
  - Qualimetrix\Tests\Architecture\Unit\Rules\LayerViolationRuleTest::statelessness_consecutiveAnalyzeCallsDoNotLeakHitCountsOrShadowEvidence
+ - Qualimetrix\Tests\Architecture\Unit\Rules\LayerViolationRuleTest::itPreservesTheDependencyLocationIdentityWhenProjectingAFinding
+ - Qualimetrix\Tests\Architecture\Unit\Rules\LayerViolationRuleTest::itRejectsANonFindingDependencyLocationAtRuntime
  - Qualimetrix\Tests\Functional\Console\Command\BaselineCleanupCommandTest::itReportsAndWritesNothingWithoutRemove
  - Qualimetrix\Tests\Functional\Console\Command\BaselineCleanupCommandTest::itRemovesOnlyTheNamedEntryEvenWhenTwoDifferOnlyByEdge
  - Qualimetrix\Tests\Functional\Console\Command\BaselineCleanupCommandTest::itReportsASelectorThatMatchesNothingAndWritesNothing
@@ -884,19 +952,6 @@ Available tests:
  - Qualimetrix\Tests\Functional\Console\Command\CheckCommandTest::itSupportsGithubActionsFormatWithViolations
  - Qualimetrix\Tests\Functional\Console\Command\CheckCommandTest::itRunsHealthFormatWithComputedMetrics
  - Qualimetrix\Tests\Functional\Console\Command\CheckCommandTest::itAppliesSymbolHealthSuppressionWithoutHidingSiblingDimensions
- - Qualimetrix\Tests\Functional\Console\Command\GraphExportCommandTest::itExportsDependencyGraphToDotFormat
- - Qualimetrix\Tests\Functional\Console\Command\GraphExportCommandTest::itExportsGraphToFile
- - Qualimetrix\Tests\Functional\Console\Command\GraphExportCommandTest::itFailsWhenNoFilesFound
- - Qualimetrix\Tests\Functional\Console\Command\GraphExportCommandTest::itSupportsNamespaceFiltering
- - Qualimetrix\Tests\Functional\Console\Command\GraphExportCommandTest::itSupportsDirectionOption
- - Qualimetrix\Tests\Functional\Console\Command\GraphExportCommandTest::itSupportsNoClustersOption
- - Qualimetrix\Tests\Functional\Console\Command\GraphExportCommandTest::itExportsDependencyGraphAsJsonToStdout
- - Qualimetrix\Tests\Functional\Console\Command\GraphExportCommandTest::itExportsDependencyGraphAsJsonToFile
- - Qualimetrix\Tests\Functional\Console\Command\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"DOT stdout"
- - Qualimetrix\Tests\Functional\Console\Command\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"JSON stdout"
- - Qualimetrix\Tests\Functional\Console\Command\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"DOT output file"
- - Qualimetrix\Tests\Functional\Console\Command\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"JSON output file"
- - Qualimetrix\Tests\Functional\Console\Command\GraphExportCommandTest::itPreservesExistingOutputBytesOnPartialAnalysis
  - Qualimetrix\Tests\Functional\Console\Command\HookInstallCommandTest::itInstallsPreCommitHook
  - Qualimetrix\Tests\Functional\Console\Command\HookInstallCommandTest::itFailsWhenHookExistsWithoutForceFlag
  - Qualimetrix\Tests\Functional\Console\Command\HookInstallCommandTest::itOverwritesExistingHookWithForceFlag
@@ -991,6 +1046,19 @@ Available tests:
  - Qualimetrix\Tests\Functional\Reporting\JsonShapePreservationTest::sarifFormatterOmitsLocationsForProjectViolations
  - Qualimetrix\Tests\Functional\Reporting\JsonShapePreservationTest::metricsJsonFormatterEmitsFileAsStringField
  - Qualimetrix\Tests\Functional\Reporting\JsonShapePreservationTest::itPreservesATargetOnlyEdgeThroughTheJsonFormatter
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphToDotFormat
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsGraphToFile
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itFailsWhenNoFilesFound
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsNamespaceFiltering
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsDirectionOption
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itSupportsNoClustersOption
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphAsJsonToStdout
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itExportsDependencyGraphAsJsonToFile
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"DOT stdout"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"JSON stdout"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"DOT output file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itRefusesAllFailedAnalysisWithoutCreatingAnArtifact"JSON output file"
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\GraphExportCommandTest::itPreservesExistingOutputBytesOnPartialAnalysis
  - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itLogsToOutput
  - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itRespectsMinLevel
  - Qualimetrix\Tests\Infrastructure\Logging\ConsoleLoggerTest::itFormatsContext
@@ -1192,6 +1260,7 @@ Available tests:
  - Qualimetrix\Tests\Integration\DependencyInjection\ContainerConfigurationStagesTest::presetStageIsRegisteredInPipeline
  - Qualimetrix\Tests\Integration\DependencyInjection\ContainerConfigurationStagesTest::allStagesAreRegisteredWithCorrectPriorities
  - Qualimetrix\Tests\Integration\DependencyInjection\ContainerFactoryTest::itCreatesCompiledContainer
+ - Qualimetrix\Tests\Integration\DependencyInjection\ContainerFactoryTest::itWiresDependencyModelAndGraphProjectionThroughPublicContracts
  - Qualimetrix\Tests\Integration\DependencyInjection\ContainerFactoryTest::itHasAnalysisPipeline
  - Qualimetrix\Tests\Integration\DependencyInjection\ContainerFactoryTest::itHasFormatterRegistry
  - Qualimetrix\Tests\Integration\DependencyInjection\ContainerFactoryTest::itHasCache
@@ -1271,6 +1340,7 @@ Available tests:
  - Qualimetrix\Tests\Integration\Pipeline\AnalysisPipelineIntegrationTest::dependencyGraphIsPassedToAnalysisContext
  - Qualimetrix\Tests\Integration\Pipeline\AnalysisPipelineIntegrationTest::circularDependencyRuleProducesViolationsForActualCycles
  - Qualimetrix\Tests\Integration\Pipeline\AnalysisPipelineIntegrationTest::globalCollectorMetricsAreAggregatedToNamespaceLevel
+ - Qualimetrix\Tests\Integration\Pipeline\AnalysisPipelineIntegrationTest::itBuildsEquivalentOrderedDependencyGraphsSequentiallyAndInParallel
  - Qualimetrix\Tests\Integration\Profiler\ProfilerIntegrationTest::itReturnsNullProfilerByDefault
  - Qualimetrix\Tests\Integration\Profiler\ProfilerIntegrationTest::itReturnsSameNullProfilerInstance
  - Qualimetrix\Tests\Integration\Profiler\ProfilerIntegrationTest::itUsesSetProfiler
@@ -1314,6 +1384,37 @@ Available tests:
  - Qualimetrix\Tests\Integration\WmcIntegrationTest::itVerifiesWmcEqualsCcnSum
  - Qualimetrix\Tests\Integration\WmcIntegrationTest::itHandlesClassWithoutMethodsGracefully
  - Qualimetrix\Tests\Integration\WmcIntegrationTest::itComputesWmcForMultipleClasses
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"dot"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"json"
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itRejectsUnsupportedFormat
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsEveryRequestFieldToDotProjection
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsNamespaceFiltersToJsonProjection
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itExportsValidDot
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itGroupsByNamespace
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itUsesShortLabels
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itUsesFullLabelsWhenDisabled
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itUsesFullLabelsInClusterModeWhenShortLabelsDisabled
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itUsesShortLabelsInClusterMode
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itEscapesSpecialCharacters
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itFiltersIncludeNamespaces
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itFiltersExcludeNamespaces
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itColorsByInstability
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itDisablesColorByInstability
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itChangesDirection
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itExportsEmptyGraph
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DotExporterTest::itFiltersEdgesWhenNodesAreFiltered
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itExportsValidJson
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itHasMetaSection
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itHasStatisticsSection
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itIncludesFqnAndNamespaceInNodes
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itAggregatesEdges
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itSortsEdgesByFromThenTo
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itHandlesEmptyGraph
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itFiltersIncludeNamespaces
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itFiltersExcludeNamespaces
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itFiltersEdgesWhenNodesAreFiltered
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itPreservesAllDependencyTypes
+ - Qualimetrix\Tests\Reporting\GraphProjection\Unit\JsonGraphExporterTest::itOutputsPrettyPrintedJson
  - Qualimetrix\Tests\Unit\Analysis\Aggregator\AggregationHelperTest::percentile95ReturnsExpectedValue"single value"
  - Qualimetrix\Tests\Unit\Analysis\Aggregator\AggregationHelperTest::percentile95ReturnsExpectedValue"two values"
  - Qualimetrix\Tests\Unit\Analysis\Aggregator\AggregationHelperTest::percentile95ReturnsExpectedValue"all same values"
@@ -1488,38 +1589,6 @@ Available tests:
  - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\CycleTest::itConvertsToStructuredData
  - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\CycleTest::itKeepsStructuredDataUnambiguousWhenMembersShareAClassName
  - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\CycleTest::itContainsFullPathInStructuredDataForLargeCycle
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphBuilderTest::itKeepsDegreeZeroDeclarationsAndUndeclaredExternalTargets
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphBuilderTest::itFiltersBuiltinCouplingButRetainsBuiltinInheritance
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphBuilderTest::itDeduplicatesClassAndNamespaceCouplingEndpoints
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphBuilderTest::itTreatsSiblingEdgesAsInternalToTheirParentAndExternalEdgesAsBoundaryCrossings
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::getClassDependencies_returnsOutgoingDependencies
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::getClassDependents_returnsIncomingDependencies
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::getClassCe_countsUniqueTargets
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::getClassCa_countsUniqueSources
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::getNamespaceCe_countsExternalDependencies
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::getNamespaceCa_countsExternalDependents
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::getAllClasses_returnsAllUniqueClasses
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::getAllNamespaces_returnsAllUniqueNamespaces
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::getAllDependencies_returnsAllDependencies
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::emptyGraph_returnsEmptyResults
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::itSeedsDegreeZeroClassesFromTheExplicitUniverse
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::handlesGlobalNamespace
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::build_excludesNonStructuralBuiltinDependencies
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::build_preservesExtendsDependencyToBuiltinClass
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::build_excludesNamespacedPhpBuiltins
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::build_keepsUserClassesInGlobalNamespace
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::build_keepsNamespacedClassesEvenIfNameMatchesBuiltin
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::build_excludesBuiltinFromCeCount
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::build_excludesBuiltinFromNamespaceCe
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::build_keepsImplementsForUserDefinedInterface
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::build_excludesBuiltinInterfaces
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::parent_namespace_ce_deps_between_children_are_internal
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::parent_namespace_ce_external_deps_cross_boundary
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::parent_namespace_ca_external_deps_cross_boundary
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::parent_namespace_mixed_internal_and_external_deps
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::parent_namespace_deep_nesting_propagates_ce
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::leaf_namespace_ce_ca_not_affected_by_parent_ns_addition
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyGraphTest::parent_namespace_with_all_internal_deps_has_zero_coupling
  - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyResolverTest::resolve_fullyQualifiedName_returnsAsIs
  - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyResolverTest::resolve_relativeName_prependsNamespace
  - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyResolverTest::resolve_unqualifiedName_withImport
@@ -1567,36 +1636,6 @@ Available tests:
  - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyVisitorTest::itDetectsAttributesOnClosureParameters
  - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyVisitorTest::itStillDetectsInstantiationInsideClosureBody
  - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\DependencyVisitorTest::itIgnoresClosureSignatureOutsideAnyEnclosingClass
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itExportsValidDot
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itGroupsByNamespace
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itUsesShortLabels
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itUsesFullLabelsWhenDisabled
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itUsesFullLabelsInClusterModeWhenShortLabelsDisabled
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itUsesShortLabelsInClusterMode
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itEscapesSpecialCharacters
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itFiltersIncludeNamespaces
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itFiltersExcludeNamespaces
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itColorsByInstability
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itDisablesColorByInstability
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itChangesDirection
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itExportsEmptyGraph
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itGetsFormat
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itGetsFileExtension
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\DotExporterTest::itFiltersEdgesWhenNodesAreFiltered
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\JsonGraphExporterTest::itExportsValidJson
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\JsonGraphExporterTest::itHasMetaSection
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\JsonGraphExporterTest::itHasStatisticsSection
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\JsonGraphExporterTest::itIncludesFqnAndNamespaceInNodes
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\JsonGraphExporterTest::itAggregatesEdges
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\JsonGraphExporterTest::itSortsEdgesByFromThenTo
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\JsonGraphExporterTest::itHandlesEmptyGraph
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\JsonGraphExporterTest::itFiltersIncludeNamespaces
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\JsonGraphExporterTest::itFiltersExcludeNamespaces
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\JsonGraphExporterTest::itFiltersEdgesWhenNodesAreFiltered
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\JsonGraphExporterTest::itGetsFormat
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\JsonGraphExporterTest::itGetsFileExtension
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\JsonGraphExporterTest::itPreservesAllDependencyTypes
- - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export\JsonGraphExporterTest::itOutputsPrettyPrintedJson
  - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\TypeDependencyHelperTest::selfTypeHintDoesNotProduceDependency
  - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\TypeDependencyHelperTest::staticTypeHintDoesNotProduceDependency
  - Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\TypeDependencyHelperTest::parentTypeHintDoesNotProduceDependency
@@ -2928,37 +2967,6 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Coupling\FrameworkNamespacesTest::isFramework_exactMatchForSingleSegment
  - Qualimetrix\Tests\Unit\Core\Coupling\FrameworkNamespacesTest::isFramework_returnsFalseWhenEmpty
  - Qualimetrix\Tests\Unit\Core\Coupling\FrameworkNamespacesTest::isFrameworkNamespace_matchesNamespaceStrings
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itConstructorWithAllProperties
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itIsCrossNamespace"same namespace"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itIsCrossNamespace"different namespace"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itIsCrossNamespace"both global namespace"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itIsCrossNamespace"source global, target namespaced"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itIsCrossNamespace"source namespaced, target global"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itIsCrossNamespace"deep same namespace"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itIsStrongCoupling"extends is strong"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itIsStrongCoupling"implements is strong"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itIsStrongCoupling"trait use is strong"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itIsStrongCoupling"new is not strong"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itIsStrongCoupling"static call is not strong"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itIsStrongCoupling"type hint is not strong"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itIsStrongCoupling"attribute is not strong"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itToString"new dependency with line"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itToString"extends dependency"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itToString"implements dependency"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itToString"dependency without line"
- - Qualimetrix\Tests\Unit\Core\Dependency\DependencyTest::itDependencyIsReadonly
- - Qualimetrix\Tests\Unit\Core\Dependency\EmptyDependencyGraphTest::itImplementsDependencyGraphInterface
- - Qualimetrix\Tests\Unit\Core\Dependency\EmptyDependencyGraphTest::itGetClassDependenciesReturnsEmptyArray
- - Qualimetrix\Tests\Unit\Core\Dependency\EmptyDependencyGraphTest::itGetClassDependentsReturnsEmptyArray
- - Qualimetrix\Tests\Unit\Core\Dependency\EmptyDependencyGraphTest::itGetClassCeReturnsZero
- - Qualimetrix\Tests\Unit\Core\Dependency\EmptyDependencyGraphTest::itGetClassCaReturnsZero
- - Qualimetrix\Tests\Unit\Core\Dependency\EmptyDependencyGraphTest::itGetNamespaceCeReturnsZero
- - Qualimetrix\Tests\Unit\Core\Dependency\EmptyDependencyGraphTest::itGetNamespaceCaReturnsZero
- - Qualimetrix\Tests\Unit\Core\Dependency\EmptyDependencyGraphTest::itGetAllClassesReturnsEmptyArray
- - Qualimetrix\Tests\Unit\Core\Dependency\EmptyDependencyGraphTest::itGetAllNamespacesReturnsEmptyArray
- - Qualimetrix\Tests\Unit\Core\Dependency\EmptyDependencyGraphTest::itGetAllDependenciesReturnsEmptyArray
- - Qualimetrix\Tests\Unit\Core\Dependency\EmptyDependencyGraphTest::itMultipleCallsReturnConsistentResults
- - Qualimetrix\Tests\Unit\Core\Dependency\EmptyDependencyGraphTest::itDifferentInstancesReturnSameResults
  - Qualimetrix\Tests\Unit\Core\Metric\CallableWithMetricsTest::itKeepsTheFinalMethodIdentityAndClassOwner
  - Qualimetrix\Tests\Unit\Core\Metric\CallableWithMetricsTest::itKeepsAFunctionOutsideClassAggregation
  - Qualimetrix\Tests\Unit\Core\Metric\CallableWithMetricsTest::itRequiresSyntaxForAnAnonymousCallable

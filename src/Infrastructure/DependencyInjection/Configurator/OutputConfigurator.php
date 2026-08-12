@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Pipeline\DependencyGraphAnalyzer;
 use Qualimetrix\Analysis\Pipeline\DependencyGraphAnalyzerInterface;
@@ -89,8 +89,17 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
     public function configure(ContainerBuilder $container): void
     {
         $this->registerFormatters($container);
+        $this->registerGraphProjection($container);
         $this->registerBaseline($container);
         $this->registerCli($container);
+    }
+
+    private function registerGraphProjection(ContainerBuilder $container): void
+    {
+        $projectorServiceId = 'qmx.reporting.graph_projection.projector';
+        $container->register($projectorServiceId, 'Qualimetrix\\Reporting\\GraphProjection\\DependencyGraphProjector');
+        $container->setAlias('Qualimetrix\\Reporting\\GraphProjection\\Contract\\DependencyGraphProjectionInterface', $projectorServiceId)
+            ->setPublic(true);
     }
 
     private function registerFormatters(ContainerBuilder $container): void
@@ -353,7 +362,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(FileDiscoveryInterface::class),
                 new Reference(FileParserInterface::class),
                 new Reference(DependencyVisitor::class),
-                new Reference(DependencyGraphBuilder::class),
+                new Reference(DependencyGraphBuilderInterface::class),
             ]);
         $container->setAlias(DependencyGraphAnalyzerInterface::class, DependencyGraphAnalyzer::class);
 
@@ -361,6 +370,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $container->register(GraphExportCommand::class)
             ->setArguments([
                 new Reference(DependencyGraphAnalyzerInterface::class),
+                new Reference('Qualimetrix\\Reporting\\GraphProjection\\Contract\\DependencyGraphProjectionInterface'),
                 new Reference(DelegatingLogger::class),
             ])
             ->setPublic(true);

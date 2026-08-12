@@ -8,9 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Dependency\CycleInterface;
-use Qualimetrix\Core\Dependency\EmptyDependencyGraph;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
 
 #[CoversClass(AnalysisContext::class)]
 final class AnalysisContextTest extends TestCase
@@ -31,7 +31,7 @@ final class AnalysisContextTest extends TestCase
     public function itConstructorWithAllParameters(): void
     {
         $metrics = self::createStub(MetricRepositoryInterface::class);
-        $dependencyGraph = new EmptyDependencyGraph();
+        $dependencyGraph = AdjacencyGraphBuilder::empty();
         $ruleOptions = [
             'complexity' => ['threshold' => 10],
             'size' => ['max_lines' => 100],

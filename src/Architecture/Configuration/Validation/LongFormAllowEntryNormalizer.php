@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Architecture\Configuration\Validation;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Architecture\Configuration\Allow\AllowAliasExpander;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
-use Qualimetrix\Core\Dependency\DependencyType;
 
 /**
  * Parses the long-form allow-target map ({@code [target: ..., relations:

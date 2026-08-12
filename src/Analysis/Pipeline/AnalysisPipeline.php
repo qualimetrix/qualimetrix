@@ -9,11 +9,12 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Collection\CollectionResult;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Discovery\GeneratedFileFilter;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory;
 use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
@@ -56,7 +57,7 @@ use SplFileInfo;
  */
 final class AnalysisPipeline implements AnalysisPipelineInterface
 {
-    private readonly DependencyGraphBuilder $graphBuilder;
+    private readonly DependencyGraphBuilderInterface $graphBuilder;
 
     public function __construct(
         private readonly FileDiscoveryInterface $defaultDiscovery,
@@ -65,13 +66,13 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         private readonly ConfigurationProviderInterface $configurationProvider,
         private readonly MetricEnricher $metricEnricher,
         private readonly ArchitectureProcessorInterface $architectureProcessor,
+        DependencyGraphBuilderInterface $graphBuilder,
         private readonly MetricRepositoryFactoryInterface $repositoryFactory = new DefaultMetricRepositoryFactory(),
-        ?DependencyGraphBuilder $graphBuilder = null,
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly ?ProfilerHolder $profilerHolder = null,
         private readonly RuleSelector $ruleSelector = new RuleSelector(new InMemoryRuleChannelRegistry()),
     ) {
-        $this->graphBuilder = $graphBuilder ?? new DependencyGraphBuilder();
+        $this->graphBuilder = $graphBuilder;
     }
 
     public function analyze(AbsolutePath|array $paths, ?FileDiscoveryInterface $discovery = null): AnalysisResult
@@ -217,11 +218,11 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         );
     }
 
-    /** @param list<\Qualimetrix\Core\Dependency\Dependency> $dependencies */
+    /** @param list<Dependency> $dependencies */
     private function buildDependencyGraph(
         array $dependencies,
         MetricRepositoryInterface $repository,
-    ): DependencyGraph {
+    ): DependencyGraphInterface {
         return $this->graphBuilder->build($dependencies, self::collectLogicalClassPaths($repository));
     }
 
@@ -230,7 +231,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
      * @param list<string> $disabledRules
      */
     private function prepareArchitectureForRun(
-        DependencyGraph $graph,
+        DependencyGraphInterface $graph,
         MetricRepositoryInterface $repository,
         array $onlyRules,
         array $disabledRules,
@@ -249,7 +250,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
     /** @return list<Violation> */
     private function executeRulesForRun(
         MetricRepositoryInterface $repository,
-        DependencyGraph $graph,
+        DependencyGraphInterface $graph,
         EnrichmentResult $enrichmentResult,
         CollectionResult $collectionResult,
     ): array {

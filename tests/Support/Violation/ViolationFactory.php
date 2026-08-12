@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Support\Violation;
 
-use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;

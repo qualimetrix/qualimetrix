@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export;
+namespace Qualimetrix\Tests\Reporting\GraphProjection\Unit;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
-use Qualimetrix\Analysis\Collection\Dependency\Export\JsonGraphExporter;
-use Qualimetrix\Core\Dependency\Dependency;
-use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Reporting\GraphProjection\JsonGraphExporter;
 
 final class JsonGraphExporterTest extends TestCase
 {
@@ -272,20 +272,6 @@ final class JsonGraphExporterTest extends TestCase
         // Edge should not appear because target node is filtered out
         self::assertSame(0, $data['statistics']['edgeCount']);
         self::assertSame([], $data['edges']);
-    }
-
-    #[Test]
-    public function itGetsFormat(): void
-    {
-        $exporter = new JsonGraphExporter();
-        self::assertSame('json', $exporter->getFormat());
-    }
-
-    #[Test]
-    public function itGetsFileExtension(): void
-    {
-        $exporter = new JsonGraphExporter();
-        self::assertSame('json', $exporter->getFileExtension());
     }
 
     #[Test]

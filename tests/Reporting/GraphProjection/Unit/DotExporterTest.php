@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Qualimetrix\Tests\Unit\Analysis\Collection\Dependency\Export;
+namespace Qualimetrix\Tests\Reporting\GraphProjection\Unit;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
-use Qualimetrix\Analysis\Collection\Dependency\Export\DotExporter;
-use Qualimetrix\Analysis\Collection\Dependency\Export\DotExporterOptions;
-use Qualimetrix\Core\Dependency\Dependency;
-use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
+use Qualimetrix\Reporting\GraphProjection\DotExporter;
+use Qualimetrix\Reporting\GraphProjection\DotExporterOptions;
 
 final class DotExporterTest extends TestCase
 {
@@ -305,20 +305,6 @@ final class DotExporterTest extends TestCase
 
         self::assertStringContainsString('digraph Dependencies', $dot);
         self::assertStringContainsString('No classes to display', $dot);
-    }
-
-    #[Test]
-    public function itGetsFormat(): void
-    {
-        $exporter = new DotExporter();
-        self::assertSame('dot', $exporter->getFormat());
-    }
-
-    #[Test]
-    public function itGetsFileExtension(): void
-    {
-        $exporter = new DotExporter();
-        self::assertSame('dot', $exporter->getFileExtension());
     }
 
     #[Test]
