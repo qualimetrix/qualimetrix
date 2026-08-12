@@ -21,7 +21,7 @@ use Qualimetrix\Analysis\Collection\Dependency\Handler\NodeDependencyHandlerInte
 use Qualimetrix\Analysis\Collection\Dependency\Handler\PropertyHandler;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\StaticAccessHandler;
 use Qualimetrix\Analysis\Collection\Dependency\Handler\TraitUseHandler;
-use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\SymbolPath;

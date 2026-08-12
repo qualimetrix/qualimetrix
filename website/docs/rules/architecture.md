@@ -418,6 +418,32 @@ allow:
       allow_cross_instance: true   # acknowledge — any domain-* may depend on any domain-*
 ```
 
+#### Exact allow graph must be acyclic
+
+At configuration load, Qualimetrix projects every exact-source to exact-target
+allow entry into a declared layer graph. That graph must be a DAG. An exact
+self-reference, a mutual pair, or a longer directed cycle fails immediately
+with `ConfigLoadException`; analysis does not start. This validates the declared
+module topology independently of `architecture.circular-dependency`, which
+detects cycles actually present between classes.
+
+```yaml
+allow:
+  application: [domain]
+  domain: [application] # rejected: application -> domain -> application
+```
+
+Exact self-references were previously stripped silently, and mutual exact
+permissions produced only a warning. Remove redundant self-edges. For a cycle,
+remove or reorient at least one allow edge so the module dependency direction
+is acyclic. Different `relations:` filters do not make opposing permissions
+acyclic.
+
+Glob and captured selectors are not projected into this static graph. Their
+concrete layer matches can be produced only after observation-driven template
+expansion, so projecting the selector strings would invent edges. Wildcard
+self-shaped entries remain legal and retain the warning described above.
+
 #### Expansion limits
 
 Cumulative expansion across all templates is bounded by `architecture.max_expanded_layers` (default **500**). Pathological broad templates that would exceed the ceiling reject at expansion with an actionable error (the template, the resulting count, the current ceiling). Raise the ceiling explicitly when a monorepo legitimately has more bounded contexts than the default allows:
@@ -481,7 +507,7 @@ allow:
 
 Bare allow entries (`allow: { domain: [contracts] }`) keep "any relation kind" semantics — fully back-compatible.
 
-Available relation tokens come from two sources. **Direct values** mirror `Qualimetrix\Core\Dependency\DependencyType`:
+Available relation tokens come from two sources. **Direct values** mirror `Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType`:
 
 ```
 extends, implements, trait_use,
@@ -509,13 +535,19 @@ When multiple allow targets within one source resolve to the same target layer (
 
 ### Coverage modes
 
-`architecture.coverage` controls what happens with dependency edges whose source or target class does not belong to any declared layer. It is independent from `architecture.layer-violation` itself: coverage diagnostics are emitted under a separate rule name, `architecture.coverage`, so you can baseline, suppress, or filter them independently.
+`architecture.coverage` controls what happens when an analysed logical class
+does not belong to any declared layer, or when a dependency edge has an
+unclassified source or target. Isolated analysed classes are covered even when
+they have no dependency edges. The diagnostic is independent from
+`architecture.layer-violation` itself: it is emitted under the separate rule
+name `architecture.coverage`, so you can baseline, suppress, or filter it
+independently.
 
 | Mode               | Behaviour                                                                                                                                                                                                                                         |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ignore` (default) | Out-of-layer edges are silently skipped. Adopt the rule incrementally without noise.                                                                                                                                                              |
+| `ignore` (default) | Out-of-layer classes and edge endpoints are silently skipped. Adopt the rule incrementally without noise.                                                                                                                                         |
 | `warn`             | One summary `architecture.coverage` violation per analysis with `Warning` severity, listing example unclassified classes. Does not fail the run under the default `fail_on: error`, but does fail it once you set `fail_on: warning` or stricter. |
-| `error`            | Same diagnostic but with `Error` severity, suitable for CI gating once you intend to cover the whole codebase.                                                                                                                                    |
+| `error`            | Same diagnostic but with `Error` severity, suitable for fail-closed CI ownership of the whole analysed codebase.                                                                                                                                  |
 
 !!! note
     Before this release, `warn` mode emitted `Info` severity — a mismatch with the mode's own name that made the diagnostic invisible to `fail_on: warning`. `warn` now emits `Warning` severity, matching the name. If you rely on `coverage: warn` staying silent under `fail_on: warning`, switch to `coverage: ignore` or raise `fail_on` to `error`.
@@ -754,7 +786,7 @@ This works because the framework (`RuleOptionsFactory`) extracts `exclude_namesp
 - **`relations:` is a whitelist; aliases expand reflectively.** Long-form allow targets accept a `relations:` list that constrains which `DependencyType` kinds are permitted. Direct values are validated against `DependencyType::cases()` reflectively, so adding a new dependency kind to the collector automatically becomes accepted in YAML. There is no `forbid_relations:` — whitelist-only avoids resolution ambiguity and the maintenance cost of a parallel enum.
 - **Vendor namespaces are first-class layers.** Declare a `doctrine` or `symfony` layer with `Doctrine\**` / `Symfony\**` patterns to write policy against vendor edges (e.g., "only repositories may use Doctrine"). Vendor layers behave identically to project layers.
 - **Same-layer dependencies are always allowed** in the MVP. Sub-module isolation within a single layer is deferred to Phase 2.
-- **Reporting granularity is per use-site.** Each forbidden dependency edge in `Qualimetrix\Analysis\Collection\Dependency\DependencyGraph` produces one violation. If a class violates the policy through five different method calls, you get five violations. Baseline identity collapses them to a single entry (see Suppression above).
+- **Reporting granularity is per use-site.** Each forbidden dependency edge from `Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface` produces one violation. If a class violates the policy through five different method calls, you get five violations. Baseline identity collapses them to a single entry (see Suppression above).
 - **Out-of-layer ends are silently ignored** for layer-violation purposes. Their count is reported separately via the `coverage` mode.
 - **Default-enabled, but inert without layers.** The rule reports `enabled: true` by default and short-circuits when `architecture.layers` is empty, so projects without architecture configuration see zero overhead.
 - **Safety nets, not ambiguity errors.** The previous specificity-based algorithm rejected ambiguous configurations at load time. Under declaration-order matching, ambiguity does not exist — the order disambiguates — but the user can still **misorder** layers. Two diagnostics catch this, both defaulting to `info` severity but individually configurable (`unreachable_layer_severity` / `potential_shadow_severity`, see [Options](#layer-violation-options)): `architecture.unreachable-layer` (a layer that captured nothing) and `architecture.potential-shadow` (an earlier layer that silently stole classes from a later one). See the dedicated sections above.

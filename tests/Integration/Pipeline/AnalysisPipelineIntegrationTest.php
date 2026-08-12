@@ -10,13 +10,22 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
 use Qualimetrix\Analysis\Aggregator\MetricAggregator;
+use Qualimetrix\Analysis\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Collection\CollectionResult;
 use Qualimetrix\Analysis\Collection\Dependency\CircularDependencyDetector;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
+use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
+use Qualimetrix\Analysis\Collection\FileProcessor;
+use Qualimetrix\Analysis\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Collection\Metric\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Pipeline\MetricEnricher;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
@@ -25,13 +34,11 @@ use Qualimetrix\Architecture\Rules\CircularDependencyOptions;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Core\Dependency\Dependency;
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
-use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Progress\NullProgressReporter;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -40,7 +47,17 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Infrastructure\Ast\PhpFileParser;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
+use Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy;
+use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
+use Qualimetrix\Infrastructure\Parallel\Strategy\WorkerCountDetector;
 use Qualimetrix\Metrics\Coupling\CouplingCollector;
+use Qualimetrix\Metrics\Size\LocCollector;
+use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
+use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
+use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Support\Pipeline\TestPipelineBuilder;
 use SplFileInfo;
 
@@ -147,7 +164,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         ];
 
         // Verify the detector itself works (sanity check)
-        $graphBuilder = new DependencyGraphBuilder();
+        $graphBuilder = AdjacencyGraphBuilder::builder();
         $graph = $graphBuilder->build(
             $dependencies,
             array_map(static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()), $dependencies),
@@ -299,11 +316,109 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         self::assertNotNull($cboMax, 'Namespace-level cbo.max should exist');
     }
 
+    #[Test]
+    public function itBuildsEquivalentOrderedDependencyGraphsSequentiallyAndInParallel(): void
+    {
+        $fixtureRoot = AbsolutePath::fromString(\dirname(__DIR__, 2) . '/Fixtures/CouplingProject')->canonicalize();
+        $fixtureFiles = [
+            'Core/AbstractEntity.php',
+            'Core/EntityInterface.php',
+            'Service/OrderService.php',
+            'Service/UserService.php',
+            'Domain/Order.php',
+            'Domain/User.php',
+            'Isolated/StandaloneClass.php',
+        ];
+        $files = array_map(
+            static fn(string $file): SplFileInfo => new SplFileInfo($fixtureRoot->value() . '/' . $file),
+            $fixtureFiles,
+        );
+        $universe = array_map(
+            static fn(string $fqn): LogicalClassPath => new LogicalClassPath(SymbolPath::fromClassFqn($fqn)),
+            [
+                'Fixtures\\CouplingProject\\Core\\AbstractEntity',
+                'Fixtures\\CouplingProject\\Core\\EntityInterface',
+                'Fixtures\\CouplingProject\\Service\\OrderService',
+                'Fixtures\\CouplingProject\\Service\\UserService',
+                'Fixtures\\CouplingProject\\Domain\\Order',
+                'Fixtures\\CouplingProject\\Domain\\User',
+                'Fixtures\\CouplingProject\\Isolated\\StandaloneClass',
+            ],
+        );
+
+        $sequential = self::collectThroughProductionStrategy($files, $fixtureRoot, 0);
+        $parallel = self::collectThroughProductionStrategy($files, $fixtureRoot, 2);
+
+        self::assertSame(SequentialStrategy::class, $sequential['strategy']);
+        self::assertSame(\count($files), $sequential['mainProcessCalls']);
+        self::assertSame(AmphpParallelStrategy::class, $parallel['strategy']);
+        self::assertSame(0, $parallel['mainProcessCalls'], 'Parallel collection must not execute the main-process fallback processor');
+        self::assertTrue($parallel['workerStarted'], 'Amp worker-start evidence must prove the transport path was reached');
+        self::assertNotEmpty($parallel['dependencies'], 'Worker results must survive Amp serialization and deserialization');
+        self::assertSame(
+            array_map(self::dependencyFields(...), $sequential['dependencies']),
+            array_map(self::dependencyFields(...), $parallel['dependencies']),
+            'Amp transport must preserve ordered dependency source, target, type, and location fields',
+        );
+
+        $container = (new ContainerFactory())->create();
+        $builder = $container->get(DependencyGraphBuilderInterface::class);
+        self::assertInstanceOf(DependencyGraphBuilderInterface::class, $builder);
+        $sequentialGraph = $builder->build($sequential['dependencies'], $universe);
+        $parallelGraph = $builder->build($parallel['dependencies'], $universe);
+
+        $isolatedClass = SymbolPath::fromClassFqn('Fixtures\\CouplingProject\\Isolated\\StandaloneClass');
+        self::assertSame([], $sequentialGraph->getClassDependencies($isolatedClass));
+        self::assertSame([], $sequentialGraph->getClassDependents($isolatedClass));
+        self::assertSame(0, $sequentialGraph->getClassCe($isolatedClass));
+        self::assertSame(0, $sequentialGraph->getClassCa($isolatedClass));
+        $ancestorNamespace = SymbolPath::forNamespace('Fixtures\\CouplingProject');
+        self::assertContains(
+            $ancestorNamespace->toCanonical(),
+            array_map(static fn(SymbolPath $namespace): string => $namespace->toCanonical(), $sequentialGraph->getAllNamespaces()),
+        );
+        self::assertSame(0, $sequentialGraph->getNamespaceCe($ancestorNamespace));
+        self::assertSame(0, $sequentialGraph->getNamespaceCa($ancestorNamespace));
+
+        self::assertSame(
+            self::dependencyProjection($sequentialGraph),
+            self::dependencyProjection($parallelGraph),
+        );
+        self::assertSame(
+            self::graphProjection($sequentialGraph),
+            self::graphProjection($parallelGraph),
+        );
+
+        $projector = $container->get(DependencyGraphProjectionInterface::class);
+        self::assertInstanceOf(DependencyGraphProjectionInterface::class, $projector);
+        self::assertSame(
+            $projector->project($sequentialGraph, new GraphProjectionRequest(format: 'dot')),
+            $projector->project($parallelGraph, new GraphProjectionRequest(format: 'dot')),
+        );
+
+        /** @var array{meta: array{timestamp: string}, statistics: array<string, int>, nodes: list<array<string, string>>, edges: list<array<string, mixed>>} $sequentialJson */
+        $sequentialJson = json_decode(
+            $projector->project($sequentialGraph, new GraphProjectionRequest(format: 'json')),
+            true,
+            flags: \JSON_THROW_ON_ERROR,
+        );
+        /** @var array{meta: array{timestamp: string}, statistics: array<string, int>, nodes: list<array<string, string>>, edges: list<array<string, mixed>>} $parallelJson */
+        $parallelJson = json_decode(
+            $projector->project($parallelGraph, new GraphProjectionRequest(format: 'json')),
+            true,
+            flags: \JSON_THROW_ON_ERROR,
+        );
+        self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/', $sequentialJson['meta']['timestamp']);
+        self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/', $parallelJson['meta']['timestamp']);
+        unset($sequentialJson['meta']['timestamp'], $parallelJson['meta']['timestamp']);
+        self::assertSame($sequentialJson, $parallelJson);
+    }
+
     /**
      * Creates a pipeline with mocked discovery and collection that returns the given dependencies.
      */
     /**
-     * @param list<\Qualimetrix\Core\Dependency\Dependency> $dependencies
+     * @param list<\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency> $dependencies
      */
     private function createPipelineWithDependencies(
         array $dependencies,
@@ -354,7 +469,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
      * Creates a pipeline with specific global collectors.
      */
     /**
-     * @param list<\Qualimetrix\Core\Dependency\Dependency> $dependencies
+     * @param list<\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency> $dependencies
      */
     private function createPipelineWithGlobalCollectors(
         array $dependencies,
@@ -416,5 +531,144 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $provider->method('hasConfiguration')->willReturn(true);
 
         return $provider;
+    }
+
+    /** @return array<int, array<int, string>> */
+    private static function dependencyProjection(DependencyGraphInterface $graph): array
+    {
+        return array_map(
+            static fn(Dependency $dependency): array => [
+                $dependency->source->toCanonical(),
+                $dependency->target->toCanonical(),
+                $dependency->type->value,
+                $dependency->location->toString(),
+            ],
+            $graph->getAllDependencies(),
+        );
+    }
+
+    /** @return array<string, mixed> */
+    private static function graphProjection(DependencyGraphInterface $graph): array
+    {
+        $classes = $graph->getAllClasses();
+        $namespaces = $graph->getAllNamespaces();
+
+        return [
+            'classes' => array_map(static fn(SymbolPath $path): string => $path->toCanonical(), $classes),
+            'namespaces' => array_map(static fn(SymbolPath $path): string => $path->toCanonical(), $namespaces),
+            'classDependencies' => array_map(
+                static fn(SymbolPath $path): array => array_map(
+                    static fn(Dependency $dependency): array => self::dependencyFields($dependency),
+                    $graph->getClassDependencies($path),
+                ),
+                $classes,
+            ),
+            'classDependents' => array_map(
+                static fn(SymbolPath $path): array => array_map(
+                    static fn(Dependency $dependency): array => self::dependencyFields($dependency),
+                    $graph->getClassDependents($path),
+                ),
+                $classes,
+            ),
+            'classCe' => array_map($graph->getClassCe(...), $classes),
+            'classCa' => array_map($graph->getClassCa(...), $classes),
+            'namespaceCe' => array_map($graph->getNamespaceCe(...), $namespaces),
+            'namespaceCa' => array_map($graph->getNamespaceCa(...), $namespaces),
+        ];
+    }
+
+    /**
+     * @return array{string, string, string, string}
+     */
+    private static function dependencyFields(Dependency $dependency): array
+    {
+        return [
+            $dependency->source->toCanonical(),
+            $dependency->target->toCanonical(),
+            $dependency->type->value,
+            $dependency->location->toString(),
+        ];
+    }
+
+    /**
+     * @param list<SplFileInfo> $files
+     *
+     * @return array{
+     *     dependencies: list<Dependency>,
+     *     strategy: class-string,
+     *     mainProcessCalls: int,
+     *     workerStarted: bool
+     * }
+     */
+    private static function collectThroughProductionStrategy(array $files, AbsolutePath $projectRoot, int $workers): array
+    {
+        $configuration = new AnalysisConfiguration(
+            cacheEnabled: false,
+            workers: $workers,
+            projectRoot: $projectRoot,
+        );
+        $configurationProvider = self::createStub(ConfigurationProviderInterface::class);
+        $configurationProvider->method('getConfiguration')->willReturn($configuration);
+
+        $workerStarted = false;
+        $logger = self::createStub(\Psr\Log\LoggerInterface::class);
+        $logger->method('info')->willReturnCallback(
+            static function (string $message, array $context = []) use (&$workerStarted): void {
+                if ($message === 'AmphpParallelStrategy: starting parallel processing'
+                    && ($context['workers'] ?? null) === 2
+                ) {
+                    $workerStarted = true;
+                }
+            },
+        );
+
+        $parallelStrategy = new AmphpParallelStrategy($logger);
+        $parallelStrategy->setMinFilesForParallel(1);
+        $selector = new StrategySelector(
+            $parallelStrategy,
+            new SequentialStrategy(),
+            $configurationProvider,
+            new WorkerCountDetector(),
+            $logger,
+            [LocCollector::class],
+        );
+
+        $compositeCollector = new CompositeCollector([new LocCollector()]);
+        $compositeCollector->setDependencyVisitor(new DependencyVisitor(new DependencyResolver()));
+        $productionProcessor = new FileProcessor(new PhpFileParser(), $compositeCollector);
+        $trackingProcessor = new class ($productionProcessor) implements FileProcessorInterface {
+            public int $processCalls = 0;
+
+            public function __construct(private readonly FileProcessorInterface $delegate) {}
+
+            public function setProjectRoot(AbsolutePath $projectRoot): void
+            {
+                $this->delegate->setProjectRoot($projectRoot);
+            }
+
+            public function process(SplFileInfo $file): \Qualimetrix\Analysis\Collection\FileProcessingResult
+            {
+                ++$this->processCalls;
+
+                return $this->delegate->process($file);
+            }
+        };
+
+        $orchestrator = new CollectionOrchestrator(
+            $trackingProcessor,
+            $selector,
+            new DerivedMetricExtractor($compositeCollector),
+            new NullProgressReporter(),
+            $logger,
+        );
+        $strategy = $selector->select();
+        $output = $orchestrator->collect($files, new InMemoryMetricRepository(), $projectRoot);
+
+        return [
+            'dependencies' => $output->dependencies,
+            'strategy' => $strategy::class,
+            'mainProcessCalls' => $trackingProcessor->processCalls,
+            'workerStarted' => $workerStarted,
+        ];
     }
 }

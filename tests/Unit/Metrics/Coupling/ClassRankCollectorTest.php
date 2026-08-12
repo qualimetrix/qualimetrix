@@ -7,11 +7,11 @@ namespace Qualimetrix\Tests\Unit\Metrics\Coupling;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
-use Qualimetrix\Core\Dependency\Dependency;
-use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\SymbolLevel;
@@ -22,17 +22,18 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Metrics\Coupling\ClassRankCollector;
+use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
 
 #[CoversClass(ClassRankCollector::class)]
 final class ClassRankCollectorTest extends TestCase
 {
     private ClassRankCollector $collector;
-    private DependencyGraphBuilder $graphBuilder;
+    private DependencyGraphBuilderInterface $graphBuilder;
 
     protected function setUp(): void
     {
         $this->collector = new ClassRankCollector();
-        $this->graphBuilder = new DependencyGraphBuilder();
+        $this->graphBuilder = AdjacencyGraphBuilder::builder();
     }
 
     #[Test]
@@ -379,7 +380,7 @@ final class ClassRankCollectorTest extends TestCase
      * @param list<Dependency> $dependencies
      * @param list<LogicalClassPath> $universe
      */
-    private function graph(array $dependencies, array $universe = []): DependencyGraph
+    private function graph(array $dependencies, array $universe = []): DependencyGraphInterface
     {
         if ($universe === []) {
             $universe = array_map(

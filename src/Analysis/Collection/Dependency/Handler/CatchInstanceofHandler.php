@@ -8,7 +8,7 @@ use PhpParser\Node;
 use PhpParser\Node\Expr\Instanceof_;
 use PhpParser\Node\Name;
 use PhpParser\Node\Stmt\Catch_;
-use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 
 final readonly class CatchInstanceofHandler implements NodeDependencyHandlerInterface
 {

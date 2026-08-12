@@ -8,7 +8,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Dependency\CircularDependencyDetector;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
 
@@ -173,7 +173,7 @@ final class CircularDependencyDetectorTest extends TestCase
      *
      * @param array<string, list<string>> $adjacencyList
      */
-    private function buildGraph(array $adjacencyList): DependencyGraph
+    private function buildGraph(array $adjacencyList): DependencyGraphInterface
     {
         return AdjacencyGraphBuilder::build($adjacencyList);
     }

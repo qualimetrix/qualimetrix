@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Metric;
 
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 
 /**
  * Interface for collectors that compute metrics from global context.

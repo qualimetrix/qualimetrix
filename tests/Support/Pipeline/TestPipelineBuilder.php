@@ -8,8 +8,8 @@ use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Pipeline\MetricEnricher;
 use Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory;
@@ -22,6 +22,7 @@ use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Core\Rule\RuleSelector;
+use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
 
 /**
  * Fluent builder for {@see AnalysisPipeline} instances in tests.
@@ -63,7 +64,7 @@ final class TestPipelineBuilder
 
     private ?MetricRepositoryFactoryInterface $repositoryFactory = null;
 
-    private ?DependencyGraphBuilder $graphBuilder = null;
+    private ?DependencyGraphBuilderInterface $graphBuilder = null;
 
     private ?LoggerInterface $logger = null;
 
@@ -145,7 +146,7 @@ final class TestPipelineBuilder
         return $this;
     }
 
-    public function withGraphBuilder(DependencyGraphBuilder $builder): self
+    public function withGraphBuilder(DependencyGraphBuilderInterface $builder): self
     {
         $this->graphBuilder = $builder;
 
@@ -193,7 +194,7 @@ final class TestPipelineBuilder
             ),
             architectureProcessor: $this->resolveArchitectureProcessor(),
             repositoryFactory: $this->repositoryFactory ?? new DefaultMetricRepositoryFactory(),
-            graphBuilder: $this->graphBuilder,
+            graphBuilder: $this->graphBuilder ?? AdjacencyGraphBuilder::builder(),
             logger: $this->logger ?? new NullLogger(),
             profilerHolder: $this->profilerHolder,
             ruleSelector: $this->ruleSelector ?? new RuleSelector(new InMemoryRuleChannelRegistry()),

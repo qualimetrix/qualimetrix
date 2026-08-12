@@ -10,7 +10,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 

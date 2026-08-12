@@ -49,10 +49,20 @@ When starting a session in the web environment, `scripts/init-environment.sh` is
 
 ## Project Structure
 
-The project uses a **hybrid model** per [ADR 0012](docs/adr/0012-hybrid-architectural-direction.md):
-substantial domain features organize as vertical slices, thin metric/rule
-features stay layered, cross-cutting infrastructure is retained as horizontal
-layers, and adapters always live in `Infrastructure/`.
+The project's current architectural direction is the **capability-oriented
+modular monolith** accepted in
+[ADR 0022](docs/adr/0022-capability-oriented-modular-monolith.md). It supersedes
+ADR 0012's substantial/thin hybrid direction; ADR 0010 is the historical
+Architecture pilot and ADR 0016 remains the governing subject-cohesion rule.
+
+P1 has landed Duplication and P2 has landed DependencyModel plus GraphProjection;
+P3-P8 remain pending. The tree below
+describes the current physical layout. P0 governance remains live: the
+versioned internal manifest is authoritative for all 701 current declarations
+and 37 semantic owners, and it
+generates a coarse qmx projection with 37 owner layers, 12 singleton enforcement
+seams and final `external` (50 layers and 272 allow edges in this snapshot).
+That enforcement does not mean the planned P3-P8 namespace moves have landed.
 
 ```
 src/
@@ -65,8 +75,12 @@ src/
 ├── Metrics/{Category}/     # Thin metric features (layered)
 ├── Rules/{Category}/       # Thin rule features (layered)
 ├── Baseline/          # Baseline support and @qmx-ignore suppression
-├── Analysis/          # Orchestration (pipeline, discovery, collection)
-├── Reporting/         # Output formatters (cross-cutting)
+├── Analysis/          # Orchestration plus taxonomy-only capability grouping
+│   ├── Evidence/
+│   │   ├── Duplication/ # Landed P1 leaf: detection, result, rule and one contract
+│   │   └── DependencyModel/ # Landed P2 graph model: five contracts, three internals
+│   └── {Pipeline,Collection,...}/ # Unmigrated Run orchestration until P3
+├── Reporting/         # Output formatters plus landed P2 GraphProjection capability
 ├── Configuration/     # Cross-cutting config infrastructure (loader, schema, pipeline)
 └── Infrastructure/    # Adapters (CLI, DI, cache, git, profiler) — adapters for any feature live here
 benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
@@ -75,7 +89,7 @@ scripts/               # Utility scripts (benchmark data collection, regression 
 
 Each domain has its own `README.md` with detailed structure, classes, and contracts.
 
-### Decision framework for new features
+### Decision framework for new capabilities
 
 **The underlying rule is subject cohesion ([ADR 0016](docs/adr/0016-subject-cohesion.md)):
 a directory is a subject, not a role.** Its name must answer "what is this
@@ -93,31 +107,38 @@ about?" without naming a technical role, base class, or interface. Three tests:
 
 Two corollaries that settle recurring arguments:
 
-- A contract shared by many subjects goes to `Core/` — justified by subject
-  ("cross-cutting primitive"), not by constraint ("nothing else may be depended
-  upon"). When constraint and subject disagree, the layout is wrong, not the
-  constraint.
+- A contract stays with the module promising it to named consumers. It goes to
+  `Core/` only when its semantics are genuinely neutral and it has no natural
+  subject owner; many imports alone do not make it neutral. When constraint and
+  subject disagree, the layout is wrong, not the constraint.
 - "This feature has many adapters" is **not** an argument for a vertical slice:
   adapters live in `Infrastructure/` either way.
 
-The table below is the fast path for rule-bearing features (ADR 0010 / ADR
-0012). Where it disagrees with the tests above, the tests win:
+The following ADR 0022 rules define the accepted target layout. P1 is current
+architecture; do not treat the still-pending P3-P8 namespace moves as landed:
 
-| Indicator                                                                                                                                                           | → Layout       |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| Compute one metric + emit one rule, reading pre-computed metrics                                                                                                    | Layered        |
-| Cross-layer-consuming rule (needs Analysis-time prepared state / dependency graph)<br>**AND** independent-lifecycle adapter (own multi-stage debug/inspection flow) | Vertical slice |
-| Analogous complexity — multi-stage processing + non-trivial config loader                                                                                           | Case-by-case   |
-| Cross-cutting (used by every feature: primitives, formatters, orchestration)                                                                                        | Retained layer |
-| CLI / HTTP / message-handler adapter                                                                                                                                | Infrastructure |
+- A leaf module is a subject with one owner and lifecycle. Internal folders
+  follow the subject; do not create an empty role skeleton.
+- Add `Contract/` only for exact types used by named external owner-consumers.
+  A private leaf has no public surface.
+- A port introduced for dependency inversion belongs to its consumer. The
+  proposed `Analysis\Run` phase ports are non-binding hypotheses until the P3
+  contract gate proves their inputs, outputs and actual dependencies.
+- `Analysis`, `Analysis\Evidence`, and `Analysis\Policy` are navigation
+  taxonomies only: no PHP types, state, shared contracts or qmx allow target.
+- `Core` holds only neutral primitives without a natural leaf owner. Many
+  imports do not make a type neutral.
+- `Infrastructure` owns delivery and composition adapters, not application
+  policy or capability state.
+- Tests follow their owning subject; test level, fixtures and support are
+  subdivisions inside that subject rather than top-level role buckets.
+- Every production namespace has one explicit leaf owner. Do not use an
+  open-ended owner template that silently enrols a future sibling.
 
-For substantial features that warrant a vertical slice, start at
-`src/{Feature}/{Domain,Configuration,Processing,Rules}/` from day one — do
-not build a layered version first and migrate. Existing layered features
-migrate only opportunistically (major refactor or remediation), not
-proactively. Architecture is the **pilot** vertical slice; its playbook
-(subagent strategy, deptrac migration, DI configurator pattern, manifest
-format, rollback) is reused by subsequent qualified migrations.
+Existing `Metrics/` and the remaining `Rules/` role buckets are migration
+inputs, not evidence that the rest of the target physical layout has landed.
+Follow the manifest-backed current ownership and the migration plan; do not
+claim or simulate later package moves before their review gates.
 
 ### Adapter-exclusion principle
 
@@ -213,13 +234,22 @@ When documenting deviations: use `!!! info "Deviation from original spec"` block
 
 ### 1. Dependency Graph (DO NOT VIOLATE!)
 
-```
-Infrastructure -> Analysis -> Metrics/Rules/Reporting/Configuration -> Core
-```
-
-- **Core** has no dependencies (only PHP + php-parser types)
-- **Infrastructure** depends on all domains
-- Dependencies flow DOWNWARD only
+- **Target leaf capabilities** would depend only on declared public contracts;
+  sibling internals and taxonomy parents are not approved targets for new
+  migration grants.
+- **Core** contains neutral primitives only and has no project dependencies
+  (PHP and php-parser types are allowed).
+- **Analysis\Run phase ports** are proposed, non-binding hypotheses until the
+  P3 contract gate; they are not current implementation contracts.
+- **Infrastructure** may depend on capabilities for delivery/composition;
+  capabilities do not depend on framework adapters.
+- The internal manifest is the current exact owner/visibility/import authority.
+  Its checker runs through `composer architecture:check` before selfcheck and
+  rejects unlisted exact imports even when a coarse qmx owner edge permits them.
+- Generated `qmx.yaml` contains 37 semantic-owner layers, 12 singleton
+  enforcement seams and final `external`; `coverage: error` keeps isolated and
+  edge-connected project declarations fail-closed. The qmx graph is coarse and
+  does not replace the manifest checker.
 
 ### 2. Stateless Rules, Stateful-per-file Collectors
 
@@ -326,8 +356,9 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 
 **Adding a new rule:**
 
-Decide between the **layered** and **vertical-slice** layouts per ADR 0010
-/ ADR 0012:
+Place the rule with its owning subject per ADR 0016 / ADR 0022. The remaining
+layered layout is a migration input, while an independent capability owns its
+rule directly:
 
 - **Thin rule** (computes from pre-existing metrics, no Analysis-time
   preparation, no companion debug command):
@@ -341,23 +372,22 @@ Decide between the **layered** and **vertical-slice** layouts per ADR 0010
      `RuleOptionsInterface`
   6. The class is registered **automatically** by `RuleConfigurator` — no
      need to modify `ContainerFactory`
-- **Complex domain rule** (the feature meets the ADR 0010 criteria —
-  cross-layer-consuming rule AND independent-lifecycle adapter, or
-  analogous-complexity per ADR 0012):
-  - Place the rule under `src/{Feature}/Rules/{Rule}.php` together with
-    the rest of the feature's slice (`Domain/`, `Configuration/`,
-    `Processing/`)
-  - Add (or extend) a `{Feature}Configurator` in
-    `src/Infrastructure/DependencyInjection/Configurator/` that scans the
-    slice's `Rules/`, `Processing/`, and `Configuration/Validation/`
-    directories
-  - Current example: `src/Architecture/Rules/` registered via
-    `ArchitectureConfigurator`
+- **Capability-owned rule** (the feature has its own lifecycle or otherwise
+  meets the subject-cohesion criteria):
+  - Place the rule with its owning capability according to that module's
+    subject-driven layout; a `Rules/` subdirectory is not mandatory
+  - Add (or extend) the capability's configurator under
+    `src/Infrastructure/DependencyInjection/Configurator/` so it registers the
+    exact implementation root without publishing module internals
+  - Current examples: `src/Architecture/Rules/` via
+    `ArchitectureConfigurator`, and
+    `src/Analysis/Evidence/Duplication/CodeDuplicationRule.php` via
+    `DuplicationConfigurator`
 
 **How rule registration works:**
 1. `RuleConfigurator::registerClasses()` scans `src/Rules/**/*Rule.php` for
-   layered rules; each feature's own configurator (e.g.
-   `ArchitectureConfigurator`) scans its slice's `Rules/` directory
+   layered rules; each capability's configurator registers its exact rule root
+   (currently `ArchitectureConfigurator` and `DuplicationConfigurator`)
 2. `registerForAutoconfiguration(RuleInterface::class)` adds the `qmx.rule`
    tag in either case
 3. `RuleOptionsCompilerPass` automatically registers Options via
@@ -490,7 +520,8 @@ itself contain the private name, so echoing it would leak it into the build log.
 
 ```bash
 # Project validation
-composer check          # cs-check + tests + phpstan + selfcheck (architecture enforced via qmx.yaml)
+composer architecture:check # exact manifest policy + generated-artifact freshness
+composer check          # cs-check + tests + phpstan + manifest check + qmx selfcheck
 composer test           # PHPUnit
 composer phpstan        # PHPStan level 8
 
@@ -536,7 +567,7 @@ bin/qmx check --help
 **Before implementation:** read README.md in the corresponding `src/` directory
 
 **Project-specific steps** (in addition to the global workflow):
-- **Validation**: `composer check` (cs-check + tests + phpstan + selfcheck — selfcheck enforces architecture via `qmx.yaml`). When modifying `src/Reporting/Template/`, also run `composer test:js` and `composer build:js`
+- **Validation**: `composer check` (cs-check + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `src/Reporting/Template/`, also run `composer test:js` and `composer build:js`
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
 
 **Architecture Decision Records:** After implementing a feature with non-obvious design decisions, create an ADR in `docs/adr/` (see [docs/adr/README.md](docs/adr/README.md) for format). If a spec existed during design (`docs/internal/SPEC_*.md`), it can be archived or deleted after the ADR captures key decisions. ADRs preserve the "why" — implementation details live in code and component READMEs.
@@ -559,9 +590,11 @@ Run `bin/qmx check src/` after modifying metric collection or aggregation logic 
 We analyze ourselves with `bin/qmx check src/` using `qmx.yaml` and the
 versioned root `qmx-baseline.json`. That file is a v11 ratchet snapshot for
 residual, currently accepted warnings only; it is not a suppress-mode or legacy
-baseline. Direct hard gates remain outside the baseline and are declared in
-`qmx.yaml`. `composer selfcheck` applies the ratchet with `--fail-on=warning`,
-so any new warning fails the build.
+baseline. The generated qmx projection enforces coarse owner/seam topology.
+`composer selfcheck` first runs `composer architecture:check`, which validates
+the exact manifest policy and generated freshness, and then applies the qmx
+ratchet with `--fail-on=warning`. A direct `bin/qmx check` omits that first
+repository-governance step.
 
 **Decision framework** (in priority order):
 
@@ -642,6 +675,7 @@ Key rules:
 ### Component Documentation (in src/)
 - [src/Core/README.md](src/Core/README.md) — contracts and primitives
 - [src/Architecture/README.md](src/Architecture/README.md) — Architecture vertical slice (layer policy + circular dependency, ADR 0010 pilot)
+- [src/Analysis/Evidence/Duplication/README.md](src/Analysis/Evidence/Duplication/README.md) — Duplication capability boundary, lifecycle, contract and tests
 - [src/Metrics/README.md](src/Metrics/README.md) — metric collectors
 - [src/Rules/README.md](src/Rules/README.md) — analysis rules
 - [src/Analysis/README.md](src/Analysis/README.md) — orchestration

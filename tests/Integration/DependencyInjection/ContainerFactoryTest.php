@@ -8,16 +8,30 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
+use Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface;
+use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
+use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
+use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Pipeline\MetricEnricher;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationHolder;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
+use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Rule\AnalysisContext;
+use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
+use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Metrics\Complexity\CognitiveComplexityCollector;
@@ -33,6 +47,8 @@ use Qualimetrix\Metrics\Structure\MethodCountCollector;
 use Qualimetrix\Metrics\Structure\RfcCollector;
 use Qualimetrix\Metrics\Structure\TccLccCollector;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
+use Qualimetrix\Rules\AbstractRule;
 use Qualimetrix\Rules\CodeSmell\BooleanArgumentRule;
 use Qualimetrix\Rules\CodeSmell\CountInLoopRule;
 use Qualimetrix\Rules\CodeSmell\DebugCodeRule;
@@ -64,6 +80,8 @@ use Qualimetrix\Rules\Structure\InheritanceRule;
 use Qualimetrix\Rules\Structure\LcomRule;
 use Qualimetrix\Rules\Structure\NocRule;
 use Qualimetrix\Rules\Structure\WmcRule;
+use ReflectionProperty;
+use SplFileInfo;
 
 #[CoversClass(ContainerFactory::class)]
 final class ContainerFactoryTest extends TestCase
@@ -89,6 +107,34 @@ final class ContainerFactoryTest extends TestCase
         $container = $this->factory->create();
 
         self::assertTrue($container->isCompiled());
+    }
+
+    #[Test]
+    public function itWiresDependencyModelAndGraphProjectionThroughPublicContracts(): void
+    {
+        $container = $this->factory->create();
+
+        $graphBuilder = $container->get(DependencyGraphBuilderInterface::class);
+        self::assertInstanceOf(DependencyGraphBuilderInterface::class, $graphBuilder);
+        self::assertSame(
+            'Qualimetrix\\Analysis\\Evidence\\DependencyModel\\DependencyGraphBuilder',
+            $graphBuilder::class,
+        );
+
+        $pipeline = $container->get(AnalysisPipelineInterface::class);
+        $pipelineBuilder = (new ReflectionProperty(AnalysisPipeline::class, 'graphBuilder'))->getValue($pipeline);
+        self::assertSame($graphBuilder, $pipelineBuilder);
+
+        $projection = $container->get(DependencyGraphProjectionInterface::class);
+        self::assertInstanceOf(DependencyGraphProjectionInterface::class, $projection);
+        self::assertSame(
+            'Qualimetrix\\Reporting\\GraphProjection\\DependencyGraphProjector',
+            $projection::class,
+        );
+
+        $command = $container->get(GraphExportCommand::class);
+        $commandProjection = (new ReflectionProperty(GraphExportCommand::class, 'projection'))->getValue($command);
+        self::assertSame($projection, $commandProjection);
     }
 
     #[Test]
@@ -133,6 +179,137 @@ final class ContainerFactoryTest extends TestCase
         // Registry should contain rule classes
         $classes = $registry->getClasses();
         self::assertNotEmpty($classes);
+    }
+
+    #[Test]
+    public function itWiresTheDuplicationCapabilityThroughItsContractAndRegistries(): void
+    {
+        $container = $this->factory->create();
+
+        self::assertTrue($container->has(DuplicationInspectionInterface::class));
+        $inspection = $container->get(DuplicationInspectionInterface::class);
+        self::assertInstanceOf(DuplicationDetector::class, $inspection);
+
+        $providerProperty = new ReflectionProperty(DuplicationDetector::class, 'resultProvider');
+        self::assertInstanceOf(DuplicationResultProvider::class, $providerProperty->getValue($inspection));
+
+        $rulesCommand = $container->get(RulesCommand::class);
+        self::assertInstanceOf(RulesCommand::class, $rulesCommand);
+        $rulesProperty = new ReflectionProperty(RulesCommand::class, 'rules');
+        $rules = $rulesProperty->getValue($rulesCommand);
+        self::assertIsIterable($rules);
+        $duplicationRules = [];
+        foreach ($rules as $rule) {
+            if ($rule instanceof CodeDuplicationRule) {
+                $duplicationRules[] = $rule;
+            }
+        }
+        self::assertCount(1, $duplicationRules);
+        $optionsProperty = new ReflectionProperty(AbstractRule::class, 'options');
+        self::assertInstanceOf(CodeDuplicationOptions::class, $optionsProperty->getValue($duplicationRules[0]));
+        $ruleProviderProperty = new ReflectionProperty(CodeDuplicationRule::class, 'resultProvider');
+        self::assertSame(
+            $providerProperty->getValue($inspection),
+            $ruleProviderProperty->getValue($duplicationRules[0]),
+        );
+
+        $channels = $container->get(ChannelDeclarationRegistryInterface::class);
+        self::assertInstanceOf(ChannelDeclarationRegistryInterface::class, $channels);
+        self::assertArrayHasKey(
+            CodeDuplicationRule::NAME . '#' . CodeDuplicationRule::NAME,
+            $channels->staticDeclarations(),
+        );
+
+        $registry = $container->get(RuleRegistryInterface::class);
+        self::assertInstanceOf(RuleRegistryInterface::class, $registry);
+        self::assertSame(1, \count(array_filter(
+            $registry->getClasses(),
+            static fn(string $ruleClass): bool => $ruleClass === CodeDuplicationRule::class,
+        )));
+
+        $configurationProvider = $container->get(ConfigurationProviderInterface::class);
+        self::assertInstanceOf(ConfigurationProviderInterface::class, $configurationProvider);
+        $enabledConfiguration = new AnalysisConfiguration(
+            cacheEnabled: false,
+            onlyRules: [CodeDuplicationRule::NAME],
+            workers: AnalysisConfiguration::WORKERS_SEQUENTIAL,
+            projectRoot: AbsolutePath::fromString($this->tempDir),
+        );
+        $configurationProvider->setConfiguration($enabledConfiguration);
+        $configurationProvider->setRuleOptions([
+            CodeDuplicationRule::NAME => [
+                'min_lines' => 2,
+                'min_tokens' => 10,
+            ],
+        ]);
+
+        $resultProvider = $providerProperty->getValue($inspection);
+        $duplicationRule = $duplicationRules[0];
+        self::assertSame($resultProvider, $ruleProviderProperty->getValue($duplicationRule));
+
+        $pipeline = $container->get(AnalysisPipelineInterface::class);
+        self::assertInstanceOf(AnalysisPipeline::class, $pipeline);
+        $metricEnricherProperty = new ReflectionProperty(AnalysisPipeline::class, 'metricEnricher');
+        $metricEnricher = $metricEnricherProperty->getValue($pipeline);
+        self::assertInstanceOf(MetricEnricher::class, $metricEnricher);
+
+        $source = <<<'PHP'
+<?php
+
+function duplicatedFixture(): int
+{
+    $first = 1;
+    $second = 2;
+    $third = $first + $second;
+    $fourth = $third * 2;
+    $fifth = $fourth + $third;
+
+    return $fifth;
+}
+PHP;
+        $firstPath = $this->tempDir . '/First.php';
+        $secondPath = $this->tempDir . '/Second.php';
+        self::assertNotFalse(file_put_contents($firstPath, $source));
+        self::assertNotFalse(file_put_contents($secondPath, $source));
+
+        $repository = self::createStub(MetricRepositoryInterface::class);
+        $repository->method('all')->willReturn([]);
+        $graph = self::createStub(DependencyGraphInterface::class);
+        $graph->method('getAllClasses')->willReturn([]);
+        $graph->method('getAllNamespaces')->willReturn([]);
+        $graph->method('getAllDependencies')->willReturn([]);
+        $duplicateFiles = [new SplFileInfo($firstPath), new SplFileInfo($secondPath)];
+
+        $metricEnricher->enrich($repository, $graph, $duplicateFiles, filesAnalyzed: 0);
+        self::assertNotEmpty($resultProvider->all());
+        self::assertNotEmpty($duplicationRule->analyze(new AnalysisContext($repository)));
+
+        $configurationProvider->setConfiguration(new AnalysisConfiguration(
+            cacheEnabled: false,
+            disabledRules: [CodeDuplicationRule::NAME],
+            workers: AnalysisConfiguration::WORKERS_SEQUENTIAL,
+            projectRoot: AbsolutePath::fromString($this->tempDir),
+        ));
+        $metricEnricher->enrich($repository, $graph, $duplicateFiles, filesAnalyzed: 0);
+
+        self::assertSame([], $resultProvider->all());
+        self::assertSame([], $duplicationRule->analyze(new AnalysisContext($repository)));
+
+        $configurationProvider->setConfiguration($enabledConfiguration);
+        $metricEnricher->enrich($repository, $graph, $duplicateFiles, filesAnalyzed: 0);
+
+        self::assertNotEmpty($resultProvider->all());
+        self::assertNotEmpty($duplicationRule->analyze(new AnalysisContext($repository)));
+
+        $metricEnricher->enrich(
+            $repository,
+            $graph,
+            [new SplFileInfo($firstPath)],
+            filesAnalyzed: 0,
+        );
+
+        self::assertSame([], $resultProvider->all());
+        self::assertSame([], $duplicationRule->analyze(new AnalysisContext($repository)));
     }
 
     #[Test]
@@ -412,7 +589,7 @@ final class ContainerFactoryTest extends TestCase
             SensitiveParameterRule::class,
             \Qualimetrix\Rules\CodeSmell\UnusedPrivateRule::class,
             \Qualimetrix\Rules\CodeSmell\IdenticalSubExpressionRule::class,
-            \Qualimetrix\Rules\Duplication\CodeDuplicationRule::class,
+            CodeDuplicationRule::class,
             \Qualimetrix\Rules\ComputedMetric\ComputedMetricRule::class,
             \Qualimetrix\Rules\CodeSmell\ConstructorOverinjectionRule::class,
             \Qualimetrix\Rules\Design\DataClassRule::class,

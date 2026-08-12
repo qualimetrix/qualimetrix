@@ -6,9 +6,9 @@ namespace Qualimetrix\Infrastructure\Console\Command\Debug;
 
 use Exception;
 use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
 use Qualimetrix\Analysis\Discovery\GeneratedFileFilter;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
 use Qualimetrix\Architecture\Domain\Layer\ClassSet;
 use Qualimetrix\Architecture\Domain\Layer\LayerMatch;
@@ -58,7 +58,7 @@ final class LayerAssignmentCommand extends Command
     public function __construct(
         private readonly ConfigurationPipeline $configurationPipeline,
         private readonly CollectionOrchestratorInterface $collectionOrchestrator,
-        private readonly DependencyGraphBuilder $graphBuilder,
+        private readonly DependencyGraphBuilderInterface $graphBuilder,
         private readonly ArchitectureProcessorInterface $processor,
         private readonly MetricRepositoryFactoryInterface $repositoryFactory,
         private readonly RuntimeConfigurator $runtimeConfigurator,

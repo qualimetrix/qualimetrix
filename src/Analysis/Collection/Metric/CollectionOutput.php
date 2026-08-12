@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Collection\Metric;
 
-use Qualimetrix\Core\Dependency\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Core\Metric\MetricBag;
 
 /**

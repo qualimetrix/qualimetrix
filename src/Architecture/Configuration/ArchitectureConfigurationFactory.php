@@ -7,8 +7,8 @@ namespace Qualimetrix\Architecture\Configuration;
 use InvalidArgumentException;
 use Qualimetrix\Architecture\Configuration\Validation\AllowValidator;
 use Qualimetrix\Architecture\Configuration\Validation\CoverageValidator;
+use Qualimetrix\Architecture\Configuration\Validation\ExactAllowCycleValidator;
 use Qualimetrix\Architecture\Configuration\Validation\LayersValidator;
-use Qualimetrix\Architecture\Configuration\Validation\MutualAllowDetector;
 use Qualimetrix\Architecture\Configuration\Validation\WildcardSelfAllowDetector;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Domain\CoverageMode;
@@ -48,8 +48,9 @@ use Qualimetrix\Configuration\Exception\ConfigLoadException;
  *
  * 1. Validates the top-level shape (`layers`, `allow`, `coverage` keys only).
  * 2. Runs the validators in a deterministic order
- *    ({@see LayersValidator} → {@see AllowValidator} → {@see CoverageValidator}
- *    → {@see MutualAllowDetector} → {@see WildcardSelfAllowDetector}).
+ *    ({@see LayersValidator} → {@see AllowValidator} →
+ *    {@see ExactAllowCycleValidator} → {@see CoverageValidator} →
+ *    {@see WildcardSelfAllowDetector}).
  * 3. Assembles the typed {@see ArchitectureConfiguration} and returns it
  *    together with the deferred-warning list.
  *
@@ -80,7 +81,7 @@ final class ArchitectureConfigurationFactory
 
     private readonly CoverageValidator $coverageValidator;
 
-    private readonly MutualAllowDetector $mutualAllowDetector;
+    private readonly ExactAllowCycleValidator $exactAllowCycleValidator;
 
     private readonly WildcardSelfAllowDetector $wildcardSelfAllowDetector;
 
@@ -88,13 +89,13 @@ final class ArchitectureConfigurationFactory
         ?LayersValidator $layersValidator = null,
         ?AllowValidator $allowValidator = null,
         ?CoverageValidator $coverageValidator = null,
-        ?MutualAllowDetector $mutualAllowDetector = null,
+        ?ExactAllowCycleValidator $exactAllowCycleValidator = null,
         ?WildcardSelfAllowDetector $wildcardSelfAllowDetector = null,
     ) {
         $this->layersValidator = $layersValidator ?? new LayersValidator();
         $this->allowValidator = $allowValidator ?? new AllowValidator();
         $this->coverageValidator = $coverageValidator ?? new CoverageValidator();
-        $this->mutualAllowDetector = $mutualAllowDetector ?? new MutualAllowDetector();
+        $this->exactAllowCycleValidator = $exactAllowCycleValidator ?? new ExactAllowCycleValidator();
         $this->wildcardSelfAllowDetector = $wildcardSelfAllowDetector ?? new WildcardSelfAllowDetector();
     }
 
@@ -135,13 +136,13 @@ final class ArchitectureConfigurationFactory
             self::collectAllReferenceableNames($entries),
             $warnings,
         );
+        $this->exactAllowCycleValidator->validate($allowEntries);
 
         $coverage = $this->coverageValidator->validate($raw['coverage'] ?? null);
         $maxExpandedLayers = self::validateMaxExpandedLayers(
             $raw['max_expanded_layers'] ?? ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS,
         );
 
-        $this->mutualAllowDetector->detect($allowEntries, $warnings);
         $this->wildcardSelfAllowDetector->detect($allowEntries, $warnings);
 
         return new ArchitectureFactoryResult(

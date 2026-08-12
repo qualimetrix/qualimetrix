@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Baseline;
 
 use InvalidArgumentException;
-use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 
 /**
  * The dependency edge a finding carries, as an entry stores it: the target

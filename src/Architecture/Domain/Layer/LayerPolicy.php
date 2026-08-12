@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Architecture\Domain\Layer;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Architecture\Domain\Allow\AllowListEntry;
 use Qualimetrix\Architecture\Domain\Allow\AllowTarget;
 use Qualimetrix\Architecture\Domain\Allow\CaptureBinding;
 use Qualimetrix\Architecture\Domain\Allow\LayerSelector;
-use Qualimetrix\Core\Dependency\DependencyType;
 
 /**
  * Immutable allow-list of inter-layer dependencies.

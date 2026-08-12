@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Architecture\Domain\Layer;
 
 use InvalidArgumentException;
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**

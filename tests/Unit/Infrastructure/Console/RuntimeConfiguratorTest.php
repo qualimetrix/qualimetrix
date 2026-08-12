@@ -686,8 +686,8 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function deferredWarningsAreReplayedThroughConfiguredLogger(): void
     {
-        // The architecture factory captures mutual-allow / pattern-collision
-        // warnings as DeferredWarnings during pipeline resolution. They must
+        // The architecture factory captures architecture warnings as
+        // DeferredWarnings during pipeline resolution. They must
         // reach whichever logger LoggerHolder ends up carrying after
         // configureLogger() has run — NOT the NullLogger placeholder that was
         // in the holder during pipeline resolution.
@@ -700,7 +700,7 @@ final class RuntimeConfiguratorTest extends TestCase
             analysis: new AnalysisConfiguration(),
             ruleOptions: [],
             deferredWarnings: [
-                new DeferredWarning(LogLevel::WARNING, 'architecture.allow: mutual-allow detected between layer pair(s): a ↔ b.'),
+                new DeferredWarning(LogLevel::WARNING, "architecture.allow: wildcard-self-allow detected on entry(s) 'domain-*'."),
             ],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -710,8 +710,8 @@ final class RuntimeConfiguratorTest extends TestCase
         // The buffered ConsoleLogger emits warnings at VERBOSITY_NORMAL with a
         // <comment> tag, so plain text should be visible regardless of decoration.
         $rendered = $output->fetch();
-        self::assertStringContainsString('mutual-allow detected', $rendered);
-        self::assertStringContainsString('a ↔ b', $rendered);
+        self::assertStringContainsString('wildcard-self-allow detected', $rendered);
+        self::assertStringContainsString("'domain-*'", $rendered);
 
         // Sanity: the logger that received the warning is the one in the holder
         // (proving the drain happens AFTER configureLogger swapped it in).

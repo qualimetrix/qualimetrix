@@ -1,0 +1,14 @@
+metric	count
+declarations	701
+files	699
+semantic_owners	37
+contract_consumer_entries	766
+temporary_contract_consumer_entries	1
+exact_dependency_edges	2964
+cross_owner_imports	1946
+semantic_owner_layers	37
+singleton_seams	12
+exact_internal_grants	84
+coarse_internal_grant_edges	15
+internal_enforcement_layers	49
+declared_allow_edges	272

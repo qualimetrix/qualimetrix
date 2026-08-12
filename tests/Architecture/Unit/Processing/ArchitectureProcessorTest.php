@@ -8,6 +8,7 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Domain\CoverageMode;
 use Qualimetrix\Architecture\Domain\Layer\ClassContextFactory;
@@ -20,8 +21,8 @@ use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
 use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
-use Qualimetrix\Core\Dependency\EmptyDependencyGraph;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
 use ReflectionClass;
 
 /**
@@ -282,8 +283,8 @@ final class ArchitectureProcessorTest extends TestCase
         return self::classSet([]);
     }
 
-    private static function emptyGraph(): EmptyDependencyGraph
+    private static function emptyGraph(): DependencyGraphInterface
     {
-        return new EmptyDependencyGraph();
+        return AdjacencyGraphBuilder::empty();
     }
 }

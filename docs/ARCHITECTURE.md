@@ -17,26 +17,45 @@
 
 ## Key Concepts
 
-### 1. Layer Dependency Graph
+### 1. Capability Boundaries and Current Dependency Graph
 
-```
-Infrastructure -> Analysis -> Metrics/Rules/Reporting/Configuration -> Core
-```
+The accepted target is a capability-oriented modular monolith
+([ADR 0022](adr/0022-capability-oriented-modular-monolith.md)). Leaf capabilities
+own behaviour, configuration, state, tests and documentation. They
+expose `Contract` only to named external owner-consumers. Consumer-owned, typed
+phase ports under `Analysis\Run` are non-binding hypotheses until the P3
+contract gate proves their typed inputs, outputs and actual dependencies;
+implementations and prepared state would stay with their capability.
 
-- **Core** — contracts and primitives (0 dependencies except PHP + php-parser types)
-- **Metrics/Rules/Reporting/Configuration** — domain implementations (depend only on Core)
-- **Analysis** — orchestration (depends on domains)
-- **Infrastructure** — entry point (depends on everything)
+`Analysis`, `Analysis\Evidence`, and `Analysis\Policy` are navigation
+taxonomies, never modules or allow-list targets. `Core` is limited to neutral
+primitives, `Infrastructure` to delivery/composition, and `Reporting` to output
+projection. P1 has landed `Analysis\Evidence\Duplication` as the first migrated
+leaf: it owns detection, its run-scoped result provider, entities, options,
+rule, tests and documentation, and exposes only
+`Contract\DuplicationInspectionInterface`. P2 has also landed
+`Analysis\Evidence\DependencyModel` and `Reporting\GraphProjection`: graph
+consumers use the model's five contracts, while Console uses Reporting's two
+public projection types and cannot import exporter internals. The remaining
+`Metrics`, `Rules`, `Configuration` and Analysis sub-namespaces stay in their
+physical legacy locations until P3-P8.
 
-**Rule:** dependencies flow DOWNWARD only. Violations are checked by the tool
-itself: `qmx.yaml` declares the full layer topology and the
-`architecture.layer-violation` rule enforces it during `composer check`
-(deptrac was retired in [ADR 0014](adr/0014-deptrac-retirement.md)).
+P0 governance implements the current enforcement model. The versioned internal
+manifest covers all 701 declarations in 699 files and names 37 semantic
+owners. It generates a coarse qmx projection with 37 owner layers, 12 singleton
+enforcement seams and final `external`: 50 layers and 272 allow edges in the
+reviewed snapshot. The 84 exact internal grants project to 15 coarse edges.
+`external` excludes `Qualimetrix\**`; `coverage: error` makes
+an uncovered project class fail even when it has no dependency edges.
 
-The topology is finer-grained than the five names above: `Analysis`,
-`Infrastructure` and the `Architecture` slice are each split into per-sub-namespace
-layers with explicit allow-lists, so cross-sublayer coupling is caught instead
-of hidden inside a flat parent layer.
+The manifest checker is the exact owner/visibility/import authority. It runs as
+`composer architecture:check` before selfcheck and rejects unlisted imports even
+when a coarse qmx owner edge would allow them. The generated inventories are
+review projections, not the manifest or a runtime/DI registry. A direct
+`bin/qmx check` executes product analysis and the coarse qmx rule only; use
+`composer check` for complete repository governance. Exact declared allow
+cycles fail configuration loading, while `architecture.circular-dependency`
+checks cycles in actual class dependencies.
 
 ### 2. Five-Phase Pipeline
 
@@ -87,18 +106,18 @@ Used for:
 
 Symfony DI with autoconfiguration — new components are registered automatically:
 
-| Component | Condition                                | DI Tag             |
-| --------- | ---------------------------------------- | ------------------ |
-| Collector | implements `MetricCollectorInterface`    | `qmx.collector`    |
-| Rule      | implements `RuleInterface`               | `qmx.rule`         |
-| Formatter | implements `FormatterInterface`          | `qmx.formatter`    |
-| Stage     | implements `ConfigurationStageInterface` | `qmx.config_stage` |
+| Component | Condition                                | DI Tag                    |
+| --------- | ---------------------------------------- | ------------------------- |
+| Collector | implements `MetricCollectorInterface`    | `qmx.collector`           |
+| Rule      | implements `RuleInterface`               | `qmx.rule`                |
+| Formatter | implements `FormatterInterface`          | `qmx.formatter`           |
+| Stage     | implements `ConfigurationStageInterface` | `qmx.configuration_stage` |
 
 **No need** to modify `ContainerFactory` when adding new components.
 
 ### 6. Baseline Ceiling
 
-The version 10 baseline is a post-rule, reported-magnitude ceiling. It compares
+The version 11 baseline retains the post-rule, reported-magnitude ceiling. It compares
 only groups of findings that currently fire, after source/configuration
 suppression and exclusions but before git report scoping. A measured breach is
 promoted to Error; a malformed, stale, or otherwise inapplicable entry is
@@ -132,7 +151,8 @@ commands and `graph:export` refuse incomplete input. See
 ### Verification
 
 ```bash
-composer check     # cs-check + tests + phpstan + selfcheck (architecture layers)
+composer architecture:check # exact manifest policy + generated freshness
+composer check     # full validation, including manifest check and qmx selfcheck
 composer phpstan   # type safety, level 8
 composer test      # unit/integration tests
 ```
@@ -149,9 +169,15 @@ composer test      # unit/integration tests
 
 ### Add a New Rule
 
-1. Create a rule in `src/Rules/{Category}/`
-2. Implement `RuleInterface` + create an Options class
-3. **Done** — automatic registration via DI
+1. Identify the owning subject; do not create a role bucket for an independent capability
+2. Put a thin legacy-layout rule in `src/Rules/{Category}/`, or co-locate a capability-owned rule with its subject
+3. Implement `RuleInterface` + create an Options class
+4. Register a capability root through its Infrastructure configurator; layered rules remain automatic
+
+Current capability examples are Architecture,
+[`Analysis.Evidence.Duplication`](../src/Analysis/Evidence/Duplication/README.md),
+[`Analysis.Evidence.DependencyModel`](../src/Analysis/Evidence/DependencyModel/README.md),
+and [`Reporting.GraphProjection`](../src/Reporting/GraphProjection/README.md).
 
 ### Add a New Output Format
 

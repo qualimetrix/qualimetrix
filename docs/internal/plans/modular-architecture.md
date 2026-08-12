@@ -1,0 +1,985 @@
+# Qualimetrix modular architecture refactoring plan
+
+## Outcome and scope
+
+Replace the current hybrid rule (vertical only for “large” features, horizontal role buckets for “thin” checks) with a capability-oriented modular monolith. Keep a small analysis-run kernel and delivery infrastructure, but make each independently evolving check capability own its configuration, preparation, state, and rules. A capability exposes a stable external contract only when a named external consumer exists.
+
+Use `Analysis`, `Evidence`, and `Policy` as navigation taxonomies that make the product model visible in namespaces. They contain no production types, state, shared contracts or qmx layers; they never grant wildcard sibling access. Architectural boundaries remain the leaf modules.
+
+This plan deliberately migrates the proven scattered capabilities first. Thin metric/rule categories are inventoried and migrated only after their actual ownership is classified; no empty `Domain/Configuration/Processing/Rules` skeleton is required.
+
+## Architectural decisions
+
+1. A leaf module is a subject with one owner, lifecycle, README, tests, and explicit external consumers. Internal folders are free to follow the subject; only meaningful submodules become enforced boundaries.
+2. A module with external consumers exposes `Qualimetrix\...\{Module}\Contract\**`. External code may import only that namespace. Contract DTOs and errors live there; internal entities, holders, raw config arrays, and framework types do not cross the boundary. A private leaf module has no `Contract/` directory.
+3. Contract stability means consumers are insulated from internals. Breaking changes are allowed under the repository policy but require CHANGELOG migration notes and an ADR when the rationale is non-obvious.
+4. `Analysis\Run` owns phase ports because it consumes them. Capabilities implement those ports and retain their prepared state; the kernel does not grow feature-specific fields.
+5. Do not replace direct coupling with one untyped plugin bag/service locator. Extension points are phase-specific and typed. Participants within one family execute in deterministic order and fail container compilation on duplicate ids. Independence is preferred, but a dependency proven by P0 crosses a typed output of an earlier explicit phase.
+6. Mutable per-run state is instance-owned and reset through lifecycle ports. Static feature holders are removed. Process-wide logging/profiling proxies are reviewed separately and are not silently legitimised by this migration.
+7. `Core` shrinks to neutral value types with no natural subject owner. “Many imports” is not a reason to put a type there.
+8. `Infrastructure` is delivery/composition only. Business/application pipelines such as finding evaluation do not live under Console.
+9. `qmx.yaml` is a generated coarse enforcement projection: every production declaration belongs to its one semantic-owner layer except an explicitly declared singleton seam, and uncovered namespaces and projected graph cycles fail self-check. Exact `internal|contract` visibility, contract consumers and temporary grants live only in the authoritative internal manifest. Its checker runs before selfcheck and rejects an unlisted import even when the coarse owner/seam qmx allow would permit it.
+10. Namespace depth communicates subject scale, not dependency privilege. `Analysis\Evidence\Duplication` and `Analysis\Policy\Baseline` are grouped for navigation; neither parent namespace is an allow-list target or a shared implementation home.
+11. Cross-capability sequencing belongs to `Analysis\Run`. The capability that defines an operation owns its state and semantics; run orchestration owns only when it is invoked. Output-only projections, including Git-scoped views, belong to `Reporting`, not to policy evaluation.
+12. Tests follow the owning subject. Test level (`Unit`, `Integration`, `Functional`) is an internal subdivision of a module, not the first directory level. A production move and its owned tests/fixtures/support move in the same package; no package may rely on the legacy role-first test tree remaining discoverable.
+13. P0's participant inventory and the P1/P2 pilots inform the phase-port signatures below, but do not make them binding. P3 introduces the interfaces and their contract tests; its named phase-port contract gate must pass before P4 or any later consumer adopts them. The ADR must not describe unimplemented ports or target namespaces as current architecture.
+
+## P0 design gate: manifest and generated enforcement
+
+P0 uses a versioned internal manifest as the single source of truth for migration ownership. It is build-time governance input, not a runtime module manifest, service registry or DI discovery mechanism. Generated TSV inventories are review views of that source and current AST/import evidence; they are not an alternative authority.
+
+The manifest contract is:
+
+```yaml
+version: 1
+owners:
+  Analysis.Evidence.Example:
+    # ... owner metadata
+declarations:
+  Qualimetrix\Example\ExactType:
+    owner: Analysis.Evidence.Example
+    visibility: contract # internal | contract
+    consumers:
+      - owner: Permanent.Consumer.Owner
+        source_fqcn: null # permanent authorization is owner-wide for this target
+        closes_in: null # permanent consumer
+      - owner: Temporary.Consumer.Owner
+        source_fqcn: Qualimetrix\Temporary\ExactConsumer
+        closes_in: P3 # temporary consumer; closure is mandatory
+temporary_grants:
+  - source_fqcn: Qualimetrix\Source\ExactType
+    target_fqcn: Qualimetrix\Target\ExactInternalType
+    owner: Target.Owner
+    rationale: "..."
+    closes_in: Pn
+enforcement_seams:
+  Qualimetrix\Example\ExactLegacyType:
+    semantic_owner: Analysis.Evidence.Example
+    closes_in: Pn
+```
+
+Contract consumers are structured entries named explicitly on the target FQCN. A permanent entry has `closes_in: null` and `source_fqcn: null`; it authorises that semantic owner owner-wide for this exact target contract declaration. A temporary entry must name both a P1–P8 closure package and one exact `source_fqcn`; the source declaration's semantic owner must equal `owner`, and only that declaration may import the target. A fourth declaration of the same owner is rejected unless separately listed. Every entry must match at least one observed import to the exact target FQCN: permanent entries match any source declaration of their owner, temporary entries only their exact source. The generator derives coarse semantic-owner/seam qmx allows from both permanent and temporary used entries, while the manifest checker retains exact temporary source/target/lifecycle enforcement. It must neither infer a consumer from imports nor auto-approve a new import, and an unused consumer or projected allow is an error. The plan has no unused “future consumer” state.
+
+A temporary internal grant is an exact observed `source_fqcn -> target_fqcn` import record with accountable owner, rationale and `closes_in`. The qmx projection can express only its coarse source semantic-owner/seam to target semantic-owner/seam edge, so that edge is not an exact grant and does not authorise sibling imports. Same-owner imports remain within one qmx owner layer. The manifest checker is the sole visibility/import authority: it requires the exact pair, rejects every other cross-owner internal import even when the coarse edge would match it, and fails an unused grant or projected grant edge. A package changes consumers/grants deliberately, then regenerates qmx and inventories; observation never mutates policy.
+
+The generator parses the current production AST and fails unless each declaration has exactly one manifest entry and each manifest declaration exists exactly once in the AST. It emits the production, import, participant, state, Reporting, test, fixture, documentation and PHPUnit-discovery inventories under `docs/internal/generated/modular-architecture/`, including owner/status and `closure_package` columns where migration closure applies. Documentation rows outside P1-P8 use exactly one shared-governance disposition: `P0-D`, `permanent`, or `shared`. It also replaces only marked generated ownership/allow regions in `qmx.yaml`. Its `--check` mode renders to memory or a temporary location and compares all outputs without writing the worktree. This adds no public qmx schema, manifest option or runtime API.
+
+### Feasibility evidence from the current snapshot
+
+These figures describe the generated snapshot reviewed at the P0 design gate; they are assertions over today's inputs, not constants that a future generator may hardcode:
+
+| Evidence                                        | Current result                          | Consequence                                                                                         |
+| ----------------------------------------------- | --------------------------------------: | --------------------------------------------------------------------------------------------------- |
+| AST declarations / source files                 | 695 / 693                               | ownership is declaration-based; two multi-declaration files must not be collapsed to file ownership |
+| Exact FQCN dependency graph                     | 695 vertices / 2,951 edges / DAG        | current code cycles are not the cause of the projected owner cycles                                 |
+| Cross-owner exact imports                       | 1,945 pairs; generated-inventory diff 0 | manifest and projection use the same current dependency extraction                                  |
+| Semantic-owner graph before seams               | 37 vertices / 191 edges                 | coarse aggregation creates two SCCs, of sizes 10 and 2                                              |
+| Exact imports targeting `internal` declarations | 85 unique source/target FQCN pairs      | the manifest validates every pair as an exact temporary grant                                       |
+| Coarse owner edges projected from those grants  | 16                                      | qmx cannot authorise exact imports; the mandatory manifest checker rejects every unlisted pair      |
+| Graph after inclusion-minimal seams             | 51 vertices / 245 edges / no SCC        | 37 non-empty semantic-owner layers plus 14 singleton seams form an internal DAG                     |
+| Final graph including `external`                | 52 layers / 296 allow edges             | 51 internal layers each add one edge to the final no-dependency `external` layer                    |
+
+The rejected partial 41-layer `qmx.yaml` draft proved only selected explicit
+Metrics ownership. It auto-enrolled declarations through broad role buckets and
+did **not** satisfy the owner-level P0 DoD. The current generated projection has
+replaced that draft with semantic-owner/seam membership; its presence is P0-A
+implementation evidence, not acceptance of the proposed P1-P8 physical layout.
+
+The current generated projection uses the following 14 singleton enforcement seams. A seam changes only the qmx enforcement vertex for one exact legacy FQCN; its true `semantic_owner` and `visibility` remain manifest facts. All 37 owner layers remain non-empty (the smallest retains three declarations). The set is inclusion-minimal: returning any one row to its owner recreates the cycle named in the reason column.
+
+| Exact seam FQCN                                                   | True owner / visibility                        | Closure | Incoming → outgoing projection and removal proof                                                             |
+| ----------------------------------------------------------------- | ---------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------ |
+| `Qualimetrix\Analysis\Collection\Declaration\DeclarationBindings` | `Analysis.Run` / contract                      | P6      | Run/SourceControls → Measurement/Inline/Core.Path/Core.Symbol; removal cycles Run ↔ Inline                   |
+| `Qualimetrix\Analysis\Collection\SourceControl\SourceControls`    | `Analysis.Policy.Inline` / contract            | P6      | Run → Inline/DeclarationBindings; removal cycles Inline ↔ Run                                                |
+| `Qualimetrix\Analysis\RuleExecution\RuleExecutor`                 | `Analysis.Finding` / internal                  | P6      | DI → Configuration/Finding/Observability; removal closes Configuration→ComputedMetrics→Finding→Configuration |
+| `Qualimetrix\Architecture\Processing\ArchitectureLifecycleHook`   | `Analysis.Policy.Architecture` / internal      | P4      | none → Configuration/Architecture/Run; removal cycles Configuration ↔ Architecture                           |
+| `Qualimetrix\Baseline\Suppression\RuleValidatorMapFactory`        | `Analysis.Policy.Inline` / contract            | P6      | DI/Parallel → Finding; removal cycles Finding ↔ Inline                                                       |
+| `Qualimetrix\Baseline\Suppression\SuppressionFilter`              | `Analysis.Policy.Inline` / contract            | P6      | Console/DI → Finding/Inline; removal cycles Finding ↔ Inline                                                 |
+| `Qualimetrix\Configuration\ComputedMetricsConfigResolver`         | `Analysis.Evidence.ComputedMetrics` / contract | P5      | Console/DI → Configuration/Computed/Finding/Symbol; removal cycles Config↔Computed                           |
+| `Qualimetrix\Configuration\Exception\ConfigLoadException`         | `Analysis.Configuration` / contract            | P4      | Configuration/Architecture/Console → seam; removal cycles Config ↔ Architecture                              |
+| `Qualimetrix\Configuration\Pipeline\DeferredWarning`              | `Analysis.Configuration` / contract            | P3      | Architecture → seam; removal cycles Configuration ↔ Architecture                                             |
+| `Qualimetrix\Core\Metric\GlobalContextCollectorInterface`         | `Analysis.Evidence.Measurement` / contract     | P2      | Coupling/Design/Run/DI → DependencyModel/Measurement; removal cycles Measurement ↔ DependencyModel           |
+| `Qualimetrix\Core\Rule\RuleMatcher`                               | `Analysis.Finding` / contract                  | P6      | Configuration/Finding/Inline/Run → seam; removal cycles Finding ↔ Inline                                     |
+| `Qualimetrix\Core\Violation\Location`                             | `Analysis.Finding` / contract                  | P6      | capabilities/policies/Run/Reporting → Path; removal cycles Finding→DependencyModel                           |
+| `Qualimetrix\Reporting\Health\HealthReasonBuilder`                | `Reporting` / contract                         | P5      | Health/Reporting → Computed/MetricHint; removal cycles Health ↔ Reporting                                    |
+| `Qualimetrix\Reporting\Health\MetricHintProvider`                 | `Reporting` / contract                         | P5      | Health/Reporting/HealthReasonBuilder → seam; removal cycles Health ↔ Reporting                               |
+
+The resulting current projection has 37 semantic-owner layers plus 14 seams and final `external`: 52 qmx layers total. Its 245-edge internal graph is a DAG; adding the 51 project-to-external edges keeps it a DAG. A seam is neither a module nor a publication decision, and its qmx permissions remain coarse. The mandatory manifest checker runs before selfcheck and remains the sole exact visibility/import authority.
+
+### Rejected owner/status projection
+
+The earlier 60 owner/status layers plus nine status-oriented seams are retained only as rejected feasibility evidence. The live probe found same-owner `contract ↔ internal` cycles before qmx generation. Omitting those same-owner edges made the declaration graph look acyclic but produced 637 architecture errors in sequential selfcheck (`MetricBag → DataBag`, `Baseline → BaselineIdentity`, Run internal → contract, and others). Adding more status seams would encode scattered legacy internals as false architectural boundaries. Visibility therefore remains exact manifest policy, not qmx layer identity.
+
+Alternatives rejected at this gate:
+
+- a public qmx manifest plus temporary-import overlay would make an internal migration escape hatch part of qmx's public schema and API;
+- an inventory-only ratchet outside qmx would leave broad qmx ownership in place or duplicate the dependency-policy engine;
+- deriving consumers and grants from observed imports would approve the very dependency that fail-closed enforcement must review.
+
+## Target topology
+
+```text
+src/
+  Analysis/                         # navigation taxonomy; no PHP types or qmx layer
+    Run/                            # run orchestration kernel
+      Contract/                     # phase ports, AnalysisResult/API
+      Discovery|Collection|Aggregation|Execution/...
+    Configuration/                  # source merging and neutral run configuration
+      Contract/?                    # only if a named external consumer needs it
+    Finding/                        # finding, rule and channel contracts
+      Contract/
+    Evidence/                       # navigation taxonomy; no PHP types or qmx layer
+      Measurement/                  # metric/repository/collector contracts
+        Contract/
+      DependencyModel/              # dependency graph facts, construction and query
+        Contract/
+      Duplication/                  # token/block duplication capability
+        Contract/?
+      CircularDependency/           # cycle detection, result and finding capability
+        Contract/?
+      ComputedMetrics/              # formulas, evaluation, health subdomain initially
+        Contract/?
+      Complexity|Maintainability|Coupling|Cohesion|Design|Size|CodeSmell|Security/...
+    Policy/                         # navigation taxonomy; no PHP types or qmx layer
+      Architecture/                 # declared layer policy capability
+        Contract/?
+      Inline/                       # source suppression and threshold overrides
+        Contract/?
+      Baseline/                     # accepted-state ceiling and lifecycle
+        Contract/?
+  Reporting/                # result-to-output capability, including graph projections
+    Contract/
+  Infrastructure/           # Console, DI, cache, parallel, persistence/delivery adapters
+  Core/                     # neutral primitives only
+```
+
+P0 feasibility evidence confirms this physical taxonomy: PSR-4 maps leaf descendants without requiring a type in each parent, Symfony can scan the existing leaf service directories, and exact qmx membership leaves an unlisted parent or child uncovered. Therefore `Analysis`, `Evidence` and `Policy` remain empty containers rather than layers or allow targets; the leaf modules are the boundaries.
+
+## Target test topology and ownership
+
+```text
+tests/
+  Analysis/
+    Run/{Unit,Integration,Fixtures,Support}/...
+    Configuration/{Unit,Integration,Fixtures,Support}/...
+    Finding/{Unit,Integration,Fixtures,Support}/...
+    Evidence/
+      Duplication/{Unit,Integration,Fixtures,Support}/...
+      DependencyModel/{Unit,Integration,Fixtures,Support}/...
+      CircularDependency/{Unit,Integration,Fixtures,Support}/...
+      ComputedMetrics/{Unit,Integration,Fixtures,Support}/...
+      {Capability}/{Unit,Integration,Fixtures,Support}/...
+    Policy/
+      Architecture/{Unit,Integration,Fixtures,Support}/...
+      Inline/{Unit,Integration,Fixtures,Support}/...
+      Baseline/{Unit,Integration,Fixtures,Support}/...
+  Reporting/{Unit,Integration,Functional,Fixtures,Support}/...
+  Infrastructure/{Unit,Integration,Functional,Fixtures,Support}/...
+  Core/{Unit,Fixtures,Support}/...
+  System/{UserScenario}/...       # only whole-product behaviour with no honest leaf owner
+  TestSupport/                    # navigation taxonomy only; no files directly in this root
+    {NeutralSubject}/...          # named test-infrastructure subject with its own owner/lifecycle
+```
+
+Rules:
+
+- the path and `Qualimetrix\Tests\...` namespace mirror the owning production subject before the test level is appended;
+- module-specific fixtures, builders, fake services and process scripts stay with that module; shared usage alone never justifies relocation;
+- `TestSupport` is a navigation taxonomy, not a shared role bucket. It contains no files or common contract directly; every child is a named neutral subject with coherent semantics, owner and lifecycle, justified independently of its consumer count;
+- a test that crosses modules is owned by the module whose promise it verifies. `System` is the last resort for a named whole-product scenario, not a replacement `Integration/` role bucket;
+- P0 inventories every test class, fixture file/directory, support class and non-PHP test process/script as `current path -> subject owner -> target path -> PHPUnit suite/package` before any test move;
+- each production package moves its owned tests atomically, updates namespaces/imports/fixture paths and adjusts `phpunit.xml.dist`, Composer autoload/classmaps and focused commands as required;
+- before the first move, record the PHPUnit-discovered test manifest. After every package, compare discovery so renamed/moved tests cannot disappear silently; then run the focused tests and `composer check`;
+- test topology is checked mechanically by P8. Legacy role-first roots may remain only for artifacts that P0 explicitly classifies as cross-module/system-owned with a named closure or permanent owner; `TestSupport` must be empty outside its named subject children.
+
+## Initial contracts (signatures, not implementations)
+
+```php
+// Analysis\Run-owned, phase-specific ports. Participants in one family are
+// independent unless P0's participant/data-dependency inventory proves that
+// one consumes another's typed output.
+interface RunLifecycleParticipantInterface
+{
+    public function reset(): void;
+}
+
+interface GraphPreparationParticipantInterface
+{
+    public function id(): string;
+    public function prepare(
+        DependencyGraphInterface $graph,
+        MetricRepositoryInterface $metrics,
+        RuleSelection $selection,
+    ): void;
+}
+
+interface FileSetInspectionParticipantInterface
+{
+    public function id(): string;
+    /** @param list<AnalysedFile> $files */
+    public function inspect(array $files, RuleSelection $selection): void;
+}
+
+interface MetricDerivationParticipantInterface
+{
+    public function id(): string;
+    public function derive(MetricRepositoryInterface $metrics, RuleSelection $selection): void;
+}
+
+// Configuration-owned neutral syntax contract. A capability parses its own
+// section into its private typed configuration; the kernel stores no
+// heterogeneous result bag.
+interface ConfigurationDocumentInterface
+{
+    public function section(ConfigurationSectionName $name): ConfigurationNode;
+}
+```
+
+Constraints:
+
+- inputs contain only the data named by that phase contract, never a mutable universal context;
+- participants within one family execute in stable id order and duplicate ids fail container compilation;
+- independence is the default, not an axiom. P0 must enumerate participant inputs and outputs. A real dependency is represented by a typed output from an earlier explicit phase; do not hide it with `before/after`, priorities, a service locator or shared mutable state. Merge participants only when the ownership inventory shows one subject;
+- processors keep typed results in their own module services; their rules receive those services by constructor injection;
+- `AnalysisContext` retains only genuinely universal rule input. Remove `cycles` and `duplicateBlocks`; do not add `architecture`, computed-metric, or future feature payloads;
+- `ResolvedConfiguration` retains neutral run config plus `ConfigurationDocumentInterface`. A module reads only its named node and immediately parses it into its private typed configuration; no caller retrieves an object by type/key from a heterogeneous registry;
+- public signatures above remain non-binding through P0/P1/P2. Their inventories and pilot evidence may revise them. P3 introduces the binding interfaces and contract tests, and its phase-port contract gate rejects the design before P4+ adoption if it requires feature-specific fields, hidden ordering or an untyped participant-to-participant dependency.
+
+## Capability inventory and disposition
+
+| Current area                                                                                                                           | Subject owner                                               | First disposition                                                                             |
+| -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `Architecture/**` except circular-dependency types + architecture config in central pipeline                                           | `Analysis\Policy\Architecture`                              | declared layer policy; expose a contract only for named debug/run consumers                   |
+| `Architecture/Rules/CircularDependency*` + cycle detector/result currently under Analysis/Core                                         | `Analysis\Evidence\CircularDependency`                      | separate evidence capability consuming the dependency graph contract                          |
+| `Analysis/Duplication`, `Core/Duplication`, `Rules/Duplication`                                                                        | `Analysis\Evidence\Duplication`                             | first low-risk pilot; module owns detection state and rule                                    |
+| `Core/ComputedMetric`, `Configuration/*ComputedMetric*`, `Metrics/ComputedMetric`, `Rules/ComputedMetric`, health-specific computation | `Analysis\Evidence\ComputedMetrics` with `Health` subdomain | remove static definition holder; Reporting retains rendering only                             |
+| `Core/Dependency`, `Analysis/Collection/Dependency` except cycle-specific and export types                                             | `Analysis\Evidence\DependencyModel`                         | graph facts/construction/query used by Run, Architecture, CircularDependency and Coupling     |
+| dependency graph DOT/JSON exporters and their format contract                                                                          | `Reporting`                                                 | output projections consuming only the DependencyModel contract                                |
+| `Core/Metric` contracts and repositories/collector extensions                                                                          | `Analysis\Evidence\Measurement`                             | foundational evidence subject; inventory parallel-worker reconstruction before move           |
+| `Core/Violation`, `Core/Rule`, channel registries                                                                                      | `Analysis\Finding`                                          | foundational analysis subject; public rule/channel contracts, internal registries             |
+| source annotations, threshold overrides and their extractors/application                                                               | `Analysis\Policy\Inline`                                    | feature-owned model and worker-aware extraction                                               |
+| `Baseline` ceiling/lifecycle                                                                                                           | `Analysis\Policy\Baseline`                                  | independent policy capability; do not merge with Inline                                       |
+| Cross-policy invocation order currently under Console                                                                                  | `Analysis\Run`                                              | application orchestration only; operations and state remain with their capability owners      |
+| Git-scoped finding projection currently under Console                                                                                  | `Reporting`                                                 | output projection; Git client remains an Infrastructure adapter behind a Reporting-owned port |
+| `Reporting`                                                                                                                            | `Reporting`                                                 | retain rendering/projection; reclassify health, impact, debt and filtering computations       |
+| `Configuration`                                                                                                                        | `Analysis\Configuration`                                    | retain only merge/source/schema mechanics and neutral runtime config                          |
+| `Analysis` orchestration excluding capability implementations                                                                          | `Analysis\Run`                                              | orchestration; split phase internals by subject, not generic extension implementation         |
+| metric/rule categories                                                                                                                 | `Analysis\Evidence\{Capability}`                            | migrate after exhaustive class/co-change/import classification below                          |
+
+Before moving thin checks, use the exact declaration rows in `production-ownership.tsv` and the package columns in the generated production/test/documentation inventories; prose globs in this plan are scope summaries, not executable enumerations. The P0 disposition is: Halstead belongs to `Analysis.Evidence.Maintainability`; WMC belongs to `Analysis.Evidence.Complexity`; the legacy `Structure` folder is not an owner and its declarations split into the inventory's Cohesion, Size and Design owners. Apply the same row-level evidence to every current `Reporting/**` type before moving it.
+
+## Work packages
+
+### P0 — Establish authoritative ownership and fail-closed enforcement — Completed
+
+**Status:** Completed. Final verification is green: the manifest covers 695 declarations in 693 files and 37 semantic owners; the generated projection has 14 singleton seams, 52 total layers and 296 allow edges; all 85 exact internal grants project to 16 coarse edges. Full PHPUnit passed with 7,200 tests and 21,118 assertions, and architecture governance plus selfcheck are green. P1 has since completed; no later P2-P8 physical move or P3 phase-port contract was implied by P0 completion alone.
+
+P0 was split into executable, non-overlapping file slices. The manifest and its qmx projection form one atomic enforcement package. Shared outputs belong to that slice only; later slices consume them read-only.
+
+#### P0-A — Authoritative ownership and enforcement — Completed
+
+Files: `docs/internal/modular-architecture-manifest.json`, `docs/internal/modular-architecture-manifest.schema.json`, and narrow `.gitignore` exceptions for exactly those two otherwise ignored JSON files; modular-architecture inventory/projection generators; the generated ownership/allow region and its immediately preceding topology header comments in `qmx.yaml`; generated production/import/participant/state/Reporting/test/fixture/documentation/PHPUnit TSV or text artifacts; the `composer check` script entry that invokes generator `--check`; qmx projection/invariant tests and architecture topology fixtures; the enforcement-foundation production/tests below. No ADR, general documentation, baseline or plan file.
+
+**Verified:** manifest/AST coverage, exact consumers/grants, generated 37-owner + 14-seam + `external` DAG, freshness checking, isolated-class coverage and exact declared-cycle validation are green.
+
+The only new `.gitignore` exceptions are `!docs/internal/modular-architecture-manifest.json` and `!docs/internal/modular-architecture-manifest.schema.json`; the repository-wide JSON ignore policy otherwise remains intact.
+
+Enforcement-foundation file scope:
+
+- coverage: `src/Architecture/Rules/LayerViolationRule.php` and `tests/Architecture/Unit/Rules/CoverageDiagnosticsTest.php`;
+- exact allow-cycle validation and wiring: `src/Architecture/Configuration/Validation/ExactAllowCycleValidator.php`, `src/Architecture/Configuration/Validation/AllowValidator.php`, `src/Architecture/Configuration/ArchitectureConfigurationFactory.php`, `tests/Architecture/Unit/Configuration/Validation/ExactAllowCycleValidatorTest.php`, `tests/Architecture/Unit/Configuration/Validation/AllowValidatorTest.php` and `tests/Architecture/Unit/Configuration/ArchitectureConfigurationFactoryTest.php`;
+- warning-contract migration: remove `src/Architecture/Configuration/Validation/MutualAllowDetector.php` and `tests/Architecture/Unit/Configuration/Validation/MutualAllowDetectorTest.php`; retain and revalidate the real warning in `src/Architecture/Configuration/Validation/WildcardSelfAllowDetector.php` and `tests/Architecture/Unit/Configuration/Validation/WildcardSelfAllowDetectorTest.php`; align its deferred-warning wiring/comments in `src/Architecture/Configuration/Validation/LongFormAllowEntryNormalizer.php`, `src/Configuration/Pipeline/ConfigurationPipeline.php`, `src/Infrastructure/DependencyInjection/Configurator/ConfigurationConfigurator.php`, `src/Infrastructure/Console/RuntimeConfigurator.php`, `tests/Integration/Configuration/DeferredWarningIntegrationTest.php`, `tests/Unit/Configuration/Pipeline/ConfigurationPipelineTest.php`, `tests/Unit/Infrastructure/Console/RuntimeConfiguratorTest.php` and the comments-only example in `tests/Functional/Console/Command/CheckCommandTest.php`.
+
+- Replace path heuristics, inferred visibility and inferred consumers with exact manifest declarations and exact observed import-pair checks.
+- Preserve AST facts independently from policy: the parser discovers declarations/imports; the manifest supplies true owner, `internal|contract`, structured per-FQCN consumers with lifecycle, exact temporary internal grants and singleton seams.
+- Make coverage account for canonical-deduplicated analysed classes even when the dependency graph has no edges, so an isolated uncovered class fails while an owned isolated class remains clean.
+- Preserve exact self-edges through allow normalization, then run `ExactAllowCycleValidator` from `ArchitectureConfigurationFactory` before analysis; reject exact self-, two- and three-plus-node declared allow cycles. Do not duplicate actual code-cycle detection.
+- Remove mutual-allow warning semantics and its detector entirely; mutual exact allows are now a hard two-node cycle error, while the unrelated `wildcard-self-allow` warning continues through the deferred-warning pipeline.
+- Derive coarse semantic-owner/seam qmx allows from used permanent and temporary per-FQCN consumer entries and exact grants. The 85 internal pairs currently contribute 16 coarse owner edges; never describe a qmx edge as an exact grant.
+- Generate one layer per 37 semantic owners, the exact 14 singleton seams above, and final `external`. Visibility is never part of a qmx layer name or membership rule. `external` excludes `Qualimetrix\**`, project layers may depend on it, and it depends on none.
+- Keep `Analysis`, `Evidence`, `Policy` and every unlisted child namespace uncovered; no owner/category template or broad role-bucket pattern may enrol a new declaration.
+- Emit `closure_package` for every movable production/test/documentation row, temporary contract consumer and temporary internal grant. Counts in reports are computed from input, never asserted as generator constants.
+- Implement normal write mode and a no-write `--check` comparison mode; validate the declared qmx allow graph as a DAG before analysis, while actual code-cycle detection remains a separate rule.
+
+DoD: for the reviewed snapshot, 695 declarations in 693 files map 1:1 to the AST and exactly one of 37 owners; all 771 structured consumer entries are explicit and used, and every observed cross-owner import matches one. Permanent entries have `source_fqcn: null` and `closes_in: null`; temporary entries name an exact source FQCN and closure package, their source semantic owner equals `owner`, and a fourth same-owner source declaration is rejected; internal declarations cannot publish consumers. All 85 unique imports whose target is `internal` match used exact source-FQCN/target-FQCN grants; they contribute 16 coarse owner edges, and every other cross-owner import enabled only by a coarse qmx edge is rejected by the manifest checker before selfcheck. Unused consumers, projected allows, exact grants and projected grant edges fail. The qmx projection has 37 non-empty owner layers plus 14 singleton seams and `external` (52 total); the 51-vertex/245-edge internal graph and 52-vertex/296-edge final graph are DAGs, and returning any seam to its true owner recreates a cycle. qmx membership equals manifest semantic owner except for the declared enforcement layer of those 14 exact FQCNs; visibility never changes qmx membership, and a new declaration or import cannot add a consumer, layer, allow or grant during regeneration. Focused regressions prove an isolated uncovered class fails even with an empty dependency graph, an owned isolated class stays clean, repository/edge class evidence deduplicates, and ignore mode remains unchanged. Exact declared self-, two- and three-plus-node cycles fail before analysis; no production/test reference to `MutualAllowDetector` or active mutual-allow warning remains, and the `wildcard-self-allow` deferred-warning seam remains green. Topology fixtures additionally prove same-owner internal/contract imports remain inside one owner layer, permanent and exact temporary contract imports are checked by the manifest, a fourth same-owner temporary source and an unlisted cross-owner internal pair fail despite a coarse qmx allow, seam diagnostics retain true manifest owner, taxonomy-root and unlisted-child declarations are uncovered, and uncovered endpoint/isolated class/actual class-cycle cases fail. The two internal manifest JSON files are not ignored while unrelated JSON policy stays unchanged. Re-run the existing 304-test Architecture/configuration/DI/console seam evidence, all inventories, mandatory manifest check before selfcheck, `composer check` freshness and selfcheck; all are green and `--check` leaves the worktree byte-for-byte unchanged. The 695/771/85/16/14 and graph counts are generated snapshot evidence, never hardcoded invariants.
+
+#### P0-B — Documentation and ADR 0022 alignment — Completed
+
+Files: ADR 0022, `docs/ARCHITECTURE.md`, affected source/component READMEs, root/project instructions and module README template. No manifest, generator, qmx, tests, plan or baseline file.
+
+**Verified:** ADR 0022 is accepted, ADR 0012 is superseded, current manifest/qmx enforcement is distinguished from pending P1-P8 physical moves, and phase ports remain explicitly non-binding until P3.
+
+- Supersede the “large vertical / thin layered” rule while preserving its historical rationale.
+- Document taxonomy-only containers, leaf ownership, contract publication, manifest authority, generated enforcement and the fact that generated inventories are neither runtime metadata nor DI registration.
+- Preserve the distinction between current implemented governance (authoritative 695-declaration/37-owner manifest plus generated 37-owner + 14-seam + `external` projection) and the pending P1-P8 physical layout. Retain the former 41-layer draft and 60/9 status probe only as rejected feasibility history, and describe phase ports only as non-binding hypotheses informed by P0/P1/P2.
+- Record ADR 0022 as `Accepted` after the green P0-D review; no other package owns those decision-status documents. Completed.
+
+DoD: accepted-state docs accurately describe P0 enforcement as current without claiming P1-P8 moves; public docs do not expose an internal manifest/qmx option; ADR alternatives, rejected projections and the 14 temporary enforcement seams match this design gate; direct `bin/qmx check` is distinguished from mandatory repository governance; final P0 completion rechecked all docs for current/target consistency.
+
+#### P0-C — Baseline reconciliation — Completed
+
+Files: `qmx-baseline.json` and baseline-specific verification evidence only. No manifest, generator, qmx configuration, topology test, plan or documentation file.
+
+**Verified:** selfcheck is green with no architecture coverage/layer escape hatch in the v11 ratchet.
+
+- Reconcile only findings whose identity changes because fail-closed topology becomes a hard gate.
+- Review any residual snapshot delta; do not regenerate accepted debt mechanically and do not baseline architecture coverage or layer violations.
+
+DoD: `composer selfcheck` has no new topology violation; any baseline delta is minimal, explained and contains no ownership/grant escape hatch.
+
+#### P0-D — Final plan review gate — Completed
+
+Files: this plan only. P0-D read P0-A evidence, P0-B's staged docs, P0-C evidence and all generated inventories but edited no implementation/configuration/documentation artifact.
+
+**Verified:** the final independent governance review returned GO; generated inventories and qmx are fresh, the exact/coarse enforcement seam is covered, and full PHPUnit plus architecture/selfcheck are green.
+
+- Materialise P1–P8's exact production/test/documentation scope through authoritative generated TSV rows whose `closure_package` is exactly P1 through P8, rather than duplicating hundreds of paths in prose. Every non-migration documentation row uses exactly one of `P0-D`, `permanent`, or `shared` and is not silently assigned to a migration package by filename substrings.
+- Record design-gate evidence, resolved dispositions and package dependencies, then perform a fresh architecture-plan review.
+- Authorise P0-B's `Proposed -> Accepted` documentation closure after enforcement, baseline and plan findings are resolved. Completed.
+
+DoD: the review confirmed manifest/AST 1:1 coverage, all 85 exact internal import-pair checks and their 16 coarse owner projections, all 771 explicit/used structured consumers with valid permanent owner-wide or temporary exact-source lifecycle, 37 non-empty owner layers + 14 inclusion-minimal seams + external, 245-edge internal and 296-edge final DAGs, non-inferred imports, used closure-named exact grants, narrow manifest JSON ignore exceptions, `composer check` freshness enforcement and the complete topology fixture matrix. Documentation inventory discovery is committable/reproducible, root instructions and shared governance documents have explicit non-migration dispositions, and no generated P1-P8 row contradicts a P0/shared owner. P0-A, P0-B, P0-C and P0-D are complete; the generated 52-layer projection is current enforcement, while the rejected 41-layer draft and rejected 60/9 status projection remain historical evidence only.
+
+For every P1–P8 package, rows bearing that closure in the generated production, test and documentation inventories are the authoritative enumeration of artifacts whose **semantic ownership or physical location migrates** in that package. They are not the complete executable edit set. Each package must additionally enumerate its exact integration consumers, DI adapters, discovery guards, governance inputs/outputs and current-layout documentation; touching those files does not change their later semantic owner or closure package. Documentation rows marked `P0-D`, `permanent`, or `shared` remain governance/lifecycle dispositions, but a package updates them when its landed current state would otherwise make them false. The package first changes manifest policy deliberately, applies its physical and integration edits, regenerates the 37-owner/remaining-seam qmx projection and every inventory, proves the new projection DAG and every remaining seam necessary, and finally runs the generator in `--check` mode. Generated TSVs enumerate migration-owned moves and verify freshness; they are not runtime manifests, DI registries or substitutes for the package's explicit integration list.
+
+### P1 — Co-locate Analysis\Evidence\Duplication and isolate its run-scoped result
+
+**Status:** Completed. Implementation, review fixes and final re-review are complete. P1 deliberately absorbs the Duplication-specific isolation formerly deferred to P3. It does not introduce a generic phase participant or bind any of P3's proposed Run-owned ports. The final post-P1 snapshot contains 697 declarations in 695 files, retains 37 semantic owners and 14 singleton seams, and projects 84 exact internal grants to 15 coarse edges. Full PHPUnit passes with 7,206 tests, 21,273 assertions and one skip; architecture generation/check, selfcheck, full CS, P1-scoped PHPStan, cross-tool tests, strict documentation build and leak checks are green. Baseline reconciliation is complete without accepting new debt. Full PHPStan and therefore aggregate `composer check` remain red only for the pre-existing unrelated `LoggerFactory.php:72` `missingType.iterableValue` finding; this is not claimed as P1-green evidence. P2 has since completed; P3 is next and has not started.
+
+#### Boundary and lifecycle
+
+- Move the 17 existing declarations to the leaf module and add one internal run-scoped result provider. `DuplicateBlock`, `DuplicateLocation`, the provider, detector implementation, rule and options are internal module types.
+- Replace the current returning detector contract with the one narrow external inspection contract required by `Analysis\Pipeline\MetricEnricher`. Its inspection operation replaces the provider's complete result for that run; a reset operation clears prior state before the enabled/disabled decision. The exact signatures are `reset(): void` and `inspect(array $files): void`, with `@param list<SplFileInfo> $files` on the contract. The rule receives the internal provider by constructor injection and reads `list<DuplicateBlock>` from it; neither Run nor `AnalysisContext` transports that list.
+- Remove `duplicateBlocks` from `EnrichmentResult`, `AnalysisContext` and the `AnalysisPipeline` projection in P1. An enabled run followed by a disabled or no-match run must expose an empty provider result, never the previous run's blocks. The disabled path performs only the provider reset: no tokenisation, hash index, duplicate block or candidate-filter allocation.
+- Publish only `Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface`. Its sole temporary exact application consumer is `Qualimetrix\Analysis\Pipeline\MetricEnricher` (`owner: Analysis.Run`, `closes_in: P3`). `Infrastructure.DependencyInjection` retains a permanent owner-wide consumer for composition wiring. The dedicated configurator may scan/register internals but no production declaration outside the module imports an internal Duplication FQCN.
+- Do not add PHPDoc-only consumer semantics, transitive contract closure, a qmx seam or a generic phase port in P1. Removing the universal payload eliminates the earlier need to expose `DuplicateBlock`/`DuplicateLocation` and keeps the existing manifest observation model intact.
+
+#### Exact production move map
+
+| Current declaration/file                                    | Target file                                                                     | Target visibility |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------- |
+| `src/Analysis/Duplication/ContentHintExtractor.php`         | `src/Analysis/Evidence/Duplication/ContentHintExtractor.php`                    | internal          |
+| `src/Analysis/Duplication/DataDeclarationTagger.php`        | `src/Analysis/Evidence/Duplication/DataDeclarationTagger.php`                   | internal          |
+| `src/Analysis/Duplication/DuplicateBlockFinder.php`         | `src/Analysis/Evidence/Duplication/DuplicateBlockFinder.php`                    | internal          |
+| `src/Analysis/Duplication/DuplicateSearchRequest.php`       | `src/Analysis/Evidence/Duplication/DuplicateSearchRequest.php`                  | internal          |
+| `src/Analysis/Duplication/DuplicationDetector.php`          | `src/Analysis/Evidence/Duplication/DuplicationDetector.php`                     | internal          |
+| `src/Analysis/Duplication/DuplicationDetectorInterface.php` | `src/Analysis/Evidence/Duplication/Contract/DuplicationInspectionInterface.php` | contract          |
+| `src/Analysis/Duplication/HashIndexBuildResult.php`         | `src/Analysis/Evidence/Duplication/HashIndexBuildResult.php`                    | internal          |
+| `src/Analysis/Duplication/HashIndexBuilder.php`             | `src/Analysis/Evidence/Duplication/HashIndexBuilder.php`                        | internal          |
+| `src/Analysis/Duplication/NormalizedToken.php`              | `src/Analysis/Evidence/Duplication/NormalizedToken.php`                         | internal          |
+| `src/Analysis/Duplication/PackedPosition.php`               | `src/Analysis/Evidence/Duplication/PackedPosition.php`                          | internal          |
+| `src/Analysis/Duplication/RetokenizedFiles.php`             | `src/Analysis/Evidence/Duplication/RetokenizedFiles.php`                        | internal          |
+| `src/Analysis/Duplication/SaturatingCandidateFilter.php`    | `src/Analysis/Evidence/Duplication/SaturatingCandidateFilter.php`               | internal          |
+| `src/Analysis/Duplication/TokenNormalizer.php`              | `src/Analysis/Evidence/Duplication/TokenNormalizer.php`                         | internal          |
+| `src/Core/Duplication/DuplicateBlock.php`                   | `src/Analysis/Evidence/Duplication/DuplicateBlock.php`                          | internal          |
+| `src/Core/Duplication/DuplicateLocation.php`                | `src/Analysis/Evidence/Duplication/DuplicateLocation.php`                       | internal          |
+| `src/Rules/Duplication/CodeDuplicationOptions.php`          | `src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php`                  | internal          |
+| `src/Rules/Duplication/CodeDuplicationRule.php`             | `src/Analysis/Evidence/Duplication/CodeDuplicationRule.php`                     | internal          |
+| new                                                         | `src/Analysis/Evidence/Duplication/DuplicationResultProvider.php`               | internal          |
+
+The four Run/Finding integration files are exact and retain their later owners:
+
+| File                                         | P1 responsibility                                                                             |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| `src/Analysis/Pipeline/MetricEnricher.php`   | Reset the inspection contract every run; invoke inspection only when the producer is enabled. |
+| `src/Analysis/Pipeline/EnrichmentResult.php` | Remove the Duplication payload.                                                               |
+| `src/Analysis/Pipeline/AnalysisPipeline.php` | Stop projecting Duplication state into rule execution.                                        |
+| `src/Core/Rule/AnalysisContext.php`          | Remove the universal `duplicateBlocks` field/constructor argument.                            |
+
+The exact DI/composition, production discovery-comment and runtime-port integration slice is:
+
+| File                                                                              | P1 responsibility                                                                                                     |
+| --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `src/Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php`    | Remove concrete/internal Duplication registration and inject only the contract into Run.                              |
+| `src/Infrastructure/DependencyInjection/Configurator/DuplicationConfigurator.php` | New composition adapter: scan detector/provider/rule, alias the contract and preserve `qmx.rule` autoconfiguration.   |
+| `src/Infrastructure/DependencyInjection/Configurator/RuleConfigurator.php`        | Update comments that otherwise imply every non-Architecture rule lives under `src/Rules/**`.                          |
+| `src/Infrastructure/DependencyInjection/ContainerFactory.php`                     | Invoke the new configurator in deterministic configuration order.                                                     |
+| `src/Configuration/ConfigurationProviderInterface.php`                            | Record the real one-consumer CBO fan-in increase at the stable runtime configuration port without hiding the DI edge. |
+| `src/Configuration/RuleThresholdKeyGroupRegistry.php`                             | Update comments that otherwise imply every Options class lives under `src/Rules/**`; runtime keys stay unchanged.     |
+| `tests/Integration/DependencyInjection/ContainerFactoryTest.php`                  | Prove detector alias, provider injection, rule registration and channel/registry visibility.                          |
+
+#### Exact test and discovery scope
+
+The eight migration-owned tests move to `tests/Analysis/Evidence/Duplication/Unit/`; their generated current total is exactly 75 discovered test cases:
+
+| Current test                                                            | Target test                                                                      | Cases |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ----: |
+| `tests/Unit/Analysis/Duplication/ContentHintExtractorTest.php`          | `tests/Analysis/Evidence/Duplication/Unit/ContentHintExtractorTest.php`          | 14    |
+| `tests/Unit/Analysis/Duplication/DataDeclarationTaggerTest.php`         | `tests/Analysis/Evidence/Duplication/Unit/DataDeclarationTaggerTest.php`         | 15    |
+| `tests/Unit/Analysis/Duplication/DuplicationDetectorTest.php`           | `tests/Analysis/Evidence/Duplication/Unit/DuplicationDetectorTest.php`           | 16    |
+| `tests/Unit/Analysis/Duplication/DuplicationMemoryLimitProcessTest.php` | `tests/Analysis/Evidence/Duplication/Unit/DuplicationMemoryLimitProcessTest.php` | 2     |
+| `tests/Unit/Analysis/Duplication/SaturatingCandidateFilterTest.php`     | `tests/Analysis/Evidence/Duplication/Unit/SaturatingCandidateFilterTest.php`     | 2     |
+| `tests/Unit/Analysis/Duplication/TokenNormalizerTest.php`               | `tests/Analysis/Evidence/Duplication/Unit/TokenNormalizerTest.php`               | 10    |
+| `tests/Unit/Core/Duplication/DuplicateBlockIdentityTest.php`            | `tests/Analysis/Evidence/Duplication/Unit/DuplicateBlockIdentityTest.php`        | 2     |
+| `tests/Unit/Rules/Duplication/CodeDuplicationRuleTest.php`              | `tests/Analysis/Evidence/Duplication/Unit/CodeDuplicationRuleTest.php`           | 14    |
+
+The process memory test must stop deriving the repository root from its legacy directory depth. Its target regression resolves the repository root stably, proves `vendor/autoload.php` and `bin/qmx` exist there, and keeps both the 24 MB candidate-index probe and full CLI duplicate-detection probe green.
+
+The following integration/discovery files stay in place and appear only once in the executable scope:
+
+| File                                                                                                | Guard changed by P1                                                           |
+| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `tests/Unit/Analysis/Pipeline/AnalysisPipelineTest.php`                                             | No Duplication payload reaches `AnalysisContext`.                             |
+| `tests/Unit/Analysis/Pipeline/MetricEnricherTest.php`                                               | Reset/replace lifecycle, enabled inspection and disabled zero-work path.      |
+| `tests/Integration/Violation/ChannelCoverageTest.php`                                               | Moved rule still declares and emits the same channel.                         |
+| `tests/Unit/Rules/ThresholdOverrideIntegrationTest.php`                                             | Moved options retain override behaviour; also a rule/options discovery guard. |
+| `tests/Integration/Documentation/DocumentationConsistencyTest.php`                                  | Rule discovery includes capability-owned rules outside `src/Rules/**`.        |
+| `tests/Unit/Configuration/RuleThresholdKeyGroupRegistryDriftTest.php`                               | Threshold call-site discovery includes the moved rule/options.                |
+| `tests/Unit/Rules/ThresholdValidatorAssignmentTest.php`                                             | Threshold-aware Options discovery includes the moved class.                   |
+| `tests/Unit/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPassTest.php` | Its production-rule discovery contract/comments name all current rule roots.  |
+
+`phpunit.xml.dist` adds the exact target Unit directory. The discovery gate compares the before/after `--list-tests` inventory: all 75 existing migrated test IDs remain in the Unit suite exactly once and the old eight paths disappear. P1 adds exactly two lifecycle regressions in `MetricEnricherTest`: `itClearsDuplicationResultsWhenTheNextRunDisablesTheRule` (enabled -> disabled) and `itReplacesDuplicationResultsWhenTheNextEnabledRunFindsNoMatches` (enabled -> no match). Live discovery disproved the earlier `7,200 + 2` estimate because P1-A also adds `itEncodesThePostP1DuplicationBoundary`, `itClassifiesLegacyAndTargetDuplicationTestsWithoutACatchAll` and `itClassifiesTheP1DuplicationModuleReadmeExactly`, while P1-D adds `itWiresTheDuplicationCapabilityThroughItsContractAndRegistries`. The complete six-case delta is those four integration/governance cases plus the two lifecycle cases, for 7,206 full-project cases; any further delta blocks P1.
+
+#### Exact documentation and governance scope
+
+Documentation reviewed/updated atomically with the landed current state:
+
+| File                                                                        | Required update                                                                                                                       |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/Analysis/Evidence/Duplication/README.md`                               | New leaf README: subject, one contract, provider lifecycle, dependencies, owned tests, registration and P3 closure.                   |
+| `src/Analysis/README.md`                                                    | Remove the legacy Duplication subtree and universal payload description.                                                              |
+| `src/Core/README.md`                                                        | Remove `Core/Duplication`.                                                                                                            |
+| `src/Rules/README.md`                                                       | Point Duplication rule/options to their capability owner.                                                                             |
+| `src/Infrastructure/README.md`                                              | Add `DuplicationConfigurator` and its exact registration responsibility.                                                              |
+| `website/docs/rules/duplication.md`, `website/docs/rules/duplication.ru.md` | Preserve user behaviour while aligning implementation notes/owned location.                                                           |
+| `docs/ARCHITECTURE.md`, `AGENTS.md`                                         | Mark P1's physical leaf and result isolation as current without claiming P2+.                                                         |
+| `docs/adr/0022-capability-oriented-modular-monolith.md`                     | Record P1 as landed evidence; keep P3 ports non-binding.                                                                              |
+| `CHANGELOG.md`                                                              | Add the complete Breaking migration mapping, including FQCN moves, removed universal constructor fields and detector contract change. |
+| `docs/internal/plans/modular-architecture.md`                               | Mark P1 complete only after package E's final evidence/review.                                                                        |
+
+Governance edits/outputs are exact: `docs/internal/modular-architecture-manifest.json`; `scripts/generate-modular-architecture-production-inventory.php`; `scripts/generate-modular-architecture-test-inventory.php`; `phpunit.xml.dist`; `qmx.yaml`; `qmx-baseline.json`; all 12 files under `docs/internal/generated/modular-architecture/`; and `tests/Architecture/Integration/ModularArchitectureGovernanceIntegrationTest.php`. The schema and coordinator script are reviewed but unchanged unless their current contracts actually fail. The manifest removes the P1 internal concrete-detector grant, publishes only the inspection contract, records its one temporary exact Run consumer plus permanent Infrastructure consumer, and keeps all other Duplication declarations internal.
+
+Baseline reconciliation is evidence-driven: generate a current candidate and compare it structurally with the pre-P1 ratchet. Re-key the moved `DataDeclarationTagger` FQCN/path/offset entry only if its WMC facts and magnitude/count are unchanged. Classify the existing `MetricEnricher` entry separately as unchanged, identity-re-keyed, resolved by the P1 refactor, or a regression; only the first three outcomes may land, with evidence for the chosen classification. The `ConfigurationProviderInterface` CBO change from 21 to 22 is real and legitimate: `DuplicationConfigurator` adds one explicit consumer to this stable runtime configuration port. Preserve that DI edge, remove the old CBO 21 baseline row, and use the source-level inclusive threshold 23 with a reason; current fan-in 22 passes with no headroom, while the next consumer at 23 fails. Do not accept new debt, bulk-regenerate unrelated entries or require a preset delta count. Cache/serialization compatibility is evidence, not assumed work: the inventory must remain empty for Duplication types in cache, parallel collection and serializer payloads; the P1 move therefore changes no cache key or wire schema.
+
+#### P1 execution packages
+
+```text
+P1-A governance intent
+  -> P1-B module move
+  -> {P1-C Run/Finding isolation || P1-D DI/discovery wiring}
+  -> P1-E generated/docs/baseline/validation/review closure
+```
+
+- **P1-A — governance intent — Completed:** the only writer of `docs/internal/modular-architecture-manifest.json`, the production/test inventory generator inputs and `ModularArchitectureGovernanceIntegrationTest`. It establishes the reviewed declaration/visibility/consumer/grant policy but does not write generated artifacts or claim a green intermediate generator before B/C/D land.
+- **P1-B — module move — Completed:** the 17 moves, new provider, eight owned tests and module README.
+- **P1-C — Run/Finding isolation — Completed:** the four Run/Finding production files and the four downstream tests (`AnalysisPipelineTest`, `MetricEnricherTest`, `ChannelCoverageTest`, `ThresholdOverrideIntegrationTest`).
+- **P1-D — DI/discovery wiring — Completed:** the seven exact DI/composition, production discovery-comment and runtime-port integration files, including the justified inclusive CBO threshold 23 on `ConfigurationProviderInterface`; `src/Infrastructure/README.md`; the three remaining named discovery guards; and `ChannelDeclarationCompilerPassTest`. It does not edit any B/C path.
+- **P1-E — serial integration — Completed:** the only writer of all 12 generated artifacts, `qmx.yaml`, `phpunit.xml.dist`, evidence-driven `qmx-baseline.json` reconciliation (including removal of the old `ConfigurationProviderInterface` CBO 21 row) and the remaining shared documentation/CHANGELOG; it also owns full validation and required review. It runs only after B, C and D all complete and their diffs are independently verified.
+
+B starts only after A. C and D are file-disjoint and may execute in parallel only after B; E starts after both and is the sole generated/qmx/PHPUnit/baseline/remaining-shared-docs writer. No agent uses git operations or runs dependency-mutating commands in the shared tree.
+
+DoD: all 75 existing migrated IDs run exactly once; the six named P1 additions are the two lifecycle, three governance boundary/classification and one DI wiring regressions; and the final full-project count is 7,206. The memory-limit process tests resolve the new root and pass; the dedicated configurator registers the detector, provider and rule, and channel/rule/options registries discover the moved classes. Two runs on one container prove no stale provider state (enabled then disabled, and enabled then no matches). The disabled path performs exactly one O(1) provider reset and zero inspection calls, tokenisation, hashing, duplicate-block creation or candidate-filter allocation. `EnrichmentResult`, `AnalysisContext` and `AnalysisPipeline` have no `duplicateBlocks` field/argument/transport. Exactly one temporary contract consumer exists (`MetricEnricher -> DuplicationInspectionInterface`, `closes_in: P3`), Infrastructure is its permanent composition consumer, and no production declaration outside the module imports a Duplication internal. The internal grant closes, no new seam or taxonomy allow target appears, the generated DAG and every remaining seam pass, baseline reconciliation contains no accepted debt and records the evidence-backed `DataDeclarationTagger` and `MetricEnricher` classifications, cache/wire inventory stays empty, Breaking migration notes are complete, and full PHPUnit, architecture check, selfcheck, full CS, P1-scoped PHPStan, docs build and focused process/registry/topology tests pass. Aggregate `composer check` remains blocked only by the unrelated pre-existing `LoggerFactory.php:72` PHPStan finding recorded in the completed status evidence.
+
+### P2 — Extract Analysis\Evidence\DependencyModel and Reporting\GraphProjection — Completed
+
+**Status:** Completed. P2-A, P2-B, P2-D1, P2-C, P2-D2 and P2-E are complete; both confirmed review findings are fixed and the root-orchestrated targeted re-review is GO. Generated publication is byte-stable at 701 declarations/699 files/37 owners, 12 seams, 49 internal layers/50 including `external`, 272 allows and 84 exact grants projecting to 15 coarse edges. Full PHPUnit passes outside the sandbox with 7,214 tests, 21,640 assertions and one skip; governance passes 18 tests/726 assertions, `DogfoodingTopologyTest` passes 4/2,106, the builder gate passes 4/41 and the real Amp worker/serialization oracle passes 1/22. Architecture check, selfcheck with no violations, full CS, P2-scoped PHPStan, cross-tool 17/17, strict website build, leak and diff checks are green. Baseline reconciliation is exactly 35 re-keyed channel rows plus two removals, 242 identities, zero additions and zero accepted magnitude regressions; a fresh candidate has the same 242 identities and identical identity/channel/occurrence/count structure. Aggregate `composer check` passes CS, PHPUnit and cross-tool, then remains red only for the pre-existing unrelated `src/Infrastructure/Logging/LoggerFactory.php:72` `missingType.iterableValue` PHPStan finding; it is not claimed as aggregate green. P3 is next and has not started. Discovery disproved the old `Core/Dependency/**` plus `Analysis/Collection/Dependency/**` package boundary: the P2 move closure is exactly ten declarations, while AST resolution stays with Run until P3 and cycle evidence stays with CircularDependency until P4.
+
+#### Exact boundary and declaration delta
+
+P2 moves exactly these ten current production declarations. There is no directory wildcard in the move authority:
+
+| Current declaration                                                        | P2 disposition                                                                             |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `Qualimetrix\Core\Dependency\Dependency`                                   | Move to `Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency`.               |
+| `Qualimetrix\Core\Dependency\DependencyType`                               | Move to `Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType`.           |
+| `Qualimetrix\Core\Dependency\DependencyGraphInterface`                     | Move to `Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface`. |
+| `Qualimetrix\Core\Dependency\EmptyDependencyGraph`                         | Move to internal `Qualimetrix\Analysis\Evidence\DependencyModel\EmptyDependencyGraph`.     |
+| `Qualimetrix\Analysis\Collection\Dependency\DependencyGraph`               | Move to internal `Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph`.          |
+| `Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder`        | Move to internal `Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder`.   |
+| `Qualimetrix\Analysis\Collection\Dependency\Export\DotExporter`            | Move to internal `Qualimetrix\Reporting\GraphProjection\DotExporter`.                      |
+| `Qualimetrix\Analysis\Collection\Dependency\Export\DotExporterOptions`     | Move to internal `Qualimetrix\Reporting\GraphProjection\DotExporterOptions`.               |
+| `Qualimetrix\Analysis\Collection\Dependency\Export\JsonGraphExporter`      | Move to internal `Qualimetrix\Reporting\GraphProjection\JsonGraphExporter`.                |
+| `Qualimetrix\Analysis\Collection\Dependency\Export\GraphExporterInterface` | Delete; the CLI no longer selects or constructs exporter implementations.                  |
+
+P2 adds exactly five declarations:
+
+| New declaration                                                              | Visibility and exact contract                                                                                                                                                                                                                                                      |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface`     | Public consumer-owned bridge with `toString(): string`. Current `Core\Violation\Location` (semantic owner `Analysis.Finding`) implements it without changing object identity.                                                                                                      |
+| `Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface` | Public Run/Infrastructure port with native signature `build(array $dependencies, iterable $logicalClassUniverse): DependencyGraphInterface`; PHPDoc narrows the inputs with `@param list<Dependency> $dependencies` and `@param iterable<LogicalClassPath> $logicalClassUniverse`. |
+| `Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface`      | Public Infrastructure-facing port: `project(DependencyGraphInterface $graph, GraphProjectionRequest $request): string`.                                                                                                                                                            |
+| `Reporting\GraphProjection\Contract\GraphProjectionRequest`                  | Public readonly request with exactly the CLI projection fields: `format`, `direction`, `groupByNamespace`, `includeNamespaces`, `excludeNamespaces`; output path and analysis paths remain Console concerns.                                                                       |
+| `Reporting\GraphProjection\DependencyGraphProjector`                         | Internal dispatcher that constructs/selects the internal DOT/JSON projections and rejects unsupported formats.                                                                                                                                                                     |
+
+The ten old declarations become fourteen target declarations: one deletion plus five additions is a net `+4`. Starting from P1's 697 declarations in 695 production files, the expected post-P2 manifest inventory is exactly **701 declarations in 699 production files**, still 37 semantic owners. A mismatch blocks generation. P2 introduces **zero internal grants**, removes none by count, and does not create a taxonomy owner or allow target.
+
+The following declarations are explicitly not in P2:
+
+| Deferred package      | Exact declarations                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| P3 Run                | `DependencyResolver`, `DependencyVisitor`, `Handler\CatchInstanceofHandler`, `Handler\ClassLikeHandler`, `Handler\DependencyContext`, `Handler\FunctionLikeHandler`, `Handler\InstantiationHandler`, `Handler\NodeDependencyHandlerInterface`, `Handler\PropertyHandler`, `Handler\StaticAccessHandler`, `Handler\TraitUseHandler`, `Handler\TypeDependencyHelper`. They remain at their current paths. Visitor/handlers receive only the applicable P2 contract-import rewrites; `DependencyResolver` has no moved-type import and remains unchanged. |
+| P4 CircularDependency | `Core\Dependency\CycleInterface`, `Analysis\Collection\Dependency\CircularDependencyDetector`, `Analysis\Collection\Dependency\Cycle`, `Analysis\Collection\Dependency\CycleMemberLabels`. They remain at their current paths. Only `CircularDependencyDetector` has an applicable P2 graph-contract import rewrite; the other three remain unchanged.                                                                                                                                                                                                 |
+
+#### DependencyModel and location contracts
+
+`Dependency`, `DependencyType`, `DependencyGraphInterface`, `DependencyLocationInterface` and `DependencyGraphBuilderInterface` are the complete public surface. `DependencyGraph`, `DependencyGraphBuilder` and `EmptyDependencyGraph` remain internal; no feature or adapter imports them after P2. `Dependency::$location` is typed as the DependencyModel-owned location port. `Core\Violation\Location`, still owned by Finding until P6, implements that port.
+
+`Architecture\Rules\LayerViolationFinding` is the one typed bridge back to Finding. Before constructing a `Violation`, it runtime-checks that the port value is the current Finding `Location`; failure throws a deterministic exception. On success it passes the exact same object instance to `Violation`. A PHP `assert`, clone, reconstructed value or string round-trip is forbidden because assertions may be disabled and all three alternatives lose the exact location identity contract.
+
+`src/Core/Violation/Location.php` is the one additional P2 bridge integration file. It is owned by P2-B, not P2-D1/D2, so `Location` implements `DependencyLocationInterface` before the moved `DependencyTest` and `EmptyDependencyGraphTest` gate runs. It is intentionally separate from the exact 48-file old-import rewrite inventory below: the complete P2 production integration scope is those 48 rewrites plus this one bridge, or **49 files**.
+
+The builder implements `DependencyGraphBuilderInterface` and returns the interface, not the concrete graph. It derives the complete ancestor-namespace universe locally from the leaf namespace strings and therefore drops the `DependencyGraphBuilder -> NamespaceTree` edge. The refactor preserves dependency encounter order, unique class order, namespace order, class/namespace Ca and Ce semantics, built-in filtering, parent-boundary semantics, undeclared external targets and degree-zero declarations.
+
+`Dependency` remains a transient parallel-collection payload. The cache/serializer inventory must prove that no persistent cache key or stored schema names any moved P2 FQCN; P2 does not bump a persistent schema merely because a transient PHP object namespace changed. The existing named `AnalysisPipelineIntegrationTest::itBuildsEquivalentOrderedDependencyGraphsSequentiallyAndInParallel` ID is the complete compatibility oracle. It must run one sequential collection and one real `AmphpParallelStrategy` worker collection through the production `FileProcessingResult` transport/serializer boundary; a fake `ExecutionStrategyInterface` that returns prebuilt in-process results or merely toggles `isParallelAvailable()` is not evidence. Compare the ordered `Dependency` fields (`source`, `target`, `type`, `location`) and the projections of all nine graph queries: `getClassDependencies`, `getClassDependents`, `getClassCe`, `getClassCa`, `getNamespaceCe`, `getNamespaceCa`, `getAllClasses`, `getAllNamespaces` and `getAllDependencies`. Require DOT bytes to be identical; compare decoded JSON `statistics`, `nodes` and `edges` while excluding only wall-clock metadata; and check the JSON timestamp separately for a valid timestamp form. This review refinement replaces no ID and adds no thirteenth ID.
+
+The four retained `DependencyGraphBuilderTest` IDs remain B-owned and together form the direct builder oracle without adding an ID: `itKeepsDegreeZeroDeclarationsAndUndeclaredExternalTargets` proves dependency/class/namespace encounter order, both directional class queries, degree-zero declarations and undeclared targets; `itFiltersBuiltinCouplingButRetainsBuiltinInheritance` proves filtering and retained-edge order; `itDeduplicatesClassAndNamespaceCouplingEndpoints` proves class/namespace Ca and Ce; `itTreatsSiblingEdgesAsInternalToTheirParentAndExternalEdgesAsBoundaryCrossings` proves the complete ancestor namespace universe and parent-boundary semantics. Their graph facts are the expected input to D1's sequential/real-worker graph, DOT and JSON equivalence oracle.
+
+P2 atomically closes two now-unnecessary singleton enforcement seams without moving either declaration to its later physical owner:
+
+| Closed seam                                   | P2 evidence and disposition                                                                                                                                                                                                                                                                                                                                                                                |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Core\Metric\GlobalContextCollectorInterface` | The old Measurement-to-DependencyModel edge remains, but `DependencyGraphBuilder` now derives ancestor namespaces locally and no longer imports Measurement-owned `NamespaceTree`; the reverse edge that required the seam is gone. Remove the manifest seam row in the P2-A follow-up. P3 may still relocate/refine the Measurement contract, but it has no seam-closure obligation for this declaration. |
+| `Core\Violation\Location`                     | `Dependency` now depends on consumer-owned `DependencyLocationInterface`, and Finding-owned `Location` implements that port. The old DependencyModel-to-Finding concrete edge is gone, so returning `Location` to the Finding owner is acyclic. Remove the manifest seam row in the same P2-A follow-up. P6 may still move/refine `Location`, but it has no seam-closure obligation for this declaration.  |
+
+Removing only the first seam makes necessity validation stop on the second; removing both makes the live generator pass. The expected post-P2 topology is therefore **12 singleton seams**, **49 internal enforcement layers / 50 layers including `external`**, and **272 declared allow edges**. The existing **84 exact internal grants still project to 15 coarse edges**; P2 adds zero grants. These are generated P2 snapshot expectations, not revisions to the historical P0/P1 evidence above.
+
+#### Reporting graph projection and CLI boundary
+
+`DependencyGraphProjector`, `DotExporter`, `DotExporterOptions` and `JsonGraphExporter` are Reporting internals. Only `DependencyGraphProjectionInterface` and `GraphProjectionRequest` are public. The request maps the CLI surface exactly:
+
+| CLI input                      | Request field       | Normalization                                                                |
+| ------------------------------ | ------------------- | ---------------------------------------------------------------------------- |
+| `--format`                     | `format`            | Lower-level projector accepts only `dot` or `json`; unsupported values fail. |
+| `--direction`                  | `direction`         | Preserve current `LR` default and current DOT values.                        |
+| inverse of `--no-clusters`     | `groupByNamespace`  | `true` unless the flag is present.                                           |
+| repeated `--namespace`         | `includeNamespaces` | Empty CLI list becomes `null`; otherwise preserve list order.                |
+| repeated `--exclude-namespace` | `excludeNamespaces` | Preserve list order; empty remains `[]`.                                     |
+
+`GraphExportCommand` stays at `src/Infrastructure/Console/Command/GraphExportCommand.php` and remains P8-owned, but P2 changes its constructor to receive `DependencyGraphProjectionInterface`. It keeps analysis, logging, incomplete-analysis refusal, pre-write output-file byte preservation and Console rendering; it creates only `GraphProjectionRequest` and never imports or constructs a Reporting internal. `OutputConfigurator` registers the internal projector by string service id and publishes only the contract alias. No other Infrastructure class imports a GraphProjection internal.
+
+Deleting `GraphExporterInterface` leaves `DotExporter::getFormat`, `DotExporter::getFileExtension`, `JsonGraphExporter::getFormat` and `JsonGraphExporter::getFileExtension` with no production consumer; their only callers are the four moved unit IDs `DotExporterTest::itGetsFormat`, `DotExporterTest::itGetsFileExtension`, `JsonGraphExporterTest::itGetsFormat` and `JsonGraphExporterTest::itGetsFileExtension`. P2-C removes those four dead methods and four test IDs instead of preserving a compatibility shim, excluding the new namespace or accepting its health warning. The old Export namespace health 46.7 row resolves rather than re-keys. After cleanup the current `Reporting\GraphProjection` namespace health warning (observed at 48 before cleanup) must disappear; if it remains, C stops for renewed evidence rather than changing thresholds/baseline.
+
+#### Exact owned test move map and discovery delta
+
+Only these seven existing test classes move in P2. Their pre-cleanup discovery inventory contains 106 IDs; P2-C intentionally removes the four dead exporter metadata IDs named above, so exactly 102 existing IDs remain in the moved set:
+
+| Existing path                                                                | Retained IDs | Target path                                                                   |
+| ---------------------------------------------------------------------------- | -----------: | ----------------------------------------------------------------------------- |
+| `tests/Unit/Core/Dependency/DependencyTest.php`                              | 19           | `tests/Analysis/Evidence/DependencyModel/Unit/DependencyTest.php`             |
+| `tests/Unit/Core/Dependency/EmptyDependencyGraphTest.php`                    | 12           | `tests/Analysis/Evidence/DependencyModel/Unit/EmptyDependencyGraphTest.php`   |
+| `tests/Unit/Analysis/Collection/Dependency/DependencyGraphTest.php`          | 28           | `tests/Analysis/Evidence/DependencyModel/Unit/DependencyGraphTest.php`        |
+| `tests/Unit/Analysis/Collection/Dependency/DependencyGraphBuilderTest.php`   | 4            | `tests/Analysis/Evidence/DependencyModel/Unit/DependencyGraphBuilderTest.php` |
+| `tests/Unit/Analysis/Collection/Dependency/Export/DotExporterTest.php`       | 14           | `tests/Reporting/GraphProjection/Unit/DotExporterTest.php`                    |
+| `tests/Unit/Analysis/Collection/Dependency/Export/JsonGraphExporterTest.php` | 12           | `tests/Reporting/GraphProjection/Unit/JsonGraphExporterTest.php`              |
+| `tests/Functional/Console/Command/GraphExportCommandTest.php`                | 13           | `tests/Infrastructure/Console/Functional/GraphExportCommandTest.php`          |
+| **Total**                                                                    | **102**      |                                                                               |
+
+`DependencyResolverTest` (15 IDs), `DependencyVisitorTest` (32 IDs) and `TypeDependencyHelperTest` (6 IDs) remain in P3 at their current paths, as do the CircularDependency tests assigned to P4. The only target roots are `tests/Analysis/Evidence/DependencyModel/Unit`, `tests/Reporting/GraphProjection/Unit` and `tests/Infrastructure/Console/Functional`. `phpunit.xml.dist` adds the two Unit roots. Its existing recursive `tests/Infrastructure` suite already discovers the Console target, so adding it to another suite would be a duplicate and is forbidden.
+
+P2 plans exactly twelve new IDs and no unspecified additions:
+
+| File                                                                        | New test ID or provider case                                         | Count  |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------- | -----: |
+| new `tests/Reporting/GraphProjection/Unit/DependencyGraphProjectorTest.php` | `itProjectsSupportedFormats` / provider case `dot`                   | 1      |
+| new `tests/Reporting/GraphProjection/Unit/DependencyGraphProjectorTest.php` | `itProjectsSupportedFormats` / provider case `json`                  | 1      |
+| new `tests/Reporting/GraphProjection/Unit/DependencyGraphProjectorTest.php` | `itRejectsUnsupportedFormat`                                         | 1      |
+| new `tests/Reporting/GraphProjection/Unit/DependencyGraphProjectorTest.php` | `itForwardsEveryRequestFieldToDotProjection`                         | 1      |
+| new `tests/Reporting/GraphProjection/Unit/DependencyGraphProjectorTest.php` | `itForwardsNamespaceFiltersToJsonProjection`                         | 1      |
+| `LayerViolationRuleTest`                                                    | `itPreservesTheDependencyLocationIdentityWhenProjectingAFinding`     | 1      |
+| `LayerViolationRuleTest`                                                    | `itRejectsANonFindingDependencyLocationAtRuntime`                    | 1      |
+| `AnalysisPipelineIntegrationTest`                                           | `itBuildsEquivalentOrderedDependencyGraphsSequentiallyAndInParallel` | 1      |
+| `ContainerFactoryTest`                                                      | `itWiresDependencyModelAndGraphProjectionThroughPublicContracts`     | 1      |
+| `ModularArchitectureGovernanceIntegrationTest`                              | `itEncodesThePostP2DependencyAndProjectionBoundaries`                | 1      |
+| `ModularArchitectureGovernanceIntegrationTest`                              | `itClassifiesTheSevenP2OwnedTestsWithoutACatchAll`                   | 1      |
+| `ModularArchitectureGovernanceIntegrationTest`                              | `itClassifiesTheTwoP2ModuleReadmesExactly`                           | 1      |
+| **Total delta**                                                             |                                                                      | **12** |
+
+The discovery gate is therefore 7,206 - 4 obsolete IDs + 12 named additions = **7,214** full-project IDs. The 102 retained moved IDs must occur exactly once at their target paths and zero times at the old paths; the four named obsolete IDs must occur zero times anywhere. Provider expansion, not method count, is authoritative.
+
+#### Exact integration rewrite inventory
+
+Besides the ten move sources and the separately named `Location.php` bridge, P2 rewrites old DependencyModel imports in exactly these 48 production files. This **48-file import-rewrite set remains unchanged**: P2-C exclusively owns the two marked console/projection integration files and P2-D1 exclusively owns the other 46. P2-D2 owns no production file. Including P2-B's bridge makes 49 production integration files in total.
+
+```text
+src/Analysis/Aggregator/GlobalCollectorRunner.php
+src/Analysis/Collection/CollectedFileData.php
+src/Analysis/Collection/CollectionOrchestrator.php
+src/Analysis/Collection/CollectionPhaseOutput.php
+src/Analysis/Collection/Dependency/CircularDependencyDetector.php
+src/Analysis/Collection/Dependency/DependencyVisitor.php
+src/Analysis/Collection/Dependency/Handler/CatchInstanceofHandler.php
+src/Analysis/Collection/Dependency/Handler/ClassLikeHandler.php
+src/Analysis/Collection/Dependency/Handler/DependencyContext.php
+src/Analysis/Collection/Dependency/Handler/FunctionLikeHandler.php
+src/Analysis/Collection/Dependency/Handler/InstantiationHandler.php
+src/Analysis/Collection/Dependency/Handler/PropertyHandler.php
+src/Analysis/Collection/Dependency/Handler/StaticAccessHandler.php
+src/Analysis/Collection/Dependency/Handler/TraitUseHandler.php
+src/Analysis/Collection/Dependency/Handler/TypeDependencyHelper.php
+src/Analysis/Collection/FileProcessingResult.php
+src/Analysis/Collection/Metric/CollectionOutput.php
+src/Analysis/Pipeline/AnalysisPipeline.php
+src/Analysis/Pipeline/DependencyGraphAnalysisResult.php
+src/Analysis/Pipeline/DependencyGraphAnalyzer.php
+src/Analysis/Pipeline/MetricEnricher.php
+src/Architecture/Configuration/Allow/AllowAliasExpander.php
+src/Architecture/Configuration/Validation/AllowValidator.php
+src/Architecture/Configuration/Validation/LongFormAllowEntryNormalizer.php
+src/Architecture/Domain/Allow/AllowTarget.php
+src/Architecture/Domain/Layer/ClassContextFactory.php
+src/Architecture/Domain/Layer/LayerPolicy.php
+src/Architecture/Domain/Layer/LayerRegistry.php
+src/Architecture/Processing/ArchitectureProcessor.php
+src/Architecture/Processing/ArchitectureProcessorInterface.php
+src/Architecture/Rules/LayerViolationFinding.php
+src/Architecture/Rules/LayerViolationRule.php
+src/Baseline/BaselineEdge.php
+src/Baseline/BaselineEntryParser.php
+src/Core/Metric/GlobalContextCollectorInterface.php
+src/Core/Rule/AnalysisContext.php
+src/Core/Violation/Violation.php
+src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php
+src/Infrastructure/Console/Command/GraphExportCommand.php                         # P2-C
+src/Infrastructure/DependencyInjection/Configurator/AnalysisConfigurator.php
+src/Infrastructure/DependencyInjection/Configurator/ArchitectureConfigurator.php
+src/Infrastructure/DependencyInjection/Configurator/OutputConfigurator.php       # P2-C
+src/Metrics/Coupling/AbstractnessCollector.php
+src/Metrics/Coupling/ClassRankCollector.php
+src/Metrics/Coupling/CouplingCollector.php
+src/Metrics/Coupling/DistanceCollector.php
+src/Metrics/Structure/DitGlobalCollector.php
+src/Metrics/Structure/NocCollector.php
+```
+
+The exact live non-owned test/support import rewrite set is the following 66 files. Writer authority is split without changing that inventory: P2-D1 owns 65 files, while P2-D2 exclusively owns `ContainerFactoryTest`; the seven owned moved tests above belong to P2-B/P2-C instead. P2-D1 must not edit the D2 file.
+
+```text
+tests/Architecture/Support/ArchitectureViolationProjector.php
+tests/Architecture/Support/ProcessorBuilder.php
+tests/Architecture/Unit/Configuration/Allow/AllowAliasExpanderTest.php
+tests/Architecture/Unit/Configuration/Validation/AllowValidatorTest.php
+tests/Architecture/Unit/Configuration/Validation/ExactAllowCycleValidatorTest.php
+tests/Architecture/Unit/Domain/Layer/ClassContextFactoryTest.php
+tests/Architecture/Unit/Domain/Layer/LayerPolicyTest.php
+tests/Architecture/Unit/Domain/Layer/LayerRegistryTest.php
+tests/Architecture/Unit/Processing/ArchitectureProcessorTest.php
+tests/Architecture/Unit/Rules/CoverageDiagnosticsTest.php
+tests/Architecture/Unit/Rules/LayerViolationRuleTest.php
+tests/Functional/Console/Command/BaselineCleanupCommandTest.php
+tests/Functional/Reporting/JsonShapePreservationTest.php
+tests/Integration/Baseline/BaselineWorkflowTest.php
+tests/Integration/DependencyInjection/ContainerFactoryTest.php                 # P2-D2
+tests/Integration/Pipeline/AnalysisPipelineIntegrationTest.php
+tests/Support/Dependency/AdjacencyGraphBuilder.php
+tests/Support/Pipeline/TestPipelineBuilder.php
+tests/Support/Violation/ViolationFactory.php
+tests/Unit/Analysis/Aggregator/GlobalCollectorRunnerTest.php
+tests/Unit/Analysis/Collection/CollectionOrchestratorTest.php
+tests/Unit/Analysis/Collection/Dependency/CircularDependencyDetectorTest.php
+tests/Unit/Analysis/Collection/Dependency/CycleIdentityStabilityTest.php
+tests/Unit/Analysis/Collection/Dependency/DependencyVisitorTest.php
+tests/Unit/Analysis/Collection/Dependency/TypeDependencyHelperTest.php
+tests/Unit/Analysis/Pipeline/AnalysisPipelineTest.php
+tests/Unit/Analysis/Pipeline/DependencyGraphAnalyzerTest.php
+tests/Unit/Analysis/Pipeline/MetricEnricherTest.php
+tests/Unit/Baseline/BaselineCleanerTest.php
+tests/Unit/Baseline/BaselineEntryParserTest.php
+tests/Unit/Baseline/BaselineEntryTest.php
+tests/Unit/Baseline/BaselineGeneratorTest.php
+tests/Unit/Baseline/BaselineIdentityTest.php
+tests/Unit/Baseline/BaselineTest.php
+tests/Unit/Baseline/BaselineWriterTest.php
+tests/Unit/Baseline/BoundaryExplanationServiceTest.php
+tests/Unit/Core/Rule/AnalysisContextTest.php
+tests/Unit/Core/Violation/ViolationTest.php
+tests/Unit/Metrics/Coupling/AbstractnessCollectorTest.php
+tests/Unit/Metrics/Coupling/ClassRankCollectorTest.php
+tests/Unit/Metrics/Coupling/CouplingCollectorTest.php
+tests/Unit/Metrics/Coupling/DistanceCollectorTest.php
+tests/Unit/Metrics/Structure/DitGlobalCollectorTest.php
+tests/Unit/Metrics/Structure/NocCollectorTest.php
+tests/Unit/Reporting/Formatter/ArchitectureViolationSmokeTest.php
+tests/Unit/Reporting/Formatter/CheckstyleFormatterTest.php
+tests/Unit/Reporting/Formatter/GitLabCodeQualityFormatterTest.php
+tests/Unit/Reporting/Formatter/GithubActionsFormatterTest.php
+tests/Unit/Reporting/Formatter/Html/HtmlTreeBuilderTest.php
+tests/Unit/Reporting/Formatter/Html/HtmlViolationPartitionerTest.php
+tests/Unit/Reporting/Formatter/Json/JsonViolationSectionTest.php
+tests/Unit/Reporting/Formatter/JsonFormatterTest.php
+tests/Unit/Reporting/Formatter/Sarif/SarifFormatterPosixSeparatorTest.php
+tests/Unit/Reporting/Formatter/Sarif/SarifRuleCollectorTest.php
+tests/Unit/Reporting/Formatter/Sarif/SarifSchemaValidationTest.php
+tests/Unit/Reporting/Formatter/SarifFormatterTest.php
+tests/Unit/Reporting/Formatter/Summary/TopIssuesRendererTest.php
+tests/Unit/Reporting/Formatter/Summary/ViolationSummaryRendererTest.php
+tests/Unit/Reporting/Formatter/SummaryFormatterTest.php
+tests/Unit/Reporting/Formatter/Support/DetailedViolationRendererTest.php
+tests/Unit/Reporting/Formatter/Support/ViolationSorterTest.php
+tests/Unit/Reporting/Formatter/TextFormatterTest.php
+tests/Unit/Reporting/Formatter/TextVerboseFormatterTest.php
+tests/Unit/Reporting/ReportBuilderTest.php
+tests/Unit/Reporting/ReportTest.php
+tests/Unit/Rules/Coupling/CboRuleTest.php
+```
+
+#### Governance, generated, baseline and documentation scope
+
+| Kind                             | Exact P2 files and required disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Governance source                | `docs/internal/modular-architecture-manifest.json`, `scripts/generate-modular-architecture-production-inventory.php`, `scripts/generate-modular-architecture-test-inventory.php`, `tests/Architecture/Integration/ModularArchitectureGovernanceIntegrationTest.php`, `tests/Integration/Architecture/DogfoodingTopologyTest.php`. Correct the stale P2 rows that currently enrol resolver/visitor/helper tests or call the Reporting owner `DependencyGraph`; encode all fourteen target declarations and exact visibility/consumers. The P2-A follow-up removes both `GlobalContextCollectorInterface` and `Location` enforcement-seam rows and is the sole writer of the dogfooding consumer's three resulting hardcoded count updates: layers 52 -> 50, enforcement seams 14 -> 12 and declared allows 296 -> 272. No other assertion or behaviour in that test changes. |
+| Generated integration            | The exact generated set is `documentation-ownership.tsv`, `manifest-enforcement-summary.tsv`, `production-cross-owner-imports.tsv`, `production-extension-families.tsv`, `production-ownership.tsv`, `production-phase-participants.tsv`, `production-reporting-classification.tsv`, `production-state-services.tsv`, `test-fixture-directories.tsv`, `test-ownership.tsv`, `test-phpunit-discovery.txt`, `test-phpunit-suites.txt`, each under `docs/internal/generated/modular-architecture/`; generate serially, never edit manually.                                                                                                                                                                                                                                                                                                                                    |
+| PHPUnit/qmx/baseline             | `phpunit.xml.dist`, `qmx.yaml`, `qmx-baseline.json`. In qmx, rewrite the long-parameter exclusion from the old concrete graph path to `src/Analysis/Evidence/DependencyModel/DependencyGraph.php`; add the target DependencyModel contract namespace to the class-rank exclusion while retaining `Core\Dependency` until P4 owns `CycleInterface`. Add the exact root-only glob `[Q]ualimetrix\Analysis\Evidence\DependencyModel` to `coupling.distance.exclude_namespaces` and `computed.health.exclude_namespace_channels.health.cohesion`; update the qmx comment to explain the character-class root match and prove the `Contract` child remains active.                                                                                                                                                                                                               |
+| Module/current architecture docs | New `src/Analysis/Evidence/DependencyModel/README.md`, new `src/Reporting/GraphProjection/README.md`, `src/Analysis/README.md`, `src/Core/README.md`, `src/Reporting/README.md`, `src/Infrastructure/README.md`, `src/Infrastructure/Console/README.md`, `docs/ARCHITECTURE.md`, `AGENTS.md`, `docs/adr/0021-declaration-scoped-callable-identity-and-dependency-projections.md`, `docs/adr/0022-capability-oriented-modular-monolith.md`, `CHANGELOG.md`, this plan, `website/docs/rules/architecture.md`, `website/docs/rules/architecture.ru.md`. P2-E updates the architecture rule implementation references with EN/RU parity and runs the strict website build.                                                                                                                                                                                                      |
+| User docs verified unchanged     | `website/docs/usage/cli-options.md`, `website/docs/usage/cli-options.ru.md`, `website/docs/llms.txt`. The CLI syntax/output contract is unchanged, and `llms.txt` remains unchanged evidence. Edit the usage pair only if implementation exposes a user-visible delta, in which case EN/RU move together and the exact delta is added to this plan before implementation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+
+Baseline reconciliation is evidence-only. The final structural diff contains exactly **37 stale old channel rows: 28 exact unchanged offset-only re-keys + four moved re-keys across three symbols + three improved re-keys with lower ceilings + two resolved removals**. P2-E may re-key exactly these 35 rows and remove exactly the other two. There are zero baseline additions and zero magnitude regressions. Re-keying preserves identity count, so the current 244 baseline identities become exactly 242 after the two removals.
+
+Exact unchanged offset-only re-keys (28 channel rows):
+
+| Symbol                                                                     | Old -> new location                            | Explicit unchanged channel facts                                                                                                                                     |
+| -------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Analysis\Collection\CollectedFileData::__construct`                       | `CollectedFileData.php:1037 -> :1064`          | `code-smell.constructor-overinjection#code-smell.constructor-overinjection` 8                                                                                        |
+| `Analysis\Collection\Dependency\CircularDependencyDetector::strongConnect` | `CircularDependencyDetector.php:4076 -> :4103` | `complexity.cognitive#complexity.cognitive.callable` 15; `complexity.cyclomatic#complexity.cyclomatic.callable` 10                                                   |
+| `Analysis\Collection\Dependency\Handler\TypeDependencyHelper::processType` | `TypeDependencyHelper.php:648 -> :675`         | `complexity.cognitive#complexity.cognitive.callable` 15                                                                                                              |
+| `Analysis\Pipeline\AnalysisPipeline::__construct`                          | `AnalysisPipeline.php:2583 -> :2705`           | `code-smell.constructor-overinjection#code-smell.constructor-overinjection` 11                                                                                       |
+| `Analysis\Pipeline\AnalysisPipeline::discoverAnalysisFiles`                | `AnalysisPipeline.php:12036 -> :12125`         | `code-smell.boolean-argument#code-smell.boolean-argument` count 1, occurrence `ae7138a920341c7413fe1dee96e77ddb915f9da225f6034dee5175012b35aa92`                     |
+| `Analysis\Pipeline\MetricEnricher::__construct`                            | `MetricEnricher.php:1825 -> :1852`             | `code-smell.constructor-overinjection#code-smell.constructor-overinjection` 8                                                                                        |
+| `Architecture\Rules\LayerViolationRule::collectEdgeViolations`             | `LayerViolationRule.php:18791 -> :18818`       | `complexity.cyclomatic#complexity.cyclomatic.callable` 10                                                                                                            |
+| `Metrics\Coupling\ClassRankCollector::calculate`                           | `ClassRankCollector.php:2170 -> :2197`         | `complexity.cognitive#complexity.cognitive.callable` 19; `complexity.cyclomatic#complexity.cyclomatic.callable` 12; `complexity.npath#complexity.npath.callable` 480 |
+| `Metrics\Coupling\ClassRankCollector::computePageRank`                     | `ClassRankCollector.php:4906 -> :4933`         | `complexity.cognitive#complexity.cognitive.callable` 19; `complexity.cyclomatic#complexity.cyclomatic.callable` 10                                                   |
+| `Metrics\Coupling\CouplingCollector::computeClassMetrics`                  | `CouplingCollector.php:7058 -> :7085`          | `complexity.cognitive#complexity.cognitive.callable` 20; `complexity.cyclomatic#complexity.cyclomatic.callable` 10                                                   |
+| `Analysis\Aggregator\GlobalCollectorRunner`                                | `GlobalCollectorRunner.php:526 -> :553`        | `design.data-class#design.data-class` 100                                                                                                                            |
+| `Analysis\Collection\Dependency\DependencyVisitor`                         | `DependencyVisitor.php:1970 -> :1997`          | `coupling.cbo#coupling.cbo.class` 24                                                                                                                                 |
+| `Architecture\Rules\LayerViolationRule`                                    | `LayerViolationRule.php:4866 -> :4893`         | `coupling.cbo#coupling.cbo.class` 24                                                                                                                                 |
+| `Baseline\BaselineEntryParser`                                             | `BaselineEntryParser.php:1122 -> :1149`        | `computed.health#health.cohesion` 40                                                                                                                                 |
+| `Core\Rule\AnalysisContext`                                                | `AnalysisContext.php:371 -> :398`              | `computed.health#health.cohesion` 30                                                                                                                                 |
+| `Infrastructure\Console\Command\Debug\LayerAssignmentCommand`              | `LayerAssignmentCommand.php:2368 -> :2389`     | `computed.health#health.cohesion` 30                                                                                                                                 |
+| `Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator` | `ArchitectureConfigurator.php:2972 -> :2993`   | `computed.health#health.cohesion` 40                                                                                                                                 |
+| `Infrastructure\DependencyInjection\Configurator\OutputConfigurator`       | `OutputConfigurator.php:4432 -> :4453`         | `computed.health#health.cohesion` 40                                                                                                                                 |
+| `Metrics\Coupling\AbstractnessCollector`                                   | `AbstractnessCollector.php:849 -> :876`        | `computed.health#health.cohesion` 45.4                                                                                                                               |
+| `Metrics\Coupling\ClassRankCollector`                                      | `ClassRankCollector.php:883 -> :910`           | `computed.health#health.cohesion` 45.4                                                                                                                               |
+| `Metrics\Coupling\CouplingCollector`                                       | `CouplingCollector.php:1058 -> :1085`          | `design.god-class#design.god-class` 3                                                                                                                                |
+| `Metrics\Coupling\DistanceCollector`                                       | `DistanceCollector.php:856 -> :883`            | `computed.health#health.cohesion` 45.4                                                                                                                               |
+| `Metrics\Structure\DitGlobalCollector`                                     | `DitGlobalCollector.php:1064 -> :1118`         | `computed.health#health.cohesion` 30                                                                                                                                 |
+
+Moved re-keys (four channel rows across three symbols):
+
+| Old symbol/location -> new symbol/location                                                                                                                                                                                                              | Explicit unchanged channel facts                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `Analysis\Collection\Dependency\DependencyGraph::__construct@DependencyGraph.php:1546` -> `Analysis\Evidence\DependencyModel\DependencyGraph::__construct@DependencyGraph.php:1603`                                                                     | `code-smell.constructor-overinjection#code-smell.constructor-overinjection` 9                                      |
+| `Analysis\Collection\Dependency\DependencyGraphBuilder::computeParentNamespaceCouplings@DependencyGraphBuilder.php:7935` -> `Analysis\Evidence\DependencyModel\DependencyGraphBuilder::computeParentNamespaceCouplings@DependencyGraphBuilder.php:8342` | `complexity.cognitive#complexity.cognitive.callable` 18; `complexity.cyclomatic#complexity.cyclomatic.callable` 11 |
+| `Core\Dependency\DependencyType::description@DependencyType.php:2159` -> `Analysis\Evidence\DependencyModel\Contract\DependencyType::description@DependencyType.php:2186`                                                                               | `complexity.cyclomatic#complexity.cyclomatic.callable` 15                                                          |
+
+Improved but still-warning re-keys (three channel rows with tightened ratchet ceilings):
+
+| Identity/channel                                                                                                  | Old -> new location                      | Exact old -> current facts and disposition                                                                                |
+| ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `Core\Rule\AnalysisContext::getThresholdOverride` / `complexity.cyclomatic#complexity.cyclomatic.callable`        | `AnalysisContext.php:1575 -> :1602`      | 11 -> 10; the inclusive threshold still emits at 10, so re-key the identity and tighten the ceiling to the current value. |
+| `Analysis\Pipeline\MetricEnricher` / `computed.health#health.maintainability`                                     | `MetricEnricher.php:1544 -> :1571`       | 37.3 -> 47.2; current health remains below 50, so re-key the identity with the improved 47.2 fact rather than remove it.  |
+| `Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator` / `computed.health#health.maintainability` | `AnalysisConfigurator.php:2363 -> :2384` | 39.5 -> 40.6; current health remains below 50, so re-key the identity with the improved 40.6 fact rather than remove it.  |
+
+Exactly two old rows resolve and are removed rather than re-keyed:
+
+| Old identity/channel                                                                      | Evidence-backed disposition                                                                  |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| old `Core\Dependency\DependencyGraphInterface` / `coupling.cbo#coupling.cbo.class`        | Old baseline 23 removed; current raw 26 is governed by the justified source threshold below. |
+| old `Analysis\Collection\Dependency\Export` namespace / `computed.health#health.cohesion` | 46.7 resolves after P2-C dead-surface cleanup; no GraphProjection replacement row.           |
+
+`DependencyGraphInterface` raw CBO changes from HEAD 22 to current 26; the old baseline ceiling 23 had one unit of slack and cannot describe the current public boundary. A fresh HEAD/current declaration comparison gives this exact net `+4` set:
+
+| Current declaration                                                          | Why this is a net incoming edge to `DependencyGraphInterface`                                         |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface` | New P2 builder port returns the graph contract; no HEAD declaration occupied this role.               |
+| `Analysis\Evidence\DependencyModel\DependencyGraphBuilder`                   | The HEAD builder returned concrete `DependencyGraph`; the P2 builder returns the graph contract.      |
+| `Analysis\Pipeline\AnalysisPipeline`                                         | HEAD used concrete `DependencyGraph` in its graph return/parameter types; P2 uses the graph contract. |
+| `Reporting\GraphProjection\DependencyGraphProjector`                         | New P2 projector consumes the graph contract.                                                         |
+
+`DependencyGraphProjectionInterface` is not a net edge: it replaces HEAD's `GraphExporterInterface` graph-contract consumer. `DotExporter` and `JsonGraphExporter` also consumed the old graph contract at HEAD and therefore remain neutral in the 22 -> 26 delta. P2-B follow-up adds the exact justified shorthand `@qmx-threshold coupling.cbo 27 -- ...` to `DependencyGraphInterface`: inclusive no-headroom semantics mean current 26 passes and the next edge at 27 fails. P2-E removes the old CBO baseline row; it does not re-key or accept it. The reason must name the four verified net sources above and the stable query-port responsibility. Do not hide an edge, alter the metric, remove a legitimate type reference or otherwise game CBO.
+
+The two candidate-only DependencyModel root findings are structural root aggregates, not baseline debt. Root `health.cohesion` 36.1803 recursively includes the already suppressed/inapplicable internal `DependencyGraph` LCOM 10 / TCC 0 shape; root `coupling.distance` 0.520833 is composed of A 0.375, I 0.104167, Ca 43 and Ce 5 and is analogous to the old `Core\Dependency` root distance 0.506977 hidden by the broad Core blanket. The public `Contract` child is healthy (`health.cohesion` 55.8114, `coupling.distance` 0.3387755) and must remain checked.
+
+Existing `NamespaceMatcher` syntax already gives an exact root-only glob: `[Q]ualimetrix\Analysis\Evidence\DependencyModel` matches the root (`YES`) and does not match `...\Contract` (`NO`). P2-E adds exactly that pattern to `coupling.distance.exclude_namespaces` and `computed.health.exclude_namespace_channels.health.cohesion`, with comments explaining why the root aggregate is structurally inapplicable and why the character-class form avoids prefix matching. A live negative child probe is mandatory. This is configuration usage, not a config-language/code expansion. No baseline row, blanket descendant exclusion, bulk regeneration or unrelated acceptance may land.
+
+#### P2 root-review finding ledger
+
+| Finding           | Verified evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Fix ownership and closure gate                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Status                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `native-codex-01` | The named sequential/parallel regression returned prebuilt `FileProcessingResult` objects from an anonymous fake strategy; its boolean `isParallelAvailable()` branch executed no worker and crossed no serialization boundary. Its graph projection also omitted directional dependency queries and the output oracle did not exercise DOT/JSON.                                                                                                                                                                                                                                    | P2-B strengthened the four existing IDs in `tests/Analysis/Evidence/DependencyModel/Unit/DependencyGraphBuilderTest.php` with the exact direct graph-query allocation above. P2-D1 strengthened the existing `tests/Integration/Pipeline/AnalysisPipelineIntegrationTest.php::itBuildsEquivalentOrderedDependencyGraphsSequentiallyAndInParallel` ID to use a real `AmphpParallelStrategy` worker/transport round-trip and the full graph/DOT/JSON oracle defined above. Zero test IDs were added or renamed; discovery remains 7,214. The builder gate passes 4/41, the real-worker gate passes outside the sandbox 1/22, full PHPUnit passes 7,214/21,640 with one skip, and complete E revalidation passes. | Confirmed and fixed; targeted re-review GO. |
+| `native-codex-02` | The `DependencyGraphInterface` source-level `@qmx-threshold coupling.cbo 27` reason was generic and did not name the exact four HEAD 22 -> current 26 incoming-edge deltas required by the P2 DoD; the earlier plan evidence also named the wrong Reporting consumers. Live enumeration proves the net additions are `DependencyGraphBuilderInterface`, `DependencyGraphBuilder`, `AnalysisPipeline` and `DependencyGraphProjector`. `DependencyGraphProjectionInterface` is a one-for-one replacement for old `GraphExporterInterface`, while Dot/JSON were pre-existing consumers. | P2-B updated only `src/Analysis/Evidence/DependencyModel/Contract/DependencyGraphInterface.php` to name the four verified sources while retaining threshold 27. A full no-cache metric probe reports Ca 25 + Ce 1 = raw CBO 26 and no interface finding; no edge, metric, threshold or baseline debt was hidden. The plan evidence above records the same corrected enumeration.                                                                                                                                                                                                                                                                                                                               | Confirmed and fixed; targeted re-review GO. |
+
+#### P2 execution packages
+
+```text
+P2-A governance/classification
+  -> P2-B DependencyModel
+  -> P2-D1 model consumers/imports
+  -> P2-C GraphProjection + Console
+  -> P2-B follow-up: graph-contract CBO threshold
+  -> P2-A follow-up: two-seam topology closure
+  -> P2-D2 combined DI acceptance
+  -> P2-E generated/phpunit/qmx/baseline/docs/full-validation evidence
+  -> root-orchestrated review/fix/revalidation/status closure
+```
+
+Final package ledger: **P2-A — Completed; P2-B — Completed; P2-D1 — Completed; P2-C — Completed; P2-D2 — Completed; P2-E — Completed; root review and closure — Completed.** Both confirmed review findings are fixed, complete E revalidation is recorded above, and the targeted re-review is GO.
+
+- **P2-A — governance/classification and topology follow-up:** only writer of `docs/internal/modular-architecture-manifest.json`, both inventory generator scripts, `ModularArchitectureGovernanceIntegrationTest` and `tests/Integration/Architecture/DogfoodingTopologyTest.php`. Its initial pass fixes the exact declaration/test/document rows and adds the three named governance IDs. After C materializes the live graph, the same writer removes the two unnecessary seam rows, changes their later-package closure expectations to P2 evidence, and changes only the dogfooding test's three hardcoded topology assertions: layers 52 -> 50, enforcement seams 14 -> 12 and declared allows 296 -> 272. Its focused follow-up gate runs the complete `DogfoodingTopologyTest` class. It does not write generated artifacts or move `GlobalContextCollectorInterface`/`Location`.
+- **P2-B — DependencyModel + location bridge, builder-oracle review fix and CBO follow-up:** only writer of the six old model source paths in the move table, the eight exact target production files (`Contract/Dependency.php`, `Contract/DependencyType.php`, `Contract/DependencyGraphInterface.php`, `Contract/DependencyLocationInterface.php`, `Contract/DependencyGraphBuilderInterface.php`, `DependencyGraph.php`, `DependencyGraphBuilder.php`, `EmptyDependencyGraph.php`) under `src/Analysis/Evidence/DependencyModel/`, and the additional bridge `src/Core/Violation/Location.php`; it also owns the module README and four moved model tests. It must load `dvizh-workflow:subject-cohesion` before creating the target namespace. After C materializes `DependencyGraphProjector` and completes the verified four-source net edge set, the same writer adds the exact justified CBO 27 threshold to `DependencyGraphInterface` and proves inclusive no-headroom behaviour. For `native-codex-01`, B changes only `tests/Analysis/Evidence/DependencyModel/Unit/DependencyGraphBuilderTest.php`, strengthening its four retained IDs according to the exact allocation above without adding or renaming an ID. It does not edit any other consumer or shared integration file.
+- **P2-D1 — model consumers/imports and real-worker review fix:** starts only after B and is the only writer of all 46 unmarked production old-import adaptations and 65 of the 66 exact non-owned test/support adaptations. Its production scope explicitly includes `DependencyGraphAnalyzer`, `DependencyGraphAnalysisResult`, `DependencyVisitor`, the ten handler declarations, all model contract consumers, and `AnalysisConfigurator`/`ArchitectureConfigurator` builder-interface registration and alias adaptations. It adds the two named location-bridge IDs in `LayerViolationRuleTest` plus the named sequential/parallel ID in `AnalysisPipelineIntegrationTest`. For `native-codex-01`, D1 changes only that existing integration ID in `tests/Integration/Pipeline/AnalysisPipelineIntegrationTest.php`: the parallel branch must execute a real `AmphpParallelStrategy` worker/serialization round-trip and the sequential/parallel comparison must cover the full graph, byte-identical DOT and normalized JSON oracle above. It neither edits `ContainerFactoryTest` nor owns any projection command/container seam, and this fix adds or renames no test ID.
+- **P2-C — GraphProjection + Console and dead-surface cleanup:** starts only after D1 and is the only writer of the four old Export source files, six target GraphProjection declarations plus README, `GraphExportCommand`, `OutputConfigurator`, the three owned moved projection/command tests and new `DependencyGraphProjectorTest`. It deletes the four dead exporter metadata methods and their four named test IDs. With all model consumers already adapted by D1, its gate requires scoped lint, all 31 projection unit IDs and all 13 command functional IDs green, plus disappearance of the current GraphProjection namespace health warning. It does not claim combined container acceptance.
+- **P2-D2 — combined DI acceptance:** starts only after C and exclusively owns the remaining one of the 66 live non-owned import adaptations, `tests/Integration/DependencyInjection/ContainerFactoryTest.php`, including the named `itWiresDependencyModelAndGraphProjectionThroughPublicContracts` addition. D2 edits no production file and does not edit A-owned `ModularArchitectureGovernanceIntegrationTest`; it runs that governance test read-only together with the combined B/D1/C container gate.
+- **P2-E — generated/docs/baseline/full-validation evidence:** starts only after the P2-B CBO follow-up, P2-A topology follow-up and D2's combined gate pass. It is the sole writer of all 12 generated artifacts, the generated qmx projection, `phpunit.xml.dist`, manual `qmx.yaml` exclusions, evidence-driven `qmx-baseline.json`, all remaining shared docs/ADR/CHANGELOG/website files and this plan's evidence status. It publishes and verifies exactly 12 seams, 49 internal/50 total layers, 272 declared allows and 84 grants projecting to 15 coarse edges. Baseline work re-keys exactly the 28 unchanged, four moved and three improved-but-still-warning channel rows enumerated above, tightens the three improved ceilings to their current facts, and removes exactly the two resolved rows. The result has 242 identities, zero additions, zero magnitude regressions and no other acceptance. Manual qmx work adds the exact root-only DependencyModel pattern to the two named channels, documents its structural rationale and proves the `Contract` child remains active. E then runs generation, documentation, baseline reconciliation and full validation and returns exact evidence to the root orchestrator. It does not launch review or mark P2 Completed.
+- **Root review and closure:** the root orchestrator alone loads the review skill, launches the required review, verifies every finding, returns confirmed fixes to the owning package, reruns the affected focused gate plus full validation, and only then changes the status to Completed.
+
+Execution is strictly sequential: A -> B -> D1 -> C -> B follow-up -> A follow-up -> D2 -> E -> root review -> confirmed B/D1 review fixes -> E revalidation -> root re-review/closure. The writer partition is 46 production + 65 non-owned test/support files for D1, projection/Console-owned files for C, one non-owned integration test for D2, contract-threshold plus B-owned builder-test work for the B follow-up, and manifest/governance-only seam closure for the A follow-up; no file is duplicated. No package uses git operations, dependency-mutating commands, wildcards as write authority, or touches the two local `BUG_HUNT` files.
+
+#### Per-package validation and expected-red matrix
+
+| Gate                | Must be green before handoff                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Narrow expected red before the next package                                                                                                                                                                                                                                           |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P2-A                | JSON/schema validation for the amended manifest; PHP lint for both generator scripts; the three named governance target-policy/classification cases; exact declaration set-difference contains only the ten replaced/deleted current declarations and fourteen target declarations.                                                                                                                                                                                                                                                                                                                                                                                                                       | The generated qmx region and 12 inventory outputs are expected stale, but the coordinator is fail-fast and is not required to aggregate that complete stale set before the target AST materializes. Any schema, policy or unrelated declaration difference blocks B.                  |
+| P2-B                | PHP lint and P2-scoped static analysis for the eight target model files plus `Core/Violation/Location.php`; all 63 existing moved model test IDs at their target paths. The four retained `DependencyGraphBuilderTest` IDs directly cover the exact order/query/Ca/Ce/ancestor/filtering/degree-zero allocation above without a new ID.                                                                                                                                                                                                                                                                                                                                                                   | Old production consumers still importing the removed six model FQCNs are the only expected import/autoload failures. The generated qmx region and 12 outputs remain stale. Any model test, bridge, signature or additional failure blocks D1.                                         |
+| P2-D1               | Scoped compilation plus focused graph, parallel, Architecture and Coupling tests for the 46 production consumers and 65 owned non-owned test/support adaptations; the three named D1 behavioural additions; builder-interface registrations/aliases outside the projection seam. The existing sequential/parallel ID proves a real `AmphpParallelStrategy` worker/serialization round-trip plus ordered Dependency fields, all nine named graph queries, byte-identical DOT, normalized JSON statistics/nodes/edges and separately valid timestamp.                                                                                                                                                       | Projection source/command/OutputConfigurator still use their old declarations until C; combined container acceptance and `ContainerFactoryTest` wait for D2. The generated qmx region and 12 outputs remain stale. Any remaining model-consumer import or behaviour failure blocks C. |
+| P2-C                | PHP lint for the six GraphProjection declarations, `GraphExportCommand` and `OutputConfigurator`; 31 projection IDs (26 retained exporter IDs plus five new projector IDs), all 13 moved command IDs, and no current GraphProjection namespace health warning after deleting the four dead methods/IDs.                                                                                                                                                                                                                                                                                                                                                                                                   | The graph-interface raw CBO 26 awaits the P2-B follow-up and live generation may fail only because the two unnecessary seam rows await the P2-A follow-up; combined DI acceptance waits for D2. Any remaining GraphProjection health warning or behaviour/topology failure stops P2.  |
+| P2-B follow-up      | Source-level `@qmx-threshold coupling.cbo 27 -- ...` on `DependencyGraphInterface` names the stable query-port responsibility and the four verified net sources (`DependencyGraphBuilderInterface`, `DependencyGraphBuilder`, `AnalysisPipeline`, `DependencyGraphProjector`); a focused self-analysis proves raw 26 passes and a synthetic/next edge at 27 fails.                                                                                                                                                                                                                                                                                                                                        | The old baseline CBO 23 row remains versioned until E removes it; no import, metric or contract is changed to lower CBO. Any unexplained fifth net edge or failure of inclusive no-headroom semantics blocks the A follow-up.                                                         |
+| P2-A follow-up      | Manifest/schema and focused governance assertions pass with both seam rows removed; a temporary-output generator probe passes with 701 declarations, 699 files, 37 owners, 12 seams, 49 internal/50 total layers, 272 allows and 84 grants -> 15 coarse edges; all four `DogfoodingTopologyTest` IDs pass after only its three exact count updates (52 -> 50 layers, 14 -> 12 seams, 296 -> 272 allows).                                                                                                                                                                                                                                                                                                  | The versioned generated qmx region and 12 inventory outputs remain stale because E is their sole publisher; `ContainerFactoryTest` still waits for D2. Any further unnecessary seam, cycle or count mismatch blocks D2 and requires another reviewed plan amendment.                  |
+| P2-D2               | `ContainerFactoryTest` with both model-builder and projection aliases, including its one named addition; combined container compilation across B/D1/C; A-owned governance integration tests run read-only for exact imports/visibility.                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Only the generated qmx region, 12 inventory outputs, PHPUnit root discovery before E's `phpunit.xml.dist` edit, baseline identities and documentation freshness may remain red. Any runtime import, DI or contract-policy failure blocks E.                                           |
+| P2-E                | Two stable generator runs; 102 retained moved IDs exactly once, four obsolete IDs absent, and the 12 named additions; exactly 35 enumerated baseline re-keys including the three tightened improved ceilings, exactly two resolved removals, 242 final identities, zero additions and zero magnitude regressions; exact root-only DependencyModel exclusions in the two named qmx channels plus a live negative `Contract` child probe; EN/RU architecture docs and strict website build; architecture check, selfcheck, full PHPUnit including `DogfoodingTopologyTest` and the real-worker serialization/full graph/DOT/JSON oracle, full CS, P2-scoped PHPStan, leak check and all direct regressions. | No expected P2 red remains. Aggregate `composer check` may fail only on the recorded unrelated `LoggerFactory.php:72` issue.                                                                                                                                                          |
+| Root review/closure | Verified review dispositions; `native-codex-01` fixed in exactly the B builder test and D1 pipeline integration test without changing discovery 7,214; both focused gates rerun; then the complete E validation and root re-review rerun.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | None; any new or recurring P2 failure blocks the Completed status.                                                                                                                                                                                                                    |
+
+#### P2 Definition of Done
+
+- Exactly the ten old declarations have the stated move/delete disposition; the five named declarations are the only additions; the manifest and generated production inventory report 701 declarations/699 files/37 owners.
+- The production integration inventory is exactly 49 files: the unchanged 48-file old-import rewrite set plus P2-B's explicit `src/Core/Violation/Location.php` bridge; package ownership matches 1 B + 2 C + 46 D1 + 0 D2.
+- No old P2 FQCN remains in production, tests or current documentation except migration history, CHANGELOG old-to-new mapping and explicit negative/governance mappings. No implementation import crosses either module boundary, concrete graph/builder/exporters/projector remain internal, and no taxonomy namespace is a qmx target.
+- The DependencyModel public surface is exactly its five named contracts. Reporting's public surface is exactly its projection interface/request. P2 introduces zero internal grants and atomically removes the unnecessary `GlobalContextCollectorInterface` and `Location` enforcement seams; neither declaration moves in P2.
+- The final generated topology reports exactly 12 seams, 49 internal enforcement layers / 50 total with `external`, 272 declared allow edges and 84 exact internal grants projecting to 15 coarse edges. `DogfoodingTopologyTest` passes all four IDs after exactly three hardcoded count changes (52 -> 50 layers, 14 -> 12 seams, 296 -> 272 allows) and no other test change. Disabling any remaining seam recreates a cycle; no further unnecessary seam remains.
+- The four existing `DependencyGraphBuilderTest` IDs, with no additions or renames, directly preserve dependency/class/namespace encounter order, both directional class queries, class/namespace Ca and Ce, the complete ancestor namespace universe, parent-boundary semantics, built-in filtering with retained inheritance order, undeclared targets and degree-zero declarations according to the exact ID allocation above. The explicit location bridge preserves the identical Finding `Location` object and rejects any other implementation at runtime without PHP assertions.
+- DOT and JSON golden/shape tests remain direct tests of their internal projectors; the new facade cases cover both formats, all request fields and unsupported format. The four dead exporter metadata methods and their four named tests are absent, all 26 retained exporter IDs pass, and the GraphProjection namespace health warning disappears without an exclusion, threshold or baseline row. All 13 existing command IDs retain stdout/file, filtering, direction, clusters, empty/incomplete and byte-preservation behaviour through the injected public port.
+- `Dependency` is absent from persistent cache-key/schema inventories. `AnalysisPipelineIntegrationTest::itBuildsEquivalentOrderedDependencyGraphsSequentiallyAndInParallel` proves sequential collection and a real `AmphpParallelStrategy` worker/serialization round-trip yield identical ordered Dependency fields and projections for `getClassDependencies`, `getClassDependents`, `getClassCe`, `getClassCa`, `getNamespaceCe`, `getNamespaceCa`, `getAllClasses`, `getAllNamespaces` and `getAllDependencies`, plus byte-identical DOT and equal decoded JSON statistics/nodes/edges after excluding only wall-clock metadata while separately validating the timestamp form. A fake strategy/availability flag is forbidden evidence; no cache schema bump or new test ID is made.
+- PHPUnit discovers all 102 retained moved IDs exactly once, zero old copies, zero instances of the four named obsolete exporter IDs, and exactly the twelve named new IDs, for 7,214 total. Resolver/visitor/helper and cycle test identities/paths remain unchanged for P3/P4.
+- `DependencyGraphInterface` raw CBO is explained exactly by HEAD 22 plus the four verified net sources `DependencyGraphBuilderInterface`, `DependencyGraphBuilder`, `AnalysisPipeline` and `DependencyGraphProjector` = current 26. `DependencyGraphProjectionInterface` is the neutral replacement for old `GraphExporterInterface`, while Dot/JSON remain pre-existing consumers. The justified source threshold 27 has inclusive no-headroom behaviour, the old baseline CBO 23 row is removed, and no edge/metric is hidden or gamed. Baseline reconciliation re-keys exactly the 28 unchanged offset-only rows plus four moved rows plus three improved-but-still-warning rows enumerated above; the three improved ceilings tighten to CCN 10, maintainability 47.2 and maintainability 40.6. It removes exactly the two resolved rows, yields 242 identities, observes zero additions and zero magnitude regressions, and accepts nothing else.
+- The DependencyModel root-only qmx exclusions use exactly `[Q]ualimetrix\Analysis\Evidence\DependencyModel` for `coupling.distance.exclude_namespaces` and `computed.health.exclude_namespace_channels.health.cohesion`; their comments record the structural root-aggregate rationale. A live matcher probe proves the root matches and `Qualimetrix\Analysis\Evidence\DependencyModel\Contract` does not, so the healthy public child remains checked and no baseline/config-language change hides it.
+- The generator is stable across two consecutive runs; `composer architecture:check`, `composer selfcheck`, full PHPUnit including the two strengthened zero-delta review-fix tests, full CS check, P2-scoped PHPStan, direct model/projection/command/real-worker regressions, leak check and strict website build pass. Aggregate `composer check` may remain blocked only by the already recorded unrelated `src/Infrastructure/Logging/LoggerFactory.php:72` PHPStan iterable-value issue; any other failure blocks P2.
+- Documentation describes only the landed P2 state, provides exact migration mapping and names the still-pending P3/P4 declarations. The root-orchestrated required review covers model semantics, the location bridge, projection/Console seam, DI/manifest/test discovery, baseline evidence and parallel/cache compatibility; `native-codex-01` and any other confirmed finding including LOW return to their owning package, are fixed and revalidated, the root re-review verifies the actual worker/serialization and full graph/DOT/JSON evidence, and only the root orchestrator may then mark P2 Completed.
+
+### P3 — Move the complete Run/Configuration kernel and introduce phase contracts
+
+Files: current `src/Analysis/{Aggregator,Collection,Discovery,Exception,Lifecycle,Namespace_,Pipeline,Repository,RuleExecution}/**` after the P1/P2 extractions; target `src/Analysis/Run/**`; the P0-classified neutral subset of current `src/Configuration/**`; target `src/Analysis/Configuration/**`; DI compiler/configurator files; focused tests and READMEs. P0 materialises the exact file list and assigns every remaining feature-specific Configuration file to P4–P7 before this package is executable.
+
+- Move every remaining Analysis orchestration class under `Analysis\Run`; do not leave production types directly in the `Analysis` taxonomy.
+- Apply the P3 manifest rows, regenerate qmx/inventories, require P1's one temporary `MetricEnricher -> DuplicationInspectionInterface` consumer to disappear rather than become permanent or be inferred from remaining imports, and remove the `DeferredWarning` singleton seam only after returning it to `Analysis.Configuration` leaves the projected graph acyclic.
+- `GlobalContextCollectorInterface` may still move or change with the Measurement/Run contract work, but P3 does not close an enforcement seam for it: P2 already removed that seam after eliminating the DependencyModel-to-Measurement `NamespaceTree` edge.
+- Extract the three phase-specific ports above and deterministic participant composites.
+- Replace feature-specific orchestration in `AnalysisPipeline`/`MetricEnricher` with these ports while adapters still delegate to existing services.
+- Execute participants in stable id order and reject duplicate ids. Implement only the independence or typed earlier-phase dependencies proven by P0; do not add a generic participant dependency graph.
+- Keep observable pipeline order and skip-disabled-feature behaviour identical.
+- Adapt the already-isolated Duplication inspector to the accepted Run-owned `FileSetInspectionParticipantInterface`, replace `MetricEnricher`'s direct capability call, and close the single P1 temporary consumer. P3 does not recreate or relocate the provider, rule injection or universal-context removal completed in P1.
+- Move neutral configuration source/schema/merge mechanics to `Analysis\Configuration`; leave no production types directly in the `Analysis` taxonomy.
+
+DoD and named gate — **P3 phase-port contract gate**: no production PHP file remains directly under the `Analysis` taxonomy or an unassigned legacy Analysis subdirectory; `AnalysisPipeline` and `MetricEnricher` import no Duplication implementation or capability-owned inspection contract; binding interface contract tests prove stable order, every P0-recorded dependency, reset between two runs, disabled-step skip and duplicate-id failure; P1's single temporary consumer closes; every current Configuration class is either moved to the neutral owner or assigned to a named later package. P4+ is blocked until this gate passes and the accepted signatures are reflected in the manifest and ADR.
+
+### P4 — Isolate Architecture policy and CircularDependency evidence
+
+Files: current `src/Architecture/**`; cycle detector/result files assigned by P0; architecture DI configurator; related commands/adapters; central configuration/pipeline seams; qmx rules; focused tests/READMEs.
+
+Entry gate: the P3 phase-port contract gate is green; P4 consumes only those accepted interfaces.
+
+- Keep declared layer configuration, expansion, membership and layer-violation evaluation under `Analysis\Policy\Architecture`.
+- Apply the P4 manifest rows and explicit consumers, regenerate qmx/inventories, and remove the `ArchitectureLifecycleHook` and `ConfigLoadException` singleton seams only after returning each declaration to its true owner leaves the projected graph acyclic.
+- Move cycle detection, its result model/options/rule and prepared state under `Analysis\Evidence\CircularDependency`; consume only `DependencyModel\Contract`.
+- Define the minimum Architecture contract required by debug adapters; Run sees the capability only through its own phase ports. Define a CircularDependency contract only if a named consumer remains after removing its universal-context payload.
+- Have both capabilities implement the appropriate Analysis\Run-owned graph-preparation port while retaining their own state.
+- Remove `ResolvedConfiguration::$architecture`, direct `ArchitectureConfigurationFactory` construction in central configuration, direct Architecture internals from Run, and cycles from `AnalysisContext`.
+- Each capability parses its node from `ConfigurationDocumentInterface`; central Configuration stores neither feature object nor a heterogeneous resolved-object bag.
+
+DoD: no `configuration -> architecture`, `run -> architecture-internal`, `run -> circular-dependency-internal`, or mutual allow; external imports target only proven contracts; layer-policy, circular-dependency and debug-command behaviour remains; two sequential runs prove both capability states reset independently.
+
+### P5 — Extract Analysis\Evidence\ComputedMetrics and remove static state
+
+Files: `Core/ComputedMetric/**`, computed/health config resolvers, metric/rule paths, health reporting paths, runtime configurator, its exact DI wiring, docs/tests/qmx.
+
+- Co-locate definition parsing, validation, dependency ordering, evaluation, options and rules.
+- Apply the P5 manifest rows, regenerate qmx/inventories, and remove the `ComputedMetricsConfigResolver`, `HealthReasonBuilder` and `MetricHintProvider` singleton seams only when returning each declaration to its true owner leaves the projected graph acyclic.
+- Replace `ComputedMetricDefinitionHolder` with an instance-owned run definition catalog.
+- Implement MetricDerivation participant; the module parses its own configuration node.
+- Keep Health as a named subdomain for this package; split only if inventory shows an independent lifecycle/public consumer set.
+- Move health computation identified by P0 out of Reporting; pure health rendering remains in Reporting and consumes a narrow ComputedMetrics/Health read contract.
+
+DoD: `Analysis\Configuration`, `Analysis\Run` and `RuntimeConfigurator` contain no computed-feature knowledge; two different configurations in one process cannot leak definitions; formula cycles/errors, exclude-health and all health formats retain direct regressions.
+
+### P6 — Separate Finding and Policy capabilities; place orchestration and projections honestly
+
+Files: `Baseline/**`, `Core/Suppression/**`, `Core/Violation/Filter/**`, suppression collection code, `Infrastructure/Console/ViolationFilter*`, git scope adapter, reporting seams, docs/tests/qmx.
+
+- Use the P0 context map for source annotations, rule/config exclusion, baseline ceiling, Git projection and presentation; name producer, semantic owner, consumer and order for every stage.
+- Apply the P6 manifest rows, regenerate qmx/inventories, and remove the `DeclarationBindings`, `SourceControls`, `RuleExecutor`, `RuleValidatorMapFactory`, `SuppressionFilter` and `RuleMatcher` singleton seams only after returning each declaration to its true owner leaves the projected graph acyclic. `Location` may still move or change with Finding, but P2 already removed its enforcement seam after inverting the DependencyModel location dependency.
+- Move neutral violation/rule/channel contracts to `Analysis\Finding`, source annotation ownership to `Analysis\Policy\Inline`, and retain `Analysis\Policy\Baseline` as its own capability.
+- Put only cross-capability invocation order in `Analysis\Run`; do not create a `FindingEvaluation` module or shared policy-state holder.
+- Move Git-scoped and other output-only projections to Reporting. Keep the Git client as an Infrastructure adapter behind a Reporting-owned port.
+- Move framework-free orchestration out of Console; Console only parses options and renders diagnostics.
+- Keep Baseline as a peer policy capability unless the P0 ownership map disproves its independent lifecycle; do not force all policy into one implementation module.
+
+DoD: invocation/projection order has one authoritative contract test; each result/state type has one owner; Run orchestration holds no feature state; Reporting projection has no Git concrete import; Baseline remains fail-safe and scope semantics/golden output are unchanged.
+
+### P7 — Classify and migrate thin evidence capabilities in vertical batches
+
+Files per batch are disjoint by proposed check owner: implementation + rule + config/defaults + tests + docs. Shared DI/qmx files are a final serial integration package, not concurrently edited.
+
+1. Refresh P0's exhaustive ownership table and add a 6–12 month focused co-change matrix excluding mass commits.
+2. Keep the reviewed dispositions unless new evidence triggers a plan/ADR amendment: Halstead moves with Maintainability, WMC with Complexity, and legacy Structure declarations split among Cohesion, Size and Design exactly as enumerated in the generated inventory.
+3. For each accepted capability, update its P7 manifest rows and named consumers, regenerate qmx/inventories, then move metric collectors and rules together under `Analysis\Evidence\{Capability}`. Give it a `Contract` namespace only if another module actually consumes it.
+4. Delete empty role buckets and shrink Metrics/Rules foundation; do not recreate identical internal role folders by template.
+
+DoD per batch: one owner for every moved class; no cross-check internal import; external imports only through actual contracts; all rule names/options/output stay stable unless a documented breaking change is intentional; README gives an agent a bounded reading set.
+
+### P8 — Remove grants and ratchet context locality
+
+Files: `qmx.yaml`, architecture fixtures, module READMEs, scripts/CI, ADR completion note.
+
+- Remove all exact temporary grants from the manifest and their derived coarse qmx edges.
+- Remove every temporary exact contract-consumer entry; a surviving contract consumer is permanent only with an observed exact target import, `source_fqcn: null` and `closes_in: null`.
+- Apply the P8 manifest rows, remove every now-unused grant/seam, and regenerate qmx/inventories until `--check` is clean.
+- Consolidate the duplicated `LoggerFactory` ownership/test locations in P8 according to the generated rows; do not leave parallel legacy and target test owners.
+- Treat the 28 generated orphan candidates as candidates only: prove absence of direct, dynamic, fixture-path and process consumers before deleting each row. Otherwise move it to its assigned owner and record the retained disposition.
+- Add a report/test listing public imports and fan-in per module; treat growth as review evidence, not an automatic design score.
+- Add a context-locality checklist to module READMEs: owned code/tests/docs, public dependencies, adapters, change recipes.
+- Add a test-topology check: every module-owned test/support/fixture path maps to its subject, every permanent `System` scenario and `TestSupport` child has a recorded subject owner/justification, no file lives directly in the `TestSupport` taxonomy, and production code never imports test namespaces.
+- Run complete validation and self-analysis; intentionally review any baseline change rather than regenerating it mechanically.
+
+DoD: no temporary contract consumer, temporary internal grant or singleton seam remains; no mutual allow, taxonomy allow target, wildcard sibling access, uncovered production namespace, feature static holder, feature payload in universal contexts, unowned legacy test path or silently undiscovered moved test; LoggerFactory has one coherent owner/test location; every one of the 28 orphan candidates has recorded consumer proof and a move-or-delete disposition; `composer check`, selfcheck, docs build and direct module regressions pass.
+
+## Package dependencies and execution
+
+```text
+[complete] P0-A -> P0-B -> P0-C -> P0-D -> P0 completion gate
+[complete] P1-A -> P1-B -> {P1-C || P1-D} -> P1-E -> P1 completion gate -> [complete] P2-A -> P2-B -> P2-D1 -> P2-C -> P2-D2 -> P2-E -> P2 completion gate -> [next; not started] P3 (closes P1's MetricEnricher consumer) -> phase-port contract gate -> P4 -> P5 -> P6 -> P7 -> P8
+```
+
+P0 completed discovery, decision and enforcement; it does not authorise the unchanged remainder automatically. P0-A atomically established authority, generated qmx enforcement, reproducible evidence and freshness checks, including ownership of the qmx topology header immediately adjacent to its generated region. P0-B closed decision/general documentation, P0-C reconciled the baseline, and P0-D completed final review and shared-document dispositions. P1 and P2 are complete; both P2 review findings are fixed and the targeted re-review is GO. P3 is next and has not started. Generated rows bearing an exact P1–P8 closure are the authoritative migration-owned move enumerations; the explicit package tables add integration, DI, discovery, governance and current-documentation edits without changing those files' later owners. Documentation rows marked `P0-D`, `permanent`, or `shared` do not grant later package ownership and still change when the landed current state would otherwise make them false. Phase-port signatures remain non-binding until P3's contract gate.
+
+Packages P1–P6 then land sequentially because they share Run, DI, configuration and topology seams. P1's single temporary `MetricEnricher -> DuplicationInspectionInterface` relation creates the explicit lifecycle dependency on P3; P3 must replace that direct call with its accepted Run-owned port and remove the relation rather than silently make it permanent. DependencyModel lands before P3 binds Run's graph-aware phase ports, and the P3 gate passes before Architecture/CircularDependency consumes them. Migration-owned artifacts come from the generated rows, while each package's explicit integration tables name the additional consumers and guards it may edit without stealing their later ownership; moving production without its owned tests is an incomplete package. P7 batches may be delegated in parallel only after an execution plan enumerates exact non-overlapping production/tests/docs files; shared DI, `qmx.yaml`, `phpunit.xml.dist`, Composer dev-autoload/classmaps, root docs and generated inventories form a named serial integration package. No package described with `**` is eligible for parallel execution as-is.
+
+Each package is behavioural-preservation first: move + contract + architecture tests in one package, no compatibility shim. Validate focused tests after every package, then `composer check`; run standard/extended review according to changed contracts and inspect seams explicitly.
+
+## Edge cases and regression matrix
+
+- two analyses with different config in one process;
+- a disabled expensive capability does zero preparation/allocation;
+- empty project and incomplete analysis result;
+- parallel collection serialization contains only neutral contracts, never module services/state;
+- config warnings emitted after logger setup without a global feature holder;
+- deterministic extension order and duplicate-id failure;
+- CLI debug/export adapters consume only public contracts;
+- baseline + source suppression + CLI exclusion + git projection preserve exact order;
+- Git projection changes only the reported view and never the accepted-state/policy result;
+- taxonomy directories contain no production types and cannot be dependency targets;
+- a listed contract consumer without an observed exact target import fails; a temporary consumer cannot omit/mismatch `source_fqcn`, cannot disagree with its semantic `owner`, and cannot omit or outlive `closes_in`;
+- a fourth declaration of an otherwise authorised temporary consumer owner cannot reuse its coarse qmx allow;
+- an unlisted exact internal import fails even when one of the 16 coarse semantic-owner edges would otherwise permit it;
+- every moved test remains present in the PHPUnit discovery manifest, with no duplicate old/new class;
+- module-specific fixtures and support code move with their owner while neutral TestSupport consumers remain green;
+- layer policy and circular-dependency evidence can be enabled, disabled and reset independently;
+- dynamic rule discovery and constructor dependencies still work after moves;
+- cache payload versioning is bumped or proven compatible for moved class names;
+- public contract break produces CHANGELOG migration entry;
+- taxonomy container cannot become qmx allow target.
+
+## Explicit non-goals
+
+- no generic marketplace/plugin API for third-party checks;
+- no `Api/`/`Contract/` folder for private leaf code;
+- no `FindingEvaluation` role bucket or policy/projection state shared through the Run kernel;
+- no placement of circular-dependency detection under Architecture merely because its rule currently lives there;
+- no numeric context-window hard gate;
+- no mass migration based only on names or current directory categories;
+- no preservation shim for obsolete internal namespaces.

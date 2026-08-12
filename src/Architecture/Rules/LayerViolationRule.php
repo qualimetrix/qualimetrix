@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Architecture\Rules;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Domain\CoverageMode;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\LayerMatch;
 use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
-use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;
 use Qualimetrix\Core\Rule\RuleCategory;
@@ -44,7 +44,8 @@ use Qualimetrix\Rules\AbstractRule;
  *   forbidden dependency edge.
  * - `architecture.coverage` — when {@see ArchitectureConfiguration::coverage()}
  *   is not {@see CoverageMode::Ignore}, one aggregated Violation summarising
- *   edges that touch unclassified classes.
+ *   analysed logical classes outside every layer and dependency edges that
+ *   touch unclassified classes.
  * - `architecture.unreachable-layer` — severity configurable via
  *   {@see LayerViolationOptions::$unreachableLayerSeverity} (default
  *   {@see \Qualimetrix\Core\Violation\Severity::Info}), one Violation per
@@ -204,11 +205,16 @@ final class LayerViolationRule extends AbstractRule
         $registry = $architecture->registry();
 
         // Per-class evidence (local — never fields; statelessness regression in tests).
-        [$layerHits, $shadowEvidence] = $this->collectClassEvidence($registry, $context);
+        [$layerHits, $shadowEvidence, $uncoveredClasses] = $this->collectClassEvidence(
+            $registry,
+            $context,
+            $architecture->coverage(),
+        );
 
         // Per-edge violations + coverage state (also local).
         $ownedTargets = OwnedLayerTargets::fromDeclarations($context->metrics->allDeclarations());
         [$edgeViolations, $coverageState, $edgeLayerHits] = $this->collectEdgeViolations($architecture, $context, $ownedTargets);
+        $coverageState['classes'] += $uncoveredClasses;
 
         // A layer matched only as one end of a dependency edge (e.g. a vendor
         // namespace outside `paths:`, never a class in the analysed set) is
@@ -301,16 +307,23 @@ final class LayerViolationRule extends AbstractRule
      *    without re-walking the layer list at emission time). Descriptors
      *    carry the criterion kind (pattern / suffix / attribute / implements
      *    / extends) so the message can name the actual cause of the shadow.
+     * 3. `uncoveredClasses` — canonical logical class key to display FQN for
+     *    every analysed class outside all declared layers. Canonical keys make
+     *    the later merge with dependency-edge coverage deterministic and
+     *    deduplicate a class observed through both repository and graph views.
      *
      * Both are LOCAL variables here. Per CLAUDE.md "stateless rules", the rule
      * instance is reused across `analyze()` invocations — any field-based
      * accumulator would leak counts. The dedicated statelessness regression
      * test pins this contract.
      *
-     * @return array{0: array<string, int>, 1: array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Architecture\Domain\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Architecture\Domain\Layer\MatchedCriterion}>>>}
+     * @return array{0: array<string, int>, 1: array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Architecture\Domain\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Architecture\Domain\Layer\MatchedCriterion}>>>, 2: array<string, string>}
      */
-    private function collectClassEvidence(LayerRegistry $registry, AnalysisContext $context): array
-    {
+    private function collectClassEvidence(
+        LayerRegistry $registry,
+        AnalysisContext $context,
+        CoverageMode $coverageMode,
+    ): array {
         $layerHits = [];
         foreach ($registry->layerNames() as $layerName) {
             $layerHits[$layerName] = 0;
@@ -318,10 +331,15 @@ final class LayerViolationRule extends AbstractRule
 
         /** @var array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Architecture\Domain\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Architecture\Domain\Layer\MatchedCriterion}>>> $shadowEvidence */
         $shadowEvidence = [];
+        $uncoveredClasses = [];
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classSymbol) {
             $matches = $registry->resolveAll($classSymbol->symbolPath);
             if ($matches === []) {
+                if ($coverageMode !== CoverageMode::Ignore) {
+                    $uncoveredClasses[$classSymbol->symbolPath->toCanonical()] = $classSymbol->symbolPath->toString();
+                }
+
                 continue;
             }
 
@@ -343,7 +361,7 @@ final class LayerViolationRule extends AbstractRule
             }
         }
 
-        return [$layerHits, $shadowEvidence];
+        return [$layerHits, $shadowEvidence, $uncoveredClasses];
     }
 
     /**
@@ -594,7 +612,7 @@ final class LayerViolationRule extends AbstractRule
         }
 
         $unmatchedEnds = $unmatchedSourceEdges + $unmatchedTargetEdges;
-        if ($unmatchedEnds === 0) {
+        if ($unmatchedEnds === 0 && $unmatchedClasses === []) {
             return null;
         }
 

@@ -9,6 +9,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEdge;
 use Qualimetrix\Baseline\BaselineEntry;
@@ -16,7 +17,6 @@ use Qualimetrix\Baseline\BaselineIdentity;
 use Qualimetrix\Baseline\EntrySelector;
 use Qualimetrix\Baseline\InertBaselineEntry;
 use Qualimetrix\Baseline\InertEntryReason;
-use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Violation\ViolationChannel;
 
 #[CoversClass(Baseline::class)]

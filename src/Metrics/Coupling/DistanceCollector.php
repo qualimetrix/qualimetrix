@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Metrics\Coupling;
 
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
 use Qualimetrix\Core\Metric\MetricDefinition;

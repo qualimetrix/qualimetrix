@@ -9,22 +9,23 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
+use Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface;
 use Qualimetrix\Analysis\Pipeline\EnrichmentResult;
 use Qualimetrix\Analysis\Pipeline\MetricEnricher;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
-use Qualimetrix\Core\Dependency\Dependency;
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
-use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Rules\Duplication\CodeDuplicationRule;
 use SplFileInfo;
 
 #[CoversClass(MetricEnricher::class)]
@@ -75,7 +76,6 @@ final class MetricEnricherTest extends TestCase
 
         self::assertInstanceOf(EnrichmentResult::class, $result); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame([], $result->cycles);
-        self::assertSame([], $result->duplicateBlocks);
     }
 
     #[Test]
@@ -126,32 +126,33 @@ final class MetricEnricherTest extends TestCase
         $configProvider = self::createStub(ConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn($config);
 
+        $inspection = self::createMock(DuplicationInspectionInterface::class);
+        $inspection->expects(self::once())->method('reset');
+        $inspection->expects(self::never())->method('inspect');
+
         $enricher = new MetricEnricher(
             $this->compositeCollector,
             $this->globalCollectorRunner,
             $configProvider,
-            // Duplication detector is null, simulating disabled state
-            duplicationDetector: null,
+            duplicationInspection: $inspection,
         );
 
-        $result = $enricher->enrich($this->repository, $this->graph, [], 10);
-
-        self::assertSame([], $result->duplicateBlocks);
+        $enricher->enrich($this->repository, $this->graph, [], 10);
     }
 
     #[Test]
-    public function duplicationDetectionIsSkippedWhenDetectorIsNull(): void
+    public function duplicationDetectionIsSkippedWhenInspectionIsNull(): void
     {
         $enricher = new MetricEnricher(
             $this->compositeCollector,
             $this->globalCollectorRunner,
             $this->configProvider,
-            duplicationDetector: null,
+            duplicationInspection: null,
         );
 
         $result = $enricher->enrich($this->repository, $this->graph, [new SplFileInfo(__FILE__)], 10);
 
-        self::assertSame([], $result->duplicateBlocks);
+        self::assertInstanceOf(EnrichmentResult::class, $result); // @phpstan-ignore staticMethod.alreadyNarrowedType
     }
 
     #[Test]
@@ -192,7 +193,7 @@ final class MetricEnricherTest extends TestCase
             $this->compositeCollector,
             $this->globalCollectorRunner,
             $this->configProvider,
-            duplicationDetector: null,
+            duplicationInspection: null,
             computedMetricEvaluator: null,
         );
 
@@ -200,7 +201,59 @@ final class MetricEnricherTest extends TestCase
 
         self::assertInstanceOf(EnrichmentResult::class, $result); // @phpstan-ignore staticMethod.alreadyNarrowedType
         self::assertSame([], $result->cycles);
-        self::assertSame([], $result->duplicateBlocks);
+    }
+
+    #[Test]
+    public function itClearsDuplicationResultsWhenTheNextRunDisablesTheRule(): void
+    {
+        $configuration = new AnalysisConfiguration();
+        $configProvider = self::createStub(ConfigurationProviderInterface::class);
+        $configProvider->method('getConfiguration')->willReturnCallback(
+            static function () use (&$configuration): AnalysisConfiguration {
+                return $configuration;
+            },
+        );
+        $inspection = new DuplicationInspectionSpy([['first-run-block']]);
+        $enricher = new MetricEnricher(
+            $this->compositeCollector,
+            $this->globalCollectorRunner,
+            $configProvider,
+            duplicationInspection: $inspection,
+        );
+
+        $enricher->enrich($this->repository, $this->graph, [new SplFileInfo(__FILE__)], 1);
+        self::assertSame(['first-run-block'], $inspection->results);
+
+        $resetCallsBeforeDisabledRun = $inspection->resetCalls;
+        $inspectCallsBeforeDisabledRun = $inspection->inspectCalls;
+        $configuration = new AnalysisConfiguration(disabledRules: [CodeDuplicationRule::NAME]);
+
+        $enricher->enrich($this->repository, $this->graph, [new SplFileInfo(__FILE__)], 1);
+
+        self::assertSame([], $inspection->results);
+        self::assertSame($resetCallsBeforeDisabledRun + 1, $inspection->resetCalls);
+        self::assertSame($inspectCallsBeforeDisabledRun, $inspection->inspectCalls);
+    }
+
+    #[Test]
+    public function itReplacesDuplicationResultsWhenTheNextEnabledRunFindsNoMatches(): void
+    {
+        $inspection = new DuplicationInspectionSpy([['first-run-block'], []]);
+        $enricher = new MetricEnricher(
+            $this->compositeCollector,
+            $this->globalCollectorRunner,
+            $this->configProvider,
+            duplicationInspection: $inspection,
+        );
+
+        $enricher->enrich($this->repository, $this->graph, [new SplFileInfo(__FILE__)], 1);
+        self::assertSame(['first-run-block'], $inspection->results);
+
+        $enricher->enrich($this->repository, $this->graph, [new SplFileInfo(__FILE__)], 1);
+
+        self::assertSame([], $inspection->results);
+        self::assertSame(2, $inspection->resetCalls);
+        self::assertSame(2, $inspection->inspectCalls);
     }
 
     /**
@@ -228,5 +281,31 @@ final class MetricEnricherTest extends TestCase
         );
 
         return $graph;
+    }
+}
+
+final class DuplicationInspectionSpy implements DuplicationInspectionInterface
+{
+    /** @var list<string> */
+    public array $results = [];
+
+    public int $resetCalls = 0;
+    public int $inspectCalls = 0;
+
+    /**
+     * @param list<list<string>> $inspectionResults
+     */
+    public function __construct(private array $inspectionResults) {}
+
+    public function reset(): void
+    {
+        $this->resetCalls++;
+        $this->results = [];
+    }
+
+    public function inspect(array $files): void
+    {
+        $this->inspectCalls++;
+        $this->results = array_shift($this->inspectionResults) ?? [];
     }
 }

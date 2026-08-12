@@ -243,7 +243,7 @@ final class DocumentationConsistencyTest extends TestCase
     }
 
     /**
-     * Collects all rule NAME constants by scanning src/Rules/ directory.
+     * Collects all rule NAME constants from every current rule capability root.
      *
      * @return list<string>
      */
@@ -297,12 +297,12 @@ final class DocumentationConsistencyTest extends TestCase
     }
 
     /**
-     * Scans src/Rules/ and src/Architecture/Rules/ for concrete
-     * RuleInterface implementations.
+     * Scans every current rule root for concrete RuleInterface
+     * implementations.
      *
-     * Architecture rules live under src/Architecture/Rules/ per the
-     * vertical-slice migration (ADR 0010); both directories are scanned
-     * so the documentation-consistency assertions stay accurate.
+     * Architecture and Duplication own rules outside the remaining layered
+     * src/Rules tree; every root is explicit so a future capability does not
+     * silently enroll itself in documentation discovery.
      *
      * @return iterable<array{fqcn: class-string<RuleInterface>, reflection: ReflectionClass<RuleInterface>}>
      */
@@ -311,6 +311,7 @@ final class DocumentationConsistencyTest extends TestCase
         $rulesDirs = [
             self::$projectRoot . '/src/Rules',
             self::$projectRoot . '/src/Architecture/Rules',
+            self::$projectRoot . '/src/Analysis/Evidence/Duplication',
         ];
 
         foreach ($rulesDirs as $rulesDir) {

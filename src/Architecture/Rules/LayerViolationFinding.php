@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Architecture\Rules;
 
+use LogicException;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Architecture\Domain\Layer\LayerMatch;
 use Qualimetrix\Architecture\Domain\Layer\MatchedCriterion;
 use Qualimetrix\Architecture\Domain\Layer\MatchedCriterionKind;
-use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Violation\Location;
 use Qualimetrix\Core\Violation\OccurrenceKey;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
@@ -48,6 +50,11 @@ final readonly class LayerViolationFinding
 
     private function toViolation(MetricSubject $subject): Violation
     {
+        $location = $this->dependency->location;
+        if (!$location instanceof Location) {
+            throw new LogicException('Layer violation findings require a Finding Location instance.');
+        }
+
         $evidence = [
             'source' => $this->dependency->source->toCanonical(),
             'target' => $this->dependency->targetLogical()->toCanonical(),
@@ -58,7 +65,7 @@ final readonly class LayerViolationFinding
         }
 
         return new Violation(
-            location: $this->dependency->location,
+            location: $location,
             subject: $subject,
             symbolPath: $this->dependency->sourceLogical(),
             ruleName: $this->ruleName,

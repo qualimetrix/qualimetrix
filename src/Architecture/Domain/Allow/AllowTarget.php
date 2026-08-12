@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Architecture\Domain\Allow;
 
-use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 
 /**
  * One target on the right-hand side of an {@code architecture.allow} entry.

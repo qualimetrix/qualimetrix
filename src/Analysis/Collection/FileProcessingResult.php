@@ -25,7 +25,7 @@ final readonly class FileProcessingResult
      * @param list<\Qualimetrix\Core\Metric\CallableWithMetrics> $callableMetrics
      * @param array<string, array{subject: \Qualimetrix\Core\Symbol\MetricSubject, metrics: MetricBag, line: int}> $classMetrics
      * @param array<string, array{symbolPath: \Qualimetrix\Core\Symbol\SymbolPath, metrics: MetricBag, line: int}> $namespaceMetrics
-     * @param list<\Qualimetrix\Core\Dependency\Dependency> $dependencies
+     * @param list<\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency> $dependencies
      * @param list<\Qualimetrix\Core\Suppression\Suppression> $suppressions
      * @param list<\Qualimetrix\Core\Suppression\ThresholdOverride> $thresholdOverrides
      * @param list<\Qualimetrix\Core\Suppression\ThresholdDiagnostic> $thresholdDiagnostics

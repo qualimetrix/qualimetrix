@@ -89,6 +89,11 @@ Cleanup baseline from stale entries (violations that have already been fixed).
 
 Export dependency graph in DOT or JSON format.
 
+The command is an adapter: it obtains the graph through
+`DependencyGraphAnalyzerInterface` and renders it through Reporting's public
+`DependencyGraphProjectionInterface`. It never imports or constructs the
+internal DOT/JSON exporters.
+
 **Name:** `graph:export`
 
 **Options:**

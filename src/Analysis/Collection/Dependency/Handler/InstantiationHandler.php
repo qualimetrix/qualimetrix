@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Collection\Dependency\Handler;
 use PhpParser\Node;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name;
-use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 
 final readonly class InstantiationHandler implements NodeDependencyHandlerInterface
 {

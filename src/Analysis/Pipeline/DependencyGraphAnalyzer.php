@@ -8,11 +8,11 @@ use PhpParser\Node;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeTraverser;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Core\Dependency\Dependency;
 use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
@@ -32,7 +32,7 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
         private FileDiscoveryInterface $fileDiscovery,
         private FileParserInterface $fileParser,
         private DependencyVisitor $dependencyVisitor,
-        private DependencyGraphBuilder $graphBuilder,
+        private DependencyGraphBuilderInterface $graphBuilder,
     ) {}
 
     public function analyze(array $paths, AbsolutePath $projectRoot): DependencyGraphAnalysisResult

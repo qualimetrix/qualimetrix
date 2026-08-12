@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Architecture\Configuration\Validation;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Architecture\Configuration\Allow\AllowAliasExpander;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
-use Qualimetrix\Core\Dependency\DependencyType;
 
 /**
  * Parses the long-form allow-target map ({@code [target: ..., relations:
@@ -108,8 +108,8 @@ final class LongFormAllowEntryNormalizer
      * Extracts the {@code allow_cross_instance} long-form flag. Absent → false.
      * Non-boolean values are rejected so a user typo (e.g.
      * {@code allow_cross_instance: 'yes'}) cannot silently fall through to the
-     * "false" default and surprise the user with mutual-allow warnings they
-     * thought they had silenced.
+     * "false" default and surprise the user with wildcard self-allow warnings
+     * they thought they had silenced.
      *
      * Accepts the canonical snake_case spelling and the camelCase variant as
      * synonyms — Phase 3.5 made the architecture subtree preserve user-supplied

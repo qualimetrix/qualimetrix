@@ -7,13 +7,14 @@ namespace Qualimetrix\Tests\Unit\Metrics\Coupling;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraph;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Metric\AggregationStrategy;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\Coupling\DistanceCollector;
+use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
 
 #[CoversClass(DistanceCollector::class)]
 final class DistanceCollectorTest extends TestCase
@@ -161,18 +162,8 @@ final class DistanceCollectorTest extends TestCase
         self::assertEqualsWithDelta(1.0, $result->get('distance'), 0.001);
     }
 
-    private function createEmptyGraph(): DependencyGraph
+    private function createEmptyGraph(): DependencyGraphInterface
     {
-        return new DependencyGraph(
-            [],
-            [],
-            [],
-            [],
-            [],
-            [],
-            [],
-            [],
-            [],
-        );
+        return AdjacencyGraphBuilder::empty();
     }
 }

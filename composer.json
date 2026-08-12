@@ -82,7 +82,12 @@
         "cs-fix": "php-cs-fixer fix",
         "benchmark:check": "php scripts/benchmark-regression.php",
         "benchmark:update": "php scripts/benchmark-regression.php --update-baselines",
-        "selfcheck": "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M",
+        "architecture:generate": "php scripts/generate-modular-architecture.php",
+        "architecture:check": "php scripts/generate-modular-architecture.php --check",
+        "selfcheck": [
+            "@architecture:check",
+            "php bin/qmx check src/ --baseline=qmx-baseline.json --fail-on=warning --memory-limit=512M"
+        ],
         "check-leaks": "bash scripts/check-private-leaks.sh",
         "check": [
             "@check-leaks",
@@ -106,7 +111,9 @@
         "cs-fix": "Fix code style with PHP-CS-Fixer",
         "benchmark:check": "Run benchmark regression check for health score formulas",
         "benchmark:update": "Update benchmark baselines with current scores (±10 margin)",
-        "selfcheck": "Run Qualimetrix on its own source code",
+        "architecture:generate": "Regenerate modular-architecture governance projections and inventories",
+        "architecture:check": "Validate the manifest and generated modular-architecture artifacts without writing",
+        "selfcheck": "Validate modular-architecture governance, then run Qualimetrix on its own source code",
         "check": "Run all checks: leaks, code style, PHP/Python tests, phpstan, selfcheck (selfcheck enforces architecture via qmx.yaml)"
     },
     "config": {

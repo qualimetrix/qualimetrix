@@ -1,7 +1,7 @@
 # 0012. Project Architectural Direction: Hybrid Vertical-Slice / Layered Model
 
 **Date:** 2026-05-15
-**Status:** Superseded by [ADR 0016](0016-subject-cohesion.md) on internal sub-namespace freedom (see rule 1). The hybrid direction itself remains in force.
+**Status:** Superseded by [ADR 0022](0022-capability-oriented-modular-monolith.md). [ADR 0016](0016-subject-cohesion.md) had already superseded the internal sub-namespace freedom in rule 1.
 **Related:** [0010 — Architecture as Vertical Slice (Pilot)](0010-architecture-vertical-slice.md)
 
 ## Context

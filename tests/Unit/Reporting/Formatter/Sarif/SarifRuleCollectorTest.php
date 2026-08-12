@@ -240,7 +240,7 @@ final class SarifRuleCollectorTest extends TestCase
         ?string $recommendation = null,
         int|float|null $threshold = null,
         ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
-        ?\Qualimetrix\Core\Dependency\DependencyType $dependencyType = null,
+        ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null,
         ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null,
         ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,

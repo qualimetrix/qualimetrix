@@ -19,7 +19,10 @@ use Qualimetrix\Analysis\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
 use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Analysis\Duplication\DuplicationDetectorInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface;
 use Qualimetrix\Analysis\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Pipeline\MetricEnricher;
@@ -30,9 +33,6 @@ use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Core\Dependency\Dependency;
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
-use Qualimetrix\Core\Dependency\DependencyType;
 use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
 use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Metric\MetricRepositoryInterface;
@@ -407,8 +407,9 @@ final class AnalysisPipelineTest extends TestCase
         );
         $configProvider->method('getRuleOptions')->willReturn([]);
 
-        $duplicationDetector = $this->createMock(DuplicationDetectorInterface::class);
-        $duplicationDetector->expects(self::never())->method('detect');
+        $duplicationInspection = $this->createMock(DuplicationInspectionInterface::class);
+        $duplicationInspection->expects(self::once())->method('reset');
+        $duplicationInspection->expects(self::never())->method('inspect');
 
         $pipeline = TestPipelineBuilder::create()
             ->withDefaultDiscovery($this->defaultDiscovery)
@@ -420,7 +421,7 @@ final class AnalysisPipelineTest extends TestCase
                 globalCollectorRunner: $this->globalCollectorRunner,
                 configurationProvider: $configProvider,
                 logger: $this->logger,
-                duplicationDetector: $duplicationDetector,
+                duplicationInspection: $duplicationInspection,
             ))
             ->withLogger($this->logger)
             ->build();

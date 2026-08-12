@@ -9,7 +9,6 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
 use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
 use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
@@ -19,6 +18,7 @@ use Qualimetrix\Analysis\Pipeline\DependencyGraphAnalyzer;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
 use RuntimeException;
 use SplFileInfo;
 use Throwable;
@@ -160,7 +160,7 @@ PHP);
             new FinderFileDiscovery([]),
             $parser,
             new DependencyVisitor(new DependencyResolver()),
-            new DependencyGraphBuilder(),
+            AdjacencyGraphBuilder::builder(),
         );
     }
 

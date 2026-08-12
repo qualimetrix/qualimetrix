@@ -25,6 +25,7 @@ use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConf
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CollectorConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ConfigurationConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CoreServicesConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DuplicationConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\OutputConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator;
@@ -78,6 +79,7 @@ final class ContainerFactory
             new CollectorConfigurator($srcDir),
             new RuleConfigurator($srcDir),
             new ArchitectureConfigurator($srcDir),
+            new DuplicationConfigurator($srcDir),
             new AnalysisConfigurator(),
             new OutputConfigurator($srcDir),
         ];

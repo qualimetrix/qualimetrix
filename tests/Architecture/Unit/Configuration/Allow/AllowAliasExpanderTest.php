@@ -8,9 +8,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Architecture\Configuration\Allow\AllowAliasExpander;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
-use Qualimetrix\Core\Dependency\DependencyType;
 
 #[CoversClass(AllowAliasExpander::class)]
 final class AllowAliasExpanderTest extends TestCase

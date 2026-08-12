@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Architecture\Unit\Configuration\Validation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Architecture\Configuration\Allow\AllowAliasExpander;
 use Qualimetrix\Architecture\Configuration\Validation\AllowValidator;
 use Qualimetrix\Architecture\Configuration\Validation\LongFormAllowEntryNormalizer;
@@ -15,7 +16,6 @@ use Qualimetrix\Architecture\Domain\Allow\LayerSelector;
 use Qualimetrix\Architecture\Domain\Allow\SelectorKind;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
-use Qualimetrix\Core\Dependency\DependencyType;
 
 #[CoversClass(AllowValidator::class)]
 #[CoversClass(AllowAliasExpander::class)]
@@ -88,7 +88,7 @@ final class AllowValidatorTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function selfReferenceIsSilentlyStripped(): void
+    public function itPreservesSelfReferenceForExactCycleValidation(): void
     {
         $warnings = [];
         $entries = $this->validator->validate(
@@ -97,9 +97,9 @@ final class AllowValidatorTest extends TestCase
             $warnings,
         );
 
-        // 'controller' should not appear in its own explicit target list.
+        // The downstream ExactAllowCycleValidator needs the explicit self-edge.
         self::assertCount(1, $entries);
-        self::assertExactEntry($entries[0], 'controller', ['service']);
+        self::assertExactEntry($entries[0], 'controller', ['controller', 'service']);
         self::assertSame([], $warnings);
     }
 

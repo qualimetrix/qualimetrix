@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Architecture\Configuration\Validation;
 
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Architecture\Domain\Allow\AllowListEntry;
 use Qualimetrix\Architecture\Domain\Allow\AllowTarget;
 use Qualimetrix\Architecture\Domain\Allow\InvalidSelectorException;
@@ -11,7 +12,6 @@ use Qualimetrix\Architecture\Domain\Allow\LayerSelector;
 use Qualimetrix\Architecture\Domain\Allow\LayerSelectorParser;
 use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use Qualimetrix\Configuration\Pipeline\DeferredWarning;
-use Qualimetrix\Core\Dependency\DependencyType;
 
 /**
  * Parses and validates the {@code architecture.allow} sub-tree.
@@ -307,11 +307,12 @@ final class AllowValidator
     }
 
     /**
-     * Performs the exact-target side-checks (self-reference dedup, unknown
-     * layer rejection, exact-name dedup) and returns true when the caller
-     * should skip appending this target to the result list. Glob / captured
-     * selectors are deliberately untouched here — only exact-shape targets are
-     * cross-validated against the registry's layer names in Step C.
+     * Performs the exact-target side-checks (unknown layer rejection and
+     * exact-name dedup) and returns true when the caller should skip appending
+     * this target to the result list. Explicit self-references are preserved so
+     * {@see ExactAllowCycleValidator} can reject them as one-node cycles. Glob /
+     * captured selectors are deliberately untouched here — only exact-shape
+     * targets are cross-validated against the registry's layer names in Step C.
      *
      * **Dedup scope.** Only bare-equivalent targets (no {@code relations}, no
      * {@code allow_cross_instance}) are dedupped. A bare 'vendor' + long-form
@@ -344,11 +345,6 @@ final class AllowValidator
         }
 
         $targetName = $targetSelector->originalString();
-
-        // Self-reference: silently dedup (same-layer is always allowed by LayerPolicy).
-        if ($targetName === $source) {
-            return true;
-        }
 
         if (!isset($layerSet[$targetName])) {
             throw new ConfigLoadException(

@@ -176,8 +176,9 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
  *
  * The "declares nothing" exemplar for {@see ChannelDeclarationCompilerPassTest}.
  * Deliberately a dedicated fixture, not a production rule: every production
- * rule reachable from `src/Rules/**` and `src/Architecture/Rules/**` now
- * declares a channel under ADR 0017, so pointing this test at
+ * rule reachable from `src/Rules/**`, `src/Architecture/Rules/**` and
+ * `src/Analysis/Evidence/Duplication/*Rule.php` now declares a channel under
+ * ADR 0017, so pointing this test at
  * one would break again the moment a future package declared it — which is
  * exactly how this exemplar drifted twice already (`ClassCountRule`, then
  * `UnusedPrivateRule`). A fixture with no production meaning cannot drift

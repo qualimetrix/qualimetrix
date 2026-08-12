@@ -4,18 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Collection\Dependency\Export\DotExporter;
-use Qualimetrix\Analysis\Collection\Dependency\Export\DotExporterOptions;
-use Qualimetrix\Analysis\Collection\Dependency\Export\GraphExporterInterface;
-use Qualimetrix\Analysis\Collection\Dependency\Export\JsonGraphExporter;
 use Qualimetrix\Analysis\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Analysis\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
+use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
+use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -34,6 +31,7 @@ final class GraphExportCommand extends Command
 
     public function __construct(
         private readonly DependencyGraphAnalyzerInterface $analyzer,
+        private readonly DependencyGraphProjectionInterface $projection,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
         parent::__construct();
@@ -137,18 +135,15 @@ final class GraphExportCommand extends Command
         /** @var array<string> $excludeNamespaces */
         $excludeNamespaces = $input->getOption('exclude-namespace');
 
-        $options = new DotExporterOptions(
+        $format = (string) $input->getOption('format');
+        $request = new GraphProjectionRequest(
+            format: $format,
             direction: (string) $input->getOption('direction'),
             groupByNamespace: $input->getOption('no-clusters') !== true,
             includeNamespaces: $includeNamespaces !== [] ? $includeNamespaces : null,
             excludeNamespaces: $excludeNamespaces,
         );
-
-        $format = (string) $input->getOption('format');
-        $exporter = $this->getExporter($format, $options);
-
-        // Export graph
-        $content = $exporter->export($result->graph);
+        $content = $this->projection->project($result->graph, $request);
 
         // Output
         /** @var string|null $outputFile */
@@ -181,17 +176,5 @@ final class GraphExportCommand extends Command
                 $failure->message,
             ));
         }
-    }
-
-    private function getExporter(string $format, DotExporterOptions $options): GraphExporterInterface
-    {
-        return match ($format) {
-            'dot' => new DotExporter($options),
-            'json' => new JsonGraphExporter(
-                includeNamespaces: $options->includeNamespaces,
-                excludeNamespaces: $options->excludeNamespaces,
-            ),
-            default => throw new InvalidArgumentException(\sprintf('Unsupported format: %s. Supported formats: dot, json', $format)),
-        };
     }
 }

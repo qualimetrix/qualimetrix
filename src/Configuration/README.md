@@ -160,10 +160,12 @@ $resolved->ruleOptions; // array<string, mixed>
 
 Some stages (notably `ArchitectureConfigurationFactory` reached from
 `buildResolved()`) need to surface PSR-3-shaped warnings to the user — for
-example, `mutual-allow` detection in the architecture allow-list. The pipeline
-runs *before* `RuntimeConfigurator::configureLogger()` wires the user-facing
-logger into `LoggerHolder`, so direct logging at that point would be routed to
-the placeholder `NullLogger` and silently dropped.
+example, wildcard self-shaped architecture allow entries. The pipeline runs
+*before* `RuntimeConfigurator::configureLogger()` wires the user-facing logger
+into `LoggerHolder`, so direct logging at that point would be routed to the
+placeholder `NullLogger` and silently dropped. Exact self, mutual and longer
+directed allow cycles are not warnings: configuration loading fails immediately
+with `ConfigLoadException`.
 
 To avoid that, the factory returns its warnings inside
 `ArchitectureFactoryResult`, the pipeline aggregates them into
@@ -176,7 +178,8 @@ context — drained verbatim with no transformation.
 ```text
 Pipeline.resolve()
    └─ ArchitectureConfigurationFactory.fromArray()
-         └─ DeferredWarning[]  (mutual-allow detection, wildcard-self-allow detection, allow-list `types:` deprecation hint)
+         ├─ exact allow DAG validation  (fatal ConfigLoadException on a cycle)
+         └─ DeferredWarning[]  (wildcard-self-allow detection, allow-list `types:` deprecation hint)
               │
               ▼ ResolvedConfiguration.deferredWarnings
               │

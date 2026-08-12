@@ -36,8 +36,8 @@ Analysis/
 │   ├── DependencyGraphAnalyzerInterface.php # Complete discovery-to-graph contract
 │   ├── DependencyGraphAnalyzer.php       # Graph-only analysis orchestration with terminal-state coverage
 │   ├── DependencyGraphAnalysisResult.php # Graph plus canonical coverage result
-│   ├── MetricEnricher.php               # Enrichment phases (aggregation, global collectors, computed metrics, cycles, duplication)
-│   └── EnrichmentResult.php             # VO: cycles and duplicate blocks from the enrichment phase
+│   ├── MetricEnricher.php               # Enrichment phases and capability inspection sequencing
+│   └── EnrichmentResult.php             # VO: namespace tree and cycles from the enrichment phase
 │
 ├── Discovery/                           # File discovery
 │   ├── FileDiscoveryInterface.php       # Discovery contract
@@ -67,8 +67,6 @@ Analysis/
 │   │   └── DerivedMetricExtractor.php   # Extracts derived metrics from collected data
 │   │
 │   ├── Dependency/
-│   │   ├── DependencyGraph.php          # Dependency graph
-│   │   ├── DependencyGraphBuilder.php
 │   │   ├── DependencyVisitor.php        # AST visitor (delegates to handlers)
 │   │   ├── DependencyResolver.php       # Resolves class dependencies
 │   │   ├── CircularDependencyDetector.php # Tarjan's algorithm
@@ -85,11 +83,6 @@ Analysis/
 │   │   │   ├── CatchInstanceofHandler.php
 │   │   │   ├── PropertyHandler.php
 │   │   │   └── FunctionLikeHandler.php
-│   │   └── Export/                      # Graph export
-│   │       ├── GraphExporterInterface.php
-│   │       ├── DotExporter.php          # DOT format export
-│   │       ├── DotExporterOptions.php
-│   │       └── JsonGraphExporter.php    # JSON format export
 │   │
 │   └── Strategy/                        # Execution strategy contracts
 │       ├── ExecutionStrategyInterface.php
@@ -107,20 +100,22 @@ Analysis/
 │   ├── GlobalCollectorRunner.php        # Runs global (cross-file) collectors
 │   └── GlobalCollectorSorter.php        # Topological sort of global collectors
 │
-├── Duplication/                         # Rabin-Karp duplicate detection, split by phase (see DuplicationDetector docblock)
-│   ├── NormalizedToken.php              # VO: normalized token for comparison (carries an isData flag)
-│   ├── TokenNormalizer.php              # Normalizes PHP tokens for duplicate detection
-│   ├── DataDeclarationTagger.php        # Flags tokens inside const/property-array data declarations
-│   ├── ContentHintExtractor.php         # Extracts a short content preview for a duplicate block
-│   ├── PackedPosition.php               # Bit-packing helper for (fileIdx, tokenOffset) positions
-│   ├── SaturatingCandidateFilter.php    # Fixed-size two-bit candidate pre-filter for rolling hashes
-│   ├── HashIndexBuilder.php             # Bounded pre-pass, then exact candidate-position index
-│   ├── HashIndexBuildResult.php         # VO: exact candidate index + file paths
-│   ├── RetokenizedFiles.php             # VO: pass 2 output (tokens/sources of files with hash matches)
-│   ├── DuplicateSearchRequest.php       # VO: bundles pass-2 inputs for DuplicateBlockFinder::find()
-│   ├── DuplicateBlockFinder.php         # Verifies matches, extends blocks, applies data/self-dup filters
-│   ├── DuplicationDetectorInterface.php # Contract for duplicate block detection
-│   └── DuplicationDetector.php          # Thin orchestrator composing the phases above (config via DI)
+├── Evidence/                            # Navigation taxonomy; contains no PHP types
+│   ├── DependencyModel/                 # Dependency graph model; see its module README
+│   │   ├── Contract/                    # Five public graph/value/builder/location contracts
+│   │   ├── DependencyGraph.php          # Internal graph implementation
+│   │   ├── DependencyGraphBuilder.php   # Internal deterministic builder
+│   │   └── EmptyDependencyGraph.php     # Internal no-op graph
+│   └── Duplication/                     # Duplication capability; see its module README
+│       ├── Contract/
+│       │   └── DuplicationInspectionInterface.php # Run-facing reset/inspect contract
+│       ├── DuplicationDetector.php      # Token/block inspection orchestrator
+│       ├── DuplicationResultProvider.php # Per-run complete-result owner
+│       ├── DuplicateBlock.php           # Internal duplicate group
+│       ├── DuplicateLocation.php        # Internal occurrence location
+│       ├── CodeDuplicationRule.php      # Capability-owned rule
+│       ├── CodeDuplicationOptions.php   # Rule options
+│       └── ...                          # Normalization, hashing and matching internals
 │
 ├── RuleExecution/
 │   ├── RuleExecutorInterface.php        # Rule executor contract
@@ -152,9 +147,14 @@ Enforced by the project's own `qmx.yaml` as `analysis-*` sub-layers
 
 Analysis sub-packages follow layered dependency rules:
 
-- **Leaf** (no Analysis siblings): Exception, Discovery, Namespace\_, Repository, Duplication
+- **Leaf** (no legacy Analysis siblings): Exception, Discovery, Namespace\_, Repository
 - **Mid**: Aggregator depends on Exception; RuleExecution is standalone; Collection depends on Exception
 - **Orchestrator**: Pipeline depends on all sub-layers
+
+`Analysis/Evidence` is a navigation taxonomy rather than an Analysis layer.
+Its [`Duplication`](Evidence/Duplication/README.md) leaf is an independently
+owned capability. Run orchestration imports only its inspection contract;
+the rule, result provider and detection entities remain module-internal.
 
 ---
 
@@ -169,14 +169,14 @@ Coordinator of all analysis phases.
 
 The scanner keeps each transformation inside the existing owner of its subject:
 
-| Owner                          | Typed boundary and invariant                                                                                                                                                                                                                                                                                                                                                                                                                                      | Dependency treatment                                                                                                                                                                    | Focused regression                                                                                                                                                                 |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NamespaceMetricContributions` | `collectValues(MetricRepositoryInterface, list<SymbolInfo>, list<SymbolInfo>, list<MetricDefinition>, SymbolLevel): array<string, list<int\|float>>`. `collectFromSymbols` handles callable, class, and global-function subjects only; physical-file and explicit-namespace contributions remain separate passes. Physical file ownership maps each file once per owned namespace even when several exact declarations share a logical name.                      | Reads repository subjects only; it neither creates graph edges nor changes repository ownership.                                                                                        | `NamespaceMetricContributionsTest::itCollectsEachTypedSymbolLevelAndExpandsNamespaceOwnedAverages` and `::itMapsOnePhysicalFileToEveryOwnedNamespace`.                             |
-| `CollectionOrchestrator`       | `collect(list<SplFileInfo>, MetricRepositoryInterface, AbsolutePath): CollectionPhaseOutput`. It selects a strategy and folds the ordered `iterable<FileProcessingResult>` into `CollectionResult` plus the separately-lived `list<Dependency>`. Every terminal result advances progress once; only successful payloads register metrics, dependencies, suppressions, overrides, and diagnostics; every typed failure produces one warning and retains its order. | Retains successful dependencies in encounter order; failed results cannot contribute dependencies or controls.                                                                          | `CollectionOrchestratorTest::itFoldsSuccessfulPayloadsAndTypedFailuresWithoutLosingControls`.                                                                                      |
-| `DependencyGraphBuilder`       | `build(array<Dependency>, iterable<LogicalClassPath>): DependencyGraph`. The stages are filtering, source/target/class/leaf-namespace indexing, parent-universe expansion, one class/namespace Ce/Ca pass, and parent roll-up. Degree-zero declarations and undeclared external targets remain vertices; sibling edges are internal to their common parent.                                                                                                       | Retains every non-built-in edge and built-in `Extends`; removes only non-inheritance edges to PHP built-ins. Endpoint coupling is deduplicated while the ordered edge list is retained. | `DependencyGraphBuilderTest`, including degree-zero, built-in filtering, duplicate endpoints, and parent Ce/Ca boundary cases.                                                     |
-| `DependencyVisitor`            | `setFile(?RelativePath)` resets namespace, imports, class-like context, and collected dependencies; `enterNode(Node)` establishes named `ClassLike` sources, lets anonymous classes inherit the enclosing source, then dispatches other nodes through the existing handler table; `getDependencies(): array<Dependency>`.                                                                                                                                         | Handler-produced edge types and source/target identity are unchanged; state from a prior file cannot leak into the next traversal.                                                      | `DependencyVisitorTest::itPreservesExactDeclarationSourcesForEveryNamedClassLike` and `::itResetsDependenciesAndImportsWhenReusedForAnotherFile`.                                  |
-| `AnalysisPipeline`             | `analyze(AbsolutePath\|list<AbsolutePath>, ?FileDiscoveryInterface): AnalysisResult`. The invariant order is Discovery -> Collection -> graph build -> Architecture preparation -> enrichment -> RuleExecution -> result projection. Private boundaries pass the existing `DependencyGraph`, `EnrichmentResult`, and `CollectionResult`; one `ProfilerInterface` is resolved at entry and used for every pipeline span, including Architecture preparation.       | Raw dependencies are consumed by graph construction and released; graph semantics and rule context remain unchanged.                                                                    | `AnalysisPipelineTest::itKeepsCollectionArchitectureEnrichmentAndRulesInExactOrderForDegreeZeroClasses` and `::itUsesOneResolvedProfilerEvenWhenDiscoveryReplacesTheGlobalHolder`. |
-| `DependencyGraphAnalyzer`      | `analyze(list<AbsolutePath>, AbsolutePath): DependencyGraphAnalysisResult`. It discovers the named class/interface/trait/enum universe directly from parsed AST, excludes anonymous classes, builds the graph, and pairs it with canonical analyzed/parse-failure/processing-failure coverage.                                                                                                                                                                    | Visitor dependencies feed the same builder contract; declaration-only class-likes remain degree-zero vertices.                                                                          | `DependencyGraphAnalyzerTest::itBuildsTheCanonicalUniverseForEveryNamedClassLikeAndExternalTarget`.                                                                                |
+| Owner                              | Typed boundary and invariant                                                                                                                                                                                                                                                                                                                                                                                                                                      | Dependency treatment                                                                                                                                                              | Focused regression                                                                                                                                                                 |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NamespaceMetricContributions`     | `collectValues(MetricRepositoryInterface, list<SymbolInfo>, list<SymbolInfo>, list<MetricDefinition>, SymbolLevel): array<string, list<int\|float>>`. `collectFromSymbols` handles callable, class, and global-function subjects only; physical-file and explicit-namespace contributions remain separate passes. Physical file ownership maps each file once per owned namespace even when several exact declarations share a logical name.                      | Reads repository subjects only; it neither creates graph edges nor changes repository ownership.                                                                                  | `NamespaceMetricContributionsTest::itCollectsEachTypedSymbolLevelAndExpandsNamespaceOwnedAverages` and `::itMapsOnePhysicalFileToEveryOwnedNamespace`.                             |
+| `CollectionOrchestrator`           | `collect(list<SplFileInfo>, MetricRepositoryInterface, AbsolutePath): CollectionPhaseOutput`. It selects a strategy and folds the ordered `iterable<FileProcessingResult>` into `CollectionResult` plus the separately-lived `list<Dependency>`. Every terminal result advances progress once; only successful payloads register metrics, dependencies, suppressions, overrides, and diagnostics; every typed failure produces one warning and retains its order. | Retains successful dependencies in encounter order; failed results cannot contribute dependencies or controls.                                                                    | `CollectionOrchestratorTest::itFoldsSuccessfulPayloadsAndTypedFailuresWithoutLosingControls`.                                                                                      |
+| `DependencyModel` builder contract | `build(array<Dependency>, iterable<LogicalClassPath>): DependencyGraphInterface`. The capability filters and indexes edges, derives ancestor namespaces, computes Ca/Ce, and retains degree-zero declarations and undeclared targets.                                                                                                                                                                                                                             | Retains every non-built-in edge and built-in `Extends`; removes only non-inheritance edges to PHP built-ins. Endpoint coupling is deduplicated while encounter order is retained. | `DependencyGraphBuilderTest`, including degree-zero, built-in filtering, duplicate endpoints, and parent Ca/Ce boundary cases.                                                     |
+| `DependencyVisitor`                | `setFile(?RelativePath)` resets namespace, imports, class-like context, and collected dependencies; `enterNode(Node)` establishes named `ClassLike` sources, lets anonymous classes inherit the enclosing source, then dispatches other nodes through the existing handler table; `getDependencies(): array<Dependency>`.                                                                                                                                         | Handler-produced edge types and source/target identity are unchanged; state from a prior file cannot leak into the next traversal.                                                | `DependencyVisitorTest::itPreservesExactDeclarationSourcesForEveryNamedClassLike` and `::itResetsDependenciesAndImportsWhenReusedForAnotherFile`.                                  |
+| `AnalysisPipeline`                 | `analyze(AbsolutePath\|list<AbsolutePath>, ?FileDiscoveryInterface): AnalysisResult`. The invariant order is Discovery -> Collection -> graph build -> Architecture preparation -> enrichment -> RuleExecution -> result projection. Boundaries pass `DependencyGraphInterface`, `EnrichmentResult`, and `CollectionResult`; one `ProfilerInterface` is resolved at entry and used for every pipeline span.                                                       | Raw dependencies are consumed by the DependencyModel builder contract and released; graph semantics and rule context remain unchanged.                                            | `AnalysisPipelineTest::itKeepsCollectionArchitectureEnrichmentAndRulesInExactOrderForDegreeZeroClasses` and `::itUsesOneResolvedProfilerEvenWhenDiscoveryReplacesTheGlobalHolder`. |
+| `DependencyGraphAnalyzer`          | `analyze(list<AbsolutePath>, AbsolutePath): DependencyGraphAnalysisResult`. It discovers the named class/interface/trait/enum universe directly from parsed AST, excludes anonymous classes, builds the graph, and pairs it with canonical analyzed/parse-failure/processing-failure coverage.                                                                                                                                                                    | Visitor dependencies feed the same builder contract; declaration-only class-likes remain degree-zero vertices.                                                                    | `DependencyGraphAnalyzerTest::itBuildsTheCanonicalUniverseForEveryNamedClassLikeAndExternalTarget`.                                                                                |
 
 `CollectionOrchestrator` has a deliberately breaking internal constructor:
 `ProgressReporter` and `LoggerInterface` are mandatory and there is no null-object
@@ -214,7 +214,7 @@ Finding PHP files via `FileDiscoveryInterface`.
 - Running duplication detection — token-based duplicate code block detection across analyzed files (skipped when `duplication.code-duplication` rule is disabled; this phase is memory-intensive on large codebases)
 
 **Phase 4: RuleExecution**
-- Creating `AnalysisContext` with repository, dependency graph, circular dependency results, duplicate blocks, and rule options
+- Creating `AnalysisContext` with repository, dependency graph, circular dependency results, namespace tree, threshold overrides, and rule options
 - Executing all rules via `RuleExecutor`
 - Applying filters (Baseline, Suppression)
 
@@ -463,17 +463,24 @@ A second full pass rebuilds every position for those candidates, then token comp
 `DuplicateBlockFinder` verifies equality. Consequently a true repeated hash is never lost,
 while first-pass memory is independent of the number of token windows.
 
+The complete result is owned by the capability's run-scoped
+`DuplicationResultProvider`, not by `AnalysisContext` or `EnrichmentResult`.
+`MetricEnricher` resets the inspection contract before every enabled/disabled
+decision, so a later run cannot observe blocks from an earlier run. See the
+[Duplication module README](Evidence/Duplication/README.md) for its boundary,
+lifecycle and test ownership.
+
 **Naming convention:** `{metric}.{strategy}` (e.g.: `ccn.sum`, `ccn.avg`, `loc.sum`)
 
 ---
 
 ## Dependency Graph
 
-The dependency graph is built during the Collection phase and used for architecture rules.
+The graph model is owned by [`Evidence/DependencyModel`](Evidence/DependencyModel/README.md), built after collection through its public builder contract, and consumed through `DependencyGraphInterface`.
 
 ### DependencyGraph
 
-Value object representing the dependency graph between classes.
+Internal DependencyModel implementation representing dependencies between classes.
 
 **Methods:**
 - `getNodes(): array<string>` — list of classes
@@ -491,10 +498,9 @@ always receives that universe, so classes with no dependencies remain graph vert
 ### DependencyGraphAnalyzer
 
 `Pipeline/DependencyGraphAnalyzer` is the graph-only orchestration path used by
-graph export. It owns discovery, parsing, traversal, graph construction, and the
-canonical terminal-state coverage result. Graph primitives, visitors, and the
-builder remain under `Collection/Dependency/` because they are collection-time
-dependency mechanics rather than orchestration.
+graph export. It owns discovery, parsing, traversal and terminal-state coverage,
+then delegates construction through `DependencyGraphBuilderInterface`. Resolver,
+visitor and handlers remain under `Collection/Dependency/` until P3.
 
 ### DependencyVisitor (Decomposed)
 
@@ -517,11 +523,11 @@ Collects dependencies from AST. Integrated into `CompositeCollector` for unified
 
 Resolves class dependencies from collected data.
 
-### Graph Export
+### Graph Projection
 
-**GraphExporterInterface** — contract for graph exporters.
-**DotExporter** — exports dependency graph in DOT format for visualization with Graphviz.
-**JsonGraphExporter** — exports dependency graph in JSON format for programmatic consumption.
+DOT/JSON projection is owned by [`Reporting/GraphProjection`](../Reporting/GraphProjection/README.md).
+The Console adapter consumes only `DependencyGraphProjectionInterface`; exporter
+implementations remain private to Reporting.
 
 ### CircularDependencyDetector
 

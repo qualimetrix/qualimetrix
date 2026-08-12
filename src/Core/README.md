@@ -72,14 +72,7 @@ Core/
 │   ├── NamespaceDetectorInterface.php
 │   └── ProjectNamespaceResolverInterface.php
 ├── Dependency/
-│   ├── DependencyGraphInterface.php
-│   ├── Dependency.php
-│   ├── CycleInterface.php
-│   ├── DependencyType.php                 # Dependency type enum
-│   └── EmptyDependencyGraph.php           # No-op graph implementation
-├── Duplication/
-│   ├── DuplicateBlock.php                 # VO: a group of duplicate code locations
-│   └── DuplicateLocation.php              # VO: a single location within a duplicate block
+│   └── CycleInterface.php                 # Circular-dependency result contract; moves in P4
 ├── Violation/
 │   ├── Violation.php
 │   ├── OccurrenceKey.php                 # Stable SHA-256 discriminator for one semantic occurrence
@@ -720,46 +713,13 @@ Static holder (same pattern as `ProfilerHolder`) controlling whether `Analysis\R
 
 ## Dependency Contracts
 
-### DependencyGraphInterface
-
-Interface for querying the dependency graph. Provides coupling metrics (Ce/Ca) at class and namespace level.
-
-### Dependency
-
-Value Object representing a dependency between two classes.
+Dependency edges, types, graph queries, location and builder contracts moved to
+[`Analysis/Evidence/DependencyModel`](../Analysis/Evidence/DependencyModel/README.md)
+in P2. Core retains only the still-pending P4 cycle contract.
 
 ### CycleInterface
 
 Interface for circular dependency detection results.
-
-### DependencyType (Enum)
-
-Classifies all possible types of dependencies between classes.
-
-| Value                 | Description              | Strong coupling |
-| --------------------- | ------------------------ | --------------- |
-| `Extends`             | Class inheritance        | Yes             |
-| `Implements`          | Interface implementation | Yes             |
-| `TraitUse`            | Trait usage              | Yes             |
-| `New_`                | Object instantiation     | No              |
-| `StaticCall`          | Static method call       | No              |
-| `StaticPropertyFetch` | Static property access   | No              |
-| `ClassConstFetch`     | Class constant access    | No              |
-| `TypeHint`            | Type hint usage          | No              |
-| `Catch_`              | Exception catching       | No              |
-| `Instanceof_`         | Instanceof check         | No              |
-| `Attribute`           | PHP 8 attribute          | No              |
-| `PropertyType`        | Typed property           | No              |
-| `IntersectionType`    | Intersection type        | No              |
-| `UnionType`           | Union type               | No              |
-
-**Methods:**
-- `description(): string` — human-readable description
-- `isStrongCoupling(): bool` — whether this type creates strong coupling
-
-### EmptyDependencyGraph
-
-No-op implementation of `DependencyGraphInterface`. Used when dependency collection is disabled. All queries return empty results / zero values.
 
 ---
 

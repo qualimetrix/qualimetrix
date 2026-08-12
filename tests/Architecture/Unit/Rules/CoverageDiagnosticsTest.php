@@ -7,6 +7,9 @@ namespace Qualimetrix\Tests\Architecture\Unit\Rules;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Domain\CoverageMode;
@@ -16,9 +19,7 @@ use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
 use Qualimetrix\Architecture\Rules\LayerViolationOptions;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
-use Qualimetrix\Core\Dependency\Dependency;
-use Qualimetrix\Core\Dependency\DependencyGraphInterface;
-use Qualimetrix\Core\Dependency\DependencyType;
+use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -29,6 +30,7 @@ use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Tests\Architecture\Support\AllowListBuilder;
 use Qualimetrix\Tests\Architecture\Support\ProcessorBuilder;
+use ReflectionMethod;
 
 #[CoversClass(LayerViolationRule::class)]
 final class CoverageDiagnosticsTest extends TestCase
@@ -220,6 +222,127 @@ final class CoverageDiagnosticsTest extends TestCase
         self::assertCount(1, $diagnostics);
     }
 
+    #[Test]
+    public function itReportsAnIsolatedUncoveredClassWithoutDependencyEdges(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions());
+        $arch = $this->buildArchitecture(
+            layers: ['controller' => ['App\\Controller']],
+            allow: ['controller' => []],
+            coverage: CoverageMode::Error,
+        );
+
+        $violations = $rule->analyze($this->buildContext(
+            $this->buildGraph([]),
+            $arch,
+            ['App\\Unowned\\LonelyClass'],
+        ));
+
+        $diagnostics = $this->filterCoverageDiagnostics($violations);
+        self::assertCount(1, $diagnostics);
+        self::assertSame(Severity::Error, $diagnostics[0]->severity);
+        self::assertStringContainsString('0 edge(s) with unmatched source layer', $diagnostics[0]->message);
+        self::assertStringContainsString('0 edge(s) with unmatched target layer', $diagnostics[0]->message);
+        self::assertStringContainsString('1 class(es) outside all declared layers', $diagnostics[0]->message);
+        self::assertStringContainsString('App\\Unowned\\LonelyClass', (string) $diagnostics[0]->recommendation);
+    }
+
+    #[Test]
+    public function itDoesNotReportAnOwnedIsolatedClassWithoutDependencyEdges(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions());
+        $arch = $this->buildArchitecture(
+            layers: ['controller' => ['App\\Controller']],
+            allow: ['controller' => []],
+            coverage: CoverageMode::Error,
+        );
+
+        $violations = $rule->analyze($this->buildContext(
+            $this->buildGraph([]),
+            $arch,
+            ['App\\Controller\\LonelyController'],
+        ));
+
+        self::assertSame([], $this->filterCoverageDiagnostics($violations));
+    }
+
+    #[Test]
+    public function itDeduplicatesAnUncoveredClassSeenInTheRepositoryAndDependencyGraph(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions());
+        $arch = $this->buildArchitecture(
+            layers: ['controller' => ['App\\Controller']],
+            allow: ['controller' => []],
+            coverage: CoverageMode::Error,
+        );
+        $graph = $this->buildGraph([
+            $this->buildDependency('App\\Unowned', 'SharedClass', 'App\\Controller', 'Controller'),
+        ]);
+
+        $violations = $rule->analyze($this->buildContext(
+            $graph,
+            $arch,
+            ['App\\Unowned\\SharedClass', 'App\\Controller\\Controller'],
+        ));
+
+        $diagnostics = $this->filterCoverageDiagnostics($violations);
+        self::assertCount(1, $diagnostics);
+        self::assertStringContainsString('1 edge(s) with unmatched source layer', $diagnostics[0]->message);
+        self::assertStringContainsString('1 class(es) outside all declared layers', $diagnostics[0]->message);
+        self::assertSame(1, substr_count((string) $diagnostics[0]->recommendation, 'App\\Unowned\\SharedClass'));
+    }
+
+    #[Test]
+    public function itKeepsIgnoreModeForAnIsolatedUncoveredClass(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions());
+        $arch = $this->buildArchitecture(
+            layers: ['controller' => ['App\\Controller']],
+            allow: ['controller' => []],
+            coverage: CoverageMode::Ignore,
+        );
+
+        $violations = $rule->analyze($this->buildContext(
+            $this->buildGraph([]),
+            $arch,
+            ['App\\Unowned\\LonelyClass'],
+        ));
+
+        self::assertSame([], $this->filterCoverageDiagnostics($violations));
+    }
+
+    #[Test]
+    public function itSkipsUncoveredClassMaterializationInIgnoreModeWithoutSkippingLayerEvidence(): void
+    {
+        $rule = $this->buildRule(new LayerViolationOptions());
+        $arch = $this->buildArchitecture(
+            layers: [
+                'broad' => ['App\\**'],
+                'narrow' => ['App\\Controller\\**'],
+            ],
+            allow: ['broad' => [], 'narrow' => []],
+            coverage: CoverageMode::Ignore,
+        );
+        $context = $this->buildContext(
+            $this->buildGraph([]),
+            $arch,
+            ['App\\Controller\\OwnedClass', 'Vendor\\Unowned\\LonelyClass'],
+        );
+
+        $collectClassEvidence = new ReflectionMethod($rule, 'collectClassEvidence');
+        [$layerHits, $shadowEvidence, $uncoveredClasses] = $collectClassEvidence->invoke(
+            $rule,
+            $arch->registry(),
+            $context,
+            CoverageMode::Ignore,
+        );
+
+        self::assertSame(['broad' => 1, 'narrow' => 0], $layerHits);
+        self::assertArrayHasKey('broad', $shadowEvidence);
+        self::assertArrayHasKey('narrow', $shadowEvidence['broad']);
+        self::assertSame([], $uncoveredClasses);
+    }
+
     /**
      * @param array<string, list<string>> $layers
      * @param array<string, list<string>> $allow
@@ -269,9 +392,21 @@ final class CoverageDiagnosticsTest extends TestCase
         return new LayerViolationRule($options, $this->processor);
     }
 
-    private function buildContext(?DependencyGraphInterface $graph, ?ArchitectureConfiguration $architecture): AnalysisContext
-    {
+    /** @param list<string> $logicalClasses */
+    private function buildContext(
+        ?DependencyGraphInterface $graph,
+        ?ArchitectureConfiguration $architecture,
+        array $logicalClasses = [],
+    ): AnalysisContext {
         $repository = new InMemoryMetricRepository();
+        foreach ($logicalClasses as $logicalClass) {
+            $repository->add(
+                SymbolPath::fromClassFqn($logicalClass),
+                new MetricBag(),
+                RelativePath::fromString('src/dummy.php'),
+                1,
+            );
+        }
 
         ProcessorBuilder::prepared($architecture, $graph, $repository, $this->processor);
 
