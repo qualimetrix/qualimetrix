@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Pipeline\IncompleteAnalysisException;
+use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Baseline\BaselineConflictException;
 use Qualimetrix\Baseline\RunScope;
-use Qualimetrix\Configuration\Exception\ConfigLoadException;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;

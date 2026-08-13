@@ -6,6 +6,8 @@ namespace Qualimetrix\Architecture\Domain\Allow;
 
 use InvalidArgumentException;
 
+use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+
 /**
  * Thrown by {@see LayerSelectorParser::parse()} when a raw selector string violates
  * the D4 grammar — e.g. unbalanced braces, unknown capture quantifier, or an

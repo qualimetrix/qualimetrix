@@ -6,15 +6,15 @@ namespace Qualimetrix\Metrics\CodeSmell;
 
 use Override;
 use PhpParser\Node;
-use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\CallableMetricsProviderInterface;
-use Qualimetrix\Core\Metric\CallableWithMetrics;
-use Qualimetrix\Core\Metric\MetricBag;
-use Qualimetrix\Core\Metric\MetricDefinition;
-use Qualimetrix\Core\Metric\MetricName;
-use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
 /**

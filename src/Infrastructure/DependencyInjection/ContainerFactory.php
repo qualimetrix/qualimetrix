@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection;
 
-use Qualimetrix\Analysis\Lifecycle\AnalysisLifecycleHookInterface;
-use Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface;
-use Qualimetrix\Core\Metric\DerivedCollectorInterface;
-use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
-use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurableInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
+use Qualimetrix\Analysis\Run\Contract\Lifecycle\AnalysisLifecycleHookInterface;
 use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass;
+use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FileSetInspectionParticipantCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ParallelCollectorClassesCompilerPass;
@@ -25,7 +28,9 @@ use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConf
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CollectorConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ConfigurationConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CoreServicesConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DependencyModelConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DuplicationConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\MeasurementConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\OutputConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator;
@@ -36,13 +41,13 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 /**
  * Unified factory for creating the DI container.
  *
- * This single container provides all services needed for both CLI and analysis:
+ * This single container provides all services needed for both CLI and runtime:
  * - RuleRegistry with rule classes (for CLI option discovery)
  * - ConfigLoader for reading configuration files
  * - CheckCommand with injected dependencies
  * - All analysis services (Analyzer, Collectors, Rules, etc.)
  *
- * Runtime configuration is handled through ConfigurationProviderInterface and
+ * Runtime configuration is handled through TransitionalRuntimeConfigurationProviderInterface and
  * RuleOptionsRegistry, which can be configured after container creation but
  * before rules are instantiated (rules are lazy-loaded).
  *
@@ -57,7 +62,7 @@ final class ContainerFactory
      *
      * The container is created with default configuration. Runtime configuration
      * (from CLI or config file) should be set through:
-     * - ConfigurationProviderInterface::setConfiguration()
+     * - TransitionalRuntimeConfigurationProviderInterface::setConfiguration()
      * - RuleOptionsRegistry::setCliOptions()
      *
      * These must be called BEFORE rules are used (e.g., before Analyzer::analyze()).
@@ -77,6 +82,8 @@ final class ContainerFactory
             new ConfigurationConfigurator($srcDir),
             new ParserConfigurator(),
             new CollectorConfigurator($srcDir),
+            new MeasurementConfigurator(),
+            new DependencyModelConfigurator(),
             new RuleConfigurator($srcDir),
             new ArchitectureConfigurator($srcDir),
             new DuplicationConfigurator($srcDir),
@@ -120,12 +127,18 @@ final class ContainerFactory
         $container->registerForAutoconfiguration(GlobalContextCollectorInterface::class)
             ->addTag(GlobalCollectorCompilerPass::TAG);
 
+        $container->registerForAutoconfiguration(CollectorRuntimeConfigurableInterface::class)
+            ->addTag('qmx.measurement.runtime_configurable_collector');
+
+        $container->registerForAutoconfiguration(FileSetInspectionParticipantInterface::class)
+            ->addTag(FileSetInspectionParticipantCompilerPass::TAG);
+
         // Autoconfigure: all formatters get auto-tagged
         $container->registerForAutoconfiguration(FormatterInterface::class)
             ->addTag(FormatterCompilerPass::TAG);
 
         // Configuration stages autoconfiguration
-        $container->registerForAutoconfiguration(ConfigurationStageInterface::class)
+        $container->registerForAutoconfiguration('Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationStageInterface')
             ->addTag(ConfigurationStageCompilerPass::TAG);
 
         // Lifecycle hooks autoconfiguration. Slice features (Architecture
@@ -145,6 +158,7 @@ final class ContainerFactory
         $container->addCompilerPass(new CollectorCompilerPass());
         $container->addCompilerPass(new GlobalCollectorCompilerPass());
         $container->addCompilerPass(new ParallelCollectorClassesCompilerPass());
+        $container->addCompilerPass(new FileSetInspectionParticipantCompilerPass());
         $container->addCompilerPass(new RuleRegistryCompilerPass());
         $container->addCompilerPass(new ChannelDeclarationCompilerPass());
         $container->addCompilerPass(new ThresholdValidatorMapCompilerPass());

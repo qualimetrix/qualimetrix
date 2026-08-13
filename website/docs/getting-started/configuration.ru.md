@@ -589,6 +589,15 @@ Unknown rule "complexty.cyclomatic" in qmx.yaml. Did you mean "complexity.cyclom
 
 ---
 
+## Обработка конфигурации
+
+Формат конфигурационного файла и поведение CLI не изменились. Внутри
+Qualimetrix обрабатывает defaults, presets, файлы, Composer discovery и
+параметры CLI через границу Analysis Configuration. Эта деталь реализации не
+меняет ни один документированный ключ или правило приоритета.
+
+---
+
 ## Что дальше?
 
 Смотрите [справочник параметров CLI](../usage/cli-options.md) для полного списка параметров командной строки.

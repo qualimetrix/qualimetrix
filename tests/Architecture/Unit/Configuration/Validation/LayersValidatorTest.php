@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Architecture\Configuration\Validation\ExcludeBlockValidator;
 use Qualimetrix\Architecture\Configuration\Validation\LayerCriterionNormalizer;
 use Qualimetrix\Architecture\Configuration\Validation\LayersValidator;
@@ -18,7 +19,6 @@ use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\MatchMode;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
 use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
-use Qualimetrix\Configuration\Exception\ConfigLoadException;
 
 #[CoversClass(LayersValidator::class)]
 #[CoversClass(LayerCriterionNormalizer::class)]

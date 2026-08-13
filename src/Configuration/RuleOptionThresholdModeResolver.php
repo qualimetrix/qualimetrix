@@ -19,7 +19,7 @@ namespace Qualimetrix\Configuration;
  * combine them.
  *
  * {@see evictOverriddenMode()} is called by the merge functions in
- * {@see \Qualimetrix\Configuration\Pipeline\ConfigurationMerger} (preset ↔
+ * {@see \Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationMerger} (preset ↔
  * config file, and multi-preset merging) and
  * {@see \Qualimetrix\Configuration\RuleOptionsFactory} (config file ↔ CLI)
  * before they merge two layers together: it strips the *lower*-priority

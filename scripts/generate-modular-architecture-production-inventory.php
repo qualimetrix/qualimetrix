@@ -38,6 +38,8 @@ function fail(string $message): void
 }
 
 /**
+ * @param array<string, string> $sourceOverrides repository-relative source path to replacement source path
+ *
  * @return list<array{
  *     path: string,
  *     fqcn: string,
@@ -49,10 +51,12 @@ function fail(string $message): void
  *     implements: list<string>,
  *     properties: list<array{name: string, static: bool, readonly: bool}>,
  *     methods: list<string>,
+ *     contract_property_containments: list<string>,
+ *     native_method_returns: array<string, list<string>>,
  *     dependencies: list<string>,
  * }>
  */
-function declarations(string $root): array
+function declarations(string $root, array $sourceOverrides = []): array
 {
     $parser = (new ParserFactory())->createForNewestSupportedVersion();
     $finder = new NodeFinder();
@@ -67,9 +71,11 @@ function declarations(string $root): array
         }
 
         $path = $file->getPathname();
-        $code = file_get_contents($path);
+        $relativePath = relativePath($root, $path);
+        $sourcePath = $sourceOverrides[$relativePath] ?? $path;
+        $code = file_get_contents($sourcePath);
         if ($code === false) {
-            fail('cannot read ' . $path);
+            fail('cannot read ' . $sourcePath);
         }
 
         $ast = $parser->parse($code);
@@ -115,7 +121,11 @@ function declarations(string $root): array
             sort($implements, SORT_STRING);
 
             $properties = [];
+            $contractPropertyContainments = [];
             foreach ($declaration->getProperties() as $property) {
+                foreach (resolvedTypeNames($property->type) as $type) {
+                    $contractPropertyContainments[$type] = true;
+                }
                 foreach ($property->props as $item) {
                     $properties[$item->name->toString()] = [
                         'name' => $item->name->toString(),
@@ -127,8 +137,10 @@ function declarations(string $root): array
             }
 
             $methods = [];
+            $nativeMethodReturns = [];
             foreach ($declaration->getMethods() as $method) {
                 $methods[] = $method->name->toString();
+                $nativeMethodReturns[$method->name->toString()] = resolvedTypeNames($method->returnType);
                 foreach ($method->params as $parameter) {
                     if (
                         !$parameter->isPromoted()
@@ -136,6 +148,9 @@ function declarations(string $root): array
                         || !is_string($parameter->var->name)
                     ) {
                         continue;
+                    }
+                    foreach (resolvedTypeNames($parameter->type) as $type) {
+                        $contractPropertyContainments[$type] = true;
                     }
                     $name = $parameter->var->name;
                     $properties[$name] = [
@@ -148,6 +163,9 @@ function declarations(string $root): array
             }
             sort($methods, SORT_STRING);
             ksort($properties, SORT_STRING);
+            $contractPropertyContainments = array_keys($contractPropertyContainments);
+            sort($contractPropertyContainments, SORT_STRING);
+            ksort($nativeMethodReturns, SORT_STRING);
 
             $dependencies = [];
             foreach ($finder->findInstanceOf($declaration, Node\Name::class) as $name) {
@@ -173,6 +191,8 @@ function declarations(string $root): array
                 'implements' => $implements,
                 'properties' => array_values($properties),
                 'methods' => $methods,
+                'contract_property_containments' => $contractPropertyContainments,
+                'native_method_returns' => $nativeMethodReturns,
                 'dependencies' => $dependencies,
             ];
         }
@@ -181,6 +201,38 @@ function declarations(string $root): array
     usort($rows, static fn(array $left, array $right): int => $left['fqcn'] <=> $right['fqcn']);
 
     return $rows;
+}
+
+/** @return list<string> */
+function resolvedTypeNames(Node\Identifier|Node\Name|Node\ComplexType|null $type): array
+{
+    if ($type === null || $type instanceof Node\Identifier) {
+        return [];
+    }
+    if ($type instanceof Node\NullableType) {
+        return resolvedTypeNames($type->type);
+    }
+    if ($type instanceof Node\UnionType || $type instanceof Node\IntersectionType) {
+        $names = [];
+        foreach ($type->types as $nested) {
+            array_push($names, ...resolvedTypeNames($nested));
+        }
+        $names = array_values(array_unique($names));
+        sort($names, SORT_STRING);
+
+        return $names;
+    }
+
+    $resolved = $type->getAttribute('resolvedName');
+
+    if ($resolved instanceof Node\Name) {
+        return [$resolved->toString()];
+    }
+    if ($type instanceof Node\Name) {
+        return [$type->toString()];
+    }
+
+    fail('unsupported native complex type ' . $type::class);
 }
 
 function relativePath(string $root, string $path): string
@@ -283,7 +335,7 @@ function stateScope(array $row): string
     if (str_contains($row['fqcn'], 'Registry') || str_contains($row['fqcn'], 'Pipeline')) {
         return 'runtime or composition registry';
     }
-    if (str_starts_with($row['path'], 'src/Analysis/Repository/')) {
+    if (str_starts_with($row['path'], 'src/Analysis/Evidence/Measurement/Repository/')) {
         return 'analysis-run repository';
     }
     if (str_starts_with($row['path'], 'src/Infrastructure/')) {
@@ -302,26 +354,26 @@ function stateScope(array $row): string
 function phaseParticipants(): array
 {
     return [
-        ['phase' => 'configuration', 'participant' => '5 ConfigurationStageInterface implementations', 'inputs' => 'ConfigurationContext', 'outputs' => '?ConfigurationLayer', 'state_owner' => 'Analysis.Configuration', 'dependency' => 'priority 0,10,15,20,30; sequential merge', 'source' => 'src/Configuration/Pipeline/Stage'],
-        ['phase' => 'runtime setup', 'participant' => 'ArchitectureLifecycleHook', 'inputs' => 'ResolvedConfiguration', 'outputs' => 'bound ArchitectureProcessor state', 'state_owner' => 'Analysis.Policy.Architecture', 'dependency' => 'reset then bind before architecture prepare', 'source' => 'src/Architecture/Processing/ArchitectureLifecycleHook.php'],
-        ['phase' => 'discovery', 'participant' => 'FileDiscoveryInterface implementation', 'inputs' => 'AbsolutePath|list<AbsolutePath>', 'outputs' => 'iterable<AbsolutePath,SplFileInfo>', 'state_owner' => 'Analysis.Run', 'dependency' => 'first run phase; generated filter follows', 'source' => 'src/Analysis/Discovery/FileDiscoveryInterface.php'],
-        ['phase' => 'collection', 'participant' => 'CollectionOrchestratorInterface', 'inputs' => 'list<SplFileInfo>, MetricRepositoryInterface, AbsolutePath', 'outputs' => 'CollectionPhaseOutput', 'state_owner' => 'Analysis.Run', 'dependency' => 'after discovery', 'source' => 'src/Analysis/Collection/CollectionOrchestratorInterface.php'],
-        ['phase' => 'per-file measurement', 'participant' => '21 MetricCollectorInterface implementations', 'inputs' => 'SplFileInfo, Node[]', 'outputs' => 'MetricBag and typed projections', 'state_owner' => 'owning evidence capabilities', 'dependency' => 'same AST traversal; reset per file', 'source' => 'src/Core/Metric/MetricCollectorInterface.php'],
+        ['phase' => 'configuration', 'participant' => '5 ConfigurationStageInterface implementations', 'inputs' => 'ConfigurationContext', 'outputs' => '?ConfigurationLayer', 'state_owner' => 'Analysis.Configuration', 'dependency' => 'priority 0,10,15,20,30; sequential merge', 'source' => 'src/Analysis/Configuration/Pipeline/Stage'],
+        ['phase' => 'runtime setup', 'participant' => 'ArchitectureLifecycleHook', 'inputs' => 'TransitionalResolvedConfiguration', 'outputs' => 'bound ArchitectureProcessor state', 'state_owner' => 'Analysis.Policy.Architecture', 'dependency' => 'reset then bind before architecture prepare', 'source' => 'src/Architecture/Processing/ArchitectureLifecycleHook.php'],
+        ['phase' => 'discovery', 'participant' => 'FileDiscoveryInterface implementation', 'inputs' => 'AbsolutePath|list<AbsolutePath>', 'outputs' => 'iterable<AbsolutePath,SplFileInfo>', 'state_owner' => 'Analysis.Run', 'dependency' => 'first run phase; generated filter follows', 'source' => 'src/Analysis/Run/Contract/Discovery/FileDiscoveryInterface.php'],
+        ['phase' => 'collection', 'participant' => 'CollectionOrchestratorInterface', 'inputs' => 'list<SplFileInfo>, MetricRepositoryInterface, AbsolutePath', 'outputs' => 'CollectionPhaseOutput', 'state_owner' => 'Analysis.Run', 'dependency' => 'after discovery', 'source' => 'src/Analysis/Run/Contract/Collection/CollectionOrchestratorInterface.php'],
+        ['phase' => 'per-file measurement', 'participant' => '21 MetricCollectorInterface implementations plus DependencyTraversalParticipantInterface', 'inputs' => 'SplFileInfo, Node[]', 'outputs' => 'MetricBag, typed projections and list<Dependency>', 'state_owner' => 'Measurement and DependencyModel', 'dependency' => 'one AST traversal; reset per file', 'source' => 'src/Analysis/Evidence/Measurement/Contract/MetricCollectorInterface.php'],
         ['phase' => 'per-file derivation', 'participant' => 'TypeCoveragePercentCollector', 'inputs' => 'MetricBag', 'outputs' => 'MetricBag(typeCoveragePct)', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'requires collector id type-coverage', 'source' => 'src/Metrics/Design/TypeCoveragePercentCollector.php'],
         ['phase' => 'per-file derivation', 'participant' => 'MaintainabilityIndexCollector', 'inputs' => 'MetricBag', 'outputs' => 'MetricBag(maintainabilityIndex)', 'state_owner' => 'Analysis.Evidence.Maintainability', 'dependency' => 'requires halstead, cyclomatic-complexity, method-statement-count', 'source' => 'src/Metrics/Maintainability/MaintainabilityIndexCollector.php'],
         ['phase' => 'dependency graph', 'participant' => 'DependencyGraphBuilder', 'inputs' => 'list<Dependency>, list<LogicalClassPath>', 'outputs' => 'DependencyGraphInterface', 'state_owner' => 'Analysis.Evidence.DependencyModel', 'dependency' => 'consumes raw collection dependencies', 'source' => 'src/Analysis/Evidence/DependencyModel/DependencyGraphBuilder.php'],
         ['phase' => 'architecture preparation', 'participant' => 'ArchitectureProcessor', 'inputs' => 'DependencyGraphInterface, ClassSet', 'outputs' => 'retained prepared ArchitectureConfiguration', 'state_owner' => 'Analysis.Policy.Architecture', 'dependency' => 'lifecycle bind first; LayerViolationRule consumes retained state', 'source' => 'src/Architecture/Processing/ArchitectureProcessor.php'],
-        ['phase' => 'aggregation', 'participant' => '4 AggregationPhaseInterface implementations', 'inputs' => 'MetricRepositoryInterface, list<MetricDefinition>', 'outputs' => 'repository enrichment and NamespaceTree', 'state_owner' => 'Analysis.Run and Measurement', 'dependency' => 'callable -> class -> namespace tree -> project', 'source' => 'src/Analysis/Aggregator'],
+        ['phase' => 'aggregation', 'participant' => '4 AggregationPhaseInterface implementations', 'inputs' => 'MetricRepositoryInterface, list<MetricDefinition>', 'outputs' => 'repository enrichment and NamespaceTree', 'state_owner' => 'Analysis.Evidence.Measurement', 'dependency' => 'callable -> class -> namespace tree -> project', 'source' => 'src/Analysis/Evidence/Measurement/Aggregation'],
         ['phase' => 'global derivation', 'participant' => 'CouplingCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'CA, CE, CBO, instability', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'no global predecessor', 'source' => 'src/Metrics/Coupling/CouplingCollector.php'],
         ['phase' => 'global derivation', 'participant' => 'AbstractnessCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'abstractness', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires aggregated size type counts', 'source' => 'src/Metrics/Coupling/AbstractnessCollector.php'],
         ['phase' => 'global derivation', 'participant' => 'ClassRankCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'classRank', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires CA and CE', 'source' => 'src/Metrics/Coupling/ClassRankCollector.php'],
         ['phase' => 'global derivation', 'participant' => 'DistanceCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'distance', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires instability and abstractness', 'source' => 'src/Metrics/Coupling/DistanceCollector.php'],
         ['phase' => 'global derivation', 'participant' => 'DitGlobalCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'DIT', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'no global predecessor; overwrites per-file DIT', 'source' => 'src/Metrics/Structure/DitGlobalCollector.php'],
         ['phase' => 'global derivation', 'participant' => 'NocCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'NOC', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'no global predecessor', 'source' => 'src/Metrics/Structure/NocCollector.php'],
-        ['phase' => 'global reaggregation', 'participant' => 'MetricAggregator(global definitions)', 'inputs' => 'MetricRepositoryInterface, NamespaceTree', 'outputs' => 'namespace/project aggregates', 'state_owner' => 'Analysis.Run and Measurement', 'dependency' => 'after all global collectors', 'source' => 'src/Analysis/Pipeline/MetricEnricher.php'],
+        ['phase' => 'global reaggregation', 'participant' => 'MeasurementAggregationService', 'inputs' => 'MetricRepositoryInterface, NamespaceTree', 'outputs' => 'namespace/project aggregates', 'state_owner' => 'Analysis.Evidence.Measurement', 'dependency' => 'after all global collectors', 'source' => 'src/Analysis/Evidence/Measurement/Aggregation/MeasurementAggregationService.php'],
         ['phase' => 'computed derivation', 'participant' => 'ComputedMetricEvaluator', 'inputs' => 'MetricRepositoryInterface, list<ComputedMetricDefinition>', 'outputs' => 'configured computed metrics', 'state_owner' => 'Analysis.Evidence.ComputedMetrics', 'dependency' => 'definition DAG; static definition holder; skipped without files/definitions', 'source' => 'src/Metrics/ComputedMetric/ComputedMetricEvaluator.php'],
         ['phase' => 'graph inspection', 'participant' => 'CircularDependencyDetector', 'inputs' => 'DependencyGraphInterface', 'outputs' => 'list<Cycle>', 'state_owner' => 'Analysis.Evidence.CircularDependency', 'dependency' => 'rule-selection gated; result consumed by CircularDependencyRule', 'source' => 'src/Analysis/Collection/Dependency/CircularDependencyDetector.php'],
-        ['phase' => 'file-set inspection', 'participant' => 'DuplicationInspectionInterface', 'inputs' => 'list<SplFileInfo>', 'outputs' => 'replaced run-scoped DuplicationResultProvider state', 'state_owner' => 'Analysis.Evidence.Duplication', 'dependency' => 'rule-selection gated; provider consumed by CodeDuplicationRule', 'source' => 'src/Analysis/Evidence/Duplication/Contract/DuplicationInspectionInterface.php'],
+        ['phase' => 'file-set inspection', 'participant' => 'FileSetInspectionParticipantInterface implementations', 'inputs' => 'list<SplFileInfo>', 'outputs' => 'capability-owned run state', 'state_owner' => 'owning evidence capabilities', 'dependency' => 'producer-rule selection gated; lexical participant order', 'source' => 'src/Analysis/Run/Contract/FileSetInspectionParticipantInterface.php'],
         ['phase' => 'rule execution', 'participant' => '41 RuleInterface implementations', 'inputs' => 'AnalysisContext', 'outputs' => 'list<Violation> and last RuleExclusionStats', 'state_owner' => 'Analysis.Finding and feature rules', 'dependency' => 'producer selection then per-rule exclusions and channel selection', 'source' => 'src/Analysis/RuleExecution/RuleExecutor.php'],
         ['phase' => 'report policy pipeline', 'participant' => 'ViolationFilterPipeline stages', 'inputs' => 'list<Violation> plus suppression/config/baseline/git scope', 'outputs' => 'ViolationFilterResult', 'state_owner' => 'Inline, Baseline, Reporting', 'dependency' => 'suppression -> path -> namespace -> baseline -> git', 'source' => 'src/Infrastructure/Console/ViolationFilterPipeline.php'],
         ['phase' => 'report enrichment', 'participant' => 'SummaryEnricher', 'inputs' => 'Report', 'outputs' => 'health/debt/impact summary', 'state_owner' => 'mixed ComputedMetrics/Prioritization/Reporting seam', 'dependency' => 'cross-capability orchestration before formatters', 'source' => 'src/Reporting/Health/SummaryEnricher.php'],
@@ -388,11 +440,15 @@ $documentationProbeArguments = array_values(array_filter(
     array_slice($arguments, 1),
     static fn(string $argument): bool => str_starts_with($argument, '--documentation-probe='),
 ));
+$compositionProbeArguments = array_values(array_filter(
+    array_slice($arguments, 1),
+    static fn(string $argument): bool => str_starts_with($argument, '--composition-probe='),
+));
 if (count($manifestArguments) > 1) {
     fail('only one --manifest path may be provided');
 }
-if (count($outputDirectoryArguments) > 1 || count($qmxOutputArguments) > 1 || count($qmxSourceArguments) > 1 || count($documentationProbeArguments) > 1) {
-    fail('only one output directory, qmx source/output, and documentation probe may be provided');
+if (count($outputDirectoryArguments) > 1 || count($qmxOutputArguments) > 1 || count($qmxSourceArguments) > 1 || count($documentationProbeArguments) > 1 || count($compositionProbeArguments) > 1) {
+    fail('only one output directory, qmx source/output, documentation probe, and composition probe may be provided');
 }
 $unknownArguments = array_values(array_filter(
     array_slice($arguments, 1),
@@ -401,7 +457,8 @@ $unknownArguments = array_values(array_filter(
         && !str_starts_with($argument, '--output-directory=')
         && !str_starts_with($argument, '--qmx-output=')
         && !str_starts_with($argument, '--qmx-source=')
-        && !str_starts_with($argument, '--documentation-probe='),
+        && !str_starts_with($argument, '--documentation-probe=')
+        && !str_starts_with($argument, '--composition-probe='),
 ));
 if ($unknownArguments !== []) {
     fail('unknown argument: ' . implode(', ', $unknownArguments));
@@ -422,13 +479,41 @@ $qmxSourcePath = $qmxSourceArguments === []
 $documentationProbe = $documentationProbeArguments === []
     ? null
     : substr($documentationProbeArguments[0], strlen('--documentation-probe='));
+$compositionProbe = $compositionProbeArguments === []
+    ? null
+    : substr($compositionProbeArguments[0], strlen('--composition-probe='));
+
+$compositionProbeData = null;
+if ($compositionProbe !== null) {
+    $contents = file_get_contents($compositionProbe);
+    if ($contents === false) {
+        fail('cannot read composition probe ' . $compositionProbe);
+    }
+    $compositionProbeData = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
+    if (!is_array($compositionProbeData)) {
+        fail('composition probe must be an object');
+    }
+}
+$sourceOverrides = [];
+foreach ($compositionProbeData['source_overrides'] ?? [] as $relativePath => $replacementPath) {
+    if (!is_string($relativePath) || !is_string($replacementPath)) {
+        fail('composition probe source_overrides must map repository-relative paths to source paths');
+    }
+    if (!is_file($root . '/' . $relativePath)) {
+        fail('composition probe source override names an unknown production path ' . $relativePath);
+    }
+    if (!is_file($replacementPath)) {
+        fail('composition probe source override replacement does not exist for ' . $relativePath);
+    }
+    $sourceOverrides[$relativePath] = $replacementPath;
+}
 
 $manifest = loadAndValidateManifest($manifestPath, $schemaPath);
 if ($documentationProbe !== null) {
     fwrite(STDOUT, implode("\t", documentationDisposition($documentationProbe)) . "\n");
     exit(0);
 }
-$rows = declarations($root);
+$rows = declarations($root, $sourceOverrides);
 if ($rows === []) {
     fail('no production declarations found');
 }
@@ -495,6 +580,33 @@ foreach ($rows as $row) {
 }
 usort($crossOwnerImports, static fn(array $left, array $right): int => $left <=> $right);
 
+if ($compositionProbe !== null) {
+    $probe = $compositionProbeData;
+    foreach ($probe['rows'] ?? [] as $fqcn => $changes) {
+        if (!isset($byName[$fqcn]) || !is_array($changes)) {
+            fail('composition probe names an unknown row ' . $fqcn);
+        }
+        $byName[$fqcn] = array_replace($byName[$fqcn], $changes);
+    }
+    foreach ($probe['remove_pairs'] ?? [] as $pair) {
+        unset($observedPairs[$pair[0] . "\0" . $pair[1]]);
+    }
+    foreach ($probe['add_pairs'] ?? [] as $pair) {
+        $observedPairs[$pair[0] . "\0" . $pair[1]] = true;
+    }
+    $consumerUse = [];
+    foreach ($manifest['declarations'] as $target => $entry) {
+        foreach ($entry['consumers'] as $index => $consumer) {
+            if (($consumer['relation'] ?? 'import') === 'import') {
+                $consumerUse[$target . "\0" . $index] = true;
+            }
+        }
+    }
+    validateContractCompositions($manifest, $byName, $observedPairs, $consumerUse);
+    fwrite(STDOUT, "contract_composition probe passed\n");
+    exit(0);
+}
+
 $authorization = validateAuthorizations($manifest, $byName, $observedPairs);
 $enforcement = buildEnforcementProjection($manifest, $byName, $observedPairs);
 assertDag($enforcement['allow'], 'generated qmx allow graph');
@@ -524,12 +636,12 @@ foreach ($rows as $row) {
 
 $extensionDefinitions = [
     'rule' => ['Qualimetrix\\Core\\Rule\\RuleInterface', 'qmx.rule', 'RuleConfigurator + ArchitectureConfigurator -> rule compiler passes'],
-    'regular_collector' => ['Qualimetrix\\Core\\Metric\\MetricCollectorInterface', 'qmx.collector', 'CollectorConfigurator -> CollectorCompilerPass -> CompositeCollector'],
-    'derived_collector' => ['Qualimetrix\\Core\\Metric\\DerivedCollectorInterface', 'qmx.derived_collector', 'CollectorConfigurator -> CollectorCompilerPass -> CompositeCollector'],
-    'global_collector' => ['Qualimetrix\\Core\\Metric\\GlobalContextCollectorInterface', 'qmx.global_collector', 'CollectorConfigurator -> GlobalCollectorCompilerPass -> GlobalCollectorRunner'],
+    'regular_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricCollectorInterface', 'qmx.collector', 'CollectorConfigurator -> CollectorCompilerPass -> CompositeCollector'],
+    'derived_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DerivedCollectorInterface', 'qmx.derived_collector', 'CollectorConfigurator -> CollectorCompilerPass -> CompositeCollector'],
+    'global_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\GlobalContextCollectorInterface', 'qmx.global_collector', 'CollectorConfigurator -> GlobalCollectorCompilerPass -> GlobalCollectorRunner'],
     'formatter' => ['Qualimetrix\\Reporting\\Formatter\\FormatterInterface', 'qmx.formatter', 'OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry'],
-    'configuration_stage' => ['Qualimetrix\\Configuration\\Pipeline\\Stage\\ConfigurationStageInterface', 'qmx.configuration_stage', 'ConfigurationConfigurator -> ConfigurationStageCompilerPass -> ConfigurationPipeline'],
-    'lifecycle_hook' => ['Qualimetrix\\Analysis\\Lifecycle\\AnalysisLifecycleHookInterface', 'qmx.analysis.lifecycle_hook', 'ArchitectureConfigurator -> tagged iterator -> AnalysisRuntimeConfigurator'],
+    'configuration_stage' => ['Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationStageInterface', 'qmx.configuration_stage', 'ConfigurationConfigurator -> ConfigurationStageCompilerPass -> ConfigurationPipeline'],
+    'lifecycle_hook' => ['Qualimetrix\\Analysis\\Run\\Contract\\Lifecycle\\AnalysisLifecycleHookInterface', 'qmx.analysis.lifecycle_hook', 'ArchitectureConfigurator -> tagged iterator -> AnalysisRuntimeConfigurator'],
 ];
 $extensionRows = [];
 foreach ($extensionDefinitions as $family => [$target, $tag, $registration]) {
@@ -685,6 +797,14 @@ function validateDeclarationEntry(string $fqcn, array $entry, array $declaration
         if (!in_array($consumer['owner'], $owners, true)) {
             fail("consumer {$fqcn}#{$index} names unknown owner {$consumer['owner']}");
         }
+        if (($consumer['relation'] ?? 'import') === 'contract_composition') {
+            $key = $consumer['owner'] . "\0contract_composition\0" . $consumer['carrier_fqcn'] . "\0" . $consumer['boundary_fqcn'];
+            if (isset($seen[$key])) {
+                fail("duplicate contract_composition relation on {$fqcn} for {$consumer['owner']}");
+            }
+            $seen[$key] = true;
+            continue;
+        }
         $permanent = $consumer['source_fqcn'] === null && $consumer['closes_in'] === null;
         $temporary = is_string($consumer['source_fqcn']) && is_string($consumer['closes_in']);
         if (!$permanent && !$temporary) {
@@ -729,7 +849,10 @@ function validateAuthorizations(array $manifest, array $byName, array $observedP
 {
     $consumerUse = [];
     foreach ($manifest['declarations'] as $target => $entry) {
-        foreach ($entry['consumers'] as $index => $_consumer) {
+        foreach ($entry['consumers'] as $index => $consumer) {
+            if (($consumer['relation'] ?? 'import') === 'contract_composition') {
+                continue;
+            }
             $consumerUse[$target . "\0" . $index] = false;
         }
     }
@@ -771,6 +894,9 @@ function validateAuthorizations(array $manifest, array $byName, array $observedP
         }
         $matches = [];
         foreach ($manifest['declarations'][$target]['consumers'] as $index => $consumer) {
+            if (($consumer['relation'] ?? 'import') !== 'import') {
+                continue;
+            }
             if ($consumer['owner'] !== $sourceRow['proposed_owner']) {
                 continue;
             }
@@ -791,6 +917,7 @@ function validateAuthorizations(array $manifest, array $byName, array $observedP
             fail("unused contract consumer entry {$target}#{$index}");
         }
     }
+    validateContractCompositions($manifest, $byName, $observedPairs, $consumerUse);
     foreach ($grantUse as $pair => $used) {
         if (!$used) {
             [$source, $target] = explode("\0", $pair, 2);
@@ -806,6 +933,74 @@ function validateAuthorizations(array $manifest, array $byName, array $observedP
     }
 
     return ['internal_grant_count' => count($grantByPair), 'coarse_internal_grant_edge_count' => count($coarse)];
+}
+
+/**
+ * @param array<string, mixed> $manifest
+ * @param array<string, array<string, mixed>> $byName
+ * @param array<string, true> $observedPairs
+ * @param array<string, bool> $consumerUse
+ */
+function validateContractCompositions(array $manifest, array $byName, array $observedPairs, array $consumerUse): void
+{
+    foreach ($manifest['declarations'] as $target => $entry) {
+        foreach ($entry['consumers'] as $index => $consumer) {
+            if (($consumer['relation'] ?? 'import') !== 'contract_composition') {
+                continue;
+            }
+            $carrier = $consumer['carrier_fqcn'];
+            $boundary = $consumer['boundary_fqcn'];
+            if ($carrier === $target) {
+                fail("contract_composition {$target}#{$index} must name a distinct carrier");
+            }
+            if (!isset($byName[$carrier], $byName[$boundary])) {
+                fail("contract_composition {$target}#{$index} references an unknown carrier or boundary");
+            }
+            if ($entry['visibility'] !== 'contract'
+                || $byName[$carrier]['proposed_status'] !== 'contract'
+                || $byName[$carrier]['proposed_owner'] !== $byName[$target]['proposed_owner']
+            ) {
+                fail("contract_composition {$target}#{$index} requires same-owner contract target and carrier");
+            }
+            if (!in_array($target, $byName[$carrier]['contract_property_containments'], true)) {
+                fail("contract_composition {$target}#{$index} carrier lacks exact native stored target containment");
+            }
+            if ($byName[$boundary]['proposed_owner'] !== $consumer['owner']) {
+                fail("contract_composition {$target}#{$index} boundary owner does not match {$consumer['owner']}");
+            }
+            if (!in_array('Amp\\Parallel\\Worker\\Task', $byName[$boundary]['implements'], true)) {
+                fail("contract_composition {$target}#{$index} boundary must implement Amp\\Parallel\\Worker\\Task");
+            }
+            if (($byName[$boundary]['native_method_returns']['run'] ?? []) !== [$carrier]) {
+                fail("contract_composition {$target}#{$index} boundary run() must have the exact native carrier return");
+            }
+            if (!isset($observedPairs[$boundary . "\0" . $carrier])) {
+                fail("contract_composition {$target}#{$index} boundary lacks the exact carrier dependency");
+            }
+            if (isset($observedPairs[$boundary . "\0" . $target])) {
+                fail("contract_composition {$target}#{$index} cannot replace a direct boundary import");
+            }
+            $carrierConsumerUsed = false;
+            foreach ($manifest['declarations'][$carrier]['consumers'] as $carrierIndex => $carrierConsumer) {
+                if (($carrierConsumer['relation'] ?? 'import') === 'import'
+                    && $carrierConsumer['owner'] === $consumer['owner']
+                    && ($consumerUse[$carrier . "\0" . $carrierIndex] ?? false)
+                ) {
+                    $carrierConsumerUsed = true;
+                    break;
+                }
+            }
+            if (!$carrierConsumerUsed) {
+                fail("contract_composition {$target}#{$index} carrier lacks a separately used import consumer");
+            }
+            foreach ($observedPairs as $pair => $_true) {
+                [$source, $dependency] = explode("\0", $pair, 2);
+                if ($dependency === $target && $byName[$source]['proposed_owner'] !== $byName[$target]['proposed_owner']) {
+                    fail("contract_composition {$target}#{$index} cannot authorize direct cross-owner import {$source}");
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -1119,7 +1314,6 @@ function documentationDisposition(string $path): array
         'docs/adr/README.md',
         'docs/internal/MODULE_README_TEMPLATE.md',
         'src/Architecture/README.md',
-        'src/Configuration/README.md',
         'website/docs/reference/default-thresholds.md',
         'website/docs/reference/default-thresholds.ru.md',
     ];
@@ -1137,8 +1331,11 @@ function documentationDisposition(string $path): array
         'docs/adr/0022-capability-oriented-modular-monolith.md' => ['Architecture.Governance', 'P2'],
         'docs/internal/plans/modular-architecture.md' => ['Architecture.Governance', 'P2'],
         'src/Analysis/README.md' => ['Analysis.Run', 'P2'],
+        'src/Analysis/Configuration/README.md' => ['Analysis.Configuration', 'P3'],
         'src/Analysis/Evidence/DependencyModel/README.md' => ['Analysis.Evidence.DependencyModel', 'P2'],
         'src/Analysis/Evidence/Duplication/README.md' => ['Analysis.Evidence.Duplication', 'P1'],
+        'src/Analysis/Evidence/Measurement/README.md' => ['Analysis.Evidence.Measurement', 'P3'],
+        'src/Analysis/Run/README.md' => ['Analysis.Run', 'P3'],
         'src/Baseline/README.md' => ['Analysis.Policy.Baseline', 'P6'],
         'src/Core/README.md' => ['Architecture.Governance', 'P2'],
         'src/Infrastructure/Console/README.md' => ['Architecture.Governance', 'P2'],

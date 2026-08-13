@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Impact;
 
-use Qualimetrix\Core\Metric\MetricName;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
-use Qualimetrix\Core\Namespace_\NamespaceTree;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;

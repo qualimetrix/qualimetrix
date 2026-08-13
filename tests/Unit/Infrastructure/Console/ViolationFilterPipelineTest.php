@@ -8,13 +8,13 @@ use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Baseline\BaselineEntryParser;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
@@ -75,7 +75,7 @@ final class ViolationFilterPipelineTest extends TestCase
     #[Test]
     public function itRunsTheBaselineStageImmediatelyBeforeGitScope(): void
     {
-        $pipeline = $this->createPipeline(new AnalysisConfiguration(
+        $pipeline = $this->createPipeline(new TransitionalRuntimeConfiguration(
             excludePaths: ['vendor'],
             excludeNamespaces: ['App\\Generated'],
         ));
@@ -190,7 +190,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $kept = $this->makeViolation('src/Service/UserService.php');
         $excluded = $this->makeViolation('generated/Proxy.php');
 
-        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludePaths: ['generated']));
+        $pipeline = $this->createPipeline(new TransitionalRuntimeConfiguration(excludePaths: ['generated']));
 
         $result = $pipeline->filter([$kept, $excluded], new ViolationFilterOptions());
 
@@ -210,7 +210,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $architecture = $this->makeViolation('src/Foo/Service.php', 'App\\Foo', 'Service', LayerViolationRule::NAME);
         $ordinary = $this->makeViolation('src/Foo/Other.php', 'App\\Foo', 'Other');
 
-        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludeNamespaces: ['App\\Foo']));
+        $pipeline = $this->createPipeline(new TransitionalRuntimeConfiguration(excludeNamespaces: ['App\\Foo']));
 
         $result = $pipeline->filter([$architecture, $ordinary], new ViolationFilterOptions());
 
@@ -630,7 +630,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $byPath = $this->makeViolation('generated/Proxy.php', 'App\\Generated', 'Proxy', line: 21);
         $byNamespace = $this->makeViolation('src/Entity/User.php', 'App\\Entity', 'User', line: 21);
 
-        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludePaths: ['generated']));
+        $pipeline = $this->createPipeline(new TransitionalRuntimeConfiguration(excludePaths: ['generated']));
         $pipeline->loadSuppressions([
             'src/Service/UserService.php' => [self::ignoreLine20()],
             'generated/Proxy.php' => [self::ignoreLine20()],
@@ -696,7 +696,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $kept = $this->makeViolation('src/Service/UserService.php');
         $excluded = $this->makeViolation('generated/Proxy.php');
 
-        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludePaths: ['generated']));
+        $pipeline = $this->createPipeline(new TransitionalRuntimeConfiguration(excludePaths: ['generated']));
 
         $result = $pipeline->filter([$kept, $excluded], new ViolationFilterOptions());
 
@@ -711,7 +711,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $configured = $this->makeViolation('generated/Proxy.php');
         $flagged = $this->makeViolation('vendor/library/SomeClass.php');
 
-        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludePaths: ['generated']));
+        $pipeline = $this->createPipeline(new TransitionalRuntimeConfiguration(excludePaths: ['generated']));
 
         $options = new ViolationFilterOptions(
             narrowing: new CliOnlyNarrowing(excludePaths: ['vendor']),
@@ -742,7 +742,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $kept = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
         $excluded = $this->makeViolation('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
 
-        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludeNamespaces: ['App\\Generated']));
+        $pipeline = $this->createPipeline(new TransitionalRuntimeConfiguration(excludeNamespaces: ['App\\Generated']));
 
         $result = $pipeline->filter([$kept, $excluded], new ViolationFilterOptions());
 
@@ -756,7 +756,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $kept = $this->makeViolation('src/Service/UserService.php', 'App\\Service', 'UserService');
         $excluded = $this->makeViolation('src/Generated/Sub/Proxy.php', 'App\\Generated\\Sub', 'Proxy');
 
-        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludeNamespaces: ['App\\Generated']));
+        $pipeline = $this->createPipeline(new TransitionalRuntimeConfiguration(excludeNamespaces: ['App\\Generated']));
 
         $result = $pipeline->filter([$kept, $excluded], new ViolationFilterOptions());
 
@@ -779,7 +779,7 @@ final class ViolationFilterPipelineTest extends TestCase
             severity: Severity::Error,
         );
 
-        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludeNamespaces: ['App']));
+        $pipeline = $this->createPipeline(new TransitionalRuntimeConfiguration(excludeNamespaces: ['App']));
 
         $result = $pipeline->filter([$fileLevel], new ViolationFilterOptions());
 
@@ -794,7 +794,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $configured = $this->makeViolation('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
         $flagged = $this->makeViolation('src/Entity/User.php', 'App\\Entity', 'User');
 
-        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludeNamespaces: ['App\\Generated']));
+        $pipeline = $this->createPipeline(new TransitionalRuntimeConfiguration(excludeNamespaces: ['App\\Generated']));
 
         $options = new ViolationFilterOptions(
             narrowing: new CliOnlyNarrowing(excludeNamespaces: ['App\\Entity']),
@@ -823,7 +823,7 @@ final class ViolationFilterPipelineTest extends TestCase
         $architecture = $this->makeViolation('src/Foo/Service.php', 'App\\Foo', 'Service', LayerViolationRule::NAME);
         $ordinary = $this->makeViolation('src/Foo/Other.php', 'App\\Foo', 'Other');
 
-        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludeNamespaces: ['App\\Foo']));
+        $pipeline = $this->createPipeline(new TransitionalRuntimeConfiguration(excludeNamespaces: ['App\\Foo']));
 
         $result = $pipeline->filter([$architecture, $ordinary], new ViolationFilterOptions());
 
@@ -934,10 +934,10 @@ final class ViolationFilterPipelineTest extends TestCase
         );
     }
 
-    private function createPipeline(?AnalysisConfiguration $configuration = null): ViolationFilterPipeline
+    private function createPipeline(?TransitionalRuntimeConfiguration $configuration = null): ViolationFilterPipeline
     {
-        $configProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn($configuration ?? new AnalysisConfiguration());
+        $configProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
+        $configProvider->method('getConfiguration')->willReturn($configuration ?? new TransitionalRuntimeConfiguration());
 
         $declarations = StubChannelDeclarationRegistry::withDefaults();
 

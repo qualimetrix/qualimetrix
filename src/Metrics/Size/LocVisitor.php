@@ -8,7 +8,7 @@ use PhpParser\Node;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 
 /**
  * Visitor for LocCollector.

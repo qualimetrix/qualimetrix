@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
-use Qualimetrix\Configuration\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -19,7 +19,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * coincidence.
  *
  * It is an interface so a command can be exercised against a known set of
- * findings without a real analysis: the commands' own behaviour — refusals,
+ * findings without a real runtime: the commands' own behaviour — refusals,
  * scope guards, what they write — is what their tests are about, and running
  * a parser over fixtures to reach it would test the pipeline instead.
  */

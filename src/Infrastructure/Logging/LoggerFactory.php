@@ -68,8 +68,14 @@ final class LoggerFactory
 
         // Composite logger for multiple outputs
         return new class ($loggers) extends AbstractLogger {
-            /** @param list<\Psr\Log\LoggerInterface> $loggers */
-            public function __construct(private readonly array $loggers) {}
+            /** @var list<LoggerInterface> */
+            private readonly array $loggers;
+
+            /** @param list<LoggerInterface> $loggers */
+            public function __construct(array $loggers)
+            {
+                $this->loggers = $loggers;
+            }
 
             public function log($level, string|Stringable $message, array $context = []): void
             {

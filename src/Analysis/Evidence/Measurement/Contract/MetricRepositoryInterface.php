@@ -1,0 +1,101 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Evidence\Measurement\Contract;
+
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+
+/**
+ * Mutable Measurement repository promise shared by collection, aggregation, and rules.
+ *
+ * @qmx-threshold coupling.cbo 46 -- Stable provider-owned repository fan-in gets one-edge headroom above raw CBO 45.
+ * @qmx-threshold coupling.class-rank warning=0.020 error=0.020 -- Project-size scaling maps this point threshold to about 0.00748, just above the observed raw ClassRank 0.00745523 for this intentional contract hub.
+ */
+interface MetricRepositoryInterface
+{
+    /** Returns a merged repository, or null when implementations are incompatible. */
+    public function mergedWith(self $other): ?self;
+
+    /**
+     * Returns metrics for any symbol.
+     *
+     * All symbol levels (Method, Class, File, Namespace, Project) return MetricBag.
+     * Aggregated metrics use naming convention: {metric}.{strategy} (e.g., ccn.sum, loc.avg).
+     */
+    public function get(SymbolPath $symbol): MetricBag;
+
+    /**
+     * Returns iterator over symbols of given type.
+     *
+     * @return iterable<SymbolInfo>
+     */
+    public function all(SymbolType $type): iterable;
+
+    /**
+     * Checks if metrics exist for given symbol.
+     */
+    public function has(SymbolPath $symbol): bool;
+
+    /**
+     * Adds or merges metrics for a symbol.
+     *
+     * If the symbol already has metrics, new metrics are merged (new values override).
+     *
+     * @param SymbolPath $symbol The symbol to add metrics for
+     * @param MetricBag $metrics The metrics to add
+     * @param ?RelativePath $file The source file path; null for symbols without a single owning file (e.g., class-level coupling metrics aggregated by CouplingCollector, namespace-level graph metrics)
+     * @param ?int $line The line number (null for aggregated/namespace metrics)
+     */
+    public function add(SymbolPath $symbol, MetricBag $metrics, ?RelativePath $file, ?int $line): void;
+
+    /** Returns metrics for an exact declaration, logical class, or aggregate subject. */
+    public function getSubject(MetricSubject $subject): MetricBag;
+
+    /** Checks whether an exact declaration, logical class, or aggregate subject exists. */
+    public function hasSubject(MetricSubject $subject): bool;
+
+    /** Adds or merges metrics without collapsing declaration identities to SymbolPath. */
+    public function addSubject(MetricSubject $subject, MetricBag $metrics, ?RelativePath $file, ?int $line): void;
+
+    /** Adds or merges one callable while preserving its declaration metadata. */
+    public function addCallable(CallableWithMetrics $callable): void;
+
+    /** @return iterable<SymbolInfo> exact declaration subjects */
+    public function allDeclarations(): iterable;
+
+    /** @return iterable<SymbolInfo> exact callable declaration subjects */
+    public function allCallables(): iterable;
+
+    /** @return iterable<SymbolInfo> logical class subjects */
+    public function allLogicalClasses(): iterable;
+
+    /**
+     * Adds a single scalar metric to an existing symbol.
+     *
+     * Unlike add(), this only touches scalar metrics and never duplicates
+     * DataBag entries. Use this when you need to enrich existing symbols
+     * with computed metrics (e.g., in global collectors).
+     *
+     * If the symbol does not exist, the metric is silently ignored.
+     */
+    public function addScalar(SymbolPath $symbol, string $key, int|float $value): void;
+
+    /**
+     * Returns all namespaces that have metrics.
+     *
+     * @return list<string>
+     */
+    public function getNamespaces(): array;
+
+    /**
+     * Returns all metrics for symbols in a given namespace.
+     *
+     * @return list<SymbolInfo>
+     */
+    public function forNamespace(string $namespace): array;
+}

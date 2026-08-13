@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Rule;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Core\Dependency\CycleInterface;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
-use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\MetricSubject;
 

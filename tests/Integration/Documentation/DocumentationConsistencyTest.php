@@ -21,7 +21,7 @@ use Symfony\Component\Yaml\Yaml;
  *
  * These tests catch stale documentation automatically in CI:
  * - Rule names missing from default-thresholds.md
- * - CLI aliases missing from Configuration/README.md
+ * - CLI aliases missing from Analysis/Configuration/README.md
  * - YAML examples in README.md that don't parse or reference non-existent rules
  */
 final class DocumentationConsistencyTest extends TestCase
@@ -71,13 +71,13 @@ final class DocumentationConsistencyTest extends TestCase
     }
 
     /**
-     * Every CLI alias from rule classes must appear in src/Configuration/README.md.
+     * Every CLI alias from rule classes must appear in src/Analysis/Configuration/README.md.
      */
     #[Test]
     public function itDocumentsAllCliAliasesInConfigurationReadme(): void
     {
         $aliases = $this->collectAllCliAliases();
-        $configReadme = $this->readFile('src/Configuration/README.md');
+        $configReadme = $this->readFile('src/Analysis/Configuration/README.md');
 
         $missing = [];
 
@@ -92,7 +92,7 @@ final class DocumentationConsistencyTest extends TestCase
         self::assertSame(
             [],
             $missing,
-            "CLI aliases missing from src/Configuration/README.md:\n" . implode("\n", $missing),
+            "CLI aliases missing from src/Analysis/Configuration/README.md:\n" . implode("\n", $missing),
         );
     }
 

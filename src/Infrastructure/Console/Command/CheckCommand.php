@@ -5,24 +5,22 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
-use Psr\Log\LoggerInterface;
-use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Architecture\Processing\LayerExpansionException;
-use Qualimetrix\Configuration\Exception\ConfigLoadException;
-use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
-use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
+use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\DiagnosticOutput;
 use Qualimetrix\Infrastructure\Console\FilteredInputDefinition;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
-use Qualimetrix\Infrastructure\Console\ScopeWarningChecker;
 use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
-use Qualimetrix\Infrastructure\Git\GitScopeResolver;
 use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -50,12 +48,12 @@ final class CheckCommand extends Command
         private readonly AnalysisPipelineInterface $analyzer,
         private readonly CacheFactory $cacheFactory,
         private readonly ViolationFilterOrchestrator $violationFilterOrchestrator,
-        private readonly ConfigurationPipeline $configurationPipeline,
+        private readonly ConfigurationPipelineInterface $configurationPipeline,
         private readonly RuntimeConfigurator $runtimeConfigurator,
         private readonly ResultPresenter $resultPresenter,
-        private readonly LoggerInterface $logger,
         private readonly RuleInputValidator $ruleInputValidator,
         private readonly DiagnosticOutput $diagnosticOutput,
+        private readonly CheckScopeResolver $checkScopeResolver,
     ) {
         parent::__construct();
     }
@@ -180,7 +178,8 @@ final class CheckCommand extends Command
         $this->warnAboutConflictingRuleFilters($resolved, $output);
         $this->logConfigSources($resolved, $output);
 
-        $scopeResolution = (new GitScopeResolver($this->logger))->resolve($input, $resolved);
+        $resolvedScope = $this->checkScopeResolver->resolve($input, $resolved);
+        $scopeResolution = $resolvedScope->scope;
 
         $pathErrors = $this->validatePaths($scopeResolution->paths);
         if ($pathErrors !== []) {
@@ -191,9 +190,11 @@ final class CheckCommand extends Command
             return self::EXIT_CONFIG_ERROR;
         }
 
-        $projectRoot = $resolved->analysis->projectRoot;
+        $projectRoot = $resolved->runtime->projectRoot;
         $this->warnIfComposerJsonMissing($projectRoot, $output);
-        $this->warnAboutPartialScope($scopeResolution->paths, $projectRoot, $output);
+        foreach ($resolvedScope->warnings as $warning) {
+            $this->writeWarning($output, \sprintf('Warning: %s', $warning));
+        }
 
         $result = $this->runAnalysis($scopeResolution->paths, $scopeResolution->fileDiscovery);
 
@@ -224,7 +225,7 @@ final class CheckCommand extends Command
      * Working directory is captured from getcwd() which is the project root
      * (already changed by Application::doRun() if --working-dir was passed).
      */
-    private function resolveConfiguration(InputInterface $input): ResolvedConfiguration
+    private function resolveConfiguration(InputInterface $input): TransitionalResolvedConfiguration
     {
         $configPath = $input->getOption('config');
         $cwd = getcwd();
@@ -256,7 +257,7 @@ final class CheckCommand extends Command
      *
      * @param list<AbsolutePath> $paths
      */
-    private function runAnalysis(array $paths, \Qualimetrix\Analysis\Discovery\FileDiscoveryInterface $fileDiscovery): \Qualimetrix\Analysis\Pipeline\AnalysisResult
+    private function runAnalysis(array $paths, \Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface $fileDiscovery): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
         return $this->analyzer->analyze($paths, $fileDiscovery);
     }
@@ -301,9 +302,9 @@ final class CheckCommand extends Command
     /**
      * Warns if both --disable-rule and --only-rule are used simultaneously.
      */
-    private function warnAboutConflictingRuleFilters(ResolvedConfiguration $resolved, OutputInterface $output): void
+    private function warnAboutConflictingRuleFilters(TransitionalResolvedConfiguration $resolved, OutputInterface $output): void
     {
-        if ($resolved->analysis->disabledRules !== [] && $resolved->analysis->onlyRules !== []) {
+        if ($resolved->runtime->disabledRules !== [] && $resolved->runtime->onlyRules !== []) {
             $this->writeWarning(
                 $output,
                 'Warning: both --disable-rule and --only-rule are active. This may result in no rules being enabled.',
@@ -325,20 +326,6 @@ final class CheckCommand extends Command
     }
 
     /**
-     * Warns when analyzed paths don't cover the full project scope.
-     *
-     * @param list<AbsolutePath> $paths
-     */
-    private function warnAboutPartialScope(array $paths, AbsolutePath $projectRoot, OutputInterface $output): void
-    {
-        $checker = new ScopeWarningChecker();
-        $warnings = $checker->check($projectRoot, $paths);
-        foreach ($warnings as $warning) {
-            $this->writeWarning($output, \sprintf('Warning: %s', $warning));
-        }
-    }
-
-    /**
      * Writes a warning to stderr to avoid polluting structured output.
      */
     private function writeWarning(OutputInterface $output, string $message): void
@@ -351,7 +338,7 @@ final class CheckCommand extends Command
     /**
      * Logs which configuration sources were applied (verbose mode only).
      */
-    private function logConfigSources(ResolvedConfiguration $resolved, OutputInterface $output): void
+    private function logConfigSources(TransitionalResolvedConfiguration $resolved, OutputInterface $output): void
     {
         if (!$output->isVerbose() || $resolved->appliedSources === []) {
             return;

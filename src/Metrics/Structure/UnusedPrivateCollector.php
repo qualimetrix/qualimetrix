@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Metrics\Structure;
 
 use Override;
-use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
-use Qualimetrix\Core\Metric\ClassWithMetrics;
-use Qualimetrix\Core\Metric\MetricBag;
-use Qualimetrix\Core\Metric\MetricName;
+
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\DataBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
 /**

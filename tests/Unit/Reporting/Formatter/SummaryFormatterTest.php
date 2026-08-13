@@ -1005,7 +1005,7 @@ final class SummaryFormatterTest extends TestCase
     public function itShowsNamespaceHealthScoresWhenFilteringByNamespace(): void
     {
         $nsPath = SymbolPath::forNamespace('App\Service');
-        $nsMetrics = \Qualimetrix\Core\Metric\MetricBag::fromArray([
+        $nsMetrics = \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag::fromArray([
             'health.overall' => 45.0,
             'health.complexity' => 60.0,
             'health.cohesion' => 30.0,
@@ -1015,14 +1015,14 @@ final class SummaryFormatterTest extends TestCase
             'classCount' => 5,
         ]);
 
-        $metrics = self::createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
+        $metrics = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class);
         $metrics->method('has')->willReturnCallback(
             static fn(SymbolPath $sp): bool => $sp->toCanonical() === $nsPath->toCanonical(),
         );
         $metrics->method('get')->willReturnCallback(
-            static fn(SymbolPath $sp): \Qualimetrix\Core\Metric\MetricBag => $sp->toCanonical() === $nsPath->toCanonical()
+            static fn(SymbolPath $sp): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag => $sp->toCanonical() === $nsPath->toCanonical()
                 ? $nsMetrics
-                : new \Qualimetrix\Core\Metric\MetricBag(),
+                : new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag(),
         );
         $metrics->method('all')->willReturnCallback(
             static fn(\Qualimetrix\Core\Symbol\SymbolType $type): array => $type === \Qualimetrix\Core\Symbol\SymbolType::Namespace_
@@ -1059,27 +1059,27 @@ final class SummaryFormatterTest extends TestCase
     public function itBuildsWorstClassesFromMetricsWhenFilteringByNamespace(): void
     {
         $classPath = SymbolPath::forClass('App\Service', 'UserService');
-        $classMetrics = \Qualimetrix\Core\Metric\MetricBag::fromArray([
+        $classMetrics = \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag::fromArray([
             'health.overall' => 25.0,
             'health.complexity' => 20.0,
             'health.cohesion' => 15.0,
         ]);
 
         $nsPath = SymbolPath::forNamespace('App\Service');
-        $nsMetrics = \Qualimetrix\Core\Metric\MetricBag::fromArray([
+        $nsMetrics = \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag::fromArray([
             'health.overall' => 40.0,
             'health.complexity' => 50.0,
         ]);
 
-        $metrics = self::createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
+        $metrics = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class);
         $metrics->method('has')->willReturnCallback(
             static fn(SymbolPath $sp): bool => $sp->toCanonical() === $nsPath->toCanonical(),
         );
         $metrics->method('get')->willReturnCallback(
-            static fn(SymbolPath $sp): \Qualimetrix\Core\Metric\MetricBag => match ($sp->toCanonical()) {
+            static fn(SymbolPath $sp): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag => match ($sp->toCanonical()) {
                 $nsPath->toCanonical() => $nsMetrics,
                 $classPath->toCanonical() => $classMetrics,
-                default => new \Qualimetrix\Core\Metric\MetricBag(),
+                default => new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag(),
             },
         );
         $metrics->method('all')->willReturnCallback(
@@ -1113,9 +1113,9 @@ final class SummaryFormatterTest extends TestCase
     #[Test]
     public function itFallsBackToProjectWhenNoNsMetricsForNamespaceFilter(): void
     {
-        $metrics = self::createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
+        $metrics = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class);
         $metrics->method('has')->willReturn(false);
-        $metrics->method('get')->willReturn(new \Qualimetrix\Core\Metric\MetricBag());
+        $metrics->method('get')->willReturn(new \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag());
         $metrics->method('all')->willReturn([]);
 
         $report = new Report(

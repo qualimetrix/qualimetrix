@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Maintainability;
 
 use LogicException;
-use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;

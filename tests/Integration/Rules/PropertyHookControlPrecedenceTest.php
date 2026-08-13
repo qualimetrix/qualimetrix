@@ -10,16 +10,16 @@ use PhpParser\NodeVisitorAbstract;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Collection\FileProcessor;
-use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
+use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Core\Metric\CallableMetricsProviderInterface;
-use Qualimetrix\Core\Metric\CallableWithMetrics;
-use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
-use Qualimetrix\Core\Metric\ClassWithMetrics;
-use Qualimetrix\Core\Metric\MetricBag;
-use Qualimetrix\Core\Metric\MetricCollectorInterface;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -136,10 +136,10 @@ final class PropertyHookControlPrecedenceTest extends TestCase
         $result = $processor->process(new SplFileInfo('/tmp/test.php'));
 
         self::assertTrue($result->isSuccessful());
-        self::assertSame([], $result->collectedData()->thresholdDiagnostics);
-        self::assertCount(4, $result->collectedData()->thresholdOverrides);
+        self::assertSame([], $result->thresholdDiagnostics());
+        self::assertCount(4, $result->thresholdOverrides());
         $hookControls = array_values(array_filter(
-            $result->collectedData()->thresholdOverrides,
+            $result->thresholdOverrides(),
             static fn($override) => $override->subject->toCanonical() === $hookDeclaration->toCanonical(),
         ));
         self::assertSame([ControlScope::Class_, ControlScope::Property, ControlScope::Hook], array_map(

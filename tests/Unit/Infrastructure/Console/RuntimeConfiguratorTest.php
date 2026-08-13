@@ -10,26 +10,28 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\DeferredWarning;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurableInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfiguration;
+use Qualimetrix\Analysis\Evidence\Measurement\Runtime\CollectorRuntimeConfigurationStore;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Processing\ArchitectureLifecycleHook;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
-use Qualimetrix\Configuration\AnalysisConfiguration;
 use Qualimetrix\Configuration\ComputedMetricFormulaValidator;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Configuration\HealthFormulaExcluder;
-use Qualimetrix\Configuration\PathsConfiguration;
-use Qualimetrix\Configuration\Pipeline\DeferredWarning;
-use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
-use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Violation\RuleExclusionCaptureHolder;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\DiagnosticOutput;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
@@ -46,10 +48,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[CoversClass(DeferredWarning::class)]
 final class RuntimeConfiguratorTest extends TestCase
 {
-    private ConfigurationProviderInterface&Stub $configProvider;
+    private TransitionalRuntimeConfigurationProviderInterface&Stub $configProvider;
     private RuleOptionsRegistry $ruleOptionsRegistry;
     private FrameworkNamespacesHolder $frameworkNamespacesHolder;
     private ArchitectureProcessorInterface $architectureProcessor;
+    private CollectorRuntimeConfigurationStore $collectorRuntimeConfigurationStore;
+    private CacheFactory $cacheFactory;
     private RuntimeConfigurator $configurator;
 
     protected function setUp(): void
@@ -57,8 +61,10 @@ final class RuntimeConfiguratorTest extends TestCase
         $this->ruleOptionsRegistry = new RuleOptionsRegistry();
         $this->frameworkNamespacesHolder = new FrameworkNamespacesHolder();
         $this->architectureProcessor = new ArchitectureProcessor();
+        $this->collectorRuntimeConfigurationStore = new CollectorRuntimeConfigurationStore();
 
-        $this->configProvider = self::createStub(ConfigurationProviderInterface::class);
+        $this->configProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
+        $this->cacheFactory = new CacheFactory($this->configProvider);
         $this->configurator = $this->buildConfigurator($this->configProvider);
     }
 
@@ -66,7 +72,6 @@ final class RuntimeConfiguratorTest extends TestCase
     {
         RuleExclusionCaptureHolder::reset();
         ComputedMetricDefinitionHolder::reset();
-        CollectorConfigHolder::reset();
     }
 
     /**
@@ -74,16 +79,18 @@ final class RuntimeConfiguratorTest extends TestCase
      *
      * Call this in tests that need `expects()` on the config provider.
      */
-    private function useConfigProviderMock(): ConfigurationProviderInterface&MockObject
+    private function useConfigProviderMock(): TransitionalRuntimeConfigurationProviderInterface&MockObject
     {
-        $mock = $this->createMock(ConfigurationProviderInterface::class);
+        $mock = $this->createMock(TransitionalRuntimeConfigurationProviderInterface::class);
+        $mock->method('getConfiguration')->willReturn(new TransitionalRuntimeConfiguration());
         $this->configProvider = $mock;
+        $this->cacheFactory = new CacheFactory($mock);
         $this->configurator = $this->buildConfigurator($mock);
 
         return $mock;
     }
 
-    private function buildConfigurator(ConfigurationProviderInterface $configProvider): RuntimeConfigurator
+    private function buildConfigurator(TransitionalRuntimeConfigurationProviderInterface $configProvider): RuntimeConfigurator
     {
         $loggerFactory = new LoggerFactory();
         $loggerHolder = new LoggerHolder();
@@ -100,14 +107,16 @@ final class RuntimeConfiguratorTest extends TestCase
                 $configProvider,
                 $this->ruleOptionsRegistry,
                 $ruleRegistry,
-                new CacheFactory($configProvider),
                 new ComputedMetricsConfigResolver(
                     new ComputedMetricFormulaValidator(),
                     new HealthFormulaExcluder(),
                 ),
                 $this->frameworkNamespacesHolder,
                 [new ArchitectureLifecycleHook($this->architectureProcessor)],
+                $this->collectorRuntimeConfigurationStore,
             ),
+            new DiagnosticOutput(),
+            $this->cacheFactory,
         );
     }
 
@@ -117,9 +126,10 @@ final class RuntimeConfiguratorTest extends TestCase
         $configProvider = $this->useConfigProviderMock();
 
         // First configure call: set CLI options
-        $resolved1 = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved1 = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -135,25 +145,57 @@ final class RuntimeConfiguratorTest extends TestCase
             ->expects($this->exactly(2))
             ->method('setRuleOptions');
 
+        $cacheBeforeFirstConfigure = $this->cacheFactory->create();
+        $collector = new class ($this->cacheFactory, $cacheBeforeFirstConfigure) implements CollectorRuntimeConfigurableInterface {
+            /** @var list<bool> */
+            public array $cacheWasResetBeforeApply = [];
+
+            public function __construct(
+                private readonly CacheFactory $cacheFactory,
+                private object $previousCache,
+            ) {}
+
+            public function applyRuntimeConfiguration(CollectorRuntimeConfiguration $configuration): void
+            {
+                $this->cacheWasResetBeforeApply[] = $this->cacheFactory->create() !== $this->previousCache;
+            }
+
+            public function expectResetFrom(object $cache): void
+            {
+                $this->previousCache = $cache;
+            }
+        };
+        $this->collectorRuntimeConfigurationStore = new CollectorRuntimeConfigurationStore([$collector]);
+        $this->configurator = $this->buildConfigurator($configProvider);
+
         $this->configurator->configure($resolved1, $input1, $this->createOutput());
+
+        $cacheAfterFirstConfigure = $this->cacheFactory->create();
+        self::assertNotSame($cacheBeforeFirstConfigure, $cacheAfterFirstConfigure);
+        self::assertTrue($collector->cacheWasResetBeforeApply[0]);
 
         // Verify CLI options were set
         self::assertArrayHasKey('complexity.cyclomatic', $this->ruleOptionsRegistry->getCliOptions());
 
         // Second configure call: no CLI options
-        $resolved2 = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved2 = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
 
         $input2 = $this->createCliInput([]);
 
+        $collector->expectResetFrom($cacheAfterFirstConfigure);
         $this->configurator->configure($resolved2, $input2, $this->createOutput());
 
+        self::assertNotSame($cacheAfterFirstConfigure, $this->cacheFactory->create());
+        self::assertTrue($collector->cacheWasResetBeforeApply[2]);
+
         // CLI options from first run should not persist
-        self::assertEmpty( // @phpstan-ignore staticMethod.impossibleType
+        self::assertEmpty(
             $this->ruleOptionsRegistry->getCliOptions(),
             'CLI options from first configure() call should not leak into second call',
         );
@@ -165,9 +207,10 @@ final class RuntimeConfiguratorTest extends TestCase
         $configProvider = $this->useConfigProviderMock();
 
         // First configure call: set exclude_namespaces via config
-        $resolved1 = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved1 = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [
                 'coupling.cbo' => [
                     'exclude_namespaces' => ['App\\Tests'],
@@ -197,9 +240,10 @@ final class RuntimeConfiguratorTest extends TestCase
         self::assertTrue($provider->isExcluded('coupling.cbo', 'App\\Tests'));
 
         // Second configure call: no exclude_namespaces
-        $resolved2 = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved2 = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -220,9 +264,10 @@ final class RuntimeConfiguratorTest extends TestCase
     {
         $configProvider = $this->useConfigProviderMock();
 
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [
                 'complexity.cyclomatic' => [
                     'warningThreshold' => 10,
@@ -258,9 +303,10 @@ final class RuntimeConfiguratorTest extends TestCase
     {
         $configProvider = $this->useConfigProviderMock();
 
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [
                 'complexity.cyclomatic' => [
                     'warningThreshold' => 10,
@@ -293,9 +339,10 @@ final class RuntimeConfiguratorTest extends TestCase
     {
         $configProvider = $this->useConfigProviderMock();
 
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [
                 'complexity.cyclomatic' => [
                     'warningThreshold' => 10,
@@ -328,9 +375,10 @@ final class RuntimeConfiguratorTest extends TestCase
     {
         $configProvider = $this->useConfigProviderMock();
 
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [
                 'complexity.cyclomatic' => [
                     'warningThreshold' => 10,
@@ -395,9 +443,10 @@ final class RuntimeConfiguratorTest extends TestCase
     {
         RuleExclusionCaptureHolder::set(true); // simulate a leftover from a previous run
 
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -410,9 +459,10 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function itEnablesRuleExclusionCaptureFromShowSuppressedOption(): void
     {
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -438,9 +488,10 @@ final class RuntimeConfiguratorTest extends TestCase
     {
         RuleExclusionCaptureHolder::set(true); // simulate a leftover from a previous run
 
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -459,9 +510,10 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function configureSetsFrameworkNamespacesFromConfig(): void
     {
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(frameworkNamespaces: ['Symfony', 'Doctrine']),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(frameworkNamespaces: ['Symfony', 'Doctrine']),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -483,9 +535,10 @@ final class RuntimeConfiguratorTest extends TestCase
         $configProvider = $this->useConfigProviderMock();
 
         // First configure: set framework namespaces
-        $resolved1 = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(frameworkNamespaces: ['Symfony']),
+        $resolved1 = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(frameworkNamespaces: ['Symfony']),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -503,9 +556,10 @@ final class RuntimeConfiguratorTest extends TestCase
         self::assertTrue($this->frameworkNamespacesHolder->get()->isFramework('Symfony\\Console'));
 
         // Second configure: no framework namespaces
-        $resolved2 = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved2 = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -522,9 +576,10 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function excludeHealthFiltersDimensionsAndNormalizesOverall(): void
     {
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(excludeHealth: ['typing']),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(excludeHealth: ['typing']),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -564,11 +619,10 @@ final class RuntimeConfiguratorTest extends TestCase
     #[Test]
     public function configureCollectorsSetsExcludeMethodsFromArray(): void
     {
-        CollectorConfigHolder::reset();
-
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [
                 'design.lcom' => [
                     'exclude_methods' => ['getName', 'getDescription'],
@@ -581,18 +635,17 @@ final class RuntimeConfiguratorTest extends TestCase
 
         self::assertSame(
             ['getName', 'getDescription'],
-            CollectorConfigHolder::get(CollectorConfigHolder::LCOM_EXCLUDE_METHODS),
+            $this->collectorRuntimeConfigurationStore->current()->lcomExcludedMethods,
         );
     }
 
     #[Test]
     public function configureCollectorsSetsExcludeMethodsFromCommaSeparatedString(): void
     {
-        CollectorConfigHolder::reset();
-
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [
                 'design.lcom' => [
                     'exclude_methods' => 'getName, getDescription',
@@ -605,18 +658,17 @@ final class RuntimeConfiguratorTest extends TestCase
 
         self::assertSame(
             ['getName', 'getDescription'],
-            CollectorConfigHolder::get(CollectorConfigHolder::LCOM_EXCLUDE_METHODS),
+            $this->collectorRuntimeConfigurationStore->current()->lcomExcludedMethods,
         );
     }
 
     #[Test]
     public function configureCollectorsSetsExcludeMethodsFromSingleString(): void
     {
-        CollectorConfigHolder::reset();
-
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [
                 'design.lcom' => [
                     'exclude_methods' => 'getName',
@@ -629,18 +681,17 @@ final class RuntimeConfiguratorTest extends TestCase
 
         self::assertSame(
             ['getName'],
-            CollectorConfigHolder::get(CollectorConfigHolder::LCOM_EXCLUDE_METHODS),
+            $this->collectorRuntimeConfigurationStore->current()->lcomExcludedMethods,
         );
     }
 
     #[Test]
     public function configureCollectorsSkipsWhenNoExcludeMethods(): void
     {
-        CollectorConfigHolder::reset();
-
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [
                 'design.lcom' => [
                     'warning' => 5,
@@ -651,17 +702,16 @@ final class RuntimeConfiguratorTest extends TestCase
 
         $this->configurator->configure($resolved, $this->createCliInput([]), $this->createOutput());
 
-        self::assertNull(
-            CollectorConfigHolder::get(CollectorConfigHolder::LCOM_EXCLUDE_METHODS),
-        );
+        self::assertSame([], $this->collectorRuntimeConfigurationStore->current()->lcomExcludedMethods);
     }
 
     #[Test]
     public function excludeHealthAcceptsHealthPrefixedNames(): void
     {
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(excludeHealth: ['health.complexity', 'cohesion']),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(excludeHealth: ['health.complexity', 'cohesion']),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -695,9 +745,10 @@ final class RuntimeConfiguratorTest extends TestCase
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, true);
         $loggerHolder = $this->buildConfiguratorWithBufferedOutput();
 
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [],
             deferredWarnings: [
                 new DeferredWarning(LogLevel::WARNING, "architecture.allow: wildcard-self-allow detected on entry(s) 'domain-*'."),
@@ -724,9 +775,10 @@ final class RuntimeConfiguratorTest extends TestCase
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, true);
         $this->buildConfiguratorWithBufferedOutput();
 
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -748,9 +800,10 @@ final class RuntimeConfiguratorTest extends TestCase
         $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, true);
         $this->buildConfiguratorWithBufferedOutput();
 
-        $resolved = new ResolvedConfiguration(
-            paths: PathsConfiguration::defaults(),
-            analysis: new AnalysisConfiguration(),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ["."],
+            pathExcludes: ["vendor", "node_modules", ".git"],
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [],
             deferredWarnings: [
                 new DeferredWarning(LogLevel::WARNING, 'first warning'),
@@ -792,14 +845,16 @@ final class RuntimeConfiguratorTest extends TestCase
                 $this->configProvider,
                 $this->ruleOptionsRegistry,
                 $ruleRegistry,
-                new CacheFactory($this->configProvider),
                 new ComputedMetricsConfigResolver(
                     new ComputedMetricFormulaValidator(),
                     new HealthFormulaExcluder(),
                 ),
                 $this->frameworkNamespacesHolder,
                 [new ArchitectureLifecycleHook($this->architectureProcessor)],
+                $this->collectorRuntimeConfigurationStore,
             ),
+            new DiagnosticOutput(),
+            $this->cacheFactory,
         );
 
         return $loggerHolder;

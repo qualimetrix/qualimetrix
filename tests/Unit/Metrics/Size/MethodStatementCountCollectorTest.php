@@ -9,8 +9,8 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\Size\MethodStatementCountCollector;
 use Qualimetrix\Metrics\Size\MethodStatementCountVisitor;
@@ -184,7 +184,7 @@ PHP;
     }
 
     /**
-     * @return list<\Qualimetrix\Core\Metric\CallableWithMetrics>
+     * @return list<\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics>
      */
     private function collectMethods(string $code): array
     {

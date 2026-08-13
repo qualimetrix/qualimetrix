@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Configuration\KnownRuleNamesProviderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
 use Qualimetrix\Core\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;

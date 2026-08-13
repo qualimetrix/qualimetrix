@@ -6,12 +6,12 @@ namespace Qualimetrix\Metrics\Structure;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\GlobalContextCollectorInterface;
-use Qualimetrix\Core\Metric\MetricDefinition;
-use Qualimetrix\Core\Metric\MetricName;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
-use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 

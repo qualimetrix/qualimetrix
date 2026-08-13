@@ -1,0 +1,31 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Run\Contract\Pipeline;
+
+use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
+
+/**
+ * Main entry point for code analysis.
+ *
+ * Coordinates the analysis pipeline:
+ * 1. Discovery - Find PHP files to analyze
+ * 2. Collection - Parse files and collect metrics (parallel or sequential)
+ * 3. Build dependency graph
+ * 4. Aggregation - Aggregate metrics at class/namespace/project level
+ * 5. Global collectors - Compute cross-file metrics (coupling, distance, etc.)
+ * 6. Rule execution - Run rules against collected metrics
+ * 7. Return analysis result
+ */
+interface AnalysisPipelineInterface
+{
+    /**
+     * Analyze the given paths.
+     *
+     * @param AbsolutePath|list<AbsolutePath> $paths Single path or list of paths to analyze
+     * @param FileDiscoveryInterface|null $customFileDiscovery Custom file discovery strategy (e.g., for Git scope)
+     */
+    public function analyze(AbsolutePath|array $paths, ?FileDiscoveryInterface $customFileDiscovery = null): AnalysisResult;
+}

@@ -4,36 +4,38 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Lifecycle\AnalysisLifecycleHookInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfiguration;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurationStoreInterface;
+use Qualimetrix\Analysis\Run\Contract\Lifecycle\AnalysisLifecycleHookInterface;
 use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Configuration\RuleOptionsParserFactory;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Coupling\FrameworkNamespaces;
 use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
-use Qualimetrix\Core\Metric\CollectorConfigHolder;
 use Qualimetrix\Core\Violation\RuleExclusionCaptureHolder;
-use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Input\InputInterface;
 
 /** Configures the analysis engine's per-run rule, collector, and feature state. */
 final readonly class AnalysisRuntimeConfigurator
 {
-    /** @param iterable<AnalysisLifecycleHookInterface> $lifecycleHooks */
+    /**
+     * @param iterable<AnalysisLifecycleHookInterface> $lifecycleHooks
+     */
     public function __construct(
-        private ConfigurationProviderInterface $configurationProvider,
+        private TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
         private RuleOptionsRegistry $ruleOptionsRegistry,
         private RuleRegistryInterface $ruleRegistry,
-        private CacheFactory $cacheFactory,
         private ComputedMetricsConfigResolver $computedMetricsResolver,
         private FrameworkNamespacesHolder $frameworkNamespacesHolder,
         private iterable $lifecycleHooks,
+        private CollectorRuntimeConfigurationStoreInterface $collectorConfigurationStore,
     ) {}
 
-    public function configure(ResolvedConfiguration $resolved, InputInterface $input): void
+    public function configure(TransitionalResolvedConfiguration $resolved, InputInterface $input): void
     {
         $parser = (new RuleOptionsParserFactory())->createFromClasses($this->ruleRegistry->getClasses());
         $cliRuleOptions = (new CliOptionsParser($parser))->parseRuleOptions($input);
@@ -44,13 +46,13 @@ final readonly class AnalysisRuntimeConfigurator
         }
 
         $ruleOptions = array_replace_recursive($resolved->ruleOptions, $cliRuleOptions);
-        $this->configurationProvider->setConfiguration($resolved->analysis);
+        $this->configurationProvider->setConfiguration($resolved->runtime);
         $this->configurationProvider->setRuleOptions($ruleOptions);
         $this->configureCollectors($ruleOptions);
 
-        if ($resolved->analysis->frameworkNamespaces !== []) {
+        if ($resolved->runtime->frameworkNamespaces !== []) {
             $this->frameworkNamespacesHolder->set(
-                new FrameworkNamespaces($resolved->analysis->frameworkNamespaces),
+                new FrameworkNamespaces($resolved->runtime->frameworkNamespaces),
             );
         }
 
@@ -60,7 +62,7 @@ final readonly class AnalysisRuntimeConfigurator
 
         $definitions = $this->computedMetricsResolver->resolve(
             $resolved->computedMetrics,
-            $resolved->analysis->excludeHealth,
+            $resolved->runtime->excludeHealth,
         );
         ComputedMetricDefinitionHolder::setDefinitions($definitions);
 
@@ -72,9 +74,8 @@ final readonly class AnalysisRuntimeConfigurator
     public function resetRunState(): void
     {
         $this->ruleOptionsRegistry->resetRuntimeState();
-        $this->cacheFactory->reset();
         ComputedMetricDefinitionHolder::reset();
-        CollectorConfigHolder::reset();
+        $this->collectorConfigurationStore->reset();
         $this->frameworkNamespacesHolder->reset();
     }
 
@@ -84,10 +85,6 @@ final readonly class AnalysisRuntimeConfigurator
         $lcomConfig = $ruleOptions['design.lcom'] ?? [];
         $excludeKey = $lcomConfig['exclude_methods'] ?? $lcomConfig['excludeMethods'] ?? null;
 
-        if ($excludeKey === null) {
-            return;
-        }
-
         $excludeMethods = match (true) {
             \is_string($excludeKey) && str_contains($excludeKey, ',') => array_map('trim', explode(',', $excludeKey)),
             \is_string($excludeKey) => [$excludeKey],
@@ -95,8 +92,7 @@ final readonly class AnalysisRuntimeConfigurator
             default => [],
         };
 
-        if ($excludeMethods !== []) {
-            CollectorConfigHolder::set(CollectorConfigHolder::LCOM_EXCLUDE_METHODS, $excludeMethods);
-        }
+        $configuration = new CollectorRuntimeConfiguration($excludeMethods);
+        $this->collectorConfigurationStore->replace($configuration);
     }
 }

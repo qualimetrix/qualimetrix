@@ -38,7 +38,7 @@ Documentation for individual components of the analysis system.
 
 Tool configuration, CLI interface, DI container, and caching.
 
-- **[Configuration](../src/Configuration/README.md)** — configuration management system (YAML, defaults, CLI options)
+- **[Configuration](../src/Analysis/Configuration/README.md)** — configuration management system (YAML, defaults, CLI options)
 - **[Infrastructure](../src/Infrastructure/README.md)** — CLI (Symfony Console), DI container, PHP parser, progress reporting, caching
 
 ---

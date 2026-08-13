@@ -231,10 +231,10 @@ PHP;
     #[Test]
     public function itDeliberatelyDoesNotProvideCallableMetrics(): void
     {
-        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
+        self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
-    private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
+    private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];

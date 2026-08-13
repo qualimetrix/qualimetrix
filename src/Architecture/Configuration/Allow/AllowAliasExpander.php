@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Architecture\Configuration\Allow;
 
+use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Configuration\Exception\ConfigLoadException;
 
 /**
  * Expands a user-written list of {@code relations:} tokens into a deduplicated

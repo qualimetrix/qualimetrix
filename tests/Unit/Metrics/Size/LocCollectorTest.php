@@ -9,8 +9,8 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Metrics\Size\LocCollector;
 use Qualimetrix\Metrics\Size\LocVisitor;
 use SplFileInfo;
@@ -572,10 +572,10 @@ PHP;
     #[Test]
     public function itDeliberatelyDoesNotProvideCallableMetrics(): void
     {
-        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
+        self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
-    private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
+    private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag
     {
         // Create actual temp file
         $filePath = $this->tempDir . '/test_' . uniqid() . '.php';

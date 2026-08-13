@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\DependencyInjection\CompilerPass
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass;
 use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Metrics\Complexity\NpathComplexityCollector;
@@ -18,11 +18,14 @@ use Symfony\Component\DependencyInjection\Reference;
 #[CoversClass(CollectorCompilerPass::class)]
 final class CollectorCompilerPassTest extends TestCase
 {
+    private const string COLLECTOR_SERVICE_ID = 'qmx.measurement.file_collector';
+
     #[Test]
     public function collectsTaggedServicesIntoCompositeCollector(): void
     {
         $container = new ContainerBuilder();
-        $container->register(CompositeCollector::class);
+        $container->register(self::COLLECTOR_SERVICE_ID, CompositeCollector::class)
+            ->setArguments(['$collectors' => [], '$derivedCollectors' => []]);
         $container->register(CyclomaticComplexityCollector::class)
             ->addTag(CollectorCompilerPass::TAG);
         $container->register(NpathComplexityCollector::class)
@@ -33,14 +36,14 @@ final class CollectorCompilerPassTest extends TestCase
         $pass = new CollectorCompilerPass();
         $pass->process($container);
 
-        $definition = $container->getDefinition(CompositeCollector::class);
+        $definition = $container->getDefinition(self::COLLECTOR_SERVICE_ID);
 
-        $collectors = $definition->getArgument(0);
+        $collectors = $definition->getArgument('$collectors');
         self::assertCount(2, $collectors);
         self::assertInstanceOf(Reference::class, $collectors[0]);
         self::assertInstanceOf(Reference::class, $collectors[1]);
 
-        $derivedCollectors = $definition->getArgument(1);
+        $derivedCollectors = $definition->getArgument('$derivedCollectors');
         self::assertCount(1, $derivedCollectors);
         self::assertInstanceOf(Reference::class, $derivedCollectors[0]);
     }
@@ -55,21 +58,22 @@ final class CollectorCompilerPassTest extends TestCase
         $pass = new CollectorCompilerPass();
         $pass->process($container);
 
-        self::assertFalse($container->hasDefinition(CompositeCollector::class));
+        self::assertFalse($container->hasDefinition(self::COLLECTOR_SERVICE_ID));
     }
 
     #[Test]
     public function setsEmptyArraysWhenNoTaggedServices(): void
     {
         $container = new ContainerBuilder();
-        $container->register(CompositeCollector::class);
+        $container->register(self::COLLECTOR_SERVICE_ID, CompositeCollector::class)
+            ->setArguments(['$collectors' => [], '$derivedCollectors' => []]);
 
         $pass = new CollectorCompilerPass();
         $pass->process($container);
 
-        $definition = $container->getDefinition(CompositeCollector::class);
+        $definition = $container->getDefinition(self::COLLECTOR_SERVICE_ID);
 
-        self::assertSame([], $definition->getArgument(0));
-        self::assertSame([], $definition->getArgument(1));
+        self::assertSame([], $definition->getArgument('$collectors'));
+        self::assertSame([], $definition->getArgument('$derivedCollectors'));
     }
 }

@@ -10,8 +10,8 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\Complexity\CognitiveComplexityVisitor;
 use Qualimetrix\Metrics\Complexity\CyclomaticComplexityVisitor;
@@ -288,7 +288,7 @@ PHP;
 
         $resolver = new DependencyResolver();
         $visitor = new DependencyVisitor($resolver);
-        $visitor->setFile(RelativePath::fromString('test.php'));
+        $visitor->beginFile(RelativePath::fromString('test.php'));
 
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
@@ -297,7 +297,7 @@ PHP;
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
-        $deps = $visitor->getDependencies();
+        $deps = $visitor->dependencies();
 
         // Filter dependencies from OuterClass
         $outerDeps = array_filter(
@@ -329,9 +329,9 @@ PHP;
     // ──────────────────────────────────────────────────────────────────
 
     /**
-     * @param list<\Qualimetrix\Core\Metric\CallableWithMetrics> $methods
+     * @param list<\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics> $methods
      */
-    private function findMethodByName(array $methods, string $name): ?\Qualimetrix\Core\Metric\CallableWithMetrics
+    private function findMethodByName(array $methods, string $name): ?\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics
     {
         foreach ($methods as $method) {
             if ($method->declarationPath->logical->member === $name) {

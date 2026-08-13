@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\ReportCoverage;
@@ -24,7 +24,7 @@ use Qualimetrix\Reporting\ReportCoverage;
 final readonly class ExitCodeResolver
 {
     public function __construct(
-        private ConfigurationProviderInterface $configurationProvider,
+        private TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
     ) {}
 
     /**

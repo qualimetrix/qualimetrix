@@ -7,9 +7,9 @@ namespace Qualimetrix\Tests\Unit\Analysis\RuleExecution;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Runtime\TransitionalRuntimeConfigurationHolder;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationHolder;
 use Qualimetrix\Configuration\RuleNamespaceExclusionProvider;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Configuration\RulePathExclusionProvider;
@@ -221,7 +221,7 @@ final class RuleExecutorTest extends TestCase
         $rule1 = $this->createRule('rule1', [$violation1]);
         $rule2 = $this->createRule('rule2', [$violation2]);
 
-        $config = new AnalysisConfiguration(disabledRules: ['rule1']);
+        $config = new TransitionalRuntimeConfiguration(disabledRules: ['rule1']);
         $provider = $this->createConfiguredProvider($config);
         $executor = new RuleExecutor([$rule1, $rule2], $provider);
 
@@ -243,7 +243,7 @@ final class RuleExecutorTest extends TestCase
         $rule2 = $this->createRule('rule2', [$violation2]);
         $rule3 = $this->createRule('rule3', [$violation3]);
 
-        $config = new AnalysisConfiguration(onlyRules: ['rule1', 'rule3']);
+        $config = new TransitionalRuntimeConfiguration(onlyRules: ['rule1', 'rule3']);
         $provider = $this->createConfiguredProvider($config);
         $executor = new RuleExecutor([$rule1, $rule2, $rule3], $provider);
 
@@ -261,7 +261,7 @@ final class RuleExecutorTest extends TestCase
         $rule1 = $this->createRule('enabled-rule', []);
         $rule2 = $this->createRule('disabled-rule', []);
 
-        $config = new AnalysisConfiguration(disabledRules: ['disabled-rule']);
+        $config = new TransitionalRuntimeConfiguration(disabledRules: ['disabled-rule']);
         $provider = $this->createConfiguredProvider($config);
         $executor = new RuleExecutor([$rule1, $rule2], $provider);
 
@@ -277,7 +277,7 @@ final class RuleExecutorTest extends TestCase
         $rule1 = $this->createRule('rule1', []);
         $rule2 = $this->createRule('rule2', []);
 
-        $config = new AnalysisConfiguration(disabledRules: ['rule1']);
+        $config = new TransitionalRuntimeConfiguration(disabledRules: ['rule1']);
         $provider = $this->createConfiguredProvider($config);
         $executor = new RuleExecutor([$rule1, $rule2], $provider);
 
@@ -311,7 +311,7 @@ final class RuleExecutorTest extends TestCase
         $violation = $this->createViolation('rule1');
         $rule = $this->createRule('rule1', [$violation]);
 
-        $config = new AnalysisConfiguration(
+        $config = new TransitionalRuntimeConfiguration(
             disabledRules: ['rule1'],
             onlyRules: ['rule1'],
         );
@@ -339,7 +339,7 @@ final class RuleExecutorTest extends TestCase
         $rule3 = $this->createRule('size.method-count', [$v3]);
 
         // Disable entire complexity group
-        $config = new AnalysisConfiguration(disabledRules: ['complexity']);
+        $config = new TransitionalRuntimeConfiguration(disabledRules: ['complexity']);
         $provider = $this->createConfiguredProvider($config);
         $executor = new RuleExecutor([$rule1, $rule2, $rule3], $provider);
 
@@ -366,7 +366,7 @@ final class RuleExecutorTest extends TestCase
         );
 
         // Disable only class-level violations
-        $config = new AnalysisConfiguration(disabledRules: ['complexity.cyclomatic.class']);
+        $config = new TransitionalRuntimeConfiguration(disabledRules: ['complexity.cyclomatic.class']);
         $provider = $this->createConfiguredProvider($config);
         $executor = new RuleExecutor([$rule], $provider);
 
@@ -384,7 +384,7 @@ final class RuleExecutorTest extends TestCase
         $rule2 = $this->createRule('complexity.cognitive', []);
         $rule3 = $this->createRule('size.method-count', []);
 
-        $config = new AnalysisConfiguration(onlyRules: ['complexity']);
+        $config = new TransitionalRuntimeConfiguration(onlyRules: ['complexity']);
         $provider = $this->createConfiguredProvider($config);
         $executor = new RuleExecutor([$rule1, $rule2, $rule3], $provider);
 
@@ -400,7 +400,7 @@ final class RuleExecutorTest extends TestCase
         $rule = $this->createRule('computed.health', [$finding]);
         $executor = new RuleExecutor(
             [$rule],
-            $this->createConfiguredProvider(new AnalysisConfiguration(onlyRules: ['computed.health'])),
+            $this->createConfiguredProvider(new TransitionalRuntimeConfiguration(onlyRules: ['computed.health'])),
             ruleSelector: $this->computedRuleSelector(),
         );
 
@@ -415,7 +415,7 @@ final class RuleExecutorTest extends TestCase
         $rule = $this->createRule('computed.health', [$complexity, $cohesion]);
         $executor = new RuleExecutor(
             [$rule],
-            $this->createConfiguredProvider(new AnalysisConfiguration(onlyRules: ['health.complexity'])),
+            $this->createConfiguredProvider(new TransitionalRuntimeConfiguration(onlyRules: ['health.complexity'])),
             ruleSelector: $this->computedRuleSelector(),
         );
 
@@ -467,7 +467,7 @@ final class RuleExecutorTest extends TestCase
         );
 
         // Disable class-level violations via violationCode filtering
-        $config = new AnalysisConfiguration(disabledRules: ['complexity.class']);
+        $config = new TransitionalRuntimeConfiguration(disabledRules: ['complexity.class']);
         $provider = $this->createConfiguredProvider($config);
         $executor = new RuleExecutor([$rule], $provider);
 
@@ -492,7 +492,7 @@ final class RuleExecutorTest extends TestCase
         );
 
         // Disable entire rule
-        $config = new AnalysisConfiguration(disabledRules: ['complexity']);
+        $config = new TransitionalRuntimeConfiguration(disabledRules: ['complexity']);
         $provider = $this->createConfiguredProvider($config);
         $executor = new RuleExecutor([$rule], $provider);
 
@@ -518,7 +518,7 @@ final class RuleExecutorTest extends TestCase
         );
 
         // Only enable callable-level violations
-        $config = new AnalysisConfiguration(onlyRules: ['complexity.callable']);
+        $config = new TransitionalRuntimeConfiguration(onlyRules: ['complexity.callable']);
         $provider = $this->createConfiguredProvider($config);
         $executor = new RuleExecutor([$rule], $provider);
 
@@ -798,10 +798,10 @@ final class RuleExecutorTest extends TestCase
         self::assertSame([$excludedViolation], $stats->excludedViolations);
     }
 
-    private function createConfiguredProvider(?AnalysisConfiguration $config = null): ConfigurationHolder
+    private function createConfiguredProvider(?TransitionalRuntimeConfiguration $config = null): TransitionalRuntimeConfigurationHolder
     {
-        $provider = new ConfigurationHolder();
-        $provider->setConfiguration($config ?? new AnalysisConfiguration());
+        $provider = new TransitionalRuntimeConfigurationHolder();
+        $provider->setConfiguration($config ?? new TransitionalRuntimeConfiguration());
 
         return $provider;
     }
@@ -821,7 +821,7 @@ final class RuleExecutorTest extends TestCase
 
     private function createMinimalContext(): AnalysisContext
     {
-        $repository = self::createStub(\Qualimetrix\Core\Metric\MetricRepositoryInterface::class);
+        $repository = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([]);
 
         return new AnalysisContext($repository, []);

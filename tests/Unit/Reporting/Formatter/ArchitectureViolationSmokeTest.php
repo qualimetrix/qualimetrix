@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 
 use DOMDocument;
+
 use DOMElement;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;

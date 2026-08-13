@@ -7,13 +7,13 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Console;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Pipeline\AnalysisCoverage;
-use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Analysis\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
@@ -45,7 +45,7 @@ final class MeasuredViolationSetTest extends TestCase
 
         $set = $this->createSet(
             [$ignored, $reported],
-            new AnalysisConfiguration(),
+            new TransitionalRuntimeConfiguration(),
             [
                 'src/Legacy/Service.php' => [
                     new Suppression(rule: '*', reason: 'Reviewed', line: 1, type: SuppressionType::File),
@@ -65,7 +65,7 @@ final class MeasuredViolationSetTest extends TestCase
 
         $set = $this->createSet(
             [$excludedByPath, $excludedByNamespace, $reported],
-            new AnalysisConfiguration(
+            new TransitionalRuntimeConfiguration(
                 excludePaths: ['generated'],
                 excludeNamespaces: ['App\\Vendor'],
             ),
@@ -86,7 +86,7 @@ final class MeasuredViolationSetTest extends TestCase
     {
         $onlyExcludedByAFlag = self::violation('vendor/library/SomeClass.php', 'App\\Vendor', 'SomeClass');
 
-        $set = $this->createSet([$onlyExcludedByAFlag], new AnalysisConfiguration());
+        $set = $this->createSet([$onlyExcludedByAFlag], new TransitionalRuntimeConfiguration());
 
         self::assertSame(
             [$onlyExcludedByAFlag],
@@ -104,7 +104,7 @@ final class MeasuredViolationSetTest extends TestCase
     #[Test]
     public function itListsOnlyStagesThatDefineTheMeasuredSet(): void
     {
-        $set = $this->createSet([], new AnalysisConfiguration(
+        $set = $this->createSet([], new TransitionalRuntimeConfiguration(
             excludePaths: ['generated'],
             excludeNamespaces: ['App\\Vendor'],
         ));
@@ -142,7 +142,7 @@ final class MeasuredViolationSetTest extends TestCase
 
         $set = $this->createSet(
             [$ignored, $reported],
-            new AnalysisConfiguration(),
+            new TransitionalRuntimeConfiguration(),
             [
                 'src/Legacy/Service.php' => [
                     new Suppression(rule: '*', reason: 'Reviewed', line: 1, type: SuppressionType::File),
@@ -162,7 +162,7 @@ final class MeasuredViolationSetTest extends TestCase
      */
     private function createSet(
         array $violations,
-        AnalysisConfiguration $configuration,
+        TransitionalRuntimeConfiguration $configuration,
         array $suppressions = [],
     ): MeasuredViolationSet {
         $analyzer = self::createStub(AnalysisPipelineInterface::class);
@@ -174,7 +174,7 @@ final class MeasuredViolationSetTest extends TestCase
             suppressions: $suppressions,
         ));
 
-        $configurationProvider = self::createStub(ConfigurationProviderInterface::class);
+        $configurationProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
         $configurationProvider->method('getConfiguration')->willReturn($configuration);
 
         return new MeasuredViolationSet($analyzer, new SuppressionFilter(), $configurationProvider);

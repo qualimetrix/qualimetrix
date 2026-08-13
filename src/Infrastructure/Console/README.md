@@ -24,12 +24,15 @@ Console/
 ├── GitScopeFilterConfig.php
 ├── RuntimeConfigurator.php
 ├── AnalysisRuntimeConfigurator.php  # Per-run rule, collector, computed-metric, and feature state
+├── CheckScopeResolver.php           # Git scope first, then warnings for that exact scope
+├── ResolvedCheckScope.php           # Resolved Git scope plus deferred warning messages
 ├── DiagnosticOutput.php              # Human diagnostics routed to stderr
 ├── RuleInputValidator.php            # Fail-closed selector/option-owner validation
 ├── ResultPresenter.php
 ├── CheckCommandDefinition.php
 ├── FilteredInputDefinition.php      # InputDefinition that hides rule-specific options from --help
 ├── OutputHelper.php                 # Line-by-line output with flush (avoids PTY truncation)
+├── LayerAssignmentResolver.php      # Rebuilds collected project state for layer-assignment diagnostics
 ├── Progress/
 │   ├── ConsoleProgressBar.php
 │   ├── ProgressReporterHolder.php
@@ -40,7 +43,9 @@ Console/
     ├── GraphExportCommand.php       # Export dependency graph (DOT, JSON)
     ├── HookInstallCommand.php       # Install pre-commit hook
     ├── HookStatusCommand.php        # Check hook status
-    └── HookUninstallCommand.php     # Remove pre-commit hook
+    ├── HookUninstallCommand.php     # Remove pre-commit hook
+    └── Debug/
+        └── LayerAssignmentCommand.php # Validate input, configure runtime, and render layer matches
 ```
 
 ## Commands
@@ -49,14 +54,32 @@ Console/
 
 **Name:** `check`
 
-**Dependencies (via constructor):**
-- `RuleRegistryInterface` — for CLI option discovery
-- `ConfigLoaderInterface` — loading config files
-- `AnalyzerInterface` — running analysis
-- `FormatterRegistryInterface` — output formatting
-- `CacheFactory` — for --clear-cache
-- `ConfigurationProviderInterface` — setting runtime config
-- `RuleOptionsFactory` — setting CLI options
+`CheckCommand` has ten constructor dependencies and thirteen properties. Its
+direct collaborators are `RuleRegistryInterface`, `AnalysisPipelineInterface`,
+`CacheFactory`, `ViolationFilterOrchestrator`,
+`ConfigurationPipelineInterface`, `RuntimeConfigurator`, `ResultPresenter`,
+`RuleInputValidator`, `DiagnosticOutput`, and `CheckScopeResolver`. The command
+has no logger, `GitScopeResolver`, or `ScopeWarningChecker` property.
+
+`CheckScopeResolver` owns the narrow scope seam. It resolves
+`GitScopeResolution` first, so invalid Git references fail before warnings or a
+payload are produced, and only then computes partial-autoload warnings for the
+resolved project root and paths. `ResolvedCheckScope` returns that unchanged
+scope with its warning messages. `CheckCommand` validates the resolved paths
+before emitting the messages through its stderr-only warning route; structured
+stdout remains a clean report payload.
+
+The Console package is an adapter. It imports Run and Configuration promises,
+parses options, configures one run, and renders diagnostics; it does not own a
+pipeline phase or capability state. P6 still moves the remaining rule-option
+transport out of the transitional Configuration boundary.
+
+`LayerAssignmentResolver` is an internal Console collaborator for
+`debug:layer-assignment`. It owns the adapter-side discovery, generated-file
+filtering, collection, dependency-graph and class-set preparation needed to
+query `ArchitectureProcessor`; the command retains input validation, runtime
+configuration, error mapping and rendering. This keeps both declarations below
+their constructor-dependency thresholds without introducing a public port.
 
 **Arguments:**
 - `paths` (required, array) — paths for analysis

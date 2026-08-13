@@ -12,13 +12,13 @@ use PhpParser\Node\Stmt;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope;
+use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorCallableMetadata;
+use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorFileEntryScope;
+use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorMethodContext;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
-use Qualimetrix\Metrics\VisitorCallableMetadata;
-use Qualimetrix\Metrics\VisitorCallableScope;
-use Qualimetrix\Metrics\VisitorFileEntryScope;
-use Qualimetrix\Metrics\VisitorMethodContext;
 use ReflectionClass;
 use ReflectionMethod;
 

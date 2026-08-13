@@ -200,7 +200,7 @@ PHP;
         );
     }
 
-    private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
+    private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];

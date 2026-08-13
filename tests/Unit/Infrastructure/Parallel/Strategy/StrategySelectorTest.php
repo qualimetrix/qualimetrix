@@ -9,11 +9,12 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Core\Metric\DerivedCollectorInterface;
-use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfiguration;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurationStoreInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
 use Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy;
 use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
@@ -23,21 +24,30 @@ use ReflectionProperty;
 #[CoversClass(StrategySelector::class)]
 final class StrategySelectorTest extends TestCase
 {
+    private const string TRAVERSAL_PARTICIPANT_CLASS = 'Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyVisitor';
+
     private AmphpParallelStrategy $amphpStrategy;
     private SequentialStrategy $sequentialStrategy;
-    private ConfigurationProviderInterface&Stub $configProvider;
+    private TransitionalRuntimeConfigurationProviderInterface&Stub $configProvider;
+    private CollectorRuntimeConfigurationStoreInterface&Stub $collectorRuntimeConfigurationStore;
 
     protected function setUp(): void
     {
-        $this->amphpStrategy = new AmphpParallelStrategy(new NullLogger());
+        $this->collectorRuntimeConfigurationStore = self::createStub(CollectorRuntimeConfigurationStoreInterface::class);
+        $this->collectorRuntimeConfigurationStore->method('current')
+            ->willReturn(new CollectorRuntimeConfiguration(['configure-me']));
+        $this->amphpStrategy = new AmphpParallelStrategy(new FileProcessingTaskFactory(
+            $this->collectorRuntimeConfigurationStore,
+            self::TRAVERSAL_PARTICIPANT_CLASS,
+        ));
         $this->sequentialStrategy = new SequentialStrategy();
-        $this->configProvider = self::createStub(ConfigurationProviderInterface::class);
+        $this->configProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
     }
 
     #[Test]
     public function itSelectsSequentialWhenWorkersIsZero(): void
     {
-        $config = new AnalysisConfiguration(workers: 0);
+        $config = new TransitionalRuntimeConfiguration(workers: 0);
         $this->configProvider->method('getConfiguration')->willReturn($config);
 
         $selector = $this->createSelector();
@@ -50,7 +60,7 @@ final class StrategySelectorTest extends TestCase
     #[Test]
     public function itSelectsSequentialWhenWorkersIsOne(): void
     {
-        $config = new AnalysisConfiguration(workers: 1);
+        $config = new TransitionalRuntimeConfiguration(workers: 1);
         $this->configProvider->method('getConfiguration')->willReturn($config);
 
         $selector = $this->createSelector();
@@ -63,7 +73,7 @@ final class StrategySelectorTest extends TestCase
     #[Test]
     public function itSelectsSequentialWhenRequestedWorkersIsOne(): void
     {
-        $config = new AnalysisConfiguration(
+        $config = new TransitionalRuntimeConfiguration(
             workers: 1, // explicitly sequential
             projectRoot: AbsolutePath::fromString(__DIR__),
         );
@@ -79,7 +89,7 @@ final class StrategySelectorTest extends TestCase
     #[Test]
     public function itSelectsParallelAndConfiguresIt(): void
     {
-        $config = new AnalysisConfiguration(
+        $config = new TransitionalRuntimeConfiguration(
             workers: 4,
             projectRoot: AbsolutePath::fromString(__DIR__),
             cacheEnabled: true,
@@ -101,7 +111,7 @@ final class StrategySelectorTest extends TestCase
     #[Test]
     public function itAutoDetectsWorkerCountWhenNull(): void
     {
-        $config = new AnalysisConfiguration(
+        $config = new TransitionalRuntimeConfiguration(
             workers: null, // auto-detect
             projectRoot: AbsolutePath::fromString(__DIR__),
         );
@@ -121,7 +131,7 @@ final class StrategySelectorTest extends TestCase
     #[Test]
     public function itUsesExplicitWorkerCount(): void
     {
-        $config = new AnalysisConfiguration(
+        $config = new TransitionalRuntimeConfiguration(
             workers: 4, // explicit count
             projectRoot: AbsolutePath::fromString(__DIR__),
         );
@@ -138,7 +148,7 @@ final class StrategySelectorTest extends TestCase
     #[Test]
     public function itPropagatesCwdProjectRootIntoStrategy(): void
     {
-        $config = new AnalysisConfiguration(
+        $config = new TransitionalRuntimeConfiguration(
             workers: 4,
             projectRoot: AbsolutePath::fromString((string) getcwd()),
         );
@@ -154,7 +164,7 @@ final class StrategySelectorTest extends TestCase
     #[Test]
     public function itFallsBackToSequentialWhenProjectRootDoesNotExist(): void
     {
-        $config = new AnalysisConfiguration(
+        $config = new TransitionalRuntimeConfiguration(
             workers: 4,
             projectRoot: AbsolutePath::fromString('/non/existent/path'),
         );
@@ -170,7 +180,7 @@ final class StrategySelectorTest extends TestCase
     #[Test]
     public function itDisablesCacheWhenCacheDisabled(): void
     {
-        $config = new AnalysisConfiguration(
+        $config = new TransitionalRuntimeConfiguration(
             workers: 4,
             projectRoot: AbsolutePath::fromString(__DIR__),
             cacheEnabled: false,
@@ -187,11 +197,11 @@ final class StrategySelectorTest extends TestCase
     #[Test]
     public function itPropagatesLazyDefaultCacheDirIntoStrategy(): void
     {
-        // Lazy default cacheDir (null) resolves at AnalysisConfiguration ctor time
+        // Lazy default cacheDir (null) resolves at TransitionalRuntimeConfiguration ctor time
         // to "$projectRoot/.qmx-cache". This test pins that the resolved cache dir
         // is propagated as-is to the parallel strategy.
         $projectRoot = AbsolutePath::fromString((string) getcwd());
-        $config = new AnalysisConfiguration(
+        $config = new TransitionalRuntimeConfiguration(
             workers: 4,
             projectRoot: $projectRoot,
             cacheEnabled: true,
@@ -214,7 +224,7 @@ final class StrategySelectorTest extends TestCase
     #[Test]
     public function itHandlesAbsoluteCacheDir(): void
     {
-        $config = new AnalysisConfiguration(
+        $config = new TransitionalRuntimeConfiguration(
             workers: 4,
             projectRoot: AbsolutePath::fromString(__DIR__),
             cacheEnabled: true,
@@ -229,22 +239,14 @@ final class StrategySelectorTest extends TestCase
         self::assertInstanceOf(AmphpParallelStrategy::class, $strategy);
     }
 
-    /**
-     * @param list<class-string<MetricCollectorInterface>> $collectorClasses
-     * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses
-     */
-    private function createSelector(
-        array $collectorClasses = [],
-        array $derivedCollectorClasses = [],
-    ): StrategySelector {
+    private function createSelector(): StrategySelector
+    {
         return new StrategySelector(
             amphpStrategy: $this->amphpStrategy,
             sequentialStrategy: $this->sequentialStrategy,
             configurationProvider: $this->configProvider,
             workerCountDetector: new WorkerCountDetector(),
             logger: new NullLogger(),
-            collectorClasses: $collectorClasses,
-            derivedCollectorClasses: $derivedCollectorClasses,
         );
     }
 }

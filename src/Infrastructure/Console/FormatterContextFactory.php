@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use InvalidArgumentException;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -21,7 +21,7 @@ final class FormatterContextFactory
     private const int DEFAULT_DETAIL_LIMIT = 200;
 
     public function __construct(
-        private readonly ConfigurationProviderInterface $configurationProvider,
+        private readonly TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
     ) {}
 
     public function create(

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Health;
 
-use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 

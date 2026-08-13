@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Configuration\Discovery\ComposerReader;
+use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
@@ -18,6 +18,8 @@ use RuntimeException;
  */
 final class ScopeWarningChecker
 {
+    public function __construct(private readonly ComposerAutoloadPathReaderInterface $composerReader) {}
+
     /**
      * Returns warning messages about incomplete analysis scope.
      *
@@ -35,9 +37,8 @@ final class ScopeWarningChecker
             return [];
         }
 
-        $reader = new ComposerReader();
         // Only check production autoload paths; autoload-dev (tests/) is not required for accurate coupling metrics
-        $autoloadPaths = $reader->extractAutoloadPaths($composerJsonPath->value(), includeDev: false);
+        $autoloadPaths = $this->composerReader->extractAutoloadPaths($composerJsonPath->value(), includeDev: false);
 
         if ($autoloadPaths === []) {
             return [];

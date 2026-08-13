@@ -16,11 +16,11 @@ use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Foreach_;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait;
 use Qualimetrix\Metrics\CodeSmell\BooleanArgument\BooleanArgumentSmells;
 use Qualimetrix\Metrics\CodeSmell\ControlFlow\ControlFlowSmells;
 use Qualimetrix\Metrics\CodeSmell\Debug\DebugCodeSmells;
-use Qualimetrix\Metrics\ResettableVisitorInterface;
-use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /** Traverses AST nodes and delegates code-smell semantics to subject companions. */
 final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface

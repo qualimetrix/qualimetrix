@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Support\Console;
 
 use Closure;
-use Qualimetrix\Analysis\Pipeline\AnalysisCoverage;
-use Qualimetrix\Analysis\Pipeline\AnalysisResult;
-use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Baseline\RunScope;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
@@ -47,7 +47,7 @@ final readonly class StubBaselineRun implements BaselineRunInterface
      *                                    returned — what the real run does to the world on its way
      *                                    to an answer
      * @param ?MetricRepositoryInterface $metrics the run's measured symbols, as
-     *                                            {@see \Qualimetrix\Analysis\Pipeline\AnalysisResult::$metrics}
+     *                                            {@see \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult::$metrics}
      *                                            would carry them; defaults to an empty repository
      *                                            when a test has no need to populate declaration sites
      */

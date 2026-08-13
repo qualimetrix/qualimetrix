@@ -7,19 +7,19 @@ namespace Qualimetrix\Tests\Integration\Architecture;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
+use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
+use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
+use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
-use Qualimetrix\Configuration\Discovery\ComposerReader;
-use Qualimetrix\Configuration\Loader\YamlConfigLoader;
-use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
-use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
-use Qualimetrix\Configuration\Pipeline\Stage\CliStage;
-use Qualimetrix\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
-use Qualimetrix\Configuration\Pipeline\Stage\ConfigFileStage;
-use Qualimetrix\Configuration\Pipeline\Stage\DefaultsStage;
-use Qualimetrix\Configuration\Pipeline\Stage\PresetStage;
-use Qualimetrix\Configuration\Preset\PresetResolver;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -29,7 +29,7 @@ use Symfony\Component\Console\Input\InputOption;
  * Consumer-expectation test for the ADR 0009 §5 two-layer test discipline.
  *
  * The characterization test
- * ({@see \Qualimetrix\Tests\Integration\Configuration\Loader\YamlNormalizationCharacterizationTest})
+ * ({@see \Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\YamlNormalizationCharacterizationTest})
  * proves that the loader emits {@code architecture.max_expanded_layers}
  * verbatim. This test proves the **independent** assertion that the value
  * reaches {@see ArchitectureConfiguration::$maxExpandedLayers} via the
@@ -124,7 +124,7 @@ final class MaxExpandedLayersFromYamlTest extends TestCase
         file_put_contents($this->tempDir . '/qmx.yaml', $contents);
     }
 
-    private function resolveFullPipeline(): ResolvedConfiguration
+    private function resolveFullPipeline(): TransitionalResolvedConfiguration
     {
         $loader = new YamlConfigLoader();
         $resolver = new PresetResolver();

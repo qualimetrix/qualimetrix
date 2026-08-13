@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Architecture\Configuration;
 
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\DeferredWarning;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
-use Qualimetrix\Configuration\Pipeline\DeferredWarning;
 
 /**
  * Result of {@see ArchitectureConfigurationFactory::fromArray()}.
@@ -13,7 +13,7 @@ use Qualimetrix\Configuration\Pipeline\DeferredWarning;
  * Bundles the typed {@see ArchitectureConfiguration} produced from the raw YAML
  * map with the list of {@see DeferredWarning}s the factory emitted while
  * processing it. The pipeline collects these warnings into
- * {@see \Qualimetrix\Configuration\Pipeline\ResolvedConfiguration::$deferredWarnings}
+ * {@see \Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration::$deferredWarnings}
  * so that {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator} can
  * replay them once the user-configured logger has been wired up — at the time
  * {@see ArchitectureConfigurationFactory::fromArray()} runs, the logger holder

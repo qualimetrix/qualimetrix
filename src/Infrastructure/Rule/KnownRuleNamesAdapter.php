@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Rule;
 
-use Qualimetrix\Configuration\KnownRuleNamesProviderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
+
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Core\Rule\RuleNameReader;
 

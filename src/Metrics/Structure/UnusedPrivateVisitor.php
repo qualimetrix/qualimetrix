@@ -17,7 +17,7 @@ use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 
 /**
  * AST visitor for detecting unused private class members.

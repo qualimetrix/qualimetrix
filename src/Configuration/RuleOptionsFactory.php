@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Qualimetrix\Configuration;
 
 use InvalidArgumentException;
+
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Rule\AdditionalOptionKeysInterface;
 use Qualimetrix\Core\Rule\RuleOptionKey;
 use Qualimetrix\Core\Rule\RuleOptionsInterface;

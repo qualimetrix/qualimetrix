@@ -12,7 +12,7 @@ use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Namespace_;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 
 /**
  * Visitor for counting classes, interfaces, traits, enums, and standalone functions.

@@ -4,20 +4,22 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Cache;
 
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+
+use Qualimetrix\Analysis\Configuration\Runtime\TransitionalRuntimeConfigurationHolder;
 
 /**
  * Factory for creating cache instance based on runtime configuration.
  *
  * This enables lazy cache creation — the cache directory is determined
- * from ConfigurationHolder at the moment of first cache access.
+ * from TransitionalRuntimeConfigurationHolder at the moment of first cache access.
  */
 final class CacheFactory
 {
     private ?CacheInterface $cache = null;
 
     public function __construct(
-        private readonly ConfigurationProviderInterface $configurationProvider,
+        private readonly TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
     ) {}
 
     /**

@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use Psr\Log\LogLevel;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\DeferredWarning;
+
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Progress\NullProgressReporter;
+use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
@@ -29,17 +33,19 @@ final class RuntimeConfigurator
         private readonly ProgressReporterHolder $progressReporterHolder,
         private readonly ProfilerHolder $profilerHolder,
         private readonly AnalysisRuntimeConfigurator $analysisRuntimeConfigurator,
-        private readonly DiagnosticOutput $diagnosticOutput = new DiagnosticOutput(),
+        private readonly DiagnosticOutput $diagnosticOutput,
+        private readonly CacheFactory $cacheFactory,
     ) {}
 
     /**
      * Configures all runtime services from resolved configuration and CLI input.
      */
     public function configure(
-        ResolvedConfiguration $resolved,
+        TransitionalResolvedConfiguration $resolved,
         InputInterface $input,
         OutputInterface $output,
     ): void {
+        $this->cacheFactory->reset();
         $this->analysisRuntimeConfigurator->resetRunState();
 
         $this->configureLogger($input, $output);
@@ -50,7 +56,7 @@ final class RuntimeConfigurator
         // configured at that point — replay them now that it is.
         $this->drainDeferredWarnings($resolved);
 
-        $this->configureMemoryLimit($resolved->analysis, $output);
+        $this->configureMemoryLimit($resolved->runtime, $output);
         $this->configureProgressReporter($input, $output);
         $this->configureProfiler($input);
         $this->analysisRuntimeConfigurator->configure($resolved, $input);
@@ -62,7 +68,7 @@ final class RuntimeConfigurator
      * The default (512M) is set in DefaultsStage and can be overridden
      * via qmx.yaml or --memory-limit CLI option.
      */
-    private function configureMemoryLimit(AnalysisConfiguration $config, OutputInterface $output): void
+    private function configureMemoryLimit(TransitionalRuntimeConfiguration $config, OutputInterface $output): void
     {
         if ($config->memoryLimit === null) {
             return;
@@ -126,10 +132,10 @@ final class RuntimeConfigurator
      * so the {@see LoggerHolder} still carries a NullLogger when the
      * architecture factory runs. To prevent its allow-list warnings from being
      * dropped, the factory buffers them in
-     * {@see \Qualimetrix\Configuration\Pipeline\ResolvedConfiguration::$deferredWarnings};
+     * {@see \Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration::$deferredWarnings};
      * this method drains the buffer through the now-configured logger.
      */
-    private function drainDeferredWarnings(ResolvedConfiguration $resolved): void
+    private function drainDeferredWarnings(TransitionalResolvedConfiguration $resolved): void
     {
         if ($resolved->deferredWarnings === []) {
             return;

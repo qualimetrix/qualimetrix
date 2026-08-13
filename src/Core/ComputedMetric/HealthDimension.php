@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\ComputedMetric;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+
 /**
  * Canonical health dimension identifiers.
  *

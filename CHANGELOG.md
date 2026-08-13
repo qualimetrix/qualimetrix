@@ -20,9 +20,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- Analysis orchestration moved without aliases. Replace imports under
+  `Qualimetrix\Analysis\Pipeline\*`, `Analysis\Collection\*`,
+  `Analysis\Discovery\*`, and `Analysis\Lifecycle\*` with their
+  `Qualimetrix\Analysis\Run\Contract\*`, `Analysis\Run\Collection\*`,
+  `Analysis\Run\Discovery\*`, and `Analysis\Run\Pipeline\*` counterparts.
+  In particular, use `Run\Contract\Pipeline\AnalysisPipelineInterface` for
+  adapters and `Run\Contract\FileSetInspectionParticipantInterface` for the
+  file-set invocation seam. There are no compatibility aliases.
+- Measurement moved without aliases. Replace
+  `Qualimetrix\Analysis\Aggregator\*`, `Analysis\Repository\*`,
+  `Analysis\Namespace_\*`, and shared collection metric contracts with
+  `Qualimetrix\Analysis\Evidence\Measurement\*`. External consumers must use
+  the corresponding `Measurement\Contract\*` type; repository indexes,
+  visitors, and aggregation implementations are internal.
+- Configuration moved without aliases from `Qualimetrix\Configuration\*` to
+  `Qualimetrix\Analysis\Configuration\*` where P3 moved the type. Use
+  `TransitionalRuntimeConfigurationProviderInterface` and the named pipeline
+  contracts rather than the old provider and resolved-configuration names. The
+  remaining rule-option and computed-metric classes are deliberate P5/P6
+  migration inputs, not compatibility shims.
+- Dependency extraction moved inside DependencyModel. Replace direct imports of
+  `Analysis\Collection\Dependency\DependencyResolver`, `DependencyVisitor`,
+  and handler types with the declared
+  `Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface`
+  where an external promise is needed. Extraction internals have no public
+  replacement. Tests move with their subject and must be discovered from their
+  new `tests/Analysis/...` paths.
 - Dependency graph types moved without aliases: replace `Qualimetrix\Core\Dependency\Dependency`, `DependencyType`, and `DependencyGraphInterface` with their `Qualimetrix\Analysis\Evidence\DependencyModel\Contract\*` equivalents; replace `EmptyDependencyGraph` with the internal capability implementation only inside composition. Replace the concrete `Analysis\Collection\Dependency\DependencyGraphBuilder` dependency with `Contract\DependencyGraphBuilderInterface`; graph implementations are no longer public module dependencies.
 - Graph export is now a Reporting projection contract. Replace `Analysis\Collection\Dependency\Export\GraphExporterInterface` and direct `DotExporter`/`JsonGraphExporter` construction with `Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface::project()` plus `GraphProjectionRequest`. The old exporter interface was removed, implementations moved under `Reporting\GraphProjection`, and no compatibility aliases or shims are provided.
-- Duplication implementation moved without aliases or shims: update `Qualimetrix\Analysis\Duplication\*`, `Qualimetrix\Core\Duplication\*`, and `Qualimetrix\Rules\Duplication\*` imports to `Qualimetrix\Analysis\Evidence\Duplication\*`. The former `DuplicationDetectorInterface::detect(array): array` contract was replaced by `Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface::reset(): void` plus `inspect(array): void`; detection results are now provider-owned. Remove `duplicateBlocks` arguments/reads from `AnalysisContext` and `EnrichmentResult`, inject the capability contract for inspection or the internal `DuplicationResultProvider` for the capability-owned rule, and update `DuplicateBlock`, `DuplicateLocation`, `CodeDuplicationRule`, and `CodeDuplicationOptions` imports to their new namespace.
+- Duplication implementation moved without aliases or shims: update `Qualimetrix\Analysis\Duplication\*`, `Qualimetrix\Core\Duplication\*`, and `Qualimetrix\Rules\Duplication\*` imports to `Qualimetrix\Analysis\Evidence\Duplication\*`. The intermediate `DuplicationInspectionInterface` is removed; final composition registers the internal `DuplicationDetector` as an implementation of `Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface`. Remove `duplicateBlocks` arguments/reads from `AnalysisContext` and `EnrichmentResult`; no Duplication-owned public inspection contract remains. The capability-owned rule reads the internal `DuplicationResultProvider`.
 - `architecture.allow` now rejects every directed cycle made only of exact selectors with `ConfigLoadException`. Exact self-references were previously stripped silently and exact mutual permissions only warned; remove redundant self-edges and break or reorient at least one allow edge in every cycle. Glob and captured selectors remain outside this static DAG check.
 - Callable-level contracts now use `Callable` instead of `Method`, including symbol/rule levels and `*.callable` channels. Update enum cases, configuration selectors, stored channel names, and integrations; there are no `Method` aliases.
 - Baselines now require version 11 typed subjects with optional semantic occurrence and dependency-edge identity. Version 5 and version 10 files are rejected because exact declaration identities cannot be inferred; run a fresh analysis, deliberately map or split accepted entries, and write a reviewed v11 file. The historical `baseline:migrate` command was removed and has no replacement shim.

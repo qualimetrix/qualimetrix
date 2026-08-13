@@ -7,18 +7,18 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Console;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Analysis\Pipeline\AnalysisCoverage;
-use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Analysis\Pipeline\AnalysisResult;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\RuleExecution\RuleExclusionStats;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Baseline\BaselineEntryParser;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -275,8 +275,8 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
 
     private function createOrchestrator(): ViolationFilterOrchestrator
     {
-        $configProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn(new AnalysisConfiguration());
+        $configProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
+        $configProvider->method('getConfiguration')->willReturn(new TransitionalRuntimeConfiguration());
 
         $declarations = StubChannelDeclarationRegistry::withDefaults();
 

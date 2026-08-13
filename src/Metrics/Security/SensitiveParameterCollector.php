@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Metrics\Security;
 
 use PhpParser\Node;
-use Qualimetrix\Core\Metric\MetricBag;
-use Qualimetrix\Core\Metric\MetricName;
-use Qualimetrix\Metrics\AbstractCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use SplFileInfo;
 
 /**

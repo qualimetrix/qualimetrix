@@ -6,11 +6,11 @@ namespace Qualimetrix\Tests\Integration;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Aggregator\AggregationHelper;
-use Qualimetrix\Analysis\Aggregator\MetricAggregator;
-use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
-use Qualimetrix\Core\Metric\CallableWithMetrics;
-use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper;
+use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;

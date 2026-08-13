@@ -7,9 +7,9 @@ namespace Qualimetrix\Tests\Unit\Metrics\Design;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Metric\MetricBag;
-use Qualimetrix\Core\Metric\MetricName;
-use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Metrics\Design\TypeCoveragePercentCollector;
 
 #[CoversClass(TypeCoveragePercentCollector::class)]

@@ -55,14 +55,14 @@ modular monolith** accepted in
 ADR 0012's substantial/thin hybrid direction; ADR 0010 is the historical
 Architecture pilot and ADR 0016 remains the governing subject-cohesion rule.
 
-P1 has landed Duplication and P2 has landed DependencyModel plus GraphProjection;
-P3-P8 remain pending. The tree below
+P1 has landed Duplication, P2 has landed DependencyModel plus GraphProjection,
+and P3 has landed Run, Measurement, and the transitional Configuration boundary;
+P4-P8 remain pending. The tree below
 describes the current physical layout. P0 governance remains live: the
-versioned internal manifest is authoritative for all 701 current declarations
-and 37 semantic owners, and it
-generates a coarse qmx projection with 37 owner layers, 12 singleton enforcement
-seams and final `external` (50 layers and 272 allow edges in this snapshot).
-That enforcement does not mean the planned P3-P8 namespace moves have landed.
+versioned internal manifest is authoritative for all 717 current declarations
+in 715 files and 37 semantic owners. It generates a coarse qmx projection with
+37 owner layers, 11 singleton enforcement seams, final `external`, 67 exact
+internal grants collapsing to 12 owner pairs, and 266 declared allow edges.
 
 ```
 src/
@@ -72,16 +72,17 @@ src/
 │   ├── Configuration/      # YAML factory + validators
 │   ├── Processing/         # Analysis-time helpers (template expansion etc.)
 │   └── Rules/              # Architecture rules (layer-violation, circular-dependency)
-├── Metrics/{Category}/     # Thin metric features (layered)
+├── Metrics/{Category}/     # Thin metric features (P7 migration inputs)
 ├── Rules/{Category}/       # Thin rule features (layered)
 ├── Baseline/          # Baseline support and @qmx-ignore suppression
 ├── Analysis/          # Orchestration plus taxonomy-only capability grouping
+│   ├── Configuration/       # P3 transitional document resolution and runtime config
 │   ├── Evidence/
-│   │   ├── Duplication/ # Landed P1 leaf: detection, result, rule and one contract
-│   │   └── DependencyModel/ # Landed P2 graph model: five contracts, three internals
-│   └── {Pipeline,Collection,...}/ # Unmigrated Run orchestration until P3
+│   │   ├── DependencyModel/ # graph model plus P3 extraction/traversal contract
+│   │   ├── Duplication/     # detection, result and rule; implements the Run-owned FileSet port
+│   │   └── Measurement/     # collection facts, repository, attribution, aggregation
+│   └── Run/                 # P3 discovery, collection, phase ordering and FileSet port
 ├── Reporting/         # Output formatters plus landed P2 GraphProjection capability
-├── Configuration/     # Cross-cutting config infrastructure (loader, schema, pipeline)
 └── Infrastructure/    # Adapters (CLI, DI, cache, git, profiler) — adapters for any feature live here
 benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
 scripts/               # Utility scripts (benchmark data collection, regression checks)
@@ -114,16 +115,16 @@ Two corollaries that settle recurring arguments:
 - "This feature has many adapters" is **not** an argument for a vertical slice:
   adapters live in `Infrastructure/` either way.
 
-The following ADR 0022 rules define the accepted target layout. P1 is current
-architecture; do not treat the still-pending P3-P8 namespace moves as landed:
+The following ADR 0022 rules define the accepted target layout. P1-P3 are current
+architecture; do not treat the still-pending P4-P8 namespace moves as landed:
 
 - A leaf module is a subject with one owner and lifecycle. Internal folders
   follow the subject; do not create an empty role skeleton.
 - Add `Contract/` only for exact types used by named external owner-consumers.
   A private leaf has no public surface.
-- A port introduced for dependency inversion belongs to its consumer. The
-  proposed `Analysis\Run` phase ports are non-binding hypotheses until the P3
-  contract gate proves their inputs, outputs and actual dependencies.
+- A port introduced for dependency inversion belongs to its consumer. P3 proves
+  only `Analysis\Run\Contract\FileSetInspectionParticipantInterface`; do not
+  add a generic lifecycle, graph-preparation, or metric-derivation port.
 - `Analysis`, `Analysis\Evidence`, and `Analysis\Policy` are navigation
   taxonomies only: no PHP types, state, shared contracts or qmx allow target.
 - `Core` holds only neutral primitives without a natural leaf owner. Many
@@ -239,14 +240,14 @@ When documenting deviations: use `!!! info "Deviation from original spec"` block
   migration grants.
 - **Core** contains neutral primitives only and has no project dependencies
   (PHP and php-parser types are allowed).
-- **Analysis\Run phase ports** are proposed, non-binding hypotheses until the
-  P3 contract gate; they are not current implementation contracts.
+- **Analysis\Run phase ports** are limited to the P3 FileSet inspection
+  participant. Graph preparation and metric derivation remain unapproved ports.
 - **Infrastructure** may depend on capabilities for delivery/composition;
   capabilities do not depend on framework adapters.
 - The internal manifest is the current exact owner/visibility/import authority.
   Its checker runs through `composer architecture:check` before selfcheck and
   rejects unlisted exact imports even when a coarse qmx owner edge permits them.
-- Generated `qmx.yaml` contains 37 semantic-owner layers, 12 singleton
+- Generated `qmx.yaml` contains 37 semantic-owner layers, 11 singleton
   enforcement seams and final `external`; `coverage: error` keeps isolated and
   edge-connected project declarations fail-closed. The qmx graph is coarse and
   does not replace the manifest checker.
@@ -344,14 +345,14 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 3. The class will be registered **automatically**
 
 **Adding a new configuration stage:**
-1. Create a class in `src/Configuration/Pipeline/Stage/`
+1. Create a class in `src/Analysis/Configuration/Pipeline/Stage/`
 2. Implement `ConfigurationStageInterface`
 3. The class will be registered **automatically** and added to `ConfigurationPipeline`
 
 **Adding a new config option (YAML key):**
-1. Add a constant to `src/Configuration/ConfigSchema.php` (e.g., `public const MY_OPTION = 'my.option'`)
+1. Add a constant to `src/Analysis/Configuration/ConfigSchema.php` (e.g., `public const MY_OPTION = 'my.option'`)
 2. Add an entry to `ConfigSchema::ENTRIES` (source path, result key, root type)
-3. Add handling in the appropriate consumer (`AnalysisConfiguration`, `DefaultsStage`, `CliStage`, etc.)
+3. Add handling in the appropriate consumer (`TransitionalRuntimeConfiguration`, `DefaultsStage`, `CliStage`, etc.)
 4. All consumers must reference the constant, not a string literal
 
 **Adding a new rule:**
@@ -675,12 +676,12 @@ Key rules:
 ### Component Documentation (in src/)
 - [src/Core/README.md](src/Core/README.md) — contracts and primitives
 - [src/Architecture/README.md](src/Architecture/README.md) — Architecture vertical slice (layer policy + circular dependency, ADR 0010 pilot)
-- [src/Analysis/Evidence/Duplication/README.md](src/Analysis/Evidence/Duplication/README.md) — Duplication capability boundary, lifecycle, contract and tests
+- [src/Analysis/Evidence/Duplication/README.md](src/Analysis/Evidence/Duplication/README.md) — Duplication capability boundary, lifecycle, Run-port integration and tests
 - [src/Metrics/README.md](src/Metrics/README.md) — metric collectors
 - [src/Rules/README.md](src/Rules/README.md) — analysis rules
 - [src/Analysis/README.md](src/Analysis/README.md) — orchestration
 - [src/Reporting/README.md](src/Reporting/README.md) — formatting
-- [src/Configuration/README.md](src/Configuration/README.md) — configuration
+- [src/Analysis/Configuration/README.md](src/Analysis/Configuration/README.md) — configuration
 - [src/Baseline/README.md](src/Baseline/README.md) — baseline support and @qmx-ignore suppression
 - [src/Infrastructure/README.md](src/Infrastructure/README.md) — CLI, DI, caching
 

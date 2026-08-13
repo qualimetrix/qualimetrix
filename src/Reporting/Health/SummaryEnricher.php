@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Health;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\ComputedMetric\HealthDimension;
-use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\MetricName;
-use Qualimetrix\Core\Namespace_\NamespaceTree;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Violation\Violation;
@@ -147,7 +147,7 @@ final readonly class SummaryEnricher
      */
     private function buildDecomposition(
         string $dimension,
-        \Qualimetrix\Core\Metric\MetricBag $projectMetrics,
+        \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag $projectMetrics,
     ): array {
         // Typing dimension needs special handling: compute percentages from raw sums
         if ($dimension === HealthDimension::Typing->value) {
@@ -186,7 +186,7 @@ final readonly class SummaryEnricher
     /**
      * @return list<DecompositionItem>
      */
-    private function buildTypingDecomposition(\Qualimetrix\Core\Metric\MetricBag $metrics): array
+    private function buildTypingDecomposition(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag $metrics): array
     {
         $components = [
             ['label' => 'Parameter types', 'typed' => MetricName::agg(MetricName::TYPE_COVERAGE_PARAM_TYPED, AggregationStrategy::Sum), 'total' => MetricName::agg(MetricName::TYPE_COVERAGE_PARAM_TOTAL, AggregationStrategy::Sum)],
@@ -313,7 +313,7 @@ final readonly class SummaryEnricher
     /**
      * @return array<string, float>
      */
-    private function getPerDimensionScores(\Qualimetrix\Core\Metric\MetricBag $metrics): array
+    private function getPerDimensionScores(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag $metrics): array
     {
         $scores = [];
 
@@ -373,7 +373,7 @@ final readonly class SummaryEnricher
     /**
      * @return array<string, int|float>
      */
-    private function getNotableMetrics(\Qualimetrix\Core\Metric\MetricBag $metrics, SymbolType $symbolType): array
+    private function getNotableMetrics(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag $metrics, SymbolType $symbolType): array
     {
         $notable = [];
         $keys = $symbolType === SymbolType::Class_

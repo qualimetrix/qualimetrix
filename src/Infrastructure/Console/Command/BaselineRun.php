@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
-use Qualimetrix\Analysis\Pipeline\IncompleteAnalysisException;
+use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Baseline\RunScope;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Configuration\Exception\ConfigLoadException;
-use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
-use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
@@ -41,11 +41,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 final readonly class BaselineRun implements BaselineRunInterface
 {
     public function __construct(
-        private ConfigurationPipeline $configurationPipeline,
+        private ConfigurationPipelineInterface $configurationPipeline,
         private RuntimeConfigurator $runtimeConfigurator,
         private MeasuredViolationSet $measuredViolationSet,
-        private ConfigurationProviderInterface $configurationProvider,
+        private TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
         private RuleInputValidator $ruleInputValidator,
+        private FileDiscoveryFactoryInterface $fileDiscoveryFactory,
     ) {}
 
     public function measure(InputInterface $input, OutputInterface $output): BaselineRunContext
@@ -62,12 +63,12 @@ final readonly class BaselineRun implements BaselineRunInterface
         $cwd = AbsolutePath::fromString((string) getcwd());
         $paths = array_map(
             static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $cwd),
-            $resolved->paths->paths,
+            $resolved->paths,
         );
 
         $this->assertPathsExist($paths);
 
-        $run = $this->measuredViolationSet->runForPaths($paths, new FinderFileDiscovery($resolved->paths->excludes));
+        $run = $this->measuredViolationSet->runForPaths($paths, $this->fileDiscoveryFactory->create($resolved->pathExcludes));
 
         // A partial measured set is not evidence about what disappeared or
         // improved. Stop before deriving a claimed scope or letting any
@@ -86,7 +87,7 @@ final readonly class BaselineRun implements BaselineRunInterface
     /**
      * @throws ConfigLoadException
      */
-    private function resolveConfiguration(InputInterface $input): ResolvedConfiguration
+    private function resolveConfiguration(InputInterface $input): TransitionalResolvedConfiguration
     {
         /** @var string|null $configPath */
         $configPath = $input->getOption('config');

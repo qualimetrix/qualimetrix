@@ -8,12 +8,12 @@ use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Core\Metric\CallableWithMetrics;
-use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Metrics\ResettableVisitorInterface;
-use Qualimetrix\Metrics\VisitorCallableScope;
-use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
  * Visitor for detecting unreachable code after terminal statements.

@@ -10,7 +10,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEdge;
 use Qualimetrix\Baseline\BaselineEntry;
@@ -19,9 +22,6 @@ use Qualimetrix\Baseline\BoundaryExplanationService;
 use Qualimetrix\Baseline\BoundaryExplanationStatus;
 use Qualimetrix\Baseline\InertBaselineEntry;
 use Qualimetrix\Baseline\InertEntryReason;
-use Qualimetrix\Core\Metric\CallableWithMetrics;
-use Qualimetrix\Core\Metric\MetricBag;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
@@ -619,6 +619,11 @@ final class CountingBoundaryRepository implements MetricRepositoryInterface
         private array $logicalClasses = [],
         private array $aggregates = [],
     ) {}
+
+    public function mergedWith(MetricRepositoryInterface $other): ?MetricRepositoryInterface
+    {
+        return null;
+    }
 
     public function get(SymbolPath $symbol): MetricBag
     {

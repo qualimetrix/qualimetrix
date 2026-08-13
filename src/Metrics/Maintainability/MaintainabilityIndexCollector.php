@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Metrics\Maintainability;
 
-use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\DerivedCollectorInterface;
-use Qualimetrix\Core\Metric\MetricBag;
-use Qualimetrix\Core\Metric\MetricDefinition;
-use Qualimetrix\Core\Metric\MetricName;
-use Qualimetrix\Core\Metric\ParallelSafeCollectorInterface;
-use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 
 /**
  * Derived collector that calculates Maintainability Index.

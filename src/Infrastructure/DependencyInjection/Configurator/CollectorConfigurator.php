@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
-use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+
 use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
-use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
+use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
 use Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy;
-use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
 use Qualimetrix\Infrastructure\Parallel\Strategy\WorkerCountDetector;
 use Qualimetrix\Metrics\Coupling\CouplingCollector;
 use Symfony\Component\Config\FileLocator;
@@ -59,21 +58,6 @@ final class CollectorConfigurator implements ContainerConfiguratorInterface
         $container->getDefinition(CouplingCollector::class)
             ->setArgument('$frameworkNamespacesHolder', new Reference(FrameworkNamespacesHolder::class));
 
-        // DependencyResolver for resolving class names to FQN
-        $container->register(DependencyResolver::class);
-
-        // DependencyVisitor for collecting dependencies during AST traversal
-        $container->register(DependencyVisitor::class)
-            ->setArguments([
-                new Reference(DependencyResolver::class),
-            ]);
-
-        // CompositeCollector will be populated by compiler pass
-        // Also receives DependencyVisitor for unified AST traversal (metrics + dependencies)
-        $container->register(CompositeCollector::class)
-            ->setArguments([[], []])
-            ->addMethodCall('setDependencyVisitor', [new Reference(DependencyVisitor::class)])
-            ->setPublic(true);
     }
 
     private function registerParallel(ContainerBuilder $container): void
@@ -81,20 +65,14 @@ final class CollectorConfigurator implements ContainerConfiguratorInterface
         // WorkerCountDetector for auto-detecting CPU cores
         $container->register(WorkerCountDetector::class);
 
+        $container->register(FileProcessingTaskFactory::class);
+
         // AmphpParallelStrategy for parallel processing via amphp/parallel
-        $container->register(AmphpParallelStrategy::class);
+        $container->register(AmphpParallelStrategy::class)
+            ->setArgument('$fileProcessingTaskFactory', new Reference(FileProcessingTaskFactory::class));
 
         // SequentialStrategy as fallback
         $container->register(SequentialStrategy::class);
 
-        // StrategySelector chooses and configures best available strategy
-        $container->register(StrategySelector::class)
-            ->setArguments([
-                new Reference(AmphpParallelStrategy::class),
-                new Reference(SequentialStrategy::class),
-                new Reference(ConfigurationProviderInterface::class),
-                new Reference(WorkerCountDetector::class),
-                new Reference(DelegatingLogger::class),
-            ]);
     }
 }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Design;
 
-use Qualimetrix\Core\Metric\MetricBag;
-use Qualimetrix\Core\Metric\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 
 /**
  * Evaluates the independent exclusion predicates for {@see DataClassRule}:

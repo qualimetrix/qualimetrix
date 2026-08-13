@@ -27,7 +27,7 @@ namespace Qualimetrix\Core\Violation;
  * — rather than beside its implementation in `Infrastructure\Rule`. Any
  * consumer that may not depend on `Infrastructure` (e.g. `Baseline`, which
  * `qmx.yaml` permits to depend only on `Core`) still needs this lookup;
- * mirrors {@see \Qualimetrix\Configuration\KnownRuleNamesProviderInterface}
+ * mirrors {@see \Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface}
  * (contract) / {@see \Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter}
  * (adapter) — the same split for the same reason. The concrete
  * {@see \Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry} stays in

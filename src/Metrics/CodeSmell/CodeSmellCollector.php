@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Metrics\CodeSmell;
 
 use PhpParser\Node;
-use Qualimetrix\Core\Metric\MetricBag;
-use Qualimetrix\Metrics\AbstractCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use SplFileInfo;
 
 /**

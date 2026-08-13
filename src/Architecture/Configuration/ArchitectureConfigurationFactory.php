@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Architecture\Configuration;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Architecture\Configuration\Validation\AllowValidator;
 use Qualimetrix\Architecture\Configuration\Validation\CoverageValidator;
 use Qualimetrix\Architecture\Configuration\Validation\ExactAllowCycleValidator;
@@ -16,7 +17,6 @@ use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\LayerPolicy;
 use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
-use Qualimetrix\Configuration\Exception\ConfigLoadException;
 
 /**
  * Converts the raw YAML map under the {@code architecture:} key into a typed
@@ -64,8 +64,8 @@ use Qualimetrix\Configuration\Exception\ConfigLoadException;
  * configured by
  * {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator::configureLogger()};
  * deferring the warnings ensures they survive until the logger is ready.
- * {@see \Qualimetrix\Configuration\Pipeline\ConfigurationPipeline} collects the
- * list into {@see \Qualimetrix\Configuration\Pipeline\ResolvedConfiguration::$deferredWarnings},
+ * {@see \Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline} collects the
+ * list into {@see \Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration::$deferredWarnings},
  * and {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator} drains it
  * to the configured logger after the holder is populated.
  */

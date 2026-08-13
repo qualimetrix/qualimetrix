@@ -9,10 +9,10 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorMethodContext;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\Complexity\CyclomaticComplexityVisitor;
-use Qualimetrix\Metrics\VisitorMethodContext;
 
 #[CoversClass(CyclomaticComplexityVisitor::class)]
 #[CoversClass(VisitorMethodContext::class)]

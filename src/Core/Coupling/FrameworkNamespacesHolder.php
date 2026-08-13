@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Coupling;
 
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
+
 /**
  * Late-init holder for FrameworkNamespaces.
  *

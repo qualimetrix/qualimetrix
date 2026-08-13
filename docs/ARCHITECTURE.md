@@ -2,16 +2,16 @@
 
 ## Navigation
 
-| Task                        | Document                                                        |
-| --------------------------- | --------------------------------------------------------------- |
-| **Getting started**         | [CLAUDE.md](../CLAUDE.md) — rules, structure, commands          |
-| **New collector**           | [src/Metrics/README.md](../src/Metrics/README.md)               |
-| **New rule**                | [src/Rules/README.md](../src/Rules/README.md)                   |
-| **Understanding contracts** | [src/Core/README.md](../src/Core/README.md)                     |
-| **Analysis pipeline**       | [src/Analysis/README.md](../src/Analysis/README.md)             |
-| **Formatters**              | [src/Reporting/README.md](../src/Reporting/README.md)           |
-| **Configuration**           | [src/Configuration/README.md](../src/Configuration/README.md)   |
-| **DI, cache, CLI**          | [src/Infrastructure/README.md](../src/Infrastructure/README.md) |
+| Task                        | Document                                                                        |
+| --------------------------- | ------------------------------------------------------------------------------- |
+| **Getting started**         | [CLAUDE.md](../CLAUDE.md) — rules, structure, commands                          |
+| **New collector**           | [src/Metrics/README.md](../src/Metrics/README.md)                               |
+| **New rule**                | [src/Rules/README.md](../src/Rules/README.md)                                   |
+| **Understanding contracts** | [src/Core/README.md](../src/Core/README.md)                                     |
+| **Analysis pipeline**       | [src/Analysis/README.md](../src/Analysis/README.md)                             |
+| **Formatters**              | [src/Reporting/README.md](../src/Reporting/README.md)                           |
+| **Configuration**           | [src/Analysis/Configuration/README.md](../src/Analysis/Configuration/README.md) |
+| **DI, cache, CLI**          | [src/Infrastructure/README.md](../src/Infrastructure/README.md)                 |
 
 ---
 
@@ -22,29 +22,34 @@
 The accepted target is a capability-oriented modular monolith
 ([ADR 0022](adr/0022-capability-oriented-modular-monolith.md)). Leaf capabilities
 own behaviour, configuration, state, tests and documentation. They
-expose `Contract` only to named external owner-consumers. Consumer-owned, typed
-phase ports under `Analysis\Run` are non-binding hypotheses until the P3
-contract gate proves their typed inputs, outputs and actual dependencies;
-implementations and prepared state would stay with their capability.
+expose `Contract` only to named external owner-consumers. P3 proved one
+consumer-owned Run port,
+`Analysis\Run\Contract\FileSetInspectionParticipantInterface`: it receives an
+eligible file set and owns no capability result. Generic lifecycle,
+graph-preparation, and metric-derivation ports remain unapproved.
 
 `Analysis`, `Analysis\Evidence`, and `Analysis\Policy` are navigation
 taxonomies, never modules or allow-list targets. `Core` is limited to neutral
 primitives, `Infrastructure` to delivery/composition, and `Reporting` to output
 projection. P1 has landed `Analysis\Evidence\Duplication` as the first migrated
 leaf: it owns detection, its run-scoped result provider, entities, options,
-rule, tests and documentation, and exposes only
-`Contract\DuplicationInspectionInterface`. P2 has also landed
+rule, tests and documentation. P3 removed its temporary inspection contract;
+the internal detector now implements Run's FileSet participant port. P2 also landed
 `Analysis\Evidence\DependencyModel` and `Reporting\GraphProjection`: graph
-consumers use the model's five contracts, while Console uses Reporting's two
-public projection types and cannot import exporter internals. The remaining
-`Metrics`, `Rules`, `Configuration` and Analysis sub-namespaces stay in their
-physical legacy locations until P3-P8.
+consumers use the model's six contracts, while Console uses Reporting's two
+public projection types and cannot import exporter internals. P3 moved Run,
+Measurement, and Configuration to their current physical boundaries. Run owns
+discovery, collection and ordering; Measurement owns collection facts,
+repository, namespace attribution and aggregation; Configuration owns document
+resolution through a deliberately transitional runtime DTO. P4-P8 retain the
+remaining Architecture, computed-metrics, Finding and thin-evidence moves.
 
 P0 governance implements the current enforcement model. The versioned internal
-manifest covers all 701 declarations in 699 files and names 37 semantic
-owners. It generates a coarse qmx projection with 37 owner layers, 12 singleton
-enforcement seams and final `external`: 50 layers and 272 allow edges in the
-reviewed snapshot. The 84 exact internal grants project to 15 coarse edges.
+manifest covers all 717 declarations in 715 files and names 37 semantic
+owners. P3 has 11 singleton enforcement seams and 67 exact internal grants,
+which collapse to 12 coarse owner pairs and produce 266 declared qmx allow
+edges. Generated artifacts are deterministic projections rather than a second
+source of truth.
 `external` excludes `Qualimetrix\**`; `coverage: error` makes
 an uncovered project class fail even when it has no dependency edges.
 
@@ -187,8 +192,8 @@ and [`Reporting.GraphProjection`](../src/Reporting/GraphProjection/README.md).
 
 ### Add a New Config Option
 
-1. Add a constant to `src/Configuration/ConfigSchema.php` (e.g., `public const MY_OPTION = 'my.option'`)
+1. Add a constant to `src/Analysis/Configuration/ConfigSchema.php` (e.g., `public const MY_OPTION = 'my.option'`)
 2. Add an entry to `ConfigSchema::ENTRIES` (if YAML-configurable)
-3. Add handling in the appropriate consumer (`AnalysisConfiguration`, pipeline stage, etc.)
+3. Add handling in the appropriate consumer (`TransitionalRuntimeConfiguration`, pipeline stage, etc.)
 
 **Details** — in the README.md of the corresponding directory.

@@ -6,9 +6,9 @@ namespace Qualimetrix\Metrics\Security\Credential;
 
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait;
 use Qualimetrix\Metrics\Security\SensitiveNameMatcher;
-use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
 
 /**
  * Traverses nodes and delegates credential-literal semantics.

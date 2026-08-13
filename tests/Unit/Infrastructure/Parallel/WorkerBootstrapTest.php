@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Unit\Infrastructure\Parallel;
 
+use PhpParser\NodeVisitorAbstract;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Collection\FileProcessorInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
+use Qualimetrix\Analysis\Run\Collection\FileProcessor;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Parallel\WorkerBootstrap;
@@ -16,10 +22,14 @@ use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Metrics\Size\LocCollector;
 use ReflectionClass;
+use RuntimeException;
+use stdClass;
 
 #[CoversClass(WorkerBootstrap::class)]
 final class WorkerBootstrapTest extends TestCase
 {
+    private const string TRAVERSAL_PARTICIPANT_CLASS = 'Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyVisitor';
+
     private string $tempCacheDir;
 
     protected function setUp(): void
@@ -46,6 +56,7 @@ final class WorkerBootstrapTest extends TestCase
     {
         $processor = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -59,6 +70,7 @@ final class WorkerBootstrapTest extends TestCase
     {
         $processor1 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class, LocCollector::class],
             derivedCollectorClasses: [],
             cacheDir: AbsolutePath::fromString($this->tempCacheDir),
@@ -66,6 +78,7 @@ final class WorkerBootstrapTest extends TestCase
 
         $processor2 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class, LocCollector::class],
             derivedCollectorClasses: [],
             cacheDir: AbsolutePath::fromString($this->tempCacheDir),
@@ -79,6 +92,7 @@ final class WorkerBootstrapTest extends TestCase
     {
         $processor1 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project-1'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -86,6 +100,7 @@ final class WorkerBootstrapTest extends TestCase
 
         $processor2 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project-2'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -99,6 +114,7 @@ final class WorkerBootstrapTest extends TestCase
     {
         $processor1 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -106,6 +122,7 @@ final class WorkerBootstrapTest extends TestCase
 
         $processor2 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class, LocCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -119,6 +136,7 @@ final class WorkerBootstrapTest extends TestCase
     {
         $processor1 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -126,6 +144,7 @@ final class WorkerBootstrapTest extends TestCase
 
         $processor2 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [MaintainabilityIndexCollector::class],
             cacheDir: null,
@@ -139,6 +158,7 @@ final class WorkerBootstrapTest extends TestCase
     {
         $processor1 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -146,6 +166,7 @@ final class WorkerBootstrapTest extends TestCase
 
         $processor2 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: AbsolutePath::fromString($this->tempCacheDir),
@@ -159,6 +180,7 @@ final class WorkerBootstrapTest extends TestCase
     {
         $processor = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: AbsolutePath::fromString($this->tempCacheDir),
@@ -174,6 +196,7 @@ final class WorkerBootstrapTest extends TestCase
     {
         $processor = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -190,6 +213,7 @@ final class WorkerBootstrapTest extends TestCase
         // Create processor and cache it
         $processor1 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -212,6 +236,7 @@ final class WorkerBootstrapTest extends TestCase
     {
         $processor1 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -221,6 +246,7 @@ final class WorkerBootstrapTest extends TestCase
 
         $processor2 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -234,6 +260,7 @@ final class WorkerBootstrapTest extends TestCase
     {
         $processor = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -247,6 +274,7 @@ final class WorkerBootstrapTest extends TestCase
     {
         $processor = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [
                 CyclomaticComplexityCollector::class,
                 LocCollector::class,
@@ -273,6 +301,7 @@ final class WorkerBootstrapTest extends TestCase
 
         $processor1 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: $collectorClasses,
             derivedCollectorClasses: $derivedCollectorClasses,
             cacheDir: AbsolutePath::fromString($this->tempCacheDir),
@@ -280,6 +309,7 @@ final class WorkerBootstrapTest extends TestCase
 
         $processor2 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: $collectorClasses,
             derivedCollectorClasses: $derivedCollectorClasses,
             cacheDir: AbsolutePath::fromString($this->tempCacheDir),
@@ -297,6 +327,7 @@ final class WorkerBootstrapTest extends TestCase
         // processes.
         $processor1 = WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [CyclomaticComplexityCollector::class, LocCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -308,6 +339,7 @@ final class WorkerBootstrapTest extends TestCase
 
         WorkerBootstrap::getFileProcessor(
             projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: self::TRAVERSAL_PARTICIPANT_CLASS,
             collectorClasses: [LocCollector::class, CyclomaticComplexityCollector::class],
             derivedCollectorClasses: [],
             cacheDir: null,
@@ -316,6 +348,72 @@ final class WorkerBootstrapTest extends TestCase
         $cacheKey2 = $this->getStaticCacheKey();
 
         self::assertSame($cacheKey1, $cacheKey2, 'Cache key must be insensitive to collector order — sets are equal');
+    }
+
+    #[Test]
+    public function itReconstructsTheConfiguredDependencyTraversalParticipantWithoutImportingItsImplementation(): void
+    {
+        $processor = WorkerBootstrap::getFileProcessor(
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: TestDependencyTraversalParticipant::class,
+            collectorClasses: [],
+        );
+
+        $processorReflection = new ReflectionClass($processor);
+        $composite = $processorReflection->getProperty('collector')->getValue($processor);
+        $compositeReflection = new ReflectionClass($composite);
+
+        self::assertInstanceOf(
+            TestDependencyTraversalParticipant::class,
+            $compositeReflection->getProperty('dependencyTraversalParticipant')->getValue($composite),
+        );
+    }
+
+    #[Test]
+    public function itChangesTheCacheKeyWhenTheTraversalParticipantClassChanges(): void
+    {
+        $processor1 = WorkerBootstrap::getFileProcessor(
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: TestDependencyTraversalParticipant::class,
+            collectorClasses: [],
+        );
+        $processor2 = WorkerBootstrap::getFileProcessor(
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: AlternateDependencyTraversalParticipant::class,
+            collectorClasses: [],
+        );
+
+        self::assertNotSame($processor1, $processor2);
+    }
+
+    #[Test]
+    public function itRejectsAMissingDependencyTraversalParticipantClass(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('WorkerBootstrap: dependency traversal participant class must not be empty.');
+
+        WorkerBootstrap::getFileProcessor(
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: '',
+            collectorClasses: [],
+        );
+    }
+
+    #[Test]
+    public function itRejectsAClassThatDoesNotImplementDependencyTraversalParticipantInterface(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(\sprintf(
+            "WorkerBootstrap: dependency traversal participant class '%s' must implement %s.",
+            stdClass::class,
+            DependencyTraversalParticipantInterface::class,
+        ));
+
+        WorkerBootstrap::getFileProcessor(
+            projectRoot: AbsolutePath::fromString('/tmp/test-project'),
+            dependencyTraversalParticipantClass: stdClass::class,
+            collectorClasses: [],
+        );
     }
 
     /**
@@ -380,3 +478,16 @@ final class WorkerBootstrapTest extends TestCase
         @rmdir($dir);
     }
 }
+
+class TestDependencyTraversalParticipant extends NodeVisitorAbstract implements DependencyTraversalParticipantInterface
+{
+    public function beginFile(RelativePath $file): void {}
+
+    /** @return list<Dependency> */
+    public function dependencies(): array
+    {
+        return [];
+    }
+}
+
+final class AlternateDependencyTraversalParticipant extends TestDependencyTraversalParticipant {}

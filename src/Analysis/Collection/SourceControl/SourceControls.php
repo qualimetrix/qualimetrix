@@ -6,7 +6,7 @@ namespace Qualimetrix\Analysis\Collection\SourceControl;
 
 use PhpParser\Node;
 use PhpParser\NodeFinder;
-use Qualimetrix\Analysis\Collection\Declaration\DeclarationBindings;
+use Qualimetrix\Analysis\Run\Contract\Collection\Declaration\DeclarationBindings;
 use Qualimetrix\Baseline\Suppression\SuppressionExtractor;
 use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
 use Qualimetrix\Core\Suppression\ControlScope;

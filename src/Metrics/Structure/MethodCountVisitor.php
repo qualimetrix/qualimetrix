@@ -14,7 +14,7 @@ use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\Use_;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Metrics\ResettableVisitorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 
 /**
  * Visitor for counting methods and properties in classes by visibility.

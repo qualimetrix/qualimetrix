@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\RuleExecution;
 
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -35,7 +35,7 @@ final class RuleExecutor implements RuleExecutorInterface
      */
     public function __construct(
         iterable $rules,
-        private readonly ConfigurationProviderInterface $configurationProvider,
+        private readonly TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
         private readonly RuleOptionsRegistry $ruleOptionsRegistry = new RuleOptionsRegistry(),
         ?RuleSelector $ruleSelector = null,
     ) {

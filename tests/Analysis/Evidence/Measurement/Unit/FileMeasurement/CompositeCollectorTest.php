@@ -1,0 +1,684 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\FileMeasurement;
+
+use ArrayIterator;
+use Generator;
+use LogicException;
+use PhpParser\Node;
+use PhpParser\NodeVisitorAbstract;
+use PhpParser\ParserFactory;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use ReflectionMethod;
+use SplFileInfo;
+use stdClass;
+
+#[CoversClass(CompositeCollector::class)]
+final class CompositeCollectorTest extends TestCase
+{
+    #[Test]
+    public function itTraversesMetricAndDependencyParticipantsInOneNodeTraverserPass(): void
+    {
+        $tracker = new stdClass();
+        $tracker->visited = false;
+        $collector = self::createStub(MetricCollectorInterface::class);
+        $collector->method('getVisitor')->willReturn(new class ($tracker) extends NodeVisitorAbstract {
+            public function __construct(private readonly stdClass $tracker) {}
+
+            public function enterNode(Node $node): null
+            {
+                $this->tracker->visited = true;
+
+                return null;
+            }
+        });
+        $collector->method('collect')->willReturn(new MetricBag());
+        $ast = (new ParserFactory())->createForNewestSupportedVersion()->parse(
+            '<?php namespace App; use Vendor\\Base; final class Subject extends Base {}',
+        ) ?? [];
+
+        $result = (new CompositeCollector([$collector], [], new DependencyVisitor()))->collect(
+            new SplFileInfo(__FILE__),
+            $ast,
+            RelativePath::fromString('Subject.php'),
+        );
+
+        self::assertTrue($tracker->visited);
+        self::assertCount(1, $result->dependencies);
+    }
+
+    #[Test]
+    public function itRequiresARelativePathWhenDependencyTraversalIsConfigured(): void
+    {
+        $method = new ReflectionMethod(CompositeCollector::class, 'collect');
+        $parameter = $method->getParameters()[2];
+
+        self::assertSame('filePath', $parameter->getName());
+        self::assertFalse($parameter->isOptional());
+    }
+
+    #[Test]
+    public function itReturnsDependenciesFromTheTraversalParticipant(): void
+    {
+        $ast = (new ParserFactory())->createForNewestSupportedVersion()->parse(
+            '<?php namespace App; use Vendor\\Port; final class Subject implements Port {}',
+        ) ?? [];
+
+        $result = (new CompositeCollector([], [], new DependencyVisitor()))->collect(
+            new SplFileInfo(__FILE__),
+            $ast,
+            RelativePath::fromString('Subject.php'),
+        );
+
+        self::assertSame('Vendor\\Port', $result->dependencies[0]->targetLogical()->toString());
+    }
+
+    #[Test]
+    public function itMergesMetricsFromAllCollectors(): void
+    {
+        $metrics1 = (new MetricBag())->with('loc', 100);
+        $metrics2 = (new MetricBag())->with('ccn', 5);
+
+        $collector1 = $this->createCollector('loc', $metrics1);
+        $collector2 = $this->createCollector('ccn', $metrics2);
+
+        $composite = new CompositeCollector([$collector1, $collector2]);
+        $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
+
+        self::assertSame(100, $result->metrics->get('loc'));
+        self::assertSame(5, $result->metrics->get('ccn'));
+    }
+
+    #[Test]
+    public function itReturnsEmptyBagWithNoCollectors(): void
+    {
+        $composite = new CompositeCollector([]);
+        $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
+
+        self::assertSame([], $result->metrics->all());
+    }
+
+    #[Test]
+    public function itResetsAllCollectors(): void
+    {
+        $collector1 = $this->createMock(MetricCollectorInterface::class);
+        $collector1->expects(self::once())->method('reset');
+        $collector1->method('getVisitor')->willReturn(new class extends NodeVisitorAbstract {});
+
+        $collector2 = $this->createMock(MetricCollectorInterface::class);
+        $collector2->expects(self::once())->method('reset');
+        $collector2->method('getVisitor')->willReturn(new class extends NodeVisitorAbstract {});
+
+        $composite = new CompositeCollector([$collector1, $collector2]);
+        $composite->reset();
+    }
+
+    #[Test]
+    public function itExposesCollectors(): void
+    {
+        $collector1 = $this->createCollector('test1', new MetricBag());
+        $collector2 = $this->createCollector('test2', new MetricBag());
+
+        $composite = new CompositeCollector([$collector1, $collector2]);
+
+        self::assertCount(2, $composite->getCollectors());
+    }
+
+    #[Test]
+    public function itAcceptsIterableOfCollectors(): void
+    {
+        $metrics = (new MetricBag())->with('from_generator', 42);
+
+        $collector = $this->createCollector('gen', $metrics);
+
+        $generator = (static function () use ($collector): Generator {
+            yield $collector;
+        })();
+
+        $composite = new CompositeCollector($generator);
+        $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
+
+        self::assertSame(42, $result->metrics->get('from_generator'));
+    }
+
+    #[Test]
+    public function itTraversesAstWithAllVisitors(): void
+    {
+        $callTracker = new stdClass();
+        $callTracker->visitor1Called = false;
+        $callTracker->visitor2Called = false;
+
+        $visitor1 = new TrackingVisitor($callTracker, 'visitor1Called');
+        $visitor2 = new TrackingVisitor($callTracker, 'visitor2Called');
+
+        $collector1 = self::createStub(MetricCollectorInterface::class);
+        $collector1->method('getVisitor')->willReturn($visitor1);
+        $collector1->method('collect')->willReturn(new MetricBag());
+
+        $collector2 = self::createStub(MetricCollectorInterface::class);
+        $collector2->method('getVisitor')->willReturn($visitor2);
+        $collector2->method('collect')->willReturn(new MetricBag());
+
+        $composite = new CompositeCollector([$collector1, $collector2]);
+        $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
+
+        self::assertTrue($callTracker->visitor1Called);
+        self::assertTrue($callTracker->visitor2Called);
+    }
+
+    #[Test]
+    public function itHandlesSingleCollector(): void
+    {
+        $metrics = (new MetricBag())->with('single', 42);
+        $collector = $this->createCollector('single', $metrics);
+
+        $composite = new CompositeCollector([$collector]);
+        $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
+
+        self::assertSame(42, $result->metrics->get('single'));
+    }
+
+    #[Test]
+    public function itAppliesDerivedCollectors(): void
+    {
+        // Base collector provides ccn:App\Service\UserService::method
+        $baseMetrics = (new MetricBag())
+            ->with('ccn:App\Service\UserService::method', 5)
+            ->with('loc:App\Service\UserService::method', 100);
+
+        $callable = $this->callable('App\\Service', 'UserService', 'method', 100, (new MetricBag())
+            ->with('ccn', 5)
+            ->with('loc', 100));
+        $baseCollector = $this->createCallableCollector('base', $baseMetrics, [$callable]);
+
+        // Derived collector that doubles the ccn value
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
+        $derivedCollector->method('getName')->willReturn('derived');
+        $derivedCollector->method('requires')->willReturn(['base']);
+        $derivedCollector->method('provides')->willReturn(['derived_ccn']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('derived_ccn', SymbolLevel::Callable),
+        ]);
+
+        // The derived collector receives a MetricBag with base metric names (without FQN)
+        $derivedCollector->method('calculate')
+            ->willReturnCallback(static function (MetricBag $sourceBag): MetricBag {
+                $ccn = $sourceBag->get('ccn');
+                if ($ccn === null) {
+                    return new MetricBag();
+                }
+
+                return (new MetricBag())->with('derived_ccn', $ccn * 2);
+            });
+
+        $composite = new CompositeCollector([$baseCollector], [$derivedCollector]);
+        $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
+
+        // Should have both base and derived metrics
+        self::assertSame(5, $result->metrics->get('ccn:App\Service\UserService::method'));
+        self::assertSame(100, $result->metrics->get('loc:App\Service\UserService::method'));
+        self::assertSame(10, $result->metrics->get($this->derivedKey('derived_ccn', $callable)));
+    }
+
+    #[Test]
+    public function itAppliesMultipleDerivedCollectors(): void
+    {
+        $baseMetrics = (new MetricBag())
+            ->with('value:test', 10);
+
+        $callable = $this->callable('', 'Test', 'test', 110, (new MetricBag())->with('value', 10));
+        $baseCollector = $this->createCallableCollector('base', $baseMetrics, [$callable]);
+
+        // First derived collector
+        $derived1 = self::createStub(DerivedCollectorInterface::class);
+        $derived1->method('getName')->willReturn('derived1');
+        $derived1->method('requires')->willReturn(['base']);
+        $derived1->method('provides')->willReturn(['doubled']);
+        $derived1->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('doubled', SymbolLevel::Callable),
+        ]);
+        $derived1->method('calculate')
+            ->willReturnCallback(static fn(MetricBag $bag): MetricBag =>
+                (new MetricBag())->with('doubled', ($bag->get('value') ?? 0) * 2));
+
+        // Second derived collector
+        $derived2 = self::createStub(DerivedCollectorInterface::class);
+        $derived2->method('getName')->willReturn('derived2');
+        $derived2->method('requires')->willReturn(['base']);
+        $derived2->method('provides')->willReturn(['tripled']);
+        $derived2->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('tripled', SymbolLevel::Callable),
+        ]);
+        $derived2->method('calculate')
+            ->willReturnCallback(static fn(MetricBag $bag): MetricBag =>
+                (new MetricBag())->with('tripled', ($bag->get('value') ?? 0) * 3));
+
+        $composite = new CompositeCollector([$baseCollector], [$derived1, $derived2]);
+        $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
+
+        self::assertSame(10, $result->metrics->get('value:test'));
+        self::assertSame(20, $result->metrics->get($this->derivedKey('doubled', $callable)));
+        self::assertSame(30, $result->metrics->get($this->derivedKey('tripled', $callable)));
+    }
+
+    #[Test]
+    public function itHandlesEmptyDerivedCollectors(): void
+    {
+        $metrics = (new MetricBag())->with('base', 42);
+        $collector = $this->createCollector('base', $metrics);
+
+        // Empty derived collectors array
+        $composite = new CompositeCollector([$collector], []);
+        $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
+
+        self::assertSame(42, $result->metrics->get('base'));
+    }
+
+    #[Test]
+    public function itHandlesDerivedCollectorWithNoMetrics(): void
+    {
+        $baseMetrics = (new MetricBag())
+            ->with('key:fqn', 10);
+
+        $callable = $this->callable('', 'Test', 'separator', 120, (new MetricBag())->with('with', 10));
+        $baseCollector = $this->createCallableCollector('base', $baseMetrics, [$callable]);
+
+        // Derived collector that returns empty bag
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
+        $derivedCollector->method('getName')->willReturn('empty_derived');
+        $derivedCollector->method('requires')->willReturn(['base']);
+        $derivedCollector->method('provides')->willReturn([]);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([]);
+        $derivedCollector->method('calculate')->willReturn(new MetricBag());
+
+        $composite = new CompositeCollector([$baseCollector], [$derivedCollector]);
+        $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
+
+        // Should only have base metrics
+        self::assertSame(10, $result->metrics->get('key:fqn'));
+    }
+
+    #[Test]
+    public function itHandlesMetricsWithoutColonSeparator(): void
+    {
+        // Base metrics without colon separator should be ignored by derived collectors
+        $baseMetrics = (new MetricBag())
+            ->with('no_separator', 5)
+            ->with('with:separator', 10);
+
+        $callable = $this->callable('', 'Test', 'separator', 120, (new MetricBag())->with('with', 10));
+        $baseCollector = $this->createCallableCollector('base', $baseMetrics, [$callable]);
+
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
+        $derivedCollector->method('getName')->willReturn('derived');
+        $derivedCollector->method('requires')->willReturn(['base']);
+        $derivedCollector->method('provides')->willReturn(['calculated']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('calculated', SymbolLevel::Callable),
+        ]);
+        $derivedCollector->method('calculate')
+            ->willReturnCallback(static function (MetricBag $sourceBag): MetricBag {
+                // Should only receive metrics with separator
+                $value = $sourceBag->get('with');
+
+                return $value !== null
+                    ? (new MetricBag())->with('calculated', $value * 2)
+                    : new MetricBag();
+            });
+
+        $composite = new CompositeCollector([$baseCollector], [$derivedCollector]);
+        $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
+
+        self::assertSame(5, $result->metrics->get('no_separator'));
+        self::assertSame(10, $result->metrics->get('with:separator'));
+        self::assertSame(20, $result->metrics->get($this->derivedKey('calculated', $callable)));
+    }
+
+    #[Test]
+    public function itExposesDerivedCollectors(): void
+    {
+        $collector = $this->createCollector('base', new MetricBag());
+
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
+        $derivedCollector->method('getName')->willReturn('derived');
+
+        $composite = new CompositeCollector([$collector], [$derivedCollector]);
+
+        $derivedCollectors = $composite->getDerivedCollectors();
+
+        self::assertCount(1, $derivedCollectors);
+        self::assertSame($derivedCollector, $derivedCollectors[0]);
+    }
+
+    #[Test]
+    public function itAcceptsIterableOfDerivedCollectors(): void
+    {
+        $collector = $this->createCollector('base', new MetricBag());
+
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
+        $derivedCollector->method('getName')->willReturn('derived');
+        $derivedCollector->method('requires')->willReturn([]);
+        $derivedCollector->method('provides')->willReturn([]);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([]);
+
+        // Use generator for derived collectors
+        $generator = (static function () use ($derivedCollector): Generator {
+            yield $derivedCollector;
+        })();
+
+        $composite = new CompositeCollector([$collector], $generator);
+
+        self::assertCount(1, $composite->getDerivedCollectors());
+    }
+
+    #[Test]
+    public function itHandlesMultipleFqnsInDerivedCollector(): void
+    {
+        // Multiple symbols with metrics
+        $baseMetrics = (new MetricBag())
+            ->with('ccn:App\Service\A::method1', 5)
+            ->with('ccn:App\Service\B::method2', 8)
+            ->with('loc:App\Service\A::method1', 100)
+            ->with('loc:App\Service\B::method2', 200);
+
+        $first = $this->callable('App\\Service', 'A', 'method1', 130, (new MetricBag())->with('ccn', 5)->with('loc', 100));
+        $second = $this->callable('App\\Service', 'B', 'method2', 140, (new MetricBag())->with('ccn', 8)->with('loc', 200));
+        $baseCollector = $this->createCallableCollector('base', $baseMetrics, [$first, $second]);
+
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
+        $derivedCollector->method('getName')->willReturn('derived');
+        $derivedCollector->method('requires')->willReturn(['base']);
+        $derivedCollector->method('provides')->willReturn(['ratio']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('ratio', SymbolLevel::Callable),
+        ]);
+        $derivedCollector->method('calculate')
+            ->willReturnCallback(static function (MetricBag $sourceBag): MetricBag {
+                $ccn = $sourceBag->get('ccn');
+                $loc = $sourceBag->get('loc');
+
+                if ($ccn === null || $loc === null) {
+                    return new MetricBag();
+                }
+
+                return (new MetricBag())->with('ratio', $ccn / $loc);
+            });
+
+        $composite = new CompositeCollector([$baseCollector], [$derivedCollector]);
+        $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
+
+        // Should have derived metrics for each FQN
+        self::assertEqualsWithDelta(0.05, $result->metrics->get($this->derivedKey('ratio', $first)), 0.001);
+        self::assertEqualsWithDelta(0.04, $result->metrics->get($this->derivedKey('ratio', $second)), 0.001);
+    }
+
+    #[Test]
+    public function itRoutesClassDerivedMetricsOnlyToTheirExactClassDeclaration(): void
+    {
+        $class = new ClassWithMetrics(
+            new DeclarationPath(
+                SymbolPath::forClass('App\\Design', 'TypedService'),
+                RelativePath::fromString('CompositeCollectorTest.php'),
+                330,
+            ),
+            45,
+            MetricBag::fromArray([
+                'typeCoverage.paramTyped' => 2,
+                'typeCoverage.paramTotal' => 2,
+            ]),
+        );
+        $baseCollector = $this->createClassCollector('type-coverage', new MetricBag(), [$class]);
+
+        $derivedCollector = self::createStub(DerivedCollectorInterface::class);
+        $derivedCollector->method('getName')->willReturn('type-coverage-pct');
+        $derivedCollector->method('requires')->willReturn(['type-coverage']);
+        $derivedCollector->method('provides')->willReturn(['typeCoverage.pct']);
+        $derivedCollector->method('getMetricDefinitions')->willReturn([
+            new MetricDefinition('typeCoverage.pct', SymbolLevel::Class_),
+        ]);
+        $derivedCollector->method('calculate')->willReturnCallback(
+            static fn(MetricBag $metrics): MetricBag => (new MetricBag())->with(
+                'typeCoverage.pct',
+                ($metrics->get('typeCoverage.paramTyped') ?? 0) === ($metrics->get('typeCoverage.paramTotal') ?? 0)
+                    ? 100.0
+                    : 0.0,
+            ),
+        );
+
+        $result = (new CompositeCollector([$baseCollector], [$derivedCollector]))->collect(
+            new SplFileInfo(__FILE__),
+            [],
+            RelativePath::fromString('CompositeCollectorTest.php'),
+        );
+
+        self::assertSame(100.0, $result->metrics->get($this->derivedSubjectKey('typeCoverage.pct', $class->subject)));
+        self::assertFalse($result->metrics->has('typeCoverage.pct:callable:' . $class->declarationPath->toCanonical()));
+    }
+
+    #[Test]
+    public function itConvertsDifferentIterableTypes(): void
+    {
+        $metrics = (new MetricBag())->with('test', 1);
+        $collector = $this->createCollector('test', $metrics);
+
+        // Test with array
+        $composite1 = new CompositeCollector([$collector]);
+        self::assertCount(1, $composite1->getCollectors());
+
+        // Test with ArrayIterator
+        $composite2 = new CompositeCollector(new ArrayIterator([$collector]));
+        self::assertCount(1, $composite2->getCollectors());
+
+        // Test with Generator
+        $generator = (static function () use ($collector): Generator {
+            yield $collector;
+        })();
+        $composite3 = new CompositeCollector($generator);
+        self::assertCount(1, $composite3->getCollectors());
+    }
+
+    #[Test]
+    public function itMergesDuplicateMetricKeys(): void
+    {
+        // Both collectors return the same metric key (merge behavior)
+        $metrics1 = (new MetricBag())->with('duplicate', 10);
+        $metrics2 = (new MetricBag())->with('duplicate', 20); // Will override
+
+        $collector1 = $this->createCollector('c1', $metrics1);
+        $collector2 = $this->createCollector('c2', $metrics2);
+
+        $composite = new CompositeCollector([$collector1, $collector2]);
+        $result = $composite->collect(new SplFileInfo(__FILE__), [], RelativePath::fromString('CompositeCollectorTest.php'));
+
+        // Second value should override first (MetricBag::merge behavior)
+        self::assertSame(20, $result->metrics->get('duplicate'));
+    }
+
+    #[Test]
+    public function itThrowsOnCyclicDerivedCollectorDependencies(): void
+    {
+        $baseMetrics = (new MetricBag())->with('value:test', 10);
+        $baseCollector = $this->createCollector('base', $baseMetrics);
+
+        // Collector A requires B, Collector B requires A => cycle
+        $derivedA = self::createStub(DerivedCollectorInterface::class);
+        $derivedA->method('getName')->willReturn('derivedA');
+        $derivedA->method('requires')->willReturn(['derivedB']);
+        $derivedA->method('provides')->willReturn(['metricA']);
+        $derivedA->method('getMetricDefinitions')->willReturn([]);
+        $derivedA->method('calculate')->willReturn(new MetricBag());
+
+        $derivedB = self::createStub(DerivedCollectorInterface::class);
+        $derivedB->method('getName')->willReturn('derivedB');
+        $derivedB->method('requires')->willReturn(['derivedA']);
+        $derivedB->method('provides')->willReturn(['metricB']);
+        $derivedB->method('getMetricDefinitions')->willReturn([]);
+        $derivedB->method('calculate')->willReturn(new MetricBag());
+
+        $composite = new CompositeCollector([$baseCollector], [$derivedA, $derivedB]);
+
+        self::expectException(LogicException::class);
+        self::expectExceptionMessageMatches('/Cyclic dependency.*derivedA.*derivedB|Cyclic dependency.*derivedB.*derivedA/');
+
+        $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
+    }
+
+    private function createCollector(string $name, MetricBag $metrics): MetricCollectorInterface
+    {
+        $collector = self::createStub(MetricCollectorInterface::class);
+        $collector->method('getName')->willReturn($name);
+        $collector->method('getVisitor')->willReturn(new class extends NodeVisitorAbstract {});
+        $collector->method('collect')->willReturn($metrics);
+
+        return $collector;
+    }
+
+    /** @param list<CallableWithMetrics> $callables */
+    private function createCallableCollector(string $name, MetricBag $metrics, array $callables): MetricCollectorInterface&CallableMetricsProviderInterface
+    {
+        return new class ($name, $metrics, $callables) implements MetricCollectorInterface, CallableMetricsProviderInterface {
+            /** @param list<CallableWithMetrics> $callables */
+            public function __construct(
+                private readonly string $name,
+                private readonly MetricBag $metrics,
+                private readonly array $callables,
+            ) {}
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
+            public function provides(): array
+            {
+                return [];
+            }
+            public function getMetricDefinitions(): array
+            {
+                return [new MetricDefinition('base', SymbolLevel::Callable)];
+            }
+            public function getVisitor(): NodeVisitorAbstract
+            {
+                return new class extends NodeVisitorAbstract {};
+            }
+            public function collect(SplFileInfo $file, array $ast): MetricBag
+            {
+                return $this->metrics;
+            }
+            public function reset(): void {}
+            public function getCallablesWithMetrics(RelativePath $file): array
+            {
+                return $this->callables;
+            }
+        };
+    }
+
+    /** @param list<ClassWithMetrics> $classes */
+    private function createClassCollector(string $name, MetricBag $metrics, array $classes): MetricCollectorInterface&ClassMetricsProviderInterface
+    {
+        return new class ($name, $metrics, $classes) implements MetricCollectorInterface, ClassMetricsProviderInterface {
+            /** @param list<ClassWithMetrics> $classes */
+            public function __construct(
+                private readonly string $name,
+                private readonly MetricBag $metrics,
+                private readonly array $classes,
+            ) {}
+
+            public function getName(): string
+            {
+                return $this->name;
+            }
+
+            public function provides(): array
+            {
+                return [];
+            }
+
+            public function getMetricDefinitions(): array
+            {
+                return [new MetricDefinition('base', SymbolLevel::Class_)];
+            }
+
+            public function getVisitor(): NodeVisitorAbstract
+            {
+                return new class extends NodeVisitorAbstract {};
+            }
+
+            public function collect(SplFileInfo $file, array $ast): MetricBag
+            {
+                return $this->metrics;
+            }
+
+            public function reset(): void {}
+
+            public function getClassesWithMetrics(RelativePath $file): array
+            {
+                return $this->classes;
+            }
+        };
+    }
+
+    private function callable(string $namespace, string $class, string $method, int $startFilePos, MetricBag $metrics): CallableWithMetrics
+    {
+        $classPath = SymbolPath::forClass($namespace, $class);
+
+        return new CallableWithMetrics(
+            new DeclarationPath(SymbolPath::forMethod($namespace, $class, $method), RelativePath::fromString('CompositeCollectorTest.php'), $startFilePos),
+            CallableKind::Method,
+            null,
+            null,
+            new LogicalClassPath($classPath),
+            $metrics,
+        );
+    }
+
+    private function derivedKey(string $metric, CallableWithMetrics $callable): string
+    {
+        return $metric . ':' . $callable->kind->value . ':' . $callable->declarationPath->toCanonical();
+    }
+
+    private function derivedSubjectKey(string $metric, \Qualimetrix\Core\Symbol\MetricSubject $subject): string
+    {
+        return $metric . ':' . $subject->toCanonical();
+    }
+}
+
+/**
+ * @internal
+ */
+final class TrackingVisitor extends NodeVisitorAbstract
+{
+    public function __construct(
+        private readonly stdClass $tracker,
+        private readonly string $property,
+    ) {}
+
+    /**
+     * @param Node[] $nodes
+     */
+    public function beforeTraverse(array $nodes): ?array
+    {
+        $this->tracker->{$this->property} = true;
+
+        return null;
+    }
+}

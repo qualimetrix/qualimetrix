@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Architecture\Unit\Rules;
 
 use LogicException;
+
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -12,7 +13,9 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
-use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Domain\CoverageMode;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
@@ -25,7 +28,6 @@ use Qualimetrix\Architecture\Rules\LayerViolationOptions;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Architecture\Rules\OwnedLayerTargets;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
-use Qualimetrix\Core\Metric\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\CliAliasReader;
@@ -1288,14 +1290,67 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsANonFindingDependencyLocationAtRuntime(): void
+    public function itProjectsAStructuredDependencyLocationIntoAFindingLocation(): void
     {
         $source = SymbolPath::forClass('App\\Controller', 'Controller');
         $target = SymbolPath::forClass('App\\Repository', 'Repository');
         $location = new class implements DependencyLocationInterface {
+            public function file(): RelativePath
+            {
+                return RelativePath::fromString('src/Controller.php');
+            }
+
+            public function line(): int
+            {
+                return 12;
+            }
+
             public function toString(): string
             {
-                return 'foreign-location';
+                return 'this string is deliberately not parsed';
+            }
+        };
+        $finding = new LayerViolationFinding(
+            dependency: new Dependency(
+                new DeclarationPath($source, RelativePath::fromString('src/Controller.php'), 0),
+                new LogicalClassPath($target),
+                DependencyType::New_,
+                $location,
+            ),
+            fromMatch: (new LayerRegistry([new LayerDefinition('controller', new MembershipSpec(['App\\Controller']))]))->resolveAll($source)[0],
+            toMatch: (new LayerRegistry([new LayerDefinition('repository', new MembershipSpec(['App\\Repository']))]))->resolveAll($target)[0],
+            ownedTargets: [],
+            ruleName: LayerViolationRule::NAME,
+            severity: Severity::Warning,
+            recommendation: 'Move the dependency behind an allowed boundary.',
+        );
+
+        $findingLocation = $finding->toViolations()[0]->location;
+
+        self::assertNotSame($location, $findingLocation);
+        self::assertSame('src/Controller.php', $findingLocation->file?->value());
+        self::assertSame(12, $findingLocation->line);
+    }
+
+    #[Test]
+    public function itRejectsADependencyLocationWithoutAnExactFileAndLine(): void
+    {
+        $source = SymbolPath::forClass('App\\Controller', 'Controller');
+        $target = SymbolPath::forClass('App\\Repository', 'Repository');
+        $location = new class implements DependencyLocationInterface {
+            public function file(): ?RelativePath
+            {
+                return null;
+            }
+
+            public function line(): ?int
+            {
+                return null;
+            }
+
+            public function toString(): string
+            {
+                return '';
             }
         };
         $finding = new LayerViolationFinding(
@@ -1314,6 +1369,7 @@ final class LayerViolationRuleTest extends TestCase
         );
 
         $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Layer violation findings require an exact dependency location.');
         $finding->toViolations();
     }
 

@@ -11,8 +11,8 @@ use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\Print_;
 use PhpParser\Node\Scalar\InterpolatedString;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Metrics\ResettableVisitorInterface;
-use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait;
 
 /**
  * AST visitor that detects security patterns: SQL injection, XSS, command injection.

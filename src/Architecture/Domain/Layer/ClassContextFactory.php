@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Architecture\Domain\Layer;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -27,7 +29,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * already captured during the dependency-collection phase as
  * {@see DependencyType::Attribute}, {@see DependencyType::Implements} and
  * {@see DependencyType::Extends} edges (see
- * {@see \Qualimetrix\Analysis\Collection\Dependency\Handler\ClassLikeHandler}).
+ * {@see \Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler}).
  * The factory walks the merged graph once to build child→parent maps and
  * services membership queries from them — no new collector, no AST traversal,
  * no worker-serialisation impact.
@@ -60,7 +62,7 @@ final class ClassContextFactory
      *
      * **Dual-purpose map.** {@see DependencyType::Extends} is emitted for both
      * {@code class extends Class} AND {@code interface extends Interface}
-     * (see {@see \Qualimetrix\Analysis\Collection\Dependency\Handler\ClassLikeHandler}).
+     * (see {@see \Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler}).
      * Class-extends-interface and interface-extends-class are not valid PHP
      * grammar, so a walk seeded from a class FQN only ever encounters parent
      * classes, and a walk seeded from an interface FQN only ever encounters

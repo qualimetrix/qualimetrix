@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Pipeline\AnalysisResult;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\CoverageFailure;
@@ -26,7 +29,7 @@ final class ResultPresenter
     public function __construct(
         private readonly FormatterRegistryInterface $formatterRegistry,
         private readonly ProfilerHolder $profilerHolder,
-        private readonly ConfigurationProviderInterface $configurationProvider,
+        private readonly TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
         private readonly SummaryEnricher $summaryEnricher,
         private readonly ProfilePresenter $profilePresenter,
         private readonly ExitCodeResolver $exitCodeResolver,
@@ -54,7 +57,7 @@ final class ResultPresenter
         // Fall back to CLI option only if config is not yet available
         $format = $this->configurationProvider->hasConfiguration()
             ? $this->configurationProvider->getConfiguration()->format
-            : ($input->getOption('format') ?? AnalysisConfiguration::DEFAULT_FORMAT);
+            : ($input->getOption('format') ?? TransitionalRuntimeConfiguration::DEFAULT_FORMAT);
         /** @var string $format */
 
         // Deprecation warning for text-verbose (stderr only, not in formatted output)
@@ -72,20 +75,7 @@ final class ResultPresenter
         $filteredViolations = $this->violationFilter->filterViolations($violations, $context);
 
         // Build and output report with filtered violations
-        $coverage = new ReportCoverage(
-            discovered: $analysisResult->coverage->discoveredFiles(),
-            analyzed: $analysisResult->coverage->analyzedFilesCount(),
-            generatedExcluded: $analysisResult->coverage->generatedExcludedFilesCount(),
-            failed: $analysisResult->coverage->failedFilesCount(),
-            failures: array_map(
-                fn($failure): CoverageFailure => new CoverageFailure(
-                    $failure->path->value(),
-                    $failure->kind->value,
-                    $this->relativizeFailureMessage($failure->message),
-                ),
-                $analysisResult->coverage->failures,
-            ),
-        );
+        $coverage = $this->reportCoverage($analysisResult->coverage);
 
         $report = ReportBuilder::create()
             ->addViolations($filteredViolations)
@@ -104,6 +94,34 @@ final class ResultPresenter
         $profiler->stop('reporting');
 
         return $this->exitCodeResolver->resolve($violations, $coverage);
+    }
+
+    private function reportCoverage(AnalysisCoverage $coverage): ReportCoverage
+    {
+        return new ReportCoverage(
+            discovered: $coverage->discoveredFiles(),
+            analyzed: $coverage->analyzedFilesCount(),
+            generatedExcluded: $coverage->generatedExcludedFilesCount(),
+            failed: $coverage->failedFilesCount(),
+            failures: array_map(
+                $this->coverageFailure(...),
+                $coverage->failures,
+            ),
+        );
+    }
+
+    private function coverageFailure(AnalysisFailure $failure): CoverageFailure
+    {
+        return new CoverageFailure(
+            $failure->path->value(),
+            $this->failureKind($failure->kind),
+            $this->relativizeFailureMessage($failure->message),
+        );
+    }
+
+    private function failureKind(AnalysisFailureKind $kind): string
+    {
+        return $kind->value;
     }
 
     private function relativizeFailureMessage(string $message): string

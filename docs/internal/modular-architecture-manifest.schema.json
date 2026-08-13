@@ -44,25 +44,38 @@
       }
     },
     "consumer": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["owner", "source_fqcn", "closes_in"],
-      "properties": {
-        "owner": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)*$" },
-        "source_fqcn": { "type": ["string", "null"] },
-        "closes_in": { "type": ["string", "null"], "pattern": "^P[1-8]$" }
-      },
       "oneOf": [
         {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner", "source_fqcn", "closes_in"],
           "properties": {
+            "owner": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)*$" },
             "source_fqcn": { "type": "null" },
             "closes_in": { "type": "null" }
           }
         },
         {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner", "source_fqcn", "closes_in"],
           "properties": {
+            "owner": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)*$" },
             "source_fqcn": { "type": "string", "minLength": 1 },
             "closes_in": { "type": "string", "pattern": "^P[1-8]$" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["owner", "relation", "source_fqcn", "closes_in", "carrier_fqcn", "boundary_fqcn"],
+          "properties": {
+            "owner": { "type": "string", "pattern": "^[A-Z][A-Za-z0-9]*(\\.[A-Z][A-Za-z0-9]*)*$" },
+            "relation": { "const": "contract_composition" },
+            "source_fqcn": { "type": "null" },
+            "closes_in": { "type": "null" },
+            "carrier_fqcn": { "type": "string", "minLength": 1 },
+            "boundary_fqcn": { "type": "string", "minLength": 1 }
           }
         }
       ]

@@ -8,8 +8,8 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\GroupBy;
@@ -27,8 +27,8 @@ final class FormatterContextFactoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $config = new AnalysisConfiguration();
-        $configProvider = self::createStub(ConfigurationProviderInterface::class);
+        $config = new TransitionalRuntimeConfiguration();
+        $configProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
         $configProvider->method('getConfiguration')->willReturn($config);
 
         $this->factory = new FormatterContextFactory($configProvider);

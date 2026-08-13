@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Duplication;
 
-use Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
 use SplFileInfo;
 
 /**
@@ -36,7 +38,7 @@ use SplFileInfo;
  * shape across the rows of a constant lookup table is the normal form of
  * that table, not code duplication needing extraction.
  */
-final class DuplicationDetector implements DuplicationInspectionInterface
+final class DuplicationDetector implements FileSetInspectionParticipantInterface
 {
     private HashIndexBuilder $hashIndexBuilder;
     private TokenNormalizer $normalizer;
@@ -46,8 +48,9 @@ final class DuplicationDetector implements DuplicationInspectionInterface
     private int $minLines;
 
     public function __construct(
-        private readonly ConfigurationProviderInterface $configurationProvider,
+        private readonly TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
         private readonly DuplicationResultProvider $resultProvider,
+        private readonly LoggerInterface $logger = new NullLogger(),
     ) {
         $this->hashIndexBuilder = new HashIndexBuilder();
         $this->normalizer = new TokenNormalizer();
@@ -62,6 +65,28 @@ final class DuplicationDetector implements DuplicationInspectionInterface
      * @param list<SplFileInfo> $files
      */
     public function inspect(array $files): void
+    {
+        $this->detect($files);
+        $this->logger->info('Duplication detection completed');
+    }
+
+    public static function participantId(): string
+    {
+        return 'duplication';
+    }
+
+    public static function producerRuleName(): string
+    {
+        return 'duplication.code-duplication';
+    }
+
+    public function resetForRun(): void
+    {
+        $this->resultProvider->reset();
+    }
+
+    /** @param list<SplFileInfo> $files */
+    private function detect(array $files): void
     {
         $this->loadOptions();
 
@@ -88,11 +113,6 @@ final class DuplicationDetector implements DuplicationInspectionInterface
         unset($indexResult, $retokenized);
 
         $this->resultProvider->replace($this->filterAndDeduplicate($rawBlocks));
-    }
-
-    public function reset(): void
-    {
-        $this->resultProvider->reset();
     }
 
     private function loadOptions(): void

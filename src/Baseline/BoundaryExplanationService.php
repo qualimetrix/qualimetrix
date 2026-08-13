@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Baseline;
 
 use InvalidArgumentException;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\MetricSubject;

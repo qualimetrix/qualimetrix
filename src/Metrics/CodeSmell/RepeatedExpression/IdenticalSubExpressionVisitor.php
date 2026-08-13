@@ -10,8 +10,8 @@ use PhpParser\Node\Expr\BinaryOp;
 use PhpParser\Node\Expr\Ternary;
 use PhpParser\Node\Stmt;
 use PhpParser\NodeVisitorAbstract;
-use Qualimetrix\Metrics\ResettableVisitorInterface;
-use Qualimetrix\Metrics\VisitorMethodTrackingTrait;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait;
 
 /** Traverses nodes and delegates repeated-expression policy to its subjects. */
 final class IdenticalSubExpressionVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface

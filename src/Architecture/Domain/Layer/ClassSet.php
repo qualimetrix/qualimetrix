@@ -11,7 +11,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * {@see ClassContextFactory} that resolves per-class context (attributes,
  * interfaces, parent classes).
  *
- * Built by {@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline} once
+ * Built by {@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline} once
  * collection and dependency-graph construction have completed; consumed by
  * {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage} to walk the
  * class set for each {@see TemplateLayerDefinition} and collect observed

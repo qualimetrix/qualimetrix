@@ -26,9 +26,9 @@ coupling:
 
 # Architecture: generated modular-architecture coarse enforcement projection.
 #
-# The live topology contains 37 semantic-owner layers plus 12 exact singleton
-# seams: 49 internal enforcement layers, or 50 including `external`. Membership
-# and 272 allows are generated from the internal manifest and production AST.
+# The live topology contains 37 semantic-owner layers plus 11 exact singleton
+# seams: 48 internal enforcement layers, or 49 including `external`. Membership
+# and 266 allows are generated from the internal manifest and production AST.
 #
 # qmx layers intentionally enforce only the coarse owner/seam DAG. Exact
 # internal visibility, contract consumers and temporary source-to-target grants
@@ -43,32 +43,31 @@ architecture:
   layers:
     - name: analysis-configuration
       patterns:
-        - 'Qualimetrix\Configuration\AnalysisConfiguration'
-        - 'Qualimetrix\Configuration\ConfigSchema'
-        - 'Qualimetrix\Configuration\ConfigurationHolder'
-        - 'Qualimetrix\Configuration\ConfigurationProviderInterface'
-        - 'Qualimetrix\Configuration\Discovery\ComposerReader'
-        - 'Qualimetrix\Configuration\HealthFormulaExcluder'
-        - 'Qualimetrix\Configuration\KnownRuleNamesProviderInterface'
-        - 'Qualimetrix\Configuration\Loader\ConfigLoaderInterface'
-        - 'Qualimetrix\Configuration\Loader\SectionNormalizationPolicy'
-        - 'Qualimetrix\Configuration\Loader\YamlConfigLoader'
-        - 'Qualimetrix\Configuration\PathsConfiguration'
-        - 'Qualimetrix\Configuration\Pipeline\ConfigDataNormalizer'
-        - 'Qualimetrix\Configuration\Pipeline\ConfigurationContext'
-        - 'Qualimetrix\Configuration\Pipeline\ConfigurationLayer'
-        - 'Qualimetrix\Configuration\Pipeline\ConfigurationMerger'
-        - 'Qualimetrix\Configuration\Pipeline\ConfigurationPipeline'
-        - 'Qualimetrix\Configuration\Pipeline\ConfigurationPipelineInterface'
-        - 'Qualimetrix\Configuration\Pipeline\ResolvedConfiguration'
-        - 'Qualimetrix\Configuration\Pipeline\RuleNameValidator'
-        - 'Qualimetrix\Configuration\Pipeline\Stage\CliStage'
-        - 'Qualimetrix\Configuration\Pipeline\Stage\ComposerDiscoveryStage'
-        - 'Qualimetrix\Configuration\Pipeline\Stage\ConfigFileStage'
-        - 'Qualimetrix\Configuration\Pipeline\Stage\ConfigurationStageInterface'
-        - 'Qualimetrix\Configuration\Pipeline\Stage\DefaultsStage'
-        - 'Qualimetrix\Configuration\Pipeline\Stage\PresetStage'
-        - 'Qualimetrix\Configuration\Preset\PresetResolver'
+        - 'Qualimetrix\Analysis\Configuration\ConfigSchema'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration'
+        - 'Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration'
+        - 'Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface'
+        - 'Qualimetrix\Analysis\Configuration\Discovery\ComposerReader'
+        - 'Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface'
+        - 'Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy'
+        - 'Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader'
+        - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer'
+        - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer'
+        - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationMerger'
+        - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline'
+        - 'Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface'
+        - 'Qualimetrix\Analysis\Configuration\Pipeline\RuleNameValidator'
+        - 'Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage'
+        - 'Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage'
+        - 'Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage'
+        - 'Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage'
+        - 'Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage'
+        - 'Qualimetrix\Analysis\Configuration\Preset\PresetResolver'
+        - 'Qualimetrix\Analysis\Configuration\Runtime\TransitionalRuntimeConfigurationHolder'
         - 'Qualimetrix\Configuration\RuleNamespaceExclusionProvider'
         - 'Qualimetrix\Configuration\RuleOptionThresholdModeResolver'
         - 'Qualimetrix\Configuration\RuleOptionsFactory'
@@ -170,6 +169,8 @@ architecture:
     - name: analysis-evidence-computedmetrics
       patterns:
         - 'Qualimetrix\Configuration\ComputedMetricFormulaValidator'
+        - 'Qualimetrix\Configuration\ComputedMetricsConfigResolver'
+        - 'Qualimetrix\Configuration\ComputedMetrics\Contract\HealthFormulaExclusionInterface'
         - 'Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults'
         - 'Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition'
         - 'Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder'
@@ -180,6 +181,7 @@ architecture:
         - 'Qualimetrix\Rules\ComputedMetric\ComputedMetricRuleOptions'
     - name: analysis-evidence-computedmetrics-health
       patterns:
+        - 'Qualimetrix\Configuration\HealthFormulaExcluder'
         - 'Qualimetrix\Reporting\Health\ContributorRanker'
         - 'Qualimetrix\Reporting\Health\DecompositionItem'
         - 'Qualimetrix\Reporting\Health\HealthContributor'
@@ -215,10 +217,24 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyLocationInterface'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\EmptyDependencyGraph'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyLocation'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\CatchInstanceofHandler'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\DependencyContext'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\FunctionLikeHandler'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\InstantiationHandler'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\NodeDependencyHandlerInterface'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\PropertyHandler'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\StaticAccessHandler'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TraitUseHandler'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TypeDependencyHelper'
     - name: analysis-evidence-design
       patterns:
         - 'Qualimetrix\Metrics\Design\TypeCoverageCollector'
@@ -247,7 +263,6 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions'
         - 'Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule'
         - 'Qualimetrix\Analysis\Evidence\Duplication\ContentHintExtractor'
-        - 'Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DataDeclarationTagger'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock'
         - 'Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlockFinder'
@@ -273,36 +288,63 @@ architecture:
         - 'Qualimetrix\Rules\Maintainability\MaintainabilityRule'
     - name: analysis-evidence-measurement
       patterns:
-        - 'Qualimetrix\Core\Metric\AggregationMeta'
-        - 'Qualimetrix\Core\Metric\AggregationStrategy'
-        - 'Qualimetrix\Core\Metric\BaseCollectorInterface'
-        - 'Qualimetrix\Core\Metric\CallableMetricsProviderInterface'
-        - 'Qualimetrix\Core\Metric\CallableWithMetrics'
-        - 'Qualimetrix\Core\Metric\ClassMetricsProviderInterface'
-        - 'Qualimetrix\Core\Metric\ClassWithMetrics'
-        - 'Qualimetrix\Core\Metric\CollectorConfigHolder'
-        - 'Qualimetrix\Core\Metric\DataBag'
-        - 'Qualimetrix\Core\Metric\DerivedCollectorInterface'
-        - 'Qualimetrix\Core\Metric\GlobalContextCollectorInterface'
-        - 'Qualimetrix\Core\Metric\MetricBag'
-        - 'Qualimetrix\Core\Metric\MetricCollectorInterface'
-        - 'Qualimetrix\Core\Metric\MetricDefinition'
-        - 'Qualimetrix\Core\Metric\MetricName'
-        - 'Qualimetrix\Core\Metric\MetricRepositoryInterface'
-        - 'Qualimetrix\Core\Metric\NamespaceMetricProviderInterface'
-        - 'Qualimetrix\Core\Metric\NamespaceWithMetrics'
-        - 'Qualimetrix\Core\Metric\ParallelSafeCollectorInterface'
-        - 'Qualimetrix\Core\Metric\SymbolLevel'
-        - 'Qualimetrix\Core\Namespace_\NamespaceDetectorInterface'
-        - 'Qualimetrix\Core\Namespace_\NamespaceTree'
-        - 'Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface'
-        - 'Qualimetrix\Metrics\AbstractCollector'
-        - 'Qualimetrix\Metrics\ResettableVisitorInterface'
-        - 'Qualimetrix\Metrics\VisitorCallableMetadata'
-        - 'Qualimetrix\Metrics\VisitorCallableScope'
-        - 'Qualimetrix\Metrics\VisitorFileEntryScope'
-        - 'Qualimetrix\Metrics\VisitorMethodContext'
-        - 'Qualimetrix\Metrics\VisitorMethodTrackingTrait'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationMeta'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationPhaseInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\CallableToClassAggregator'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\ClassToNamespaceAggregator'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\CyclicDependencyException'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\GlobalCollectorSorter'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\NamespaceMetricContributions'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\NamespaceToProjectAggregator'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Aggregation\TreeAwareNamespaceAggregator'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectionOutput'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurableInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfiguration'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurationStoreInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\DataBag'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedCollectorExecutionPlan'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedCollectorRunner'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedMetricExtractor'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\DefaultMetricRepositoryFactory'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\MetricSubjectIndex'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\NamespaceMetricIndex'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\RepositoryMerge'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Runtime\CollectorRuntimeConfigurationStore'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorCallableMetadata'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorFileEntryScope'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorMethodContext'
     - name: analysis-evidence-prioritization
       patterns:
         - 'Qualimetrix\Reporting\Debt\DebtCalculator'
@@ -517,74 +559,42 @@ architecture:
         - 'Qualimetrix\Core\Suppression\ThresholdOverride'
     - name: analysis-run
       patterns:
-        - 'Qualimetrix\Analysis\Aggregator\AggregationHelper'
-        - 'Qualimetrix\Analysis\Aggregator\AggregationPhaseInterface'
-        - 'Qualimetrix\Analysis\Aggregator\CallableToClassAggregator'
-        - 'Qualimetrix\Analysis\Aggregator\ClassToNamespaceAggregator'
-        - 'Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner'
-        - 'Qualimetrix\Analysis\Aggregator\GlobalCollectorSorter'
-        - 'Qualimetrix\Analysis\Aggregator\MetricAggregator'
-        - 'Qualimetrix\Analysis\Aggregator\NamespaceMetricContributions'
-        - 'Qualimetrix\Analysis\Aggregator\NamespaceToProjectAggregator'
-        - 'Qualimetrix\Analysis\Aggregator\TreeAwareNamespaceAggregator'
-        - 'Qualimetrix\Analysis\Collection\CollectedFileData'
-        - 'Qualimetrix\Analysis\Collection\CollectionOrchestrator'
-        - 'Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface'
-        - 'Qualimetrix\Analysis\Collection\CollectionPhaseOutput'
-        - 'Qualimetrix\Analysis\Collection\CollectionResult'
-        - 'Qualimetrix\Analysis\Collection\Dependency\DependencyResolver'
-        - 'Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor'
-        - 'Qualimetrix\Analysis\Collection\Dependency\Handler\CatchInstanceofHandler'
-        - 'Qualimetrix\Analysis\Collection\Dependency\Handler\ClassLikeHandler'
-        - 'Qualimetrix\Analysis\Collection\Dependency\Handler\DependencyContext'
-        - 'Qualimetrix\Analysis\Collection\Dependency\Handler\FunctionLikeHandler'
-        - 'Qualimetrix\Analysis\Collection\Dependency\Handler\InstantiationHandler'
-        - 'Qualimetrix\Analysis\Collection\Dependency\Handler\NodeDependencyHandlerInterface'
-        - 'Qualimetrix\Analysis\Collection\Dependency\Handler\PropertyHandler'
-        - 'Qualimetrix\Analysis\Collection\Dependency\Handler\StaticAccessHandler'
-        - 'Qualimetrix\Analysis\Collection\Dependency\Handler\TraitUseHandler'
-        - 'Qualimetrix\Analysis\Collection\Dependency\Handler\TypeDependencyHelper'
-        - 'Qualimetrix\Analysis\Collection\FileProcessingFailure'
-        - 'Qualimetrix\Analysis\Collection\FileProcessingFailureKind'
-        - 'Qualimetrix\Analysis\Collection\FileProcessingResult'
-        - 'Qualimetrix\Analysis\Collection\FileProcessor'
-        - 'Qualimetrix\Analysis\Collection\FileProcessorInterface'
-        - 'Qualimetrix\Analysis\Collection\Metric\CollectionOutput'
-        - 'Qualimetrix\Analysis\Collection\Metric\CompositeCollector'
-        - 'Qualimetrix\Analysis\Collection\Metric\DerivedCollectorExecutionPlan'
-        - 'Qualimetrix\Analysis\Collection\Metric\DerivedCollectorRunner'
-        - 'Qualimetrix\Analysis\Collection\Metric\DerivedMetricExtractor'
-        - 'Qualimetrix\Analysis\Collection\Strategy\ExecutionStrategyInterface'
-        - 'Qualimetrix\Analysis\Collection\Strategy\ParallelCapableInterface'
-        - 'Qualimetrix\Analysis\Collection\Strategy\StrategySelectorInterface'
-        - 'Qualimetrix\Analysis\Discovery\FileDiscoveryInterface'
-        - 'Qualimetrix\Analysis\Discovery\FinderFileDiscovery'
-        - 'Qualimetrix\Analysis\Discovery\GeneratedFileFilter'
-        - 'Qualimetrix\Analysis\Exception\CyclicDependencyException'
-        - 'Qualimetrix\Analysis\Lifecycle\AnalysisLifecycleHookInterface'
-        - 'Qualimetrix\Analysis\Namespace_\ChainNamespaceDetector'
-        - 'Qualimetrix\Analysis\Namespace_\NamespaceDetectorFactory'
-        - 'Qualimetrix\Analysis\Namespace_\ProjectNamespaceResolver'
-        - 'Qualimetrix\Analysis\Namespace_\Psr4NamespaceDetector'
-        - 'Qualimetrix\Analysis\Namespace_\TokenizerNamespaceDetector'
-        - 'Qualimetrix\Analysis\Pipeline\AnalysisCoverage'
-        - 'Qualimetrix\Analysis\Pipeline\AnalysisFailure'
-        - 'Qualimetrix\Analysis\Pipeline\AnalysisFailureKind'
-        - 'Qualimetrix\Analysis\Pipeline\AnalysisPipeline'
-        - 'Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface'
-        - 'Qualimetrix\Analysis\Pipeline\AnalysisResult'
-        - 'Qualimetrix\Analysis\Pipeline\DependencyGraphAnalysisResult'
-        - 'Qualimetrix\Analysis\Pipeline\DependencyGraphAnalyzer'
-        - 'Qualimetrix\Analysis\Pipeline\DependencyGraphAnalyzerInterface'
-        - 'Qualimetrix\Analysis\Pipeline\EnrichmentResult'
-        - 'Qualimetrix\Analysis\Pipeline\IncompleteAnalysisException'
-        - 'Qualimetrix\Analysis\Pipeline\MetricEnricher'
-        - 'Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory'
-        - 'Qualimetrix\Analysis\Repository\InMemoryMetricRepository'
-        - 'Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface'
-        - 'Qualimetrix\Analysis\Repository\MetricSubjectIndex'
-        - 'Qualimetrix\Analysis\Repository\NamespaceMetricIndex'
-        - 'Qualimetrix\Analysis\Repository\RepositoryMerge'
+        - 'Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator'
+        - 'Qualimetrix\Analysis\Run\Collection\FileProcessor'
+        - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput'
+        - 'Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind'
+        - 'Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult'
+        - 'Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing'
+        - 'Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Lifecycle\AnalysisLifecycleHookInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage'
+        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure'
+        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind'
+        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult'
+        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult'
+        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface'
+        - 'Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException'
+        - 'Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery'
+        - 'Qualimetrix\Analysis\Run\Discovery\DiscoveredAnalysisFiles'
+        - 'Qualimetrix\Analysis\Run\Discovery\FileDiscoveryFactory'
+        - 'Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery'
+        - 'Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter'
+        - 'Qualimetrix\Analysis\Run\Discovery\GeneratedFilePolicy'
+        - 'Qualimetrix\Analysis\Run\Enrichment\TransitionalEnrichmentResult'
+        - 'Qualimetrix\Analysis\Run\Enrichment\TransitionalMetricEnricher'
+        - 'Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite'
+        - 'Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate'
+        - 'Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline'
+        - 'Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer'
     - name: core-neutral
       patterns:
         - 'Qualimetrix\Core\Ast\FileParserInterface'
@@ -630,6 +640,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Application'
         - 'Qualimetrix\Infrastructure\Console\CheckCommandDefinition'
+        - 'Qualimetrix\Infrastructure\Console\CheckScopeResolver'
         - 'Qualimetrix\Infrastructure\Console\CliOnlyNarrowing'
         - 'Qualimetrix\Infrastructure\Console\CliOptionsParser'
         - 'Qualimetrix\Infrastructure\Console\Command\BaselineCaptureReporter'
@@ -655,6 +666,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\FilteredInputDefinition'
         - 'Qualimetrix\Infrastructure\Console\FormatterContextFactory'
         - 'Qualimetrix\Infrastructure\Console\GitScopeFilterConfig'
+        - 'Qualimetrix\Infrastructure\Console\LayerAssignmentResolver'
         - 'Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun'
         - 'Qualimetrix\Infrastructure\Console\MeasuredViolationSet'
         - 'Qualimetrix\Infrastructure\Console\OutputHelper'
@@ -662,6 +674,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar'
         - 'Qualimetrix\Infrastructure\Console\Progress\DelegatingProgressReporter'
         - 'Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder'
+        - 'Qualimetrix\Infrastructure\Console\ResolvedCheckScope'
         - 'Qualimetrix\Infrastructure\Console\ResultPresenter'
         - 'Qualimetrix\Infrastructure\Console\RuleInputValidator'
         - 'Qualimetrix\Infrastructure\Console\RuntimeConfigurator'
@@ -675,6 +688,7 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FileSetInspectionParticipantCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FormatterCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\GlobalCollectorCompilerPass'
         - 'Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ParallelCollectorClassesCompilerPass'
@@ -688,7 +702,9 @@ architecture:
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\ConfigurationConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\ContainerConfiguratorInterface'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\CoreServicesConfigurator'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\DependencyModelConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\DuplicationConfigurator'
+        - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\MeasurementConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\OutputConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurator'
         - 'Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator'
@@ -725,6 +741,7 @@ architecture:
     - name: infrastructure-parallel
       patterns:
         - 'Qualimetrix\Infrastructure\Parallel\FileProcessingTask'
+        - 'Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory'
         - 'Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy'
         - 'Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy'
         - 'Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector'
@@ -807,18 +824,15 @@ architecture:
     - name: seam-architecture-lifecycle-hook
       patterns:
         - 'Qualimetrix\Architecture\Processing\ArchitectureLifecycleHook'
-    - name: seam-computed-metrics-config-resolver
-      patterns:
-        - 'Qualimetrix\Configuration\ComputedMetricsConfigResolver'
     - name: seam-config-load-exception
       patterns:
-        - 'Qualimetrix\Configuration\Exception\ConfigLoadException'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException'
     - name: seam-declaration-bindings
       patterns:
-        - 'Qualimetrix\Analysis\Collection\Declaration\DeclarationBindings'
+        - 'Qualimetrix\Analysis\Run\Contract\Collection\Declaration\DeclarationBindings'
     - name: seam-deferred-warning
       patterns:
-        - 'Qualimetrix\Configuration\Pipeline\DeferredWarning'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\DeferredWarning'
     - name: seam-health-reason-builder
       patterns:
         - 'Qualimetrix\Reporting\Health\HealthReasonBuilder'
@@ -847,7 +861,6 @@ architecture:
 
   allow:
     analysis-configuration:
-      - analysis-evidence-computedmetrics
       - analysis-finding
       - analysis-policy-architecture
       - core-neutral
@@ -906,6 +919,7 @@ architecture:
       - external
     analysis-evidence-dependencymodel:
       - core-neutral
+      - core-path
       - core-symbol
       - external
     analysis-evidence-design:
@@ -919,6 +933,7 @@ architecture:
     analysis-evidence-duplication:
       - analysis-configuration
       - analysis-finding
+      - analysis-run
       - core-neutral
       - core-path
       - core-symbol
@@ -934,6 +949,7 @@ architecture:
       - analysis-evidence-dependencymodel
       - core-path
       - core-symbol
+      - infrastructure-observability
       - external
     analysis-evidence-prioritization:
       - analysis-evidence-measurement
@@ -989,7 +1005,6 @@ architecture:
       - analysis-evidence-circulardependency
       - analysis-evidence-computedmetrics
       - analysis-evidence-dependencymodel
-      - analysis-evidence-duplication
       - analysis-evidence-measurement
       - analysis-finding
       - analysis-policy-architecture
@@ -1043,7 +1058,6 @@ architecture:
       - infrastructure-rule
       - reporting
       - reporting-graphprojection
-      - seam-computed-metrics-config-resolver
       - seam-config-load-exception
       - seam-suppression-filter
       - external
@@ -1052,7 +1066,6 @@ architecture:
       - analysis-evidence-computedmetrics
       - analysis-evidence-coupling
       - analysis-evidence-dependencymodel
-      - analysis-evidence-duplication
       - analysis-evidence-measurement
       - analysis-finding
       - analysis-policy-architecture
@@ -1069,7 +1082,6 @@ architecture:
       - infrastructure-parallel
       - infrastructure-rule
       - reporting
-      - seam-computed-metrics-config-resolver
       - seam-rule-executor
       - seam-rule-validator-map-factory
       - seam-suppression-filter
@@ -1086,6 +1098,7 @@ architecture:
       - external
     infrastructure-parallel:
       - analysis-configuration
+      - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
       - analysis-policy-inline
       - analysis-run
@@ -1126,12 +1139,6 @@ architecture:
       - analysis-configuration
       - analysis-policy-architecture
       - analysis-run
-      - external
-    seam-computed-metrics-config-resolver:
-      - analysis-configuration
-      - analysis-evidence-computedmetrics
-      - analysis-finding
-      - core-symbol
       - external
     seam-config-load-exception:
       - external
@@ -1211,7 +1218,7 @@ rules:
       - src/Infrastructure/DependencyInjection
       # Infrastructure console commands and pipeline orchestrators need many deps
       - src/Infrastructure/Console
-      - src/Analysis/Pipeline
+      - src/Analysis/Run/Pipeline
     namespace:
       warning: 16
       error: 25
@@ -1250,7 +1257,6 @@ rules:
       - Qualimetrix\Reporting\Debt
       - Qualimetrix\Infrastructure\Serializer
       - Qualimetrix\Reporting\Formatter\Support
-      - Qualimetrix\Analysis\Collection\Metric
       # The stable public contract plus internal graph implementations makes the
       # owner-root distance structural; `[Q]` avoids excluding the Contract child.
       - '[Q]ualimetrix\Analysis\Evidence\DependencyModel'
@@ -1266,12 +1272,10 @@ rules:
       - src/Metrics/*Trait.php
       # Console commands/orchestrators sit at the top of the stack: I→1 is correct there
       - src/Infrastructure/Console
-      - src/Analysis/Pipeline
       # Abstract base classes aggregate deps from all subclasses — instability is structural.
       # Fragile by construction: these path entries suppress NAMESPACE-level violations
       # (Qualimetrix\Metrics I=0.98, Qualimetrix\Rules I=0.92) through a representative
       # file, so renaming or deleting either file silently brings the violation back.
-      - src/Metrics/AbstractCollector.php
       - src/Rules/AbstractRule.php
     class:
       min_afferent: 2
@@ -1366,9 +1370,9 @@ rules:
       - src/Reporting/Health/WorstOffender.php
       - src/Analysis/Collection/CollectedFileData.php
       - src/Analysis/Evidence/DependencyModel/DependencyGraph.php
-      - src/Analysis/Collection/FileProcessingResult.php
-      - src/Analysis/Pipeline/AnalysisPipeline.php
-      - src/Analysis/Pipeline/MetricEnricher.php
+      - src/Analysis/Run/Contract/Collection/FileProcessingResult.php
+      - src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php
+      - src/Analysis/Run/Pipeline/AnalysisPipeline.php
       - src/Infrastructure/Console/Command/CheckCommand.php
       - src/Infrastructure/Console/ResultPresenter.php
       - src/Infrastructure/Parallel/Strategy/StrategySelector.php
@@ -1379,6 +1383,7 @@ rules:
     exclude_paths:
       - src/Reporting/Report.php
       - src/Reporting/FormatterContext.php
+      - src/Analysis/Run/Contract/Collection/SuccessfulFileProcessing.php
 
   code-smell.unreachable-code:
     warning: 1
@@ -1400,7 +1405,13 @@ rules:
     error: 10
     exclude_paths:
       - src/Rules/AbstractRule.php
-      - src/Metrics/AbstractCollector.php
+      - src/Analysis/Evidence/Measurement/Contract/AbstractCollector.php
+
+  # Mutable runtime stores intentionally expose state accessors rather than
+  # domain behaviour; this exact path keeps the exception local to that role.
+  design.data-class:
+    exclude_paths:
+      - src/Analysis/Evidence/Measurement/Runtime/CollectorRuntimeConfigurationStore.php
 
   design.lcom:
     warning: 5

@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Unit\Core\Metric;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Metric\DataBag;
+use Qualimetrix\Analysis\Evidence\Measurement\DataBag;
 
 #[CoversClass(DataBag::class)]
 final class DataBagTest extends TestCase

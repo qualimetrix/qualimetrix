@@ -589,6 +589,15 @@ Unknown rule "complexty.cyclomatic" in qmx.yaml. Did you mean "complexity.cyclom
 
 ---
 
+## Configuration Processing
+
+The configuration file format and CLI behavior are stable. Internally,
+Qualimetrix resolves defaults, presets, files, Composer discovery, and CLI
+options through the Analysis Configuration boundary. This implementation detail
+does not change any documented key or precedence rule.
+
+---
+
 ## What's Next?
 
 See the [CLI Options](../usage/cli-options.md) reference for the complete list of command-line options.

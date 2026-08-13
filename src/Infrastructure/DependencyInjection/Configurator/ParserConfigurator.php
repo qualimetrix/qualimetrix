@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Namespace_\NamespaceDetectorFactory;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Core\Namespace_\NamespaceDetectorInterface;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\FileParserFactory;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
@@ -27,7 +25,6 @@ final class ParserConfigurator implements ContainerConfiguratorInterface
     {
         $this->registerCache($container);
         $this->registerParsers($container);
-        $this->registerNamespaceDetection($container);
     }
 
     private function registerCache(ContainerBuilder $container): void
@@ -35,9 +32,9 @@ final class ParserConfigurator implements ContainerConfiguratorInterface
         $container->register(CacheKeyGenerator::class);
 
         // CacheFactory creates FileCache lazily based on runtime configuration
-        // Note: ConfigurationProviderInterface is synthetic, so we can't use autowiring here
+        // Note: TransitionalRuntimeConfigurationProviderInterface is synthetic, so we can't use autowiring here
         $container->register(CacheFactory::class)
-            ->setArguments([new Reference(ConfigurationProviderInterface::class)])
+            ->setArguments([new Reference(TransitionalRuntimeConfigurationProviderInterface::class)])
             ->setPublic(true);
 
         // CacheInterface is created through factory
@@ -66,7 +63,7 @@ final class ParserConfigurator implements ContainerConfiguratorInterface
                 new Reference(PhpFileParser::class),
                 new Reference(CacheFactory::class),
                 new Reference(CacheKeyGenerator::class),
-                new Reference(ConfigurationProviderInterface::class),
+                new Reference(TransitionalRuntimeConfigurationProviderInterface::class),
             ]);
 
         // Register FileParserInterface using factory
@@ -74,15 +71,4 @@ final class ParserConfigurator implements ContainerConfiguratorInterface
             ->setFactory([new Reference(FileParserFactory::class), 'create']);
     }
 
-    private function registerNamespaceDetection(ContainerBuilder $container): void
-    {
-        // Factory reads namespace.composer_json from runtime config
-        // Note: namespace.strategy config is accepted but only 'chain' is implemented.
-        // To support strategy selection, extend NamespaceDetectorFactory.
-        $container->register(NamespaceDetectorFactory::class)
-            ->setArguments([new Reference(ConfigurationProviderInterface::class)]);
-
-        $container->register(NamespaceDetectorInterface::class)
-            ->setFactory([new Reference(NamespaceDetectorFactory::class), 'create']);
-    }
 }

@@ -5,22 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command\Debug;
 
 use Exception;
-use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
-use Qualimetrix\Analysis\Discovery\GeneratedFileFilter;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
-use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
-use Qualimetrix\Architecture\Domain\Layer\ClassSet;
+use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Architecture\Domain\Layer\LayerMatch;
 use Qualimetrix\Architecture\Domain\Layer\MatchedCriterion;
-use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
-use Qualimetrix\Configuration\Exception\ConfigLoadException;
-use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
-use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -42,7 +33,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * The command runs the full Discovery + Collection phases so the per-class
  * answer matches {@code qmx check} byte-for-byte under both template-layer
  * and graph-criteria configurations (ADR 0008). Resolution itself is
- * performed by the shared {@see ArchitectureProcessorInterface} so the
+ * performed by the shared {@see LayerAssignmentResolver} so the
  * matching algorithm has a single source of truth.
  *
  * Exits 0 for any informational result (including "no layer matches"), 2
@@ -56,12 +47,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class LayerAssignmentCommand extends Command
 {
     public function __construct(
-        private readonly ConfigurationPipeline $configurationPipeline,
-        private readonly CollectionOrchestratorInterface $collectionOrchestrator,
-        private readonly DependencyGraphBuilderInterface $graphBuilder,
-        private readonly ArchitectureProcessorInterface $processor,
-        private readonly MetricRepositoryFactoryInterface $repositoryFactory,
+        private readonly ConfigurationPipelineInterface $configurationPipeline,
         private readonly RuntimeConfigurator $runtimeConfigurator,
+        private readonly LayerAssignmentResolver $layerAssignmentResolver,
     ) {
         parent::__construct();
     }
@@ -114,7 +102,21 @@ final class LayerAssignmentCommand extends Command
         $normalized = $this->fqnFor($symbol);
 
         try {
-            $matches = $this->resolveLayerMatches($input, $output, $symbol);
+            $resolved = $this->loadResolvedConfiguration($input);
+            $this->runtimeConfigurator->configure($resolved, $input, $output);
+            $resolution = $resolved->runtime->includeGenerated
+                ? $this->layerAssignmentResolver->resolveIncludingGenerated(
+                    $resolved->paths,
+                    $resolved->pathExcludes,
+                    $resolved->runtime->projectRoot,
+                    $symbol,
+                )
+                : $this->layerAssignmentResolver->resolve(
+                    $resolved->paths,
+                    $resolved->pathExcludes,
+                    $resolved->runtime->projectRoot,
+                    $symbol,
+                );
         } catch (ConfigLoadException $e) {
             $output->writeln(\sprintf('<error>Configuration error: %s</error>', $e->getMessage()));
 
@@ -128,91 +130,15 @@ final class LayerAssignmentCommand extends Command
             return self::FAILURE;
         }
 
-        $this->renderReport($output, $normalized, $matches);
+        $this->renderReport($output, $normalized, $resolution['matches'], $resolution['hasLayers']);
 
         return self::SUCCESS;
     }
 
     /**
-     * Runs the configuration pipeline, file discovery, the collection phase,
-     * and template expansion through the processor — then asks the processor
-     * to classify the requested class.
-     *
-     * @return list<LayerMatch>
-     */
-    private function resolveLayerMatches(InputInterface $input, OutputInterface $output, SymbolPath $symbol): array
-    {
-        $resolved = $this->loadResolvedConfiguration($input);
-
-        // Apply the same per-run setup `qmx check` performs: raise PHP
-        // `memory_limit` from `qmx.yaml`, bind the ArchitectureProcessor,
-        // reset stateful holders, wire the logger/profiler/progress reporter.
-        // Phase 4.5 makes this command run a full Discovery + Collection pass
-        // through the parallel worker pool, which exhausts the default 128MB
-        // limit on any non-trivial codebase without this hook (matches the
-        // behaviour `CheckCommand::doExecute()` relies on).
-        $this->runtimeConfigurator->configure($resolved, $input, $output);
-
-        $repository = $this->repositoryFactory->create();
-
-        // Honour `paths.excludes` and `analysis.include_generated` exactly like
-        // `qmx check` does ({@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline::analyze()}).
-        // Without this, classes inside excluded directories or `@generated`
-        // files would silently enter the class set, drift the
-        // ArchitectureProcessor's template-layer expansion, and break the
-        // byte-for-byte parity contract documented above.
-        $fileDiscovery = new FinderFileDiscovery($resolved->paths->excludes);
-        $cwd = AbsolutePath::fromString((string) getcwd());
-        $paths = array_map(
-            static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $cwd),
-            $resolved->paths->paths,
-        );
-        $files = array_values(iterator_to_array(
-            $fileDiscovery->discover($paths),
-            false,
-        ));
-
-        if (!$resolved->analysis->includeGenerated) {
-            $files = (new GeneratedFileFilter())->filter($files);
-        }
-
-        $collection = $this->collectionOrchestrator->collect($files, $repository, $resolved->analysis->projectRoot);
-        $logicalClassUniverse = [];
-        foreach ($repository->allLogicalClasses() as $info) {
-            $logicalClass = $info->subject?->logicalClassPath();
-            if ($logicalClass !== null) {
-                $logicalClassUniverse[$logicalClass->toCanonical()] = $logicalClass;
-            }
-        }
-        $graph = $this->graphBuilder->build($collection->dependencies, array_values($logicalClassUniverse));
-
-        $classPaths = [];
-        foreach ($repository->all(SymbolType::Class_) as $classSymbol) {
-            $classPaths[] = $classSymbol->symbolPath;
-        }
-        $classSet = new ClassSet($classPaths, new \Qualimetrix\Architecture\Domain\Layer\ClassContextFactory());
-
-        // RuntimeConfigurator already invoked reset() and bind() on the
-        // processor above; calling them again here would be redundant. We
-        // still prepare() explicitly because that step is command-specific
-        // (graph + classSet built from this command's own collection pass).
-        $this->processor->prepare($graph, $classSet);
-
-        // classify() yields the head match per class; the debug command
-        // wants the full match list (assignment + shadowed alternatives),
-        // so we reach into the prepared registry directly. The processor's
-        // prepare() already bound the graph and expanded templates, so the
-        // matching algorithm is identical to what the rule layer sees.
-        $prepared = $this->processor->getPreparedConfiguration();
-        \assert($prepared !== null);
-
-        return $prepared->registry()->resolveAll($symbol);
-    }
-
-    /**
      * Loads the resolved configuration via the configuration pipeline.
      */
-    private function loadResolvedConfiguration(InputInterface $input): \Qualimetrix\Configuration\Pipeline\ResolvedConfiguration
+    private function loadResolvedConfiguration(InputInterface $input): \Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration
     {
         /** @var string|null $configPath */
         $configPath = $input->getOption('config');
@@ -289,6 +215,7 @@ final class LayerAssignmentCommand extends Command
         OutputInterface $output,
         string $fqn,
         array $matches,
+        bool $hasLayers,
     ): void {
         $output->writeln(\sprintf('Class: <info>%s</info>', $fqn));
         $output->writeln('');
@@ -296,8 +223,7 @@ final class LayerAssignmentCommand extends Command
         if ($matches === []) {
             $output->writeln('  Assigned to: <comment>(no layer)</comment>');
             $output->writeln('');
-            $registry = $this->processor->getPreparedConfiguration()?->registry();
-            if ($registry === null || $registry->isEmpty()) {
+            if (!$hasLayers) {
                 $output->writeln('  Suggestion: no layers are declared in the configuration. Add an');
                 $output->writeln('  <comment>architecture.layers</comment> section to qmx.yaml to start enforcing');
                 $output->writeln('  layer boundaries.');

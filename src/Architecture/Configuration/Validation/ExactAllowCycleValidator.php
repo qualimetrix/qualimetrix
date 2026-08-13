@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Architecture\Configuration\Validation;
 
+use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Architecture\Domain\Allow\AllowListEntry;
-use Qualimetrix\Configuration\Exception\ConfigLoadException;
 
 /**
  * Rejects directed cycles in the exact-selector projection of architecture.allow.

@@ -1,0 +1,417 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\DeferredWarning;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
+use Qualimetrix\Architecture\Domain\CoverageMode;
+use Symfony\Component\Console\Input\ArrayInput;
+
+#[CoversClass(ConfigurationPipeline::class)]
+#[CoversClass(DeferredWarning::class)]
+final class ConfigurationPipelineTest extends TestCase
+{
+    #[Test]
+    public function resolveWithNoStagesReturnsDefaults(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+
+        $resolved = $pipeline->resolve($context);
+
+        self::assertSame(['.'], $resolved->paths);
+        self::assertSame(['vendor', 'node_modules', '.git'], $resolved->pathExcludes);
+    }
+
+    #[Test]
+    public function stagesAreSortedByPriority(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $high = $this->createStage(30, 'cli', null);
+        $low = $this->createStage(0, 'defaults', null);
+        $mid = $this->createStage(10, 'composer', null);
+
+        $pipeline->addStage($high);
+        $pipeline->addStage($low);
+        $pipeline->addStage($mid);
+
+        $stages = $pipeline->stages();
+
+        self::assertSame('defaults', $stages[0]->name());
+        self::assertSame('composer', $stages[1]->name());
+        self::assertSame('cli', $stages[2]->name());
+    }
+
+    #[Test]
+    public function laterStageOverridesEarlier(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $defaults = $this->createStage(0, 'defaults', new ConfigurationLayer('defaults', [
+            'paths' => ['.'],
+            'format' => 'text',
+        ]));
+
+        $cli = $this->createStage(30, 'cli', new ConfigurationLayer('cli', [
+            'paths' => ['src'],
+        ]));
+
+        $pipeline->addStage($defaults);
+        $pipeline->addStage($cli);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        // CLI paths override defaults
+        self::assertSame(['src'], $resolved->paths);
+        // Format from defaults is preserved
+        self::assertSame('text', $resolved->runtime->format);
+    }
+
+    #[Test]
+    public function nullLayerIsSkipped(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $defaults = $this->createStage(0, 'defaults', new ConfigurationLayer('defaults', [
+            'paths' => ['default'],
+        ]));
+
+        $composer = $this->createStage(10, 'composer', null);
+
+        $pipeline->addStage($defaults);
+        $pipeline->addStage($composer);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        // Defaults preserved because composer returned null
+        self::assertSame(['default'], $resolved->paths);
+    }
+
+    #[Test]
+    public function ruleOptionsAreMerged(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $configFile = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
+            'rules' => [
+                'complexity' => ['warning' => 10],
+            ],
+        ]));
+
+        $pipeline->addStage($configFile);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        self::assertSame(['complexity' => ['warning' => 10]], $resolved->ruleOptions);
+    }
+
+    #[Test]
+    public function disabledRulesAreMergedNotOverwritten(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
+            'disabled_rules' => ['complexity.cyclomatic', 'size.loc'],
+        ]));
+
+        $cliStage = $this->createStage(30, 'cli', new ConfigurationLayer('cli', [
+            'disabled_rules' => ['coupling.cbo'],
+        ]));
+
+        $pipeline->addStage($yamlStage);
+        $pipeline->addStage($cliStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        // Should contain union of both stages, not just CLI values
+        $disabledRules = $resolved->runtime->disabledRules;
+        self::assertContains('complexity.cyclomatic', $disabledRules);
+        self::assertContains('size.loc', $disabledRules);
+        self::assertContains('coupling.cbo', $disabledRules);
+        self::assertCount(3, $disabledRules);
+    }
+
+    #[Test]
+    public function excludePathsAreMergedNotOverwritten(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
+            'exclude_paths' => ['tests/', 'vendor/'],
+        ]));
+
+        $cliStage = $this->createStage(30, 'cli', new ConfigurationLayer('cli', [
+            'exclude_paths' => ['generated/'],
+        ]));
+
+        $pipeline->addStage($yamlStage);
+        $pipeline->addStage($cliStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        $excludePaths = $resolved->runtime->excludePaths;
+        self::assertContains('tests/', $excludePaths);
+        self::assertContains('vendor/', $excludePaths);
+        self::assertContains('generated/', $excludePaths);
+        self::assertCount(3, $excludePaths);
+    }
+
+    #[Test]
+    public function mergedArraysDeduplicateValues(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
+            'disabled_rules' => ['complexity.cyclomatic'],
+        ]));
+
+        $cliStage = $this->createStage(30, 'cli', new ConfigurationLayer('cli', [
+            'disabled_rules' => ['complexity.cyclomatic', 'size.loc'],
+        ]));
+
+        $pipeline->addStage($yamlStage);
+        $pipeline->addStage($cliStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        $disabledRules = $resolved->runtime->disabledRules;
+        // Should have no duplicates
+        self::assertCount(2, $disabledRules);
+        self::assertContains('complexity.cyclomatic', $disabledRules);
+        self::assertContains('size.loc', $disabledRules);
+    }
+
+    #[Test]
+    public function excludesAreMergedNotOverwritten(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $yamlStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
+            'excludes' => ['vendor', 'tests'],
+        ]));
+
+        $cliStage = $this->createStage(30, 'cli', new ConfigurationLayer('cli', [
+            'excludes' => ['generated', 'cache'],
+        ]));
+
+        $pipeline->addStage($yamlStage);
+        $pipeline->addStage($cliStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        // CLI excludes should be merged with config file excludes, not replace them
+        $excludes = $resolved->pathExcludes;
+        self::assertContains('vendor', $excludes);
+        self::assertContains('tests', $excludes);
+        self::assertContains('generated', $excludes);
+        self::assertContains('cache', $excludes);
+        self::assertCount(4, $excludes);
+    }
+
+    #[Test]
+    public function architectureIsEmptyWhenNoStageContributesIt(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+
+        $resolved = $pipeline->resolve($context);
+        self::assertTrue($resolved->architecture->isEmpty());
+        self::assertSame(CoverageMode::Ignore, $resolved->architecture->coverage());
+    }
+
+    #[Test]
+    public function architectureIsPopulatedFromMergedConfig(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $configStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
+            'architecture' => [
+                'layers' => [
+                    ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                    ['name' => 'service', 'patterns' => ['App\\Service']],
+                ],
+                'allow' => [
+                    'controller' => ['service'],
+                ],
+                'coverage' => 'warn',
+            ],
+        ]));
+
+        $pipeline->addStage($configStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+        self::assertFalse($resolved->architecture->isEmpty());
+        // Declaration order is preserved (not alphabetically sorted).
+        self::assertSame(['controller', 'service'], $resolved->architecture->registry()->layerNames());
+        self::assertTrue($resolved->architecture->policy()->isAllowed('controller', 'service'));
+        self::assertSame(CoverageMode::Warn, $resolved->architecture->coverage());
+    }
+
+    #[Test]
+    public function wildcardSelfAllowWarningSurfacesAsDeferredWarning(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $configStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
+            'architecture' => [
+                'layers' => [
+                    ['name' => 'domain-orders', 'patterns' => ['App\\Domain\\Orders\\**']],
+                ],
+                'allow' => [
+                    'domain-*' => ['domain-*'],
+                ],
+            ],
+        ]));
+
+        $pipeline->addStage($configStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        $wildcardSelfWarnings = array_values(array_filter(
+            $resolved->deferredWarnings,
+            static fn(DeferredWarning $w): bool => $w->level === 'warning'
+                && str_contains($w->message, 'wildcard-self-allow'),
+        ));
+
+        self::assertCount(1, $wildcardSelfWarnings);
+        self::assertStringContainsString("'domain-*'", $wildcardSelfWarnings[0]->message);
+        self::assertStringContainsString('cross-instance edges', $wildcardSelfWarnings[0]->message);
+    }
+
+    #[Test]
+    public function configurationWithoutFactoryWarningsHasEmptyDeferredWarnings(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+
+        $configStage = $this->createStage(20, 'config', new ConfigurationLayer('qmx.yaml', [
+            'architecture' => [
+                'layers' => [
+                    ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                    ['name' => 'service', 'patterns' => ['App\\Service']],
+                ],
+                'allow' => [
+                    'controller' => ['service'],
+                ],
+            ],
+        ]));
+
+        $pipeline->addStage($configStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+
+        self::assertSame([], $resolved->deferredWarnings);
+    }
+
+    #[Test]
+    public function architecturePresetLayersAreReplacedByProjectLayers(): void
+    {
+        // ADR 0006: when a later config source defines `architecture.layers`,
+        // it REPLACES the base list entirely. Order is meaningful and
+        // mixing-and-matching across sources is unsafe.
+        $pipeline = new ConfigurationPipeline();
+
+        $presetStage = $this->createStage(15, 'preset', new ConfigurationLayer('preset', [
+            'architecture' => [
+                'layers' => [
+                    ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                    ['name' => 'service', 'patterns' => ['App\\Service']],
+                ],
+            ],
+        ]));
+
+        $projectStage = $this->createStage(20, 'project', new ConfigurationLayer('qmx.yaml', [
+            'architecture' => [
+                'layers' => [
+                    ['name' => 'domain', 'patterns' => ['App\\Domain']],
+                ],
+                'coverage' => 'error',
+            ],
+        ]));
+
+        $pipeline->addStage($presetStage);
+        $pipeline->addStage($projectStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+        // Project's single 'domain' layer replaced the preset's two.
+        self::assertSame(['domain'], $resolved->architecture->registry()->layerNames());
+        self::assertSame(CoverageMode::Error, $resolved->architecture->coverage());
+    }
+
+    #[Test]
+    public function architecturePresetLayersAreKeptWhenProjectDoesNotDefineLayers(): void
+    {
+        // The replace-whole-list rule only kicks in when the overlay DEFINES
+        // `layers`. If it only touches `coverage` or `allow`, the base list
+        // is preserved.
+        $pipeline = new ConfigurationPipeline();
+
+        $presetStage = $this->createStage(15, 'preset', new ConfigurationLayer('preset', [
+            'architecture' => [
+                'layers' => [
+                    ['name' => 'controller', 'patterns' => ['App\\Controller']],
+                    ['name' => 'service', 'patterns' => ['App\\Service']],
+                ],
+            ],
+        ]));
+
+        $projectStage = $this->createStage(20, 'project', new ConfigurationLayer('qmx.yaml', [
+            'architecture' => [
+                'coverage' => 'error',
+            ],
+        ]));
+
+        $pipeline->addStage($presetStage);
+        $pipeline->addStage($projectStage);
+
+        $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
+        $resolved = $pipeline->resolve($context);
+        self::assertSame(['controller', 'service'], $resolved->architecture->registry()->layerNames());
+        self::assertSame(CoverageMode::Error, $resolved->architecture->coverage());
+    }
+
+    private function createStage(int $priority, string $name, ?ConfigurationLayer $layer): ConfigurationStageInterface
+    {
+        return new class ($priority, $name, $layer) implements ConfigurationStageInterface {
+            public function __construct(
+                private readonly int $priority,
+                private readonly string $name,
+                private readonly ?ConfigurationLayer $layer,
+            ) {}
+
+            public function priority(): int
+            {
+                return $this->priority;
+            }
+
+            public function name(): string
+            {
+                return $this->name;
+            }
+
+            public function apply(ConfigurationContext $context): ?ConfigurationLayer
+            {
+                return $this->layer;
+            }
+        };
+    }
+}

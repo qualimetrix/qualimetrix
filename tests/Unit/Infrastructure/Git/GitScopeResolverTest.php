@@ -7,11 +7,11 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Run\Discovery\FileDiscoveryFactory;
+use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\PathsConfiguration;
-use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Git\GitScopeResolver;
 use ReflectionProperty;
@@ -27,9 +27,10 @@ final class GitScopeResolverTest extends TestCase
     {
         $projectRoot = AbsolutePath::fromString(\dirname(__DIR__, 4)); // repo root
 
-        $resolved = new ResolvedConfiguration(
-            paths: new PathsConfiguration(['src']),
-            analysis: new AnalysisConfiguration(projectRoot: $projectRoot),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ['src'],
+            pathExcludes: ['vendor', 'node_modules', '.git'],
+            runtime: new TransitionalRuntimeConfiguration(projectRoot: $projectRoot),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -42,7 +43,7 @@ final class GitScopeResolverTest extends TestCase
         // in detached CI checkouts where no local main branch exists.
         $input = new ArrayInput(['--report' => 'git:HEAD'], $definition);
 
-        $resolver = new GitScopeResolver();
+        $resolver = new GitScopeResolver(new FileDiscoveryFactory());
         $result = $resolver->resolve($input, $resolved);
 
         self::assertNotNull($result->gitClient);
@@ -56,9 +57,10 @@ final class GitScopeResolverTest extends TestCase
     #[Test]
     public function itDoesNotCreateGitClientWithoutGitOptions(): void
     {
-        $resolved = new ResolvedConfiguration(
-            paths: new PathsConfiguration(['src']),
-            analysis: new AnalysisConfiguration(projectRoot: AbsolutePath::fromString('/some/project')),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ['src'],
+            pathExcludes: ['vendor', 'node_modules', '.git'],
+            runtime: new TransitionalRuntimeConfiguration(projectRoot: AbsolutePath::fromString('/some/project')),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -69,7 +71,7 @@ final class GitScopeResolverTest extends TestCase
 
         $input = new ArrayInput([], $definition);
 
-        $resolver = new GitScopeResolver();
+        $resolver = new GitScopeResolver(new FileDiscoveryFactory());
         $result = $resolver->resolve($input, $resolved);
 
         self::assertNull($result->gitClient);
@@ -80,9 +82,10 @@ final class GitScopeResolverTest extends TestCase
     {
         $projectRoot = AbsolutePath::fromString(\dirname(__DIR__, 4)); // repo root
 
-        $resolved = new ResolvedConfiguration(
-            paths: new PathsConfiguration(['src'], ['vendor', 'tests']),
-            analysis: new AnalysisConfiguration(projectRoot: $projectRoot),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ['src'],
+            pathExcludes: ['vendor', 'tests'],
+            runtime: new TransitionalRuntimeConfiguration(projectRoot: $projectRoot),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -95,7 +98,7 @@ final class GitScopeResolverTest extends TestCase
         // Missing-reference rejection is covered by direct GitClient/CLI tests.
         $input = new ArrayInput(['--report' => 'git:HEAD'], $definition);
 
-        $resolver = new GitScopeResolver();
+        $resolver = new GitScopeResolver(new FileDiscoveryFactory());
         $result = $resolver->resolve($input, $resolved);
 
         // Always uses FinderFileDiscovery for full project collection
@@ -108,9 +111,10 @@ final class GitScopeResolverTest extends TestCase
     #[Test]
     public function itReturnsFindDiscoveryForFullAnalysis(): void
     {
-        $resolved = new ResolvedConfiguration(
-            paths: new PathsConfiguration(['src']),
-            analysis: new AnalysisConfiguration(projectRoot: AbsolutePath::fromString('/some/project')),
+        $resolved = new TransitionalResolvedConfiguration(
+            paths: ['src'],
+            pathExcludes: ['vendor', 'node_modules', '.git'],
+            runtime: new TransitionalRuntimeConfiguration(projectRoot: AbsolutePath::fromString('/some/project')),
             ruleOptions: [],
             architecture: ArchitectureConfiguration::empty(),
         );
@@ -121,7 +125,7 @@ final class GitScopeResolverTest extends TestCase
 
         $input = new ArrayInput([], $definition);
 
-        $resolver = new GitScopeResolver();
+        $resolver = new GitScopeResolver(new FileDiscoveryFactory());
         $result = $resolver->resolve($input, $resolved);
 
         self::assertInstanceOf(FinderFileDiscovery::class, $result->fileDiscovery);

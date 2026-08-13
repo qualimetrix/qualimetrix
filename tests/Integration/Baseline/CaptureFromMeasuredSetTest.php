@@ -7,7 +7,9 @@ namespace Qualimetrix\Tests\Integration\Baseline;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Baseline\Baseline;
 use Qualimetrix\Baseline\BaselineEntryParser;
@@ -15,8 +17,6 @@ use Qualimetrix\Baseline\BaselineGenerator;
 use Qualimetrix\Baseline\BaselineIdentity;
 use Qualimetrix\Baseline\BaselineLoader;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Suppression\SuppressionType;
@@ -80,7 +80,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         $excluded = self::finding('generated/Proxy.php', 'App\\Generated', 'Proxy');
         $reported = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
 
-        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludePaths: ['generated']));
+        $pipeline = $this->createPipeline(new TransitionalRuntimeConfiguration(excludePaths: ['generated']));
 
         $baseline = $this->capture($pipeline->filter([$excluded, $reported], new ViolationFilterOptions())->measuredViolations);
 
@@ -98,7 +98,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         $excluded = self::finding('src/Generated/Proxy.php', 'App\\Generated', 'Proxy');
         $reported = self::finding('src/Service/UserService.php', 'App\\Service', 'UserService');
 
-        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludeNamespaces: ['App\\Generated']));
+        $pipeline = $this->createPipeline(new TransitionalRuntimeConfiguration(excludeNamespaces: ['App\\Generated']));
 
         $baseline = $this->capture($pipeline->filter([$excluded, $reported], new ViolationFilterOptions())->measuredViolations);
 
@@ -122,7 +122,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
             LayerViolationRule::NAME,
         );
 
-        $pipeline = $this->createPipeline(new AnalysisConfiguration(excludeNamespaces: ['App\\Generated']));
+        $pipeline = $this->createPipeline(new TransitionalRuntimeConfiguration(excludeNamespaces: ['App\\Generated']));
 
         $baseline = $this->capture($pipeline->filter([$architecture], new ViolationFilterOptions())->measuredViolations);
 
@@ -221,10 +221,10 @@ final class CaptureFromMeasuredSetTest extends TestCase
         return $path;
     }
 
-    private function createPipeline(?AnalysisConfiguration $configuration = null): ViolationFilterPipeline
+    private function createPipeline(?TransitionalRuntimeConfiguration $configuration = null): ViolationFilterPipeline
     {
-        $configurationProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configurationProvider->method('getConfiguration')->willReturn($configuration ?? new AnalysisConfiguration());
+        $configurationProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
+        $configurationProvider->method('getConfiguration')->willReturn($configuration ?? new TransitionalRuntimeConfiguration());
 
         $declarations = StubChannelDeclarationRegistry::withDefaults();
 

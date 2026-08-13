@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
+
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
-use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
+use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
+use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
-use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Symfony\Component\Config\FileLocator;
@@ -170,14 +174,22 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
      */
     private function registerAdapters(ContainerBuilder $container): void
     {
-        $container->register(LayerAssignmentCommand::class)
+        $resolver = 'Qualimetrix\\Infrastructure\\Console\\LayerAssignmentResolver';
+        $container->register($resolver, $resolver)
             ->setArguments([
-                new Reference(ConfigurationPipeline::class),
                 new Reference(CollectionOrchestratorInterface::class),
                 new Reference(DependencyGraphBuilderInterface::class),
                 new Reference(ArchitectureProcessorInterface::class),
                 new Reference(MetricRepositoryFactoryInterface::class),
+                new Reference(FileDiscoveryFactoryInterface::class),
+                new Reference(GeneratedFileFilterInterface::class),
+            ]);
+
+        $container->register(LayerAssignmentCommand::class)
+            ->setArguments([
+                new Reference(ConfigurationPipelineInterface::class),
                 new Reference(RuntimeConfigurator::class),
+                new Reference($resolver),
             ])
             ->setPublic(true);
     }

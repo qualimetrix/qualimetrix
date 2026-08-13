@@ -10,8 +10,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\Complexity\NpathComplexityCollector;
 use Qualimetrix\Metrics\Complexity\NpathComplexityVisitor;
@@ -1172,7 +1172,7 @@ PHP;
     /**
      * Collect metrics for a standalone function (no class wrapper).
      */
-    private function collectFunctionMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
+    private function collectFunctionMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code);
@@ -1280,7 +1280,7 @@ PHP;
         self::assertSame(2, $entries[0]['factor']);
     }
 
-    private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
+    private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code);

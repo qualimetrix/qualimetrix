@@ -12,7 +12,9 @@ use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
 use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
+use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use ReflectionClass;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -33,6 +35,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * matching path inside the command.
  */
 #[CoversClass(LayerAssignmentCommand::class)]
+#[CoversClass(LayerAssignmentResolver::class)]
 final class LayerAssignmentCommandTest extends TestCase
 {
     private string $tempDir;
@@ -264,6 +267,13 @@ final class LayerAssignmentCommandTest extends TestCase
         $command = $application->get('debug:layer-assignment');
         self::assertSame('debug:layer-assignment', $command->getName());
         self::assertNotSame('', $command->getDescription());
+
+        $commandConstructor = (new ReflectionClass(LayerAssignmentCommand::class))->getConstructor();
+        $resolverConstructor = (new ReflectionClass(LayerAssignmentResolver::class))->getConstructor();
+        self::assertNotNull($commandConstructor);
+        self::assertNotNull($resolverConstructor);
+        self::assertCount(3, $commandConstructor->getParameters());
+        self::assertCount(6, $resolverConstructor->getParameters());
     }
 
     /**
@@ -327,7 +337,7 @@ final class LayerAssignmentCommandTest extends TestCase
     /**
      * Regression test for Phase 7 Round 1 Fix 1 — the command must apply
      * `paths.excludes` AND filter `@generated` files during its own Discovery
-     * phase, exactly like {@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline::analyze()}.
+     * phase, exactly like {@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline::analyze()}.
      *
      * Without these filters the command's class set drifts from `qmx check`'s,
      * which silently changes template-layer expansion: excluded/generated
@@ -415,6 +425,18 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $exit);
         self::assertStringContainsString('Assigned to: (no layer)', $tester->getDisplay());
         self::assertStringNotContainsString('mod-Generated', $tester->getDisplay());
+
+        file_put_contents(
+            $configPath,
+            file_get_contents($configPath) . "include_generated: true\n",
+        );
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Generated\\Gen',
+            '--config' => $configPath,
+        ]);
+        self::assertSame(Command::SUCCESS, $exit);
+        self::assertStringContainsString('Assigned to: mod-Generated', $tester->getDisplay());
     }
 
     /**

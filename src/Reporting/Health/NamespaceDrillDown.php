@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Health;
 
 use Generator;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\ComputedMetric\HealthDimension;
-use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\MetricName;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -192,7 +192,7 @@ final readonly class NamespaceDrillDown
             $density = WorstOffender::computeViolationDensity(
                 $violationCount,
                 $classMetrics,
-                \Qualimetrix\Core\Metric\MetricName::SIZE_CLASS_LOC,
+                \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName::SIZE_CLASS_LOC,
             );
 
             $offenders[] = new WorstOffender(

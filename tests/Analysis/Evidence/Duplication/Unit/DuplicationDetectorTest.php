@@ -7,14 +7,14 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
 use Qualimetrix\Analysis\Evidence\Duplication\NormalizedToken;
 use Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use SplFileInfo;
@@ -494,7 +494,7 @@ PHP;
 
     private function createDetector(int $minTokens = 70, int $minLines = 5): DuplicationDetector
     {
-        $configProvider = self::createStub(ConfigurationProviderInterface::class);
+        $configProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
         $configProvider->method('getRuleOptions')->willReturn([
             'duplication.code-duplication' => [
                 'min_tokens' => $minTokens,
@@ -502,7 +502,7 @@ PHP;
             ],
         ]);
         $configProvider->method('getConfiguration')->willReturn(
-            new AnalysisConfiguration(projectRoot: AbsolutePath::fromString($this->tmpDir)),
+            new TransitionalRuntimeConfiguration(projectRoot: AbsolutePath::fromString($this->tmpDir)),
         );
 
         $this->resultProvider = new DuplicationResultProvider();

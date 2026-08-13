@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Configuration;
 
 use InvalidArgumentException;
+use Qualimetrix\Configuration\ComputedMetrics\Contract\HealthFormulaExclusionInterface;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\ComputedMetric\HealthDimension;
@@ -20,7 +21,7 @@ final class ComputedMetricsConfigResolver
 {
     public function __construct(
         private readonly ComputedMetricFormulaValidator $formulaValidator,
-        private readonly HealthFormulaExcluder $healthFormulaExcluder,
+        private readonly HealthFormulaExclusionInterface $healthFormulaExcluder,
     ) {}
 
     /**

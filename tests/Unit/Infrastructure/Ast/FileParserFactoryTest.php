@@ -7,8 +7,8 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Ast;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationHolder;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Runtime\TransitionalRuntimeConfigurationHolder;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\FileParserFactory;
@@ -22,12 +22,12 @@ final class FileParserFactoryTest extends TestCase
     #[Test]
     public function itCreatesCachedParserWhenCacheEnabled(): void
     {
-        $config = new AnalysisConfiguration(
+        $config = new TransitionalRuntimeConfiguration(
             cacheDir: AbsolutePath::fromString('/tmp/cache'),
             cacheEnabled: true,
         );
 
-        $configProvider = new ConfigurationHolder();
+        $configProvider = new TransitionalRuntimeConfigurationHolder();
         $configProvider->setConfiguration($config);
 
         $factory = new FileParserFactory(
@@ -45,12 +45,12 @@ final class FileParserFactoryTest extends TestCase
     #[Test]
     public function itCreatesDirectParserWhenCacheDisabled(): void
     {
-        $config = new AnalysisConfiguration(
+        $config = new TransitionalRuntimeConfiguration(
             cacheDir: AbsolutePath::fromString('/tmp/cache'),
             cacheEnabled: false,
         );
 
-        $configProvider = new ConfigurationHolder();
+        $configProvider = new TransitionalRuntimeConfigurationHolder();
         $configProvider->setConfiguration($config);
 
         $factory = new FileParserFactory(

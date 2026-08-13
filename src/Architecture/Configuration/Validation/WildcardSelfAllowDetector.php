@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Architecture\Configuration\Validation;
 
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\DeferredWarning;
 use Qualimetrix\Architecture\Domain\Allow\AllowListEntry;
-use Qualimetrix\Configuration\Pipeline\DeferredWarning;
 
 /**
  * Scans the parsed allow-list for {@code 'foo-*' → 'foo-*'} self-glob entries

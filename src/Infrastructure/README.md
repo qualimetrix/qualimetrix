@@ -56,7 +56,8 @@ Infrastructure/
 │   └── FileLogger.php
 ├── Parallel/
 │   ├── FileProcessingTask.php       # Task executed in parallel workers
-│   ├── WorkerBootstrap.php          # Worker bootstrap (filters by ParallelSafeCollectorInterface)
+│   ├── FileProcessingTaskFactory.php # Supplies each task with compile-time metadata and current runtime configuration
+│   ├── WorkerBootstrap.php          # Reconstructs Measurement and DependencyModel worker-safe participants
 │   └── Strategy/
 │       ├── SequentialStrategy.php      # Single-process execution
 │       ├── AmphpParallelStrategy.php   # Multi-worker via amphp
@@ -76,6 +77,8 @@ Infrastructure/
 │   │   ├── ContainerConfiguratorInterface.php
 │   │   ├── CoreServicesConfigurator.php
 │   │   ├── ConfigurationConfigurator.php
+│   │   ├── DependencyModelConfigurator.php
+│   │   ├── MeasurementConfigurator.php
 │   │   ├── ParserConfigurator.php
 │   │   ├── CollectorConfigurator.php
 │   │   ├── RuleConfigurator.php
@@ -92,7 +95,9 @@ Infrastructure/
 │       ├── RuleOptionsCompilerPass.php
 │       ├── FormatterCompilerPass.php
 │       ├── ConfigurationStageCompilerPass.php
-│       └── ParallelCollectorClassesCompilerPass.php
+│       ├── ParallelCollectorClassesCompilerPass.php
+│       ├── FileSetInspectionParticipantCompilerPass.php
+│       └── ThresholdValidatorMapCompilerPass.php
 ├── Rule/
 │   ├── RuleRegistryInterface.php
 │   ├── RuleRegistry.php
@@ -156,16 +161,17 @@ ContainerFactory.create()
         |
    Unified container with:
    - Lazy Rules (created on first use)
-   - Mutable providers (ConfigurationProvider, RuleOptionsFactory)
+   - TransitionalRuntimeConfigurationProviderInterface
+   - Mutable RuleOptionsRegistry read by RuleOptionsFactory
    - CacheFactory for lazy cache creation
         |
    CheckCommand receives all dependencies via constructor
         |
    In execute():
-   1. CLI parsing -> config + ruleOptions
-   2. ConfigurationProvider.setConfiguration(config)
-   3. RuleOptionsFactory.setCliOptions(...)
-   4. Analyzer.analyze() -> Rules are created with correct options
+   1. Configuration resolution -> TransitionalResolvedConfiguration
+   2. RuntimeConfigurator resets cache and run-scoped state
+   3. AnalysisRuntimeConfigurator sets runtime configuration and rule options
+   4. Analyzer.analyze() -> lazy Rules read their configured Options
 ```
 
 ### ContainerFactory (Decomposed)
@@ -173,22 +179,29 @@ ContainerFactory.create()
 Creates a unified Symfony DI ContainerBuilder without parameters. Delegates configuration to specialized configurators implementing `ContainerConfiguratorInterface`:
 
 - `CoreServicesConfigurator` — core services (logger, profiler, etc.)
-- `ConfigurationConfigurator` — configuration pipeline and providers
+- `ConfigurationConfigurator` — Analysis.Configuration pipeline and transitional runtime provider
+- `DependencyModelConfigurator` — graph/traversal contracts and extraction registration
+- `MeasurementConfigurator` — repository, aggregation, collector runtime configuration, and worker reconstruction
 - `ParserConfigurator` — AST parser and caching
 - `CollectorConfigurator` — metric collectors registration
 - `RuleConfigurator` — remaining layered rules under `src/Rules/`
 - `ArchitectureConfigurator` — Architecture capability services and rules
-- `DuplicationConfigurator` — Duplication detector/provider wiring, contract alias, and capability-owned rule registration
-- `AnalysisConfigurator` — analysis pipeline, repository and strategies; publishes the DependencyModel builder contract alias
+- `DuplicationConfigurator` — internal Duplication detector/provider wiring and capability-owned rule registration; the detector is autoconfigured as a Run-owned FileSet participant
+- `AnalysisConfigurator` — Run pipeline, discovery, collection, and strategies
 - `OutputConfigurator` — formatters plus the public GraphProjection contract alias backed by its internal projector
 
 **Method:**
 - `create(): ContainerBuilder` — runs all configurators and returns a compiled container
 
 **Runtime configuration:**
-Configuration is set via mutable services AFTER container creation:
-- `ConfigurationProviderInterface::setConfiguration()` — main configuration
-- `RuleOptionsFactory::setCliOptions()` — rule options from CLI
+Configuration is set via mutable services AFTER container creation through
+`TransitionalRuntimeConfigurationProviderInterface`. P6 owns the remaining
+rule-options transport; no new feature state belongs in the transitional holder.
+`RuntimeConfigurator` owns cache reset before logger setup and delegates
+analysis-state reset/application to `AnalysisRuntimeConfigurator`.
+`CollectorRuntimeConfigurationStore` owns applying replacement and reset values
+to every tagged runtime-configurable collector, so the outer configurator does
+not iterate Measurement implementations.
 
 **Tags:**
 - `qmx.collector` — metric collectors
@@ -196,6 +209,9 @@ Configuration is set via mutable services AFTER container creation:
 - `qmx.rule` — analysis rules (lazy)
 - `qmx.formatter` — output formatters
 - `qmx.configuration_stage` — configuration pipeline stages
+- `qmx.analysis.run.file_set_inspection_participant` — Run-owned whole-file-set participants
+- `qmx.analysis.lifecycle_hook` — capability hooks configured at run start
+- `qmx.measurement.runtime_configurable_collector` — collectors receiving run-scoped settings
 
 ### Lazy Services
 
@@ -255,7 +271,22 @@ remain independent because configuration is keyed by producer rule name.
 - Collects services with tag `qmx.configuration_stage`
 - Injects into `ConfigurationPipeline` in priority order
 
-**Test coverage:** All 8 CompilerPasses have dedicated unit tests (`tests/Unit/Infrastructure/DependencyInjection/CompilerPass/`) covering service registration, tag handling, and edge cases.
+**ParallelCollectorClassesCompilerPass:**
+- Collects base-collector, derived-collector, and rule class names
+- Supplies the exact class lists used to reconstruct parallel workers
+
+**FileSetInspectionParticipantCompilerPass:**
+- Collects `FileSetInspectionParticipantInterface` implementations
+- Fails the container build on duplicate participant ids
+- Injects a deterministic participant list into Run's FileSet composite
+
+**ThresholdValidatorMapCompilerPass:**
+- Builds the rule-name-to-threshold-validator map from registered rule classes
+- Injects it into `ThresholdOverrideExtractor` without instantiating rules
+
+The 11 compiler passes are covered by dedicated unit tests under
+`tests/Unit/Infrastructure/DependencyInjection/CompilerPass/` or, for threshold
+validator wiring, by `tests/Integration/Baseline/ThresholdValidatorWiringTest.php`.
 
 ---
 
@@ -290,9 +321,9 @@ Factory with runtime configuration awareness.
 
 **Dependencies:**
 - `PhpFileParser $parser`
-- `CacheInterface $cache`
+- `CacheFactory $cacheFactory`
 - `CacheKeyGenerator $keyGenerator`
-- `ConfigurationProviderInterface $configurationProvider`
+- `TransitionalRuntimeConfigurationProviderInterface $configurationProvider`
 
 **Method:**
 - `create(): FileParserInterface` — returns `CachedFileParser` or `PhpFileParser` depending on `config.cacheEnabled`
@@ -311,7 +342,12 @@ Factory with runtime configuration awareness.
 
 **Runtime configuration:**
 - CLI options are parsed in `CheckCommand::execute()`
-- ConfigurationProvider and RuleOptionsFactory are configured before analysis
+- `RuntimeConfigurator` delegates run-scoped configuration to
+  `AnalysisRuntimeConfigurator`, which updates
+  `TransitionalRuntimeConfigurationProviderInterface` and `RuleOptionsRegistry`
+  before analysis
+- `LayerAssignmentCommand` delegates collected-state reconstruction to the
+  internal Console `LayerAssignmentResolver`
 - Lazy rules are created with correct options
 
 ---

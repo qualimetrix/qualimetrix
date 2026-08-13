@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Metrics\Structure;
 
 use PhpParser\NodeTraverser;
+
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Metrics\Structure\UnusedPrivateClassData;
 use Qualimetrix\Metrics\Structure\UnusedPrivateCollector;
 use Qualimetrix\Metrics\Structure\UnusedPrivateVisitor;
@@ -1444,7 +1446,7 @@ PHP;
     #[Test]
     public function itDeliberatelyDoesNotProvideCallableMetrics(): void
     {
-        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
+        self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
     private function collectMetrics(string $code): MetricBag

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Coupling;
 
 use Psr\Log\LoggerInterface;
-use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\MetricName;
-use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
+
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Namespace_\ProjectNamespaceResolver;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Rule\Attribute\CliAlias;

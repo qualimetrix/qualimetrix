@@ -7,10 +7,14 @@ namespace Qualimetrix\Tests\Unit\Metrics\CodeSmell;
 use PhpParser\NodeTraverser;
 use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Metrics\CodeSmell\ParameterCountCollector;
 use Qualimetrix\Metrics\CodeSmell\ParameterCountVisitor;
@@ -687,7 +691,7 @@ PHP;
     }
 
     /**
-     * @return list<\Qualimetrix\Core\Metric\CallableWithMetrics>
+     * @return list<\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics>
      */
     private function collectMethodsWithMetrics(string $code): array
     {
@@ -702,9 +706,9 @@ PHP;
     }
 
     /**
-     * @param list<\Qualimetrix\Core\Metric\CallableWithMetrics> $methodsWithMetrics
+     * @param list<\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics> $methodsWithMetrics
      */
-    private function findCallableWithMetrics(array $methodsWithMetrics, string $class, string $method): \Qualimetrix\Core\Metric\CallableWithMetrics
+    private function findCallableWithMetrics(array $methodsWithMetrics, string $class, string $method): \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics
     {
         foreach ($methodsWithMetrics as $methodWithMetrics) {
             $logical = $methodWithMetrics->declarationPath->logical;
@@ -716,7 +720,7 @@ PHP;
         self::fail(\sprintf('No CallableWithMetrics found for %s::%s', $class, $method));
     }
 
-    private function collectMetrics(string $code): \Qualimetrix\Core\Metric\MetricBag
+    private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag
     {
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];

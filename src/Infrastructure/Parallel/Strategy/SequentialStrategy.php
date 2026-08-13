@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Parallel\Strategy;
 
-use Qualimetrix\Analysis\Collection\Strategy\ExecutionStrategyInterface;
+use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use SplFileInfo;
 

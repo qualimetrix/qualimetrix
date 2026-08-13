@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Architecture\Integration;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Architecture\Processing\LayerExpansionException;
@@ -173,7 +173,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
     /**
      * @param array<string, mixed> $configArray
      */
-    private function runPipelineWithConfig(array $configArray): \Qualimetrix\Analysis\Pipeline\AnalysisResult
+    private function runPipelineWithConfig(array $configArray): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
         $factory = new ArchitectureConfigurationFactory();
         $result = $factory->fromArray($configArray);

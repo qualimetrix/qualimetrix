@@ -162,7 +162,7 @@ final readonly class ArchitectureConfiguration
 
     /**
      * Returns true if at least one entry is a {@see TemplateLayerDefinition}.
-     * Used by {@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline} to decide
+     * Used by {@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline} to decide
      * whether to invoke the {@see \Qualimetrix\Architecture\Processing\LayerExpansionStage}.
      */
     public function hasTemplates(): bool

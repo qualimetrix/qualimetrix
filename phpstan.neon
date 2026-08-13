@@ -13,6 +13,7 @@ parameters:
         - tests
     excludePaths:
         - tests/Fixtures
+        - tests/Analysis/Evidence/Measurement/Fixtures
         - tests/Architecture/Fixtures
         - tests/Unit/PhpStan/Rules/data
     tmpDir: .phpstan.cache

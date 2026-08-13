@@ -52,7 +52,13 @@ final readonly class LayerViolationFinding
     {
         $location = $this->dependency->location;
         if (!$location instanceof Location) {
-            throw new LogicException('Layer violation findings require a Finding Location instance.');
+            $file = $location->file();
+            $line = $location->line();
+            if ($file === null || $line === null) {
+                throw new LogicException('Layer violation findings require an exact dependency location.');
+            }
+
+            $location = new Location($file, $line);
         }
 
         $evidence = [

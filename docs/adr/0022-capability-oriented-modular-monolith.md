@@ -39,26 +39,27 @@ boundary is always a leaf such as
 `Analysis\Evidence\Duplication` or `Analysis\Policy\Architecture`.
 
 This decision establishes the target layout. P0 governance is live, P1 landed
-`Analysis\Evidence\Duplication`, and P2 landed
-`Analysis\Evidence\DependencyModel` plus `Reporting\GraphProjection`;
-P3-P8 remain future work. The versioned internal manifest is authoritative for
-the current declarations and semantic owners, and its generated qmx projection
-enforces their coarse topology. P1's implementation is present in the current
-snapshot while its final migration-plan review remains pending.
+`Analysis\Evidence\Duplication`, P2 landed
+`Analysis\Evidence\DependencyModel` plus `Reporting\GraphProjection`, and P3
+landed `Analysis\Run`, `Analysis\Evidence\Measurement`, and
+`Analysis\Configuration`. P4-P8 remain future work. The versioned internal
+manifest is authoritative for the current declarations and semantic owners,
+and its generated qmx projection enforces their coarse topology.
 
-The P1 leaf co-locates 18 declarations: detection, duplicate entities, options,
-the rule and an internal per-run result provider. Its only published type is
-`Contract\DuplicationInspectionInterface`, consumed temporarily by the exact
-Run source `MetricEnricher` and permanently by Infrastructure composition.
-`AnalysisContext` and `EnrichmentResult` no longer transport duplicate blocks;
-the detector resets and atomically replaces provider-owned results through the
-capability contract. No compatibility aliases or generic phase port were added.
+The Duplication leaf co-locates detection, duplicate entities, options, the rule,
+and an internal per-run result provider. P3 deleted its temporary
+`DuplicationInspectionInterface`; the internal detector implements Run's
+consumer-owned FileSet participant port. `AnalysisContext` and the transitional
+enrichment result do not transport duplicate blocks. No compatibility alias or
+Duplication-owned public contract remains.
 
-P2 gives DependencyModel exactly five public contracts and keeps graph,
-builder, and empty implementations internal. GraphProjection publishes only
+P2 gives DependencyModel graph/value contracts and keeps graph,
+builder, and empty implementations internal. P3 adds its
+`DependencyTraversalParticipantInterface` promise while keeping resolver,
+visitor, and handler internals private. GraphProjection publishes only
 its projection interface and immutable request; Console remains an adapter and
-cannot import DOT/JSON implementations. Resolver/visitor/handlers remain P3
-inputs, while cycle declarations remain P4 inputs.
+cannot import DOT/JSON implementations. Resolver, visitor, and handlers are now
+DependencyModel extraction internals; cycle declarations remain P4 inputs.
 
 ### Contracts require named consumers
 
@@ -69,12 +70,13 @@ holders, raw configuration arrays and framework types do not cross the seam. A
 private leaf has no `Contract` directory.
 
 A port introduced to invert a dependency belongs to the consumer that needs the
-capability. The target hypothesis is that `Analysis\Run` will own typed,
-phase-specific participant ports while capability modules retain their prepared
-results. These ports are non-binding design hypotheses until the P3 contract
-gate proves their inputs, outputs and actual participant dependencies. They are
-not descriptions of the current implementation. The target must not introduce
-a universal participant interface, service locator or heterogeneous result bag.
+capability. P3 proved only Run's typed
+`FileSetInspectionParticipantInterface`: Run supplies an eligible file set and
+does not acquire the capability's result. Dependency traversal is separately a
+DependencyModel promise to named consumers. Generic lifecycle,
+graph-preparation, and metric-derivation participant ports remain non-binding
+hypotheses. The target must not introduce a universal participant interface,
+service locator or heterogeneous result bag.
 
 ### State and lifecycle are owned together
 
@@ -104,7 +106,7 @@ this decision does not legitimise them by analogy.
   not the manifest and not an independent source of ownership truth.
 
 Every current production declaration has one explicit semantic owner in the
-internal manifest. The post-P2 snapshot contains 701 declarations in 699 files
+internal manifest. The post-P3 snapshot contains 717 declarations in 715 files
 and 37 owners. The generator projects that intent into a coarse qmx owner/seam
 block and review inventories. Open-ended owner templates such as a category
 wildcard are prohibited because a new sibling would be silently enrolled.
@@ -113,9 +115,10 @@ that removes it; the manifest checker, not qmx, enforces that exactness.
 
 ### Fail-closed project topology
 
-The generated qmx projection has 37 semantic-owner layers, 12 singleton
-enforcement seams and final `external`: 50 layers and 272 allow edges in the
-reviewed snapshot. Its 84 exact internal grants project to 15 coarse edges.
+The P3 manifest has 37 semantic-owner layers, 11 singleton enforcement seams,
+and 67 exact internal grants collapsing to 12 coarse owner pairs. The generated
+qmx projection has 266 declared allow edges; generated output is not a second
+source of truth.
 `external` excludes `Qualimetrix\**`, and `coverage: error`
 includes every analysed logical class outside all declared layers even when it
 has no dependency edges, as well as unclassified dependency endpoints. The qmx
@@ -165,7 +168,7 @@ architectural allow edge must be removed or pointed in the dependency direction.
   migrated before analysis can start.
 - Fail-closed ownership detects both edge-connected and isolated unowned code.
 - The internal owner manifest remains the source for generated qmx ownership
-  and inventories while P3-P8 close the remaining temporary grants and seams. Generated
+  and inventories while P4-P8 close the remaining temporary grants and seams. Generated
   inventories remain auditable projections and can be deleted and regenerated
   without affecting runtime behaviour.
 

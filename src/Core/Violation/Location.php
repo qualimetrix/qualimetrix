@@ -44,6 +44,16 @@ final readonly class Location implements DependencyLocationInterface
         return $this->file === null;
     }
 
+    public function file(): ?RelativePath
+    {
+        return $this->file;
+    }
+
+    public function line(): ?int
+    {
+        return $this->line;
+    }
+
     /**
      * Wire-surface string of the file path; empty string for {@see none()}.
      *

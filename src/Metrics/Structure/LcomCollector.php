@@ -6,18 +6,19 @@ namespace Qualimetrix\Metrics\Structure;
 
 use Override;
 use PhpParser\Node;
-use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\ClassMetricsProviderInterface;
-use Qualimetrix\Core\Metric\ClassWithMetrics;
-use Qualimetrix\Core\Metric\CollectorConfigHolder;
-use Qualimetrix\Core\Metric\MetricBag;
-use Qualimetrix\Core\Metric\MetricDefinition;
-use Qualimetrix\Core\Metric\MetricName;
-use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurableInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfiguration;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Metrics\AbstractCollector;
 use SplFileInfo;
 
 /**
@@ -34,13 +35,21 @@ use SplFileInfo;
  *
  * Anonymous classes are ignored.
  */
-final class LcomCollector extends AbstractCollector implements ClassMetricsProviderInterface
+final class LcomCollector extends AbstractCollector implements ClassMetricsProviderInterface, CollectorRuntimeConfigurableInterface
 {
     private const NAME = 'lcom';
+
+    private CollectorRuntimeConfiguration $runtimeConfiguration;
 
     public function __construct()
     {
         $this->visitor = new LcomVisitor();
+        $this->runtimeConfiguration = CollectorRuntimeConfiguration::empty();
+    }
+
+    public function applyRuntimeConfiguration(CollectorRuntimeConfiguration $configuration): void
+    {
+        $this->runtimeConfiguration = $configuration;
     }
 
     public function getName(): string
@@ -107,9 +116,7 @@ final class LcomCollector extends AbstractCollector implements ClassMetricsProvi
      */
     private function adjustedLcom(LcomClassData $classData): int
     {
-        /** @var list<string> $excludeMethods */
-        $excludeMethods = CollectorConfigHolder::get(CollectorConfigHolder::LCOM_EXCLUDE_METHODS, []);
-        $lcom = $classData->calculateLcom($excludeMethods);
+        $lcom = $classData->calculateLcom($this->runtimeConfiguration->lcomExcludedMethods);
 
         return ($lcom > 1 && $classData->hasOnlyTrivialMethods()) ? 1 : $lcom;
     }

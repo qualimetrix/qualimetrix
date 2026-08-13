@@ -7,9 +7,11 @@ namespace Qualimetrix\Infrastructure\Parallel;
 use Amp\Cancellation;
 use Amp\Parallel\Worker\Task;
 use Amp\Sync\Channel;
-use Qualimetrix\Analysis\Collection\FileProcessingResult;
-use Qualimetrix\Core\Metric\DerivedCollectorInterface;
-use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+use Qualimetrix\Analysis\Run\Collection\FileProcessor;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Rule\RuleInterface;
 use SplFileInfo;
@@ -33,6 +35,7 @@ final class FileProcessingTask implements Task
      * @param AbsolutePath $filePath Absolute path to the PHP file to process
      * @param AbsolutePath $projectRoot Project root for autoloading
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses Collector class names
+     * @param class-string<DependencyTraversalParticipantInterface> $dependencyTraversalParticipantClass
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses Derived collector class names
      * @param AbsolutePath|null $cacheDir Optional cache directory for AST caching
      * @param array<string, mixed> $collectorConfig Collector-level configuration (e.g., LCOM exclude methods)
@@ -42,6 +45,7 @@ final class FileProcessingTask implements Task
         private readonly AbsolutePath $filePath,
         private readonly AbsolutePath $projectRoot,
         private readonly array $collectorClasses,
+        private readonly string $dependencyTraversalParticipantClass,
         private readonly array $derivedCollectorClasses = [],
         private readonly ?AbsolutePath $cacheDir = null,
         private readonly array $collectorConfig = [],
@@ -68,6 +72,7 @@ final class FileProcessingTask implements Task
         $processor = WorkerBootstrap::getFileProcessor(
             projectRoot: $this->projectRoot,
             collectorClasses: $this->collectorClasses,
+            dependencyTraversalParticipantClass: $this->dependencyTraversalParticipantClass,
             derivedCollectorClasses: $this->derivedCollectorClasses,
             cacheDir: $this->cacheDir,
             collectorConfig: $this->collectorConfig,

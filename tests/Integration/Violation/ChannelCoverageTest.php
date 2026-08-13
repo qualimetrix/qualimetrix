@@ -8,27 +8,25 @@ use ArrayIterator;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
-use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
-use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Collection\CollectionPhaseOutput;
-use Qualimetrix\Analysis\Collection\CollectionResult;
 use Qualimetrix\Analysis\Collection\Dependency\Cycle;
-use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
-use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
-use Qualimetrix\Analysis\Pipeline\MetricEnricher;
+use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
 use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
+use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
+use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Enrichment\TransitionalMetricEnricher;
 use Qualimetrix\Architecture\Rules\CircularDependencyOptions;
 use Qualimetrix\Architecture\Rules\CircularDependencyRule;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Core\Metric\MetricBag;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Rule\AnalysisContext;
@@ -62,7 +60,7 @@ use Qualimetrix\Rules\Security\CommandInjectionRule;
 use Qualimetrix\Rules\Security\SecurityPatternOptions;
 use Qualimetrix\Rules\Size\ClassCountOptions;
 use Qualimetrix\Rules\Size\ClassCountRule;
-use Qualimetrix\Tests\Support\Pipeline\TestPipelineBuilder;
+use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
 use RuntimeException;
 
 /**
@@ -72,7 +70,7 @@ use RuntimeException;
  * `tests/Fixtures/Channels/excluded.txt` as deliberately not baselineable.
  *
  * Every case runs the REAL rule (or, for the two `annotation.*` cases, the
- * real pipeline) against a hand-built `AnalysisContext`/`CollectionResult` —
+ * real pipeline) against a hand-built `AnalysisContext`/`CollectionPhaseOutput` —
  * never a hand-built `Violation` — so a wiring mistake (wrong channel key in
  * `channelDeclarations()`, a rule renamed without updating its declaration)
  * would show up as a real emitted channel the registry cannot resolve.
@@ -315,7 +313,9 @@ final class ChannelCoverageTest extends TestCase
         $collectionOrchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $collectionOrchestrator->method('collect')->willReturn(
             new CollectionPhaseOutput(
-                new CollectionResult([], [], thresholdOverrides: [
+                [],
+                [],
+                thresholdOverrides: [
                     'src/Foo.php' => [
                         new ThresholdOverride(
                             rulePattern: 'code-smell.boolean-argument',
@@ -327,8 +327,7 @@ final class ChannelCoverageTest extends TestCase
                             endLine: 50,
                         ),
                     ],
-                ]),
-                [],
+                ],
             ),
         );
 
@@ -341,15 +340,14 @@ final class ChannelCoverageTest extends TestCase
         $ruleExecutor->method('execute')->willReturn([]);
         $ruleExecutor->method('getAllRules')->willReturn([$booleanArgRule]);
 
-        $configurationProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configurationProvider->method('getConfiguration')->willReturn(new AnalysisConfiguration());
+        $configurationProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
+        $configurationProvider->method('getConfiguration')->willReturn(new TransitionalRuntimeConfiguration());
         $configurationProvider->method('getRuleOptions')->willReturn([]);
 
-        $metricEnricher = new MetricEnricher(
-            compositeCollector: new CompositeCollector([]),
-            globalCollectorRunner: new GlobalCollectorRunner([]),
-            configurationProvider: $configurationProvider,
-            logger: self::createStub(LoggerInterface::class),
+        $fileCollector = new CompositeCollector([]);
+        $metricEnricher = new TransitionalMetricEnricher(
+            new MeasurementAggregationService([], $fileCollector),
+            $configurationProvider,
         );
 
         $pipeline = TestPipelineBuilder::create()
@@ -378,7 +376,9 @@ final class ChannelCoverageTest extends TestCase
         $collectionOrchestrator = self::createStub(CollectionOrchestratorInterface::class);
         $collectionOrchestrator->method('collect')->willReturn(
             new CollectionPhaseOutput(
-                new CollectionResult([], [], thresholdDiagnostics: [
+                [],
+                [],
+                thresholdDiagnostics: [
                     'src/Foo.php' => [
                         new ThresholdDiagnostic(
                             line: 10,
@@ -387,8 +387,7 @@ final class ChannelCoverageTest extends TestCase
                             code: 'warning_exceeds_error',
                         ),
                     ],
-                ]),
-                [],
+                ],
             ),
         );
 
@@ -396,15 +395,14 @@ final class ChannelCoverageTest extends TestCase
         $ruleExecutor->method('execute')->willReturn([]);
         $ruleExecutor->method('getAllRules')->willReturn([]);
 
-        $configurationProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configurationProvider->method('getConfiguration')->willReturn(new AnalysisConfiguration());
+        $configurationProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
+        $configurationProvider->method('getConfiguration')->willReturn(new TransitionalRuntimeConfiguration());
         $configurationProvider->method('getRuleOptions')->willReturn([]);
 
-        $metricEnricher = new MetricEnricher(
-            compositeCollector: new CompositeCollector([]),
-            globalCollectorRunner: new GlobalCollectorRunner([]),
-            configurationProvider: $configurationProvider,
-            logger: self::createStub(LoggerInterface::class),
+        $fileCollector = new CompositeCollector([]);
+        $metricEnricher = new TransitionalMetricEnricher(
+            new MeasurementAggregationService([], $fileCollector),
+            $configurationProvider,
         );
 
         $pipeline = TestPipelineBuilder::create()

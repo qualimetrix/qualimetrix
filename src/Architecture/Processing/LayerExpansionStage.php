@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Architecture\Processing;
 
+use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
+use Qualimetrix\Analysis\Run\Enrichment\TransitionalMetricEnricher;
+
 use Qualimetrix\Architecture\Domain\Layer\ClassSet;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
@@ -13,10 +16,10 @@ use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
  * {@see TemplateLayerDefinition} entries into the concrete declaration-order
  * layer list consumed by {@see \Qualimetrix\Architecture\Domain\Layer\LayerRegistry}.
  *
- * Plugs into {@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline} between
+ * Plugs into {@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline} between
  * the collection and rule-execution phases (after {@code CollectionOrchestrator}
  * has produced the class set and the dependency graph, but before
- * {@code MetricEnricher} runs). The
+ * {@code TransitionalMetricEnricher} runs). The
  * {@see \Qualimetrix\Architecture\Processing\ArchitectureProcessor} delegates
  * to this stage during {@code prepare()} and exposes the post-expansion
  * configuration through {@code getPreparedConfiguration()}.

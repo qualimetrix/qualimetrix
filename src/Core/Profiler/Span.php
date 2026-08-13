@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Core\Profiler;
 
+use Qualimetrix\Analysis\Run\Collection\FileProcessor;
+
 /**
  * Mutable recording object representing a profiling span (time interval).
  *

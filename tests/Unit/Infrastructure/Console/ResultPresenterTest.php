@@ -8,12 +8,12 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Pipeline\AnalysisCoverage;
-use Qualimetrix\Analysis\Pipeline\AnalysisResult;
-use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationHolder;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Configuration\Runtime\TransitionalRuntimeConfigurationHolder;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Profiler\ProfilerInterface;
@@ -47,8 +47,8 @@ final class ResultPresenterTest extends TestCase
 
     protected function setUp(): void
     {
-        $configProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn(new AnalysisConfiguration());
+        $configProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
+        $configProvider->method('getConfiguration')->willReturn(new TransitionalRuntimeConfiguration());
 
         $this->presenter = new ResultPresenter(
             formatterRegistry: self::createStub(FormatterRegistryInterface::class),
@@ -74,9 +74,9 @@ final class ResultPresenterTest extends TestCase
     #[Test]
     public function presentResultsUsesFormatFromConfigNotCliDirectly(): void
     {
-        // Set up ConfigurationHolder with format 'json'
-        $configHolder = new ConfigurationHolder();
-        $configHolder->setConfiguration(new AnalysisConfiguration(format: 'json'));
+        // Set up TransitionalRuntimeConfigurationHolder with format 'json'
+        $configHolder = new TransitionalRuntimeConfigurationHolder();
+        $configHolder->setConfiguration(new TransitionalRuntimeConfiguration(format: 'json'));
 
         // Create a mock formatter that records it was called
         $mockFormatter = self::createStub(FormatterInterface::class);
@@ -396,8 +396,8 @@ final class ResultPresenterTest extends TestCase
      */
     private function presentWithViolationsAndFailOn(array $violations, Severity|false|null $failOn): int
     {
-        $configHolder = new ConfigurationHolder();
-        $configHolder->setConfiguration(new AnalysisConfiguration(failOn: $failOn));
+        $configHolder = new TransitionalRuntimeConfigurationHolder();
+        $configHolder->setConfiguration(new TransitionalRuntimeConfiguration(failOn: $failOn));
 
         $mockFormatter = self::createStub(FormatterInterface::class);
         $mockFormatter->method('format')->willReturn('');
@@ -448,8 +448,8 @@ final class ResultPresenterTest extends TestCase
     #[Test]
     public function presentResultsThrowsOnMutuallyExclusiveNamespaceAndClass(): void
     {
-        $configHolder = new ConfigurationHolder();
-        $configHolder->setConfiguration(new AnalysisConfiguration());
+        $configHolder = new TransitionalRuntimeConfigurationHolder();
+        $configHolder->setConfiguration(new TransitionalRuntimeConfiguration());
 
         $mockFormatter = self::createStub(FormatterInterface::class);
         $mockFormatter->method('format')->willReturn('');

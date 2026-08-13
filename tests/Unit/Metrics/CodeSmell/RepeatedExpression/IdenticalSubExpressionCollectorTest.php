@@ -16,7 +16,7 @@ final class IdenticalSubExpressionCollectorTest extends TestCase
     public function itDeliberatelyDoesNotProvideCallableMetrics(): void
     {
         self::assertNotContains(
-            \Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class,
+            \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class,
             class_implements(new IdenticalSubExpressionCollector()),
         );
     }

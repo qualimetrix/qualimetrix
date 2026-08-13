@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Baseline\Suppression;
 
 use LogicException;
+
+use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Core\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Core\Rule\RuleInterface;
@@ -24,7 +26,7 @@ use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
  * `getOverrideValidator()` accessor. Rules without thresholds are
  * skipped silently.
  *
- * Selection criterion matches {@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline::ruleSupportsThresholdOverrides()}
+ * Selection criterion matches {@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline::ruleSupportsThresholdOverrides()}
  * — the two methods must agree on which rules accept `@qmx-threshold`,
  * otherwise hierarchical rules silently bypass per-rule validation.
  */

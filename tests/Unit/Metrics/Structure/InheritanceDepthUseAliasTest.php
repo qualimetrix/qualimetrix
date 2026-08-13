@@ -9,7 +9,7 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Metrics\Structure\InheritanceDepthCollector;
 use Qualimetrix\Metrics\Structure\InheritanceDepthVisitor;
 use SplFileInfo;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Architecture\Configuration\Validation;
 
+use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Architecture\Domain\Layer\MatchMode;
-use Qualimetrix\Configuration\Exception\ConfigLoadException;
 
 /**
  * Per-criterion shape and semantic validator shared by {@see LayersValidator}

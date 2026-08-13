@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+
+use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Baseline\Suppression\SuppressionFilter;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Suppression\Suppression;
 use Qualimetrix\Core\Util\NamespaceMatcher;
@@ -69,7 +71,7 @@ final readonly class MeasuredViolationSet
     public function __construct(
         private AnalysisPipelineInterface $analyzer,
         private SuppressionFilter $suppressionFilter,
-        private ConfigurationProviderInterface $configurationProvider,
+        private TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
     ) {}
 
     /**
@@ -93,7 +95,7 @@ final readonly class MeasuredViolationSet
      * produced instead of discarding it once the measured set is taken.
      *
      * `baseline:explain` needs the run's `@qmx-threshold` overrides as well
-     * as its measured set, and both must come from one analysis: a second
+     * as its measured set, and both must come from one runtime: a second
      * call to {@see forPaths()} would run the pipeline again, and nothing
      * guarantees a second run agrees with the first (a file could change
      * between the two, or the run could simply be expensive to repeat).

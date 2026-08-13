@@ -27,13 +27,19 @@
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
             <directory>tests/Architecture/Unit</directory>
+            <directory>tests/Analysis/Configuration/Unit</directory>
             <directory>tests/Analysis/Evidence/Duplication/Unit</directory>
             <directory>tests/Analysis/Evidence/DependencyModel/Unit</directory>
+            <directory>tests/Analysis/Evidence/Measurement/Unit</directory>
+            <directory>tests/Analysis/Run/Unit</directory>
             <directory>tests/Reporting/GraphProjection/Unit</directory>
         </testsuite>
         <testsuite name="Integration">
             <directory>tests/Integration</directory>
             <directory>tests/Architecture/Integration</directory>
+            <directory>tests/Analysis/Configuration/Integration</directory>
+            <directory>tests/Analysis/Evidence/Measurement/Integration</directory>
+            <directory>tests/Analysis/Run/Integration</directory>
         </testsuite>
         <testsuite name="Functional">
             <directory>tests/Functional</directory>

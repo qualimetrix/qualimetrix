@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Architecture\Unit\Domain\Allow;
 
 use PHPUnit\Framework\Attributes\CoversClass;
+
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Architecture\Domain\Allow\CaptureBinding;
 use Qualimetrix\Architecture\Domain\Allow\InvalidSelectorException;
 use Qualimetrix\Architecture\Domain\Allow\LayerSelector;

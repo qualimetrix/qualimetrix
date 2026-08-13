@@ -9,10 +9,10 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\CollectorConfigHolder;
-use Qualimetrix\Core\Metric\MetricBag;
-use Qualimetrix\Core\Metric\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfiguration;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Metrics\Structure\LcomClassData;
 use Qualimetrix\Metrics\Structure\LcomCollector;
 use Qualimetrix\Metrics\Structure\LcomVisitor;
@@ -1428,7 +1428,7 @@ PHP;
     #[Test]
     public function itRespectsExcludeMethodsFromConfig(): void
     {
-        CollectorConfigHolder::set(CollectorConfigHolder::LCOM_EXCLUDE_METHODS, ['getName']);
+        $this->collector->applyRuntimeConfiguration(new CollectorRuntimeConfiguration(['getName']));
 
         $code = <<<'PHP'
 <?php
@@ -1458,15 +1458,10 @@ PHP;
         self::assertSame(1, $metrics->get('lcom:App\Service'));
     }
 
-    protected function tearDown(): void
-    {
-        CollectorConfigHolder::reset();
-    }
-
     #[Test]
     public function itDeliberatelyDoesNotProvideCallableMetrics(): void
     {
-        self::assertNotContains(\Qualimetrix\Core\Metric\CallableMetricsProviderInterface::class, class_implements($this->collector));
+        self::assertNotContains(\Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface::class, class_implements($this->collector));
     }
 
     private function collectMetrics(string $code): MetricBag

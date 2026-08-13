@@ -63,8 +63,8 @@ final class BaselineCommandDefinition
      * Every name below is spelled exactly as `check` spells it, and that is
      * the requirement rather than a convenience: `paths`, `preset`,
      * `disable-rule` and `only-rule` are read by
-     * {@see \Qualimetrix\Configuration\Pipeline\Stage\CliStage} and
-     * {@see \Qualimetrix\Configuration\Pipeline\Stage\PresetStage} off the
+     * {@see \Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage} and
+     * {@see \Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage} off the
      * `InputInterface` by name, and `rule-opt` by
      * {@see \Qualimetrix\Infrastructure\Console\CliOptionsParser}. A different
      * spelling here would leave the option accepted and inert — the failure

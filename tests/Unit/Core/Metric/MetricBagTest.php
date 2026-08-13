@@ -7,8 +7,7 @@ namespace Qualimetrix\Tests\Unit\Core\Metric;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Metric\DataBag;
-use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use RuntimeException;
 
 #[CoversClass(MetricBag::class)]
@@ -179,7 +178,7 @@ final class MetricBagTest extends TestCase
         self::assertSame([], $bag->all());
     }
 
-    // --- withEntry / entries / entryCount / dataBag ---
+    // --- withEntry / entries / entryCount ---
 
     #[Test]
     public function itWithEntryAndEntries(): void
@@ -225,26 +224,6 @@ final class MetricBagTest extends TestCase
         $bag = new MetricBag();
 
         self::assertSame([], $bag->entries('nonexistent'));
-    }
-
-    #[Test]
-    public function itDataBagReturnsDataBagInstance(): void
-    {
-        $bag = (new MetricBag())
-            ->withEntry('key', ['line' => 1]);
-
-        $dataBag = $bag->dataBag();
-
-        self::assertInstanceOf(DataBag::class, $dataBag); // @phpstan-ignore staticMethod.alreadyNarrowedType
-        self::assertSame(1, $dataBag->count('key'));
-    }
-
-    #[Test]
-    public function itDataBagIsEmptyForNewBag(): void
-    {
-        $bag = new MetricBag();
-
-        self::assertTrue($bag->dataBag()->isEmpty());
     }
 
     // --- withEntry preserves metrics ---

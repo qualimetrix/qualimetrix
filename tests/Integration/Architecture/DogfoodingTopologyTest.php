@@ -7,21 +7,21 @@ namespace Qualimetrix\Tests\Integration\Architecture;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
+use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
+use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
+use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
 use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Architecture\Domain\CoverageMode;
 use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
 use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
-use Qualimetrix\Configuration\Discovery\ComposerReader;
-use Qualimetrix\Configuration\Loader\YamlConfigLoader;
-use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
-use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Configuration\Pipeline\Stage\CliStage;
-use Qualimetrix\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
-use Qualimetrix\Configuration\Pipeline\Stage\ConfigFileStage;
-use Qualimetrix\Configuration\Pipeline\Stage\DefaultsStage;
-use Qualimetrix\Configuration\Pipeline\Stage\PresetStage;
-use Qualimetrix\Configuration\Preset\PresetResolver;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
@@ -47,9 +47,9 @@ final class DogfoodingTopologyTest extends TestCase
         sort($expected, \SORT_STRING);
 
         self::assertSame($expected, $declared);
-        self::assertCount(50, $declared);
+        self::assertCount(49, $declared);
         self::assertCount(37, $manifest['owners']);
-        self::assertCount(12, $manifest['enforcement_seams']);
+        self::assertCount(11, $manifest['enforcement_seams']);
 
         $seamMembers = [];
         foreach ($manifest['declarations'] as $fqcn => $declaration) {
@@ -109,7 +109,7 @@ final class DogfoodingTopologyTest extends TestCase
             }
         }
 
-        self::assertSame(272, $edgeCount);
+        self::assertSame(266, $edgeCount);
         self::assertSame([], $graph['external']);
         foreach (array_diff($layers, ['external']) as $source) {
             self::assertContains('external', $graph[$source]);

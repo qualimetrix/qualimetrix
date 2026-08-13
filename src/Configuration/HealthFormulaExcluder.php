@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Configuration;
 
 use InvalidArgumentException;
+use Qualimetrix\Configuration\ComputedMetrics\Contract\HealthFormulaExclusionInterface;
 use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
 use Qualimetrix\Core\ComputedMetric\HealthDimension;
 
@@ -12,7 +13,7 @@ use Qualimetrix\Core\ComputedMetric\HealthDimension;
  * Filters out excluded health dimensions and rebuilds the health.overall
  * formula with normalized weights when dimensions are excluded.
  */
-final readonly class HealthFormulaExcluder
+final readonly class HealthFormulaExcluder implements HealthFormulaExclusionInterface
 {
     /**
      * Filters out excluded health dimensions and rebuilds health.overall formula
