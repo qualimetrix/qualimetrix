@@ -7,8 +7,9 @@ namespace Qualimetrix\Tests\Integration\Documentation;
 use FilesystemIterator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Rule\CliAliasReader;
-use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use RecursiveDirectoryIterator;
@@ -300,17 +301,18 @@ final class DocumentationConsistencyTest extends TestCase
      * Scans every current rule root for concrete RuleInterface
      * implementations.
      *
-     * Architecture and Duplication own rules outside the remaining layered
+     * Architecture, CircularDependency, and Duplication own rules outside the remaining layered
      * src/Rules tree; every root is explicit so a future capability does not
      * silently enroll itself in documentation discovery.
      *
-     * @return iterable<array{fqcn: class-string<RuleInterface>, reflection: ReflectionClass<RuleInterface>}>
+     * @return iterable<array{fqcn: class-string<RuleDefinitionInterface>, reflection: ReflectionClass<RuleInterface>}>
      */
     private function scanRuleClasses(): iterable
     {
         $rulesDirs = [
             self::$projectRoot . '/src/Rules',
-            self::$projectRoot . '/src/Architecture/Rules',
+            self::$projectRoot . '/src/Analysis/Policy/Architecture/LayerViolation',
+            self::$projectRoot . '/src/Analysis/Evidence/CircularDependency',
             self::$projectRoot . '/src/Analysis/Evidence/Duplication',
         ];
 

@@ -6,6 +6,7 @@ namespace Qualimetrix\Tests\Analysis\Run\Unit\Pipeline;
 
 use ArrayIterator;
 
+use Closure;
 use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -14,44 +15,50 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector;
+use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
-use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
+use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
-use Qualimetrix\Analysis\Run\Enrichment\TransitionalMetricEnricher;
+use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
+use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
-use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
-use Qualimetrix\Architecture\Domain\Layer\ClassSet;
-use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
-use Qualimetrix\Architecture\Rules\LayerViolationRule;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Profiler\ProfilerInterface;
-use Qualimetrix\Core\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Core\Rule\RuleSelector;
-use Qualimetrix\Core\Suppression\ControlScope;
-use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\ViolationChannel;
 use Qualimetrix\Rules\CodeSmell\BooleanArgumentRule;
 use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
@@ -62,7 +69,7 @@ final class AnalysisPipelineTest extends TestCase
 {
     private FileDiscoveryInterface&Stub $defaultDiscovery;
     private CollectionOrchestratorInterface&Stub $collectionOrchestrator;
-    private RuleExecutorInterface&Stub $ruleExecutor;
+    private RuleExecutionInterface&Stub $ruleExecutor;
     private TransitionalRuntimeConfigurationProviderInterface&Stub $configurationProvider;
     private MeasurementAggregationService $globalCollectorRunner;
     private LoggerInterface&Stub $logger;
@@ -72,7 +79,7 @@ final class AnalysisPipelineTest extends TestCase
     {
         $this->defaultDiscovery = self::createStub(FileDiscoveryInterface::class);
         $this->collectionOrchestrator = self::createStub(CollectionOrchestratorInterface::class);
-        $this->ruleExecutor = self::createStub(RuleExecutorInterface::class);
+        $this->ruleExecutor = self::createStub(RuleExecutionInterface::class);
         $this->configurationProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
         $this->compositeCollector = new CompositeCollector([]);
         $this->globalCollectorRunner = new MeasurementAggregationService([], $this->compositeCollector);
@@ -306,7 +313,7 @@ final class AnalysisPipelineTest extends TestCase
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
         $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput([], []));
 
-        $ruleExecutor = $this->createMock(RuleExecutorInterface::class);
+        $ruleExecutor = $this->createMock(RuleExecutionInterface::class);
         $ruleExecutor->expects(self::once())->method('execute')->willReturn([]);
 
         $pipeline = $this->createPipeline(ruleExecutor: $ruleExecutor);
@@ -384,25 +391,6 @@ final class AnalysisPipelineTest extends TestCase
     }
 
     #[Test]
-    public function itSkipsCircularDependencyDetectionWhenRuleDisabled(): void
-    {
-        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput([], []));
-
-        $configProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn(
-            new TransitionalRuntimeConfiguration(disabledRules: ['architecture.circular-dependency']),
-        );
-        $configProvider->method('getRuleOptions')->willReturn([]);
-
-        $pipeline = $this->createPipeline(configurationProvider: $configProvider);
-
-        $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
-
-        self::assertSame([], $result->violations);
-    }
-
-    #[Test]
     public function itWarnsWhenThresholdAnnotationTargetsUnsupportedRule(): void
     {
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
@@ -422,9 +410,12 @@ final class AnalysisPipelineTest extends TestCase
         // ComplexityRule supports it
         $complexityRule = new ComplexityRule(ComplexityRule::getOptionsClass()::fromArray([]));
 
-        $ruleExecutor = self::createStub(RuleExecutorInterface::class);
+        $ruleExecutor = self::createStub(RuleExecutionInterface::class);
         $ruleExecutor->method('execute')->willReturn([]);
-        $ruleExecutor->method('getAllRules')->willReturn([$booleanArgRule, $complexityRule]);
+        $ruleExecutor->method('allRules')->willReturn([
+            self::metadataOf($booleanArgRule),
+            self::metadataOf($complexityRule),
+        ]);
 
         $pipeline = $this->createPipeline(ruleExecutor: $ruleExecutor);
         $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
@@ -454,9 +445,9 @@ final class AnalysisPipelineTest extends TestCase
 
         $complexityRule = new ComplexityRule(ComplexityRule::getOptionsClass()::fromArray([]));
 
-        $ruleExecutor = self::createStub(RuleExecutorInterface::class);
+        $ruleExecutor = self::createStub(RuleExecutionInterface::class);
         $ruleExecutor->method('execute')->willReturn([]);
-        $ruleExecutor->method('getAllRules')->willReturn([$complexityRule]);
+        $ruleExecutor->method('allRules')->willReturn([self::metadataOf($complexityRule)]);
 
         $pipeline = $this->createPipeline(ruleExecutor: $ruleExecutor);
         $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
@@ -465,113 +456,19 @@ final class AnalysisPipelineTest extends TestCase
     }
 
     #[Test]
-    public function itSkipsArchitecturePrepareWhenLayerViolationRuleDisabled(): void
+    public function itDelegatesComputedMetricEvaluationForZeroAnalyzedFiles(): void
     {
         $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(
-            new CollectionPhaseOutput([], []),
+        $this->collectionOrchestrator->method('collect')->willReturn(new CollectionPhaseOutput([], []));
+
+        $evaluation = $this->createMock(ComputedMetricEvaluator::class);
+        $evaluation->expects(self::once())->method('evaluate')->with(
+            self::isInstanceOf(MetricRepositoryInterface::class),
+            0,
         );
 
-        $configProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn(
-            new TransitionalRuntimeConfiguration(disabledRules: [LayerViolationRule::NAME]),
-        );
-        $configProvider->method('getRuleOptions')->willReturn([]);
-
-        $processor = $this->createMock(ArchitectureProcessorInterface::class);
-        // bind() runs in the production wiring before the pipeline analyses —
-        // TestPipelineBuilder mimics that, then the pipeline must not call
-        // prepare() once it sees the rule is disabled (symmetric with the
-        // duplication detector skip in TransitionalMetricEnricher).
-        $processor->expects(self::once())->method('bind');
-        $processor->expects(self::never())->method('prepare');
-
-        $pipeline = TestPipelineBuilder::create()
-            ->withDefaultDiscovery($this->defaultDiscovery)
-            ->withCollectionOrchestrator($this->collectionOrchestrator)
-            ->withRuleExecutor($this->ruleExecutor)
-            ->withConfigurationProvider($configProvider)
-            ->withMetricEnricher(new TransitionalMetricEnricher($this->globalCollectorRunner, $configProvider))
-            ->withArchitectureProcessor($processor)
-            ->withLogger($this->logger)
-            ->build();
-
-        // bind() simulates the production RuntimeConfigurator handshake.
-        $processor->bind(ArchitectureConfiguration::empty());
-
-        $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
-    }
-
-    #[Test]
-    public function itPreparesArchitectureProcessorWhenLayerViolationRuleEnabled(): void
-    {
-        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(
-            new CollectionPhaseOutput([], []),
-        );
-
-        // Default TransitionalRuntimeConfiguration leaves disabledRules empty, so the
-        // layer-violation rule is enabled by default.
-        $processor = $this->createMock(ArchitectureProcessorInterface::class);
-        $processor->expects(self::once())->method('bind');
-        $processor->expects(self::once())->method('prepare');
-
-        $pipeline = TestPipelineBuilder::create()
-            ->withDefaultDiscovery($this->defaultDiscovery)
-            ->withCollectionOrchestrator($this->collectionOrchestrator)
-            ->withRuleExecutor($this->ruleExecutor)
-            ->withConfigurationProvider($this->configurationProvider)
-            ->withMetricEnricher(new TransitionalMetricEnricher($this->globalCollectorRunner, $this->configurationProvider))
-            ->withArchitectureProcessor($processor)
-            ->withLogger($this->logger)
-            ->build();
-
-        $processor->bind(ArchitectureConfiguration::empty());
-
-        $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
-    }
-
-    #[Test]
-    public function itPreparesTheArchitectureProducerWhenOnlyADiagnosticChannelIsSelected(): void
-    {
-        $this->defaultDiscovery->method('discover')->willReturn(new ArrayIterator([]));
-        $this->collectionOrchestrator->method('collect')->willReturn(
-            new CollectionPhaseOutput([], []),
-        );
-
-        $configProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn(
-            new TransitionalRuntimeConfiguration(onlyRules: ['architecture.coverage']),
-        );
-        $configProvider->method('getRuleOptions')->willReturn([]);
-
-        $processor = $this->createMock(ArchitectureProcessorInterface::class);
-        $processor->expects(self::once())->method('bind');
-        $processor->expects(self::once())->method('prepare');
-
-        $channelRegistry = new class implements RuleChannelRegistryInterface {
-            public function channelsProducedBy(string $producerRuleName): array
-            {
-                return $producerRuleName === LayerViolationRule::NAME
-                    ? [new ViolationChannel('architecture.coverage', 'architecture.coverage')]
-                    : [];
-            }
-        };
-
-        $pipeline = TestPipelineBuilder::create()
-            ->withDefaultDiscovery($this->defaultDiscovery)
-            ->withCollectionOrchestrator($this->collectionOrchestrator)
-            ->withRuleExecutor($this->ruleExecutor)
-            ->withConfigurationProvider($configProvider)
-            ->withMetricEnricher(new TransitionalMetricEnricher($this->globalCollectorRunner, $configProvider))
-            ->withArchitectureProcessor($processor)
-            ->withRuleSelector(new RuleSelector($channelRegistry))
-            ->withLogger($this->logger)
-            ->build();
-
-        $processor->bind(ArchitectureConfiguration::empty());
-
-        $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
+        $this->createPipeline(computedMetricEvaluation: $evaluation)
+            ->analyze(AbsolutePath::fromString('/path/to/src'));
     }
 
     #[Test]
@@ -589,9 +486,9 @@ final class AnalysisPipelineTest extends TestCase
             new CollectionPhaseOutput([], [], thresholdOverrides: $overrides),
         );
 
-        $ruleExecutor = self::createStub(RuleExecutorInterface::class);
+        $ruleExecutor = self::createStub(RuleExecutionInterface::class);
         $ruleExecutor->method('execute')->willReturn([]);
-        $ruleExecutor->method('getAllRules')->willReturn([]);
+        $ruleExecutor->method('allRules')->willReturn([]);
 
         $pipeline = $this->createPipeline(ruleExecutor: $ruleExecutor);
         $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
@@ -630,15 +527,14 @@ final class AnalysisPipelineTest extends TestCase
             },
         );
 
-        $architecture = $this->createMock(ArchitectureProcessorInterface::class);
+        $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
         $architecture->expects(self::once())->method('prepare')->willReturnCallback(
-            static function (DependencyGraphInterface $graph, ClassSet $classSet) use (&$events, $class): void {
+            static function (DependencyGraphInterface $graph, iterable $classUniverse) use (&$events, $class): void {
                 $events[] = 'Architecture';
                 self::assertSame([$class], $graph->getAllClasses());
-                self::assertSame([$class], $classSet->classes());
+                self::assertSame([$class], \is_array($classUniverse) ? $classUniverse : iterator_to_array($classUniverse, false));
             },
         );
-        $architecture->bind(ArchitectureConfiguration::empty());
 
         $globalCollector = self::createStub(GlobalContextCollectorInterface::class);
         $globalCollector->method('getName')->willReturn('order-fixture');
@@ -652,14 +548,52 @@ final class AnalysisPipelineTest extends TestCase
                 $repository->addScalar($class, 'enriched', 1);
             },
         );
-        $enricher = new TransitionalMetricEnricher(
-            new MeasurementAggregationService([$globalCollector], $this->compositeCollector),
-            $this->configurationProvider,
+        $measurement = new MeasurementAggregationService([$globalCollector], $this->compositeCollector);
+
+        $computedMetrics = $this->createMock(ComputedMetricEvaluator::class);
+        $computedMetrics->expects(self::once())->method('evaluate')->willReturnCallback(
+            static function () use (&$events): void {
+                $events[] = 'ComputedMetrics';
+            },
         );
 
-        $rules = $this->createMock(RuleExecutorInterface::class);
+        $circularDependencies = $this->createMock(CircularDependencyPreparationInterface::class);
+        $circularDependencies->expects(self::once())->method('prepare')->willReturnCallback(
+            static function () use (&$events): void {
+                $events[] = 'CircularDependency';
+            },
+        );
+
+        $fileSetParticipant = new class (static function () use (&$events): void {
+            $events[] = 'FileSetInspection';
+        }) implements FileSetInspectionParticipantInterface {
+            public function __construct(private readonly Closure $onInspect) {}
+
+            public static function participantId(): string
+            {
+                return 'phase-order';
+            }
+
+            public static function producerRuleName(): string
+            {
+                return 'test.phase-order';
+            }
+
+            public function resetForRun(): void {}
+
+            public function inspect(array $eligibleFiles): void
+            {
+                ($this->onInspect)();
+            }
+        };
+        $fileSetInspection = new FileSetInspectionComposite(
+            [$fileSetParticipant],
+            new RuleSelectorProducerGate(new RuleSelector(new InMemoryRuleChannelRegistry())),
+        );
+
+        $rules = $this->createMock(RuleExecutionInterface::class);
         $rules->expects(self::once())->method('execute')->willReturnCallback(
-            static function (\Qualimetrix\Core\Rule\AnalysisContext $context) use (&$events, $class): array {
+            static function (\Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext $context) use (&$events, $class): array {
                 $events[] = 'RuleExecution';
                 self::assertSame(1, $context->metrics->get($class)->get('enriched'));
                 self::assertNotNull($context->dependencyGraph);
@@ -672,15 +606,26 @@ final class AnalysisPipelineTest extends TestCase
         $result = TestPipelineBuilder::create()
             ->withDefaultDiscovery($discovery)
             ->withCollectionOrchestrator($collection)
-            ->withRuleExecutor($rules)
+            ->withRuleExecution($rules)
             ->withConfigurationProvider($this->configurationProvider)
-            ->withMetricEnricher($enricher)
-            ->withArchitectureProcessor($architecture)
+            ->withMeasurementAggregation($measurement)
+            ->withComputedMetricEvaluation($computedMetrics)
+            ->withCircularDependencyPreparation($circularDependencies)
+            ->withFileSetInspection($fileSetInspection)
+            ->withLayerPolicyPreparation($architecture)
             ->withLogger($this->logger)
             ->build()
             ->analyze($root);
 
-        self::assertSame(['Collection', 'Architecture', 'Enrichment', 'RuleExecution'], $events);
+        self::assertSame([
+            'Collection',
+            'Architecture',
+            'Enrichment',
+            'ComputedMetrics',
+            'CircularDependency',
+            'FileSetInspection',
+            'RuleExecution',
+        ], $events);
         self::assertSame([], $result->violations);
         self::assertSame(1, $result->filesAnalyzed);
         self::assertSame(0, $result->filesSkipped);
@@ -733,17 +678,19 @@ final class AnalysisPipelineTest extends TestCase
             $this->collectionOrchestrator->method('collect')->willReturn(
                 new CollectionPhaseOutput([], []),
             );
-            $architecture = $this->createMock(ArchitectureProcessorInterface::class);
+            $architecture = $this->createMock(LayerPolicyPreparationInterface::class);
             $architecture->expects(self::once())->method('prepare');
-            $architecture->bind(ArchitectureConfiguration::empty());
 
             TestPipelineBuilder::create()
                 ->withDefaultDiscovery($discovery)
                 ->withCollectionOrchestrator($this->collectionOrchestrator)
-                ->withRuleExecutor($this->ruleExecutor)
+                ->withRuleExecution($this->ruleExecutor)
                 ->withConfigurationProvider($this->configurationProvider)
-                ->withMetricEnricher(new TransitionalMetricEnricher($this->globalCollectorRunner, $this->configurationProvider))
-                ->withArchitectureProcessor($architecture)
+                ->withMeasurementAggregation($this->globalCollectorRunner)
+                ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
+                ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
+                ->withFileSetInspection($this->emptyFileSetInspection())
+                ->withLayerPolicyPreparation($architecture)
                 ->withLogger($this->logger)
                 ->withProfilerHolder(new ProfilerHolder())
                 ->build()
@@ -762,6 +709,8 @@ final class AnalysisPipelineTest extends TestCase
             'stop:dependency',
             'start:architecture-prepare',
             'stop:architecture-prepare',
+            'start:cycles',
+            'stop:cycles',
             'start:rules',
             'stop:rules',
             'stop:analysis',
@@ -772,21 +721,31 @@ final class AnalysisPipelineTest extends TestCase
     private function createPipeline(
         ?FileDiscoveryInterface $defaultDiscovery = null,
         ?CollectionOrchestratorInterface $collectionOrchestrator = null,
-        ?RuleExecutorInterface $ruleExecutor = null,
+        ?RuleExecutionInterface $ruleExecutor = null,
         ?LoggerInterface $logger = null,
         ?TransitionalRuntimeConfigurationProviderInterface $configurationProvider = null,
+        ?MeasurementAggregationInterface $measurementAggregation = null,
+        ?ComputedMetricEvaluator $computedMetricEvaluation = null,
+        ?CircularDependencyPreparationInterface $circularDependencyPreparation = null,
+        ?FileSetInspectionComposite $fileSetInspection = null,
     ): AnalysisPipeline {
         $resolvedConfigProvider = $configurationProvider ?? $this->configurationProvider;
         $resolvedLogger = $logger ?? $this->logger;
 
-        $metricEnricher = new TransitionalMetricEnricher($this->globalCollectorRunner, $resolvedConfigProvider);
-
         return TestPipelineBuilder::create()
             ->withDefaultDiscovery($defaultDiscovery ?? $this->defaultDiscovery)
             ->withCollectionOrchestrator($collectionOrchestrator ?? $this->collectionOrchestrator)
-            ->withRuleExecutor($ruleExecutor ?? $this->ruleExecutor)
+            ->withRuleExecution($ruleExecutor ?? $this->ruleExecutor)
             ->withConfigurationProvider($resolvedConfigProvider)
-            ->withMetricEnricher($metricEnricher)
+            ->withMeasurementAggregation($measurementAggregation ?? $this->globalCollectorRunner)
+            ->withComputedMetricEvaluation(
+                $computedMetricEvaluation ?? self::createStub(ComputedMetricEvaluator::class),
+            )
+            ->withCircularDependencyPreparation(
+                $circularDependencyPreparation
+                    ?? new CircularDependencyAnalysis(new CircularDependencyDetector()),
+            )
+            ->withFileSetInspection($fileSetInspection ?? $this->emptyFileSetInspection())
             ->withLogger($resolvedLogger)
             ->build();
     }
@@ -826,6 +785,26 @@ final class AnalysisPipelineTest extends TestCase
             MetricSubject::aggregate(SymbolPath::forFile($file)),
             ControlScope::Class_,
             $endLine,
+        );
+    }
+
+    private static function metadataOf(RuleInterface $rule): RuleMetadata
+    {
+        return new RuleMetadata(
+            $rule->getName(),
+            $rule::getOptionsClass(),
+            $rule->getCategory(),
+            $rule->getDescription(),
+            CliAliasReader::read($rule::class),
+            true,
+        );
+    }
+
+    private function emptyFileSetInspection(): FileSetInspectionComposite
+    {
+        return new FileSetInspectionComposite(
+            [],
+            new RuleSelectorProducerGate(new RuleSelector(new InMemoryRuleChannelRegistry())),
         );
     }
 }

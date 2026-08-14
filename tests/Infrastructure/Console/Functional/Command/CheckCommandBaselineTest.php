@@ -10,9 +10,11 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use RuntimeException;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Exception\InvalidOptionException;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\Process\Process;
 
 /**
  * `check` with a baseline, end to end: what gets captured, what a breach
@@ -65,7 +67,16 @@ final class CheckCommandBaselineTest extends TestCase
         // command line because `baseline:generate` accepts no flag that could
         // move the set it measures (ADR 0017): both commands must narrow through
         // the same configuration or they are not measuring one set.
-        file_put_contents($this->configPath, "failOn: error\nonlyRules: ['code-smell.error-suppression']\n");
+        file_put_contents($this->configPath, <<<'YAML'
+            failOn: error
+            onlyRules: ['code-smell.error-suppression', 'size.property-count']
+            rules:
+              size.property-count:
+                warning: 1
+                error: 2
+            exclude_paths: ['*ConfiguredPath.php']
+            exclude_namespaces: ['App\ConfiguredNamespace']
+            YAML . "\n");
     }
 
     protected function tearDown(): void
@@ -112,21 +123,47 @@ final class CheckCommandBaselineTest extends TestCase
      * hold if the flag had silently become a no-op.
      */
     #[Test]
-    public function itDoesNotPromoteAnAnnotatedFindingTheBaselineNeverMeasured(): void
+    public function itCombinesConfiguredAndCliExclusionsWithoutLosingBaselineAnnotationOrGit(): void
     {
         $this->writeFixture(self::FIXTURE_WITH_ONE_IGNORED_MEMBER);
+        file_put_contents($this->tempDir . '/ConfiguredPath.php', "<?php\n@strlen('configured path');\n");
+        file_put_contents($this->tempDir . '/ConfiguredNamespace.php', "<?php\nnamespace App\\ConfiguredNamespace;\nfinal class Fixture { public int \$first; public int \$second; }\n");
+        $this->git('git init -q');
+        $this->git('git config user.email test@example.com');
+        $this->git('git config user.name Test');
+        $this->git('git add .');
+        $this->git('git commit -qm initial');
 
-        $this->runGenerate();
+        $originalWorkingDirectory = getcwd();
+        if ($originalWorkingDirectory === false || !chdir($this->tempDir)) {
+            throw new RuntimeException('Unable to enter the fixture working directory');
+        }
 
-        self::assertSame([1], self::capturedCounts());
+        try {
+            $this->runGenerate();
 
-        $check = $this->runCheck([
-            '--baseline' => $this->baselinePath,
-            '--no-suppression-annotations' => true,
-        ]);
+            self::assertSame([1], self::capturedCounts());
 
-        self::assertSame(0, $check->getStatusCode(), $check->getDisplay());
-        self::assertStringContainsString('1 warning', $check->getDisplay());
+            file_put_contents($this->tempDir . '/CliPath.php', "<?php\n@strlen('cli path');\n");
+            file_put_contents($this->tempDir . '/CliNamespace.php', "<?php\nnamespace App\\CliNamespace;\nfinal class Fixture { public int \$first; public int \$second; }\n");
+            file_put_contents($this->tempDir . '/Legacy.php', "\n", \FILE_APPEND);
+            $this->git('git add -- *.php');
+
+            $check = $this->runCheck([
+                '--baseline' => $this->baselinePath,
+                '--no-suppression-annotations' => true,
+                '--exclude-path' => ['*CliPath.php'],
+                '--exclude-namespace' => ['App\\CliNamespace'],
+                '--report' => 'git:staged',
+            ]);
+
+            self::assertSame(0, $check->getStatusCode(), $check->getDisplay());
+            self::assertStringContainsString('1 warning', $check->getDisplay());
+        } finally {
+            if (!chdir($originalWorkingDirectory)) {
+                throw new RuntimeException('Unable to restore the original working directory');
+            }
+        }
     }
 
     /**
@@ -241,6 +278,11 @@ final class CheckCommandBaselineTest extends TestCase
     private function writeFixture(string $code): void
     {
         file_put_contents($this->tempDir . '/Legacy.php', $code . "\n");
+    }
+
+    private function git(string $command): void
+    {
+        Process::fromShellCommandline($command, $this->tempDir)->mustRun();
     }
 
     /**

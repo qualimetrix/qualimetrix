@@ -10,28 +10,26 @@ use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurationStoreInterface;
-use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineCleaner;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
+use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
-use Qualimetrix\Baseline\BaselineCleaner;
-use Qualimetrix\Baseline\BaselineGenerator;
-use Qualimetrix\Baseline\BaselineLoader;
-use Qualimetrix\Baseline\BaselineUpdater;
-use Qualimetrix\Baseline\BaselineWriter;
-use Qualimetrix\Baseline\BoundaryExplanationService;
-use Qualimetrix\Baseline\Suppression\SuppressionFilter;
-use Qualimetrix\Configuration\ComputedMetricFormulaValidator;
-use Qualimetrix\Configuration\ComputedMetrics\Contract\HealthFormulaExclusionInterface;
-use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
-use Qualimetrix\Configuration\RuleOptionsFactory;
-use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Rule\RuleSelector;
-use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
@@ -57,7 +55,6 @@ use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
-use Qualimetrix\Infrastructure\Console\ViolationFilterPipeline;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocator;
 use Qualimetrix\Infrastructure\Git\GitRepositoryLocatorInterface;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
@@ -65,13 +62,11 @@ use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
-use Qualimetrix\Reporting\Formatter\FormatterRegistry;
+use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
-use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\Profile\ProfileSummaryRenderer;
 use Symfony\Component\Config\FileLocator;
-use Symfony\Component\DependencyInjection\Argument\TaggedIteratorArgument;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
@@ -107,14 +102,17 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
     private function registerFormatters(ContainerBuilder $container): void
     {
+        $detailedViolationRenderer = 'Qualimetrix\\Reporting\\Formatter\\Support\\DetailedViolationRenderer';
+        $formatterRegistry = 'Qualimetrix\\Reporting\\Formatter\\FormatterRegistry';
         $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
 
-        // Auto-register debt calculation services from src/Reporting/Debt/*
-        $debtPrototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
+        // Register Prioritization evidence consumed by Reporting.
+        $prioritizationPrototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
-            $debtPrototype,
-            'Qualimetrix\\Reporting\\Debt\\',
-            $this->srcDir . '/Reporting/Debt/*',
+            $prioritizationPrototype,
+            'Qualimetrix\\Analysis\\Evidence\\Prioritization\\',
+            $this->srcDir . '/Analysis/Evidence/Prioritization/{Debt,Impact}/*',
+            $this->srcDir . '/Analysis/Evidence/Prioritization/Impact/RankedIssue.php',
         );
 
         // Auto-register all formatters from src/Reporting/Formatter/ (recursive)
@@ -138,28 +136,18 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
             $this->srcDir . '/Reporting/Health/{HealthScore.php,WorstOffender.php,DecompositionItem.php}',
         );
 
-        // Auto-register impact calculation services from src/Reporting/Impact/
-        // Exclude VOs (RankedIssue)
-        $impactPrototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
-        $loader->registerClasses(
-            $impactPrototype,
-            'Qualimetrix\\Reporting\\Impact\\',
-            $this->srcDir . '/Reporting/Impact/*',
-            $this->srcDir . '/Reporting/Impact/RankedIssue.php',
-        );
-
         // ViolationFilter (shared filtering logic for formatters)
         $container->register(ViolationFilter::class);
 
         // DetailedViolationRenderer (in Formatter/Support/, excluded from formatter glob)
-        $container->register(DetailedViolationRenderer::class)
+        $container->register($detailedViolationRenderer)
             ->setAutowired(true);
 
         // FormatterRegistry will be populated by compiler pass
-        $container->register(FormatterRegistry::class)
+        $container->register($formatterRegistry)
             ->setArguments([[]]);
 
-        $container->setAlias(FormatterRegistryInterface::class, FormatterRegistry::class)
+        $container->setAlias(FormatterRegistryInterface::class, $formatterRegistry)
             ->setPublic(true);
     }
 
@@ -167,7 +155,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
     {
         $loader = new PhpFileLoader($container, new FileLocator($this->srcDir));
 
-        // Auto-register all baseline services from src/Baseline/*
+        // Auto-register all baseline services from src/Analysis/Policy/Baseline/*
         // Excludes: value objects, enums and exceptions — data, not services.
         // A value object with required constructor arguments cannot be
         // autowired, so leaving one in would fail container compilation
@@ -175,81 +163,77 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         $prototype = (new Definition())->setAutoconfigured(true)->setAutowired(true);
         $loader->registerClasses(
             $prototype,
-            'Qualimetrix\\Baseline\\',
-            $this->srcDir . '/Baseline/*',
-            $this->srcDir . '/Baseline/{'
+            'Qualimetrix\\Analysis\\Policy\\Baseline\\',
+            $this->srcDir . '/Analysis/Policy/Baseline/*',
+            $this->srcDir . '/Analysis/Policy/Baseline/{'
                 . 'Baseline.php,BaselineEdge.php,BaselineEntry.php,BaselineEntryMode.php,'
                 . 'BaselineIdentity.php,EntrySelector.php,InertBaselineEntry.php,InertEntryReason.php,'
                 . 'BaselineConflictException.php,BaselineEntryRejection.php,'
-                . 'BaselineCapture.php,UncapturedGroup.php,UncapturedReason.php,'
-                . 'Suppression/Suppression.php}',
+                . 'BaselineCapture.php,UncapturedGroup.php,UncapturedReason.php}',
         );
     }
 
     private function registerCli(ContainerBuilder $container): void
     {
+        $computedMetricConfigurator = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface';
+        $runtimeLoggerConfigurator = 'Qualimetrix\\Infrastructure\\Console\\RuntimeLoggerConfigurator';
+        $suppressionFilter = 'Qualimetrix\\Analysis\\Policy\\Inline\\Suppression\\SuppressionFilter';
+        $gitScopeQuery = 'Qualimetrix\\Infrastructure\\Git\\ReportingGitScopeQuery';
+        $findingProjector = 'Qualimetrix\\Reporting\\FindingProjection\\FindingProjector';
+
+        $container->register($suppressionFilter);
+        $container->setAlias(AnnotationSuppressionInterface::class, $suppressionFilter)
+            ->setPublic(true);
+
+        $container->register($gitScopeQuery);
+        $container->setAlias(GitScopeQueryInterface::class, $gitScopeQuery)
+            ->setPublic(true);
+
+        $container->register($findingProjector)
+            ->setArguments([
+                new Reference(AnnotationSuppressionInterface::class),
+                new Reference(BaselineLoader::class),
+                new Reference(ChannelDeclarationRegistryInterface::class),
+                new Reference(GitScopeQueryInterface::class),
+            ]);
+
         // MeasuredViolationSet — the single definition of the set a baseline
         // measures. The pipeline runs its stages; baseline commands ask it
         // for the set directly.
         $container->register(MeasuredViolationSet::class)
             ->setArguments([
                 new Reference(AnalysisPipelineInterface::class),
-                new Reference(SuppressionFilter::class),
-                new Reference(TransitionalRuntimeConfigurationProviderInterface::class),
-            ]);
-
-        // ViolationFilterPipeline
-        $container->register(ViolationFilterPipeline::class)
-            ->setArguments([
-                new Reference(BaselineLoader::class),
-                new Reference(ChannelDeclarationRegistryInterface::class),
-                new Reference(MeasuredViolationSet::class),
+                new Reference($findingProjector),
             ]);
 
         $container->register(AnalysisRuntimeConfigurator::class)
             ->setArguments([
                 new Reference(TransitionalRuntimeConfigurationProviderInterface::class),
-                new Reference(RuleOptionsRegistry::class),
+                new Reference(RuleConfigurationInterface::class),
                 new Reference(RuleRegistryInterface::class),
-                new Reference(ComputedMetricsConfigResolver::class),
                 new Reference(FrameworkNamespacesHolder::class),
-                new TaggedIteratorArgument('qmx.analysis.lifecycle_hook'),
                 new Reference(CollectorRuntimeConfigurationStoreInterface::class),
-            ]);
-
-        // RuntimeConfigurator for runtime service configuration. Public so the
-        // deferred-warning integration test can retrieve it from the compiled
-        // container and exercise the production drain path end-to-end.
-        //
-        // AnalysisRuntimeConfigurator receives the tagged feature lifecycle
-        // hooks above. RuntimeConfigurator owns only cross-cutting setup and
-        // resets the cache before delegating the per-analysis reset.
-        $container->register(RuntimeConfigurator::class)
-            ->setPublic(true)
-            ->setArguments([
-                new Reference(LoggerFactory::class),
-                new Reference(LoggerHolder::class),
-                new Reference(ProgressReporterHolder::class),
-                new Reference(ProfilerHolder::class),
-                new Reference(AnalysisRuntimeConfigurator::class),
-                new Reference(DiagnosticOutput::class),
                 new Reference(CacheFactory::class),
             ]);
 
-        // The health implementation remains internal to the Health subdomain;
-        // ComputedMetrics consumes its dedicated exclusion contract.
-        $healthFormulaExcluder = 'Qualimetrix\\Configuration\\HealthFormulaExcluder';
-        $container->register($healthFormulaExcluder);
-        $container->setAlias(HealthFormulaExclusionInterface::class, $healthFormulaExcluder);
-
-        // ComputedMetricFormulaValidator (validates expression syntax, references, circular deps)
-        $container->register(ComputedMetricFormulaValidator::class);
-
-        // ComputedMetricsConfigResolver
-        $container->register(ComputedMetricsConfigResolver::class)
+        $container->register($runtimeLoggerConfigurator, $runtimeLoggerConfigurator)
             ->setArguments([
-                new Reference(ComputedMetricFormulaValidator::class),
-                new Reference(HealthFormulaExclusionInterface::class),
+                new Reference(LoggerFactory::class),
+                new Reference(LoggerHolder::class),
+            ]);
+
+        // RuntimeConfigurator owns cross-cutting setup and explicitly invokes
+        // the Architecture configuration contract after logger setup.
+        $container->register(RuntimeConfigurator::class)
+            ->setPublic(true)
+            ->setArguments([
+                new Reference($runtimeLoggerConfigurator),
+                new Reference(ProgressReporterHolder::class),
+                new Reference(ProfilerHolder::class),
+                new Reference(AnalysisRuntimeConfigurator::class),
+                new Reference(ArchitecturePolicyConfiguratorInterface::class),
+                new Reference($computedMetricConfigurator),
+                new Reference(DiagnosticOutput::class),
             ]);
 
         // ProfileSummaryRenderer (stateless, no dependencies)
@@ -302,8 +286,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // ViolationFilterOrchestrator
         $container->register(ViolationFilterOrchestrator::class)
             ->setArguments([
-                new Reference(ViolationFilterPipeline::class),
-                new Reference(RuleExecutorInterface::class),
+                new Reference($findingProjector),
+                new Reference(RuleExecutionInterface::class),
                 new Reference(DiagnosticOutput::class),
             ]);
 
@@ -374,7 +358,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
         // RulesCommand
         $container->register(RulesCommand::class)
             ->setArguments([
-                [], // Will be set by RuleCompilerPass
+                new Reference(RuleExecutionInterface::class),
             ])
             ->setPublic(true);
 

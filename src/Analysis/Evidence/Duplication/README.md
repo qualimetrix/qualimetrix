@@ -11,9 +11,8 @@
   `tests/Analysis/Evidence/Duplication/`, and the English/Russian Duplication
   rule pages.
 - **Non-goals:** file discovery and run sequencing belong to `Analysis.Run`;
-  configuration source merging belongs to `Analysis.Configuration`; finding
-  primitives remain in `Core.Rule` / `Core.Violation`, and rule execution
-  remains a P6 migration input under `Analysis.RuleExecution`.
+  configuration source merging belongs to `Analysis.Configuration`; Finding
+  owns rule and finding primitives plus `Analysis\Finding\RuleExecution`.
 
 ## Structure
 
@@ -71,12 +70,12 @@ P3 proves one narrow Run phase port. The generic composite invokes it without a
 Duplication-specific branch; Duplication retains its result and emits its own
 completion log through its implementation.
 
-| Dependency/port                                                                                   | Owner                                                                          | Direction                    | Typed input/output                           | Why required                                                                                                                                                            |
-| ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FileSetInspectionParticipantInterface`                                                           | Run                                                                            | Run -> Duplication           | `list<SplFileInfo>` -> provider-owned result | Run invokes a selected participant without importing the detector.                                                                                                      |
-| `TransitionalRuntimeConfigurationProviderInterface`                                               | Analysis.Configuration                                                         | Duplication -> Configuration | resolved rule options and project root       | Detection uses configured token/line thresholds and relative paths.                                                                                                     |
-| Path and symbol primitives                                                                        | Core.Path / Core.Symbol                                                        | Duplication -> Core          | absolute/relative paths and metric subjects  | Stable file, subject, and report identities.                                                                                                                            |
-| Legacy rule/finding contracts, including `Rules\AbstractRule` and `Rules\Support\ThresholdParser` | Analysis.Finding (physically under `Core\Rule`, `Core\Violation`, and `Rules`) | Duplication -> Finding       | rule/options/threshold APIs and violations   | The owned rule participates in current rule execution and reporting. P6 moves this contract set to its final boundary and rewrites the physical imports without a shim. |
+| Dependency/port                                                                            | Owner                   | Direction                    | Typed input/output                           | Why required                                                                       |
+| ------------------------------------------------------------------------------------------ | ----------------------- | ---------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `FileSetInspectionParticipantInterface`                                                    | Run                     | Run -> Duplication           | `list<SplFileInfo>` -> provider-owned result | Run invokes a selected participant without importing the detector.                 |
+| `TransitionalRuntimeConfigurationProviderInterface`                                        | Analysis.Configuration  | Duplication -> Configuration | resolved rule options and project root       | Detection uses configured token/line thresholds and relative paths.                |
+| Path and symbol primitives                                                                 | Core.Path / Core.Symbol | Duplication -> Core          | absolute/relative paths and metric subjects  | Stable file, subject, and report identities.                                       |
+| Rule/finding contracts, including `Rules\AbstractRule` and `Rules\Support\ThresholdParser` | Analysis.Finding        | Duplication -> Finding       | rule/options/threshold APIs and violations   | The owned rule participates in Finding's current execution and reporting boundary. |
 
 ## Test ownership
 

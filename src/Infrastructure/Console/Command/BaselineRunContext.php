@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
+use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
-use Qualimetrix\Baseline\RunScope;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun;
 
 /**
@@ -21,7 +21,7 @@ use Qualimetrix\Infrastructure\Console\MeasuredAnalysisRun;
  * - the **scope**, as a {@see RunScope} rather than a bare path list, so the
  *   guard of ADR 0017 asks the object that derived the portable form whether it
  *   covers the recorded one instead of two sides deriving it separately;
- * - the **project root**, which {@see \Qualimetrix\Baseline\BaselineWriter}
+ * - the **project root**, which {@see \Qualimetrix\Analysis\Policy\Baseline\BaselineWriter}
  *   needs to make `file:` keys portable;
  * - the **analysis result**, because `baseline:explain` reads the run's
  *   `@qmx-threshold` overrides off it, and a second analysis to fetch them

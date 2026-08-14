@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Security;
 
-use Qualimetrix\Core\Rule\RuleOptionKey;
-use Qualimetrix\Core\Rule\RuleOptionsInterface;
-use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
  * Options for the hardcoded credentials rule.

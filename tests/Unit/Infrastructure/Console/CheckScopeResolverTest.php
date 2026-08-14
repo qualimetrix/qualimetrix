@@ -8,12 +8,12 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\ResolvedCheckScope;
@@ -128,7 +128,7 @@ final class CheckScopeResolverTest extends TestCase
                 projectRoot: $projectRoot ?? AbsolutePath::fromString((string) getcwd()),
             ),
             ruleOptions: [],
-            architecture: ArchitectureConfiguration::empty(),
+            document: new ConfigurationDocument([]),
         );
     }
 }

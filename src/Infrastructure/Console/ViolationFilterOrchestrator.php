@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\RuleExecution\RuleExclusionStats;
-use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
-use Qualimetrix\Baseline\RunScope;
-use Qualimetrix\Core\Violation\Filter\ViolationFilterStage;
-use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
+use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
+use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -27,8 +30,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 final readonly class ViolationFilterOrchestrator
 {
     public function __construct(
-        private ViolationFilterPipeline $violationFilterPipeline,
-        private RuleExecutorInterface $ruleExecutor,
+        private FindingProjector $findingProjector,
+        private RuleExecutionInterface $ruleExecutor,
         private DiagnosticOutput $diagnosticOutput = new DiagnosticOutput(),
     ) {}
 
@@ -40,13 +43,13 @@ final readonly class ViolationFilterOrchestrator
         InputInterface $input,
         OutputInterface $output,
         GitScopeResolution $scopeResolution,
-    ): ViolationFilterResult {
+        FindingProjectionOptions $options,
+    ): FindingProjectionResult {
         $output = $this->diagnosticOutput->stream($output);
-        $this->violationFilterPipeline->loadSuppressions($result->suppressions);
-
-        $filterResult = $this->violationFilterPipeline->filter(
+        $filterResult = $this->findingProjector->project(
             $result->violations,
-            self::optionsFrom($input, $scopeResolution),
+            $result->suppressions,
+            $options,
         );
 
         $this->reportBaselineEntries($filterResult, $input, $output);
@@ -57,37 +60,6 @@ final readonly class ViolationFilterOrchestrator
         $this->reportRuleExclusions($input, $output);
 
         return $filterResult;
-    }
-
-    private static function optionsFrom(
-        InputInterface $input,
-        GitScopeResolution $scopeResolution,
-    ): ViolationFilterOptions {
-        $baselinePath = $input->getOption('baseline');
-        /** @var list<string> $cliExcludePaths */
-        $cliExcludePaths = $input->getOption('exclude-path');
-        /** @var list<string> $cliExcludeNamespaces */
-        $cliExcludeNamespaces = $input->getOption('exclude-namespace');
-
-        $gitScope = null;
-        if ($scopeResolution->gitClient !== null && $scopeResolution->reportScope !== null) {
-            $gitScope = new GitScopeFilterConfig(
-                gitClient: $scopeResolution->gitClient,
-                reportScope: $scopeResolution->reportScope,
-                strictMode: (bool) $input->getOption('report-strict'),
-                projectRoot: $scopeResolution->projectRoot,
-            );
-        }
-
-        return new ViolationFilterOptions(
-            baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
-            narrowing: new CliOnlyNarrowing(
-                excludePaths: $cliExcludePaths,
-                excludeNamespaces: $cliExcludeNamespaces,
-                annotationSuppressionDisabled: (bool) $input->getOption('no-suppression-annotations'),
-            ),
-            gitScope: $gitScope,
-        );
     }
 
     /**
@@ -112,7 +84,7 @@ final readonly class ViolationFilterOrchestrator
      * no exit. Removal by identity arrives with `cleanup --remove` in P4.
      */
     private function reportBaselineEntries(
-        ViolationFilterResult $filterResult,
+        FindingProjectionResult $filterResult,
         InputInterface $input,
         OutputInterface $output,
     ): void {
@@ -158,7 +130,7 @@ final readonly class ViolationFilterOrchestrator
      * fail the run: refusing to load would punish the whole file for one bad
      * line.
      */
-    private function reportInertEntries(ViolationFilterResult $filterResult, OutputInterface $output): void
+    private function reportInertEntries(FindingProjectionResult $filterResult, OutputInterface $output): void
     {
         if ($filterResult->inertEntries === []) {
             return;
@@ -203,7 +175,7 @@ final readonly class ViolationFilterOrchestrator
      * cannot disagree about what a run analysed.
      */
     private function reportScopeMismatch(
-        ViolationFilterResult $filterResult,
+        FindingProjectionResult $filterResult,
         GitScopeResolution $scopeResolution,
         OutputInterface $output,
     ): void {
@@ -231,7 +203,7 @@ final readonly class ViolationFilterOrchestrator
     }
 
     private function reportSuppressedViolations(
-        ViolationFilterResult $filterResult,
+        FindingProjectionResult $filterResult,
         InputInterface $input,
         OutputInterface $output,
     ): void {
@@ -250,7 +222,7 @@ final readonly class ViolationFilterOrchestrator
         self::listByFile($suppressed, $output);
     }
 
-    private function reportExclusionCounts(ViolationFilterResult $filterResult, OutputInterface $output): void
+    private function reportExclusionCounts(FindingProjectionResult $filterResult, OutputInterface $output): void
     {
         if (!$output->isVerbose()) {
             return;
@@ -273,13 +245,13 @@ final readonly class ViolationFilterOrchestrator
      * `exclude_namespace_channels`, or `exclude_paths` (any rule, set via
      * `rules: {<rule-name>: {...}}` in `qmx.yaml` —
      * {@see RuleExclusionStats}). Unlike the global exclusion filters above, this
-     * mechanism runs inside {@see RuleExecutorInterface::execute()}, before the
-     * violations even reach {@see ViolationFilterPipeline}, so it needs its own
+     * mechanism runs inside {@see RuleExecutionInterface::execute()}, before the
+     * violations even reach {@see FindingProjector}, so it needs its own
      * reporting path.
      */
     private function reportRuleExclusions(InputInterface $input, OutputInterface $output): void
     {
-        $stats = $this->ruleExecutor->getRuleExclusionStats();
+        $stats = $this->ruleExecutor->exclusionStats();
 
         if ($input->getOption('show-suppressed') === true && $stats->excludedViolations !== []) {
             $output->writeln('');

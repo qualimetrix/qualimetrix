@@ -40,7 +40,6 @@ final class ConfigurationHolderTest extends TestCase
         $provider = new TransitionalRuntimeConfigurationHolder();
         $config = new TransitionalRuntimeConfiguration(
             cacheDir: AbsolutePath::fromString('/custom/cache'),
-            format: 'json',
         );
 
         $provider->setConfiguration($config);
@@ -75,8 +74,8 @@ final class ConfigurationHolderTest extends TestCase
     public function itAllowsConfigurationToBeReplaced(): void
     {
         $provider = new TransitionalRuntimeConfigurationHolder();
-        $config1 = new TransitionalRuntimeConfiguration(format: 'text');
-        $config2 = new TransitionalRuntimeConfiguration(format: 'json');
+        $config1 = new TransitionalRuntimeConfiguration(cacheEnabled: true);
+        $config2 = new TransitionalRuntimeConfiguration(cacheEnabled: false);
 
         $provider->setConfiguration($config1);
         $provider->setConfiguration($config2);

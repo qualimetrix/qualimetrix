@@ -8,10 +8,21 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\OutputFormat;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Analysis\Configuration\Runtime\TransitionalRuntimeConfigurationHolder;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ClassRankResolver;
+use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ImpactCalculator;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\RelativePath;
@@ -19,23 +30,15 @@ use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Profiler\ProfilerInterface;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Infrastructure\Console\ProfilePresenter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
-use Qualimetrix\Reporting\Debt\DebtCalculator;
-use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
-use Qualimetrix\Reporting\Impact\ClassRankResolver;
-use Qualimetrix\Reporting\Impact\ImpactCalculator;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -56,8 +59,11 @@ final class ResultPresenterTest extends TestCase
             configurationProvider: $configProvider,
             summaryEnricher: new SummaryEnricher(
                 new DebtCalculator(new RemediationTimeRegistry()),
-                new MetricHintProvider(),
                 new ImpactCalculator(new ClassRankResolver(), new RemediationTimeRegistry()),
+                new HealthSummaryBuilder(
+                    new HealthMetricCatalog(),
+                    self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+                ),
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
             exitCodeResolver: new ExitCodeResolver($configProvider),
@@ -74,9 +80,9 @@ final class ResultPresenterTest extends TestCase
     #[Test]
     public function presentResultsUsesFormatFromConfigNotCliDirectly(): void
     {
-        // Set up TransitionalRuntimeConfigurationHolder with format 'json'
+        // Runtime state remains available for path relativization; format is an explicit Reporting value.
         $configHolder = new TransitionalRuntimeConfigurationHolder();
-        $configHolder->setConfiguration(new TransitionalRuntimeConfiguration(format: 'json'));
+        $configHolder->setConfiguration(new TransitionalRuntimeConfiguration());
 
         // Create a mock formatter that records it was called
         $mockFormatter = self::createStub(FormatterInterface::class);
@@ -96,8 +102,11 @@ final class ResultPresenterTest extends TestCase
             configurationProvider: $configHolder,
             summaryEnricher: new SummaryEnricher(
                 new DebtCalculator(new RemediationTimeRegistry()),
-                new MetricHintProvider(),
                 new ImpactCalculator(new ClassRankResolver(), new RemediationTimeRegistry()),
+                new HealthSummaryBuilder(
+                    new HealthMetricCatalog(),
+                    self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+                ),
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
             exitCodeResolver: new ExitCodeResolver($configHolder),
@@ -126,7 +135,7 @@ final class ResultPresenterTest extends TestCase
             suppressions: [],
         );
 
-        $presenter->presentResults([], $analysisResult, $input, $output);
+        $presenter->presentResults([], $analysisResult, $input, $output, outputFormat: new OutputFormat('json'));
     }
 
     #[Test]
@@ -412,8 +421,11 @@ final class ResultPresenterTest extends TestCase
             configurationProvider: $configHolder,
             summaryEnricher: new SummaryEnricher(
                 new DebtCalculator(new RemediationTimeRegistry()),
-                new MetricHintProvider(),
                 new ImpactCalculator(new ClassRankResolver(), new RemediationTimeRegistry()),
+                new HealthSummaryBuilder(
+                    new HealthMetricCatalog(),
+                    self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+                ),
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
             exitCodeResolver: new ExitCodeResolver($configHolder),
@@ -464,8 +476,11 @@ final class ResultPresenterTest extends TestCase
             configurationProvider: $configHolder,
             summaryEnricher: new SummaryEnricher(
                 new DebtCalculator(new RemediationTimeRegistry()),
-                new MetricHintProvider(),
                 new ImpactCalculator(new ClassRankResolver(), new RemediationTimeRegistry()),
+                new HealthSummaryBuilder(
+                    new HealthMetricCatalog(),
+                    self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+                ),
             ),
             profilePresenter: new ProfilePresenter(new ProfilerHolder()),
             exitCodeResolver: new ExitCodeResolver($configHolder),

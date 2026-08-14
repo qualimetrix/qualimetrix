@@ -8,9 +8,10 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Rule\AnalysisContext;
-use Qualimetrix\Core\Rule\RuleCategory;
-use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use Qualimetrix\Rules\Complexity\ComplexityOptions;
@@ -42,6 +43,9 @@ final class RuleRegistryCompilerPassTest extends TestCase
         self::assertCount(2, $ruleClasses);
         self::assertContains(ComplexityRule::class, $ruleClasses);
         self::assertContains(ClassCountRule::class, $ruleClasses);
+        foreach ($ruleClasses as $ruleClass) {
+            self::assertTrue(is_a($ruleClass, RuleDefinitionInterface::class, true));
+        }
     }
 
     #[Test]

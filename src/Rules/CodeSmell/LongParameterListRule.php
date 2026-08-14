@@ -6,19 +6,19 @@ namespace Qualimetrix\Rules\CodeSmell;
 
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
-use Qualimetrix\Core\Rule\AnalysisContext;
-use Qualimetrix\Core\Rule\Attribute\CliAlias;
-use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Violation\ChannelDeclaration;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Core\Violation\ViolationChannel;
-use Qualimetrix\Rules\AbstractRule;
 
 /**
  * Rule that checks number of parameters per method/function.

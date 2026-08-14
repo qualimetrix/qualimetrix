@@ -8,45 +8,51 @@ use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\DefaultMetricRepositoryFactory;
-use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
 use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
-use Qualimetrix\Analysis\Run\Enrichment\TransitionalMetricEnricher;
+use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
-use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
-use Qualimetrix\Architecture\Processing\ArchitectureProcessor;
-use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
+use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Rule\InMemoryRuleChannelRegistry;
-use Qualimetrix\Core\Rule\RuleSelector;
-use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
 /**
  * Fluent builder for {@see AnalysisPipeline} instances in tests.
  *
- * Production wiring (RuntimeConfigurator) binds an
- * {@see ArchitectureConfiguration} on the processor before
+ * Production wiring (RuntimeConfigurator) configures an
+ * {@see ArchitectureConfiguration} on the policy before
  * {@code AnalysisPipeline::analyze()} runs, satisfying the ADR 0008 §3
  * fail-fast invariant (bind → prepare).
  *
  * Tests that construct an {@code AnalysisPipeline} directly bypass that
- * wiring, so they must hand the pipeline an already-bound processor. This
+ * wiring, so they must hand the pipeline an already-configured policy. This
  * builder centralises that concern: by default it constructs a real
- * {@see ArchitectureProcessor} and binds {@see ArchitectureConfiguration::empty()},
+ * {@see ArchitecturePolicy} and binds {@see ArchitectureConfiguration::empty()},
  * which is sufficient for every test that does not exercise architecture
  * rules. Tests that need a non-empty configuration can supply one through
- * {@see self::withArchitectureConfiguration()} or inject a custom processor
- * through {@see self::withArchitectureProcessor()}.
+ * {@see self::withArchitectureConfiguration()} or inject a custom preparation
+ * contract through {@see self::withLayerPolicyPreparation()}.
  *
  * The other constructor arguments mirror {@see AnalysisPipeline}'s ctor.
  * Every collaborator is required from the caller's perspective — there are
  * no implicit mocks — to keep test setup explicit. The single deliberate
- * convenience is the processor default.
+ * convenience is the policy default.
  */
 final class TestPipelineBuilder
 {
@@ -54,13 +60,21 @@ final class TestPipelineBuilder
 
     private ?CollectionOrchestratorInterface $collectionOrchestrator = null;
 
-    private ?RuleExecutorInterface $ruleExecutor = null;
+    private ?RuleExecutionInterface $ruleExecutor = null;
+
+    private ?RuleConfigurationInterface $ruleConfiguration = null;
 
     private ?TransitionalRuntimeConfigurationProviderInterface $configurationProvider = null;
 
-    private ?TransitionalMetricEnricher $metricEnricher = null;
+    private ?MeasurementAggregationInterface $measurementAggregation = null;
 
-    private ?ArchitectureProcessorInterface $architectureProcessor = null;
+    private ?ComputedMetricEvaluator $computedMetricEvaluation = null;
+
+    private ?CircularDependencyPreparationInterface $circularDependencyPreparation = null;
+
+    private ?FileSetInspectionComposite $fileSetInspection = null;
+
+    private ?LayerPolicyPreparationInterface $layerPolicyPreparation = null;
 
     private ?ArchitectureConfiguration $architectureConfiguration = null;
 
@@ -95,9 +109,16 @@ final class TestPipelineBuilder
         return $this;
     }
 
-    public function withRuleExecutor(RuleExecutorInterface $ruleExecutor): self
+    public function withRuleExecution(RuleExecutionInterface $ruleExecutor): self
     {
         $this->ruleExecutor = $ruleExecutor;
+
+        return $this;
+    }
+
+    public function withRuleConfiguration(RuleConfigurationInterface $ruleConfiguration): self
+    {
+        $this->ruleConfiguration = $ruleConfiguration;
 
         return $this;
     }
@@ -109,27 +130,47 @@ final class TestPipelineBuilder
         return $this;
     }
 
-    public function withMetricEnricher(TransitionalMetricEnricher $enricher): self
+    public function withMeasurementAggregation(MeasurementAggregationInterface $aggregation): self
     {
-        $this->metricEnricher = $enricher;
+        $this->measurementAggregation = $aggregation;
+
+        return $this;
+    }
+
+    public function withComputedMetricEvaluation(ComputedMetricEvaluator $evaluation): self
+    {
+        $this->computedMetricEvaluation = $evaluation;
+
+        return $this;
+    }
+
+    public function withCircularDependencyPreparation(CircularDependencyPreparationInterface $preparation): self
+    {
+        $this->circularDependencyPreparation = $preparation;
+
+        return $this;
+    }
+
+    public function withFileSetInspection(FileSetInspectionComposite $inspection): self
+    {
+        $this->fileSetInspection = $inspection;
 
         return $this;
     }
 
     /**
-     * Inject a fully prepared processor — caller is responsible for calling
-     * {@code bind()} before handing it to the builder. Use this for tests
-     * that need to verify processor lifecycle interactions.
+     * Inject a policy preparation contract. Use this for tests that need to
+     * verify the Run-to-Architecture lifecycle interaction.
      */
-    public function withArchitectureProcessor(ArchitectureProcessorInterface $processor): self
+    public function withLayerPolicyPreparation(LayerPolicyPreparationInterface $preparation): self
     {
-        $this->architectureProcessor = $processor;
+        $this->layerPolicyPreparation = $preparation;
 
         return $this;
     }
 
     /**
-     * Use the default {@see ArchitectureProcessor}, but bind it to a specific
+     * Use the default {@see ArchitecturePolicy}, but bind it to a specific
      * configuration instead of {@see ArchitectureConfiguration::empty()}.
      * Useful for tests that exercise architecture rules with real layer
      * definitions.
@@ -189,38 +230,51 @@ final class TestPipelineBuilder
                 'TestPipelineBuilder: collectionOrchestrator is required (call withCollectionOrchestrator())',
             ),
             ruleExecutor: $this->ruleExecutor ?? throw new LogicException(
-                'TestPipelineBuilder: ruleExecutor is required (call withRuleExecutor())',
+                'TestPipelineBuilder: ruleExecutor is required (call withRuleExecution())',
             ),
             configurationProvider: $this->configurationProvider ?? throw new LogicException(
                 'TestPipelineBuilder: configurationProvider is required (call withConfigurationProvider())',
             ),
-            metricEnricher: $this->metricEnricher ?? throw new LogicException(
-                'TestPipelineBuilder: metricEnricher is required (call withMetricEnricher())',
+            ruleProducerPreparation: new RuleProducerPreparation(
+                $this->resolveLayerPolicyPreparation(),
+                $this->circularDependencyPreparation ?? throw new LogicException(
+                    'TestPipelineBuilder: circularDependencyPreparation is required '
+                    . '(call withCircularDependencyPreparation())',
+                ),
+                $this->fileSetInspection ?? throw new LogicException(
+                    'TestPipelineBuilder: fileSetInspection is required (call withFileSetInspection())',
+                ),
+                $this->ruleSelector ?? new RuleSelector(new InMemoryRuleChannelRegistry()),
+                $this->ruleConfiguration ?? new RuleOptionsRegistry(),
             ),
-            architectureProcessor: $this->resolveArchitectureProcessor(),
+            measurementAggregation: $this->measurementAggregation ?? throw new LogicException(
+                'TestPipelineBuilder: measurementAggregation is required (call withMeasurementAggregation())',
+            ),
+            computedMetricEvaluation: $this->computedMetricEvaluation ?? throw new LogicException(
+                'TestPipelineBuilder: computedMetricEvaluation is required (call withComputedMetricEvaluation())',
+            ),
             repositoryFactory: $this->repositoryFactory ?? new DefaultMetricRepositoryFactory(),
             graphBuilder: $this->graphBuilder ?? AdjacencyGraphBuilder::builder(),
             logger: $this->logger ?? new NullLogger(),
             profilerHolder: $this->profilerHolder,
-            ruleSelector: $this->ruleSelector ?? new RuleSelector(new InMemoryRuleChannelRegistry()),
         );
     }
 
-    private function resolveArchitectureProcessor(): ArchitectureProcessorInterface
+    private function resolveLayerPolicyPreparation(): LayerPolicyPreparationInterface
     {
-        if ($this->architectureProcessor !== null) {
+        if ($this->layerPolicyPreparation !== null) {
             if ($this->architectureConfiguration !== null) {
                 throw new LogicException(
-                    'TestPipelineBuilder: cannot combine withArchitectureProcessor() and '
-                    . 'withArchitectureConfiguration() — the explicit processor is responsible '
-                    . 'for its own bind() state',
+                    'TestPipelineBuilder: cannot combine withLayerPolicyPreparation() and '
+                    . 'withArchitectureConfiguration() — the explicit preparation is responsible '
+                    . 'for its own state',
                 );
             }
 
-            return $this->architectureProcessor;
+            return $this->layerPolicyPreparation;
         }
 
-        $processor = new ArchitectureProcessor();
+        $processor = new ArchitecturePolicy();
         $processor->bind($this->architectureConfiguration ?? ArchitectureConfiguration::empty());
 
         return $processor;

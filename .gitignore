@@ -59,6 +59,7 @@ __pycache__/
 examples/
 *.json
 !/qmx-baseline.json
+/qmx-baseline.json.lock
 !/docs/internal/benchmark-baselines.json
 !/docs/internal/modular-architecture-manifest.json
 !/docs/internal/modular-architecture-manifest.schema.json

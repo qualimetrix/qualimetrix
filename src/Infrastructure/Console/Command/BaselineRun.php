@@ -10,14 +10,15 @@ use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
-use Qualimetrix\Baseline\RunScope;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
+use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -68,7 +69,14 @@ final readonly class BaselineRun implements BaselineRunInterface
 
         $this->assertPathsExist($paths);
 
-        $run = $this->measuredViolationSet->runForPaths($paths, $this->fileDiscoveryFactory->create($resolved->pathExcludes));
+        $run = $this->measuredViolationSet->runForPaths(
+            $paths,
+            $this->fileDiscoveryFactory->create($resolved->pathExcludes),
+            new FindingProjectionOptions(
+                excludePaths: $resolved->findingExclusions->excludePaths,
+                excludeNamespaces: $resolved->findingExclusions->excludeNamespaces,
+            ),
+        );
 
         // A partial measured set is not evidence about what disappeared or
         // improved. Stop before deriving a claimed scope or letting any

@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\CodeSmell;
 
 use LogicException;
-use Qualimetrix\Core\Rule\AnalysisContext;
-use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Violation\ChannelDeclaration;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Core\Violation\ViolationChannel;
-use Qualimetrix\Rules\AbstractRule;
 
 /**
  * Base class for code smell rules.
@@ -63,7 +63,7 @@ abstract class AbstractCodeSmellRule extends AbstractRule
      * measured magnitude — so `occurrence` is the correct shape for all of
      * them uniformly. `static::NAME` resolves per concrete subclass via
      * late static binding, exactly as {@see getName()} above already relies
-     * on; {@see \Qualimetrix\Core\Rule\ChannelDeclarationReader} reads this
+     * on; {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader} reads this
      * method via reflection on the concrete rule class, so the binding
      * target is correct without any special-casing on the reader's side.
      *

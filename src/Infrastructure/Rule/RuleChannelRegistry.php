@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Rule;
 
-use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
-use Qualimetrix\Core\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Core\Violation\ViolationChannel;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 
 /**
  * Runtime producer-to-channel registry.
@@ -23,6 +23,7 @@ final readonly class RuleChannelRegistry implements RuleChannelRegistryInterface
     public function __construct(
         private array $staticChannelKeysByProducer,
         private string $computedMetricRuleName,
+        private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
     ) {}
 
     public function channelsProducedBy(string $producerRuleName): array
@@ -36,7 +37,7 @@ final readonly class RuleChannelRegistry implements RuleChannelRegistryInterface
             return $channels;
         }
 
-        foreach (ComputedMetricDefinitionHolder::getDefinitions() as $definition) {
+        foreach ($this->definitionCatalog->all() as $definition) {
             $channels[] = new ViolationChannel($producerRuleName, $definition->name);
         }
 

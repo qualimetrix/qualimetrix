@@ -10,8 +10,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
-use Qualimetrix\Analysis\Run\Contract\Lifecycle\AnalysisLifecycleHookInterface;
-use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\CollectorCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ConfigurationStageCompilerPass;
@@ -25,11 +23,14 @@ use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryComp
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ThresholdValidatorMapCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CircularDependencyConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CollectorConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ComputedMetricsConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ConfigurationConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CoreServicesConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DependencyModelConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DuplicationConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\FindingConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\MeasurementConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\OutputConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurator;
@@ -84,8 +85,11 @@ final class ContainerFactory
             new CollectorConfigurator($srcDir),
             new MeasurementConfigurator(),
             new DependencyModelConfigurator(),
+            new ComputedMetricsConfigurator(),
             new RuleConfigurator($srcDir),
+            new FindingConfigurator(),
             new ArchitectureConfigurator($srcDir),
+            new CircularDependencyConfigurator($srcDir),
             new DuplicationConfigurator($srcDir),
             new AnalysisConfigurator(),
             new OutputConfigurator($srcDir),
@@ -113,7 +117,8 @@ final class ContainerFactory
     private function registerAutoconfiguration(ContainerBuilder $container): void
     {
         // Autoconfigure: all RuleInterface implementations get tagged and made lazy
-        $container->registerForAutoconfiguration(RuleInterface::class)
+        $ruleInterface = 'Qualimetrix\\Analysis\\Finding\\Rule\\RuleInterface';
+        $container->registerForAutoconfiguration($ruleInterface)
             ->addTag(RuleCompilerPass::TAG)
             ->setLazy(true);
 
@@ -141,13 +146,6 @@ final class ContainerFactory
         $container->registerForAutoconfiguration('Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationStageInterface')
             ->addTag(ConfigurationStageCompilerPass::TAG);
 
-        // Lifecycle hooks autoconfiguration. Slice features (Architecture
-        // today, Computed Metrics potentially next) implement
-        // AnalysisLifecycleHookInterface and register an autowired service
-        // in their own configurator; RuntimeConfigurator consumes them as a
-        // tagged iterator so Infrastructure never imports a feature type.
-        $container->registerForAutoconfiguration(AnalysisLifecycleHookInterface::class)
-            ->addTag('qmx.analysis.lifecycle_hook');
     }
 
     /**

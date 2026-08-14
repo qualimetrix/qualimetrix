@@ -8,9 +8,11 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
+use Qualimetrix\Analysis\Configuration\Contract\ResolvedFindingExclusions;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Architecture\Processing\LayerExpansionException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
@@ -23,6 +25,8 @@ use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
 use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
+use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -119,14 +123,14 @@ final class CheckCommand extends Command
             ));
 
             return self::EXIT_CONFIG_ERROR;
-        } catch (ConfigLoadException $e) {
+        } catch (ConfigLoadException|ArchitectureConfigurationException $e) {
             $this->diagnosticOutput->write($output, \sprintf(
                 '<error>Configuration error: %s</error>',
                 $e->getMessage(),
             ));
 
             return self::EXIT_CONFIG_ERROR;
-        } catch (LayerExpansionException $e) {
+        } catch (ArchitecturePreparationException $e) {
             // Template-layer expansion failures are user-fixable misconfiguration
             // (typo'd templates, ceiling exceeded, name collisions). Surface them
             // with the same framing and exit code as ConfigLoadException so the
@@ -198,7 +202,13 @@ final class CheckCommand extends Command
 
         $result = $this->runAnalysis($scopeResolution->paths, $scopeResolution->fileDiscovery);
 
-        $filterResult = $this->violationFilterOrchestrator->filterAndReport($result, $input, $output, $scopeResolution);
+        $filterResult = $this->violationFilterOrchestrator->filterAndReport(
+            $result,
+            $input,
+            $output,
+            $scopeResolution,
+            $this->projectionOptions($resolved->findingExclusions, $input, $scopeResolution),
+        );
         $filteredViolations = $filterResult->violations;
 
         $scopedReporting = $scopeResolution->reportScope !== null;
@@ -212,6 +222,7 @@ final class CheckCommand extends Command
             $input,
             $output,
             $scopedReporting,
+            $resolved->outputFormat,
         );
 
         $this->resultPresenter->presentProfile($input, $output);
@@ -238,6 +249,37 @@ final class CheckCommand extends Command
         );
 
         return $this->configurationPipeline->resolve($context);
+    }
+
+    private function projectionOptions(
+        ResolvedFindingExclusions $configuredExclusions,
+        InputInterface $input,
+        \Qualimetrix\Infrastructure\Git\GitScopeResolution $scopeResolution,
+    ): FindingProjectionOptions {
+        /** @var list<string> $cliExcludePaths */
+        $cliExcludePaths = $input->getOption('exclude-path');
+        /** @var list<string> $cliExcludeNamespaces */
+        $cliExcludeNamespaces = $input->getOption('exclude-namespace');
+        $exclusions = $configuredExclusions->withAdditional($cliExcludePaths, $cliExcludeNamespaces);
+
+        $gitScope = null;
+        if ($scopeResolution->gitClient !== null && $scopeResolution->reportScope !== null) {
+            $gitScope = new GitScopeRequest(
+                reference: $scopeResolution->reportScope->ref,
+                projectRoot: $scopeResolution->projectRoot,
+                includeParentNamespaces: !(bool) $input->getOption('report-strict'),
+            );
+        }
+
+        $baselinePath = $input->getOption('baseline');
+
+        return new FindingProjectionOptions(
+            baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
+            excludePaths: $exclusions->excludePaths,
+            excludeNamespaces: $exclusions->excludeNamespaces,
+            annotationSuppressionDisabled: (bool) $input->getOption('no-suppression-annotations'),
+            gitScope: $gitScope,
+        );
     }
 
     /**
@@ -304,7 +346,7 @@ final class CheckCommand extends Command
      */
     private function warnAboutConflictingRuleFilters(TransitionalResolvedConfiguration $resolved, OutputInterface $output): void
     {
-        if ($resolved->runtime->disabledRules !== [] && $resolved->runtime->onlyRules !== []) {
+        if ($resolved->ruleSelection->disabled !== [] && $resolved->ruleSelection->only !== []) {
             $this->writeWarning(
                 $output,
                 'Warning: both --disable-rule and --only-rule are active. This may result in no rules being enabled.',

@@ -216,7 +216,7 @@ final class ConfigSchemaTest extends TestCase
     #[Test]
     public function everyConstantHasEntryOrIsInternal(): void
     {
-        $internalConstants = ConfigSchema::INTERNAL_KEYS;
+        $internalConstants = [...ConfigSchema::INTERNAL_KEYS, ...ConfigSchema::DOCUMENT_ROOTS];
 
         $reflection = new ReflectionClass(ConfigSchema::class);
         $entryResultKeys = array_map(static fn(array $e): string => $e[1], ConfigSchema::ENTRIES);
@@ -227,6 +227,10 @@ final class ConfigSchemaTest extends TestCase
             }
 
             $value = $rc->getValue();
+
+            if (\in_array($value, ConfigSchema::DOCUMENT_ROOTS, true)) {
+                continue;
+            }
 
             if (\in_array($value, $internalConstants, true)) {
                 continue;
@@ -275,6 +279,10 @@ final class ConfigSchemaTest extends TestCase
 
         foreach ($reflection->getReflectionConstants() as $rc) {
             if (!$rc->isPublic() || !$rc->getType() instanceof ReflectionNamedType || $rc->getType()->getName() !== 'string') {
+                continue;
+            }
+
+            if (\in_array($rc->getValue(), ConfigSchema::DOCUMENT_ROOTS, true)) {
                 continue;
             }
 

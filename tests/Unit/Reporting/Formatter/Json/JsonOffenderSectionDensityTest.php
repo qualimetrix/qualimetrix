@@ -7,15 +7,16 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Json;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
 use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
-use Qualimetrix\Reporting\Health\NamespaceDrillDown;
-use Qualimetrix\Reporting\Health\WorstOffender;
 
 #[CoversClass(JsonOffenderSection::class)]
 final class JsonOffenderSectionDensityTest extends TestCase
@@ -25,7 +26,7 @@ final class JsonOffenderSectionDensityTest extends TestCase
     protected function setUp(): void
     {
         $this->section = new JsonOffenderSection(
-            new NamespaceDrillDown(new MetricHintProvider()),
+            new WorstClassDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)),
             new ViolationFilter(),
             new JsonSanitizer(),
         );
@@ -40,9 +41,11 @@ final class JsonOffenderSectionDensityTest extends TestCase
             healthOverall: 35.0,
             label: 'Poor',
             reason: 'high complexity',
-            violationCount: 8,
-            classCount: 4,
-            violationDensity: 2.5,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 8,
+                classCount: 4,
+                violationDensity: 2.5,
+            ),
         );
 
         $context = new FormatterContext();
@@ -63,9 +66,11 @@ final class JsonOffenderSectionDensityTest extends TestCase
             healthOverall: 30.0,
             label: 'Poor',
             reason: '',
-            violationCount: 12,
-            classCount: 0,
-            violationDensity: 6.0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 12,
+                classCount: 0,
+                violationDensity: 6.0,
+            ),
         );
 
         $context = new FormatterContext();
@@ -99,9 +104,11 @@ final class JsonOffenderSectionDensityTest extends TestCase
             healthOverall: 25.0,
             label: 'Poor',
             reason: '',
-            violationCount: 15,
-            classCount: 3,
-            violationDensity: null,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 15,
+                classCount: 3,
+                violationDensity: null,
+            ),
         );
 
         $context = new FormatterContext();
@@ -121,9 +128,11 @@ final class JsonOffenderSectionDensityTest extends TestCase
             healthOverall: 45.0,
             label: 'Poor',
             reason: '',
-            violationCount: 5,
-            classCount: 2,
-            violationDensity: 10.0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 5,
+                classCount: 2,
+                violationDensity: 10.0,
+            ),
         );
 
         $lowDensity = new WorstOffender(
@@ -132,9 +141,11 @@ final class JsonOffenderSectionDensityTest extends TestCase
             healthOverall: 30.0,
             label: 'Poor',
             reason: '',
-            violationCount: 20,
-            classCount: 10,
-            violationDensity: 1.0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 20,
+                classCount: 10,
+                violationDensity: 1.0,
+            ),
         );
 
         // Default order: lowDensity first (lower health score)
@@ -156,9 +167,11 @@ final class JsonOffenderSectionDensityTest extends TestCase
             healthOverall: 45.0,
             label: 'Poor',
             reason: '',
-            violationCount: 5,
-            classCount: 2,
-            violationDensity: 10.0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 5,
+                classCount: 2,
+                violationDensity: 10.0,
+            ),
         );
 
         $lowDensity = new WorstOffender(
@@ -167,9 +180,11 @@ final class JsonOffenderSectionDensityTest extends TestCase
             healthOverall: 30.0,
             label: 'Poor',
             reason: '',
-            violationCount: 20,
-            classCount: 10,
-            violationDensity: 1.0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 20,
+                classCount: 10,
+                violationDensity: 1.0,
+            ),
         );
 
         // Default order preserved

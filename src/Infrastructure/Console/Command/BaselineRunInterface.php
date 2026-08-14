@@ -6,6 +6,8 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -30,6 +32,8 @@ interface BaselineRunInterface
      * and analyses the configured paths.
      *
      * @throws ConfigLoadException when the configuration cannot be read
+     * @throws ArchitectureConfigurationException when Architecture configuration is invalid
+     * @throws ArchitecturePreparationException when Architecture preparation cannot complete
      * @throws InvalidArgumentException when a requested path does not exist
      */
     public function measure(InputInterface $input, OutputInterface $output): BaselineRunContext;

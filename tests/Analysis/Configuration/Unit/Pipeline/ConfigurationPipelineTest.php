@@ -8,15 +8,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\DeferredWarning;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
-use Qualimetrix\Architecture\Domain\CoverageMode;
 use Symfony\Component\Console\Input\ArrayInput;
 
 #[CoversClass(ConfigurationPipeline::class)]
-#[CoversClass(DeferredWarning::class)]
 final class ConfigurationPipelineTest extends TestCase
 {
     #[Test]
@@ -74,7 +71,7 @@ final class ConfigurationPipelineTest extends TestCase
         // CLI paths override defaults
         self::assertSame(['src'], $resolved->paths);
         // Format from defaults is preserved
-        self::assertSame('text', $resolved->runtime->format);
+        self::assertSame('text', $resolved->outputFormat->value);
     }
 
     #[Test]
@@ -137,7 +134,7 @@ final class ConfigurationPipelineTest extends TestCase
         $resolved = $pipeline->resolve($context);
 
         // Should contain union of both stages, not just CLI values
-        $disabledRules = $resolved->runtime->disabledRules;
+        $disabledRules = $resolved->ruleSelection->disabled;
         self::assertContains('complexity.cyclomatic', $disabledRules);
         self::assertContains('size.loc', $disabledRules);
         self::assertContains('coupling.cbo', $disabledRules);
@@ -163,7 +160,7 @@ final class ConfigurationPipelineTest extends TestCase
         $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
         $resolved = $pipeline->resolve($context);
 
-        $excludePaths = $resolved->runtime->excludePaths;
+        $excludePaths = $resolved->findingExclusions->excludePaths;
         self::assertContains('tests/', $excludePaths);
         self::assertContains('vendor/', $excludePaths);
         self::assertContains('generated/', $excludePaths);
@@ -189,7 +186,7 @@ final class ConfigurationPipelineTest extends TestCase
         $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
         $resolved = $pipeline->resolve($context);
 
-        $disabledRules = $resolved->runtime->disabledRules;
+        $disabledRules = $resolved->ruleSelection->disabled;
         // Should have no duplicates
         self::assertCount(2, $disabledRules);
         self::assertContains('complexity.cyclomatic', $disabledRules);
@@ -231,8 +228,7 @@ final class ConfigurationPipelineTest extends TestCase
         $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
 
         $resolved = $pipeline->resolve($context);
-        self::assertTrue($resolved->architecture->isEmpty());
-        self::assertSame(CoverageMode::Ignore, $resolved->architecture->coverage());
+        self::assertSame([], $resolved->document->contributions('architecture'));
     }
 
     #[Test]
@@ -257,15 +253,11 @@ final class ConfigurationPipelineTest extends TestCase
 
         $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
         $resolved = $pipeline->resolve($context);
-        self::assertFalse($resolved->architecture->isEmpty());
-        // Declaration order is preserved (not alphabetically sorted).
-        self::assertSame(['controller', 'service'], $resolved->architecture->registry()->layerNames());
-        self::assertTrue($resolved->architecture->policy()->isAllowed('controller', 'service'));
-        self::assertSame(CoverageMode::Warn, $resolved->architecture->coverage());
+        self::assertSame('warn', $resolved->document->contributions('architecture')[0]['coverage']);
     }
 
     #[Test]
-    public function wildcardSelfAllowWarningSurfacesAsDeferredWarning(): void
+    public function architectureDocumentPreservesWildcardAllowInput(): void
     {
         $pipeline = new ConfigurationPipeline();
 
@@ -285,19 +277,11 @@ final class ConfigurationPipelineTest extends TestCase
         $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
         $resolved = $pipeline->resolve($context);
 
-        $wildcardSelfWarnings = array_values(array_filter(
-            $resolved->deferredWarnings,
-            static fn(DeferredWarning $w): bool => $w->level === 'warning'
-                && str_contains($w->message, 'wildcard-self-allow'),
-        ));
-
-        self::assertCount(1, $wildcardSelfWarnings);
-        self::assertStringContainsString("'domain-*'", $wildcardSelfWarnings[0]->message);
-        self::assertStringContainsString('cross-instance edges', $wildcardSelfWarnings[0]->message);
+        self::assertSame(['domain-*'], $resolved->document->contributions('architecture')[0]['allow']['domain-*']);
     }
 
     #[Test]
-    public function configurationWithoutFactoryWarningsHasEmptyDeferredWarnings(): void
+    public function configurationDocumentRetainsOneArchitectureContributionFromOneStage(): void
     {
         $pipeline = new ConfigurationPipeline();
 
@@ -318,7 +302,7 @@ final class ConfigurationPipelineTest extends TestCase
         $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
         $resolved = $pipeline->resolve($context);
 
-        self::assertSame([], $resolved->deferredWarnings);
+        self::assertCount(1, $resolved->document->contributions('architecture'));
     }
 
     #[Test]
@@ -352,9 +336,8 @@ final class ConfigurationPipelineTest extends TestCase
 
         $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
         $resolved = $pipeline->resolve($context);
-        // Project's single 'domain' layer replaced the preset's two.
-        self::assertSame(['domain'], $resolved->architecture->registry()->layerNames());
-        self::assertSame(CoverageMode::Error, $resolved->architecture->coverage());
+        self::assertSame('controller', $resolved->document->contributions('architecture')[0]['layers'][0]['name']);
+        self::assertSame('domain', $resolved->document->contributions('architecture')[1]['layers'][0]['name']);
     }
 
     #[Test]
@@ -385,8 +368,8 @@ final class ConfigurationPipelineTest extends TestCase
 
         $context = new ConfigurationContext(new ArrayInput([]), '/tmp');
         $resolved = $pipeline->resolve($context);
-        self::assertSame(['controller', 'service'], $resolved->architecture->registry()->layerNames());
-        self::assertSame(CoverageMode::Error, $resolved->architecture->coverage());
+        self::assertSame('controller', $resolved->document->contributions('architecture')[0]['layers'][0]['name']);
+        self::assertSame('error', $resolved->document->contributions('architecture')[1]['coverage']);
     }
 
     private function createStage(int $priority, string $name, ?ConfigurationLayer $layer): ConfigurationStageInterface

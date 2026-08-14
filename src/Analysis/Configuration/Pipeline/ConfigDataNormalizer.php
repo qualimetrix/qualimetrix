@@ -39,6 +39,12 @@ final class ConfigDataNormalizer
             }
         }
 
+        foreach (ConfigSchema::DOCUMENT_ROOTS as $root) {
+            if (\array_key_exists($root, $data)) {
+                $result[$root] = $data[$root];
+            }
+        }
+
         return $result;
     }
 

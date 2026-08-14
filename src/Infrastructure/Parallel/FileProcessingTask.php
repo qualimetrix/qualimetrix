@@ -10,10 +10,10 @@ use Amp\Sync\Channel;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Rule\RuleInterface;
 use SplFileInfo;
 
 /**
@@ -39,7 +39,7 @@ final class FileProcessingTask implements Task
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses Derived collector class names
      * @param AbsolutePath|null $cacheDir Optional cache directory for AST caching
      * @param array<string, mixed> $collectorConfig Collector-level configuration (e.g., LCOM exclude methods)
-     * @param list<class-string<RuleInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
+     * @param list<class-string<RuleDefinitionInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
      */
     public function __construct(
         private readonly AbsolutePath $filePath,

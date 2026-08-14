@@ -17,11 +17,11 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
-use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
-use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
-use Qualimetrix\Architecture\Domain\CoverageMode;
-use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
-use Qualimetrix\Architecture\Domain\Layer\TemplateLayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
@@ -47,9 +47,9 @@ final class DogfoodingTopologyTest extends TestCase
         sort($expected, \SORT_STRING);
 
         self::assertSame($expected, $declared);
-        self::assertCount(49, $declared);
-        self::assertCount(37, $manifest['owners']);
-        self::assertCount(11, $manifest['enforcement_seams']);
+        $internalLayerCount = \count($manifest['owners']) + \count($manifest['enforcement_seams']);
+        self::assertSame($this->enforcementSummaryCount('internal_enforcement_layers'), $internalLayerCount);
+        self::assertCount($internalLayerCount + 1, $declared);
 
         $seamMembers = [];
         foreach ($manifest['declarations'] as $fqcn => $declaration) {
@@ -109,7 +109,7 @@ final class DogfoodingTopologyTest extends TestCase
             }
         }
 
-        self::assertSame(266, $edgeCount);
+        self::assertSame($this->enforcementSummaryCount('declared_allow_edges'), $edgeCount);
         self::assertSame([], $graph['external']);
         foreach (array_diff($layers, ['external']) as $source) {
             self::assertContains('external', $graph[$source]);
@@ -218,7 +218,11 @@ final class DogfoodingTopologyTest extends TestCase
             new InputOption('workers', null, InputOption::VALUE_REQUIRED),
         ]);
 
-        return $pipeline->resolve(new ConfigurationContext(new ArrayInput([], $definition), $repoRoot))->architecture;
+        $resolved = $pipeline->resolve(new ConfigurationContext(new ArrayInput([], $definition), $repoRoot));
+
+        return (new ArchitectureConfigurationFactory())
+            ->fromContributions($resolved->document->contributions('architecture'))
+            ->configuration;
     }
 
     private function repoRoot(): string
@@ -227,5 +231,23 @@ final class DogfoodingTopologyTest extends TestCase
         self::assertIsString($root);
 
         return $root;
+    }
+
+    private function enforcementSummaryCount(string $metric): int
+    {
+        $path = $this->repoRoot() . '/docs/internal/generated/modular-architecture/manifest-enforcement-summary.tsv';
+        $rows = file($path, \FILE_IGNORE_NEW_LINES | \FILE_SKIP_EMPTY_LINES);
+        self::assertIsArray($rows);
+
+        foreach ($rows as $row) {
+            [$name, $count] = array_pad(explode("\t", $row, 2), 2, null);
+            if ($name === $metric) {
+                self::assertIsNumeric($count);
+
+                return (int) $count;
+            }
+        }
+
+        self::fail("Missing {$metric} in {$path}");
     }
 }

@@ -6,16 +6,18 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Rule;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Qualimetrix\Rules\Size\ClassCountRule;
+use ReflectionClass;
 
 final class RuleRegistryTest extends TestCase
 {
     // The registry deliberately exposes no rule factory: rules may declare
     // constructor dependencies beyond their Options object (LayerViolationRule
-    // takes an ArchitectureProcessorInterface), so only the DI container may
+    // takes the capability-owned ArchitecturePolicy), so only the DI container may
     // build them. Instance wiring is covered by RulesCommandWiringTest.
 
     #[Test]
@@ -30,6 +32,9 @@ final class RuleRegistryTest extends TestCase
         self::assertCount(2, $classes);
         self::assertSame(ComplexityRule::class, $classes[0]);
         self::assertSame(ClassCountRule::class, $classes[1]);
+        foreach ($classes as $class) {
+            self::assertTrue((new ReflectionClass($class))->implementsInterface(RuleDefinitionInterface::class));
+        }
     }
 
     #[Test]

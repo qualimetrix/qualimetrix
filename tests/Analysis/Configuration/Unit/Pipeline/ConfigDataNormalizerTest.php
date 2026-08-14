@@ -106,7 +106,7 @@ final class ConfigDataNormalizerTest extends TestCase
     {
         $result = ConfigDataNormalizer::normalize(['excludeHealth' => ['typing']]);
 
-        self::assertSame(['typing'], $result['exclude_health']);
+        self::assertSame(['typing'], $result['excludeHealth']);
     }
 
     #[Test]

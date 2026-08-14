@@ -7,13 +7,21 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Reporting\Debt\DebtCalculator;
-use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\HintRenderer;
@@ -24,12 +32,7 @@ use Qualimetrix\Reporting\Formatter\Summary\ViolationSummaryRenderer;
 use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Health\DecompositionItem;
-use Qualimetrix\Reporting\Health\HealthScore;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
-use Qualimetrix\Reporting\Health\NamespaceDrillDown;
-use Qualimetrix\Reporting\Health\WorstOffender;
 use Qualimetrix\Reporting\Report;
 
 #[CoversClass(SummaryFormatter::class)]
@@ -42,10 +45,11 @@ final class SummaryFormatterTest extends TestCase
     {
         $registry = new RemediationTimeRegistry();
         $debtCalculator = new DebtCalculator($registry);
-        $hintProvider = new MetricHintProvider();
-        $namespaceDrillDown = new NamespaceDrillDown($hintProvider);
+        $hintProvider = new HealthMetricCatalog();
+        $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $namespaceDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
         $violationFilter = new ViolationFilter();
-        $offenderListRenderer = new OffenderListRenderer($violationFilter, $namespaceDrillDown);
+        $offenderListRenderer = new OffenderListRenderer($violationFilter, new WorstClassDrillDown($definitionCatalog));
         $this->formatter = new SummaryFormatter(
             new DetailedViolationRenderer($debtCalculator),
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),
@@ -98,8 +102,10 @@ final class SummaryFormatterTest extends TestCase
                     healthOverall: 30.0,
                     label: 'Poor',
                     reason: 'test',
-                    violationCount: 1,
-                    classCount: 1,
+                    evidence: new WorstOffenderEvidence(
+                        violationCount: 1,
+                        classCount: 1,
+                    ),
                 ),
             ],
             worstClasses: [
@@ -109,8 +115,10 @@ final class SummaryFormatterTest extends TestCase
                     healthOverall: 30.0,
                     label: 'Poor',
                     reason: 'test',
-                    violationCount: 1,
-                    classCount: 0,
+                    evidence: new WorstOffenderEvidence(
+                        violationCount: 1,
+                        classCount: 0,
+                    ),
                 ),
             ],
         );
@@ -177,8 +185,10 @@ final class SummaryFormatterTest extends TestCase
                     healthOverall: 35.0,
                     label: 'Poor',
                     reason: 'high complexity, low cohesion',
-                    violationCount: 15,
-                    classCount: 8,
+                    evidence: new WorstOffenderEvidence(
+                        violationCount: 15,
+                        classCount: 8,
+                    ),
                 ),
             ],
             worstClasses: [
@@ -188,8 +198,10 @@ final class SummaryFormatterTest extends TestCase
                     healthOverall: 22.0,
                     label: 'Critical',
                     reason: 'high coupling',
-                    violationCount: 5,
-                    classCount: 0,
+                    evidence: new WorstOffenderEvidence(
+                        violationCount: 5,
+                        classCount: 0,
+                    ),
                 ),
             ],
         );
@@ -401,8 +413,10 @@ final class SummaryFormatterTest extends TestCase
                     healthOverall: 35.0,
                     label: 'Poor',
                     reason: 'high complexity',
-                    violationCount: 5,
-                    classCount: 3,
+                    evidence: new WorstOffenderEvidence(
+                        violationCount: 5,
+                        classCount: 3,
+                    ),
                 ),
             ],
         );
@@ -422,8 +436,10 @@ final class SummaryFormatterTest extends TestCase
             healthOverall: 30.0,
             label: 'Poor',
             reason: 'test',
-            violationCount: 3,
-            classCount: 2,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 3,
+                classCount: 2,
+            ),
         );
 
         $offenderNoMatch = new WorstOffender(
@@ -432,8 +448,10 @@ final class SummaryFormatterTest extends TestCase
             healthOverall: 25.0,
             label: 'Critical',
             reason: 'test',
-            violationCount: 5,
-            classCount: 4,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 5,
+                classCount: 4,
+            ),
         );
 
         $report = $this->createReport(
@@ -555,8 +573,10 @@ final class SummaryFormatterTest extends TestCase
             healthOverall: 22.0,
             label: 'Critical',
             reason: 'test',
-            violationCount: 5,
-            classCount: 0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 5,
+                classCount: 0,
+            ),
         );
 
         $offenderNoMatch = new WorstOffender(
@@ -565,8 +585,10 @@ final class SummaryFormatterTest extends TestCase
             healthOverall: 30.0,
             label: 'Poor',
             reason: 'test',
-            violationCount: 3,
-            classCount: 0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 3,
+                classCount: 0,
+            ),
         );
 
         $report = $this->createReport(
@@ -598,8 +620,10 @@ final class SummaryFormatterTest extends TestCase
                 healthOverall: 20.0 + $i * 5,
                 label: 'Poor',
                 reason: 'test',
-                violationCount: $i + 1,
-                classCount: $i + 2,
+                evidence: new WorstOffenderEvidence(
+                    violationCount: $i + 1,
+                    classCount: $i + 2,
+                ),
             );
         }
 
@@ -637,8 +661,10 @@ final class SummaryFormatterTest extends TestCase
                 healthOverall: 20.0 + $i * 5,
                 label: 'Poor',
                 reason: 'test',
-                violationCount: 1,
-                classCount: 1,
+                evidence: new WorstOffenderEvidence(
+                    violationCount: 1,
+                    classCount: 1,
+                ),
             );
         }
 
@@ -1248,8 +1274,8 @@ final class SummaryFormatterTest extends TestCase
         );
     }
 
-    /** @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations */
-    private static function violation(\Qualimetrix\Core\Violation\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Core\Violation\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Core\Rule\RuleLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
+    private static function violation(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),

@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Integration\Infrastructure\Console;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
@@ -20,8 +20,8 @@ use Symfony\Component\Console\Tester\CommandTester;
  * The unit test builds the command from stub rules, so it cannot see wiring
  * faults. This test runs the real command over the real rule set: it failed
  * with a fatal ArgumentCountError while the command built rules itself
- * (LayerViolationRule takes an ArchitectureProcessorInterface on top of its
- * Options object, which only the container can supply).
+ * (LayerViolationRule takes the capability-owned ArchitecturePolicy on top of
+ * its Options object, which only the container can supply).
  */
 #[CoversClass(RulesCommand::class)]
 #[CoversClass(RuleCompilerPass::class)]

@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Json;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Health\NamespaceDrillDown;
-use Qualimetrix\Reporting\Health\WorstOffender;
 use Qualimetrix\Reporting\Report;
 
 final class JsonOffenderSection
 {
     public function __construct(
-        private readonly NamespaceDrillDown $namespaceDrillDown,
+        private readonly WorstClassDrillDown $namespaceDrillDown,
         private readonly ViolationFilter $filter,
         private readonly JsonSanitizer $sanitizer,
     ) {}

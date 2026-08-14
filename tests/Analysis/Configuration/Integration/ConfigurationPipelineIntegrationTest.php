@@ -197,7 +197,7 @@ YAML;
 
         // Assert: CLI should override config file
         self::assertSame(['override/'], $resolved->paths);
-        self::assertSame('checkstyle', $resolved->runtime->format);
+        self::assertSame('checkstyle', $resolved->outputFormat->value);
     }
 
     #[Test]
@@ -277,7 +277,7 @@ YAML;
     public function complexScenario_allLayersCombined(): void
     {
         // Arrange: All layers are active simultaneously
-        // 1. Defaults (priority: 0) - format: text
+        // 1. Defaults (priority: 0) - format: summary
         // 2. Composer (priority: 10) - paths: ['src']
         $composerJson = [
             'autoload' => [
@@ -316,7 +316,7 @@ YAML;
         self::assertContains('vendor', $excludes, 'excludes from defaults');
         self::assertContains('cache/', $excludes, 'excludes from config file');
         self::assertContains('temp/', $excludes, 'excludes from CLI');
-        self::assertSame('json', $resolved->runtime->format, 'format from config file (overrides defaults)');
+        self::assertSame('json', $resolved->outputFormat->value, 'format from config file (overrides defaults)');
         self::assertSame(
             $resolved->runtime->projectRoot->value() . '/.qmx-cache',
             $resolved->runtime->cacheDir->value(),
@@ -349,7 +349,7 @@ YAML;
         // Assert: CLI only_rules should REPLACE config file only_rules (not merge)
         self::assertSame(
             ['coupling.cbo'],
-            $resolved->runtime->onlyRules,
+            $resolved->ruleSelection->only,
             'CLI only_rules should replace config file only_rules, not merge with them',
         );
     }
@@ -421,7 +421,7 @@ YAML;
         $resolved = $pipeline->resolve($context);
 
         // Assert: Config file format should be used (not overridden by CLI default)
-        self::assertSame('json', $resolved->runtime->format);
+        self::assertSame('json', $resolved->outputFormat->value);
     }
 
     #[Test]
@@ -442,7 +442,7 @@ YAML;
         $resolved = $pipeline->resolve($context);
 
         // Assert: CLI explicit format should override config file
-        self::assertSame('text', $resolved->runtime->format);
+        self::assertSame('text', $resolved->outputFormat->value);
     }
 
     #[Test]

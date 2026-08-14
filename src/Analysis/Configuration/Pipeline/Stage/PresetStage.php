@@ -51,7 +51,11 @@ final class PresetStage implements ConfigurationStageInterface
             return null;
         }
 
-        $merged = $this->loadAndMergePresets($presetNames, $context->workingDirectory);
+        $documents = $this->loadPresets($presetNames, $context->workingDirectory);
+        $merged = [];
+        foreach ($documents as $document) {
+            $merged = ConfigurationMerger::merge($merged, $document);
+        }
 
         if ($merged === []) {
             return null;
@@ -60,6 +64,7 @@ final class PresetStage implements ConfigurationStageInterface
         return new ConfigurationLayer(
             'preset:' . implode(',', $presetNames),
             $merged,
+            $documents,
         );
     }
 
@@ -104,15 +109,15 @@ final class PresetStage implements ConfigurationStageInterface
     }
 
     /**
-     * Loads and merges multiple preset configs into a single flat config array.
+     * Loads normalized preset source documents in precedence order.
      *
      * @param list<string> $presetNames
      *
-     * @return array<string, mixed>
+     * @return list<array<string, mixed>>
      */
-    private function loadAndMergePresets(array $presetNames, string $workingDirectory): array
+    private function loadPresets(array $presetNames, string $workingDirectory): array
     {
-        $merged = [];
+        $documents = [];
 
         foreach ($presetNames as $name) {
             $path = $this->resolver->resolve($name, $workingDirectory);
@@ -124,9 +129,9 @@ final class PresetStage implements ConfigurationStageInterface
 
             $normalized = ConfigDataNormalizer::normalize($data);
 
-            $merged = ConfigurationMerger::merge($merged, $normalized);
+            $documents[] = $normalized;
         }
 
-        return $merged;
+        return $documents;
     }
 }

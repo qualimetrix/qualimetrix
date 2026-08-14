@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\CodeSmell;
 
-use Qualimetrix\Core\Rule\Override\StandardOverrideValidatorTrait;
-use Qualimetrix\Core\Rule\RuleOptionKey;
-use Qualimetrix\Core\Rule\RuleOptionsInterface;
-use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
-use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Rules\Support\ThresholdParser;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\StandardOverrideValidatorTrait;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
  * Options for LongParameterListRule.
@@ -27,8 +27,8 @@ use Qualimetrix\Rules\Support\ThresholdParser;
  *
  * > **Note:** The canonical spelling for the `vo-*` options is kebab-case
  * > (`vo-warning`, `vo-error`, `vo-threshold`) — that's what users type in
- * > `qmx.yaml`, presets, and `--rule-opt`. `Qualimetrix\Configuration\RuleOptionsFactory`
- * > (config-file keys) and `Qualimetrix\Configuration\RuleOptionsParser`
+ * > `qmx.yaml`, presets, and `--rule-opt`. `Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory`
+ * > (config-file keys) and `Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser`
  * > (`--rule-opt` keys) normalize any kebab-case/snake_case key to camelCase
  * > before it reaches {@see fromArray()}, so `fromArray()` must also accept the
  * > camelCase forms (`voWarning`, `voError`, `voThreshold`) — that's the form

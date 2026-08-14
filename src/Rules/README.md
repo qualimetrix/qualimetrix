@@ -2,15 +2,23 @@
 
 ## Overview
 
-Rules are analysis rule implementations for static analysis. Rules are **completely stateless**:
-- They do not collect data — they read from `MetricRepository`
-- They do not store state between calls
-- A single `analyze()` method is the only entry point
+Rules are stateless analysis-rule implementations that read pre-computed
+metrics and emit findings. The executable rule protocol is internal to Finding;
+it is not a cross-owner instance or factory API.
+
+The public metadata boundary for a rule class is
+`Analysis\Finding\Contract\Rule\RuleDefinitionInterface`. It exposes only the
+static options-class declaration as `class-string<RuleOptionsInterface>`.
+`RuleInterface` extends that metadata contract inside Finding and remains the
+internal executable contract.
 
 > **Note.** [ADR 0022](../../docs/adr/0022-capability-oriented-modular-monolith.md)
 > makes the owning subject, not rule size or technical role, the placement
-> boundary. Architecture owns its rules under
-> [`src/Architecture/Rules/`](../Architecture/README.md), while Duplication
+> boundary. Declared-layer policy owns its rule under
+> [`src/Analysis/Policy/Architecture/`](../Analysis/Policy/Architecture/README.md),
+> while circular-dependency evidence owns its rule under
+> [`src/Analysis/Evidence/CircularDependency/`](../Analysis/Evidence/CircularDependency/README.md)
+> and Duplication
 > owns `CodeDuplicationRule` and its options under
 > [`src/Analysis/Evidence/Duplication/`](../Analysis/Evidence/Duplication/README.md).
 > The remaining rules under `src/Rules/{Category}/` are the current layered
@@ -19,10 +27,10 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 
 ### Rule Types
 
-| Type         | Interface                   | Description                                |
-| ------------ | --------------------------- | ------------------------------------------ |
-| Simple       | `RuleInterface`             | Single analysis level                      |
-| Hierarchical | `HierarchicalRuleInterface` | Multiple levels (method, class, namespace) |
+| Type         | Description                                |
+| ------------ | ------------------------------------------ |
+| Simple       | Single analysis level                      |
+| Hierarchical | Multiple levels (method, class, namespace) |
 
 ---
 
@@ -76,8 +84,8 @@ Rules are analysis rule implementations for static analysis. Rules are **complet
 
 ## Internal Rule Analysis Boundaries
 
-The rule entry point remains `RuleInterface::analyze()`. The boundaries below
-are private implementation seams: they keep policy decisions in each rule while
+The executable protocol remains internal to Finding. The boundaries below are
+private implementation seams: they keep policy decisions in each rule while
 moving one already-decided finding into a small, subject-specific projection.
 They do not add rule, option, channel, selector, threshold, message, severity,
 ordering, or recommendation surfaces.
@@ -225,15 +233,9 @@ methods whose truthful return values are external enum and metric constants.
 
 ## Hierarchical Rules
 
-Rules that operate on multiple levels of the code hierarchy (method/class/namespace).
-
-**Interface:**
-```php
-interface HierarchicalRuleInterface extends RuleInterface {
-    public function getSupportedLevels(): array; // [RuleLevel::Callable, RuleLevel::Class_]
-    public function analyzeLevel(RuleLevel $level, AnalysisContext $context): array;
-}
-```
+Hierarchical rules operate on multiple levels of the code hierarchy
+(method/class/namespace). Their execution protocol remains internal; configured
+selection continues to support level and prefix matching:
 
 **CLI with prefix matching:**
 ```bash
@@ -595,9 +597,8 @@ rules:
 Reports dependency edges that cross declared architecture layers and are not in the policy allow-list.
 
 Layer definitions, allow-list, and `coverage` mode live in the top-level `architecture:` YAML section
-(see [`src/Architecture/Configuration/ArchitectureConfigurationFactory.php`](../Architecture/Configuration/ArchitectureConfigurationFactory.php))
-and reach the rule through a constructor-injected `ArchitectureProcessorInterface`
-([ADR 0008](../../docs/adr/0008-architecture-processor-service.md)). The Options class itself carries
+(see [`src/Analysis/Policy/Architecture/Configuration/ArchitectureConfigurationFactory.php`](../Analysis/Policy/Architecture/README.md))
+and reach the rule through leaf-owned prepared policy state. The Options class itself carries
 only the `enabled` flag and a single `severity` selector — there are no numeric thresholds.
 
 **Default:** `enabled: true`, `severity: warning`. The rule short-circuits immediately when `architecture.layers` is empty, so projects without architecture configuration pay zero cost.
@@ -671,11 +672,11 @@ available as `--layer-violation-severity=SEVERITY`,
 - `architecture.potential-shadow` (info by default) — one violation per (assigned, shadowed) layer pair observed in practice. Evidence-based: walks every class, records all matching layers, groups by (first-match, later-match). Catches prefix overlap, suffix-theft, and arbitrary intersection without re-introducing specificity scoring.
 - `architecture.empty-template` (warning by default) — one violation per template layer that expanded to zero concrete instances. Higher default severity than the other safety nets because an empty template silently disables the policy attached to it.
 
-**Files:** the rule, options, layer/allow primitives, configuration factory, validators, and runtime
-template expansion all live inside the Architecture vertical slice — see
-[`src/Architecture/README.md`](../Architecture/README.md) for the full inventory. The
-slice covers `Domain/` (VOs and enums), `Configuration/` (YAML factory + validators),
-`Processing/` (template expansion), and `Rules/` (this rule plus `CircularDependencyRule`).
+**Files:** the rule, options, layer/allow primitives, configuration factory,
+validators, and template expansion live in the Architecture policy leaf — see
+[`src/Analysis/Policy/Architecture/README.md`](../Analysis/Policy/Architecture/README.md).
+Circular-dependency detection, values, options, and its rule live in the
+separate [`Analysis/Evidence/CircularDependency`](../Analysis/Evidence/CircularDependency/README.md) leaf.
 
 ---
 
@@ -991,9 +992,11 @@ computed_metrics:
 --disable-rule=health.complexity   # Disable a specific health score
 ```
 
-**Files:**
-- `src/Rules/ComputedMetric/ComputedMetricRule.php` — rule implementation
-- `src/Rules/ComputedMetric/ComputedMetricRuleOptions.php` — rule options (reads from ComputedMetricDefinitionHolder)
+**Owner:**
+[`Analysis\\Evidence\\ComputedMetrics`](../Analysis/Evidence/ComputedMetrics/README.md)
+owns the rule, options, instance-owned definition catalog, and evaluation
+lifecycle. The rule receives ordinary options and the catalog through DI; no
+static definition holder exists.
 
 ---
 
@@ -1052,7 +1055,8 @@ rules:
 
 ## Universal Per-Rule Options
 
-These options are available for **any** rule and are handled at framework level by `RuleExecutor`:
+These options are available for **any** rule and are handled by Finding's
+`RuleExecution`:
 
 | Option                       | Type                                  | Description                                                      |
 | ---------------------------- | ------------------------------------- | ---------------------------------------------------------------- |
@@ -1097,61 +1101,19 @@ Violations are triggered when a metric value meets or exceeds the threshold (`>=
 
 ## Baseline Channel Declarations (optional)
 
-The baseline ceiling (see `src/Baseline/README.md`) needs exactly two facts
+The baseline ceiling (see
+[`Analysis/Policy/Baseline`](../Analysis/Policy/Baseline/README.md)) needs exactly two facts
 per channel: its **shape** (`magnitude` or `occurrence`) and, for `magnitude`
 channels only, its **direction** (`higher` or `lower` is worse) —
-`Core\Violation\ChannelShape` / `ChannelDeclaration`. A channel that declares
+Finding's `ChannelShape` / `ChannelDeclaration`. A channel that declares
 neither is simply not baselineable; that is a legitimate state, not an
 error.
 
-A rule declares this by defining an optional static method, mirroring the
-`NAME`-constant / `#[CliAlias]` idiom already used for other rule metadata
-that must be readable without instantiating the rule:
-
-```php
-/**
- * @return array<string, ChannelDeclaration>
- */
-public static function channelDeclarations(): array
-{
-    return [
-        (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
-    ];
-}
-```
-
-- **Keyed by the full channel key** — `ViolationChannel::toKey()`'s
-  `ruleName#violationCode` form — not by a bare `violationCode` paired
-  implicitly with the declaring rule's own name. There is deliberately no
-  such shorthand: a rule may emit a channel under a `ruleName` other than
-  its own (`LayerViolationRule` does this for four of its five channels), and
-  a shorthand that assumed otherwise would make exactly those channels
-  undeclarable. The cost is that most rules — whose emitted `ruleName`
-  always equals their own `NAME` — repeat it in every key, e.g.
-  `(new ViolationChannel(self::NAME, self::NAME))->toKey()` for a rule with
-  one channel, or `self::NAME . '.method'` / `.class'` appended to the
-  `violationCode` half for a hierarchical rule with several.
-- **Not** part of `RuleInterface` and **not** an attribute — most rules
-  declare nothing, and an interface method would force every one of them to
-  implement a no-op override. A rule with no `channelDeclarations()` method
-  is completely untouched by this mechanism.
-- Read via reflection by `Core\Rule\ChannelDeclarationReader`, then assembled
-  across every `qmx.rule`-tagged service by
-  `Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass`
-  into `Infrastructure\Rule\ChannelDeclarationRegistry`. `Core` may not
-  depend on `Rules`, so this compile-time assembly is the only place a
-  static map can be built at all — the registry itself only *receives* the
-  result.
-- Only fill in a declaration after reading that channel's own emission point
-  and comparison operator — never by analogy with a neighboring channel. The
-  full enumeration of every `new Violation(` emission point and the
-  magnitude (or lack of one) each reports lives in
-  the tracked fixture under `tests/Fixtures/Channels/`, guarded by a drift test
-  against this registry.
-- The `computed.*` / `health.*` family (`ComputedMetricRule`) cannot declare
-  statically — its vocabulary is open-ended (user-defined computed metrics)
-  — and is instead resolved by the registry at run time from each
-  configured `ComputedMetricDefinition` (`inverted` maps to the direction).
+Channel declaration discovery and execution are internal to Finding and
+Infrastructure. A rule author must establish the shape and direction from the
+channel's own emission and comparison semantics, never by analogy with a
+neighbouring rule. User-defined `computed.*` / `health.*` channels remain
+resolved from their configured definitions at run time.
 
 ### Per-category shape and direction
 
@@ -1173,120 +1135,13 @@ their rationale as a code comment on the declaring rule (never by analogy):
 
 ## Creating a New Rule
 
-### Simple Rule
-
-1. Create a `{Name}Rule extends AbstractRule` class
-2. Implement `requires(): array` — required metrics
-3. Implement `analyze(AnalysisContext): array` — validation logic
-4. Create a `{Name}Options implements RuleOptionsInterface` class
-   - If options have warning/error thresholds, also implement `ThresholdAwareOptionsInterface` with `withOverride()` method
-   - If `fromArray()` accepts a `ThresholdParser` shorthand key beyond its constructor
-     parameter names (the bare `threshold`, or a rule-specific one like `vo-threshold`),
-     also implement `Core\Rule\ShorthandOptionKeysInterface` with a static
-     `getShorthandOptionKeys()` returning those keys in canonical kebab-case. Without
-     this, `RuleOptionsFactory::warnAboutUnknownKeys()` — which only sees constructor
-     parameter names via reflection — falsely reports the shorthand as an "Unknown
-     option", even though `fromArray()` accepts it correctly. Options classes whose
-     `fromArray()` has no such branch at all must NOT implement it, so an unsupported
-     top-level `threshold` still warns. Hierarchical wrappers with more than one level
-     (`method`/`class`, `class`/`namespace`, ...) CAN still implement it even though
-     their top-level `fromArray()` only understands the nested sub-configs by name —
-     see `CboOptions`/`InstabilityOptions` for the pattern: a bare top-level
-     `threshold` (or `warning`/`error`) is parsed once via `ThresholdParser::parse()`
-     and applied uniformly to every nested level, instead of routing through the
-     nested `class:`/`namespace:` sub-configs.
-   - If `fromArray()` accepts any other top-level key that is neither a constructor
-     parameter nor a threshold shorthand (for example, CBO's `scope`), implement
-     `Core\Rule\AdditionalOptionKeysInterface` and return its canonical kebab-case
-     spelling from `getAdditionalOptionKeys()`. This keeps factory validation strict
-     while recognizing the documented option.
-5. In `analyze()`, use `$this->getEffectiveSeverity()` instead of `$options->getSeverity()` to support `@qmx-threshold` overrides
-6. Write unit tests
-7. Add value hints to `src/Reporting/Template/src/hints.js` — range-based interpretations for the HTML report
-8. Add "How to read the value" table to `website/docs/rules/` page (both EN and RU)
-
-**Example:**
-```php
-final class ExampleRule extends AbstractRule {
-    public const NAME = 'category.example';
-
-    public static function getOptionsClass(): string {
-        return ExampleOptions::class;
-    }
-
-    public function requires(): array {
-        return ['metricName'];
-    }
-
-    public function analyze(AnalysisContext $context): array {
-        $violations = [];
-        foreach ($context->metrics->allCallables() as $callable) {
-            $subject = $callable->subject
-                ?? throw new LogicException('Callable rules require an exact declaration subject');
-            $metrics = $context->metrics->getSubject($subject);
-            $value = $metrics->get('metricName');
-            if ($value === null) {
-                continue;
-            }
-            // Use getEffectiveSeverity() to support @qmx-threshold overrides
-            $severity = $this->getEffectiveSeverity(
-                $context, $this->options, $subject, $value,
-            );
-            if ($severity !== null) {
-                $violations[] = new Violation(
-                    location: new Location($callable->file, $callable->line),
-                    subject: $subject,
-                    symbolPath: $subject->toSymbolPath(),
-                    ruleName: self::NAME,
-                    violationCode: self::NAME,
-                    message: 'Example metric exceeded its threshold',
-                    severity: $severity,
-                    metricValue: $value,
-                );
-            }
-        }
-        return $violations;
-    }
-}
-```
-
-### Hierarchical Rule
-
-1. Create a `{Name}Rule extends AbstractRule implements HierarchicalRuleInterface` class
-2. Implement `getSupportedLevels(): array` — list of levels
-3. Implement `analyzeLevel(RuleLevel, AnalysisContext): array`
-4. Create `{Level}{Name}Options implements LevelOptionsInterface` for each level
-5. Create `{Name}Options implements HierarchicalRuleOptionsInterface`
-6. Write unit tests for each level
-
-### Code Smell Rule
-
-1. Create a `{Name}Rule extends AbstractCodeSmellRule` class
-2. Declare the metadata via typed class constants on the rule:
-   - `public const string NAME` — full rule slug (`code-smell.{slug}`)
-   - `protected const string DESCRIPTION` — short description
-   - `protected const string SMELL_TYPE` — metric key from `CodeSmellCollector`
-   - `protected const Severity SEVERITY` — defaults to `Severity::Warning`; override for `Error`
-   - `protected const string MESSAGE_TEMPLATE` — generic violation message
-   - `protected const ?string MESSAGE_TEMPLATE_WITH_EXTRA` — sprintf template used when the entry has an `extra` value (optional)
-   - `protected const ?string RECOMMENDATION` — actionable hint shown to users (optional)
-3. Use `CodeSmellOptions` as the options class (default). Override `getOptionsClass()` only when a rule needs a richer options class
-4. For per-occurrence whitelisting, make the options class implement `EntryFilteringOptionsInterface::isExtraAllowed()` — `AbstractCodeSmellRule::shouldIncludeEntry()` will route through it automatically
-5. For filtering on data beyond the `extra` string (e.g. a boolean discriminator), add a field to `CodeSmellLocation`/the collector's entry array and override `shouldIncludeEntry()` in the rule, calling `parent::shouldIncludeEntry()` first — see `BooleanArgumentRule`'s `promoted` field (distinguishes promoted constructor properties from plain arguments) for the pattern
-6. Write unit tests
-
-**Automatic registration:**
-- Rules are registered automatically via Symfony DI (autoconfiguration)
-- No need to modify `ContainerFactory` manually
-- Remaining layered rules under `src/Rules/{Category}/*Rule.php` are
-  registered by [`RuleConfigurator`](../Infrastructure/DependencyInjection/Configurator/RuleConfigurator.php)
-- Capability-owned rules are registered by their Infrastructure configurator:
-  [`ArchitectureConfigurator`](../Infrastructure/DependencyInjection/Configurator/ArchitectureConfigurator.php)
-  registers `src/Architecture/Rules/`, and
-  [`DuplicationConfigurator`](../Infrastructure/DependencyInjection/Configurator/DuplicationConfigurator.php)
-  registers `src/Analysis/Evidence/Duplication/`.
-  Both registrations share the same `qmx.rule` autoconfiguration tag; the
-  rule is otherwise indistinguishable to the rest of the pipeline.
+Place a new implementation with its owning subject; the legacy
+`src/Rules/{Category}/` layout is only for its remaining migration inputs.
+The public surface for cross-owner class-string use is limited to
+`RuleDefinitionInterface` and its options-class metadata. Keep execution,
+registration, and implementation-specific metadata inside Finding and
+Infrastructure. Add focused tests and update the owning README plus the
+user-facing rule documentation when its observable behaviour changes.
 
 ---
 

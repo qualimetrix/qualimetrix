@@ -5,21 +5,18 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\Collection;
 
 use LogicException;
-use Qualimetrix\Analysis\Collection\SourceControl\SourceControls;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface;
-
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectionOutput;
+
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface;
-use Qualimetrix\Analysis\Run\Contract\Collection\Declaration\DeclarationBindings;
+use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing;
-use Qualimetrix\Baseline\Suppression\SuppressionExtractor;
-use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -38,12 +35,10 @@ use SplFileInfo;
 final class FileProcessor implements FileProcessorInterface
 {
     private ?AbsolutePath $projectRoot = null;
-
     public function __construct(
         private readonly FileParserInterface $parser,
         private readonly FileMeasurementCollectorInterface $collector,
-        private readonly SuppressionExtractor $suppressionExtractor = new SuppressionExtractor(),
-        private readonly ThresholdOverrideExtractor $thresholdOverrideExtractor = new ThresholdOverrideExtractor(),
+        private readonly SourceControlExtractorInterface $sourceControlExtractor,
     ) {}
 
     /**
@@ -73,12 +68,11 @@ final class FileProcessor implements FileProcessorInterface
             $callableMetrics = $this->extractCallableMetrics($relativePath);
             $classMetrics = $this->extractClassMetrics($relativePath);
             $namespaceMetrics = $this->extractNamespaceMetrics();
-            $bindings = DeclarationBindings::from($ast, $relativePath, $callableMetrics, $classMetrics);
-            $controls = SourceControls::extract(
+            $controls = $this->sourceControlExtractor->extract(
                 $ast,
-                $bindings,
-                $this->suppressionExtractor,
-                $this->thresholdOverrideExtractor,
+                $relativePath,
+                $callableMetrics,
+                $classMetrics,
             );
 
             unset($ast);

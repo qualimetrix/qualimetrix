@@ -19,7 +19,7 @@ use Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use ReflectionClass;
 use RuntimeException;
 use SplFileInfo;

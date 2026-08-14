@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
 use Psr\Log\LoggerInterface;
-use Qualimetrix\Configuration\RuleOptionsFactory;
-use Qualimetrix\Core\Rule\RuleInterface;
-use Qualimetrix\Core\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use ReflectionClass;
 use ReflectionNamedType;
@@ -30,6 +30,8 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 final class RuleOptionsCompilerPass implements CompilerPassInterface
 {
+    private const string RULE_INTERFACE = 'Qualimetrix\\Analysis\\Finding\\Rule\\RuleInterface';
+
     public function process(ContainerBuilder $container): void
     {
         // RuleOptionsFactory is synthetic, so use has() instead of hasDefinition()
@@ -46,16 +48,17 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface
             }
 
             // Ensure rule class implements RuleInterface and has getOptionsClass
-            if (!is_a($ruleClass, RuleInterface::class, true)) {
+            if (!is_a($ruleClass, self::RULE_INTERFACE, true)) {
                 continue;
             }
 
-            // Get Options class from rule
-            /** @var class-string<RuleInterface> $ruleClass */
-            $optionsClass = $ruleClass::getOptionsClass();
+            $reflection = new ReflectionClass($ruleClass);
+            $optionsClass = $reflection->getMethod('getOptionsClass')->invoke(null);
+            if (!\is_string($optionsClass) || !is_a($optionsClass, RuleOptionsInterface::class, true)) {
+                continue;
+            }
 
-            // Get rule NAME constant for factory
-            $ruleName = $ruleClass::NAME;
+            $ruleName = RuleNameReader::read($ruleClass);
 
             // Options configuration is keyed by producer rule name. The service identity
             // must therefore include both the producer and the Options class: multiple
@@ -114,7 +117,7 @@ final class RuleOptionsCompilerPass implements CompilerPassInterface
      * Since rules have autowiring disabled (due to RuleOptionsInterface injection),
      * any extra constructor dependencies must be explicitly bound.
      *
-     * @param class-string<RuleInterface> $ruleClass
+     * @param class-string $ruleClass
      */
     private function resolveExtraDependencies(
         ContainerBuilder $container,

@@ -8,6 +8,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
@@ -17,11 +22,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\Formatter\Summary\HealthBarRenderer;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Health\DecompositionItem;
-use Qualimetrix\Reporting\Health\HealthScore;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
-use Qualimetrix\Reporting\Health\NamespaceDrillDown;
 use Qualimetrix\Reporting\Report;
 
 #[CoversClass(HealthBarRenderer::class)]
@@ -32,7 +33,7 @@ final class HealthBarRendererTest extends TestCase
 
     protected function setUp(): void
     {
-        $resolver = new HealthScoreResolver(new NamespaceDrillDown(new MetricHintProvider()));
+        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(new HealthMetricCatalog(), self::createStub(ComputedMetricDefinitionCatalogInterface::class)));
         $this->renderer = new HealthBarRenderer($resolver);
         $this->color = new AnsiColor(false);
     }
@@ -389,7 +390,7 @@ final class HealthBarRendererTest extends TestCase
     public function itColorsScoreByRange(float $score, string $expectedColor): void
     {
         $ansiColor = new AnsiColor(true);
-        $resolver = new HealthScoreResolver(new NamespaceDrillDown(new MetricHintProvider()));
+        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(new HealthMetricCatalog(), self::createStub(ComputedMetricDefinitionCatalogInterface::class)));
         $renderer = new HealthBarRenderer($resolver);
 
         $report = $this->createReport(healthScores: [

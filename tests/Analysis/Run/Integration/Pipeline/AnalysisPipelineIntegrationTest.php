@@ -9,9 +9,15 @@ use PHPUnit\Framework\Attributes\Group;
 
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Collection\Dependency\CircularDependencyDetector;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
@@ -27,30 +33,41 @@ use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Measurement\Runtime\CollectorRuntimeConfigurationStore;
-use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
+use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Finding\RuleExecution;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
+use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor;
 use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Analysis\Run\Enrichment\TransitionalMetricEnricher;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
+use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
-use Qualimetrix\Architecture\Rules\CircularDependencyOptions;
-use Qualimetrix\Architecture\Rules\CircularDependencyRule;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Progress\NullProgressReporter;
-use Qualimetrix\Core\Rule\AnalysisContext;
-use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
+use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
+use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
@@ -61,9 +78,12 @@ use Qualimetrix\Metrics\Coupling\CouplingCollector;
 use Qualimetrix\Metrics\Size\LocCollector;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
+use Qualimetrix\Rules\Complexity\ComplexityRule;
+use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
-use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
 use SplFileInfo;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 /**
  * Integration tests for AnalysisPipeline.
@@ -120,7 +140,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             },
         );
 
-        $ruleExecutor = new RuleExecutor([$spyRule], $this->configurationProvider);
+        $ruleExecutor = new RuleExecution([$spyRule], new RuleOptionsRegistry());
 
         $pipeline = $this->createPipelineWithDependencies(
             $dependencies,
@@ -177,9 +197,10 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $cycles = $detector->detect($graph);
         self::assertNotEmpty($cycles, 'Sanity check: CircularDependencyDetector should find cycles');
 
-        // Now run via the full pipeline with CircularDependencyRule
-        $rule = new CircularDependencyRule(new CircularDependencyOptions(enabled: true));
-        $ruleExecutor = new RuleExecutor([$rule], $this->configurationProvider);
+        // Now run via the full pipeline with CircularDependencyRule.
+        $analysis = new CircularDependencyAnalysis($detector);
+        $rule = new CircularDependencyRule(new CircularDependencyOptions(enabled: true), $analysis);
+        $ruleExecutor = new RuleExecution([$rule], new RuleOptionsRegistry());
 
         // Pre-populate the repository with the classes so CouplingCollector can find them
         $repository = new InMemoryMetricRepository();
@@ -200,6 +221,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             $dependencies,
             $ruleExecutor,
             $repository,
+            $analysis,
         );
 
         // Act
@@ -217,6 +239,106 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             . 'Currently the pipeline never calls CircularDependencyDetector and never populates '
             . 'the $cycles property in AnalysisContext.',
         );
+    }
+
+    #[Test]
+    public function itResetsArchitectureAndCircularStateIndependentlyAcrossCompiledContainerRuns(): void
+    {
+        $fixtureRoot = sys_get_temp_dir() . '/qmx-p4-sequential-' . uniqid('', true);
+        $cyclicRoot = $fixtureRoot . '/cyclic';
+        $cleanRoot = $fixtureRoot . '/clean';
+        mkdir($cyclicRoot, 0o755, true);
+        mkdir($cleanRoot, 0o755, true);
+        file_put_contents(
+            $cyclicRoot . '/Controller.php',
+            "<?php\nnamespace P4Reset\\First\\Controller;\nfinal class A { public function __construct(private readonly \\P4Reset\\First\\Repository\\B \$b) {} }\n",
+        );
+        file_put_contents(
+            $cyclicRoot . '/Repository.php',
+            "<?php\nnamespace P4Reset\\First\\Repository;\nfinal class B { public function __construct(private readonly \\P4Reset\\First\\Controller\\A \$a) {} }\n",
+        );
+        file_put_contents(
+            $cleanRoot . '/Independent.php',
+            "<?php\nnamespace P4Reset\\Second;\nfinal class Independent {}\n",
+        );
+
+        $container = (new ContainerFactory())->create();
+        $runtimeConfigurator = $container->get(RuntimeConfigurator::class);
+        $pipeline = $container->get(AnalysisPipelineInterface::class);
+        $checkCommand = $container->get(CheckCommand::class);
+        self::assertInstanceOf(RuntimeConfigurator::class, $runtimeConfigurator);
+        self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
+        self::assertInstanceOf(CheckCommand::class, $checkCommand);
+
+        $architectureDocument = new ConfigurationDocument([['architecture' => [
+            'layers' => [
+                ['name' => 'controller', 'patterns' => ['P4Reset\\First\\Controller\\**']],
+                ['name' => 'repository', 'patterns' => ['P4Reset\\First\\Repository\\**']],
+            ],
+            'allow' => ['controller' => [], 'repository' => []],
+            'coverage' => 'ignore',
+        ]]]);
+
+        /**
+         * @return array{\Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult, array<string, array{total: float, count: int, avg: float, memory: int, peak_memory: int}>}
+         */
+        $run = static function (
+            string $path,
+            ConfigurationDocument $document,
+            string ...$disabledRules,
+        ) use ($fixtureRoot, $runtimeConfigurator, $pipeline, $checkCommand): array {
+            $runtime = new TransitionalRuntimeConfiguration(
+                cacheEnabled: false,
+                workers: TransitionalRuntimeConfiguration::WORKERS_SEQUENTIAL,
+                projectRoot: AbsolutePath::fromString($fixtureRoot),
+            );
+            $resolved = new TransitionalResolvedConfiguration(
+                paths: [$path],
+                pathExcludes: [],
+                runtime: $runtime,
+                ruleOptions: [],
+                document: $document,
+                ruleSelection: new RuleSelection(disabled: array_values($disabledRules)),
+            );
+            $input = new ArrayInput(['--profile' => true], $checkCommand->getDefinition());
+            $runtimeConfigurator->configure($resolved, $input, new BufferedOutput());
+            $result = $pipeline->analyze(AbsolutePath::fromString($path));
+
+            return [$result, ProfilerHolder::get()->getSummary()];
+        };
+
+        try {
+            [$first] = $run($cyclicRoot, $architectureDocument);
+            self::assertNotEmpty(self::violationsNamed($first->violations, LayerViolationRule::NAME));
+            self::assertNotEmpty(self::violationsNamed($first->violations, CircularDependencyRule::NAME));
+
+            [$second] = $run($cleanRoot, new ConfigurationDocument([]));
+            self::assertSame([], self::violationsNamed($second->violations, LayerViolationRule::NAME));
+            self::assertSame([], self::violationsNamed($second->violations, CircularDependencyRule::NAME));
+
+            [$withoutCycles, $cycleDisabledSpans] = $run(
+                $cyclicRoot,
+                $architectureDocument,
+                CircularDependencyRule::NAME,
+            );
+            self::assertNotEmpty(self::violationsNamed($withoutCycles->violations, LayerViolationRule::NAME));
+            self::assertSame([], self::violationsNamed($withoutCycles->violations, CircularDependencyRule::NAME));
+            self::assertArrayHasKey('architecture-prepare', $cycleDisabledSpans);
+            self::assertArrayNotHasKey('cycles', $cycleDisabledSpans);
+
+            [$withoutLayers, $architectureDisabledSpans] = $run(
+                $cyclicRoot,
+                $architectureDocument,
+                LayerViolationRule::NAME,
+            );
+            self::assertSame([], self::violationsNamed($withoutLayers->violations, LayerViolationRule::NAME));
+            self::assertNotEmpty(self::violationsNamed($withoutLayers->violations, CircularDependencyRule::NAME));
+            self::assertArrayNotHasKey('architecture-prepare', $architectureDisabledSpans);
+            self::assertArrayHasKey('cycles', $architectureDisabledSpans);
+        } finally {
+            ProfilerHolder::reset();
+            self::removeFixtureDirectory($fixtureRoot);
+        }
     }
 
     /**
@@ -278,7 +400,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $compositeCollector = new CompositeCollector([]);
         $globalCollectorRunner = new MeasurementAggregationService([$couplingCollector], $compositeCollector);
 
-        $ruleExecutor = self::createStub(\Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface::class);
+        $ruleExecutor = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
         $ruleExecutor->method('execute')->willReturn([]);
 
         $pipeline = $this->createPipelineWithGlobalCollectors(
@@ -444,6 +566,49 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itPreservesInlineControlsAcrossARealParallelWorkerRoundTrip(): void
+    {
+        $fixtureRootPath = sys_get_temp_dir() . '/qmx-inline-worker-' . uniqid('', true);
+        mkdir($fixtureRootPath, 0o755, true);
+        $fixturePath = $fixtureRootPath . '/Controlled.php';
+        file_put_contents($fixturePath, <<<'PHP'
+<?php
+
+namespace InlineWorkerFixture;
+
+/**
+ * @qmx-ignore complexity.cyclomatic Worker transport parity.
+ * @qmx-threshold complexity.cyclomatic warning=15 error=25
+ * @qmx-threshold unknown.rule invalid
+ */
+final class Controlled
+{
+    public function run(): void {}
+}
+PHP);
+
+        try {
+            $fixtureRoot = AbsolutePath::fromString($fixtureRootPath)->canonicalize();
+            $files = [new SplFileInfo($fixturePath)];
+            $sequential = self::collectThroughProductionStrategy($files, $fixtureRoot, 0);
+
+            self::assertSame(SequentialStrategy::class, $sequential['strategy']);
+            self::assertNotEmpty($sequential['suppressions']);
+            self::assertNotEmpty($sequential['thresholdOverrides']);
+            self::assertNotEmpty($sequential['thresholdDiagnostics']);
+
+            $parallel = self::collectThroughProductionStrategy($files, $fixtureRoot, 2);
+            self::assertSame(AmphpParallelStrategy::class, $parallel['strategy']);
+            self::assertTrue($parallel['workerStarted']);
+            self::assertEquals($sequential['suppressions'], $parallel['suppressions']);
+            self::assertEquals($sequential['thresholdOverrides'], $parallel['thresholdOverrides']);
+            self::assertEquals($sequential['thresholdDiagnostics'], $parallel['thresholdDiagnostics']);
+        } finally {
+            self::removeFixtureDirectory($fixtureRootPath);
+        }
+    }
+
     /**
      * Creates a pipeline with mocked discovery and collection that returns the given dependencies.
      */
@@ -452,8 +617,9 @@ final class AnalysisPipelineIntegrationTest extends TestCase
      */
     private function createPipelineWithDependencies(
         array $dependencies,
-        \Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface $ruleExecutor,
+        \Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface $ruleExecutor,
         ?InMemoryMetricRepository $existingRepository = null,
+        ?CircularDependencyAnalysis $circularDependencyAnalysis = null,
     ): AnalysisPipeline {
         $discovery = self::createStub(FileDiscoveryInterface::class);
         $discovery->method('discover')->willReturn(new ArrayIterator([
@@ -481,17 +647,18 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         $fileCollector = new CompositeCollector([]);
-        $metricEnricher = new TransitionalMetricEnricher(
-            new MeasurementAggregationService([], $fileCollector),
-            $this->configurationProvider,
-        );
 
         return TestPipelineBuilder::create()
             ->withDefaultDiscovery($discovery)
             ->withCollectionOrchestrator($orchestrator)
-            ->withRuleExecutor($ruleExecutor)
+            ->withRuleExecution($ruleExecutor)
             ->withConfigurationProvider($this->configurationProvider)
-            ->withMetricEnricher($metricEnricher)
+            ->withMeasurementAggregation(new MeasurementAggregationService([], $fileCollector))
+            ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
+            ->withCircularDependencyPreparation(
+                $circularDependencyAnalysis ?? new CircularDependencyAnalysis(new CircularDependencyDetector()),
+            )
+            ->withFileSetInspection($this->emptyFileSetInspection())
             ->build();
     }
 
@@ -503,7 +670,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
      */
     private function createPipelineWithGlobalCollectors(
         array $dependencies,
-        \Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface $ruleExecutor,
+        \Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface $ruleExecutor,
         MeasurementAggregationService $globalCollectorRunner,
         CompositeCollector $compositeCollector,
         InMemoryMetricRepository $existingRepository,
@@ -533,15 +700,24 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             },
         );
 
-        $metricEnricher = new TransitionalMetricEnricher($globalCollectorRunner, $this->configurationProvider);
-
         return TestPipelineBuilder::create()
             ->withDefaultDiscovery($discovery)
             ->withCollectionOrchestrator($orchestrator)
-            ->withRuleExecutor($ruleExecutor)
+            ->withRuleExecution($ruleExecutor)
             ->withConfigurationProvider($this->configurationProvider)
-            ->withMetricEnricher($metricEnricher)
+            ->withMeasurementAggregation($globalCollectorRunner)
+            ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
+            ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
+            ->withFileSetInspection($this->emptyFileSetInspection())
             ->build();
+    }
+
+    private function emptyFileSetInspection(): FileSetInspectionComposite
+    {
+        return new FileSetInspectionComposite(
+            [],
+            new RuleSelectorProducerGate(new RuleSelector(new InMemoryRuleChannelRegistry())),
+        );
     }
 
     /**
@@ -617,13 +793,51 @@ final class AnalysisPipelineIntegrationTest extends TestCase
     }
 
     /**
+     * @param list<Violation> $violations
+     *
+     * @return list<Violation>
+     */
+    private static function violationsNamed(array $violations, string $ruleName): array
+    {
+        return array_values(array_filter(
+            $violations,
+            static fn(Violation $violation): bool => $violation->ruleName === $ruleName,
+        ));
+    }
+
+    private static function removeFixtureDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $entries = scandir($directory);
+        if ($entries === false) {
+            return;
+        }
+
+        foreach (array_diff($entries, ['.', '..']) as $entry) {
+            $path = $directory . '/' . $entry;
+            if (is_dir($path)) {
+                self::removeFixtureDirectory($path);
+            } else {
+                unlink($path);
+            }
+        }
+        rmdir($directory);
+    }
+
+    /**
      * @param list<SplFileInfo> $files
      *
      * @return array{
      *     dependencies: list<Dependency>,
      *     strategy: class-string,
      *     mainProcessCalls: int,
-     *     workerStarted: bool
+     *     workerStarted: bool,
+     *     suppressions: array<string, list<\Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression>>,
+     *     thresholdOverrides: array<string, list<\Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride>>,
+     *     thresholdDiagnostics: array<string, list<\Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic>>
      * }
      */
     private static function collectThroughProductionStrategy(array $files, AbsolutePath $projectRoot, int $workers): array
@@ -652,6 +866,8 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             new CollectorRuntimeConfigurationStore(),
             DependencyVisitor::class,
             [LocCollector::class],
+            [],
+            [ComplexityRule::class],
         );
         $parallelStrategy = new AmphpParallelStrategy($fileProcessingTaskFactory, $logger);
         $parallelStrategy->setMinFilesForParallel(1);
@@ -668,7 +884,15 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             [],
             new DependencyVisitor(new DependencyResolver()),
         );
-        $productionProcessor = new FileProcessor(new PhpFileParser(), $compositeCollector);
+        $productionProcessor = new FileProcessor(
+            new PhpFileParser(),
+            $compositeCollector,
+            sourceControlExtractor: new SourceControlExtractor(
+                thresholdOverrideExtractor: new ThresholdOverrideExtractor(
+                    RuleValidatorMapFactory::build([ComplexityRule::class]),
+                ),
+            ),
+        );
         $trackingProcessor = new class ($productionProcessor) implements FileProcessorInterface {
             public int $processCalls = 0;
 
@@ -702,6 +926,9 @@ final class AnalysisPipelineIntegrationTest extends TestCase
             'strategy' => $strategy::class,
             'mainProcessCalls' => $trackingProcessor->processCalls,
             'workerStarted' => $workerStarted,
+            'suppressions' => $output->suppressions,
+            'thresholdOverrides' => $output->thresholdOverrides,
+            'thresholdDiagnostics' => $output->thresholdDiagnostics,
         ];
     }
 }

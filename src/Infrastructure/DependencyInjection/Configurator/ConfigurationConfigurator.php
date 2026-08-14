@@ -8,9 +8,6 @@ use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathRe
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
-use Qualimetrix\Configuration\RuleOptionsFactory;
-use Qualimetrix\Configuration\RuleOptionsRegistry;
-use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -51,26 +48,6 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
      */
     private function registerConfigurationHolder(ContainerBuilder $container): void
     {
-        // RuleOptionsRegistry - mutable storage for rule options, exclusion providers, and CLI overrides.
-        // Exclusion providers are owned by the registry (no separate DI registration needed).
-        $registry = new RuleOptionsRegistry();
-        $container->register(RuleOptionsRegistry::class)
-            ->setSynthetic(true)
-            ->setPublic(true);
-        $container->set(RuleOptionsRegistry::class, $registry);
-
-        // RuleOptionsFactory - stateless factory that reads from the registry
-        // LoggerHolder is a synthetic service set by CoreServicesConfigurator (runs before this)
-        /** @var LoggerHolder $loggerHolder */
-        $loggerHolder = $container->get(LoggerHolder::class);
-        $container->register(RuleOptionsFactory::class)
-            ->setSynthetic(true)
-            ->setPublic(true);
-        $container->set(RuleOptionsFactory::class, new RuleOptionsFactory(
-            $registry,
-            new \Qualimetrix\Infrastructure\Logging\DelegatingLogger($loggerHolder),
-        ));
-
         // TransitionalRuntimeConfigurationHolder - mutable, configured at runtime with merged config
         $container->register(self::RUNTIME_CONFIGURATION_HOLDER, self::RUNTIME_CONFIGURATION_HOLDER_CLASS)
             ->addMethodCall('setConfiguration', [new TransitionalRuntimeConfiguration()])
@@ -120,20 +97,8 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
         $container->getDefinition('Qualimetrix\\Analysis\\Configuration\\Pipeline\\Stage\\PresetStage')
             ->setArgument('$resolver', new Reference(self::PRESET_RESOLVER));
 
-        // Register ArchitectureConfigurationFactory so ConfigurationPipeline
-        // can inject it (Phase 4.6 of ADR 0008). The validation helpers under
-        // src/Architecture/Configuration/Validation/ are already auto-registered
-        // by ArchitectureConfigurator.
-        $container->register(\Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory::class)
-            ->setAutowired(true);
-
-        // ConfigurationPipeline will be populated by ConfigurationStageCompilerPass.
-        // The pipeline runs before RuntimeConfigurator::configureLogger() and
-        // therefore does NOT receive a logger: any warnings produced during
-        // resolution (for example, wildcard self-allow detection) are captured
-        // as DeferredWarnings inside the
-        // TransitionalResolvedConfiguration and replayed once the user-facing logger is
-        // ready. See RuntimeConfigurator::drainDeferredWarnings().
+        // ConfigurationPipeline exposes an ordered document. Capability-owned
+        // parsing and warning delivery happen later, after runtime logging.
         $container->register(self::CONFIGURATION_PIPELINE, self::CONFIGURATION_PIPELINE_CLASS)
             ->setAutowired(true)
             ->setPublic(true);

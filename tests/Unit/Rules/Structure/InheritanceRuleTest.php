@@ -11,12 +11,12 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Rule\AnalysisContext;
-use Qualimetrix\Core\Rule\CliAliasReader;
-use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Structure\InheritanceOptions;
 use Qualimetrix\Rules\Structure\InheritanceRule;
 
@@ -71,7 +71,7 @@ final class InheritanceRuleTest extends TestCase
     #[Test]
     public function itThrowsExceptionForWrongOptionsType(): void
     {
-        $wrongOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
+        $wrongOptions = self::createStub(\Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface::class);
 
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Expected');

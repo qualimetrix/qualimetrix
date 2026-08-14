@@ -56,33 +56,42 @@ ADR 0012's substantial/thin hybrid direction; ADR 0010 is the historical
 Architecture pilot and ADR 0016 remains the governing subject-cohesion rule.
 
 P1 has landed Duplication, P2 has landed DependencyModel plus GraphProjection,
-and P3 has landed Run, Measurement, and the transitional Configuration boundary;
-P4-P8 remain pending. The tree below
+P3 has landed Run, Measurement, and the transitional Configuration boundary,
+and P4 has landed Architecture policy plus CircularDependency evidence. P5 has
+landed ComputedMetrics plus Health. P6 implementation has published Finding,
+Inline and Baseline policy, Prioritization, and finding projection, but P6
+remains paused pending its post-review closure; it is not complete. P7-P8 remain
+pending. The tree below
 describes the current physical layout. P0 governance remains live: the
-versioned internal manifest is authoritative for all 717 current declarations
-in 715 files and 37 semantic owners. It generates a coarse qmx projection with
-37 owner layers, 11 singleton enforcement seams, final `external`, 67 exact
-internal grants collapsing to 12 owner pairs, and 266 declared allow edges.
+versioned internal manifest is authoritative for all 754 current declarations
+in 752 files and 37 semantic owners. It generates a coarse qmx projection with
+37 owner layers, no singleton enforcement seams, final `external`, 51 exact
+internal grants collapsing to 8 owner pairs, and 223 declared allow edges.
+The earlier paused P6 checkpoint's 753 declarations in 751 files predates the
+published `RuleDefinitionInterface` boundary and is historical, not current
+authority.
 
 ```
 src/
 ├── Core/              # Cross-cutting primitives (no dependencies)
-├── Architecture/      # Vertical slice — Architecture domain (ADR 0010 pilot)
-│   ├── Domain/             # VOs, enums, exceptions
-│   ├── Configuration/      # YAML factory + validators
-│   ├── Processing/         # Analysis-time helpers (template expansion etc.)
-│   └── Rules/              # Architecture rules (layer-violation, circular-dependency)
 ├── Metrics/{Category}/     # Thin metric features (P7 migration inputs)
 ├── Rules/{Category}/       # Thin rule features (layered)
-├── Baseline/          # Baseline support and @qmx-ignore suppression
 ├── Analysis/          # Orchestration plus taxonomy-only capability grouping
 │   ├── Configuration/       # P3 transitional document resolution and runtime config
+│   ├── Finding/             # rule language, execution, violations and filtering
 │   ├── Evidence/
-│   │   ├── DependencyModel/ # graph model plus P3 extraction/traversal contract
-│   │   ├── Duplication/     # detection, result and rule; implements the Run-owned FileSet port
-│   │   └── Measurement/     # collection facts, repository, attribution, aggregation
+│   │   ├── DependencyModel/     # graph model plus P3 extraction/traversal contract
+│   │   ├── Duplication/         # detection, result and rule; implements the Run-owned FileSet port
+│   │   ├── CircularDependency/  # P4 SCC evidence, rule and preparation contract
+│   │   ├── ComputedMetrics/      # P5 formulas, instance-owned catalog and Health semantics
+│   │   ├── Measurement/         # collection facts, repository, attribution, aggregation
+│   │   └── Prioritization/      # impact ranking and technical-debt evidence
+│   ├── Policy/
+│   │   ├── Architecture/        # P4 declared-layer policy and debug contracts
+│   │   ├── Baseline/            # accepted-finding ceiling lifecycle
+│   │   └── Inline/              # source annotations and suppression controls
 │   └── Run/                 # P3 discovery, collection, phase ordering and FileSet port
-├── Reporting/         # Output formatters plus landed P2 GraphProjection capability
+├── Reporting/         # formatters plus GraphProjection and FindingProjection
 └── Infrastructure/    # Adapters (CLI, DI, cache, git, profiler) — adapters for any feature live here
 benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
 scripts/               # Utility scripts (benchmark data collection, regression checks)
@@ -115,16 +124,18 @@ Two corollaries that settle recurring arguments:
 - "This feature has many adapters" is **not** an argument for a vertical slice:
   adapters live in `Infrastructure/` either way.
 
-The following ADR 0022 rules define the accepted target layout. P1-P3 are current
-architecture; do not treat the still-pending P4-P8 namespace moves as landed:
+The following ADR 0022 rules define the accepted target layout. P1-P5 and the
+implemented P6 boundaries are current physical architecture; P6 nevertheless
+remains paused, and the still-pending P7-P8 namespace moves are not landed:
 
 - A leaf module is a subject with one owner and lifecycle. Internal folders
   follow the subject; do not create an empty role skeleton.
 - Add `Contract/` only for exact types used by named external owner-consumers.
   A private leaf has no public surface.
 - A port introduced for dependency inversion belongs to its consumer. P3 proves
-  only `Analysis\Run\Contract\FileSetInspectionParticipantInterface`; do not
-  add a generic lifecycle, graph-preparation, or metric-derivation port.
+  only `Analysis\Run\Contract\FileSetInspectionParticipantInterface` plus the
+  two P4 capability-specific preparation contracts; do not add a generic
+  lifecycle, graph-preparation, or metric-derivation port.
 - `Analysis`, `Analysis\Evidence`, and `Analysis\Policy` are navigation
   taxonomies only: no PHP types, state, shared contracts or qmx allow target.
 - `Core` holds only neutral primitives without a natural leaf owner. Many
@@ -148,7 +159,7 @@ in `src/Infrastructure/` regardless of which feature they touch. They
 depend on the slice through its public service contracts. Example:
 `LayerAssignmentCommand` stays at
 `src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php` and
-injects `ArchitectureProcessorInterface` plus Collection services — pulling
+injects `LayerAssignmentInspectorInterface` plus Collection services — pulling
 the command into the Architecture slice would force the slice to depend on
 `symfony/console`, which is an infrastructure concern.
 
@@ -247,7 +258,7 @@ When documenting deviations: use `!!! info "Deviation from original spec"` block
 - The internal manifest is the current exact owner/visibility/import authority.
   Its checker runs through `composer architecture:check` before selfcheck and
   rejects unlisted exact imports even when a coarse qmx owner edge permits them.
-- Generated `qmx.yaml` contains 37 semantic-owner layers, 11 singleton
+- Generated `qmx.yaml` contains 37 semantic-owner layers, no singleton
   enforcement seams and final `external`; `coverage: error` keeps isolated and
   edge-connected project declarations fail-closed. The qmx graph is coarse and
   does not replace the manifest checker.
@@ -365,13 +376,12 @@ rule directly:
   preparation, no companion debug command):
   1. Create a `*Rule.php` class in `src/Rules/{Category}/` (e.g.,
      `src/Rules/Complexity/`)
-  2. Implement `RuleInterface` (or extend `AbstractRule`)
-  3. Add a `NAME` constant with the rule slug in `group.rule-name` format
-     (e.g., `'complexity.cyclomatic'`)
-  4. Add a static `getOptionsClass()` method returning the Options class
-  5. Create an Options class in the same directory, implementing
+  2. Implement the internal executable rule contract (or extend `AbstractRule`)
+  3. Expose only the Finding-owned `RuleDefinitionInterface` metadata contract
+     to cross-owner class-string consumers
+  4. Create an Options class in the same directory, implementing
      `RuleOptionsInterface`
-  6. The class is registered **automatically** by `RuleConfigurator` — no
+  5. The class is registered **automatically** by `RuleConfigurator` — no
      need to modify `ContainerFactory`
 - **Capability-owned rule** (the feature has its own lifecycle or otherwise
   meets the subject-cohesion criteria):
@@ -380,7 +390,7 @@ rule directly:
   - Add (or extend) the capability's configurator under
     `src/Infrastructure/DependencyInjection/Configurator/` so it registers the
     exact implementation root without publishing module internals
-  - Current examples: `src/Architecture/Rules/` via
+  - Current examples: `src/Analysis/Policy/Architecture/LayerViolation/` via
     `ArchitectureConfigurator`, and
     `src/Analysis/Evidence/Duplication/CodeDuplicationRule.php` via
     `DuplicationConfigurator`
@@ -389,18 +399,14 @@ rule directly:
 1. `RuleConfigurator::registerClasses()` scans `src/Rules/**/*Rule.php` for
    layered rules; each capability's configurator registers its exact rule root
    (currently `ArchitectureConfigurator` and `DuplicationConfigurator`)
-2. `registerForAutoconfiguration(RuleInterface::class)` adds the `qmx.rule`
-   tag in either case
-3. `RuleOptionsCompilerPass` automatically registers Options via
-   `RuleOptionsFactory::create()`
-4. `RuleCompilerPass` collects all rules into `RuleExecutor` and `RulesCommand`
-   — the only supported source of rule *instances*. Never build a rule with
-   `new $ruleClass($options)`: a rule may declare constructor dependencies
-   beyond its options (e.g. `LayerViolationRule`)
-5. Every rule class must declare a `public const string NAME`; metadata is read
-   from it by reflection (`Core\Rule\RuleNameReader`), never by instantiation
+2. Cross-owner consumers of rule class strings depend only on
+   `Analysis\Finding\Contract\Rule\RuleDefinitionInterface`, whose sole
+   metadata operation returns the options class.
+3. Rule execution, registration, and construction remain Finding and
+   Infrastructure internals; do not expose an instance or factory contract.
 
-**Important:** Rules do NOT use autowiring for the constructor (due to `RuleOptionsInterface`). The `$options` argument is injected via `RuleOptionsCompilerPass`.
+**Important:** Finding and Infrastructure own executable-rule construction;
+cross-owner code must not construct rules or depend on their instances.
 
 **Important:** Collectors must be placed in subdirectories `src/Metrics/{Category}/`; files in the root of `src/Metrics/` (except base classes) are ignored.
 
@@ -413,9 +419,7 @@ rule directly:
 **CompilerPasses collect services by tags:**
 - `CollectorCompilerPass` -> `CompositeCollector`
 - `GlobalCollectorCompilerPass` -> `GlobalCollectorRunner`
-- `RuleOptionsCompilerPass` -> registers Options for rules
-- `RuleCompilerPass` -> `RuleExecutor::$rules`, `RulesCommand::$rules`
-- `RuleRegistryCompilerPass` -> `RuleRegistry::$ruleClasses`
+- Rule compiler passes -> Finding's private execution and metadata registries
 - `FormatterCompilerPass` -> `FormatterRegistry`
 - `ConfigurationStageCompilerPass` -> `ConfigurationPipeline`
 
@@ -571,6 +575,23 @@ bin/qmx check --help
 - **Validation**: `composer check` (cs-check + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `src/Reporting/Template/`, also run `composer test:js` and `composer build:js`
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
 
+### Efficient validation order
+
+For multi-package changes, fail fast before paying for the full test suite:
+
+1. Run lint/style, focused tests, and scoped static analysis for each package.
+2. Before the root aggregate, run full PHPStan, `composer architecture:check`,
+   and dogfood with machine-readable output, `--workers=0`, and
+   `--fail-on=warning`.
+3. Run `composer check` once before review and once after confirmed review
+   fixes. Repeat it earlier only when a change invalidates prior aggregate
+   evidence.
+
+Subagents own focused package gates; the root orchestrator owns full aggregate
+gates. For every long-running or redirected command, persist its output under
+`/tmp`, wait for completion, and inspect the explicit exit code. Empty or
+redirected stdout is never evidence of success.
+
 **Architecture Decision Records:** After implementing a feature with non-obvious design decisions, create an ADR in `docs/adr/` (see [docs/adr/README.md](docs/adr/README.md) for format). If a spec existed during design (`docs/internal/SPEC_*.md`), it can be archived or deleted after the ADR captures key decisions. ADRs preserve the "why" — implementation details live in code and component READMEs.
 
 **Commit granularity:** Split large changes into logical commits when it improves changelog readability. Each commit should represent one coherent change (e.g., separate "rename command" from "update documentation"). Avoid monolithic commits that bundle unrelated changes — they make changelogs harder to generate and git history harder to navigate.
@@ -675,14 +696,16 @@ Key rules:
 
 ### Component Documentation (in src/)
 - [src/Core/README.md](src/Core/README.md) — contracts and primitives
-- [src/Architecture/README.md](src/Architecture/README.md) — Architecture vertical slice (layer policy + circular dependency, ADR 0010 pilot)
+- [src/Analysis/Policy/Architecture/README.md](src/Analysis/Policy/Architecture/README.md) — declared-layer policy capability
+- [src/Analysis/Evidence/CircularDependency/README.md](src/Analysis/Evidence/CircularDependency/README.md) — circular-dependency evidence capability
 - [src/Analysis/Evidence/Duplication/README.md](src/Analysis/Evidence/Duplication/README.md) — Duplication capability boundary, lifecycle, Run-port integration and tests
 - [src/Metrics/README.md](src/Metrics/README.md) — metric collectors
 - [src/Rules/README.md](src/Rules/README.md) — analysis rules
 - [src/Analysis/README.md](src/Analysis/README.md) — orchestration
 - [src/Reporting/README.md](src/Reporting/README.md) — formatting
 - [src/Analysis/Configuration/README.md](src/Analysis/Configuration/README.md) — configuration
-- [src/Baseline/README.md](src/Baseline/README.md) — baseline support and @qmx-ignore suppression
+- [src/Analysis/Policy/Baseline/README.md](src/Analysis/Policy/Baseline/README.md) — baseline persistence and acceptance policy
+- [src/Analysis/Policy/Inline/README.md](src/Analysis/Policy/Inline/README.md) — `@qmx-ignore` suppression and inline controls
 - [src/Infrastructure/README.md](src/Infrastructure/README.md) — CLI, DI, caching
 
 ### Architecture Decision Records (in docs/adr/)

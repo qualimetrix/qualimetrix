@@ -4,26 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Contract;
 
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\DeferredWarning;
-use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 
 /**
  * Fully resolved configuration after pipeline processing.
  *
- * Phase 4.6 (ADR 0008): the `$architecture` field is non-nullable. Production
- * code in {@see ConfigurationPipeline::resolve()} has always populated it with
- * a (possibly empty) {@see ArchitectureConfiguration}; the type now matches
- * that runtime invariant. Tests that construct fixtures explicitly pass
- * {@see ArchitectureConfiguration::empty()}.
+ * Feature-owned configuration is exposed as an ordered document; this
+ * transitional DTO does not materialize feature configuration or warnings.
  *
- * **Deferred warnings.** {@see $deferredWarnings} carries PSR-3 records that
- * the configuration pipeline produced *before* the user-facing logger was
- * configured. {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator}
- * drains this list to the configured logger after
- * {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator::configureLogger()}
- * runs, ensuring those warnings reach the user instead of being dropped into
- * the placeholder {@see \Psr\Log\NullLogger}.
+ * @qmx-threshold code-smell.constructor-overinjection warning=10 error=10 -- Transitional resolved configuration exposes nine independently owned resolved values; grouping them would recreate the opaque configuration aggregate being dismantled, and the inclusive threshold of 10 rejects a tenth field.
+ * @qmx-threshold code-smell.long-parameter-list warning=10 error=10 -- Transitional resolved configuration exposes nine independently owned resolved values; grouping them would recreate the opaque configuration aggregate being dismantled, and the inclusive threshold of 10 rejects a tenth field.
  */
 final readonly class TransitionalResolvedConfiguration
 {
@@ -31,18 +21,17 @@ final readonly class TransitionalResolvedConfiguration
      * @param list<string> $paths
      * @param list<string> $pathExcludes
      * @param array<string, mixed> $ruleOptions
-     * @param array<string, mixed> $computedMetrics
      * @param list<string> $appliedSources Names of configuration sources that contributed values
-     * @param list<DeferredWarning> $deferredWarnings PSR-3 records to replay once the user logger is configured
      */
     public function __construct(
         public array $paths,
         public array $pathExcludes,
         public TransitionalRuntimeConfiguration $runtime,
         public array $ruleOptions,
-        public ArchitectureConfiguration $architecture,
-        public array $computedMetrics = [],
+        public ConfigurationDocument $document,
+        public RuleSelection $ruleSelection = new RuleSelection(),
+        public OutputFormat $outputFormat = new OutputFormat(OutputFormat::DEFAULT),
+        public ResolvedFindingExclusions $findingExclusions = new ResolvedFindingExclusions(),
         public array $appliedSources = [],
-        public array $deferredWarnings = [],
     ) {}
 }

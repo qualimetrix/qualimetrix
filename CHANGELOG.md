@@ -20,6 +20,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- Finding and policy ownership moved without aliases or shims. Replace
+  `Qualimetrix\Analysis\RuleExecution\*`, `Qualimetrix\Core\Rule\*`, and
+  `Qualimetrix\Core\Violation\*` imports with their
+  `Qualimetrix\Analysis\Finding\*` counterparts and consume only the named
+  Finding contracts for rule configuration, execution metadata/statistics,
+  filters, and violations. Source controls and annotation suppression moved
+  from `Core\Suppression` / Baseline internals to
+  `Analysis\Policy\Inline`; baseline lifecycle and accepted-boundary types now
+  live under `Analysis\Policy\Baseline`. Impact ranking and technical-debt
+  calculation moved to `Analysis\Evidence\Prioritization`. Replace direct
+  Console `ViolationFilterPipeline` and Infrastructure `GitScopeFilter`
+  composition with `Reporting\FindingProjection\FindingProjector` and its
+  `GitScopeQueryInterface`; the shipped adapter is
+  `Infrastructure\Git\ReportingGitScopeQuery`. The transitional Configuration
+  rule-option, selection, output-format, and finding-exclusion fields were
+  replaced by the corresponding Finding/Configuration contracts. Update test
+  namespaces with their subjects; removed provider getters, concrete rule-list
+  exposure, old pipeline/result types, and old FQCNs have no compatibility
+  replacement.
+
+- Computed metrics and Health moved without aliases or shims into the
+  `Qualimetrix\Analysis\Evidence\ComputedMetrics` capability. Replace
+  `Qualimetrix\Configuration\ComputedMetricsConfigResolver` and
+  `Qualimetrix\Configuration\ComputedMetricFormulaValidator` with the
+  same-named classes at the new capability root. Replace
+  `Qualimetrix\Configuration\ComputedMetrics\Contract\HealthFormulaExclusionInterface`
+  with `Contract\Configuration\HealthFormulaExclusionInterface` and
+  `Qualimetrix\Configuration\HealthFormulaExcluder` with
+  `Health\Configuration\HealthFormulaExcluder` under that root. Move remaining
+  `Core\ComputedMetric\*`, `Metrics\ComputedMetric\*`,
+  `Rules\ComputedMetric\*`, and `Reporting\Health` score, offender, metadata,
+  ranking, and drill-down imports to their corresponding root, `Contract\*`,
+  and `Health\*` declarations under the new capability;
+  Reporting retains only thin report assembly and projection consumers. The
+  evaluator API changes from `compute($repository, $definitions)` to
+  `evaluate($repository, $filesAnalyzed)`: definitions and configuration now
+  belong to the injected, instance-owned catalog instead of caller-supplied or
+  process-global state. Update imports and direct constructor calls, and wire
+  the published ComputedMetrics contracts through DI; removed holder,
+  evaluator-interface, Health builder-interface, and legacy drill-down
+  surfaces have no compatibility replacement.
+
+- Architecture implementation moved without aliases. Replace
+  `Qualimetrix\Architecture\*` imports with either
+  `Qualimetrix\Analysis\Policy\Architecture\*` for declared-layer policy or
+  `Qualimetrix\Analysis\Evidence\CircularDependency\*` for SCC evidence.
+  `ArchitectureProcessorInterface`, `ArchitectureLifecycleHook`,
+  `AnalysisLifecycleHookInterface`, `CycleInterface`, and the Configuration
+  deferred-warning transport were removed. External consumers use only the new
+  named leaf contracts; no compatibility shims are provided.
+
 - Analysis orchestration moved without aliases. Replace imports under
   `Qualimetrix\Analysis\Pipeline\*`, `Analysis\Collection\*`,
   `Analysis\Discovery\*`, and `Analysis\Lifecycle\*` with their

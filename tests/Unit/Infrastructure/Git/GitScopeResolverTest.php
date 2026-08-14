@@ -7,11 +7,11 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
 use Qualimetrix\Analysis\Run\Discovery\FileDiscoveryFactory;
 use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
-use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Git\GitScopeResolver;
 use ReflectionProperty;
@@ -32,7 +32,7 @@ final class GitScopeResolverTest extends TestCase
             pathExcludes: ['vendor', 'node_modules', '.git'],
             runtime: new TransitionalRuntimeConfiguration(projectRoot: $projectRoot),
             ruleOptions: [],
-            architecture: ArchitectureConfiguration::empty(),
+            document: new ConfigurationDocument([]),
         );
 
         $definition = new InputDefinition([
@@ -62,7 +62,7 @@ final class GitScopeResolverTest extends TestCase
             pathExcludes: ['vendor', 'node_modules', '.git'],
             runtime: new TransitionalRuntimeConfiguration(projectRoot: AbsolutePath::fromString('/some/project')),
             ruleOptions: [],
-            architecture: ArchitectureConfiguration::empty(),
+            document: new ConfigurationDocument([]),
         );
 
         $definition = new InputDefinition([
@@ -87,7 +87,7 @@ final class GitScopeResolverTest extends TestCase
             pathExcludes: ['vendor', 'tests'],
             runtime: new TransitionalRuntimeConfiguration(projectRoot: $projectRoot),
             ruleOptions: [],
-            architecture: ArchitectureConfiguration::empty(),
+            document: new ConfigurationDocument([]),
         );
 
         $definition = new InputDefinition([
@@ -116,7 +116,7 @@ final class GitScopeResolverTest extends TestCase
             pathExcludes: ['vendor', 'node_modules', '.git'],
             runtime: new TransitionalRuntimeConfiguration(projectRoot: AbsolutePath::fromString('/some/project')),
             ruleOptions: [],
-            architecture: ArchitectureConfiguration::empty(),
+            document: new ConfigurationDocument([]),
         );
 
         $definition = new InputDefinition([

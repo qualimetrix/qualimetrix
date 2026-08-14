@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -18,7 +19,7 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * constructor arguments to FileProcessingTaskFactory. Rule classes flow through
  * the same channel so
  * each worker can rebuild its own threshold-override validator map via
- * {@see \Qualimetrix\Baseline\Suppression\RuleValidatorMapFactory}.
+ * {@see \Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory}.
  */
 final class ParallelCollectorClassesCompilerPass implements CompilerPassInterface
 {
@@ -49,6 +50,7 @@ final class ParallelCollectorClassesCompilerPass implements CompilerPassInterfac
             $ruleClasses[] = $definition->getClass() ?? $id;
         }
 
+        /** @var list<class-string<RuleDefinitionInterface>> $ruleClasses */
         // Pass collector and rule classes to FileProcessingTaskFactory
         $definition = $container->getDefinition(FileProcessingTaskFactory::class);
         $definition->setArgument('$collectorClasses', $collectorClasses);

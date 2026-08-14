@@ -7,19 +7,17 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Rule;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinition;
-use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
-use Qualimetrix\Rules\ComputedMetric\ComputedMetricRule;
 
 #[CoversClass(RuleChannelRegistry::class)]
 final class RuleChannelRegistryTest extends TestCase
 {
-    protected function tearDown(): void
-    {
-        ComputedMetricDefinitionHolder::reset();
-    }
+    /** @var list<ComputedMetricDefinition> */
+    private array $definitions = [];
 
     #[Test]
     public function itPreservesTheProducerOfStaticChannelsWithDifferentRuleNames(): void
@@ -29,7 +27,7 @@ final class RuleChannelRegistryTest extends TestCase
                 'architecture.layer-violation#architecture.layer-violation',
                 'architecture.coverage#architecture.coverage',
             ],
-        ], ComputedMetricRule::NAME);
+        ], ComputedMetricRule::NAME, $this->catalog());
 
         $channels = $registry->channelsProducedBy('architecture.layer-violation');
 
@@ -42,7 +40,7 @@ final class RuleChannelRegistryTest extends TestCase
     #[Test]
     public function itAddsRuntimeComputedMetricChannelsToTheirProducer(): void
     {
-        ComputedMetricDefinitionHolder::setDefinitions([
+        $this->definitions = ([
             new ComputedMetricDefinition(
                 name: 'health.complexity',
                 formulas: ['class' => 'ccn__avg'],
@@ -51,11 +49,19 @@ final class RuleChannelRegistryTest extends TestCase
                 inverted: true,
             ),
         ]);
-        $registry = new RuleChannelRegistry([], ComputedMetricRule::NAME);
+        $registry = new RuleChannelRegistry([], ComputedMetricRule::NAME, $this->catalog());
 
         $channels = $registry->channelsProducedBy(ComputedMetricRule::NAME);
 
         self::assertCount(1, $channels);
         self::assertSame('computed.health#health.complexity', $channels[0]->toKey());
+    }
+
+    private function catalog(): ComputedMetricDefinitionCatalogInterface
+    {
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('all')->willReturnCallback(fn(): array => $this->definitions);
+
+        return $catalog;
     }
 }

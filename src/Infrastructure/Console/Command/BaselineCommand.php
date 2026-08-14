@@ -6,9 +6,11 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
+use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
-use Qualimetrix\Baseline\BaselineConflictException;
-use Qualimetrix\Baseline\RunScope;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -43,8 +45,10 @@ abstract class BaselineCommand extends Command
             return $this->doExecute($input, $output);
         } catch (IncompleteAnalysisException $e) {
             return $this->fail($output, $e->getMessage(), $e, self::EXIT_ANALYSIS_INCOMPLETE);
-        } catch (ConfigLoadException $e) {
+        } catch (ConfigLoadException|ArchitectureConfigurationException $e) {
             return $this->fail($output, \sprintf('Configuration error: %s', $e->getMessage()), $e);
+        } catch (ArchitecturePreparationException $e) {
+            return $this->fail($output, $e->getMessage(), $e);
         } catch (BaselineConflictException $e) {
             return $this->fail($output, $e->getMessage(), $e);
         } catch (InvalidArgumentException|RuntimeException $e) {

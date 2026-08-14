@@ -1,5 +1,9 @@
 # 0008. `ArchitectureProcessor` Service
 
+> **Superseded for current implementation.** P4 replaced this combined
+> processor and its lifecycle contract with the Architecture policy leaf and
+> its capability-specific contracts; see [ADR 0022](0022-capability-oriented-modular-monolith.md).
+
 **Date:** 2026-05-15
 **Status:** Accepted
 **Builds on:** [0005 — Architecture Layer Rules](0005-architecture-rules.md), [0006 — Declaration-Order Matching](0006-architecture-rules-declaration-order.md), [0007 — Phase 2 Flexibility & Expressiveness](0007-architecture-rules-phase-2-design.md)

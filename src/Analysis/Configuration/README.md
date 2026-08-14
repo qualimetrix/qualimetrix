@@ -10,10 +10,11 @@ boundary, but it has not claimed that the mixed runtime DTO is a neutral final
 kernel.
 
 The module currently carries transitional fields for aggregation, namespace
-detection, health, rule options, and framework namespaces. Their owners are
-made explicit by later packages: P4 removes Architecture configuration from the
-central resolved object; P5 moves computed/health configuration; P6 moves rule
-option and exclusion transport; P7 moves Coupling's framework namespace field.
+detection, and framework namespaces. Their owners are
+made explicit by later packages: P4 removed Architecture configuration and P5
+removed computed/health configuration from the central resolved object; P6 moved rule
+option state behind Finding-owned contracts and moved output format plus finding
+projection controls to Reporting-owned values; P7 moves Coupling's framework namespace field.
 Do not add a feature field to this DTO as a permanent integration pattern.
 
 ## Structure
@@ -23,7 +24,9 @@ Configuration/
 ├── Contract/
 │   ├── Discovery/      # Composer autoload-path reader
 │   ├── Exception/      # configuration load error
-│   ├── Pipeline/       # context, pipeline, deferred warning
+│   ├── Pipeline/       # context and pipeline contracts
+│   ├── OutputFormat.php
+│   ├── ResolvedFindingExclusions.php
 │   └── Transitional*   # current runtime/resolved configuration promises
 ├── Discovery/          # Composer metadata reader
 ├── Loader/             # YAML load and section normalization
@@ -41,9 +44,14 @@ precedence order is defaults, presets, configuration files, Composer discovery,
 and CLI options; later layers override earlier scalar values while the schema
 defines merge semantics for collection values.
 
-Deferred warnings are values (`Contract\\Pipeline\\DeferredWarning`), not log
-calls: the pipeline records them before the user logger exists, and the Console
-adapter replays them after logging is configured.
+The immutable contract `ConfigurationDocument` preserves ordered source
+contributions. Feature leaves consume their own contribution key: for example,
+Architecture policy parses and merges only `architecture` after the Console
+logger exists, then returns typed warnings through its own contract. The
+central pipeline neither contains an Architecture object nor transports a
+feature-specific deferred warning. ComputedMetrics folds `computed_metrics` and
+`exclude_health` directly from the same ordered document and publishes an
+instance-owned catalog only after full validation.
 
 ## Public contracts and adapters
 
@@ -53,6 +61,12 @@ the Configuration boundary. Infrastructure composition registers the configurati
 its stages; Console resolves configuration and sets the
 `TransitionalRuntimeConfigurationProviderInterface` for one run. No consumer
 may construct a feature configuration factory through this mixed boundary.
+
+The resolved boundary now publishes `RuleSelection`, `OutputFormat`, and
+`FindingProjectionOptions`. Console configures Finding once, passes projection
+options to Reporting, and passes the output-format value to the presenter. The
+transitional runtime DTO no longer carries `disabledRules`, `onlyRules`,
+`excludePaths`, `excludeNamespaces`, or `format`.
 
 ## CLI option aliases
 

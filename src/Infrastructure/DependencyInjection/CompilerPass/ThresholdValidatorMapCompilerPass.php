@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
-use Qualimetrix\Baseline\Suppression\RuleValidatorMapFactory;
-use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
+use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -35,7 +36,7 @@ final class ThresholdValidatorMapCompilerPass implements CompilerPassInterface
             }
         }
 
-        /** @var list<class-string<\Qualimetrix\Core\Rule\RuleInterface>> $ruleClasses */
+        /** @var list<class-string<RuleDefinitionInterface>> $ruleClasses */
         $validators = RuleValidatorMapFactory::build($ruleClasses);
 
         $container->getDefinition(ThresholdOverrideExtractor::class)

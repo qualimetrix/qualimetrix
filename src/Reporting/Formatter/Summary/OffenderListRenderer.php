@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Health\NamespaceDrillDown;
-use Qualimetrix\Reporting\Health\WorstOffender;
 use Qualimetrix\Reporting\Report;
 
 /**
@@ -24,7 +24,7 @@ final class OffenderListRenderer
 
     public function __construct(
         private readonly ViolationFilter $filter,
-        private readonly NamespaceDrillDown $namespaceDrillDown,
+        private readonly WorstClassDrillDown $namespaceDrillDown,
     ) {}
 
     /**

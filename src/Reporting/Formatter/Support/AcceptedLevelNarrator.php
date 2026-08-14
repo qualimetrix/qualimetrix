@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Support;
 
-use Qualimetrix\Core\Violation\ChannelShape;
-use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 
 /**
  * Renders the "accepted at 25, now 31" fragment a measured breach carries
@@ -48,7 +48,7 @@ final class AcceptedLevelNarrator
     }
 
     /**
-     * Same trailing-zero trim as {@see \Qualimetrix\Core\Violation\AcceptedLevel::describe()}
+     * Same trailing-zero trim as {@see \Qualimetrix\Analysis\Finding\Contract\AcceptedLevel::describe()}
      * applies to the accepted side, so "40.0" and "40" don't print differently
      * depending on which side of "now" they land on.
      */

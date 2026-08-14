@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Configuration\Fixtures;
 
-use Qualimetrix\Core\Rule\RuleOptionsInterface;
-use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
  * Test fixture for RuleOptions with required parameters (no defaults).

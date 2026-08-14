@@ -9,13 +9,21 @@ use DateTimeInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Reporting\Debt\DebtCalculator;
-use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
@@ -24,12 +32,7 @@ use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
 use Qualimetrix\Reporting\Formatter\Json\JsonViolationSection;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Health\DecompositionItem;
-use Qualimetrix\Reporting\Health\HealthScore;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
-use Qualimetrix\Reporting\Health\NamespaceDrillDown;
-use Qualimetrix\Reporting\Health\WorstOffender;
 use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
 
@@ -40,15 +43,17 @@ final class JsonFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $hintProvider = new MetricHintProvider();
-        $namespaceDrillDown = new NamespaceDrillDown($hintProvider);
+        $hintProvider = new HealthMetricCatalog();
+        $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $namespaceDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
+        $worstClassDrillDown = new WorstClassDrillDown($definitionCatalog);
         $sanitizer = new JsonSanitizer();
         $violationFilter = new ViolationFilter();
         $remediationTimeRegistry = new RemediationTimeRegistry();
         $this->formatter = new JsonFormatter(
             new DebtCalculator($remediationTimeRegistry),
             new JsonHealthSection(new HealthScoreResolver($namespaceDrillDown), $sanitizer),
-            new JsonOffenderSection($namespaceDrillDown, $violationFilter, $sanitizer),
+            new JsonOffenderSection($worstClassDrillDown, $violationFilter, $sanitizer),
             new JsonViolationSection($remediationTimeRegistry, $sanitizer),
         );
     }
@@ -315,10 +320,12 @@ final class JsonFormatterTest extends TestCase
                     healthOverall: 31.0,
                     label: 'Critical',
                     reason: 'low cohesion, high complexity',
-                    violationCount: 12,
-                    classCount: 4,
-                    metrics: ['cbo.avg' => 8.5],
-                    healthScores: ['complexity' => 28.0, 'cohesion' => 25.0],
+                    evidence: new WorstOffenderEvidence(
+                        violationCount: 12,
+                        classCount: 4,
+                        metrics: ['cbo.avg' => 8.5],
+                        healthScores: ['complexity' => 28.0, 'cohesion' => 25.0],
+                    ),
                 ),
             ],
         );
@@ -356,10 +363,12 @@ final class JsonFormatterTest extends TestCase
                     healthOverall: 28.0,
                     label: 'Critical',
                     reason: '32 methods, high coupling',
-                    violationCount: 5,
-                    classCount: 0,
-                    metrics: ['methodCount' => 32, 'cbo' => 18],
-                    healthScores: ['complexity' => 12.0, 'cohesion' => 8.0],
+                    evidence: new WorstOffenderEvidence(
+                        violationCount: 5,
+                        classCount: 0,
+                        metrics: ['methodCount' => 32, 'cbo' => 18],
+                        healthScores: ['complexity' => 12.0, 'cohesion' => 8.0],
+                    ),
                 ),
             ],
         );
@@ -855,9 +864,9 @@ final class JsonFormatterTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             worstNamespaces: [
-                new WorstOffender(SymbolPath::forNamespace('App\A'), null, 20.0, 'Critical', 'bad', 5, 3),
-                new WorstOffender(SymbolPath::forNamespace('App\B'), null, 25.0, 'Critical', 'bad', 3, 2),
-                new WorstOffender(SymbolPath::forNamespace('App\C'), null, 30.0, 'Critical', 'bad', 2, 1),
+                new WorstOffender(SymbolPath::forNamespace('App\A'), null, 20.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3)),
+                new WorstOffender(SymbolPath::forNamespace('App\B'), null, 25.0, 'Critical', 'bad', new WorstOffenderEvidence(3, 2)),
+                new WorstOffender(SymbolPath::forNamespace('App\C'), null, 30.0, 'Critical', 'bad', new WorstOffenderEvidence(2, 1)),
             ],
         );
 
@@ -922,9 +931,9 @@ final class JsonFormatterTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             worstNamespaces: [
-                new WorstOffender(SymbolPath::forNamespace('App\Payment'), null, 30.0, 'Critical', 'bad', 5, 3),
-                new WorstOffender(SymbolPath::forNamespace('App\Payment\Gateway'), null, 25.0, 'Critical', 'bad', 3, 2),
-                new WorstOffender(SymbolPath::forNamespace('App\User'), null, 35.0, 'Critical', 'bad', 2, 1),
+                new WorstOffender(SymbolPath::forNamespace('App\Payment'), null, 30.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3)),
+                new WorstOffender(SymbolPath::forNamespace('App\Payment\Gateway'), null, 25.0, 'Critical', 'bad', new WorstOffenderEvidence(3, 2)),
+                new WorstOffender(SymbolPath::forNamespace('App\User'), null, 35.0, 'Critical', 'bad', new WorstOffenderEvidence(2, 1)),
             ],
         );
 
@@ -976,10 +985,10 @@ final class JsonFormatterTest extends TestCase
             errorCount: 0,
             warningCount: 0,
             worstNamespaces: [
-                new WorstOffender(SymbolPath::forNamespace('App'), null, 30.0, 'Critical', 'bad', 5, 3),
+                new WorstOffender(SymbolPath::forNamespace('App'), null, 30.0, 'Critical', 'bad', new WorstOffenderEvidence(5, 3)),
             ],
             worstClasses: [
-                new WorstOffender(SymbolPath::forClass('App', 'Foo'), RelativePath::fromString('src/Foo.php'), 20.0, 'Critical', 'bad', 1, 0),
+                new WorstOffender(SymbolPath::forClass('App', 'Foo'), RelativePath::fromString('src/Foo.php'), 20.0, 'Critical', 'bad', new WorstOffenderEvidence(1, 0)),
             ],
         );
 
@@ -1633,24 +1642,24 @@ final class JsonFormatterTest extends TestCase
      * subject, preserving the production contract without hiding it behind a
      * legacy fallback.
      *
-     * @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations
+     * @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations
      */
     private static function violation(
-        \Qualimetrix\Core\Violation\Location $location,
+        \Qualimetrix\Analysis\Finding\Contract\Location $location,
         \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
         string $ruleName,
         string $violationCode,
         string $message,
-        \Qualimetrix\Core\Violation\Severity $severity,
+        \Qualimetrix\Analysis\Finding\Contract\Severity $severity,
         int|float|null $metricValue = null,
-        ?\Qualimetrix\Core\Rule\RuleLevel $level = null,
+        ?\Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel $level = null,
         array $relatedLocations = [],
         ?string $recommendation = null,
         int|float|null $threshold = null,
         ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
         ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null,
-        ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null,
-        ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null,
+        ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
     ): Violation {
         $subject ??= match ($symbolPath->getType()) {

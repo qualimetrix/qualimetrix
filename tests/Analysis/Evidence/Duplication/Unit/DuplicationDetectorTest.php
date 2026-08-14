@@ -337,7 +337,7 @@ PHP;
     public function itDoesNotReportDuplicationEntirelyInsideConstArrays(): void
     {
         // Same shape, different literal content, two rows of the same const
-        // array in one file — mirrors the real bug: MetricHintProvider's
+        // array in one file — mirrors the real bug: HealthMetricCatalog's
         // METRICS/RANGES tables have many rows sharing this shape, so pairs
         // of rows normalize to identical token sequences and used to match
         // each other. A single-file, multi-row fixture keeps the matched
@@ -525,7 +525,7 @@ PHP;
     /**
      * Builds a source file whose body is a `const array` with three rows
      * sharing one shape but different literal content — mirrors the real
-     * bug: MetricHintProvider's METRICS/RANGES tables have many rows of
+     * bug: HealthMetricCatalog's METRICS/RANGES tables have many rows of
      * this shape, and pairs of rows normalize to identical token sequences
      * (string/number literals become placeholders), so they used to match
      * each other as duplicates.

@@ -1,0 +1,49 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Evidence\Prioritization\Impact;
+
+use Qualimetrix\Core\Path\RelativePath;
+
+/**
+ * Pre-computed index for fast classRank lookups.
+ *
+ * Built once by ClassRankResolver::buildIndex(), used for O(1) resolution
+ * of namespace-level and file-level violations.
+ *
+ * @qmx-ignore health.cohesion -- Lookup methods expose independent indexes of one rank snapshot.
+ */
+final readonly class ClassRankIndex
+{
+    /**
+     * @param array<string, float> $fileMaxRank file path → max classRank
+     * @param array<string, float> $nsMaxRank namespace → max classRank (includes parent namespaces)
+     * @param float|null $medianRank median classRank across all classes (fallback for unknown)
+     */
+    public function __construct(
+        private array $fileMaxRank,
+        private array $nsMaxRank,
+        private ?float $medianRank,
+    ) {}
+
+    public function getMaxForFile(RelativePath $filePath): ?float
+    {
+        return $this->fileMaxRank[$filePath->value()] ?? null;
+    }
+
+    public function getMaxForNamespace(string $namespace): ?float
+    {
+        return $this->nsMaxRank[$namespace] ?? null;
+    }
+
+    /**
+     * Returns the median classRank across all classes, or null if no classes have classRank.
+     *
+     * Used as fallback when a violation's classRank cannot be resolved.
+     */
+    public function getMedianRank(): ?float
+    {
+        return $this->medianRank;
+    }
+}

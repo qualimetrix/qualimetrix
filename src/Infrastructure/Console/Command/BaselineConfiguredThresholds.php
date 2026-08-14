@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Configuration\RuleOptionsFactory;
-use Qualimetrix\Core\Rule\ChannelDeclarationReader;
-use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
-use Qualimetrix\Core\Rule\LevelOptionsInterface;
-use Qualimetrix\Core\Rule\RuleInterface;
-use Qualimetrix\Core\Rule\RuleLevel;
-use Qualimetrix\Core\Rule\RuleNameReader;
-use Qualimetrix\Core\Rule\RuleOptionKey;
-use Qualimetrix\Core\Rule\RuleOptionsInterface;
-use Qualimetrix\Core\Violation\ViolationChannel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use ReflectionObject;
 use ReflectionProperty;
@@ -28,7 +28,7 @@ use Throwable;
  * while resolving a rule's configured options means going through
  * {@see RuleOptionsFactory}, which is `Configuration`. The command is already
  * on the far side of that boundary, so it resolves the numbers and hands
- * {@see \Qualimetrix\Baseline\BoundaryExplanationService} data.
+ * {@see \Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService} data.
  *
  * **The warning boundary, not the error one.** It is the number at which a
  * channel starts reporting, which is the boundary a user compares a baseline
@@ -36,7 +36,7 @@ use Throwable;
  * (`bin/qmx rules` and the violation's own message carry it).
  *
  * **A channel whose options expose no such number is left out of the map, not
- * guessed.** {@see \Qualimetrix\Baseline\EffectiveBoundary::$configuredThreshold}
+ * guessed.** {@see \Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary::$configuredThreshold}
  * is then `null`, which `explain` prints as "not resolvable" — distinct from a
  * configured `0`. Two shapes are read, and both are conventions the codebase
  * actually holds rather than assumptions about it:
@@ -116,7 +116,7 @@ final readonly class BaselineConfiguredThresholds
     }
 
     /**
-     * @param class-string<RuleInterface> $ruleClass
+     * @param class-string<RuleDefinitionInterface> $ruleClass
      */
     private function optionsFor(string $ruleClass): ?RuleOptionsInterface
     {

@@ -26,23 +26,36 @@
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
-            <directory>tests/Architecture/Unit</directory>
+            <directory>tests/Analysis/Policy/Architecture/Unit</directory>
+            <directory>tests/Analysis/Policy/Baseline/Unit</directory>
+            <directory>tests/Analysis/Policy/Inline/Unit</directory>
+            <directory>tests/Analysis/Finding/Unit</directory>
+            <directory>tests/Analysis/Evidence/CircularDependency/Unit</directory>
             <directory>tests/Analysis/Configuration/Unit</directory>
             <directory>tests/Analysis/Evidence/Duplication/Unit</directory>
             <directory>tests/Analysis/Evidence/DependencyModel/Unit</directory>
             <directory>tests/Analysis/Evidence/Measurement/Unit</directory>
+            <directory>tests/Analysis/Evidence/Prioritization/Unit</directory>
+            <directory>tests/Analysis/Evidence/ComputedMetrics/Unit</directory>
+            <directory>tests/Analysis/Evidence/ComputedMetrics/Health/Unit</directory>
             <directory>tests/Analysis/Run/Unit</directory>
             <directory>tests/Reporting/GraphProjection/Unit</directory>
+            <directory>tests/Reporting/FindingProjection/Unit</directory>
         </testsuite>
         <testsuite name="Integration">
             <directory>tests/Integration</directory>
-            <directory>tests/Architecture/Integration</directory>
+            <directory>tests/Analysis/Policy/Architecture/Integration</directory>
+            <directory>tests/Analysis/Policy/Baseline/Integration</directory>
+            <directory>tests/Analysis/Policy/Inline/Integration</directory>
+            <directory>tests/Analysis/Finding/Integration</directory>
             <directory>tests/Analysis/Configuration/Integration</directory>
             <directory>tests/Analysis/Evidence/Measurement/Integration</directory>
+            <directory>tests/Analysis/Evidence/ComputedMetrics/Integration</directory>
             <directory>tests/Analysis/Run/Integration</directory>
         </testsuite>
         <testsuite name="Functional">
             <directory>tests/Functional</directory>
+            <directory>tests/Analysis/Policy/Baseline/Functional</directory>
         </testsuite>
         <testsuite name="Infrastructure">
             <directory>tests/Infrastructure</directory>

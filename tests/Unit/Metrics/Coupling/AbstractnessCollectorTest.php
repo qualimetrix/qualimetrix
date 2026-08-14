@@ -16,7 +16,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\Coupling\AbstractnessCollector;
 use Qualimetrix\Metrics\Size\ClassCountCollector;
-use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
 #[CoversClass(AbstractnessCollector::class)]
 final class AbstractnessCollectorTest extends TestCase

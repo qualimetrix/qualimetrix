@@ -18,12 +18,13 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
+use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Rule\AnalysisContext;
-use Qualimetrix\Core\Suppression\ControlScope;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -130,6 +131,7 @@ final class PropertyHookControlPrecedenceTest extends TestCase
                     }
                 },
             ]),
+            new SourceControlExtractor(),
         );
         $processor->setProjectRoot(AbsolutePath::fromString('/tmp'));
 

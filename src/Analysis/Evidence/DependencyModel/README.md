@@ -9,7 +9,7 @@
 - **Owned paths:** `src/Analysis/Evidence/DependencyModel/` and
   `tests/Analysis/Evidence/DependencyModel/`.
 - **Non-goals:** collection sequencing remains with `Analysis.Run`; cycle
-  detection remains a P4 input and is not DependencyModel state.
+  detection is prepared by its own P4 leaf and is not DependencyModel state.
 
 ## Structure
 
@@ -39,7 +39,7 @@ The model's graph/value contracts and
 type under `Extraction/` are internal implementation details.
 `DependencyLocationInterface` exposes a structured relative file and line so
 Finding consumers can project DependencyModel-owned extraction locations
-without parsing their wire representation. `Core\Violation\Location` also
+without parsing their wire representation. `Analysis\Finding\Contract\Location` also
 implements the contract; when dependency evidence already carries that type,
 findings preserve the same object identity.
 

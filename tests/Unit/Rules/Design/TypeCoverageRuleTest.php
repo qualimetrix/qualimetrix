@@ -12,12 +12,12 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Rule\AnalysisContext;
-use Qualimetrix\Core\Rule\CliAliasReader;
-use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Rules\Design\TypeCoverageOptions;
 use Qualimetrix\Rules\Design\TypeCoverageRule;
 
@@ -87,7 +87,7 @@ final class TypeCoverageRuleTest extends TestCase
     {
         self::expectException(InvalidArgumentException::class);
 
-        new TypeCoverageRule(new class implements \Qualimetrix\Core\Rule\RuleOptionsInterface {
+        new TypeCoverageRule(new class implements \Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface {
             public static function fromArray(array $config): static
             {
                 return new static();

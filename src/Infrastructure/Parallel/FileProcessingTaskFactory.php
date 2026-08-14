@@ -9,8 +9,8 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalPa
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Rule\RuleInterface;
 
 /** Creates serializable tasks with compile-time metadata and current runtime configuration. */
 final readonly class FileProcessingTaskFactory
@@ -19,7 +19,7 @@ final readonly class FileProcessingTaskFactory
      * @param class-string<DependencyTraversalParticipantInterface> $dependencyTraversalParticipantClass
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses
-     * @param list<class-string<RuleInterface>> $ruleClasses
+     * @param list<class-string<RuleDefinitionInterface>> $ruleClasses
      */
     public function __construct(
         private CollectorRuntimeConfigurationStoreInterface $collectorRuntimeConfigurationStore,

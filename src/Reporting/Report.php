@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Reporting\Health\HealthScore;
-use Qualimetrix\Reporting\Health\WorstOffender;
-use Qualimetrix\Reporting\Impact\RankedIssue;
+use Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 
 /**
  * Value Object representing the analysis report.

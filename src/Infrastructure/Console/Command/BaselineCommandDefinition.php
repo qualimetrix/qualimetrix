@@ -33,7 +33,7 @@ use Symfony\Component\Console\Input\InputOption;
  *
  * Defining the shared input in one place means both halves are one thing to
  * check rather than five, and
- * {@see \Qualimetrix\Tests\Functional\Console\Command\BaselineCommandOptionSurfaceTest}
+ * {@see \Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest}
  * checks them by asking each command's definition rather than by reading it.
  *
  * `--config` belongs with the second group for the same reason: it names

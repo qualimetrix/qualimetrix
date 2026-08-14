@@ -6,10 +6,10 @@ namespace Qualimetrix\Analysis\Configuration\Contract;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Violation\Severity;
 use RuntimeException;
 
 /**
@@ -24,7 +24,6 @@ use RuntimeException;
 final readonly class TransitionalRuntimeConfiguration
 {
     public const string DEFAULT_CACHE_DIR = '.qmx-cache';
-    public const string DEFAULT_FORMAT = 'summary';
     public const string DEFAULT_NAMESPACE_STRATEGY = 'chain';
 
     /** @var list<string> */
@@ -54,19 +53,13 @@ final readonly class TransitionalRuntimeConfiguration
     /**
      * @param AbsolutePath|null $cacheDir Cache directory (null = `$projectRoot/.qmx-cache`)
      * @param bool $cacheEnabled Whether caching is enabled
-     * @param string $format Output format (text)
      * @param string $namespaceStrategy Namespace detection strategy (psr4, tokenizer, chain)
      * @param AbsolutePath|null $composerJsonPath Path to composer.json for PSR-4 detection
      * @param list<string> $aggregationPrefixes Namespace prefixes for aggregation
      * @param int|null $aggregationAutoDepth Auto-detect depth for namespace aggregation
-     * @param list<string> $disabledRules List of disabled rule names
-     * @param list<string> $onlyRules List of rules to run (empty = all enabled)
-     * @param list<string> $excludePaths Path patterns to suppress violations for
-     * @param list<string> $excludeNamespaces Namespace prefixes to suppress violations for
      * @param int|null $workers Number of parallel workers (null = auto-detect, 1 = sequential)
      * @param AbsolutePath|null $projectRoot Project root directory (null = current working directory)
      * @param Severity|false|null $failOn Minimum severity to trigger non-zero exit code (null = default/error, false = none/never fail)
-     * @param list<string> $excludeHealth Health dimensions to exclude from scoring (e.g., 'typing', 'complexity')
      * @param bool $includeGenerated Whether to include files marked with @generated annotation
      * @param list<string> $frameworkNamespaces Framework namespace prefixes for CBO_APP/CE_FRAMEWORK metrics
      * @param string|null $memoryLimit PHP memory limit override (e.g., '512M', '1G', '-1' for unlimited)
@@ -74,19 +67,13 @@ final readonly class TransitionalRuntimeConfiguration
     public function __construct(
         ?AbsolutePath $cacheDir = null,
         public bool $cacheEnabled = true,
-        public string $format = self::DEFAULT_FORMAT,
         public string $namespaceStrategy = self::DEFAULT_NAMESPACE_STRATEGY,
         ?AbsolutePath $composerJsonPath = null,
         public array $aggregationPrefixes = [],
         public ?int $aggregationAutoDepth = null,
-        public array $disabledRules = [],
-        public array $onlyRules = [],
-        public array $excludePaths = [],
-        public array $excludeNamespaces = [],
         public ?int $workers = null,
         ?AbsolutePath $projectRoot = null,
         public Severity|false|null $failOn = null,
-        public array $excludeHealth = [],
         public bool $includeGenerated = false,
         public array $frameworkNamespaces = [],
         public ?string $memoryLimit = null,
@@ -153,19 +140,13 @@ final readonly class TransitionalRuntimeConfiguration
         return new self(
             cacheDir: $cacheDir,
             cacheEnabled: self::getBool($config, ConfigSchema::CACHE_ENABLED, true),
-            format: self::getString($config, ConfigSchema::FORMAT, self::DEFAULT_FORMAT),
             namespaceStrategy: $namespaceStrategy,
             composerJsonPath: $composerJsonPath,
             aggregationPrefixes: self::getStringList($config, ConfigSchema::AGGREGATION_PREFIXES),
             aggregationAutoDepth: $aggregationAutoDepth,
-            disabledRules: self::getStringList($config, ConfigSchema::DISABLED_RULES),
-            onlyRules: self::getStringList($config, ConfigSchema::ONLY_RULES),
-            excludePaths: self::getStringList($config, ConfigSchema::EXCLUDE_PATHS),
-            excludeNamespaces: self::getStringList($config, ConfigSchema::EXCLUDE_NAMESPACES),
             workers: $workers,
             projectRoot: $projectRoot,
             failOn: self::getFailOn($config, ConfigSchema::FAIL_ON),
-            excludeHealth: self::getStringList($config, ConfigSchema::EXCLUDE_HEALTH),
             includeGenerated: self::getBool($config, ConfigSchema::INCLUDE_GENERATED, false),
             frameworkNamespaces: self::getStringList($config, ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES),
             memoryLimit: self::getMemoryLimit($config, ConfigSchema::MEMORY_LIMIT),
@@ -207,25 +188,15 @@ final readonly class TransitionalRuntimeConfiguration
         return new self(
             cacheDir: $cacheDir,
             cacheEnabled: self::getBool($overrides, ConfigSchema::CACHE_ENABLED, $this->cacheEnabled),
-            format: self::getString($overrides, ConfigSchema::FORMAT, $this->format),
             namespaceStrategy: self::getString($overrides, ConfigSchema::NAMESPACE_STRATEGY, $this->namespaceStrategy),
             composerJsonPath: $composerJsonPath,
             aggregationPrefixes: self::hasNestedValue($overrides, ConfigSchema::AGGREGATION_PREFIXES)
                 ? self::getStringList($overrides, ConfigSchema::AGGREGATION_PREFIXES)
                 : $this->aggregationPrefixes,
             aggregationAutoDepth: self::getIntOrNull($overrides, ConfigSchema::AGGREGATION_AUTO_DEPTH) ?? $this->aggregationAutoDepth,
-            disabledRules: array_values(array_unique([...$this->disabledRules, ...self::getStringList($overrides, ConfigSchema::DISABLED_RULES)])),
-            onlyRules: self::hasNestedValue($overrides, ConfigSchema::ONLY_RULES)
-                ? self::getStringList($overrides, ConfigSchema::ONLY_RULES)
-                : $this->onlyRules,
-            excludePaths: array_values(array_unique([...$this->excludePaths, ...self::getStringList($overrides, ConfigSchema::EXCLUDE_PATHS)])),
-            excludeNamespaces: array_values(array_unique([...$this->excludeNamespaces, ...self::getStringList($overrides, ConfigSchema::EXCLUDE_NAMESPACES)])),
             workers: self::getIntOrNull($overrides, ConfigSchema::PARALLEL_WORKERS) ?? $this->workers,
             projectRoot: $projectRoot,
             failOn: self::getFailOn($overrides, ConfigSchema::FAIL_ON) ?? $this->failOn,
-            excludeHealth: self::hasNestedValue($overrides, ConfigSchema::EXCLUDE_HEALTH)
-                ? self::getStringList($overrides, ConfigSchema::EXCLUDE_HEALTH)
-                : $this->excludeHealth,
             includeGenerated: self::getBool($overrides, ConfigSchema::INCLUDE_GENERATED, $this->includeGenerated),
             frameworkNamespaces: self::hasNestedValue($overrides, ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES)
                 ? self::getStringList($overrides, ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES)

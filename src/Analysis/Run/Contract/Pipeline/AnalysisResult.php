@@ -6,10 +6,10 @@ namespace Qualimetrix\Analysis\Run\Contract\Pipeline;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
-use Qualimetrix\Core\Suppression\Suppression;
-use Qualimetrix\Core\Suppression\ThresholdOverride;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 
 final readonly class AnalysisResult
 {
@@ -27,7 +27,7 @@ final readonly class AnalysisResult
      * @param array<string, list<Suppression>> $suppressions Per-file suppression tags
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides Per-file `@qmx-threshold`
      *                                                                   overrides — the same map
-     *                                                                   {@see \Qualimetrix\Core\Rule\AnalysisContext}
+     *                                                                   {@see \Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext}
      *                                                                   used to evaluate rules, kept
      *                                                                   here too so a caller outside
      *                                                                   rule execution (e.g.

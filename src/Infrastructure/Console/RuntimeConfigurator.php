@@ -4,19 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Psr\Log\LogLevel;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\DeferredWarning;
-
+use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Progress\NullProgressReporter;
-use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar;
 use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
-use Qualimetrix\Infrastructure\Logging\LoggerFactory;
-use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Qualimetrix\Infrastructure\Profiler\Profiler;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -28,13 +25,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class RuntimeConfigurator
 {
     public function __construct(
-        private readonly LoggerFactory $loggerFactory,
-        private readonly LoggerHolder $loggerHolder,
+        private readonly RuntimeLoggerConfigurator $runtimeLoggerConfigurator,
         private readonly ProgressReporterHolder $progressReporterHolder,
         private readonly ProfilerHolder $profilerHolder,
         private readonly AnalysisRuntimeConfigurator $analysisRuntimeConfigurator,
+        private readonly ArchitecturePolicyConfiguratorInterface $architecturePolicyConfigurator,
+        private readonly ComputedMetricConfiguratorInterface $computedMetricConfigurator,
         private readonly DiagnosticOutput $diagnosticOutput,
-        private readonly CacheFactory $cacheFactory,
     ) {}
 
     /**
@@ -45,16 +42,12 @@ final class RuntimeConfigurator
         InputInterface $input,
         OutputInterface $output,
     ): void {
-        $this->cacheFactory->reset();
         $this->analysisRuntimeConfigurator->resetRunState();
 
-        $this->configureLogger($input, $output);
+        $logger = $this->runtimeLoggerConfigurator->configure($input, $output);
 
-        // Drain warnings captured during configuration resolution (e.g. wildcard
-        // self-allow detection). These were buffered as
-        // DeferredWarning records because the user-facing logger was not yet
-        // configured at that point — replay them now that it is.
-        $this->drainDeferredWarnings($resolved);
+        $this->configureArchitecturePolicy($resolved, $logger);
+        $this->computedMetricConfigurator->configure($resolved->document);
 
         $this->configureMemoryLimit($resolved->runtime, $output);
         $this->configureProgressReporter($input, $output);
@@ -84,66 +77,13 @@ final class RuntimeConfigurator
         }
     }
 
-    /**
-     * Configures logger based on CLI options.
-     *
-     * Creates appropriate logger using LoggerFactory and sets it in LoggerHolder
-     * so that all components (Analyzer, PhpFileParser) can use it.
-     *
-     * Defensive about option presence: commands other than `check` (e.g.
-     * `debug:layer-assignment`) reuse this configurator to apply the YAML
-     * `memory_limit` before parallel collection, but don't expose every
-     * logging/profiling option. Missing options fall back to defaults.
-     */
-    private function configureLogger(InputInterface $input, OutputInterface $output): void
-    {
-        // Get log file path and level from CLI options
-        $logFile = $input->hasOption('log-file') ? $input->getOption('log-file') : null;
-        $logLevel = $input->hasOption('log-level') ? $input->getOption('log-level') : null;
-
-        // Validate log file path
-        if (!\is_string($logFile) && $logFile !== null) {
-            $logFile = null;
-        }
-
-        // Validate log level
-        if (!\is_string($logLevel)) {
-            $logLevel = LogLevel::INFO;
-        }
-
-        // Normalize log level
-        $logLevel = strtolower($logLevel);
-        $validLevels = ['debug', 'info', 'warning', 'error'];
-        if (!\in_array($logLevel, $validLevels, true)) {
-            $logLevel = LogLevel::INFO;
-        }
-
-        // Create logger
-        $logger = $this->loggerFactory->create($output, $logFile, $logLevel);
-
-        // Set logger in holder so all components can use it
-        $this->loggerHolder->setLogger($logger);
-    }
-
-    /**
-     * Replays warnings captured during configuration resolution.
-     *
-     * Configuration resolution happens before {@see self::configureLogger()},
-     * so the {@see LoggerHolder} still carries a NullLogger when the
-     * architecture factory runs. To prevent its allow-list warnings from being
-     * dropped, the factory buffers them in
-     * {@see \Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration::$deferredWarnings};
-     * this method drains the buffer through the now-configured logger.
-     */
-    private function drainDeferredWarnings(TransitionalResolvedConfiguration $resolved): void
-    {
-        if ($resolved->deferredWarnings === []) {
-            return;
-        }
-
-        $logger = $this->loggerHolder->getLogger();
-        foreach ($resolved->deferredWarnings as $warning) {
-            $logger->log($warning->level, $warning->message, $warning->context);
+    /** Configures Architecture only after the user-facing logger is ready. */
+    private function configureArchitecturePolicy(
+        TransitionalResolvedConfiguration $resolved,
+        LoggerInterface $logger,
+    ): void {
+        foreach ($this->architecturePolicyConfigurator->configure($resolved->document) as $warning) {
+            $logger->warning($warning->message, $warning->context);
         }
     }
 

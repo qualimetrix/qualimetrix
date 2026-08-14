@@ -17,12 +17,12 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Rule\AnalysisContext;
-use Qualimetrix\Core\Rule\CliAliasReader;
-use Qualimetrix\Core\Rule\RuleCategory;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Metrics\Size\ClassCountCollector;
 use Qualimetrix\Rules\Coupling\DistanceOptions;
 use Qualimetrix\Rules\Coupling\DistanceRule;
@@ -523,7 +523,7 @@ final class DistanceRuleTest extends TestCase
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Expected');
 
-        $invalidOptions = self::createStub(\Qualimetrix\Core\Rule\RuleOptionsInterface::class);
+        $invalidOptions = self::createStub(\Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface::class);
         new DistanceRule($invalidOptions);
     }
 

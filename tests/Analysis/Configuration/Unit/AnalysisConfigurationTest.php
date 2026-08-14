@@ -9,9 +9,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Violation\Severity;
+use Symfony\Component\Console\Input\InputInterface;
 
 #[CoversClass(TransitionalRuntimeConfiguration::class)]
 final class AnalysisConfigurationTest extends TestCase
@@ -20,18 +25,19 @@ final class AnalysisConfigurationTest extends TestCase
     public function itHasDefaultValues(): void
     {
         $config = new TransitionalRuntimeConfiguration();
+        $resolved = $this->resolveFeatureValues([]);
 
         self::assertSame((string) getcwd() . '/.qmx-cache', $config->cacheDir->value());
         self::assertTrue($config->cacheEnabled);
-        self::assertSame('summary', $config->format);
+        self::assertSame('summary', $resolved->outputFormat->value);
         self::assertSame('chain', $config->namespaceStrategy);
         self::assertNull($config->composerJsonPath);
         self::assertSame([], $config->aggregationPrefixes);
         self::assertNull($config->aggregationAutoDepth);
-        self::assertSame([], $config->disabledRules);
-        self::assertSame([], $config->onlyRules);
-        self::assertSame([], $config->excludePaths);
-        self::assertSame([], $config->excludeNamespaces);
+        self::assertSame([], $resolved->ruleSelection->disabled);
+        self::assertSame([], $resolved->ruleSelection->only);
+        self::assertSame([], $resolved->findingExclusions->excludePaths);
+        self::assertSame([], $resolved->findingExclusions->excludeNamespaces);
         self::assertNull($config->failOn);
     }
 
@@ -39,10 +45,11 @@ final class AnalysisConfigurationTest extends TestCase
     public function itCreatesFromArrayWithDefaults(): void
     {
         $config = TransitionalRuntimeConfiguration::fromArray([]);
+        $resolved = $this->resolveFeatureValues([]);
 
         self::assertSame((string) getcwd() . '/.qmx-cache', $config->cacheDir->value());
         self::assertTrue($config->cacheEnabled);
-        self::assertSame('summary', $config->format);
+        self::assertSame('summary', $resolved->outputFormat->value);
     }
 
     #[Test]
@@ -66,18 +73,24 @@ final class AnalysisConfigurationTest extends TestCase
             'only_rules' => ['size'],
             'exclude_paths' => ['src/Generated/*', 'src/Legacy/*'],
         ]);
+        $resolved = $this->resolveFeatureValues([
+            ConfigSchema::FORMAT => 'json',
+            ConfigSchema::DISABLED_RULES => ['complexity.cyclomatic'],
+            ConfigSchema::ONLY_RULES => ['size'],
+            ConfigSchema::EXCLUDE_PATHS => ['src/Generated/*', 'src/Legacy/*'],
+        ]);
 
         self::assertSame('/tmp/cache', $config->cacheDir->value());
         self::assertFalse($config->cacheEnabled);
-        self::assertSame('json', $config->format);
+        self::assertSame('json', $resolved->outputFormat->value);
         self::assertSame('psr4', $config->namespaceStrategy);
         self::assertNotNull($config->composerJsonPath);
         self::assertSame((string) getcwd() . '/composer.json', $config->composerJsonPath->value());
         self::assertSame(['App\\Domain', 'App\\Infrastructure'], $config->aggregationPrefixes);
         self::assertSame(2, $config->aggregationAutoDepth);
-        self::assertSame(['complexity.cyclomatic'], $config->disabledRules);
-        self::assertSame(['size'], $config->onlyRules);
-        self::assertSame(['src/Generated/*', 'src/Legacy/*'], $config->excludePaths);
+        self::assertSame(['complexity.cyclomatic'], $resolved->ruleSelection->disabled);
+        self::assertSame(['size'], $resolved->ruleSelection->only);
+        self::assertSame(['src/Generated/*', 'src/Legacy/*'], $resolved->findingExclusions->excludePaths);
     }
 
     #[Test]
@@ -86,7 +99,6 @@ final class AnalysisConfigurationTest extends TestCase
         $base = new TransitionalRuntimeConfiguration(
             cacheDir: AbsolutePath::fromString('/original/cache'),
             cacheEnabled: true,
-            format: 'text',
             namespaceStrategy: 'chain',
         );
 
@@ -99,7 +111,16 @@ final class AnalysisConfigurationTest extends TestCase
 
         // Merged values
         self::assertSame('/new/cache', $merged->cacheDir->value());
-        self::assertSame('json', $merged->format);
+        self::assertSame('json', $this->resolveFeatureValues(['format' => 'json'])->outputFormat->value);
+
+        $exclusions = $this->resolveFeatureValues(
+            ['exclude_paths' => ['configured', 'shared'], 'exclude_namespaces' => ['App\\Configured', 'App\\Shared']],
+        )->findingExclusions->withAdditional(
+            ['shared', 'cli'],
+            ['App\\Shared', 'App\\Cli'],
+        );
+        self::assertSame(['configured', 'shared', 'cli'], $exclusions->excludePaths);
+        self::assertSame(['App\\Configured', 'App\\Shared', 'App\\Cli'], $exclusions->excludeNamespaces);
 
         // Preserved values
         self::assertTrue($merged->cacheEnabled);
@@ -109,97 +130,67 @@ final class AnalysisConfigurationTest extends TestCase
     #[Test]
     public function itMergeAccumulatesDisabledRules(): void
     {
-        $base = new TransitionalRuntimeConfiguration(
-            disabledRules: ['rule-a'],
+        $resolved = $this->resolveFeatureValues(
+            ['disabled_rules' => ['rule-a']],
+            ['disabled_rules' => ['rule-b', 'rule-c']],
         );
-
-        $merged = $base->merge([
-            'disabled_rules' => ['rule-b', 'rule-c'],
-        ]);
-
-        self::assertContains('rule-a', $merged->disabledRules);
-        self::assertContains('rule-b', $merged->disabledRules);
-        self::assertContains('rule-c', $merged->disabledRules);
+        self::assertSame(['rule-a', 'rule-b', 'rule-c'], $resolved->ruleSelection->disabled);
     }
 
     #[Test]
     public function itMergeAccumulatesExcludePaths(): void
     {
-        $base = new TransitionalRuntimeConfiguration(
-            excludePaths: ['src/Generated/*'],
+        $resolved = $this->resolveFeatureValues(
+            ['exclude_paths' => ['src/Generated/*']],
+            ['exclude_paths' => ['src/Legacy/*', 'src/Vendor/*']],
         );
-
-        $merged = $base->merge([
-            'exclude_paths' => ['src/Legacy/*', 'src/Vendor/*'],
-        ]);
-
-        self::assertSame(['src/Generated/*', 'src/Legacy/*', 'src/Vendor/*'], $merged->excludePaths);
+        self::assertSame(['src/Generated/*', 'src/Legacy/*', 'src/Vendor/*'], $resolved->findingExclusions->excludePaths);
     }
 
     #[Test]
     public function itMergeExcludePathsDeduplicates(): void
     {
-        $base = new TransitionalRuntimeConfiguration(
-            excludePaths: ['src/Generated/*'],
+        $resolved = $this->resolveFeatureValues(
+            ['exclude_paths' => ['src/Generated/*']],
+            ['exclude_paths' => ['src/Generated/*', 'src/Legacy/*']],
         );
-
-        $merged = $base->merge([
-            'exclude_paths' => ['src/Generated/*', 'src/Legacy/*'],
-        ]);
-
-        self::assertSame(['src/Generated/*', 'src/Legacy/*'], $merged->excludePaths);
+        self::assertSame(['src/Generated/*', 'src/Legacy/*'], $resolved->findingExclusions->excludePaths);
     }
 
     #[Test]
     public function itFromArrayParsesExcludeNamespaces(): void
     {
-        $config = TransitionalRuntimeConfiguration::fromArray([
+        $resolved = $this->resolveFeatureValues([
             'exclude_namespaces' => ['App\\Generated', 'App\\Legacy'],
         ]);
-
-        self::assertSame(['App\\Generated', 'App\\Legacy'], $config->excludeNamespaces);
+        self::assertSame(['App\\Generated', 'App\\Legacy'], $resolved->findingExclusions->excludeNamespaces);
     }
 
     #[Test]
     public function itMergeAccumulatesExcludeNamespaces(): void
     {
-        $base = new TransitionalRuntimeConfiguration(
-            excludeNamespaces: ['App\\Generated'],
+        $resolved = $this->resolveFeatureValues(
+            ['exclude_namespaces' => ['App\\Generated']],
+            ['exclude_namespaces' => ['App\\Legacy', 'App\\Vendor']],
         );
-
-        $merged = $base->merge([
-            'exclude_namespaces' => ['App\\Legacy', 'App\\Vendor'],
-        ]);
-
-        self::assertSame(['App\\Generated', 'App\\Legacy', 'App\\Vendor'], $merged->excludeNamespaces);
+        self::assertSame(['App\\Generated', 'App\\Legacy', 'App\\Vendor'], $resolved->findingExclusions->excludeNamespaces);
     }
 
     #[Test]
     public function itMergeExcludeNamespacesDeduplicates(): void
     {
-        $base = new TransitionalRuntimeConfiguration(
-            excludeNamespaces: ['App\\Generated'],
+        $resolved = $this->resolveFeatureValues(
+            ['exclude_namespaces' => ['App\\Generated']],
+            ['exclude_namespaces' => ['App\\Generated', 'App\\Legacy']],
         );
-
-        $merged = $base->merge([
-            'exclude_namespaces' => ['App\\Generated', 'App\\Legacy'],
-        ]);
-
-        self::assertSame(['App\\Generated', 'App\\Legacy'], $merged->excludeNamespaces);
+        self::assertSame(['App\\Generated', 'App\\Legacy'], $resolved->findingExclusions->excludeNamespaces);
     }
 
     #[Test]
     public function itMergeEmptyOnlyRulesResetsToEmpty(): void
     {
-        $base = new TransitionalRuntimeConfiguration(
-            onlyRules: ['complexity', 'size'],
-        );
-
-        $merged = $base->merge([
-            'only_rules' => [],
-        ]);
-
-        self::assertSame([], $merged->onlyRules);
+        $resolved = $this->resolveFeatureValues(['only_rules' => ['complexity', 'size']], ['only_rules' => []]);
+        self::assertSame([], $resolved->ruleSelection->only);
     }
 
     #[Test]
@@ -221,15 +212,8 @@ final class AnalysisConfigurationTest extends TestCase
     #[Test]
     public function itMergeWithoutOnlyRulesPreservesExisting(): void
     {
-        $base = new TransitionalRuntimeConfiguration(
-            onlyRules: ['complexity'],
-        );
-
-        $merged = $base->merge([
-            'format' => 'json',
-        ]);
-
-        self::assertSame(['complexity'], $merged->onlyRules);
+        $resolved = $this->resolveFeatureValues(['only_rules' => ['complexity']], ['format' => 'json']);
+        self::assertSame(['complexity'], $resolved->ruleSelection->only);
     }
 
     #[Test]
@@ -274,7 +258,7 @@ final class AnalysisConfigurationTest extends TestCase
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('format');
 
-        TransitionalRuntimeConfiguration::fromArray([
+        $this->resolveFeatureValues([
             'format' => 123,
         ]);
     }
@@ -327,21 +311,21 @@ final class AnalysisConfigurationTest extends TestCase
     public function itFromArrayAcceptsAbsentKeysWithDefaults(): void
     {
         $config = TransitionalRuntimeConfiguration::fromArray([]);
+        $resolved = $this->resolveFeatureValues([]);
 
         self::assertSame((string) getcwd() . '/.qmx-cache', $config->cacheDir->value());
         self::assertTrue($config->cacheEnabled);
-        self::assertSame('summary', $config->format);
+        self::assertSame('summary', $resolved->outputFormat->value);
         self::assertSame('chain', $config->namespaceStrategy);
         self::assertNull($config->composerJsonPath);
         self::assertSame([], $config->aggregationPrefixes);
         self::assertNull($config->aggregationAutoDepth);
-        self::assertSame([], $config->disabledRules);
-        self::assertSame([], $config->onlyRules);
-        self::assertSame([], $config->excludePaths);
-        self::assertSame([], $config->excludeNamespaces);
+        self::assertSame([], $resolved->ruleSelection->disabled);
+        self::assertSame([], $resolved->ruleSelection->only);
+        self::assertSame([], $resolved->findingExclusions->excludePaths);
+        self::assertSame([], $resolved->findingExclusions->excludeNamespaces);
         self::assertNull($config->workers);
         self::assertNull($config->failOn);
-        self::assertSame([], $config->excludeHealth);
         self::assertFalse($config->includeGenerated);
         self::assertSame([], $config->frameworkNamespaces);
         self::assertNull($config->memoryLimit);
@@ -366,22 +350,22 @@ final class AnalysisConfigurationTest extends TestCase
             'cache' => ['enabled' => null, 'dir' => null],
             ConfigSchema::DISABLED_RULES => null,
         ]);
+        $resolved = $this->resolveFeatureValues(['format' => null, ConfigSchema::DISABLED_RULES => null]);
 
-        self::assertSame('summary', $config->format);
+        self::assertSame('summary', $resolved->outputFormat->value);
         self::assertTrue($config->cacheEnabled);
         self::assertSame((string) getcwd() . '/.qmx-cache', $config->cacheDir->value());
-        self::assertSame([], $config->disabledRules);
+        self::assertSame([], $resolved->ruleSelection->disabled);
     }
 
     #[Test]
     public function itFromArrayRejectsNonStringListElements(): void
     {
-        self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('expected string, got int');
-
-        TransitionalRuntimeConfiguration::fromArray([
+        $resolved = $this->resolveFeatureValues([
             ConfigSchema::EXCLUDE_PATHS => ['src/*', 123],
         ]);
+
+        self::assertSame(['src/*'], $resolved->findingExclusions->excludePaths);
     }
 
     // --- failOn tests ---
@@ -665,5 +649,31 @@ final class AnalysisConfigurationTest extends TestCase
         $merged = $base->merge(['format' => 'json']);
 
         self::assertNull($merged->memoryLimit);
+    }
+
+    /** @param array<string, mixed> ...$layers */
+    private function resolveFeatureValues(array ...$layers): \Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration
+    {
+        $pipeline = new ConfigurationPipeline();
+        foreach (array_values($layers === [] ? [[]] : $layers) as $priority => $values) {
+            $pipeline->addStage(new class ($priority, $values) implements ConfigurationStageInterface {
+                /** @param array<string, mixed> $values */
+                public function __construct(private int $priority, private array $values) {}
+                public function priority(): int
+                {
+                    return $this->priority;
+                }
+                public function name(): string
+                {
+                    return 'test';
+                }
+                public function apply(ConfigurationContext $context): ConfigurationLayer
+                {
+                    return new ConfigurationLayer('test', $this->values);
+                }
+            });
+        }
+
+        return $pipeline->resolve(new ConfigurationContext(self::createStub(InputInterface::class), (string) getcwd()));
     }
 }

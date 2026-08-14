@@ -42,7 +42,14 @@ This decision establishes the target layout. P0 governance is live, P1 landed
 `Analysis\Evidence\Duplication`, P2 landed
 `Analysis\Evidence\DependencyModel` plus `Reporting\GraphProjection`, and P3
 landed `Analysis\Run`, `Analysis\Evidence\Measurement`, and
-`Analysis\Configuration`. P4-P8 remain future work. The versioned internal
+`Analysis\Configuration`. P4 landed `Analysis\Policy\Architecture` and
+`Analysis\Evidence\CircularDependency`; P5 landed
+`Analysis\Evidence\ComputedMetrics` and its Health subdomain. P6 subsequently
+landed `Analysis\Finding`,
+`Analysis\Policy\Inline`, `Analysis\Policy\Baseline`,
+`Analysis\Evidence\Prioritization`, and `Reporting\FindingProjection`, with
+Git retained as an Infrastructure adapter behind the Reporting port. P7-P8
+remain future work. The versioned internal
 manifest is authoritative for the current declarations and semantic owners,
 and its generated qmx projection enforces their coarse topology.
 
@@ -59,7 +66,8 @@ builder, and empty implementations internal. P3 adds its
 visitor, and handler internals private. GraphProjection publishes only
 its projection interface and immutable request; Console remains an adapter and
 cannot import DOT/JSON implementations. Resolver, visitor, and handlers are now
-DependencyModel extraction internals; cycle declarations remain P4 inputs.
+DependencyModel extraction internals; P4 moved cycle declarations to their own
+CircularDependency evidence leaf.
 
 ### Contracts require named consumers
 
@@ -106,7 +114,7 @@ this decision does not legitimise them by analogy.
   not the manifest and not an independent source of ownership truth.
 
 Every current production declaration has one explicit semantic owner in the
-internal manifest. The post-P3 snapshot contains 717 declarations in 715 files
+internal manifest. The post-P5 snapshot contains 739 declarations in 737 files
 and 37 owners. The generator projects that intent into a coarse qmx owner/seam
 block and review inventories. Open-ended owner templates such as a category
 wildcard are prohibited because a new sibling would be silently enrolled.
@@ -115,9 +123,9 @@ that removes it; the manifest checker, not qmx, enforces that exactness.
 
 ### Fail-closed project topology
 
-The P3 manifest has 37 semantic-owner layers, 11 singleton enforcement seams,
-and 67 exact internal grants collapsing to 12 coarse owner pairs. The generated
-qmx projection has 266 declared allow edges; generated output is not a second
+The P5 manifest has 37 semantic-owner layers, 6 singleton enforcement seams,
+and 62 exact internal grants collapsing to 10 coarse owner pairs. The generated
+qmx projection has 250 declared allow edges; generated output is not a second
 source of truth.
 `external` excludes `Qualimetrix\**`, and `coverage: error`
 includes every analysed logical class outside all declared layers even when it
@@ -168,7 +176,7 @@ architectural allow edge must be removed or pointed in the dependency direction.
   migrated before analysis can start.
 - Fail-closed ownership detects both edge-connected and isolated unowned code.
 - The internal owner manifest remains the source for generated qmx ownership
-  and inventories while P4-P8 close the remaining temporary grants and seams. Generated
+  and inventories while P7-P8 close the remaining temporary grants. Generated
   inventories remain auditable projections and can be deleted and regenerated
   without affecting runtime behaviour.
 

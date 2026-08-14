@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Security;
 
-use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
  * Detects potential command injection vulnerabilities.

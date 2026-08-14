@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Unit\Rules\CodeSmell;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Rules\CodeSmell\ErrorSuppressionOptions;
 
 #[CoversClass(ErrorSuppressionOptions::class)]

@@ -1,5 +1,10 @@
 # 0010. Architecture as Vertical Slice — Pilot
 
+> **Superseded for current implementation.** This records the historical pilot.
+> P4 separated declared-layer policy and circular-dependency evidence into two
+> leaf capabilities under the direction accepted by
+> [ADR 0022](0022-capability-oriented-modular-monolith.md).
+
 **Date:** 2026-05-15
 **Status:** Superseded by [ADR 0016](0016-subject-cohesion.md) on Part 5 (internal freedom). Other parts remain in force.
 **Builds on:** [0008 — `ArchitectureProcessor` Service](0008-architecture-processor-service.md)

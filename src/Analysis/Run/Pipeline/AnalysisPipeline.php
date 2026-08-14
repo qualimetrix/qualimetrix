@@ -8,13 +8,24 @@ use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
-
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleMatcher;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
@@ -26,31 +37,14 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
 use Qualimetrix\Analysis\Run\Discovery\GeneratedFilePolicy;
-use Qualimetrix\Analysis\Run\Enrichment\TransitionalEnrichmentResult;
-use Qualimetrix\Analysis\Run\Enrichment\TransitionalMetricEnricher;
-use Qualimetrix\Architecture\Domain\Layer\ClassContextFactory;
-use Qualimetrix\Architecture\Domain\Layer\ClassSet;
-use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
-use Qualimetrix\Architecture\Rules\LayerViolationRule;
+use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Profiler\ProfilerInterface;
-use Qualimetrix\Core\Rule\AnalysisContext;
-use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
-use Qualimetrix\Core\Rule\InMemoryRuleChannelRegistry;
-use Qualimetrix\Core\Rule\RuleMatcher;
-use Qualimetrix\Core\Rule\RuleSelector;
-use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Core\Suppression\ThresholdDiagnostic;
-use Qualimetrix\Core\Suppression\ThresholdOverride;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
 use SplFileInfo;
 
 /**
@@ -60,8 +54,11 @@ use SplFileInfo;
  * 1. Discovery - Find PHP files to analyze
  * 2. Collection - Parse files and collect metrics + dependencies (single AST traversal)
  * 3. Build dependency graph from collected dependencies
- * 4. Enrichment - Aggregation, global collectors, computed metrics, circular deps, duplication
- * 5. Rule execution - Run analysis rules
+ * 4. Measurement aggregation and global reaggregation
+ * 5. Computed metric evaluation
+ * 6. Circular dependency preparation
+ * 7. File-set inspection
+ * 8. Rule execution
  */
 final class AnalysisPipeline implements AnalysisPipelineInterface
 {
@@ -70,15 +67,15 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
     public function __construct(
         private readonly AnalysisFileDiscovery $analysisFileDiscovery,
         private readonly CollectionOrchestratorInterface $collectionOrchestrator,
-        private readonly RuleExecutorInterface $ruleExecutor,
+        private readonly RuleExecutionInterface $ruleExecutor,
         private readonly TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
-        private readonly TransitionalMetricEnricher $metricEnricher,
-        private readonly ArchitectureProcessorInterface $architectureProcessor,
+        private readonly RuleProducerPreparation $ruleProducerPreparation,
+        private readonly MeasurementAggregationInterface $measurementAggregation,
+        private readonly ComputedMetricEvaluator $computedMetricEvaluation,
         DependencyGraphBuilderInterface $graphBuilder,
         private readonly MetricRepositoryFactoryInterface $repositoryFactory,
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly ?ProfilerHolder $profilerHolder = null,
-        private readonly RuleSelector $ruleSelector = new RuleSelector(new InMemoryRuleChannelRegistry()),
     ) {
         $this->graphBuilder = $graphBuilder;
     }
@@ -147,46 +144,36 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         unset($collectionOutput); // Free raw dependencies — no longer needed
         $profiler->stop('dependency');
 
-        // Phase 2.6: Prepare ArchitectureProcessor with this run's graph and
-        // class set (ADR 0008). The processor expands template layers (when
-        // present), binds the registry's ClassContextFactory to $graph, and
-        // exposes the resulting ArchitectureConfiguration through
-        // getPreparedConfiguration() for the rule layer.
-        //
-        // Skipped when `architecture.layer-violation` is disabled — that is the
-        // only consumer of getPreparedConfiguration() (its diagnostics
-        // architecture.empty-template / .unreachable-layer / .potential-shadow
-        // are emitted from the same rule). Template expansion and graph bind
-        // are pure waste in that case. Symmetric with the duplication skip in
-        // TransitionalMetricEnricher (CLAUDE.md §3).
-        //
-        // ADR 0008 §3 fail-fast contract: bind() must have been called before
-        // prepare(). Production wiring (RuntimeConfigurator) binds before this
-        // pipeline runs. Tests that construct AnalysisPipeline directly must
-        // provide an already-bound processor — TestPipelineBuilder handles this.
-        $this->prepareArchitectureForRun(
+        // Phase 2.6: prepare Architecture-owned layer policy from this run's
+        // graph and class universe. Run selects the producer rule through its
+        // public contract and never receives Architecture state.
+        $this->ruleProducerPreparation->prepareArchitecture(
             $graph,
-            $repository,
-            $config->onlyRules,
-            $config->disabledRules,
+            self::collectClassPaths($repository),
             $profiler,
         );
 
-        // Phases 3-3.8: Enrichment (aggregation, global collectors, computed metrics,
-        // circular dependency detection, duplication detection)
-        $enrichmentResult = $this->metricEnricher->enrich(
-            $repository,
+        // Phase 3: Measurement aggregation and global reaggregation.
+        $namespaceTree = $this->measurementAggregation->aggregate($repository, $graph);
+
+        // Phase 4: Computed metric evaluation.
+        $this->computedMetricEvaluation->evaluate($repository, $collectionResult->filesAnalyzed);
+
+        // Phase 5: Circular dependency preparation.
+        $this->ruleProducerPreparation->prepareCircularDependencies(
             $graph,
-            $files,
-            $collectionResult->filesAnalyzed,
+            $profiler,
         );
 
-        // Phase 4: Rule execution
+        // Phase 6: File-set inspection.
+        $this->ruleProducerPreparation->inspectFiles($files);
+
+        // Phase 7: Rule execution.
         $phaseStartTime = microtime(true);
         $this->logger->debug('Starting analysis phase');
 
         $profiler->start('rules', 'pipeline');
-        $violations = $this->executeRulesForRun($repository, $graph, $enrichmentResult, $collectionResult);
+        $violations = $this->executeRulesForRun($repository, $graph, $namespaceTree, $collectionResult);
         $profiler->stop('rules');
 
         $analysisTime = microtime(true) - $phaseStartTime;
@@ -221,7 +208,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             metrics: $repository,
             coverage: $coverage,
             suppressions: $collectionResult->suppressions,
-            namespaceTree: $enrichmentResult->namespaceTree,
+            namespaceTree: $namespaceTree,
             thresholdOverrides: $collectionResult->thresholdOverrides,
         );
     }
@@ -234,40 +221,18 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         return $this->graphBuilder->build($dependencies, self::collectLogicalClassPaths($repository));
     }
 
-    /**
-     * @param list<string> $onlyRules
-     * @param list<string> $disabledRules
-     */
-    private function prepareArchitectureForRun(
-        DependencyGraphInterface $graph,
-        MetricRepositoryInterface $repository,
-        array $onlyRules,
-        array $disabledRules,
-        ProfilerInterface $profiler,
-    ): void {
-        if (!$this->ruleSelector->isProducerEnabled(LayerViolationRule::NAME, $onlyRules, $disabledRules)) {
-            return;
-        }
-
-        $profiler->start('architecture-prepare', 'pipeline');
-        $classSet = new ClassSet(self::collectClassPaths($repository), new ClassContextFactory());
-        $this->architectureProcessor->prepare($graph, $classSet);
-        $profiler->stop('architecture-prepare');
-    }
-
     /** @return list<Violation> */
     private function executeRulesForRun(
         MetricRepositoryInterface $repository,
         DependencyGraphInterface $graph,
-        TransitionalEnrichmentResult $enrichmentResult,
+        NamespaceTree $namespaceTree,
         CollectionPhaseOutput $collectionResult,
     ): array {
         $context = new AnalysisContext(
             metrics: $repository,
             ruleOptions: $this->configurationProvider->getRuleOptions(),
             dependencyGraph: $graph,
-            cycles: $enrichmentResult->cycles,
-            namespaceTree: $enrichmentResult->namespaceTree,
+            namespaceTree: $namespaceTree,
             thresholdOverrides: $collectionResult->thresholdOverrides,
         );
         $violations = $this->ruleExecutor->execute($context);
@@ -406,10 +371,10 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
     private function collectThresholdSupportedRuleNames(): array
     {
         return array_values(array_map(
-            static fn($rule): string => $rule->getName(),
+            static fn($rule): string => $rule->name,
             array_filter(
-                $this->ruleExecutor->getAllRules(),
-                fn($rule): bool => $this->ruleSupportsThresholdOverrides($rule::getOptionsClass()),
+                $this->ruleExecutor->allRules(),
+                fn($rule): bool => $this->ruleSupportsThresholdOverrides($rule->optionsClass),
             ),
         ));
     }

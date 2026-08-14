@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
-use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
-use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface;
@@ -19,15 +24,10 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
-use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
-use Qualimetrix\Configuration\RuleOptionsRegistry;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Rule\RuleSelector;
 use Qualimetrix\Infrastructure\Console\Progress\DelegatingProgressReporter;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
-use Qualimetrix\Metrics\ComputedMetric\ComputedMetricEvaluator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -44,14 +44,15 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     private const string ANALYSIS_PIPELINE_CLASS = 'Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline';
     private const string RULE_SELECTOR_PRODUCER_GATE = 'qmx.analysis.run.rule_selector_producer_gate';
     private const string RULE_SELECTOR_PRODUCER_GATE_CLASS = 'Qualimetrix\\Analysis\\Run\\FileSetInspection\\RuleSelectorProducerGate';
-    private const string TRANSITIONAL_METRIC_ENRICHER = 'qmx.run.transitional_metric_enricher';
-    private const string TRANSITIONAL_METRIC_ENRICHER_CLASS = 'Qualimetrix\\Analysis\\Run\\Enrichment\\TransitionalMetricEnricher';
+    private const string RULE_PRODUCER_PREPARATION = 'qmx.analysis.run.rule_producer_preparation';
+    private const string RULE_PRODUCER_PREPARATION_CLASS = 'Qualimetrix\\Analysis\\Run\\RuleProducerPreparation';
     private const string FILE_DISCOVERY = 'qmx.run.file_discovery';
     private const string FILE_DISCOVERY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\FinderFileDiscovery';
     private const string ANALYSIS_FILE_DISCOVERY = 'qmx.analysis.run.file_discovery';
     private const string ANALYSIS_FILE_DISCOVERY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\AnalysisFileDiscovery';
     private const string FILE_PROCESSOR = 'qmx.run.file_processor';
     private const string FILE_PROCESSOR_CLASS = 'Qualimetrix\\Analysis\\Run\\Collection\\FileProcessor';
+    private const string SOURCE_CONTROL_EXTRACTOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor';
     private const string FILE_DISCOVERY_FACTORY = 'qmx.run.file_discovery_factory';
     private const string FILE_DISCOVERY_FACTORY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\FileDiscoveryFactory';
     private const string GENERATED_FILE_FILTER = 'qmx.run.generated_file_filter';
@@ -75,6 +76,13 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         // by ThresholdValidatorMapCompilerPass after RuleRegistryCompilerPass runs
         $container->register(ThresholdOverrideExtractor::class)
             ->setArguments(['$validators' => []]);
+        $container->register(SuppressionExtractor::class);
+        $privateExtractorId = self::SOURCE_CONTROL_EXTRACTOR_CLASS;
+        $container->register($privateExtractorId, $privateExtractorId)
+            ->setArguments([
+                new Reference(SuppressionExtractor::class),
+                new Reference(ThresholdOverrideExtractor::class),
+            ]);
 
         // FileProcessor - processes single files. projectRoot is set at runtime
         // by CollectionOrchestrator (sequential side) and WorkerBootstrap
@@ -84,7 +92,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 '$parser' => new Reference(FileParserInterface::class),
                 '$collector' => new Reference(FileMeasurementCollectorInterface::class),
-                '$thresholdOverrideExtractor' => new Reference(ThresholdOverrideExtractor::class),
+                '$sourceControlExtractor' => new Reference($privateExtractorId),
             ]);
         $container->setAlias(FileProcessorInterface::class, self::FILE_PROCESSOR);
 
@@ -99,16 +107,6 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(DelegatingLogger::class),
             ]);
         $container->setAlias(CollectionOrchestratorInterface::class, self::COLLECTION_ORCHESTRATOR);
-
-        // RuleExecutor will have rules injected by compiler pass
-        $container->register(RuleExecutor::class)
-            ->setArguments([
-                '$rules' => [], // Will be set by RuleCompilerPass
-                '$configurationProvider' => new Reference(TransitionalRuntimeConfigurationProviderInterface::class),
-                '$ruleOptionsRegistry' => new Reference(RuleOptionsRegistry::class),
-                '$ruleSelector' => new Reference(RuleSelector::class),
-            ]);
-        $container->setAlias(RuleExecutorInterface::class, RuleExecutor::class);
 
         // DependencyModel publishes the builder only through its contract.
         $container->register(
@@ -127,34 +125,41 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 '$profilerHolder' => new Reference(ProfilerHolder::class),
             ]);
 
-        // TransitionalMetricEnricher - handles aggregation, global collectors, computed metrics and cycles.
-        $container->register(self::TRANSITIONAL_METRIC_ENRICHER, self::TRANSITIONAL_METRIC_ENRICHER_CLASS)
-            ->setArguments([
-                new Reference(MeasurementAggregationInterface::class),
-                new Reference(TransitionalRuntimeConfigurationProviderInterface::class),
-                new Reference(ProfilerHolder::class),
-                new Reference(self::FILE_SET_INSPECTION_COMPOSITE),
-                new Reference(ComputedMetricEvaluator::class),
-                new Reference(RuleSelector::class),
-            ]);
+        $this->registerRuleProducerPreparation($container);
+        $this->registerAnalysisPipeline($container);
+    }
 
-        // AnalysisPipeline - main orchestrator
-        // ArchitectureProcessor (via interface alias registered by
-        // ArchitectureConfigurator) is the per-run lifecycle coordinator for
-        // architecture rules — see ADR 0008.
+    private function registerRuleProducerPreparation(ContainerBuilder $container): void
+    {
+        $container->register(self::RULE_PRODUCER_PREPARATION, self::RULE_PRODUCER_PREPARATION_CLASS)
+            ->setArguments([
+                new Reference(LayerPolicyPreparationInterface::class),
+                new Reference(CircularDependencyPreparationInterface::class),
+                new Reference(self::FILE_SET_INSPECTION_COMPOSITE),
+                new Reference(RuleSelector::class),
+                new Reference(RuleConfigurationInterface::class),
+            ]);
+    }
+
+    private function registerAnalysisPipeline(ContainerBuilder $container): void
+    {
+        $computedMetricEvaluation = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator';
+
+        // AnalysisPipeline owns the complete phase order while every capability
+        // retains its own state behind a narrow public contract.
         $container->register(self::ANALYSIS_PIPELINE, self::ANALYSIS_PIPELINE_CLASS)
             ->setArguments([
                 new Reference(self::ANALYSIS_FILE_DISCOVERY),
                 new Reference(CollectionOrchestratorInterface::class),
-                new Reference(RuleExecutorInterface::class),
+                new Reference(RuleExecutionInterface::class),
                 new Reference(TransitionalRuntimeConfigurationProviderInterface::class),
-                new Reference(self::TRANSITIONAL_METRIC_ENRICHER),
-                new Reference(ArchitectureProcessorInterface::class),
+                new Reference(self::RULE_PRODUCER_PREPARATION),
+                new Reference(MeasurementAggregationInterface::class),
+                new Reference($computedMetricEvaluation),
                 new Reference(DependencyGraphBuilderInterface::class),
                 new Reference(MetricRepositoryFactoryInterface::class),
                 new Reference(DelegatingLogger::class),
                 new Reference(ProfilerHolder::class),
-                new Reference(RuleSelector::class),
             ])
             ->setPublic(true);
         $container->setAlias(AnalysisPipelineInterface::class, self::ANALYSIS_PIPELINE)

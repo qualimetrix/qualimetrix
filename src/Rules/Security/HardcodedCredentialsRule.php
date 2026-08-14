@@ -6,17 +6,17 @@ namespace Qualimetrix\Rules\Security;
 
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
-use Qualimetrix\Core\Rule\AnalysisContext;
-use Qualimetrix\Core\Rule\RuleCategory;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Violation\ChannelDeclaration;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\OccurrenceKey;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Core\Violation\ViolationChannel;
-use Qualimetrix\Rules\AbstractRule;
 
 /**
  * Detects hardcoded credentials in PHP code.
@@ -140,7 +140,7 @@ final class HardcodedCredentialsRule extends AbstractRule
      * `security.hardcoded-credentials` reports a fixed `1.0` occurrence
      * marker per entry (see the emission above). Severity receives the same
      * fixed per-occurrence value `1` via
-     * {@see \Qualimetrix\Rules\AbstractRule::getEffectiveSeverity()}, and
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule::getEffectiveSeverity()}, and
      * {@see HardcodedCredentialsOptions::getSeverity()} only checks that the
      * value is greater than zero. There is no live threshold that varies the
      * outcome, so no direction to declare.

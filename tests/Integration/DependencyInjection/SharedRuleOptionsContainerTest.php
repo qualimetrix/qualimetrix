@@ -7,14 +7,15 @@ namespace Qualimetrix\Tests\Integration\DependencyInjection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Configuration\RuleOptionsFactory;
-use Qualimetrix\Configuration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Rule\RuleInterface;
-use Qualimetrix\Core\Rule\RuleOptionsInterface;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass;
-use Qualimetrix\Rules\AbstractRule;
 use Qualimetrix\Rules\CodeSmell\CodeSmellOptions;
 use Qualimetrix\Rules\CodeSmell\CountInLoopRule;
 use Qualimetrix\Rules\CodeSmell\DebugCodeRule;
@@ -35,7 +36,7 @@ use Symfony\Component\DependencyInjection\Reference;
 final class SharedRuleOptionsContainerTest extends TestCase
 {
     /**
-     * @var array<class-string<RuleInterface>, class-string<RuleOptionsInterface>>
+     * @var array<class-string<RuleDefinitionInterface>, class-string<RuleOptionsInterface>>
      */
     private const array PRODUCERS = [
         CountInLoopRule::class => CodeSmellOptions::class,
@@ -90,13 +91,11 @@ final class SharedRuleOptionsContainerTest extends TestCase
         self::assertFalse($optionsByProducer[SqlInjectionRule::NAME]->isEnabled());
         self::assertFalse($optionsByProducer[XssRule::NAME]->isEnabled());
 
-        $pathExclusions = $registry->getPathExclusionProvider();
-        self::assertTrue($pathExclusions->isExcluded(EvalRule::NAME, RelativePath::fromString('src/Eval/File.php')));
-        self::assertFalse($pathExclusions->isExcluded(CountInLoopRule::NAME, RelativePath::fromString('src/Eval/File.php')));
+        self::assertTrue($registry->isPathExcluded(EvalRule::NAME, RelativePath::fromString('src/Eval/File.php')));
+        self::assertFalse($registry->isPathExcluded(CountInLoopRule::NAME, RelativePath::fromString('src/Eval/File.php')));
 
-        $namespaceExclusions = $registry->getExclusionProvider();
-        self::assertTrue($namespaceExclusions->isExcluded(GotoRule::NAME, 'App\\Legacy\\Service'));
-        self::assertFalse($namespaceExclusions->isExcluded(DebugCodeRule::NAME, 'App\\Legacy\\Service'));
+        self::assertTrue($registry->isNamespaceExcluded(GotoRule::NAME, 'App\\Legacy\\Service'));
+        self::assertFalse($registry->isNamespaceExcluded(DebugCodeRule::NAME, 'App\\Legacy\\Service'));
     }
 
     private function createContainer(): ContainerBuilder

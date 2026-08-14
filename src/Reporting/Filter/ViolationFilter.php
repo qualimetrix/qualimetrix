@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Filter;
 
-use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Health\WorstOffender;
 
 /**
  * Filters violations and worst offenders by namespace/class context.

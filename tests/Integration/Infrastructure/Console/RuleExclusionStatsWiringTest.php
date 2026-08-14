@@ -20,12 +20,12 @@ use Symfony\Component\Console\Tester\CommandTester;
  * Regression guard for the assumption behind `--show-suppressed` reporting
  * per-rule `exclude_namespaces`, `exclude_namespace_channels`, and `exclude_paths` suppressions
  * ({@see RuleExclusionStats}): {@see ViolationFilterOrchestrator} reads
- * {@see RuleExecutorInterface::getRuleExclusionStats()} and implicitly relies
+ * {@see RuleExecutionInterface::exclusionStats()} and implicitly relies
  * on the container handing it the *same shared instance* that
  * `AnalysisPipeline` just ran `execute()` on.
  *
  * The unit test ({@see \Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorTest})
- * substitutes a stub `RuleExecutorInterface`, so it cannot see a wiring
+ * substitutes a stub `RuleExecutionInterface`, so it cannot see a wiring
  * regression (e.g. the service becoming non-shared or wrapped in a
  * decorator) — that would silently turn the feature into a no-op with every
  * existing test still green. This test runs the real production container
@@ -49,11 +49,11 @@ final class RuleExclusionStatsWiringTest extends TestCase
     }
 
     #[Test]
-    public function itSharesTheSameRuleExecutorInstanceBetweenThePipelineAndTheOrchestrator(): void
+    public function itSharesTheSameRuleExecutionInstanceBetweenThePipelineAndTheOrchestrator(): void
     {
         // Cheap, precise complement to the end-to-end test below: proves the
         // exact assumption ViolationFilterOrchestrator relies on, without
-        // needing a real analysis run to observe it. RuleExecutorInterface
+        // needing a real analysis run to observe it. RuleExecutionInterface
         // itself is private/inlined in the compiled container (not reachable
         // via $container->get()), so both instances are recovered via
         // reflection from the two public consumers that are wired to it.
@@ -72,7 +72,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
         self::assertSame(
             $ruleExecutorFromPipeline,
             $ruleExecutorFromOrchestrator,
-            'RuleExecutorInterface must be a shared service — ViolationFilterOrchestrator '
+            'RuleExecutionInterface must be a shared service — ViolationFilterOrchestrator '
                 . 'reads stats produced by whichever instance the pipeline executed rules on.',
         );
     }
@@ -128,7 +128,7 @@ final class RuleExclusionStatsWiringTest extends TestCase
         self::assertStringContainsString('0 error(s), 0 warning(s)', $display);
 
         // But the per-rule exclusion mechanism must still have run inside
-        // RuleExecutor and its stats must have reached the orchestrator's
+        // RuleExecution and its stats must have reached the orchestrator's
         // output — proving the shared-instance assumption holds end-to-end,
         // not just in isolation.
         self::assertStringContainsString(

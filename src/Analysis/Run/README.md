@@ -21,21 +21,21 @@ Run/
 ├── Contract/
 │   ├── Collection/             # collection inputs and wire-safe outputs
 │   ├── Discovery/              # discovery contracts
-│   ├── Lifecycle/              # run lifecycle hook
 │   ├── Pipeline/               # analysis result and coverage contracts
 │   └── FileSetInspectionParticipantInterface.php
 ├── Collection/                 # orchestration and per-file processing
 ├── Discovery/                  # discovery coordination and implementations
-├── Enrichment/                 # transitional sequencing only; exits in P4/P5
 ├── FileSetInspection/          # rule-selected composite
-└── Pipeline/                   # ordered analysis pipeline
+├── Pipeline/                   # ordered analysis pipeline
+└── RuleProducerPreparation.php # capability-specific producer gating and reset
 ```
 
 ## Phase order
 
 ```text
-Discovery -> Collection -> DependencyModel build -> Architecture preparation
-          -> transitional enrichment -> Rule execution -> result projection
+Discovery -> Collection -> DependencyModel build -> Architecture policy ->
+Measurement aggregation -> ComputedMetrics evaluation -> CircularDependency
+preparation -> FileSet inspection -> Rule execution -> result projection
 ```
 
 `AnalysisFileDiscovery` coordinates the default or explicit discovery strategy,
@@ -53,9 +53,9 @@ overrides, and threshold diagnostics. The same value graph crosses PHP and
 igbinary worker serialization; services and capability-owned state never cross
 it. DependencyModel receives
 collected dependency occurrences through its public builder contract.
-Measurement owns repository creation and aggregation; Run only orders its
-invocation through the transitional enricher until P4/P5 close that sequencing
-seam.
+Measurement owns repository creation and aggregation. ComputedMetrics owns
+formula definitions and evaluation; Run invokes only its evaluation contract
+and stores no computed-metric state or result payload.
 
 ## Contracts and consumers
 
@@ -70,6 +70,12 @@ seam.
   metric-derivation participant port.
 - `DependencyTraversalParticipantInterface` belongs to DependencyModel, not
   Run: it promises extraction to its named consumers.
+- `LayerPolicyPreparationInterface` and
+  `CircularDependencyPreparationInterface` are capability-specific P4
+  contracts, not a generic lifecycle or graph-participant registry.
+- `RuleProducerPreparation` coordinates their rule selection, reset and
+  profiling with file-set inspection while `AnalysisPipeline` retains the
+  complete phase order. It stores no capability result.
 
 ## Test ownership
 

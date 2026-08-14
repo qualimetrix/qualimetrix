@@ -53,19 +53,15 @@ final class ConfigSchema
     public const string AGGREGATION_AUTO_DEPTH = 'aggregation.auto_depth';
     public const string PARALLEL_WORKERS = 'parallel.workers';
     public const string COUPLING_FRAMEWORK_NAMESPACES = 'coupling.framework_namespaces';
-    public const string COMPUTED_METRICS = 'computed_metrics';
-    public const string EXCLUDE_HEALTH = 'exclude_health';
+    public const string COMPUTED_METRICS = 'computedMetrics';
+    public const string EXCLUDE_HEALTH = 'excludeHealth';
     public const string INCLUDE_GENERATED = 'include_generated';
     public const string MEMORY_LIMIT = 'memory_limit';
     public const string ARCHITECTURE = 'architecture';
 
-    // Note: `architecture.max_expanded_layers` (Phase 2 direction 2) is a
-    // sub-key under the MIXED `architecture` root and lives in its sibling
-    // {@see \Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory}
-    // alongside `layers`, `allow`, and `coverage`. The default value is
-    // {@see \Qualimetrix\Architecture\Domain\ArchitectureConfiguration::DEFAULT_MAX_EXPANDED_LAYERS}.
-    // It does not appear in ENTRIES because sub-keys of a MIXED root are
-    // validated by the dedicated factory, not by the generic schema.
+    // The architecture root is transported as a preserve-subtree associative
+    // document. Its subject-owned syntax and merge semantics are not part of
+    // this neutral schema.
 
     /** Internal key: set by DefaultsStage only, not YAML-configurable. */
     public const string PROJECT_ROOT = 'project_root';
@@ -79,6 +75,9 @@ final class ConfigSchema
      * @var list<string>
      */
     public const array INTERNAL_KEYS = [self::PROJECT_ROOT];
+
+    /** Capability-owned roots transported in ordered configuration documents. */
+    public const array DOCUMENT_ROOTS = [self::COMPUTED_METRICS, self::EXCLUDE_HEALTH, self::ARCHITECTURE];
 
     // -------------------------------------------------------------------------
     // Root key types
@@ -127,8 +126,6 @@ final class ConfigSchema
         ['coupling.frameworkNamespaces', self::COUPLING_FRAMEWORK_NAMESPACES, null],
 
         // Top-level camelCase keys (loader normalizes snake_case before these are resolved)
-        ['computedMetrics', self::COMPUTED_METRICS, self::MIXED],
-        ['excludeHealth', self::EXCLUDE_HEALTH, self::LIST],
         ['includeGenerated', self::INCLUDE_GENERATED, self::SCALAR],
         ['memoryLimit', self::MEMORY_LIMIT, self::SCALAR],
 
@@ -151,7 +148,7 @@ final class ConfigSchema
             $keys[$root] = true;
         }
 
-        return array_keys($keys);
+        return array_values(array_unique([...array_keys($keys), ...self::DOCUMENT_ROOTS]));
     }
 
     /**
@@ -232,7 +229,7 @@ final class ConfigSchema
             'excludePaths' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'excludeNamespaces' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'failOn' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
-            'excludeHealth' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
+            self::EXCLUDE_HEALTH => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'includeGenerated' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'memoryLimit' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
 
@@ -246,7 +243,7 @@ final class ConfigSchema
             // Identifier sections — level-1 keys are user-defined identifiers
             // (rule slugs / metric names); level-2+ are typed option keys.
             self::RULES => SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN,
-            'computedMetrics' => SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN,
+            self::COMPUTED_METRICS => SectionNormalizationPolicy::PRESERVE_IMMEDIATE_CHILDREN,
 
             // Architecture — PRESERVE_SUBTREE since Phase 3.5 (ADR 0009).
             // Closes the C1 max_expanded_layers scalar-leaf bug: the entire
@@ -312,6 +309,8 @@ final class ConfigSchema
             $keys[$root] = true;
         }
 
+        $keys[self::COMPUTED_METRICS] = true;
+
         return array_keys($keys);
     }
 
@@ -330,6 +329,8 @@ final class ConfigSchema
                 $lists[$root] = true;
             }
         }
+
+        $lists[self::EXCLUDE_HEALTH] = true;
 
         return array_keys($lists);
     }

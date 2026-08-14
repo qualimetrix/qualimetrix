@@ -7,14 +7,11 @@ namespace Qualimetrix\Infrastructure\Console;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
-use Qualimetrix\Architecture\Domain\Layer\ClassContextFactory;
-use Qualimetrix\Architecture\Domain\Layer\ClassSet;
-use Qualimetrix\Architecture\Domain\Layer\LayerMatch;
-use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -27,7 +24,7 @@ final readonly class LayerAssignmentResolver
     public function __construct(
         private CollectionOrchestratorInterface $collectionOrchestrator,
         private DependencyGraphBuilderInterface $graphBuilder,
-        private ArchitectureProcessorInterface $processor,
+        private LayerAssignmentInspectorInterface $layerAssignmentInspector,
         private MetricRepositoryFactoryInterface $repositoryFactory,
         private FileDiscoveryFactoryInterface $fileDiscoveryFactory,
         private GeneratedFileFilterInterface $generatedFileFilter,
@@ -37,7 +34,7 @@ final readonly class LayerAssignmentResolver
      * @param list<string> $paths
      * @param list<string> $pathExcludes
      *
-     * @return array{matches: list<LayerMatch>, hasLayers: bool}
+     * @return array{matches: list<\Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch>, hasLayers: bool}
      */
     public function resolve(
         array $paths,
@@ -56,7 +53,7 @@ final readonly class LayerAssignmentResolver
      * @param list<string> $paths
      * @param list<string> $pathExcludes
      *
-     * @return array{matches: list<LayerMatch>, hasLayers: bool}
+     * @return array{matches: list<\Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch>, hasLayers: bool}
      */
     public function resolveIncludingGenerated(
         array $paths,
@@ -70,7 +67,7 @@ final readonly class LayerAssignmentResolver
     /**
      * @param list<SplFileInfo> $files
      *
-     * @return array{matches: list<LayerMatch>, hasLayers: bool}
+     * @return array{matches: list<\Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch>, hasLayers: bool}
      */
     private function resolveFiles(array $files, AbsolutePath $projectRoot, SymbolPath $symbol): array
     {
@@ -85,15 +82,11 @@ final readonly class LayerAssignmentResolver
         }
         $graph = $this->graphBuilder->build($collection->dependencies, array_values($logicalClassUniverse));
 
-        $this->processor->prepare($graph, new ClassSet($this->classPaths($repository), new ClassContextFactory()));
-
-        $prepared = $this->processor->getPreparedConfiguration();
-        \assert($prepared !== null);
-        $registry = $prepared->registry();
+        $assignment = $this->layerAssignmentInspector->inspect($graph, $this->classPaths($repository), $symbol);
 
         return [
-            'matches' => $registry->resolveAll($symbol),
-            'hasLayers' => !$registry->isEmpty(),
+            'matches' => $assignment->matches,
+            'hasLayers' => $assignment->hasLayers,
         ];
     }
 

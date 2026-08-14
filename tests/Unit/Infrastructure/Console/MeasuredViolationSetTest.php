@@ -7,27 +7,31 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Console;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStage;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
+use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
-use Qualimetrix\Baseline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Suppression\Suppression;
-use Qualimetrix\Core\Suppression\SuppressionType;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Filter\ViolationFilterStage;
-use Qualimetrix\Core\Violation\Filter\ViolationFilterStageInterface;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Infrastructure\Console\CliOnlyNarrowing;
 use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
+use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
+use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
+use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult;
+use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\FindingProjector;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 
 /**
  * The seam of ADR 0017: paths in, the set a baseline measures out, with no
@@ -45,7 +49,7 @@ final class MeasuredViolationSetTest extends TestCase
 
         $set = $this->createSet(
             [$ignored, $reported],
-            new TransitionalRuntimeConfiguration(),
+            new FindingProjectionOptions(),
             [
                 'src/Legacy/Service.php' => [
                     new Suppression(rule: '*', reason: 'Reviewed', line: 1, type: SuppressionType::File),
@@ -63,15 +67,19 @@ final class MeasuredViolationSetTest extends TestCase
         $excludedByNamespace = self::violation('src/Vendor/Thing.php', 'App\\Vendor', 'Thing');
         $reported = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
 
+        $options = new FindingProjectionOptions(
+            excludePaths: ['generated'],
+            excludeNamespaces: ['App\\Vendor'],
+        );
         $set = $this->createSet(
             [$excludedByPath, $excludedByNamespace, $reported],
-            new TransitionalRuntimeConfiguration(
-                excludePaths: ['generated'],
-                excludeNamespaces: ['App\\Vendor'],
-            ),
+            $options,
         );
 
-        self::assertSame([$reported], $set->forPaths([AbsolutePath::fromString(sys_get_temp_dir())]));
+        self::assertSame([$reported], $set->forPaths(
+            [AbsolutePath::fromString(sys_get_temp_dir())],
+            options: $options,
+        ));
     }
 
     /**
@@ -86,7 +94,7 @@ final class MeasuredViolationSetTest extends TestCase
     {
         $onlyExcludedByAFlag = self::violation('vendor/library/SomeClass.php', 'App\\Vendor', 'SomeClass');
 
-        $set = $this->createSet([$onlyExcludedByAFlag], new TransitionalRuntimeConfiguration());
+        $set = $this->createSet([$onlyExcludedByAFlag], new FindingProjectionOptions());
 
         self::assertSame(
             [$onlyExcludedByAFlag],
@@ -95,36 +103,22 @@ final class MeasuredViolationSetTest extends TestCase
 
         // The same narrowing, supplied as a flag, does remove it from the
         // run — it just does not redefine what the baseline measures.
-        $narrowed = $set->stages(new CliOnlyNarrowing(excludePaths: ['vendor']))[1]
-            ->apply([$onlyExcludedByAFlag]);
-
-        self::assertSame([], $narrowed->violations);
+        self::assertSame([], $set->forPaths(
+            [AbsolutePath::fromString(sys_get_temp_dir())],
+            options: new FindingProjectionOptions(excludePaths: ['vendor']),
+        ));
     }
 
     #[Test]
     public function itListsOnlyStagesThatDefineTheMeasuredSet(): void
     {
-        $set = $this->createSet([], new TransitionalRuntimeConfiguration(
+        $set = $this->createSet([], new FindingProjectionOptions(
             excludePaths: ['generated'],
             excludeNamespaces: ['App\\Vendor'],
         ));
 
-        $stages = $set->stages();
-
-        self::assertSame(
-            [
-                ViolationFilterStage::Suppression,
-                ViolationFilterStage::PathExclusion,
-                ViolationFilterStage::NamespaceExclusion,
-            ],
-            array_map(
-                static fn(ViolationFilterStageInterface $stage): ViolationFilterStage => $stage->stage(),
-                $stages,
-            ),
-        );
-
-        foreach ($stages as $stage) {
-            self::assertTrue($stage->stage()->definesMeasuredSet());
+        foreach ([ViolationFilterStage::Suppression, ViolationFilterStage::PathExclusion, ViolationFilterStage::NamespaceExclusion] as $stage) {
+            self::assertTrue($stage->definesMeasuredSet());
         }
     }
 
@@ -142,7 +136,7 @@ final class MeasuredViolationSetTest extends TestCase
 
         $set = $this->createSet(
             [$ignored, $reported],
-            new TransitionalRuntimeConfiguration(),
+            new FindingProjectionOptions(),
             [
                 'src/Legacy/Service.php' => [
                     new Suppression(rule: '*', reason: 'Reviewed', line: 1, type: SuppressionType::File),
@@ -162,7 +156,7 @@ final class MeasuredViolationSetTest extends TestCase
      */
     private function createSet(
         array $violations,
-        TransitionalRuntimeConfiguration $configuration,
+        FindingProjectionOptions $configuration,
         array $suppressions = [],
     ): MeasuredViolationSet {
         $analyzer = self::createStub(AnalysisPipelineInterface::class);
@@ -174,10 +168,20 @@ final class MeasuredViolationSetTest extends TestCase
             suppressions: $suppressions,
         ));
 
-        $configurationProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
-        $configurationProvider->method('getConfiguration')->willReturn($configuration);
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+        $projector = new FindingProjector(
+            new SuppressionFilter(),
+            new BaselineLoader(new BaselineEntryParser($declarations)),
+            $declarations,
+            new class implements GitScopeQueryInterface {
+                public function resolve(GitScopeRequest $request): GitScopeResult
+                {
+                    return new GitScopeResult([], []);
+                }
+            },
+        );
 
-        return new MeasuredViolationSet($analyzer, new SuppressionFilter(), $configurationProvider);
+        return new MeasuredViolationSet($analyzer, $projector);
     }
 
     private static function violation(string $file, string $namespace, string $class): Violation

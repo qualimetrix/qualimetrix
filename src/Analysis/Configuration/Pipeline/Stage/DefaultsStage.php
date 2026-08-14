@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
-
+use Qualimetrix\Analysis\Configuration\Contract\OutputFormat;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
@@ -39,7 +39,7 @@ final class DefaultsStage implements ConfigurationStageInterface
             ConfigSchema::EXCLUDES => ['vendor', 'node_modules', '.git'],
             ConfigSchema::CACHE_DIR => TransitionalRuntimeConfiguration::DEFAULT_CACHE_DIR,
             ConfigSchema::CACHE_ENABLED => true,
-            ConfigSchema::FORMAT => TransitionalRuntimeConfiguration::DEFAULT_FORMAT,
+            ConfigSchema::FORMAT => OutputFormat::DEFAULT,
             ConfigSchema::NAMESPACE_STRATEGY => TransitionalRuntimeConfiguration::DEFAULT_NAMESPACE_STRATEGY,
             ConfigSchema::PROJECT_ROOT => $this->resolveProjectRoot($context->workingDirectory),
         ]);

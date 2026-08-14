@@ -25,8 +25,10 @@ own behaviour, configuration, state, tests and documentation. They
 expose `Contract` only to named external owner-consumers. P3 proved one
 consumer-owned Run port,
 `Analysis\Run\Contract\FileSetInspectionParticipantInterface`: it receives an
-eligible file set and owns no capability result. Generic lifecycle,
-graph-preparation, and metric-derivation ports remain unapproved.
+eligible file set and owns no capability result. P4 adds only the two
+capability-specific preparation contracts for Architecture policy and circular
+dependency evidence. Generic lifecycle, graph-preparation, and
+metric-derivation ports remain unapproved.
 
 `Analysis`, `Analysis\Evidence`, and `Analysis\Policy` are navigation
 taxonomies, never modules or allow-list targets. `Core` is limited to neutral
@@ -38,16 +40,27 @@ the internal detector now implements Run's FileSet participant port. P2 also lan
 `Analysis\Evidence\DependencyModel` and `Reporting\GraphProjection`: graph
 consumers use the model's six contracts, while Console uses Reporting's two
 public projection types and cannot import exporter internals. P3 moved Run,
-Measurement, and Configuration to their current physical boundaries. Run owns
+Measurement, and Configuration to their current physical boundaries. P4
+separated declared-layer policy into `Analysis\Policy\Architecture` and SCC
+evidence into `Analysis\Evidence\CircularDependency`; each leaf owns its own
+prepared state and capability-specific preparation contract. Run owns
 discovery, collection and ordering; Measurement owns collection facts,
 repository, namespace attribution and aggregation; Configuration owns document
-resolution through a deliberately transitional runtime DTO. P4-P8 retain the
-remaining Architecture, computed-metrics, Finding and thin-evidence moves.
+resolution through a deliberately transitional runtime DTO. P5 landed
+`Analysis\Evidence\ComputedMetrics` plus its Health subdomain: definitions are
+instance-owned, Run invokes only the evaluation contract, and Reporting
+consumes immutable Health contracts. P6 implementation has published
+`Analysis\Finding`, peer Inline and Baseline policy capabilities,
+`Analysis\Evidence\Prioritization`, and Reporting's `FindingProjection`;
+Infrastructure keeps the Console, Git, DI, and worker adapters behind those
+public contracts. P6 remains paused pending its post-review closure and is not
+complete. P7-P8 retain only the thin-evidence classification and final
+locality/grant closure.
 
 P0 governance implements the current enforcement model. The versioned internal
-manifest covers all 717 declarations in 715 files and names 37 semantic
-owners. P3 has 11 singleton enforcement seams and 67 exact internal grants,
-which collapse to 12 coarse owner pairs and produce 266 declared qmx allow
+manifest covers all 754 declarations in 752 files and names 37 semantic
+owners. P6 leaves no singleton enforcement seam and 51 exact internal grants,
+which collapse to 8 coarse owner pairs and produce 223 declared qmx allow
 edges. Generated artifacts are deterministic projections rather than a second
 source of truth.
 `external` excludes `Qualimetrix\**`; `coverage: error` makes
@@ -127,7 +140,7 @@ only groups of findings that currently fire, after source/configuration
 suppression and exclusions but before git report scoping. A measured breach is
 promoted to Error; a malformed, stale, or otherwise inapplicable entry is
 fail-safe and suppresses nothing. See [ADR 0017](adr/0017-baseline-ceiling.md)
-and [Baseline](../src/Baseline/README.md) for the lifecycle and file contract.
+and [Baseline](../src/Analysis/Policy/Baseline/README.md) for the lifecycle and file contract.
 
 For full details (CompilerPasses, exclude patterns, autowiring constraints for rules), see [CLAUDE.md § Symfony DI](../CLAUDE.md#7-symfony-di-automatic-service-registration).
 
@@ -182,6 +195,7 @@ composer test      # unit/integration tests
 Current capability examples are Architecture,
 [`Analysis.Evidence.Duplication`](../src/Analysis/Evidence/Duplication/README.md),
 [`Analysis.Evidence.DependencyModel`](../src/Analysis/Evidence/DependencyModel/README.md),
+[`Analysis.Evidence.ComputedMetrics`](../src/Analysis/Evidence/ComputedMetrics/README.md),
 and [`Reporting.GraphProjection`](../src/Reporting/GraphProjection/README.md).
 
 ### Add a New Output Format

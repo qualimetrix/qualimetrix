@@ -18,8 +18,8 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
-use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
-use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -116,7 +116,11 @@ final class MaxExpandedLayersFromYamlTest extends TestCase
 
     private function resolveArchitecture(): ArchitectureConfiguration
     {
-        return $this->resolveFullPipeline()->architecture;
+        $resolved = $this->resolveFullPipeline();
+
+        return (new ArchitectureConfigurationFactory())
+            ->fromContributions($resolved->document->contributions('architecture'))
+            ->configuration;
     }
 
     private function writeYaml(string $contents): void

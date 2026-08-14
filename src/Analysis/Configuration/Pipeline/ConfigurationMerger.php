@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration\Pipeline;
 
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
-use Qualimetrix\Configuration\RuleOptionThresholdModeResolver;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionThresholdModeResolver;
 
 /**
  * Centralizes configuration merge logic for layered configuration resolution.
@@ -21,17 +21,6 @@ use Qualimetrix\Configuration\RuleOptionThresholdModeResolver;
  *   while list-valued options (e.g., exclude_namespaces) are replaced entirely.
  *   This allows a later layer to override individual rule options without losing
  *   unrelated rule configurations from earlier layers.
- * - `architecture`: deep associative merge with one special case. The
- *   `architecture.layers` field is an **ordered list** (declaration-order
- *   matching, ADR 0006) and is **replaced wholesale** when a later configuration
- *   source defines it — never appended or merged. Naive deep-merge would
- *   silently destroy ordering, and ordering is the user's disambiguation tool.
- *   Presets that ship a base layer topology can therefore be wholly overridden
- *   by a project config that re-declares `layers`. The `architecture.allow` map
- *   continues to deep-merge by source layer (a later source can override one
- *   source's targets without re-declaring every layer's allowed targets); the
- *   list inside each `architecture.allow.<source>` entry is replaced. The
- *   scalar `architecture.coverage` is replaced by the overlay.
  * - Everything else: simple override — the overlay value replaces the base value.
  *
  * **Why `only_rules` is NOT in MERGEABLE_LIST_KEYS:**
@@ -56,8 +45,8 @@ final class ConfigurationMerger
     public const array MERGEABLE_LIST_KEYS = [
         ConfigSchema::DISABLED_RULES,
         ConfigSchema::EXCLUDE_PATHS,
+        ConfigSchema::EXCLUDE_NAMESPACES,
         ConfigSchema::EXCLUDES,
-        ConfigSchema::EXCLUDE_HEALTH,
     ];
 
     /**
@@ -81,40 +70,9 @@ final class ConfigurationMerger
                     $base[$key] = self::deepMergeAllRuleOptions($base[$key], $value);
                     continue;
                 }
-
-                if ($key === ConfigSchema::ARCHITECTURE) {
-                    $base[$key] = self::mergeArchitecture($base[$key], $value);
-                    continue;
-                }
             }
 
             $base[$key] = $value;
-        }
-
-        return $base;
-    }
-
-    /**
-     * Deep-merges two associative arrays, replacing list-arrays entirely.
-     *
-     * Unlike array_replace_recursive, this correctly handles list-valued options
-     * (e.g., exclude_namespaces): lists are replaced, not merged by index.
-     *
-     * @param array<array-key, mixed> $base
-     * @param array<array-key, mixed> $overlay
-     *
-     * @return array<array-key, mixed>
-     */
-    private static function deepMergeAssociative(array $base, array $overlay): array
-    {
-        foreach ($overlay as $key => $value) {
-            if (\is_array($value) && isset($base[$key]) && \is_array($base[$key])
-                && !array_is_list($value)
-            ) {
-                $base[$key] = self::deepMergeAssociative($base[$key], $value);
-            } else {
-                $base[$key] = $value;
-            }
         }
 
         return $base;
@@ -150,9 +108,8 @@ final class ConfigurationMerger
     /**
      * Deep-merges a single rule's option array, evicting `threshold` vs
      * `warning`/`error` mode conflicts across the merge boundary before
-     * falling back to the same semantics as {@see deepMergeAssociative()}
-     * (list-valued options replaced wholesale, associative sub-arrays
-     * merged recursively). See {@see RuleOptionThresholdModeResolver} for
+     * recursively merging associative sub-arrays while replacing list-valued
+     * options wholesale. See {@see RuleOptionThresholdModeResolver} for
      * why this can't just be a plain deep-merge.
      *
      * Recurses so hierarchical rule levels (e.g. `complexity.cyclomatic`'s
@@ -184,42 +141,4 @@ final class ConfigurationMerger
         return $base;
     }
 
-    /**
-     * Merges the {@code architecture:} section with special handling for the
-     * ordered `layers` list.
-     *
-     * - `layers` (list): when the overlay defines it, it REPLACES the base list
-     *   entirely. Declaration order is meaningful and must not be silently
-     *   reshuffled by deep-merge. See ADR 0006.
-     * - `allow` (map of source → list of targets): deep-merged by source. Each
-     *   source's allowed-target list is replaced wholesale (matching `rules`
-     *   list-replacement behaviour).
-     * - `coverage` (scalar): replaced by overlay.
-     *
-     * @param array<string, mixed> $base
-     * @param array<string, mixed> $overlay
-     *
-     * @return array<string, mixed>
-     */
-    private static function mergeArchitecture(array $base, array $overlay): array
-    {
-        foreach ($overlay as $key => $value) {
-            if ($key === 'layers') {
-                // ORDERED-LIST REPLACEMENT: the overlay's layers list wins outright.
-                // Deep-merge would destroy declaration order which is meaningful
-                // under first-match-wins semantics (ADR 0006).
-                $base[$key] = $value;
-                continue;
-            }
-
-            if (\is_array($value) && isset($base[$key]) && \is_array($base[$key]) && !array_is_list($value)) {
-                $base[$key] = self::deepMergeAssociative($base[$key], $value);
-                continue;
-            }
-
-            $base[$key] = $value;
-        }
-
-        return $base;
-    }
 }

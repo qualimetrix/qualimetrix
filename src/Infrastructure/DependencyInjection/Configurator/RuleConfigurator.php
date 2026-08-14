@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
-use Qualimetrix\Core\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Core\Rule\RuleSelector;
-use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry;
 use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
 use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
@@ -74,6 +74,7 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
             $this->srcDir . '/Rules/**/*Rule.php',
             $this->srcDir . '/Rules/AbstractRule.php',
         );
+
     }
 
     private function registerRuleRegistry(ContainerBuilder $container): void
@@ -96,6 +97,8 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
 
     private function registerChannelDeclarationRegistry(ContainerBuilder $container): void
     {
+        $computedMetricCatalog = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface';
+
         // ChannelDeclarationRegistry will have the static declaration map and
         // the computed-metric family discriminator injected by
         // ChannelDeclarationCompilerPass.
@@ -103,6 +106,7 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 '$staticDeclarations' => [],
                 '$computedMetricRuleName' => '',
+                '$definitionCatalog' => new Reference($computedMetricCatalog),
             ])
             ->setPublic(true);
 
@@ -112,10 +116,13 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
 
     private function registerRuleChannelSelection(ContainerBuilder $container): void
     {
+        $computedMetricCatalog = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface';
+
         $container->register(RuleChannelRegistry::class)
             ->setArguments([
                 '$staticChannelKeysByProducer' => [],
                 '$computedMetricRuleName' => '',
+                '$definitionCatalog' => new Reference($computedMetricCatalog),
             ]);
         $container->setAlias(RuleChannelRegistryInterface::class, RuleChannelRegistry::class);
 

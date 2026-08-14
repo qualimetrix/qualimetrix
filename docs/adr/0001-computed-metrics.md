@@ -21,6 +21,13 @@ Qualimetrix collects 30+ raw metrics but provides no aggregate "how healthy is t
 
 5. **Implementation as standalone evaluator** — `ComputedMetricEvaluator` runs after aggregation as a separate pipeline step (not part of the collector framework), receives full `MetricRepositoryInterface`. Called directly from `AnalysisPipeline`.
 
+6. **Capability-owned lifecycle** — the implementation lives under
+   `Analysis\Evidence\ComputedMetrics`; one instance owns configuration,
+   catalog reads, and evaluation for a run. Configuration clears prior state
+   before validating and publishes only a complete successful definition set.
+   Health score/decomposition semantics live in its Health subdomain, while
+   Reporting consumes immutable contracts for report and HTML projection.
+
 **Alternatives considered:**
 - SonarQube-style hardcoded A-E ratings — rejected (not configurable, no formula transparency)
 - NDepend CQLinq — rejected (separate query language, too complex for CLI tool)

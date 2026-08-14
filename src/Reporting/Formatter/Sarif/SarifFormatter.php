@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Sarif;
 
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Version;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator;
 use Qualimetrix\Reporting\FormatterContext;

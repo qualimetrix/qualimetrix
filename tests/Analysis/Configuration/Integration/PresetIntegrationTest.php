@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
-use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
@@ -73,7 +73,7 @@ final class PresetIntegrationTest extends TestCase
     {
         $resolved = $this->resolveWithPresets(['legacy']);
 
-        self::assertContains('code-smell.boolean-argument', $resolved->runtime->disabledRules);
+        self::assertContains('code-smell.boolean-argument', $resolved->ruleSelection->disabled);
     }
 
     /**

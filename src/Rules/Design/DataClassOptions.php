@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Design;
 
-use Qualimetrix\Core\Rule\Override\IndependentAxisValidator;
-use Qualimetrix\Core\Rule\Override\OverrideValidatorInterface;
-use Qualimetrix\Core\Rule\RuleOptionKey;
-use Qualimetrix\Core\Rule\RuleOptionsInterface;
-use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
  * Options for DataClassRule.

@@ -8,8 +8,9 @@ use Exception;
 use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
-use Qualimetrix\Architecture\Domain\Layer\LayerMatch;
-use Qualimetrix\Architecture\Domain\Layer\MatchedCriterion;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
@@ -117,8 +118,12 @@ final class LayerAssignmentCommand extends Command
                     $resolved->runtime->projectRoot,
                     $symbol,
                 );
-        } catch (ConfigLoadException $e) {
+        } catch (ConfigLoadException|ArchitectureConfigurationException $e) {
             $output->writeln(\sprintf('<error>Configuration error: %s</error>', $e->getMessage()));
+
+            return self::FAILURE;
+        } catch (ArchitecturePreparationException $e) {
+            $output->writeln(\sprintf('<error>Failed to load configuration: %s</error>', $e->getMessage()));
 
             return self::FAILURE;
         } catch (Exception $e) {
@@ -209,7 +214,7 @@ final class LayerAssignmentCommand extends Command
     }
 
     /**
-     * @param list<LayerMatch> $matches
+     * @param list<LayerAssignmentMatch> $matches
      */
     private function renderReport(
         OutputInterface $output,
@@ -250,7 +255,7 @@ final class LayerAssignmentCommand extends Command
         }
 
         $maxLayerNameWidth = max(array_map(
-            static fn(LayerMatch $entry): int => \strlen($entry->layerName),
+            static fn(LayerAssignmentMatch $entry): int => \strlen($entry->layerName),
             $shadowed,
         ));
 
@@ -276,14 +281,11 @@ final class LayerAssignmentCommand extends Command
     /**
      * Joins every matched criterion descriptor with a comma so the command
      * line surface mirrors the order that
-     * {@see \Qualimetrix\Architecture\Domain\Layer\LayerDefinition::matches()}
+     * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition::matches()}
      * scans (pattern → suffix → attribute → implements → extends).
      */
-    private static function describeCriteria(LayerMatch $entry): string
+    private static function describeCriteria(LayerAssignmentMatch $entry): string
     {
-        return implode(', ', array_map(
-            static fn(MatchedCriterion $criterion): string => $criterion->describe(),
-            $entry->matchedCriteria,
-        ));
+        return implode(', ', $entry->criteria);
     }
 }

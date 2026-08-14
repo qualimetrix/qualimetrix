@@ -43,7 +43,7 @@ Infrastructure/
 │   ├── GitScope.php
 │   ├── ChangedFile.php
 │   ├── ChangeStatus.php
-│   ├── GitScopeFilter.php
+│   ├── ReportingGitScopeQuery.php   # Git adapter for Reporting finding projection
 │   ├── GitScopeResolver.php          # Resolves git scope from CLI options
 │   ├── GitScopeResolution.php        # Resolution result VO
 │   └── Exception/UnresolvedGitReferenceException.php # Invalid git revision input
@@ -78,11 +78,13 @@ Infrastructure/
 │   │   ├── CoreServicesConfigurator.php
 │   │   ├── ConfigurationConfigurator.php
 │   │   ├── DependencyModelConfigurator.php
+│   │   ├── ComputedMetricsConfigurator.php
 │   │   ├── MeasurementConfigurator.php
 │   │   ├── ParserConfigurator.php
 │   │   ├── CollectorConfigurator.php
 │   │   ├── RuleConfigurator.php
 │   │   ├── ArchitectureConfigurator.php
+│   │   ├── CircularDependencyConfigurator.php
 │   │   ├── DuplicationConfigurator.php
 │   │   ├── AnalysisConfigurator.php
 │   │   └── OutputConfigurator.php
@@ -101,8 +103,8 @@ Infrastructure/
 ├── Rule/
 │   ├── RuleRegistryInterface.php
 │   ├── RuleRegistry.php
-│   ├── ChannelDeclarationRegistry.php     # Implements Core\Violation\ChannelDeclarationRegistryInterface: (ruleName, violationCode) -> ChannelDeclaration
-│   ├── RuleChannelRegistry.php             # Implements Core\Rule\RuleChannelRegistryInterface: producer rule -> emitted channels
+│   ├── ChannelDeclarationRegistry.php     # Implements Finding's channel-declaration registry contract
+│   ├── RuleChannelRegistry.php             # Implements Finding's rule-channel registry contract
 │   └── Exception/
 │       └── ConflictingCliAliasException.php
 └── Console/                          # -> See Console/README.md
@@ -110,13 +112,9 @@ Infrastructure/
     ├── CliOptionsParser.php
     ├── OutputHelper.php               # Helper for large text output (line-by-line flush)
     ├── MeasuredViolationSet.php       # The one definition of the set a baseline measures: paths + resolved config in, findings at the baseline stage's input out (no InputInterface)
-    ├── ViolationFilterPipeline.php    # Runs the ordered stages: suppression -> path exclusion -> namespace exclusion -> baseline -> git scope; also where --no-suppression-annotations puts annotated findings back into the report, past the baseline
-    ├── ViolationFilterOrchestrator.php # Turns check's options into a pipeline run and reports what its stages did — also reports per-rule namespace/channel/path suppression (via injected RuleExecutorInterface, Analysis\RuleExecution\RuleExclusionStats) for -v / --show-suppressed
-    ├── ViolationFilterOptions.php     # Filter options VO
-    ├── CliOnlyNarrowing.php           # VO: --exclude-path / --exclude-namespace / --no-suppression-annotations — narrowing that is check's alone and not part of the measured set; a flag may shrink what the ceiling measures, never grow it
-    ├── ViolationFilterResult.php      # Filter result VO: reported findings, the measured set, per-stage removals, stale entries
-    ├── GitScopeFilterConfig.php       # Git scope filter config VO
-    ├── RuntimeConfigurator.php        # Runtime DI configuration; also sets Core\Violation\RuleExclusionCaptureHolder from --show-suppressed
+    ├── ViolationFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector and reports its stage results
+    ├── RuntimeConfigurator.php        # Runtime DI configuration; also sets Finding's rule-exclusion capture holder from --show-suppressed
+    ├── RuntimeLoggerConfigurator.php  # Creates and publishes the logger for one console run
     ├── DiagnosticOutput.php          # Routes human diagnostics to stderr without polluting report payloads
     ├── RuleInputValidator.php        # Fails closed on unknown selectors and option owners
     ├── ResultPresenter.php            # Output presentation
@@ -181,23 +179,27 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
 - `CoreServicesConfigurator` — core services (logger, profiler, etc.)
 - `ConfigurationConfigurator` — Analysis.Configuration pipeline and transitional runtime provider
 - `DependencyModelConfigurator` — graph/traversal contracts and extraction registration
+- `ComputedMetricsConfigurator` — private root/Health implementation tree, capability-owned rule, and four public contract aliases
 - `MeasurementConfigurator` — repository, aggregation, collector runtime configuration, and worker reconstruction
 - `ParserConfigurator` — AST parser and caching
 - `CollectorConfigurator` — metric collectors registration
 - `RuleConfigurator` — remaining layered rules under `src/Rules/`
-- `ArchitectureConfigurator` — Architecture capability services and rules
+- `ArchitectureConfigurator` — declared-layer policy contracts and rule
+- `CircularDependencyConfigurator` — SCC evidence preparation and rule
 - `DuplicationConfigurator` — internal Duplication detector/provider wiring and capability-owned rule registration; the detector is autoconfigured as a Run-owned FileSet participant
 - `AnalysisConfigurator` — Run pipeline, discovery, collection, and strategies
-- `OutputConfigurator` — formatters plus the public GraphProjection contract alias backed by its internal projector
+- `OutputConfigurator` — formatters, GraphProjection, and exact composition for Reporting finding projection, Inline annotation suppression, and the Git query adapter
 
 **Method:**
 - `create(): ContainerBuilder` — runs all configurators and returns a compiled container
 
 **Runtime configuration:**
 Configuration is set via mutable services AFTER container creation through
-`TransitionalRuntimeConfigurationProviderInterface`. P6 owns the remaining
-rule-options transport; no new feature state belongs in the transitional holder.
-`RuntimeConfigurator` owns cache reset before logger setup and delegates
+`TransitionalRuntimeConfigurationProviderInterface`. Finding owns the separate
+`RuleConfigurationInterface` transport for per-run rule options and exclusions;
+no rule-option state belongs in the transitional configuration holder.
+`RuntimeConfigurator` owns cache reset before logger setup, delegates logger
+creation/publication to `RuntimeLoggerConfigurator`, and delegates
 analysis-state reset/application to `AnalysisRuntimeConfigurator`.
 `CollectorRuntimeConfigurationStore` owns applying replacement and reset values
 to every tagged runtime-configurable collector, so the outer configurator does
@@ -206,18 +208,17 @@ not iterate Measurement implementations.
 **Tags:**
 - `qmx.collector` — metric collectors
 - `qmx.global_collector` — global context collectors
-- `qmx.rule` — analysis rules (lazy)
+- analysis rules — composed as Finding's private executable set
 - `qmx.formatter` — output formatters
 - `qmx.configuration_stage` — configuration pipeline stages
 - `qmx.analysis.run.file_set_inspection_participant` — Run-owned whole-file-set participants
-- `qmx.analysis.lifecycle_hook` — capability hooks configured at run start
 - `qmx.measurement.runtime_configurable_collector` — collectors receiving run-scoped settings
 
 ### Lazy Services
 
 Rules and their Options are made lazy via `->setLazy(true)`:
 - Rules are not created during container compilation
-- Rules are created on first use in RuleExecutor
+- Rules are created on first use in Finding's `RuleExecution`
 - By that time RuleOptionsFactory is already configured with CLI options
 
 ### CompilerPass
@@ -231,37 +232,26 @@ Rules and their Options are made lazy via `->setLazy(true)`:
 - Injects into `GlobalCollectorRunner`
 
 **RuleOptionsCompilerPass:**
-- Registers producer-specific Options for each rule via `RuleOptionsFactory::create()`
-- Injects Options into the rule constructor
+- Prepares producer-specific options for Finding's private executable rules
+- Keeps configured options independent when implementations share an immutable options value
 
 The service identity contains both producer name and Options class. Rules may
 share an immutable Options implementation, but their configured instances must
 remain independent because configuration is keyed by producer rule name.
 
 **RuleCompilerPass:**
-- Collects services with tag `qmx.rule`
-- Injects into `RuleExecutor` and `RulesCommand` — the only supported source of
-  rule *instances* (a rule may take constructor dependencies besides its
-  Options object, so nothing outside the container may build rules)
+- Composes Finding's private executable-rule set
+- Adapters, including `RulesCommand`, consume `RuleExecutionInterface` metadata views
 
 **RuleRegistryCompilerPass:**
-- Collects rule classes (not instances)
-- Injects into `RuleRegistry` for CLI option discovery
-- Fails the container build when a rule class omits its `NAME` constant
+- Collects `RuleDefinitionInterface` class strings for CLI option discovery
+- Maintains the metadata boundary without exposing executable rule instances
 
 **ChannelDeclarationCompilerPass:**
-- Walks the same `qmx.rule`-tagged services as `RuleRegistryCompilerPass`
-- Reads each rule's optional static `channelDeclarations(): array<string, ChannelDeclaration>`
-  method via `Core\Rule\ChannelDeclarationReader` (reflection, no instantiation — a rule
-  with no such method is untouched)
-- Each rule already returns full channel keys (`ruleName#violationCode`), so this pass
-  does no pairing of its own — it assembles the declaration map and injects it into
-  `ChannelDeclarationRegistry`, along with `ComputedMetricRule::NAME` as the
-  run-time family discriminator
-- Preserves which registered rule class produced each static channel and injects that
-  topology into `RuleChannelRegistry`; the registry adds configured computed channels
-  at run time for channel-aware `--only-rule` / `--disable-rule` selection
-- Fails the container build on a channel declared by more than one rule class
+- Builds Finding's channel-declaration registry from the registered rule set
+- Preserves producer-to-channel topology and adds configured computed channels at run
+  time for channel-aware `--only-rule` / `--disable-rule` selection
+- Rejects a channel declared by more than one rule class
 
 **FormatterCompilerPass:**
 - Collects services with tag `qmx.formatter`
@@ -286,7 +276,8 @@ remain independent because configuration is keyed by producer rule name.
 
 The 11 compiler passes are covered by dedicated unit tests under
 `tests/Unit/Infrastructure/DependencyInjection/CompilerPass/` or, for threshold
-validator wiring, by `tests/Integration/Baseline/ThresholdValidatorWiringTest.php`.
+validator wiring, by
+`tests/Analysis/Policy/Inline/Integration/ThresholdValidatorWiringTest.php`.
 
 ---
 

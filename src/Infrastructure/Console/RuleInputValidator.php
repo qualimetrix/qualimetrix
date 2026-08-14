@@ -6,7 +6,7 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
-use Qualimetrix\Core\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Input\InputInterface;
 
@@ -25,7 +25,7 @@ final readonly class RuleInputValidator
             $this->ruleRegistry->getClasses(),
         );
 
-        foreach ([...$resolved->runtime->onlyRules, ...$resolved->runtime->disabledRules] as $selector) {
+        foreach ([...$resolved->ruleSelection->only, ...$resolved->ruleSelection->disabled] as $selector) {
             if ($selector === '' || !$this->ruleSelector->matchesKnown($selector, $producers)) {
                 throw new InvalidArgumentException(\sprintf(
                     'Rule selector "%s" does not match any registered producer, group, or channel.',

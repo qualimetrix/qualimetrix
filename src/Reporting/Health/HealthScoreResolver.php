@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Health;
 
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
 
@@ -15,7 +17,7 @@ use Qualimetrix\Reporting\Report;
 final class HealthScoreResolver
 {
     public function __construct(
-        private readonly NamespaceDrillDown $namespaceDrillDown,
+        private readonly HealthScoreDrillDown $namespaceDrillDown,
     ) {}
 
     /**

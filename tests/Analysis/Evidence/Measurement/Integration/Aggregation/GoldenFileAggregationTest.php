@@ -7,13 +7,12 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregatio
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationMeta;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
-use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
-use Qualimetrix\Core\ComputedMetric\ComputedMetricDefaults;
-use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -32,17 +31,16 @@ final class GoldenFileAggregationTest extends TestCase
 
     public static function setUpBeforeClass(): void
     {
-        // Populate computed metric definitions (health scores) — normally done by RuntimeConfigurator
-        ComputedMetricDefinitionHolder::setDefinitions(array_values(ComputedMetricDefaults::getDefaults()));
-
         $containerFactory = new ContainerFactory();
         $container = $containerFactory->create();
 
-        // Normally done by RuntimeConfigurator (ADR 0008 §3: bind() before
-        // prepare()); replicated here because this test bypasses CheckCommand.
-        /** @var ArchitectureProcessorInterface $architectureProcessor */
-        $architectureProcessor = $container->get(ArchitectureProcessorInterface::class);
-        $architectureProcessor->bind(ArchitectureConfiguration::empty());
+        /** @var ComputedMetricConfiguratorInterface $computedMetrics */
+        $computedMetrics = $container->get(ComputedMetricConfiguratorInterface::class);
+        $computedMetrics->configure(new ConfigurationDocument([]));
+
+        /** @var ArchitecturePolicyConfiguratorInterface $architecturePolicy */
+        $architecturePolicy = $container->get(ArchitecturePolicyConfiguratorInterface::class);
+        $architecturePolicy->configure(new ConfigurationDocument([]));
 
         /** @var AnalysisPipelineInterface $pipeline */
         $pipeline = $container->get(AnalysisPipelineInterface::class);
@@ -51,11 +49,6 @@ final class GoldenFileAggregationTest extends TestCase
         $result = $pipeline->analyze(AbsolutePath::fromString($fixturesPath));
 
         self::$repository = $result->metrics;
-    }
-
-    public static function tearDownAfterClass(): void
-    {
-        ComputedMetricDefinitionHolder::setDefinitions([]);
     }
 
     // ──────────────────────────────────────────────────────────────────

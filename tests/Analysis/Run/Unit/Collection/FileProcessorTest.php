@@ -25,14 +25,15 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
+use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
+use Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Suppression\ControlScope;
-use Qualimetrix\Core\Suppression\SuppressionType;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -51,7 +52,7 @@ final class FileProcessorTest extends TestCase
 
     private function makeProcessor(CompositeCollector $collector): FileProcessor
     {
-        $processor = new FileProcessor($this->parser, $collector);
+        $processor = new FileProcessor($this->parser, $collector, new SourceControlExtractor());
         $processor->setProjectRoot(AbsolutePath::fromString('/tmp'));
 
         return $processor;
@@ -64,7 +65,7 @@ final class FileProcessorTest extends TestCase
         // and let process() fall through to a TypeError. Explicit throw now
         // guarantees a clean LogicException whether assertions are enabled
         // or not.
-        $processor = new FileProcessor($this->parser, new CompositeCollector([]));
+        $processor = new FileProcessor($this->parser, new CompositeCollector([]), new SourceControlExtractor());
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('projectRoot must be set');

@@ -6,6 +6,7 @@ declare(strict_types=1);
 const GENERATED_ARTIFACTS = [
     'documentation-ownership.tsv',
     'manifest-enforcement-summary.tsv',
+    'production-class-string-targets.tsv',
     'production-cross-owner-imports.tsv',
     'production-extension-families.tsv',
     'production-ownership.tsv',

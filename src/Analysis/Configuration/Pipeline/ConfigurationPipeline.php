@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Pipeline;
 
+use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\OutputFormat;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
-
+use Qualimetrix\Analysis\Configuration\Contract\ResolvedFindingExclusions;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
-use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
+use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 
 /**
  * Configuration resolution pipeline.
@@ -18,23 +21,15 @@ use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
  * Collects configuration from multiple stages (defaults, composer, config file, cli)
  * and merges them according to priority order.
  *
- * The architecture configuration factory may emit warnings during resolution
- * (e.g. wildcard self-allow detection). Because {@see resolve()} runs before
- * {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator::configureLogger()}
- * has wired up the user-facing logger, those warnings are captured in
- * {@see TransitionalResolvedConfiguration::$deferredWarnings} via
- * {@see \Qualimetrix\Architecture\Configuration\ArchitectureFactoryResult}.
- * {@see \Qualimetrix\Infrastructure\Console\RuntimeConfigurator} drains them
- * to the configured logger once the holder is populated.
+ * Capability-specific configuration remains an ordered normalized document
+ * until its owning capability explicitly consumes it.
  */
 final class ConfigurationPipeline implements ConfigurationPipelineInterface
 {
     /** @var list<ConfigurationStageInterface> */
     private array $stages = [];
 
-    public function __construct(
-        private readonly ArchitectureConfigurationFactory $architectureConfigurationFactory = new ArchitectureConfigurationFactory(),
-    ) {}
+    public function __construct() {}
 
     public function resolve(ConfigurationContext $context): TransitionalResolvedConfiguration
     {
@@ -49,15 +44,17 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
         // Collect layers
         $merged = [];
         $appliedSources = [];
+        $documents = [];
         foreach ($stages as $stage) {
             $layer = $stage->apply($context);
             if ($layer !== null) {
                 $appliedSources[] = $layer->source;
                 $merged = ConfigurationMerger::merge($merged, $layer->values);
+                $documents = [...$documents, ...($layer->documents === [] ? [$layer->values] : $layer->documents)];
             }
         }
 
-        return $this->buildResolved($merged, $appliedSources);
+        return $this->buildResolved($merged, $appliedSources, new ConfigurationDocument($documents));
     }
 
     public function addStage(ConfigurationStageInterface $stage): void
@@ -83,25 +80,27 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
      * @param array<string, mixed> $merged
      * @param list<string> $appliedSources
      */
-    private function buildResolved(array $merged, array $appliedSources): TransitionalResolvedConfiguration
+    private function buildResolved(array $merged, array $appliedSources, ConfigurationDocument $document): TransitionalResolvedConfiguration
     {
-        // The architecture factory emits PSR-3-shaped records (e.g. wildcard
-        // self-allow detection) for downstream replay. They are collected into
-        // TransitionalResolvedConfiguration::$deferredWarnings and drained by
-        // RuntimeConfigurator after the user logger is wired up.
-        $factoryResult = $this->architectureConfigurationFactory->fromArray(
-            $this->getAssocArrayValue($merged, ConfigSchema::ARCHITECTURE, []),
-        );
-
+        // Capability configuration remains in the neutral document boundary.
+        // RuntimeConfigurator consumes it only after the user logger is ready,
+        // so capability warnings can be delivered immediately by their owner.
         return new TransitionalResolvedConfiguration(
             paths: $this->getListValue($merged, ConfigSchema::PATHS, ['.']),
             pathExcludes: $this->getListValue($merged, ConfigSchema::EXCLUDES, ['vendor', 'node_modules', '.git']),
             runtime: TransitionalRuntimeConfiguration::fromArray($merged),
             ruleOptions: $this->getAssocArrayValue($merged, ConfigSchema::RULES, []),
-            architecture: $factoryResult->configuration,
-            computedMetrics: $this->getAssocArrayValue($merged, ConfigSchema::COMPUTED_METRICS, []),
+            document: $document,
+            ruleSelection: new RuleSelection(
+                $this->getListValue($merged, ConfigSchema::ONLY_RULES, []),
+                $this->getListValue($merged, ConfigSchema::DISABLED_RULES, []),
+            ),
+            outputFormat: new OutputFormat($this->getStringValue($merged, ConfigSchema::FORMAT, OutputFormat::DEFAULT)),
+            findingExclusions: new ResolvedFindingExclusions(
+                excludePaths: $this->getListValue($merged, ConfigSchema::EXCLUDE_PATHS, []),
+                excludeNamespaces: $this->getListValue($merged, ConfigSchema::EXCLUDE_NAMESPACES, []),
+            ),
             appliedSources: $appliedSources,
-            deferredWarnings: $factoryResult->warnings,
         );
     }
 
@@ -128,6 +127,20 @@ final class ConfigurationPipeline implements ConfigurationPipelineInterface
         }
 
         return array_values(array_filter($value, is_string(...)));
+    }
+
+    /** @param array<string, mixed> $merged */
+    private function getStringValue(array $merged, string $key, string $default): string
+    {
+        $value = $merged[$key] ?? null;
+        if ($value === null) {
+            return $default;
+        }
+        if (!\is_string($value)) {
+            throw new InvalidArgumentException(\sprintf('Invalid value for "%s": expected string, got %s', $key, get_debug_type($value)));
+        }
+
+        return $value;
     }
 
     /**

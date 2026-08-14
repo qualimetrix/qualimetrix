@@ -7,36 +7,38 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Console;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\RuleExecution\RuleExclusionStats;
-use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
-use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
-use Qualimetrix\Baseline\BaselineEntryParser;
-use Qualimetrix\Baseline\BaselineLoader;
-use Qualimetrix\Baseline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
 use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
-use Qualimetrix\Infrastructure\Console\ViolationFilterPipeline;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
-use Qualimetrix\Tests\Support\Violation\StubChannelDeclarationRegistry;
+use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
+use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
+use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult;
+use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
+use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
+use Qualimetrix\Reporting\FindingProjection\FindingProjector;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\ConsoleOutput;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Covers the three reporting facts P4-D2 adds on top of the existing stale
@@ -88,7 +90,8 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         ]);
 
         $output = new BufferedOutput();
-        $result = $this->createOrchestrator()->filterAndReport(
+        $result = $this->filterAndReport(
+            $this->createOrchestrator(),
             $this->createAnalysisResult($survivors),
             $this->createInput(['--baseline' => $baselinePath, '--show-resolved' => true]),
             self::diagnosticConsole($output),
@@ -122,7 +125,8 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         ]);
 
         $output = new BufferedOutput();
-        $result = $this->createOrchestrator()->filterAndReport(
+        $result = $this->filterAndReport(
+            $this->createOrchestrator(),
             $this->createAnalysisResult(),
             $this->createInput(['--baseline' => $baselinePath]),
             self::diagnosticConsole($output),
@@ -150,7 +154,8 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         $baselinePath = $this->writeBaseline(entries: [], scope: ['src', 'tests']);
 
         $output = new BufferedOutput();
-        $result = $this->createOrchestrator()->filterAndReport(
+        $result = $this->filterAndReport(
+            $this->createOrchestrator(),
             $this->createAnalysisResult(),
             $this->createInput(['--baseline' => $baselinePath]),
             self::diagnosticConsole($output),
@@ -175,7 +180,8 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         $baselinePath = $this->writeBaseline(entries: [], scope: ['src']);
 
         $output = new BufferedOutput();
-        $this->createOrchestrator()->filterAndReport(
+        $this->filterAndReport(
+            $this->createOrchestrator(),
             $this->createAnalysisResult(),
             $this->createInput(['--baseline' => $baselinePath]),
             self::diagnosticConsole($output),
@@ -199,7 +205,8 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         $projectRoot = AbsolutePath::fromString(sys_get_temp_dir());
 
         $output = new BufferedOutput();
-        $this->createOrchestrator()->filterAndReport(
+        $this->filterAndReport(
+            $this->createOrchestrator(),
             $this->createAnalysisResult(),
             $this->createInput(['--baseline' => $baselinePath]),
             self::diagnosticConsole($output),
@@ -224,7 +231,8 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
     public function itPrintsNoneOfTheThreeBaselineMessagesWithoutABaselineOption(): void
     {
         $output = new BufferedOutput();
-        $this->createOrchestrator()->filterAndReport(
+        $this->filterAndReport(
+            $this->createOrchestrator(),
             $this->createAnalysisResult([self::gotoViolation('src/Legacy/bootstrap.php')]),
             $this->createInput(),
             self::diagnosticConsole($output),
@@ -273,25 +281,44 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         return $path;
     }
 
-    private function createOrchestrator(): ViolationFilterOrchestrator
-    {
-        $configProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn(new TransitionalRuntimeConfiguration());
+    private function filterAndReport(
+        ViolationFilterOrchestrator $orchestrator,
+        AnalysisResult $result,
+        ArrayInput $input,
+        OutputInterface $output,
+        GitScopeResolution $scopeResolution,
+    ): FindingProjectionResult {
+        $baselinePath = $input->getOption('baseline');
 
-        $declarations = StubChannelDeclarationRegistry::withDefaults();
-
-        $pipeline = new ViolationFilterPipeline(
-            new BaselineLoader(new BaselineEntryParser($declarations)),
-            $declarations,
-            new MeasuredViolationSet(
-                self::createStub(AnalysisPipelineInterface::class),
-                new SuppressionFilter(),
-                $configProvider,
+        return $orchestrator->filterAndReport(
+            $result,
+            $input,
+            $output,
+            $scopeResolution,
+            new FindingProjectionOptions(
+                baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
             ),
         );
+    }
 
-        $ruleExecutor = self::createStub(RuleExecutorInterface::class);
-        $ruleExecutor->method('getRuleExclusionStats')->willReturn(new RuleExclusionStats());
+    private function createOrchestrator(): ViolationFilterOrchestrator
+    {
+        $declarations = StubChannelDeclarationRegistry::withDefaults();
+
+        $pipeline = new FindingProjector(
+            new SuppressionFilter(),
+            new BaselineLoader(new BaselineEntryParser($declarations)),
+            $declarations,
+            new class implements GitScopeQueryInterface {
+                public function resolve(GitScopeRequest $request): GitScopeResult
+                {
+                    return new GitScopeResult([], []);
+                }
+            },
+        );
+
+        $ruleExecutor = self::createStub(RuleExecutionInterface::class);
+        $ruleExecutor->method('exclusionStats')->willReturn(new RuleExclusionStats());
 
         return new ViolationFilterOrchestrator($pipeline, $ruleExecutor);
     }

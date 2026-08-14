@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Qualimetrix\Rules\Complexity;
 
 use InvalidArgumentException;
-use Qualimetrix\Core\Rule\HierarchicalRuleOptionsInterface;
-use Qualimetrix\Core\Rule\LevelOptionsInterface;
-use Qualimetrix\Core\Rule\RuleLevel;
-use Qualimetrix\Core\Rule\RuleOptionKey;
-use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Rules\Support\ThresholdParser;
+use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
  * Options for CognitiveComplexityRule (hierarchical).

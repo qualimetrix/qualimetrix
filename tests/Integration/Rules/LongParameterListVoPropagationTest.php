@@ -14,12 +14,12 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Rule\AnalysisContext;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
-use Qualimetrix\Core\Violation\Severity;
 use Qualimetrix\Metrics\CodeSmell\ParameterCountCollector;
 use Qualimetrix\Metrics\CodeSmell\ParameterCountVisitor;
 use Qualimetrix\Rules\CodeSmell\LongParameterListOptions;
@@ -159,7 +159,7 @@ PHP;
     }
 
     /**
-     * @return list<\Qualimetrix\Core\Violation\Violation>
+     * @return list<\Qualimetrix\Analysis\Finding\Contract\Violation>
      */
     private function analyzeConstruct(
         string $code,

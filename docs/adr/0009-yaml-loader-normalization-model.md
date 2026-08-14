@@ -1,5 +1,9 @@
 # 0009. YAML Loader Normalization Model
 
+> **Historical path note.** The Architecture factory named below moved in P4
+> to `Analysis\\Policy\\Architecture`; current ownership is governed by
+> [ADR 0022](0022-capability-oriented-modular-monolith.md).
+
 **Date:** 2026-05-15
 **Status:** Accepted
 

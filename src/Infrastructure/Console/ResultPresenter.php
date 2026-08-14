@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\OutputFormat;
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\CoverageFailure;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
@@ -49,15 +49,16 @@ final class ResultPresenter
         InputInterface $input,
         OutputInterface $output,
         bool $scopedReporting = false,
+        ?OutputFormat $outputFormat = null,
     ): int {
         $profiler = $this->profilerHolder->get(); // @phpstan-ignore staticMethod.dynamicCall
         $profiler->start('reporting', 'pipeline');
 
         // Use resolved config format (already merged: defaults -> config file -> CLI)
         // Fall back to CLI option only if config is not yet available
-        $format = $this->configurationProvider->hasConfiguration()
-            ? $this->configurationProvider->getConfiguration()->format
-            : ($input->getOption('format') ?? TransitionalRuntimeConfiguration::DEFAULT_FORMAT);
+        $format = $outputFormat instanceof OutputFormat
+            ? $outputFormat->value
+            : ($input->getOption('format') ?? 'summary');
         /** @var string $format */
 
         // Deprecation warning for text-verbose (stderr only, not in formatted output)

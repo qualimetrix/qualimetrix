@@ -15,7 +15,9 @@ Wrapper around git commands for obtaining the list of changed files.
 - `getRoot(): AbsolutePath` — get git top-level (`git rev-parse --show-toplevel`); may differ from the project root passed to the constructor when the project sits in a git subdirectory
 - `getChangedFiles(string $scope): array` — get list of changed files by scope
 
-The project root is owned by `GitScopeResolution` (ADR 0015 Phase 5) — pass it explicitly to consumers like `GitScopeFilter` instead of re-extracting it from the client.
+`GitScopeResolution` owns the project root for analysis. Reporting passes its
+explicit project root to `ReportingGitScopeQuery` instead of asking the Git
+client to infer it again.
 
 **Supported scopes:**
 - `staged` — files in staging area
@@ -44,15 +46,16 @@ Parses strings in format `git:staged`, `git:main..HEAD` into a `GitScope` object
 - `parse(string $scope): ?GitScope` — parse scope string
 - `isValid(string $scope): bool` — check scope validity
 
-### GitScopeFilter
+### ReportingGitScopeQuery
 
-`ViolationFilterInterface` implementation for `--report=git:...`.
+The Infrastructure adapter for Reporting's
+`GitScopeQueryInterface` and `--report=git:...` finding projection.
 
 **Behavior:**
-- Filters violations, showing only those related to changed files
-- By default includes parent namespace violations (if a class is changed, namespace violations are shown too)
+- Resolves changed PHP paths and their declared namespaces for Reporting
+- By default includes parent namespaces when a changed file declares one
 - Indexes every namespace declaration in a changed PHP file, including multiple bracketed blocks
-- `--report-strict` mode disables parent namespace violation display
+- `--report-strict` requests no parent-namespace expansion
 
 ## Use Cases
 
@@ -103,7 +106,7 @@ fi
 
 - `GitClient` with support for all scope formats (staged, HEAD, two-dot, three-dot)
 - `GitScopeParser` parses git:... syntax
-- `GitScopeFilter` filters violations by scope
+- `ReportingGitScopeQuery` resolves git scope for Reporting finding projection
 - CLI option `--report` works
 - `--report-strict` disables parent namespaces
 - Pre-commit hook example works

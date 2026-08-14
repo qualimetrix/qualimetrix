@@ -14,6 +14,9 @@ parameters:
     excludePaths:
         - tests/Fixtures
         - tests/Analysis/Evidence/Measurement/Fixtures
+        - tests/Analysis/Policy/Architecture/Fixtures
+        - tests/Analysis/Policy/Baseline/Fixtures
+        - tests/Analysis/Policy/Inline/Fixtures
         - tests/Architecture/Fixtures
         - tests/Unit/PhpStan/Rules/data
     tmpDir: .phpstan.cache

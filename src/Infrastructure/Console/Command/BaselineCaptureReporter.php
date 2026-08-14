@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Baseline\BaselineCapture;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineCapture;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**

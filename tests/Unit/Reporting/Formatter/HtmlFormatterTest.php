@@ -7,12 +7,15 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Reporting\Debt\DebtCalculator;
-use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
 use Qualimetrix\Reporting\Formatter\Html\HtmlFormatter;
+use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
+use Qualimetrix\Reporting\Health\HealthHintProjector;
 use Qualimetrix\Reporting\ReportBuilder;
 
 #[CoversClass(HtmlFormatter::class)]
@@ -23,8 +26,11 @@ final class HtmlFormatterTest extends TestCase
     protected function setUp(): void
     {
         $this->formatter = new HtmlFormatter(
-            new DebtCalculator(new RemediationTimeRegistry()),
-            new MetricHintProvider(),
+            new HtmlTreeBuilder(
+                new DebtCalculator(new RemediationTimeRegistry()),
+                self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+            ),
+            new HealthHintProjector(new HealthMetricCatalog()),
         );
     }
 

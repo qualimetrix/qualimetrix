@@ -33,13 +33,11 @@ final class ConfigurationMergerTest extends TestCase
             'disabled_rules' => ['complexity.cyclomatic', 'size.loc'],
             'exclude_paths' => ['tests/'],
             'excludes' => ['vendor'],
-            'exclude_health' => ['complexity'],
         ];
         $overlay = [
             'disabled_rules' => ['size.loc', 'coupling.cbo'],
             'exclude_paths' => ['tests/', 'generated/'],
             'excludes' => ['vendor', 'node_modules'],
-            'exclude_health' => ['complexity', 'coupling'],
         ];
 
         $result = ConfigurationMerger::merge($base, $overlay);
@@ -47,7 +45,6 @@ final class ConfigurationMergerTest extends TestCase
         self::assertSame(['complexity.cyclomatic', 'size.loc', 'coupling.cbo'], $result['disabled_rules']);
         self::assertSame(['tests/', 'generated/'], $result['exclude_paths']);
         self::assertSame(['vendor', 'node_modules'], $result['excludes']);
-        self::assertSame(['complexity', 'coupling'], $result['exclude_health']);
     }
 
     #[Test]
@@ -179,154 +176,6 @@ final class ConfigurationMergerTest extends TestCase
         self::assertSame(['warning' => 200], $result['rules']['size.loc']);
         // New key added
         self::assertSame('new_value', $result['new_key']);
-    }
-
-    #[Test]
-    public function architectureLayersListIsReplacedWholesaleByOverlay(): void
-    {
-        // ADR 0006: `architecture.layers` is an ordered list under
-        // declaration-order matching. Order is meaningful and must not be
-        // silently reshuffled by deep-merge — when overlay defines `layers`,
-        // it replaces the base list entirely.
-        $base = [
-            'architecture' => [
-                'layers' => [
-                    ['name' => 'a', 'patterns' => ['App\\A']],
-                    ['name' => 'b', 'patterns' => ['App\\B']],
-                ],
-            ],
-        ];
-        $overlay = [
-            'architecture' => [
-                'layers' => [
-                    ['name' => 'c', 'patterns' => ['App\\C']],
-                ],
-            ],
-        ];
-
-        $result = ConfigurationMerger::merge($base, $overlay);
-
-        // Overlay's layers list wins outright; base's a/b are NOT carried over.
-        self::assertCount(1, $result['architecture']['layers']);
-        self::assertSame('c', $result['architecture']['layers'][0]['name']);
-    }
-
-    #[Test]
-    public function architectureLayersListIsPreservedWhenOverlayDoesNotDefineIt(): void
-    {
-        // Regression: an overlay that only touches `coverage` or `allow` must
-        // not clobber the base `layers` list.
-        $base = [
-            'architecture' => [
-                'layers' => [
-                    ['name' => 'controller', 'patterns' => ['App\\Controller']],
-                ],
-            ],
-        ];
-        $overlay = [
-            'architecture' => [
-                'coverage' => 'error',
-            ],
-        ];
-
-        $result = ConfigurationMerger::merge($base, $overlay);
-
-        self::assertCount(1, $result['architecture']['layers']);
-        self::assertSame('controller', $result['architecture']['layers'][0]['name']);
-        self::assertSame('error', $result['architecture']['coverage']);
-    }
-
-    #[Test]
-    public function architectureAllowMapsAreDeepMerged(): void
-    {
-        $base = [
-            'architecture' => [
-                'allow' => [
-                    'controller' => ['service'],
-                ],
-            ],
-        ];
-        $overlay = [
-            'architecture' => [
-                'allow' => [
-                    'service' => ['repository'],
-                ],
-            ],
-        ];
-
-        $result = ConfigurationMerger::merge($base, $overlay);
-
-        self::assertSame(['service'], $result['architecture']['allow']['controller']);
-        self::assertSame(['repository'], $result['architecture']['allow']['service']);
-    }
-
-    #[Test]
-    public function architectureCoverageScalarIsOverridden(): void
-    {
-        $base = [
-            'architecture' => [
-                'coverage' => 'warn',
-            ],
-        ];
-        $overlay = [
-            'architecture' => [
-                'coverage' => 'error',
-            ],
-        ];
-
-        $result = ConfigurationMerger::merge($base, $overlay);
-
-        self::assertSame('error', $result['architecture']['coverage']);
-    }
-
-    #[Test]
-    public function architectureAllowListEntriesAreReplacedNotMerged(): void
-    {
-        // Within architecture.allow.<source>, the target list is replaced (matching
-        // the rules deep-merge contract for list-valued options).
-        $base = [
-            'architecture' => [
-                'allow' => [
-                    'controller' => ['service', 'shared'],
-                ],
-            ],
-        ];
-        $overlay = [
-            'architecture' => [
-                'allow' => [
-                    'controller' => ['repository'],
-                ],
-            ],
-        ];
-
-        $result = ConfigurationMerger::merge($base, $overlay);
-
-        self::assertSame(['repository'], $result['architecture']['allow']['controller']);
-    }
-
-    #[Test]
-    public function architectureKeepsPresetLayersWhenProjectAddsCoverage(): void
-    {
-        // Regression: project config that only adds `coverage` must not clobber
-        // the preset's layers list.
-        $preset = [
-            'architecture' => [
-                'layers' => [
-                    ['name' => 'controller', 'patterns' => ['App\\Controller']],
-                ],
-            ],
-        ];
-        $project = [
-            'architecture' => [
-                'coverage' => 'error',
-            ],
-        ];
-
-        $result = ConfigurationMerger::merge($preset, $project);
-
-        self::assertCount(1, $result['architecture']['layers']);
-        self::assertSame('controller', $result['architecture']['layers'][0]['name']);
-        self::assertSame('error', $result['architecture']['coverage']);
     }
 
     #[Test]

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Rules\Maintainability;
 
-use Qualimetrix\Core\Rule\Override\InvertedOverrideValidator;
-use Qualimetrix\Core\Rule\Override\OverrideValidatorInterface;
-use Qualimetrix\Core\Rule\RuleOptionKey;
-use Qualimetrix\Core\Rule\RuleOptionsInterface;
-use Qualimetrix\Core\Rule\ShorthandOptionKeysInterface;
-use Qualimetrix\Core\Rule\ThresholdAwareOptionsInterface;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Rules\Support\ThresholdParser;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator;
+use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 
 /**
  * Options for MaintainabilityRule.

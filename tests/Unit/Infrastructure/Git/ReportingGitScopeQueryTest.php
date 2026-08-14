@@ -1,0 +1,665 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
+
+use Closure;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\MetricSubject;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Infrastructure\Git\GitClient;
+use Qualimetrix\Infrastructure\Git\ReportingGitScopeQuery;
+use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
+use RuntimeException;
+use Symfony\Component\Process\Process;
+
+#[CoversClass(ReportingGitScopeQuery::class)]
+final class ReportingGitScopeQueryTest extends TestCase
+{
+    private string $tempDir;
+
+    private AbsolutePath $projectRoot;
+
+    protected function setUp(): void
+    {
+        $dir = sys_get_temp_dir() . '/git-scope-filter-test-' . uniqid();
+        mkdir($dir);
+        // Use realpath to normalize the path (macOS /var vs /private/var)
+        $realPath = realpath($dir);
+        if ($realPath === false) {
+            throw new RuntimeException('Failed to resolve path: ' . $dir);
+        }
+        $this->tempDir = $realPath;
+        $this->projectRoot = AbsolutePath::fromString($realPath);
+    }
+
+    protected function tearDown(): void
+    {
+        if (is_dir($this->tempDir)) {
+            $this->removeDirectory($this->tempDir);
+        }
+    }
+
+    #[Test]
+    public function itIncludesViolationsInChangedFiles(): void
+    {
+        $this->initGitRepo();
+
+        $this->createPhpFileWithNamespace('src/Service.php', 'App\\Service');
+        $this->exec('git add src/Service.php');
+
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
+        $filter = $this->projection('staged');
+
+        $violation = new Violation(
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
+            symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App\\Service', 'UserService'),
+                RelativePath::fromString('src/Service.php'),
+                10,
+            )),
+            ruleName: 'complexity',
+            violationCode: 'complexity',
+            message: 'Too complex',
+            severity: Severity::Warning,
+        );
+
+        self::assertTrue($filter($violation));
+    }
+
+    #[Test]
+    public function itExcludesViolationsInUnchangedFiles(): void
+    {
+        $this->initGitRepo();
+
+        $this->createPhpFileWithNamespace('src/Service.php', 'App\\Service');
+        $this->exec('git add src/Service.php');
+
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
+        $filter = $this->projection('staged');
+
+        $violation = new Violation(
+            location: new Location(RelativePath::fromString('src/Controller.php'), 10),
+            symbolPath: SymbolPath::forClass('App\\Controller', 'HomeController'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App\\Controller', 'HomeController'),
+                RelativePath::fromString('src/Controller.php'),
+                10,
+            )),
+            ruleName: 'complexity',
+            violationCode: 'complexity',
+            message: 'Too complex',
+            severity: Severity::Warning,
+        );
+
+        self::assertFalse($filter($violation));
+    }
+
+    #[Test]
+    public function itIncludesParentNamespaceViolationsByDefault(): void
+    {
+        $this->initGitRepo();
+
+        $this->createPhpFileWithNamespace('src/Service/User/UserService.php', 'App\\Service\\User');
+        $this->exec('git add src/Service/User/UserService.php');
+
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
+        $filter = $this->projection('staged');
+
+        // Violation for parent namespace
+        $violation = new Violation(
+            location: new Location(RelativePath::fromString('src/Service/Aggregated.php'), null),
+            symbolPath: SymbolPath::forNamespace('App\\Service'),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Service')),
+            ruleName: 'size',
+            violationCode: 'size',
+            message: 'Namespace too large',
+            severity: Severity::Warning,
+        );
+
+        self::assertTrue($filter($violation));
+    }
+
+    #[Test]
+    public function itExcludesParentNamespaceViolationsWhenStrictModeEnabled(): void
+    {
+        $this->initGitRepo();
+
+        $this->createPhpFileWithNamespace('src/Service/User/UserService.php', 'App\\Service\\User');
+        $this->exec('git add src/Service/User/UserService.php');
+
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
+        $filter = $this->projection('staged', false);
+
+        // Violation for parent namespace
+        $violation = new Violation(
+            location: new Location(RelativePath::fromString('src/Service/Aggregated.php'), null),
+            symbolPath: SymbolPath::forNamespace('App\\Service'),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Service')),
+            ruleName: 'size',
+            violationCode: 'size',
+            message: 'Namespace too large',
+            severity: Severity::Warning,
+        );
+
+        self::assertFalse($filter($violation));
+    }
+
+    #[Test]
+    public function itSkipsDeletedFiles(): void
+    {
+        $this->initGitRepo();
+
+        // Create and commit file
+        $this->createPhpFileWithNamespace('src/Service.php', 'App\\Service');
+        $this->exec('git add src/Service.php');
+        $this->exec('git commit -m "Initial"');
+
+        // Delete and stage
+        unlink($this->tempDir . '/src/Service.php');
+        $this->exec('git add src/Service.php');
+
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
+        $filter = $this->projection('staged');
+
+        $violation = new Violation(
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
+            symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App\\Service', 'UserService'),
+                RelativePath::fromString('src/Service.php'),
+                10,
+            )),
+            ruleName: 'complexity',
+            violationCode: 'complexity',
+            message: 'Too complex',
+            severity: Severity::Warning,
+        );
+
+        self::assertFalse($filter($violation));
+    }
+
+    #[Test]
+    public function itSkipsNonPhpFiles(): void
+    {
+        $this->initGitRepo();
+
+        file_put_contents($this->tempDir . '/README.md', '# Test');
+        $this->exec('git add README.md');
+
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
+        $filter = $this->projection('staged');
+
+        $violation = new Violation(
+            location: new Location(RelativePath::fromString('README.md'), 10),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('README.md')),
+            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('README.md'))),
+            ruleName: 'complexity',
+            violationCode: 'complexity',
+            message: 'Too complex',
+            severity: Severity::Warning,
+        );
+
+        self::assertFalse($filter($violation));
+    }
+
+    #[Test]
+    public function itBuildsNamespaceIndexIncludingAllParents(): void
+    {
+        $this->initGitRepo();
+
+        $this->createPhpFileWithNamespace(
+            'src/Service/User/Profile/ProfileService.php',
+            'App\\Service\\User\\Profile',
+        );
+        $this->exec('git add src/Service/User/Profile/ProfileService.php');
+
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
+        $filter = $this->projection('staged');
+
+        // All parent namespaces should be included
+        $namespaces = [
+            'App\\Service\\User\\Profile',
+            'App\\Service\\User',
+            'App\\Service',
+            'App',
+        ];
+
+        foreach ($namespaces as $namespace) {
+            $violation = new Violation(
+                location: new Location(RelativePath::fromString('some/file.php'), null),
+                symbolPath: SymbolPath::forNamespace($namespace),
+                subject: MetricSubject::aggregate(SymbolPath::forNamespace($namespace)),
+                ruleName: 'size',
+                violationCode: 'size',
+                message: 'Namespace too large',
+                severity: Severity::Warning,
+            );
+
+            self::assertTrue(
+                $filter($violation),
+                "Expected namespace '$namespace' to be included",
+            );
+        }
+    }
+
+    #[Test]
+    public function itHandlesFilesWithoutNamespace(): void
+    {
+        $this->initGitRepo();
+
+        // File without namespace declaration - still should be included by file path match
+        $this->createPhpFile('src/legacy.php');
+        $this->exec('git add src/legacy.php');
+
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
+        $filter = $this->projection('staged');
+
+        // Violation in the changed file should be included
+        $violation = new Violation(
+            location: new Location(RelativePath::fromString('src/legacy.php'), 10),
+            symbolPath: SymbolPath::forClass('', 'LegacyClass'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('', 'LegacyClass'),
+                RelativePath::fromString('src/legacy.php'),
+                10,
+            )),
+            ruleName: 'complexity',
+            violationCode: 'complexity',
+            message: 'Too complex',
+            severity: Severity::Warning,
+        );
+
+        // File path match should work even without namespace
+        self::assertTrue($filter($violation));
+    }
+
+    #[Test]
+    public function itHandlesMultipleChangedFiles(): void
+    {
+        $this->initGitRepo();
+
+        $this->createPhpFileWithNamespace('src/Service.php', 'App');
+        $this->createPhpFileWithNamespace('src/Controller.php', 'App');
+        $this->exec('git add src/Service.php src/Controller.php');
+
+        // Also create and commit a file that will be renamed
+        $this->createPhpFileWithNamespace('src/OldRepository.php', 'App');
+        $this->exec('git add src/OldRepository.php');
+        $this->exec('git commit -m "Initial"');
+
+        // Rename it
+        rename($this->tempDir . '/src/OldRepository.php', $this->tempDir . '/src/Repository.php');
+        $this->exec('git add src/OldRepository.php src/Repository.php');
+
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
+        $filter = $this->projection('staged');
+
+        $violations = [
+            new Violation(
+                location: new Location(RelativePath::fromString('src/Service.php'), 10),
+                symbolPath: SymbolPath::forClass('App', 'Service'),
+                subject: MetricSubject::declaration(new DeclarationPath(
+                    SymbolPath::forClass('App', 'Service'),
+                    RelativePath::fromString('src/Service.php'),
+                    10,
+                )),
+                ruleName: 'complexity',
+                violationCode: 'complexity',
+                message: 'Too complex',
+                severity: Severity::Warning,
+            ),
+            new Violation(
+                location: new Location(RelativePath::fromString('src/Controller.php'), 20),
+                symbolPath: SymbolPath::forClass('App', 'Controller'),
+                subject: MetricSubject::declaration(new DeclarationPath(
+                    SymbolPath::forClass('App', 'Controller'),
+                    RelativePath::fromString('src/Controller.php'),
+                    20,
+                )),
+                ruleName: 'size',
+                violationCode: 'size',
+                message: 'Too large',
+                severity: Severity::Warning,
+            ),
+            new Violation(
+                location: new Location(RelativePath::fromString('src/Repository.php'), 30),
+                symbolPath: SymbolPath::forClass('App', 'Repository'),
+                subject: MetricSubject::declaration(new DeclarationPath(
+                    SymbolPath::forClass('App', 'Repository'),
+                    RelativePath::fromString('src/Repository.php'),
+                    30,
+                )),
+                ruleName: 'coupling',
+                violationCode: 'coupling',
+                message: 'Too coupled',
+                severity: Severity::Warning,
+            ),
+        ];
+
+        foreach ($violations as $violation) {
+            self::assertTrue($filter($violation));
+        }
+    }
+
+    #[Test]
+    public function itUsesSpecifiedGitScope(): void
+    {
+        $this->initGitRepo();
+
+        // Initial commit on main
+        $this->createPhpFileWithNamespace('src/Base.php', 'App');
+        $this->exec('git add src/Base.php');
+        $this->exec('git commit -m "Base"');
+
+        // Create feature branch
+        $this->exec('git checkout -b feature');
+
+        // Add new file on feature branch
+        $this->createPhpFileWithNamespace('src/Service.php', 'App\\Service');
+        $this->exec('git add src/Service.php');
+        $this->exec('git commit -m "Feature"');
+
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
+        $filter = $this->projection('main..HEAD');
+
+        // Service.php was changed in main..HEAD, should be included
+        $violation = new Violation(
+            location: new Location(RelativePath::fromString('src/Service.php'), 10),
+            symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App\\Service', 'UserService'),
+                RelativePath::fromString('src/Service.php'),
+                10,
+            )),
+            ruleName: 'complexity',
+            violationCode: 'complexity',
+            message: 'Too complex',
+            severity: Severity::Warning,
+        );
+
+        self::assertTrue($filter($violation));
+
+        // Base.php was NOT changed in main..HEAD (it's in both), should not be included
+        // However, it shares namespace 'App' with Service.php which is in 'App\Service'
+        // So we need to check with a different namespace
+        $baseViolation = new Violation(
+            location: new Location(RelativePath::fromString('src/Base.php'), 10),
+            symbolPath: SymbolPath::forClass('App', 'Base'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App', 'Base'),
+                RelativePath::fromString('src/Base.php'),
+                10,
+            )),
+            ruleName: 'complexity',
+            violationCode: 'complexity',
+            message: 'Too complex',
+            severity: Severity::Warning,
+        );
+
+        // This should be false because Base.php file path is not in changed files
+        // and namespace 'App' is a parent of 'App\Service' so it would be included
+        // Let's use strict mode to test this properly
+        $strictFilter = $this->projection('main..HEAD', false);
+        self::assertFalse($strictFilter($baseViolation));
+    }
+
+    #[Test]
+    public function itIncludesViolationsForStagedFilesEvenIfDeletedLocally(): void
+    {
+        $this->initGitRepo();
+
+        // Stage a file and then delete it locally
+        // This simulates a file that was added but deleted before commit
+        $this->createPhpFileWithNamespace('src/Deleted.php', 'App');
+        $this->exec('git add src/Deleted.php');
+        unlink($this->tempDir . '/src/Deleted.php');
+
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
+        $filter = $this->projection('staged');
+
+        $violation = new Violation(
+            location: new Location(RelativePath::fromString('src/Deleted.php'), 10),
+            symbolPath: SymbolPath::forClass('App', 'Deleted'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App', 'Deleted'),
+                RelativePath::fromString('src/Deleted.php'),
+                10,
+            )),
+            ruleName: 'complexity',
+            violationCode: 'complexity',
+            message: 'Too complex',
+            severity: Severity::Warning,
+        );
+
+        // File is still in Git's staged changes, so violations should be included
+        // even though the file doesn't exist locally
+        self::assertTrue($filter($violation));
+    }
+
+    #[Test]
+    public function itHandlesViolationsWithNullNamespace(): void
+    {
+        $this->initGitRepo();
+
+        $this->createPhpFileWithNamespace('src/Service.php', 'App\\Service');
+        $this->exec('git add src/Service.php');
+
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
+        $filter = $this->projection('staged');
+
+        // File-level violation - should match by file path
+        $violation = new Violation(
+            location: new Location(RelativePath::fromString('src/Service.php'), null),
+            symbolPath: SymbolPath::forFile(RelativePath::fromString('src/Service.php')),
+            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Service.php'))),
+            ruleName: 'size',
+            violationCode: 'size',
+            message: 'File too large',
+            severity: Severity::Warning,
+        );
+
+        // Should be included because file path matches
+        self::assertTrue($filter($violation));
+    }
+
+    #[Test]
+    public function itExtractsNamespaceFromFileContent(): void
+    {
+        $this->initGitRepo();
+
+        $content = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App\Complex\Nested;
+
+class Service
+{
+}
+PHP;
+
+        $this->createPhpFileWithContent('src/Complex/Nested/Service.php', $content);
+        $this->exec('git add src/Complex/Nested/Service.php');
+
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
+        $filter = $this->projection('staged');
+
+        $violation = new Violation(
+            location: new Location(RelativePath::fromString('some/file.php'), null),
+            symbolPath: SymbolPath::forNamespace('App\\Complex\\Nested'),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Complex\\Nested')),
+            ruleName: 'size',
+            violationCode: 'size',
+            message: 'Namespace too large',
+            severity: Severity::Warning,
+        );
+
+        self::assertTrue($filter($violation));
+    }
+
+    #[Test]
+    public function itExtractsBracketedNamespace(): void
+    {
+        $this->initGitRepo();
+
+        $content = <<<'PHP'
+<?php
+
+declare(strict_types=1);
+
+namespace App\Bracketed {
+
+class Service
+{
+}
+
+}
+PHP;
+
+        $this->createPhpFileWithContent('src/Bracketed/Service.php', $content);
+        $this->exec('git add src/Bracketed/Service.php');
+
+        $gitClient = new GitClient(AbsolutePath::fromString($this->tempDir));
+        $filter = $this->projection('staged');
+
+        $violation = new Violation(
+            location: new Location(RelativePath::fromString('some/file.php'), null),
+            symbolPath: SymbolPath::forNamespace('App\\Bracketed'),
+            subject: MetricSubject::aggregate(SymbolPath::forNamespace('App\\Bracketed')),
+            ruleName: 'size',
+            violationCode: 'size',
+            message: 'Namespace too large',
+            severity: Severity::Warning,
+        );
+
+        self::assertTrue($filter($violation));
+    }
+
+    #[Test]
+    public function itIndexesEveryNamespaceBlockInAChangedFile(): void
+    {
+        $this->initGitRepo();
+        $content = <<<'PHP'
+<?php
+namespace One { class A {} }
+namespace Two\Nested { class B {} }
+PHP;
+        $this->createPhpFileWithContent('src/Multi.php', $content);
+        $this->exec('git add src/Multi.php');
+
+        $filter = $this->projection('staged');
+
+        foreach (['One', 'Two\\Nested', 'Two'] as $namespace) {
+            self::assertTrue($filter(new Violation(
+                location: new Location(RelativePath::fromString('other.php'), null),
+                symbolPath: SymbolPath::forNamespace($namespace),
+                subject: MetricSubject::aggregate(SymbolPath::forNamespace($namespace)),
+                ruleName: 'size',
+                violationCode: 'size',
+                message: 'Namespace issue',
+                severity: Severity::Warning,
+            )));
+        }
+    }
+
+    private function initGitRepo(): void
+    {
+        $this->exec('git init');
+        $this->exec('git config user.email "test@example.com"');
+        $this->exec('git config user.name "Test User"');
+        $this->exec('git checkout -b main');
+    }
+
+    /** @return Closure(Violation): bool */
+    private function projection(string $reference, bool $includeParentNamespaces = true): Closure
+    {
+        $result = (new ReportingGitScopeQuery())->resolve(new GitScopeRequest(
+            $reference,
+            $this->projectRoot,
+            $includeParentNamespaces,
+        ));
+        $paths = array_fill_keys($result->paths, true);
+        $namespaces = array_fill_keys($result->namespaces, true);
+
+        return static fn(Violation $violation): bool => isset($paths[$violation->location->pathString()])
+            || ($violation->symbolPath->namespace !== null && isset($namespaces[$violation->symbolPath->namespace]));
+    }
+
+    private function createPhpFile(string $relativePath): void
+    {
+        $this->createPhpFileWithContent($relativePath, '<?php');
+    }
+
+    private function createPhpFileWithNamespace(string $relativePath, string $namespace): void
+    {
+        $content = "<?php\n\nnamespace {$namespace};";
+        $this->createPhpFileWithContent($relativePath, $content);
+    }
+
+    private function createPhpFileWithContent(string $relativePath, string $content): void
+    {
+        $fullPath = $this->tempDir . '/' . $relativePath;
+        $dir = \dirname($fullPath);
+
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
+
+        file_put_contents($fullPath, $content);
+    }
+
+    private function exec(string $command): void
+    {
+        $process = Process::fromShellCommandline(
+            $command,
+            $this->tempDir,
+        );
+
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new RuntimeException(
+                \sprintf('Command failed: %s', $process->getErrorOutput()),
+            );
+        }
+    }
+
+    private function removeDirectory(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $items = scandir($dir);
+        if ($items === false) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            $path = $dir . '/' . $item;
+            if (is_dir($path)) {
+                $this->removeDirectory($path);
+            } else {
+                unlink($path);
+            }
+        }
+
+        rmdir($dir);
+    }
+}

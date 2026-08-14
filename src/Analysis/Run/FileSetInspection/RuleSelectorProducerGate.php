@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\FileSetInspection;
 
-use Qualimetrix\Core\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 
 final readonly class RuleSelectorProducerGate
 {

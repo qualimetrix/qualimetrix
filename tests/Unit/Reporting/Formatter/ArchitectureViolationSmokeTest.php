@@ -10,23 +10,28 @@ use DOMElement;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Architecture\Rules\CircularDependencyRule;
-use Qualimetrix\Architecture\Rules\LayerViolationRule;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Reporting\Debt\DebtCalculator;
-use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\CheckstyleFormatter;
 use Qualimetrix\Reporting\Formatter\GithubActionsFormatter;
 use Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter;
 use Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter;
 use Qualimetrix\Reporting\Formatter\Html\HtmlFormatter;
+use Qualimetrix\Reporting\Formatter\Html\HtmlTreeBuilder;
 use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonOffenderSection;
@@ -45,9 +50,8 @@ use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
 use Qualimetrix\Reporting\Formatter\TextFormatter;
 use Qualimetrix\Reporting\Formatter\TextVerboseFormatter;
 use Qualimetrix\Reporting\FormatterContext;
+use Qualimetrix\Reporting\Health\HealthHintProjector;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
-use Qualimetrix\Reporting\Health\NamespaceDrillDown;
 use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
 
@@ -123,15 +127,16 @@ final class ArchitectureViolationSmokeTest extends TestCase
     #[Test]
     public function itRendersArchitectureViolationsViaJsonFormatter(): void
     {
-        $hintProvider = new MetricHintProvider();
-        $namespaceDrillDown = new NamespaceDrillDown($hintProvider);
+        $hintProvider = new HealthMetricCatalog();
+        $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $namespaceDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
         $sanitizer = new JsonSanitizer();
         $violationFilter = new ViolationFilter();
         $remediationTimeRegistry = new RemediationTimeRegistry();
         $formatter = new JsonFormatter(
             new DebtCalculator($remediationTimeRegistry),
             new JsonHealthSection(new HealthScoreResolver($namespaceDrillDown), $sanitizer),
-            new JsonOffenderSection($namespaceDrillDown, $violationFilter, $sanitizer),
+            new JsonOffenderSection(new WorstClassDrillDown($definitionCatalog), $violationFilter, $sanitizer),
             new JsonViolationSection($remediationTimeRegistry, $sanitizer),
         );
 
@@ -183,8 +188,11 @@ final class ArchitectureViolationSmokeTest extends TestCase
     public function itRendersArchitectureViolationsViaHtmlFormatter(): void
     {
         $formatter = new HtmlFormatter(
-            new DebtCalculator(new RemediationTimeRegistry()),
-            new MetricHintProvider(),
+            new HtmlTreeBuilder(
+                new DebtCalculator(new RemediationTimeRegistry()),
+                self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+            ),
+            new HealthHintProjector(new HealthMetricCatalog()),
         );
 
         $report = $this->buildArchitectureReport();
@@ -309,8 +317,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
     #[Test]
     public function itRunsHealthFormatterOnArchitectureOnlyReport(): void
     {
-        $hintProvider = new MetricHintProvider();
-        $drillDown = new NamespaceDrillDown($hintProvider);
+        $hintProvider = new HealthMetricCatalog();
+        $drillDown = new HealthScoreDrillDown($hintProvider, self::createStub(ComputedMetricDefinitionCatalogInterface::class));
         $resolver = new HealthScoreResolver($drillDown);
         $formatter = new HealthTextFormatter($resolver);
 
@@ -328,10 +336,11 @@ final class ArchitectureViolationSmokeTest extends TestCase
     {
         $registry = new RemediationTimeRegistry();
         $debtCalculator = new DebtCalculator($registry);
-        $hintProvider = new MetricHintProvider();
-        $namespaceDrillDown = new NamespaceDrillDown($hintProvider);
+        $hintProvider = new HealthMetricCatalog();
+        $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $namespaceDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
         $violationFilter = new ViolationFilter();
-        $offenderListRenderer = new OffenderListRenderer($violationFilter, $namespaceDrillDown);
+        $offenderListRenderer = new OffenderListRenderer($violationFilter, new WorstClassDrillDown($definitionCatalog));
         $formatter = new SummaryFormatter(
             new DetailedViolationRenderer($debtCalculator),
             new HealthBarRenderer(new HealthScoreResolver($namespaceDrillDown)),
@@ -525,8 +534,8 @@ final class ArchitectureViolationSmokeTest extends TestCase
         return \count($this->expectedRuleNames());
     }
 
-    /** @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations */
-    private static function violation(\Qualimetrix\Core\Violation\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Core\Violation\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Core\Rule\RuleLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
+    private static function violation(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),

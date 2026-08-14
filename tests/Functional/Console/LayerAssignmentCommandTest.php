@@ -7,9 +7,9 @@ namespace Qualimetrix\Tests\Functional\Console;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
-use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
-use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
@@ -282,7 +282,7 @@ final class LayerAssignmentCommandTest extends TestCase
      * Builds a {@see LayerRegistry} from the same overlapping configuration
      * the command will load, asks the registry directly what layer
      * `App\Service\Foo` resolves to ({@see LayerRegistry::resolveLayer()} —
-     * the value the runtime {@see \Qualimetrix\Architecture\Rules\LayerViolationRule}
+     * the value the runtime {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule}
      * sees on every dependency edge), runs the command against the same
      * config, and asserts both agree.
      *

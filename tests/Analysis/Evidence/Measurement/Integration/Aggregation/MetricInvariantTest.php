@@ -7,12 +7,12 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregatio
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationMeta;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
-use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -41,11 +41,9 @@ final class MetricInvariantTest extends TestCase
         $containerFactory = new ContainerFactory();
         $container = $containerFactory->create();
 
-        // Normally done by RuntimeConfigurator (ADR 0008 §3: bind() before
-        // prepare()); replicated here because this test bypasses CheckCommand.
-        /** @var ArchitectureProcessorInterface $architectureProcessor */
-        $architectureProcessor = $container->get(ArchitectureProcessorInterface::class);
-        $architectureProcessor->bind(ArchitectureConfiguration::empty());
+        /** @var ArchitecturePolicyConfiguratorInterface $architecturePolicy */
+        $architecturePolicy = $container->get(ArchitecturePolicyConfiguratorInterface::class);
+        $architecturePolicy->configure(new ConfigurationDocument([]));
 
         /** @var AnalysisPipelineInterface $pipeline */
         $pipeline = $container->get(AnalysisPipelineInterface::class);

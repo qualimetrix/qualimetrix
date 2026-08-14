@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -63,6 +64,12 @@ final class WorkerBootstrapTest extends TestCase
         );
 
         self::assertInstanceOf(FileProcessorInterface::class, $processor); // @phpstan-ignore staticMethod.alreadyNarrowedType
+        $sourceControlExtractor = (new ReflectionClass($processor))->getProperty('sourceControlExtractor')->getValue($processor);
+        self::assertInstanceOf(SourceControlExtractorInterface::class, $sourceControlExtractor);
+        self::assertSame(
+            'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor',
+            $sourceControlExtractor::class,
+        );
     }
 
     #[Test]

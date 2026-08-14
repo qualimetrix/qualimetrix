@@ -14,7 +14,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Metrics\Coupling\DistanceCollector;
-use Qualimetrix\Tests\Support\Dependency\AdjacencyGraphBuilder;
+use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
 #[CoversClass(DistanceCollector::class)]
 final class DistanceCollectorTest extends TestCase

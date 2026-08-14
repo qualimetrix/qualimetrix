@@ -17,13 +17,10 @@ Console/
 ├── Application.php
 ├── CliOptionsParser.php
 ├── MeasuredViolationSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by config + source annotations; a CLI flag may narrow it, never widen it
-├── ViolationFilterPipeline.php      # suppression -> path exclusion -> namespace exclusion -> baseline -> git scope; --no-suppression-annotations restores annotated findings after the baseline stage
-├── ViolationFilterOptions.php
-├── CliOnlyNarrowing.php             # check-only narrowing: --exclude-path / --exclude-namespace / --no-suppression-annotations
-├── ViolationFilterResult.php
-├── GitScopeFilterConfig.php
+├── ViolationFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
 ├── RuntimeConfigurator.php
-├── AnalysisRuntimeConfigurator.php  # Per-run rule, collector, computed-metric, and feature state
+├── RuntimeLoggerConfigurator.php    # Creates, publishes, and returns the logger for one run
+├── AnalysisRuntimeConfigurator.php  # Per-run rule, collector, cache, and feature state
 ├── CheckScopeResolver.php           # Git scope first, then warnings for that exact scope
 ├── ResolvedCheckScope.php           # Resolved Git scope plus deferred warning messages
 ├── DiagnosticOutput.php              # Human diagnostics routed to stderr
@@ -69,15 +66,17 @@ scope with its warning messages. `CheckCommand` validates the resolved paths
 before emitting the messages through its stderr-only warning route; structured
 stdout remains a clean report payload.
 
-The Console package is an adapter. It imports Run and Configuration promises,
-parses options, configures one run, and renders diagnostics; it does not own a
-pipeline phase or capability state. P6 still moves the remaining rule-option
-transport out of the transitional Configuration boundary.
+The Console package is an adapter. It imports Run, Configuration, Finding, and
+Reporting contracts, parses options, configures one run, and renders
+diagnostics; it does not own a pipeline phase or finding-policy state. The
+Reporting-owned `FindingProjector` is the single authority for suppression,
+configured exclusions, baseline judgment, annotation rejoin, and Git-last
+projection.
 
 `LayerAssignmentResolver` is an internal Console collaborator for
 `debug:layer-assignment`. It owns the adapter-side discovery, generated-file
 filtering, collection, dependency-graph and class-set preparation needed to
-query `ArchitectureProcessor`; the command retains input validation, runtime
+query `LayerAssignmentInspectorInterface`; the command retains input validation, runtime
 configuration, error mapping and rendering. This keeps both declarations below
 their constructor-dependency thresholds without introducing a public port.
 

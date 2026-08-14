@@ -11,11 +11,13 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
+use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
-use Qualimetrix\Baseline\Suppression\RuleValidatorMapFactory;
-use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
@@ -41,6 +43,7 @@ final class WorkerBootstrap
 {
     private const string FILE_MEASUREMENT_COLLECTOR_CLASS = 'Qualimetrix\\Analysis\\Evidence\\Measurement\\FileMeasurement\\CompositeCollector';
     private const string FILE_PROCESSOR_CLASS = 'Qualimetrix\\Analysis\\Run\\Collection\\FileProcessor';
+    private const string SOURCE_CONTROL_EXTRACTOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor';
 
     /**
      * Cached FileProcessor instance (static for persistence across tasks).
@@ -64,7 +67,7 @@ final class WorkerBootstrap
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses Derived collector class names
      * @param AbsolutePath|null $cacheDir Cache directory (null to disable caching)
      * @param array<string, mixed> $collectorConfig Collector-level configuration (e.g., LCOM exclude methods)
-     * @param list<class-string<RuleInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
+     * @param list<class-string<RuleDefinitionInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
      */
     public static function getFileProcessor(
         AbsolutePath $projectRoot,
@@ -126,7 +129,7 @@ final class WorkerBootstrap
      * @param class-string<DependencyTraversalParticipantInterface> $dependencyTraversalParticipantClass
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses
      * @param array<string, mixed> $collectorConfig
-     * @param list<class-string<RuleInterface>> $ruleClasses
+     * @param list<class-string<RuleDefinitionInterface>> $ruleClasses
      */
     private static function buildCacheKey(
         AbsolutePath $projectRoot,
@@ -166,7 +169,7 @@ final class WorkerBootstrap
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses
      * @param class-string<DependencyTraversalParticipantInterface> $dependencyTraversalParticipantClass
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses
-     * @param list<class-string<RuleInterface>> $ruleClasses
+     * @param list<class-string<RuleDefinitionInterface>> $ruleClasses
      */
     private static function createFileProcessor(
         AbsolutePath $projectRoot,
@@ -206,7 +209,15 @@ final class WorkerBootstrap
 
         // Build per-rule threshold-override validator map (static lookup, no DI)
         $validators = RuleValidatorMapFactory::build($ruleClasses);
-        $extractor = new ThresholdOverrideExtractor($validators);
+        $thresholdOverrideExtractor = new ThresholdOverrideExtractor($validators);
+        $sourceControlExtractorClass = self::validatedImplementationClass(
+            self::SOURCE_CONTROL_EXTRACTOR_CLASS,
+            SourceControlExtractorInterface::class,
+        );
+        $sourceControlExtractor = new $sourceControlExtractorClass(
+            new SuppressionExtractor(),
+            $thresholdOverrideExtractor,
+        );
 
         $fileProcessorClass = self::validatedImplementationClass(
             self::FILE_PROCESSOR_CLASS,
@@ -215,7 +226,7 @@ final class WorkerBootstrap
         $processor = new $fileProcessorClass(
             parser: $parser,
             collector: $compositeCollector,
-            thresholdOverrideExtractor: $extractor,
+            sourceControlExtractor: $sourceControlExtractor,
         );
         $processor->setProjectRoot($projectRoot);
 

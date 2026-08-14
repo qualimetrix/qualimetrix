@@ -19,7 +19,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
-use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -91,9 +91,9 @@ final class FullPipelineIntegrationTest extends TestCase
         self::assertSame(7, $resolved->ruleOptions['complexity.cyclomatic']['callable']['warning']);
 
         // Disabled rules from legacy are preserved (union semantics)
-        self::assertContains('code-smell.boolean-argument', $resolved->runtime->disabledRules);
-        self::assertContains('design.data-class', $resolved->runtime->disabledRules);
-        self::assertContains('design.god-class', $resolved->runtime->disabledRules);
+        self::assertContains('code-smell.boolean-argument', $resolved->ruleSelection->disabled);
+        self::assertContains('design.data-class', $resolved->ruleSelection->disabled);
+        self::assertContains('design.god-class', $resolved->ruleSelection->disabled);
     }
 
     #[Test]
@@ -106,11 +106,11 @@ final class FullPipelineIntegrationTest extends TestCase
         $resolved = $this->resolveFullPipeline(['--preset' => ['legacy']]);
 
         // Legacy preset disables these rules
-        self::assertContains('code-smell.boolean-argument', $resolved->runtime->disabledRules);
-        self::assertContains('design.data-class', $resolved->runtime->disabledRules);
+        self::assertContains('code-smell.boolean-argument', $resolved->ruleSelection->disabled);
+        self::assertContains('design.data-class', $resolved->ruleSelection->disabled);
 
         // Config file adds its own disabled rule (union semantics)
-        self::assertContains('complexity.npath', $resolved->runtime->disabledRules);
+        self::assertContains('complexity.npath', $resolved->ruleSelection->disabled);
     }
 
     #[Test]

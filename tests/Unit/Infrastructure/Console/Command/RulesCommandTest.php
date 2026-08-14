@@ -7,13 +7,16 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Console\Command;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
-use Qualimetrix\Architecture\Rules\LayerViolationOptions;
-use Qualimetrix\Architecture\Rules\LayerViolationRule;
-use Qualimetrix\Core\Rule\RuleCategory;
-use Qualimetrix\Core\Rule\RuleInterface;
-use Qualimetrix\Core\Rule\RuleOptionsInterface;
-use Qualimetrix\Core\Violation\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
+use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -23,7 +26,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itSetsTheCommandNameAndDescription(): void
     {
-        $command = new RulesCommand([]);
+        $command = $this->createCommand([]);
 
         self::assertSame('rules', $command->getName());
         self::assertSame('List all available analysis rules', $command->getDescription());
@@ -32,7 +35,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itConfiguresTheGroupOption(): void
     {
-        $command = new RulesCommand([]);
+        $command = $this->createCommand([]);
         $definition = $command->getDefinition();
 
         self::assertTrue($definition->hasOption('group'));
@@ -45,7 +48,7 @@ final class RulesCommandTest extends TestCase
     #[Test]
     public function itDisplaysNoRulesMessageWhenNoRulesAreRegistered(): void
     {
-        $tester = new CommandTester(new RulesCommand([]));
+        $tester = new CommandTester($this->createCommand([]));
         $tester->execute([]);
 
         self::assertSame(0, $tester->getStatusCode());
@@ -57,7 +60,7 @@ final class RulesCommandTest extends TestCase
     {
         $rule = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
 
-        $tester = new CommandTester(new RulesCommand([$rule]));
+        $tester = new CommandTester($this->createCommand([$rule]));
         $tester->execute(['--group' => 'nonexistent']);
 
         self::assertSame(0, $tester->getStatusCode());
@@ -70,7 +73,7 @@ final class RulesCommandTest extends TestCase
         $ruleA = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
         $ruleB = $this->createRuleMock('size.class-count', RuleCategory::Size, 'Class count');
 
-        $tester = new CommandTester(new RulesCommand([$ruleA, $ruleB]));
+        $tester = new CommandTester($this->createCommand([$ruleA, $ruleB]));
         $tester->execute([]);
 
         $display = $tester->getDisplay();
@@ -90,7 +93,7 @@ final class RulesCommandTest extends TestCase
         $ruleA = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
         $ruleB = $this->createRuleMock('size.class-count', RuleCategory::Size, 'Class count');
 
-        $tester = new CommandTester(new RulesCommand([$ruleA, $ruleB]));
+        $tester = new CommandTester($this->createCommand([$ruleA, $ruleB]));
         $tester->execute(['--group' => 'complexity']);
 
         $display = $tester->getDisplay();
@@ -106,7 +109,7 @@ final class RulesCommandTest extends TestCase
     {
         $rule = $this->createCyclomaticRuleWithAlias();
 
-        $tester = new CommandTester(new RulesCommand([$rule]));
+        $tester = new CommandTester($this->createCommand([$rule]));
         $tester->execute([]);
 
         $display = $tester->getDisplay();
@@ -120,10 +123,10 @@ final class RulesCommandTest extends TestCase
     {
         $rule = new LayerViolationRule(
             new LayerViolationOptions(),
-            self::createStub(ArchitectureProcessorInterface::class),
+            new ArchitecturePolicy(),
         );
 
-        $tester = new CommandTester(new RulesCommand([$rule]));
+        $tester = new CommandTester($this->createCommand([$rule]));
         $tester->execute([]);
 
         $display = $tester->getDisplay();
@@ -143,7 +146,7 @@ final class RulesCommandTest extends TestCase
     {
         $rule = $this->createRuleMock('complexity.cyclomatic', RuleCategory::Complexity, 'Cyclomatic complexity');
 
-        $tester = new CommandTester(new RulesCommand([$rule]));
+        $tester = new CommandTester($this->createCommand([$rule]));
         $tester->execute([]);
 
         $display = $tester->getDisplay();
@@ -163,6 +166,26 @@ final class RulesCommandTest extends TestCase
         $rule->method('getDescription')->willReturn($description);
 
         return $rule;
+    }
+
+    /** @param list<RuleInterface> $rules */
+    private function createCommand(array $rules): RulesCommand
+    {
+        $metadata = array_map(
+            static fn(RuleInterface $rule): RuleMetadata => new RuleMetadata(
+                name: $rule->getName(),
+                optionsClass: StubRuleOptions::class,
+                category: $rule->getCategory(),
+                description: $rule->getDescription(),
+                aliases: CliAliasReader::read($rule::class),
+                active: true,
+            ),
+            $rules,
+        );
+        $execution = self::createStub(RuleExecutionInterface::class);
+        $execution->method('allRules')->willReturn($metadata);
+
+        return new RulesCommand($execution);
     }
 
     private function createCyclomaticRuleWithAlias(): RuleInterface
@@ -197,7 +220,7 @@ final readonly class StubRuleOptions implements RuleOptionsInterface
 /**
  * @internal
  */
-#[\Qualimetrix\Core\Rule\Attribute\CliAlias('cyclomatic-warning', 'warning_threshold')]
+#[\Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias('cyclomatic-warning', 'warning_threshold')]
 final class FixtureRuleWithCyclomaticAlias implements RuleInterface
 {
     public function getName(): string
@@ -220,7 +243,7 @@ final class FixtureRuleWithCyclomaticAlias implements RuleInterface
         return [];
     }
 
-    public function analyze(\Qualimetrix\Core\Rule\AnalysisContext $context): array
+    public function analyze(\Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext $context): array
     {
         return [];
     }
