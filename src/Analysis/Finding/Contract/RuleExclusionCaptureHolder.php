@@ -10,9 +10,8 @@ namespace Qualimetrix\Analysis\Finding\Contract;
  * `exclude_namespaces` / `exclude_paths` (as opposed to just counting them in
  * {@see \Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats}).
  *
- * Static holder, mirroring {@see \Qualimetrix\Core\Profiler\ProfilerHolder} and
- * {@see \Qualimetrix\Core\Coupling\FrameworkNamespacesHolder}: RuleExecution (Analysis
- * layer) must not depend on Symfony Console or know about the `--show-suppressed`
+ * Static holder, mirroring {@see \Qualimetrix\Core\Profiler\ProfilerHolder}:
+ * RuleExecution (Analysis layer) must not depend on Symfony Console or know about the `--show-suppressed`
  * CLI option directly — the dependency graph
  * (`Infrastructure -> Analysis -> ... -> Core`) only flows downward. Infrastructure
  * (`RuntimeConfigurator`) sets this holder from the CLI flag before the analysis

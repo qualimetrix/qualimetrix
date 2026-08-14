@@ -9,6 +9,17 @@ use PhpParser\Node\Stmt\Class_;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Design\DataClassOptions;
+use Qualimetrix\Analysis\Evidence\Design\DataClassRule;
+use Qualimetrix\Analysis\Evidence\Design\GodClassOptions;
+use Qualimetrix\Analysis\Evidence\Design\GodClassRule;
+use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
+use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
+use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator;
@@ -18,17 +29,6 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Rules\Complexity\ComplexityOptions;
-use Qualimetrix\Rules\Complexity\ComplexityRule;
-use Qualimetrix\Rules\Design\DataClassOptions;
-use Qualimetrix\Rules\Design\DataClassRule;
-use Qualimetrix\Rules\Design\GodClassOptions;
-use Qualimetrix\Rules\Design\GodClassRule;
-use Qualimetrix\Rules\Design\TypeCoverageOptions;
-use Qualimetrix\Rules\Design\TypeCoverageRule;
-use Qualimetrix\Rules\Maintainability\MaintainabilityOptions;
-use Qualimetrix\Rules\Maintainability\MaintainabilityRule;
-use Qualimetrix\Rules\Size\MethodCountRule;
 
 /**
  * End-to-end coverage for the `@qmx-threshold` annotation path that

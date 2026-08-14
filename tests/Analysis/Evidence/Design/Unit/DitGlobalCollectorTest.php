@@ -1,0 +1,233 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Evidence\Design\Unit;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\Design\DitGlobalCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
+
+#[CoversClass(DitGlobalCollector::class)]
+final class DitGlobalCollectorTest extends TestCase
+{
+    private DitGlobalCollector $collector;
+
+    protected function setUp(): void
+    {
+        $this->collector = new DitGlobalCollector();
+    }
+
+    private function createExtends(string $childFqn, string $parentFqn): Dependency
+    {
+        return new Dependency(
+            source: new DeclarationPath(SymbolPath::fromClassFqn($childFqn), RelativePath::fromString('test.php'), 0),
+            target: new LogicalClassPath(SymbolPath::fromClassFqn($parentFqn)),
+            type: DependencyType::Extends,
+            location: new Location(RelativePath::fromString('test.php'), 1),
+        );
+    }
+
+    #[Test]
+    public function getName_returnsDitGlobal(): void
+    {
+        self::assertSame('dit-global', $this->collector->getName());
+    }
+
+    #[Test]
+    public function requires_returnsEmpty(): void
+    {
+        self::assertSame([], $this->collector->requires());
+    }
+
+    #[Test]
+    public function provides_returnsDit(): void
+    {
+        self::assertSame(['dit'], $this->collector->provides());
+    }
+
+    #[Test]
+    public function classWithNoParent_ditZero(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $graph = $this->graph([]);
+
+        $path = SymbolPath::forClass('App', 'Root');
+        $repository->add($path, new MetricBag(), RelativePath::fromString('root.php'), 1);
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(0, $repository->get($path)->get('dit'));
+    }
+
+    #[Test]
+    public function classExtendsStandardPhpClass_ditOne(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $graph = $this->graph([
+            $this->createExtends('App\\MyException', 'RuntimeException'),
+        ]);
+
+        $path = SymbolPath::forClass('App', 'MyException');
+        $repository->add($path, new MetricBag(), RelativePath::fromString('ex.php'), 1);
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(1, $repository->get($path)->get('dit'));
+    }
+
+    #[Test]
+    public function twoLevelInheritance_crossFile_ditTwo(): void
+    {
+        // A extends B extends C (C is root, each in different "file")
+        $repository = new InMemoryMetricRepository();
+        $graph = $this->graph([
+            $this->createExtends('App\\Child', 'App\\Parent'),
+            $this->createExtends('App\\Parent', 'App\\GrandParent'),
+        ]);
+
+        $grandparentPath = SymbolPath::forClass('App', 'GrandParent');
+        $repository->add($grandparentPath, (new MetricBag())->with('dit', 0), RelativePath::fromString('gp.php'), 1);
+
+        $parentPath = SymbolPath::forClass('App', 'Parent');
+        $repository->add($parentPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('p.php'), 1);
+
+        $childPath = SymbolPath::forClass('App', 'Child');
+        // The per-file collector would have set dit=1 (can't see grandparent)
+        $repository->add($childPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('c.php'), 1);
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(0, $repository->get($grandparentPath)->get('dit'));
+        self::assertSame(1, $repository->get($parentPath)->get('dit'));
+        self::assertSame(2, $repository->get($childPath)->get('dit'));
+    }
+
+    #[Test]
+    public function threeLevelInheritance_crossFile_ditThree(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $graph = $this->graph([
+            $this->createExtends('App\\D', 'App\\C'),
+            $this->createExtends('App\\C', 'App\\B'),
+            $this->createExtends('App\\B', 'App\\A'),
+        ]);
+
+        $aPath = SymbolPath::forClass('App', 'A');
+        $repository->add($aPath, (new MetricBag())->with('dit', 0), RelativePath::fromString('a.php'), 1);
+
+        $bPath = SymbolPath::forClass('App', 'B');
+        $repository->add($bPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('b.php'), 1);
+
+        $cPath = SymbolPath::forClass('App', 'C');
+        $repository->add($cPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('c.php'), 1);
+
+        $dPath = SymbolPath::forClass('App', 'D');
+        $repository->add($dPath, (new MetricBag())->with('dit', 1), RelativePath::fromString('d.php'), 1);
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(0, $repository->get($aPath)->get('dit'));
+        self::assertSame(1, $repository->get($bPath)->get('dit'));
+        self::assertSame(2, $repository->get($cPath)->get('dit'));
+        self::assertSame(3, $repository->get($dPath)->get('dit'));
+    }
+
+    #[Test]
+    public function inheritanceChainWithStandardClassAtRoot(): void
+    {
+        // D extends C extends B extends Exception (standard)
+        $repository = new InMemoryMetricRepository();
+        $graph = $this->graph([
+            $this->createExtends('App\\D', 'App\\C'),
+            $this->createExtends('App\\C', 'App\\B'),
+            $this->createExtends('App\\B', 'Exception'),
+        ]);
+
+        $bPath = SymbolPath::forClass('App', 'B');
+        $repository->add($bPath, new MetricBag(), RelativePath::fromString('b.php'), 1);
+
+        $cPath = SymbolPath::forClass('App', 'C');
+        $repository->add($cPath, new MetricBag(), RelativePath::fromString('c.php'), 1);
+
+        $dPath = SymbolPath::forClass('App', 'D');
+        $repository->add($dPath, new MetricBag(), RelativePath::fromString('d.php'), 1);
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(1, $repository->get($bPath)->get('dit'));
+        self::assertSame(2, $repository->get($cPath)->get('dit'));
+        self::assertSame(3, $repository->get($dPath)->get('dit'));
+    }
+
+    #[Test]
+    public function preservesExistingMetrics(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $graph = $this->graph([
+            $this->createExtends('App\\Child', 'App\\Parent'),
+        ]);
+
+        $parentPath = SymbolPath::forClass('App', 'Parent');
+        $repository->add($parentPath, (new MetricBag())->with('wmc', 10)->with('dit', 0), RelativePath::fromString('p.php'), 1);
+
+        $childPath = SymbolPath::forClass('App', 'Child');
+        $repository->add($childPath, (new MetricBag())->with('wmc', 5)->with('dit', 1), RelativePath::fromString('c.php'), 1);
+
+        $this->collector->calculate($graph, $repository);
+
+        // WMC should be preserved, DIT updated
+        self::assertSame(10, $repository->get($parentPath)->get('wmc'));
+        self::assertSame(0, $repository->get($parentPath)->get('dit'));
+        self::assertSame(5, $repository->get($childPath)->get('wmc'));
+        self::assertSame(1, $repository->get($childPath)->get('dit'));
+    }
+
+    #[Test]
+    public function crossNamespaceInheritance(): void
+    {
+        $repository = new InMemoryMetricRepository();
+        $graph = $this->graph([
+            $this->createExtends('App\\Service\\Handler', 'Vendor\\Base\\AbstractHandler'),
+            $this->createExtends('Vendor\\Base\\AbstractHandler', 'Vendor\\Core\\Component'),
+        ]);
+
+        $componentPath = SymbolPath::forClass('Vendor\\Core', 'Component');
+        $repository->add($componentPath, new MetricBag(), RelativePath::fromString('comp.php'), 1);
+
+        $abstractPath = SymbolPath::forClass('Vendor\\Base', 'AbstractHandler');
+        $repository->add($abstractPath, new MetricBag(), RelativePath::fromString('abs.php'), 1);
+
+        $handlerPath = SymbolPath::forClass('App\\Service', 'Handler');
+        $repository->add($handlerPath, new MetricBag(), RelativePath::fromString('handler.php'), 1);
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(0, $repository->get($componentPath)->get('dit'));
+        self::assertSame(1, $repository->get($abstractPath)->get('dit'));
+        self::assertSame(2, $repository->get($handlerPath)->get('dit'));
+    }
+
+    /** @param list<Dependency> $dependencies */
+    private function graph(array $dependencies): DependencyGraphInterface
+    {
+        $universe = array_map(
+            static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
+            $dependencies,
+        );
+
+        return AdjacencyGraphBuilder::builder()->build($dependencies, $universe);
+    }
+}

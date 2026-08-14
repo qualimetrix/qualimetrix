@@ -45,13 +45,13 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
         ));
         $sortedTestIds = $testIds;
         sort($sortedTestIds, \SORT_STRING);
-        self::assertCount(7251, $testIds);
+        self::assertCount(7254, $testIds);
         self::assertSame($sortedTestIds, $testIds, 'Generated PHPUnit discovery IDs must be canonical across environments.');
 
         $path = $this->root() . '/docs/internal/generated/modular-architecture/test-phpunit-discovery.txt';
         $lines = file($path, \FILE_IGNORE_NEW_LINES);
         self::assertIsArray($lines);
-        self::assertCount(7254, $lines);
+        self::assertCount(7257, $lines);
 
         $suites = file(
             $this->root() . '/docs/internal/generated/modular-architecture/test-phpunit-suites.txt',
@@ -64,9 +64,9 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
         ));
         self::assertSame([
             ' - Functional (22 files, 227 tests)',
-            ' - Infrastructure (5 files, 36 tests)',
-            ' - Integration (51 files, 352 tests)',
-            ' - Unit (431 files, 6636 tests)',
+            ' - Infrastructure (21 files, 100 tests)',
+            ' - Integration (48 files, 346 tests)',
+            ' - Unit (418 files, 6581 tests)',
         ], $suiteRows);
 
         $malformed = $lines;
@@ -132,13 +132,13 @@ final class ModularArchitectureGovernanceIntegrationTest extends TestCase
         [$qmxLayerCount, $qmxAllowEdgeCount] = $this->generatedQmxCounts();
 
         self::assertCount(0, $manifest['enforcement_seams']);
-        self::assertCount(51, $manifest['temporary_internal_grants']);
-        self::assertCount(8, $coarseGrantEdges);
+        self::assertCount(50, $manifest['temporary_internal_grants']);
+        self::assertCount(7, $coarseGrantEdges);
         self::assertSame(37, $qmxLayerCount);
-        self::assertSame(223, $qmxAllowEdgeCount);
-        self::assertSame('754', $summary['declarations']);
-        self::assertSame('752', $summary['files']);
-        self::assertSame('836', $summary['contract_consumer_entries']);
+        self::assertSame(224, $qmxAllowEdgeCount);
+        self::assertSame('762', $summary['declarations']);
+        self::assertSame('760', $summary['files']);
+        self::assertSame('837', $summary['contract_consumer_entries']);
         self::assertSame((string) \count(array_unique(array_column($declarations, 'path'))), $summary['files']);
         self::assertSame((string) \count($owners), $summary['semantic_owners']);
         self::assertSame((string) $consumerEntries, $summary['contract_consumer_entries']);
@@ -439,10 +439,10 @@ PHP);
     {
         $manifest = $this->manifest();
         $declarations = $manifest['declarations'];
-        self::assertCount(754, $declarations);
-        self::assertCount(752, array_unique(array_column($declarations, 'path')));
+        self::assertCount(762, $declarations);
+        self::assertCount(760, array_unique(array_column($declarations, 'path')));
         self::assertCount(37, $manifest['owners']);
-        self::assertSame(249, \count(array_filter(
+        self::assertSame(248, \count(array_filter(
             $declarations,
             static fn(array $declaration): bool => $declaration['visibility'] === 'contract',
         )));
@@ -540,7 +540,7 @@ PHP);
     {
         $manifest = $this->manifest();
         $declarations = $manifest['declarations'];
-        self::assertCount(754, $declarations);
+        self::assertCount(762, $declarations);
 
         $dependencyPrefix = 'Qualimetrix\\Analysis\\Evidence\\DependencyModel\\';
         $dependencyDeclarations = array_filter(
@@ -882,7 +882,7 @@ PHP);
         self::assertSame('Analysis.Finding', $declarations['Qualimetrix\\Analysis\\Finding\\Contract\\Control\\ControlScope']['owner']);
         self::assertSame('Analysis.Finding', $declarations['Qualimetrix\\Analysis\\Finding\\Contract\\Threshold\\ThresholdOverride']['owner']);
         self::assertSame([], $manifest['enforcement_seams']);
-        self::assertCount(51, $manifest['temporary_internal_grants']);
+        self::assertCount(50, $manifest['temporary_internal_grants']);
         if (!\is_array($declarations)) {
             self::fail('Manifest declarations must be an array.');
         }
@@ -927,7 +927,7 @@ PHP);
             '--output-directory=' . $scratchTestDirectory,
         ]);
         self::assertSame(0, $exitCode, $output);
-        self::assertStringContainsString('509 PHPUnit classes, and 7251 expanded cases', $output);
+        self::assertStringContainsString('509 PHPUnit classes, and 7254 expanded cases', $output);
         [$exitCode, $output] = $this->runCommand([
             \PHP_BINARY,
             $this->root() . '/scripts/generate-modular-architecture-test-inventory.php',
@@ -960,7 +960,7 @@ PHP);
             )),
         );
         self::assertSame([], $manifest['enforcement_seams']);
-        self::assertCount(51, $manifest['temporary_internal_grants']);
+        self::assertCount(50, $manifest['temporary_internal_grants']);
         self::assertSame([], array_values(array_filter(
             $manifest['temporary_internal_grants'],
             static fn(array $grant): bool => \in_array($grant['closes_in'], ['P6', 'P6-E'], true),
@@ -987,8 +987,8 @@ PHP);
             'Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline',
             array_column($ruleConfigurationConsumers, 'source_fqcn'),
         );
-        self::assertCount(754, $declarations);
-        self::assertCount(752, array_unique(array_column($declarations, 'path')));
+        self::assertCount(762, $declarations);
+        self::assertCount(760, array_unique(array_column($declarations, 'path')));
         self::assertCount(37, $manifest['owners']);
         $baseline = json_decode(
             (string) file_get_contents($this->root() . '/qmx-baseline.json'),
@@ -997,7 +997,7 @@ PHP);
             \JSON_THROW_ON_ERROR,
         );
         self::assertIsArray($baseline);
-        self::assertCount(270, array_merge(...array_values($baseline['entries'])));
+        self::assertCount(274, array_merge(...array_values($baseline['entries'])));
         $suppressionFilterPredecessor = 'declaration:callable:Qualimetrix\\Analysis\\Policy\\Inline\\Suppression\\SuppressionFilter::shouldInclude@src/Analysis/Policy/Inline/Suppression/SuppressionFilter.php:2433';
         $suppressionFilterSuccessor = 'declaration:callable:Qualimetrix\\Analysis\\Policy\\Inline\\Suppression\\SuppressionFilter::shouldInclude@src/Analysis/Policy/Inline/Suppression/SuppressionFilter.php:2552';
         self::assertArrayNotHasKey($suppressionFilterPredecessor, $baseline['entries']);
@@ -1466,7 +1466,7 @@ PHP);
     public function itRejectsGeneratedLayerNameCollisions(): void
     {
         $manifest = $this->replaceOwner($this->manifest(), 'Analysis.Evidence.Size', 'Seam.Synthetic');
-        $fqcn = 'Qualimetrix\\Metrics\\Size\\ClassCountCollector';
+        $fqcn = 'Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountCollector';
         self::assertSame('Seam.Synthetic', $manifest['declarations'][$fqcn]['owner']);
         $manifest['enforcement_seams'][$fqcn] = [
             'semantic_owner' => 'Seam.Synthetic',
@@ -1485,7 +1485,7 @@ PHP);
     {
         $manifest = $this->manifest();
         self::assertSame([], $manifest['enforcement_seams']);
-        $fqcn = 'Qualimetrix\\Metrics\\Size\\ClassCountCollector';
+        $fqcn = 'Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountCollector';
         $manifest['enforcement_seams'][$fqcn] = [
             'semantic_owner' => $manifest['declarations'][$fqcn]['owner'],
             'layer' => 'seam-a--b',
@@ -1651,9 +1651,9 @@ PHP);
         $p6 = file_get_contents($directory . '/p6-finding-policy.md');
         self::assertIsString($p6);
         foreach ([
-            'p6/p6-production-ledger.md' => '4066cf886d8f8a9b7ff61529b6c7bf731dbb85bbb6784de471d54f6be58161a8',
-            'p6/p6-test-ledger.md' => '4a9e62bd717656f11f0f4808be9516d18f0cc88756ed4fd551a0f3fab6101434',
-            'p6/p6-relations-ledger.md' => 'e13551182d29a0ac8b2783aeb2a3c50c42e1e62ef988e92e2f4b67ffeceb236f',
+            'p6/p6-production-ledger.md' => '9bb72814f69adc9cc18b9d813e37e99697d38b55baaecf6113f90531f8cb71a8',
+            'p6/p6-test-ledger.md' => 'b4cfec682fc760b8eff54468b80602206f7b5c465bd16fa439cf625ced507a19',
+            'p6/p6-relations-ledger.md' => 'df68971537a08b4d571fe577801b374d9eb1c7751d3fb37e6f533a8df4aaa080',
         ] as $relativePath => $expectedHash) {
             self::assertSame($expectedHash, hash_file('sha256', $directory . '/' . $relativePath));
             self::assertStringContainsString($expectedHash, $p6);
@@ -1763,8 +1763,8 @@ PHP);
     {
         $manifest = $this->manifest();
         self::assertArrayNotHasKey('p4_target', $manifest);
-        self::assertCount(754, $manifest['declarations']);
-        self::assertCount(752, array_unique(array_column($manifest['declarations'], 'path')));
+        self::assertCount(762, $manifest['declarations']);
+        self::assertCount(760, array_unique(array_column($manifest['declarations'], 'path')));
 
         $architecture = array_filter(
             $manifest['declarations'],
@@ -1884,6 +1884,8 @@ PHP);
             'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricAnalysis',
             'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Configuration\\ComputedMetricContributionReader',
             'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface',
+            'Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingAnalysis',
+            'Qualimetrix\\Analysis\\Evidence\\Coupling\\Contract\\Configuration\\CouplingConfiguratorInterface',
         ], array_column($configurationDocument['consumers'], 'source_fqcn'));
 
         $p4EraRelations = [];
@@ -1900,8 +1902,8 @@ PHP);
                 self::assertNull($consumer['closes_in']);
             }
         }
-        self::assertCount(22, $p4EraRelations);
-        self::assertCount(20, array_filter(
+        self::assertCount(24, $p4EraRelations);
+        self::assertCount(22, array_filter(
             $p4EraRelations,
             static fn(array $relation): bool => $relation[2] === 'import',
         ));

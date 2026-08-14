@@ -31,6 +31,14 @@
             <directory>tests/Analysis/Policy/Inline/Unit</directory>
             <directory>tests/Analysis/Finding/Unit</directory>
             <directory>tests/Analysis/Evidence/CircularDependency/Unit</directory>
+            <directory>tests/Analysis/Evidence/CodeSmell/Unit</directory>
+            <directory>tests/Analysis/Evidence/Cohesion/Unit</directory>
+            <directory>tests/Analysis/Evidence/Complexity/Unit</directory>
+            <directory>tests/Analysis/Evidence/Coupling/Unit</directory>
+            <directory>tests/Analysis/Evidence/Design/Unit</directory>
+            <directory>tests/Analysis/Evidence/Maintainability/Unit</directory>
+            <directory>tests/Analysis/Evidence/Security/Unit</directory>
+            <directory>tests/Analysis/Evidence/Size/Unit</directory>
             <directory>tests/Analysis/Configuration/Unit</directory>
             <directory>tests/Analysis/Evidence/Duplication/Unit</directory>
             <directory>tests/Analysis/Evidence/DependencyModel/Unit</directory>
@@ -50,6 +58,8 @@
             <directory>tests/Analysis/Finding/Integration</directory>
             <directory>tests/Analysis/Configuration/Integration</directory>
             <directory>tests/Analysis/Evidence/Measurement/Integration</directory>
+            <directory>tests/Analysis/Evidence/CodeSmell/Integration</directory>
+            <directory>tests/Analysis/Evidence/Complexity/Integration</directory>
             <directory>tests/Analysis/Evidence/ComputedMetrics/Integration</directory>
             <directory>tests/Analysis/Run/Integration</directory>
         </testsuite>

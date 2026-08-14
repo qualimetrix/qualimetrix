@@ -81,8 +81,16 @@ Infrastructure/
 │   │   ├── ComputedMetricsConfigurator.php
 │   │   ├── MeasurementConfigurator.php
 │   │   ├── ParserConfigurator.php
-│   │   ├── CollectorConfigurator.php
-│   │   ├── RuleConfigurator.php
+│   │   ├── CollectorConfigurator.php      # Collector compiler/parallel composition
+│   │   ├── RuleConfigurator.php           # Rule registries and selection composition
+│   │   ├── CodeSmellConfigurator.php      # Exact CodeSmell collector/rule roots
+│   │   ├── CohesionConfigurator.php       # Exact Cohesion collector/rule roots
+│   │   ├── ComplexityConfigurator.php     # Exact Complexity collector/rule roots
+│   │   ├── CouplingConfigurator.php       # Exact Coupling roots, config contract alias, state
+│   │   ├── DesignConfigurator.php         # Exact Design collector/rule roots
+│   │   ├── MaintainabilityConfigurator.php # Exact Maintainability collector/rule roots
+│   │   ├── SecurityConfigurator.php       # Exact Security collector/rule roots
+│   │   ├── SizeConfigurator.php           # Exact Size collector/rule roots
 │   │   ├── ArchitectureConfigurator.php
 │   │   ├── CircularDependencyConfigurator.php
 │   │   ├── DuplicationConfigurator.php
@@ -113,7 +121,7 @@ Infrastructure/
     ├── OutputHelper.php               # Helper for large text output (line-by-line flush)
     ├── MeasuredViolationSet.php       # The one definition of the set a baseline measures: paths + resolved config in, findings at the baseline stage's input out (no InputInterface)
     ├── ViolationFilterOrchestrator.php # Adapts check options to the Reporting-owned FindingProjector and reports its stage results
-    ├── RuntimeConfigurator.php        # Runtime DI configuration; also sets Finding's rule-exclusion capture holder from --show-suppressed
+    ├── RuntimeConfigurator.php        # Runtime DI configuration; applies the ConfigurationDocument to Coupling every run
     ├── RuntimeLoggerConfigurator.php  # Creates and publishes the logger for one console run
     ├── DiagnosticOutput.php          # Routes human diagnostics to stderr without polluting report payloads
     ├── RuleInputValidator.php        # Fails closed on unknown selectors and option owners
@@ -182,8 +190,15 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
 - `ComputedMetricsConfigurator` — private root/Health implementation tree, capability-owned rule, and four public contract aliases
 - `MeasurementConfigurator` — repository, aggregation, collector runtime configuration, and worker reconstruction
 - `ParserConfigurator` — AST parser and caching
-- `CollectorConfigurator` — metric collectors registration
-- `RuleConfigurator` — remaining layered rules under `src/Rules/`
+- `CollectorConfigurator` — collector compiler-pass and parallel-class composition; it does not scan capability implementations
+- `RuleConfigurator` — rule registries, channels, selector, and compiler passes; it does not scan capability implementations
+- `CodeSmellConfigurator`, `CohesionConfigurator`, `ComplexityConfigurator`,
+  `DesignConfigurator`, `MaintainabilityConfigurator`, `SecurityConfigurator`,
+  and `SizeConfigurator` — exact owned collector roots plus lazy, non-autowired
+  rule roots
+- `CouplingConfigurator` — the same exact collector/rule registration for
+  Coupling, plus internal `CouplingAnalysis` state and the public
+  `CouplingConfiguratorInterface` alias
 - `ArchitectureConfigurator` — declared-layer policy contracts and rule
 - `CircularDependencyConfigurator` — SCC evidence preparation and rule
 - `DuplicationConfigurator` — internal Duplication detector/provider wiring and capability-owned rule registration; the detector is autoconfigured as a Run-owned FileSet participant
@@ -200,7 +215,10 @@ Configuration is set via mutable services AFTER container creation through
 no rule-option state belongs in the transitional configuration holder.
 `RuntimeConfigurator` owns cache reset before logger setup, delegates logger
 creation/publication to `RuntimeLoggerConfigurator`, and delegates
-analysis-state reset/application to `AnalysisRuntimeConfigurator`.
+shared analysis-state reset/application to `AnalysisRuntimeConfigurator`. It
+also passes the ordered `ConfigurationDocument` to
+`CouplingConfiguratorInterface::configure()` on every run, including an empty
+document, so a configured run cannot leak into the next run.
 `CollectorRuntimeConfigurationStore` owns applying replacement and reset values
 to every tagged runtime-configurable collector, so the outer configurator does
 not iterate Measurement implementations.
@@ -336,7 +354,8 @@ Factory with runtime configuration awareness.
 - `RuntimeConfigurator` delegates run-scoped configuration to
   `AnalysisRuntimeConfigurator`, which updates
   `TransitionalRuntimeConfigurationProviderInterface` and `RuleOptionsRegistry`
-  before analysis
+  before analysis; RuntimeConfigurator separately applies the ordered document
+  to Coupling's public configuration contract
 - `LayerAssignmentCommand` delegates collected-state reconstruction to the
   internal Console `LayerAssignmentResolver`
 - Lazy rules are created with correct options

@@ -11,7 +11,7 @@ This plan deliberately migrates the proven scattered capabilities first. Thin me
 
 ## Current status and reading guide
 
-P0–P6 are completed and independently reviewed. P6 closes at 754 declarations
+P0–P7 are completed and independently reviewed. P6 closed at 754 declarations
 / 752 files, 37 owners, zero seams, 51 exact grants collapsing to 8 owner
 pairs, and 223 qmx allows; generated discovery contains 509 PHPUnit classes /
 7,251 semantic IDs. Final host `composer check` exited 0: 7,251 tests / 23,654
@@ -21,10 +21,13 @@ stale 0. `native-codex-01` implemented the minimal Finding-owned
 `RuleDefinitionInterface` and passed independent address-check; `native-codex-02`
 closed the expanded current-document sweep; and `native-codex-03` closed the
 anchored lock-file gate. The three-entry, offset-only baseline rekey preserved
-the 208-entry cardinality and payloads. No commit or push was performed; HEAD
-remains `57fa22fa0d0f074cb11590e358fc01faff3eccf1` on
-`codex/modular-architecture-p3`. P7–P8 remain pending; P7 has not started and
-requires a new explicit request.
+the 208-entry cardinality and payloads. At that P6 closure no commit or push was
+performed; HEAD was `57fa22fa0d0f074cb11590e358fc01faff3eccf1` on
+`codex/modular-architecture-p3`. P7 subsequently removed the former Metrics and
+Rules role buckets and completed its implementation, final aggregate
+validation, and independent review at 762 declarations / 760 files, 37 owners,
+50 exact grants collapsing to 7 owner pairs, 224 qmx allows, and 7,254 generated
+PHPUnit cases. P8 alone remains pending and requires a new explicit request.
 
 Read the documents by concern rather than loading the historical record as one context:
 
@@ -38,7 +41,7 @@ Read the documents by concern rather than loading the historical record as one c
 | Completed P4 Architecture policy and CircularDependency work                          | [P4 Architecture policy](modular-architecture/p4-architecture-policy.md)                           |
 | Completed P5 ComputedMetrics and Health remediation and republish                     | [P5 ComputedMetrics and Health](modular-architecture/p5-computed-metrics.md)                       |
 | Completed P6 Finding/Policy record and final closure evidence                         | [P6 Finding and Policy](modular-architecture/p6-finding-policy.md)                                 |
-| Pending P7–P8, dependency graph, regression matrix, and non-goals                     | [P5–P8 roadmap](modular-architecture/roadmap-p5-p8.md)                                             |
+| Completed P7, pending P8, dependency graph, regression matrix, and non-goals          | [P5–P8 roadmap](modular-architecture/roadmap-p5-p8.md)                                             |
 
 ## Work packages
 
@@ -49,8 +52,9 @@ P5-F4.3 → P5-F4.4 → P5-G → P5 aggregate/review → P6 → P7 → P8. P5 is
 complete after three review findings were fixed, the independent reviewer
 returned GO and the post-review aggregate passed. P6 is complete after its
 three review findings were closed, the independent address-check returned GO,
-and the final host aggregate passed. P7 has not started; its next phase is
-eligible only on a new explicit request.
+and the final host aggregate passed. P7 is complete after its implementation,
+final aggregate validation, and independent review returned GO. P8 is the next
+phase and remains eligible only on a new explicit request.
 Detailed package
 dependencies and all edge-case/non-goal
 statements remain in the [P5–P8 roadmap](modular-architecture/roadmap-p5-p8.md).

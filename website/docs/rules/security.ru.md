@@ -228,7 +228,11 @@ system("ls " . $_POST['dir']);
 <!-- llms:skip-begin -->
 ### Что измеряет
 
-Обнаруживает параметры с чувствительными именами (password, secret, apiKey и т.д.), у которых отсутствует атрибут `#[\SensitiveParameter]`. Этот атрибут (доступен с PHP 8.2) предотвращает утечку значений параметров в stack traces, что особенно важно для учетных данных.
+Использует ту же политику сопоставления имен, что и поиск захардкоженных
+учетных данных: самостоятельные слова `password`, `passwd`, `pwd`, `secret`,
+`credential` и `credentials` совпадают, а `key` и `token` требуют квалифицирующего префикса,
+например `api`, `auth`, `access`, `private` или `refresh`. Контексты
+`passwordHash`, `tokenStorage`, `cacheKey` и `OPTION_PASSWORD` исключаются.
 
 <!-- llms:skip-end -->
 

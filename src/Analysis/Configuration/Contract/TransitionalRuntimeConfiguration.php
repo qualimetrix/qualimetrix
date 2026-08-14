@@ -61,7 +61,6 @@ final readonly class TransitionalRuntimeConfiguration
      * @param AbsolutePath|null $projectRoot Project root directory (null = current working directory)
      * @param Severity|false|null $failOn Minimum severity to trigger non-zero exit code (null = default/error, false = none/never fail)
      * @param bool $includeGenerated Whether to include files marked with @generated annotation
-     * @param list<string> $frameworkNamespaces Framework namespace prefixes for CBO_APP/CE_FRAMEWORK metrics
      * @param string|null $memoryLimit PHP memory limit override (e.g., '512M', '1G', '-1' for unlimited)
      */
     public function __construct(
@@ -75,7 +74,6 @@ final readonly class TransitionalRuntimeConfiguration
         ?AbsolutePath $projectRoot = null,
         public Severity|false|null $failOn = null,
         public bool $includeGenerated = false,
-        public array $frameworkNamespaces = [],
         public ?string $memoryLimit = null,
     ) {
         $this->projectRoot = $projectRoot ?? self::cwdAsAbsolutePath();
@@ -148,7 +146,6 @@ final readonly class TransitionalRuntimeConfiguration
             projectRoot: $projectRoot,
             failOn: self::getFailOn($config, ConfigSchema::FAIL_ON),
             includeGenerated: self::getBool($config, ConfigSchema::INCLUDE_GENERATED, false),
-            frameworkNamespaces: self::getStringList($config, ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES),
             memoryLimit: self::getMemoryLimit($config, ConfigSchema::MEMORY_LIMIT),
         );
     }
@@ -198,9 +195,6 @@ final readonly class TransitionalRuntimeConfiguration
             projectRoot: $projectRoot,
             failOn: self::getFailOn($overrides, ConfigSchema::FAIL_ON) ?? $this->failOn,
             includeGenerated: self::getBool($overrides, ConfigSchema::INCLUDE_GENERATED, $this->includeGenerated),
-            frameworkNamespaces: self::hasNestedValue($overrides, ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES)
-                ? self::getStringList($overrides, ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES)
-                : $this->frameworkNamespaces,
             memoryLimit: self::getMemoryLimit($overrides, ConfigSchema::MEMORY_LIMIT) ?? $this->memoryLimit,
         );
     }

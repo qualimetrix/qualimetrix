@@ -24,9 +24,9 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
  * rule's `Options::fromArray()` is ever invoked — it cannot ask
  * `ThresholdParser::parse()` "which keys did you use" at the point it needs
  * the answer, since that call hasn't happened yet. Worse: Options classes
- * live with their owning rule capability (most remain under
- * `src/Rules/{Category}/`; Duplication is capability-owned), and
- * `Configuration` may not depend on those evidence owners. So the Options
+ * live with their owning rule capability under exact
+ * `src/Analysis/Evidence/{Capability}/` or `src/Analysis/Policy/{Capability}/`
+ * roots, and `Configuration` may not depend on those owners. So the Options
  * class cannot simply implement an interface the resolver calls at merge
  * time either, not without reversing the module dependency direction.
  *

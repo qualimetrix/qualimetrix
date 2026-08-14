@@ -5,8 +5,8 @@
 | Task                        | Document                                                                        |
 | --------------------------- | ------------------------------------------------------------------------------- |
 | **Getting started**         | [CLAUDE.md](../CLAUDE.md) — rules, structure, commands                          |
-| **New collector**           | [src/Metrics/README.md](../src/Metrics/README.md)                               |
-| **New rule**                | [src/Rules/README.md](../src/Rules/README.md)                                   |
+| **New collector**           | [Analysis capability index](../src/Analysis/README.md#current-leaves)           |
+| **New rule**                | [Analysis capability index](../src/Analysis/README.md#current-leaves)           |
 | **Understanding contracts** | [src/Core/README.md](../src/Core/README.md)                                     |
 | **Analysis pipeline**       | [src/Analysis/README.md](../src/Analysis/README.md)                             |
 | **Formatters**              | [src/Reporting/README.md](../src/Reporting/README.md)                           |
@@ -53,14 +53,15 @@ consumes immutable Health contracts. P6 implementation has published
 `Analysis\Finding`, peer Inline and Baseline policy capabilities,
 `Analysis\Evidence\Prioritization`, and Reporting's `FindingProjection`;
 Infrastructure keeps the Console, Git, DI, and worker adapters behind those
-public contracts. P6 remains paused pending its post-review closure and is not
-complete. P7-P8 retain only the thin-evidence classification and final
-locality/grant closure.
+public contracts. P6 and P7 are complete. P7 distributed the former Metrics and
+Rules role buckets among CodeSmell, Cohesion, Complexity, Coupling, Design,
+Maintainability, Security, and Size, and its final aggregate validation and
+independent review returned GO. P8 remains the final locality/grant closure.
 
 P0 governance implements the current enforcement model. The versioned internal
-manifest covers all 754 declarations in 752 files and names 37 semantic
-owners. P6 leaves no singleton enforcement seam and 51 exact internal grants,
-which collapse to 8 coarse owner pairs and produce 223 declared qmx allow
+manifest covers all 762 declarations in 760 files and names 37 semantic
+owners. The current P7 tree has no singleton enforcement seam and 50 exact
+internal grants, which collapse to 7 coarse owner pairs and produce 224 declared qmx allow
 edges. Generated artifacts are deterministic projections rather than a second
 source of truth.
 `external` excludes `Qualimetrix\**`; `coverage: error` makes
@@ -122,7 +123,8 @@ Used for:
 
 ### 5. Automatic Service Registration
 
-Symfony DI with autoconfiguration — new components are registered automatically:
+Symfony DI with autoconfiguration — components under an existing capability's
+exact registration roots are registered automatically:
 
 | Component | Condition                                | DI Tag                    |
 | --------- | ---------------------------------------- | ------------------------- |
@@ -131,7 +133,9 @@ Symfony DI with autoconfiguration — new components are registered automaticall
 | Formatter | implements `FormatterInterface`          | `qmx.formatter`           |
 | Stage     | implements `ConfigurationStageInterface` | `qmx.configuration_stage` |
 
-**No need** to modify `ContainerFactory` when adding new components.
+Each capability configurator owns finite collector and rule roots. A new
+capability requires explicit composition; it must not be enrolled by a wildcard
+over `Analysis/Evidence/*`.
 
 ### 6. Baseline Ceiling
 
@@ -181,22 +185,30 @@ composer test      # unit/integration tests
 
 ### Add a New Metric
 
-1. Create a collector in `src/Metrics/{Category}/`
+1. Identify the owning evidence capability and create the collector below its exact root
 2. Implement `MetricCollectorInterface`
-3. **Done** — automatic registration via DI
+3. Extend only that capability configurator's exact collector registration
 
 ### Add a New Rule
 
 1. Identify the owning subject; do not create a role bucket for an independent capability
-2. Put a thin legacy-layout rule in `src/Rules/{Category}/`, or co-locate a capability-owned rule with its subject
+2. Co-locate the rule and its Options class with the owning capability
 3. Implement `RuleInterface` + create an Options class
-4. Register a capability root through its Infrastructure configurator; layered rules remain automatic
+4. Extend only that capability's exact lazy, non-autowired rule registration
 
-Current capability examples are Architecture,
+Current capability examples include Architecture,
 [`Analysis.Evidence.Duplication`](../src/Analysis/Evidence/Duplication/README.md),
 [`Analysis.Evidence.DependencyModel`](../src/Analysis/Evidence/DependencyModel/README.md),
 [`Analysis.Evidence.ComputedMetrics`](../src/Analysis/Evidence/ComputedMetrics/README.md),
-and [`Reporting.GraphProjection`](../src/Reporting/GraphProjection/README.md).
+[`Analysis.Evidence.CodeSmell`](../src/Analysis/Evidence/CodeSmell/README.md),
+[`Analysis.Evidence.Cohesion`](../src/Analysis/Evidence/Cohesion/README.md),
+[`Analysis.Evidence.Complexity`](../src/Analysis/Evidence/Complexity/README.md),
+[`Analysis.Evidence.Coupling`](../src/Analysis/Evidence/Coupling/README.md),
+[`Analysis.Evidence.Design`](../src/Analysis/Evidence/Design/README.md),
+[`Analysis.Evidence.Maintainability`](../src/Analysis/Evidence/Maintainability/README.md),
+[`Analysis.Evidence.Security`](../src/Analysis/Evidence/Security/README.md),
+[`Analysis.Evidence.Size`](../src/Analysis/Evidence/Size/README.md), and
+[`Reporting.GraphProjection`](../src/Reporting/GraphProjection/README.md).
 
 ### Add a New Output Format
 

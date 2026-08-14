@@ -1,0 +1,399 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Coupling\ClassRankCollector;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\LogicalClassPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
+
+#[CoversClass(ClassRankCollector::class)]
+final class ClassRankCollectorTest extends TestCase
+{
+    private ClassRankCollector $collector;
+    private DependencyGraphBuilderInterface $graphBuilder;
+
+    protected function setUp(): void
+    {
+        $this->collector = new ClassRankCollector();
+        $this->graphBuilder = AdjacencyGraphBuilder::builder();
+    }
+
+    #[Test]
+    public function getName_returnsClassRank(): void
+    {
+        self::assertSame('classRank', $this->collector->getName());
+    }
+
+    #[Test]
+    public function requires_returnsCaAndCe(): void
+    {
+        self::assertSame(['ca', 'ce'], $this->collector->requires());
+    }
+
+    #[Test]
+    public function provides_returnsClassRank(): void
+    {
+        self::assertSame(['classRank'], $this->collector->provides());
+    }
+
+    #[Test]
+    public function getMetricDefinitions_returnsOneDefinition(): void
+    {
+        $definitions = $this->collector->getMetricDefinitions();
+
+        self::assertCount(1, $definitions);
+
+        $def = $definitions[0];
+        self::assertSame('classRank', $def->name);
+        self::assertSame(SymbolLevel::Class_, $def->collectedAt);
+        self::assertSame(
+            [AggregationStrategy::Max, AggregationStrategy::Average, AggregationStrategy::Percentile95],
+            $def->getStrategiesForLevel(SymbolLevel::Namespace_),
+        );
+        self::assertSame(
+            [AggregationStrategy::Max, AggregationStrategy::Average, AggregationStrategy::Percentile95],
+            $def->getStrategiesForLevel(SymbolLevel::Project),
+        );
+    }
+
+    #[Test]
+    public function calculate_emptyGraph_writesNoMetrics(): void
+    {
+        $graph = $this->graph([]);
+        $repository = new InMemoryMetricRepository();
+
+        $this->collector->calculate($graph, $repository);
+
+        $classes = iterator_to_array($repository->all(SymbolType::Class_));
+        self::assertSame([], $classes, 'Empty graph should produce no class-level metrics');
+    }
+
+    #[Test]
+    public function calculate_singleClass_rankIsOne(): void
+    {
+        // Single class with a dependency on an external (vendor) class
+        $deps = [
+            $this->dep('App\\Foo', 'Vendor\\Bar'),
+        ];
+
+        $graph = $this->graph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Foo');
+
+        $this->collector->calculate($graph, $repository);
+
+        $fooPath = SymbolPath::forClass('App', 'Foo');
+        $metrics = $repository->get($fooPath);
+
+        self::assertEqualsWithDelta(1.0, $metrics->get('classRank'), 0.001);
+    }
+
+    #[Test]
+    public function itAssignsRankToAnIsolatedDeclaredLogicalClass(): void
+    {
+        $isolated = new LogicalClassPath(SymbolPath::forClass('App\\Isolated', 'Standalone'));
+        $graph = $this->graph([], [$isolated]);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\Isolated\\Standalone');
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertSame(
+            1.0,
+            $repository->get(SymbolPath::forClass('App\\Isolated', 'Standalone'))->get('classRank'),
+        );
+    }
+
+    #[Test]
+    public function itCalculatesOneLogicalRankForDuplicateClassDeclarations(): void
+    {
+        $class = SymbolPath::forClass('App\\Service', 'Twin');
+        $graph = $this->graph([], [new LogicalClassPath($class)]);
+        $repository = new InMemoryMetricRepository();
+        $repository->addSubject(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new DeclarationPath(
+                $class,
+                RelativePath::fromString('src/FirstTwin.php'),
+                10,
+            )),
+            new MetricBag(),
+            RelativePath::fromString('src/FirstTwin.php'),
+            10,
+        );
+        $repository->addSubject(
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new DeclarationPath(
+                $class,
+                RelativePath::fromString('src/SecondTwin.php'),
+                20,
+            )),
+            new MetricBag(),
+            RelativePath::fromString('src/SecondTwin.php'),
+            20,
+        );
+
+        $this->collector->calculate($graph, $repository);
+
+        self::assertCount(1, iterator_to_array($repository->allLogicalClasses()));
+        self::assertCount(2, iterator_to_array($repository->allDeclarations()));
+        self::assertSame(1.0, $repository->get($class)->get('classRank'));
+    }
+
+    #[Test]
+    public function calculate_simpleGraph_dependedClassHasHigherRank(): void
+    {
+        // A->B, C->B: B has the most incoming links, so B should have the highest rank
+        $deps = [
+            $this->dep('App\\A', 'App\\B'),
+            $this->dep('App\\C', 'App\\B'),
+        ];
+
+        $graph = $this->graph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\A');
+        $this->registerClass($repository, 'App\\B');
+        $this->registerClass($repository, 'App\\C');
+
+        $this->collector->calculate($graph, $repository);
+
+        $rankA = $repository->get(SymbolPath::forClass('App', 'A'))->get('classRank');
+        $rankB = $repository->get(SymbolPath::forClass('App', 'B'))->get('classRank');
+        $rankC = $repository->get(SymbolPath::forClass('App', 'C'))->get('classRank');
+
+        self::assertNotNull($rankA);
+        self::assertNotNull($rankB);
+        self::assertNotNull($rankC);
+
+        // B should have the highest rank (most depended on)
+        self::assertGreaterThan($rankA, $rankB);
+        self::assertGreaterThan($rankC, $rankB);
+    }
+
+    #[Test]
+    public function calculate_linearChain_ranksIncrease(): void
+    {
+        // A->B->C: C gets votes from B, B gets votes from A
+        // C should have highest rank, then B, then A
+        $deps = [
+            $this->dep('App\\A', 'App\\B'),
+            $this->dep('App\\B', 'App\\C'),
+        ];
+
+        $graph = $this->graph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\A');
+        $this->registerClass($repository, 'App\\B');
+        $this->registerClass($repository, 'App\\C');
+
+        $this->collector->calculate($graph, $repository);
+
+        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('classRank');
+        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('classRank');
+        $rankC = (float) $repository->get(SymbolPath::forClass('App', 'C'))->get('classRank');
+
+        self::assertGreaterThan($rankA, $rankB, 'B should rank higher than A');
+        self::assertGreaterThan($rankB, $rankC, 'C should rank higher than B');
+    }
+
+    #[Test]
+    public function calculate_vendorClassesNotInRepo_areSkipped(): void
+    {
+        // A depends on Vendor\Bar, but Vendor\Bar is not in the repository
+        $deps = [
+            $this->dep('App\\A', 'Vendor\\Bar'),
+        ];
+
+        $graph = $this->graph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\A');
+
+        $this->collector->calculate($graph, $repository);
+
+        // Vendor\Bar must NOT be added to repository
+        $vendorPath = SymbolPath::forClass('Vendor', 'Bar');
+        self::assertFalse(
+            $repository->has($vendorPath),
+            'Vendor classes must not be added to the repository',
+        );
+
+        // A should still get a rank (single project class)
+        $rankA = $repository->get(SymbolPath::forClass('App', 'A'))->get('classRank');
+        self::assertEqualsWithDelta(1.0, $rankA, 0.001);
+    }
+
+    #[Test]
+    public function calculate_selfDependencies_areExcluded(): void
+    {
+        // A->A (self-dependency) and A->B
+        $deps = [
+            $this->dep('App\\A', 'App\\A'),
+            $this->dep('App\\A', 'App\\B'),
+        ];
+
+        $graph = $this->graph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\A');
+        $this->registerClass($repository, 'App\\B');
+
+        $this->collector->calculate($graph, $repository);
+
+        // Self-dependency should not boost A's own rank
+        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('classRank');
+        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('classRank');
+
+        // B should have higher rank than A (A votes for B, not for itself)
+        self::assertGreaterThan($rankA, $rankB);
+    }
+
+    #[Test]
+    public function calculate_isolatedClasses_haveUniformRank(): void
+    {
+        // Two completely isolated classes (no dependencies between them)
+        // Each depends only on vendor classes
+        $deps = [
+            $this->dep('App\\A', 'Vendor\\X'),
+            $this->dep('App\\B', 'Vendor\\Y'),
+        ];
+
+        $graph = $this->graph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\A');
+        $this->registerClass($repository, 'App\\B');
+
+        $this->collector->calculate($graph, $repository);
+
+        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('classRank');
+        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('classRank');
+
+        // Both should have equal rank (isolated nodes get (1-d)/N from teleportation + dangling)
+        self::assertEqualsWithDelta($rankA, $rankB, 0.001);
+
+        // For isolated classes: rank = 1/N (dangling nodes distribute evenly)
+        self::assertEqualsWithDelta(0.5, $rankA, 0.001);
+    }
+
+    #[Test]
+    public function calculate_ranksConverge_sumToOne(): void
+    {
+        // Create a non-trivial graph
+        $deps = [
+            $this->dep('App\\A', 'App\\B'),
+            $this->dep('App\\A', 'App\\C'),
+            $this->dep('App\\B', 'App\\C'),
+            $this->dep('App\\C', 'App\\A'),
+        ];
+
+        $graph = $this->graph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\A');
+        $this->registerClass($repository, 'App\\B');
+        $this->registerClass($repository, 'App\\C');
+
+        $this->collector->calculate($graph, $repository);
+
+        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('classRank');
+        $rankB = (float) $repository->get(SymbolPath::forClass('App', 'B'))->get('classRank');
+        $rankC = (float) $repository->get(SymbolPath::forClass('App', 'C'))->get('classRank');
+
+        // PageRank scores should sum to approximately 1.0
+        self::assertEqualsWithDelta(1.0, $rankA + $rankB + $rankC, 0.01);
+    }
+
+    #[Test]
+    public function calculate_doesNotCreateSymbolsForExternalClasses(): void
+    {
+        $deps = [
+            $this->dep('App\\A', 'Vendor\\External'),
+            $this->dep('App\\B', 'App\\A'),
+        ];
+
+        $graph = $this->graph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\A');
+        $this->registerClass($repository, 'App\\B');
+
+        $this->collector->calculate($graph, $repository);
+
+        $vendorPath = SymbolPath::forClass('Vendor', 'External');
+        self::assertFalse(
+            $repository->has($vendorPath),
+            'Global collectors must not create symbols for external classes',
+        );
+    }
+
+    #[Test]
+    public function calculate_starTopology_centerHasHighestRank(): void
+    {
+        // Star topology: A, B, C, D all depend on Center
+        $deps = [
+            $this->dep('App\\A', 'App\\Center'),
+            $this->dep('App\\B', 'App\\Center'),
+            $this->dep('App\\C', 'App\\Center'),
+            $this->dep('App\\D', 'App\\Center'),
+        ];
+
+        $graph = $this->graph($deps);
+        $repository = new InMemoryMetricRepository();
+        $this->registerClass($repository, 'App\\A');
+        $this->registerClass($repository, 'App\\B');
+        $this->registerClass($repository, 'App\\C');
+        $this->registerClass($repository, 'App\\D');
+        $this->registerClass($repository, 'App\\Center');
+
+        $this->collector->calculate($graph, $repository);
+
+        $rankCenter = (float) $repository->get(SymbolPath::forClass('App', 'Center'))->get('classRank');
+        $rankA = (float) $repository->get(SymbolPath::forClass('App', 'A'))->get('classRank');
+
+        // Center should have the highest rank by far
+        self::assertGreaterThan($rankA, $rankCenter);
+    }
+
+    private function dep(string $source, string $target): Dependency
+    {
+        return new Dependency(
+            new DeclarationPath(SymbolPath::fromClassFqn($source), RelativePath::fromString('test.php'), 0),
+            new LogicalClassPath(SymbolPath::fromClassFqn($target)),
+            DependencyType::New_,
+            new Location(RelativePath::fromString('test.php'), 1),
+        );
+    }
+
+    /**
+     * @param list<Dependency> $dependencies
+     * @param list<LogicalClassPath> $universe
+     */
+    private function graph(array $dependencies, array $universe = []): DependencyGraphInterface
+    {
+        if ($universe === []) {
+            $universe = array_map(
+                static fn(Dependency $dependency): LogicalClassPath => new LogicalClassPath($dependency->sourceLogical()),
+                $dependencies,
+            );
+        }
+
+        return $this->graphBuilder->build($dependencies, $universe);
+    }
+
+    private function registerClass(InMemoryMetricRepository $repository, string $fqn): void
+    {
+        $repository->add(SymbolPath::fromClassFqn($fqn), new MetricBag(), RelativePath::fromString('test.php'), 1);
+    }
+}

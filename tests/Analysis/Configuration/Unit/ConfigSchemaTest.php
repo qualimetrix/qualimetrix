@@ -39,6 +39,7 @@ final class ConfigSchemaTest extends TestCase
         self::assertContains('memoryLimit', $keys);
         self::assertContains('excludeHealth', $keys);
         self::assertContains('includeGenerated', $keys);
+        self::assertContains(ConfigSchema::COUPLING, ConfigSchema::DOCUMENT_ROOTS);
     }
 
     #[Test]
@@ -283,6 +284,12 @@ final class ConfigSchemaTest extends TestCase
             }
 
             if (\in_array($rc->getValue(), ConfigSchema::DOCUMENT_ROOTS, true)) {
+                continue;
+            }
+
+            // Coupling owns the semantic consumer through ConfigurationDocument;
+            // Configuration owns only this normalized document-schema entry.
+            if ($rc->getValue() === ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES) {
                 continue;
             }
 

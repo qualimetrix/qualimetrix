@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationMeta;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
@@ -14,14 +15,13 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
+use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
+use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
-use Qualimetrix\Metrics\Size\ClassCountCollector;
-use Qualimetrix\Metrics\Size\LocCollector;
 
 #[CoversClass(MetricAggregator::class)]
 final class MetricAggregatorTest extends TestCase

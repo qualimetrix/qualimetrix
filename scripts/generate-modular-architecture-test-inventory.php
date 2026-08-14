@@ -16,7 +16,7 @@ declare(strict_types=1);
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
 const P6_C_BASELINE_PATHS_SHA256 = '432fa29e394eb7fc070bce14e7f276c7237a6453fa91d4d134443766ad30e1f9';
 const EXPECTED_PHPUNIT_CLASSES = 509;
-const EXPECTED_PHPUNIT_IDS = 7251;
+const EXPECTED_PHPUNIT_IDS = 7254;
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -72,6 +72,27 @@ const P4_IGNORED_FIXTURE_PATHS = [
     'tests/Analysis/Policy/Architecture/Fixtures/Sample/expected-violations.json',
     'tests/Analysis/Policy/Architecture/Fixtures/Sample/phase1-compat-violations-warn.json',
     'tests/Analysis/Policy/Architecture/Fixtures/Sample/phase1-compat-violations.json',
+];
+
+/** @var list<string> Exact Measurement artifacts materialized by P7. */
+const P7_MEASUREMENT_PATHS = [
+    'tests/Analysis/Evidence/Measurement/Fixtures/AnonymousClassContext.php',
+    'tests/Analysis/Evidence/Measurement/Fixtures/pdepend-collision.xml',
+    'tests/Analysis/Evidence/Measurement/Fixtures/pdepend-fqn.xml',
+    'tests/Analysis/Evidence/Measurement/Fixtures/phpmetrics-fqn.json',
+    'tests/Analysis/Evidence/Measurement/Fixtures/qmx-current.json',
+    'tests/Analysis/Evidence/Measurement/Fixtures/qmx-incomplete-coverage.json',
+    'tests/Analysis/Evidence/Measurement/Fixtures/qmx-malformed-coverage.json',
+    'tests/Analysis/Evidence/Measurement/Fixtures/qmx-missing-coverage.json',
+    'tests/Analysis/Evidence/Measurement/Fixtures/qmx-polluted.txt',
+    'tests/Analysis/Evidence/Measurement/Fixtures/qmx-stale-keys.json',
+    'tests/Analysis/Evidence/Measurement/Tests/test_cross_tool_comparison.py',
+    'tests/Analysis/Evidence/Measurement/Unit/AnonymousClassContextRegressionTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/CallableWithMetricsTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/DataBagTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/MetricBagTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/MetricDefinitionTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/VisitorMethodContextTest.php',
 ];
 
 /** @var list<string> Exact P3 test classes; future siblings require an ownership decision. */
@@ -256,9 +277,9 @@ const P6_LIVE_ADDED_TEST_IDS = [
 
 /** @var array<string, string> Exact zero-net method-ID replacements. */
 const P6_RENAMED_TEST_IDS = [
-    'Qualimetrix\\Tests\\Unit\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Unit\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecution',
+    'Qualimetrix\\Tests\\Unit\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Infrastructure\\Unit\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecution',
     'Qualimetrix\\Tests\\Integration\\DependencyInjection\\ContainerFactoryTest::itInjectsRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Integration\\DependencyInjection\\ContainerFactoryTest::itInjectsRulesIntoRuleExecution',
-    'Qualimetrix\\Tests\\Integration\\Infrastructure\\Console\\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutorInstanceBetweenThePipelineAndTheOrchestrator' => 'Qualimetrix\\Tests\\Integration\\Infrastructure\\Console\\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutionInstanceBetweenThePipelineAndTheOrchestrator',
+    'Qualimetrix\\Tests\\Integration\\Infrastructure\\Console\\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutorInstanceBetweenThePipelineAndTheOrchestrator' => 'Qualimetrix\\Tests\\Infrastructure\\Integration\\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutionInstanceBetweenThePipelineAndTheOrchestrator',
     'Qualimetrix\\Tests\\Infrastructure\\Console\\Functional\\Command\\CheckCommandBaselineTest::itDoesNotPromoteAnAnnotatedFindingTheBaselineNeverMeasured' => 'Qualimetrix\\Tests\\Infrastructure\\Console\\Functional\\Command\\CheckCommandBaselineTest::itCombinesConfiguredAndCliExclusionsWithoutLosingBaselineAnnotationOrGit',
 ];
 
@@ -275,7 +296,9 @@ if ($classificationProbeArguments !== []) {
     $path = substr($classificationProbeArguments[0], strlen('--classification-probe='));
     [$owner, $closurePackage] = classifyOwner($path);
     $currentSuite = currentSuite($path);
-    $targetSuite = $currentSuite === 'Infrastructure' ? 'Unit' : $currentSuite;
+    $targetSuite = $currentSuite === 'Infrastructure'
+        ? (str_contains($path, '/Integration/') ? 'Integration' : 'Unit')
+        : $currentSuite;
     fwrite(STDOUT, implode("\t", [
         $owner,
         $closurePackage,
@@ -346,7 +369,9 @@ foreach ($worktreePaths as $path) {
     $kind = classifyKind($path, $discoveredClasses);
     $currentSuite = currentSuite($path);
     $targetSuite = $kind === 'phpunit-test-class'
-        ? ($currentSuite === 'Infrastructure' ? 'Unit' : $currentSuite)
+        ? ($currentSuite === 'Infrastructure'
+            ? (str_contains($path, '/Integration/') ? 'Integration' : 'Unit')
+            : $currentSuite)
         : 'none';
     $disposition = dispositionFor($path, $kind);
 
@@ -587,6 +612,12 @@ function p6CBaselinePaths(string $projectRoot): array
  */
 function classifyOwner(string $path): array
 {
+    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path, $matches) === 1) {
+        return ['Analysis/Evidence/' . $matches[1], 'P7'];
+    }
+    if (in_array($path, P7_MEASUREMENT_PATHS, true)) {
+        return ['Analysis/Evidence/Measurement', 'P7'];
+    }
     global $p6CBaselinePaths;
 
     if (str_starts_with($path, 'tests/Analysis/Policy/Baseline/')) {
@@ -922,6 +953,8 @@ function classifyKind(string $path, array $discoveredClasses): string
 function currentSuite(string $path): string
 {
     return match (true) {
+        preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/Unit/#', $path) === 1 => 'Unit',
+        preg_match('#^tests/Analysis/Evidence/(CodeSmell|Complexity)/Integration/#', $path) === 1 => 'Integration',
         str_starts_with($path, 'tests/Architecture/Unit/'),
         str_starts_with($path, 'tests/Analysis/Policy/Architecture/Unit/'),
         str_starts_with($path, 'tests/Analysis/Policy/Baseline/Unit/'),
@@ -957,7 +990,10 @@ function currentSuite(string $path): string
 
 function dispositionFor(string $path, string $kind): string
 {
-    if (str_starts_with($path, 'tests/Analysis/Finding/')
+    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
+        || in_array($path, P7_MEASUREMENT_PATHS, true)
+        || preg_match('#^tests/Infrastructure/(Unit|Integration)/#', $path) === 1
+        || str_starts_with($path, 'tests/Analysis/Finding/')
         || str_starts_with($path, 'tests/Analysis/Policy/Inline/')
         || str_starts_with($path, 'tests/Analysis/Policy/Baseline/')
         || in_array($path, P6_D_REPORTING_TEST_PATHS, true)
@@ -999,7 +1035,10 @@ function targetPath(string $path, string $kind, string $owner, string $targetSui
     if ($path === 'tests/Unit/Analysis/Collection/SourceControl/SourceControlsTest.php') {
         return 'tests/Analysis/Policy/Inline/Unit/Extraction/SourceControlExtractorTest.php';
     }
-    if (str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/')
+    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
+        || in_array($path, P7_MEASUREMENT_PATHS, true)
+        || preg_match('#^tests/Infrastructure/(Unit|Integration)/#', $path) === 1
+        || str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/')
         || str_starts_with($path, 'tests/Unit/Reporting/Health/')
         || in_array($path, P6_D_REPORTING_TEST_PATHS, true)
         || in_array($path, P6_D_PRIORITIZATION_TEST_PATHS, true)

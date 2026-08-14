@@ -238,8 +238,8 @@ Place admonitions immediately after the section they relate to, not grouped at t
 
 | Change type                            | Files to update                                                                                                                                                             |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rule added/changed/removed             | `src/Rules/README.md` + `CLAUDE.md` (feature list)                                                                                                                          |
-| Metric collector added/changed         | `src/Metrics/README.md`                                                                                                                                                     |
+| Rule added/changed/removed             | Owning `src/Analysis/Evidence/{Capability}/README.md` + `rules/{group}.md` + `CLAUDE.md` (feature list)                                                                     |
+| Metric collector added/changed         | Owning `src/Analysis/Evidence/{Capability}/README.md` + `rules/{group}.md`                                                                                                  |
 | CLI alias added for a rule             | `src/Analysis/Configuration/README.md` (CLI aliases table)                                                                                                                  |
 | Pipeline phase changed                 | `src/Analysis/README.md` + `docs/ARCHITECTURE.md` + `CLAUDE.md`                                                                                                             |
 | DI registration mechanism changed      | `CLAUDE.md` (§ Symfony DI) + `docs/ARCHITECTURE.md` (link to CLAUDE)                                                                                                        |

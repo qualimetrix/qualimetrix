@@ -2,7 +2,53 @@
 
 Cohesion rules measure how well the methods inside a class work together. A cohesive class has methods that operate on the same data -- they share properties and pursue a single purpose. Low cohesion is a strong signal that a class is doing too many things and should be split.
 
-See also: [LCOM (Lack of Cohesion of Methods)](design.md#lcom----lack-of-cohesion-of-methods) in the Design rules -- a complementary cohesion metric that counts disconnected method groups.
+See also: [LCOM (Lack of Cohesion of Methods)](#lcom----lack-of-cohesion-of-methods) -- a complementary cohesion metric that counts disconnected method groups.
+
+---
+
+## LCOM -- Lack of Cohesion of Methods
+
+**Rule ID:** `design.lcom`
+
+LCOM4 counts disconnected groups of related instance methods. A value of `1`
+means that the class is cohesive; values above `1` indicate independent groups
+of responsibilities that may be split. Qualimetrix connects methods that share
+a property or call one another through `$this->method()`, excludes static
+methods, and groups stateless constant methods into one virtual node.
+
+The default warning/error thresholds are `3` and `5`. Readonly classes are
+excluded by default, and classes must have at least three methods. You can also
+exclude interface-mandated methods from the graph:
+
+```yaml
+rules:
+  design.lcom:
+    warning: 3
+    error: 5
+    exclude_readonly: true
+    min_methods: 3
+    exclude_methods: [getName, getDescription]
+```
+
+### Implementation notes
+
+Qualimetrix implements the graph-based LCOM4 algorithm. Instance methods are
+graph nodes, and the metric is the number of connected components.
+
+!!! info "Deviation from original spec"
+    The original LCOM4 specification by Hitz and Montazeri defines edges only
+    through shared property access. Qualimetrix also creates an edge when one
+    method calls another through `$this->method()`, so a well-factored class
+    that uses getters is not reported as artificially incohesive. Stateless
+    constant methods with no property access or instance method calls are
+    grouped into one virtual node; this prevents interface-mandated metadata
+    methods such as `getName()` and `getDescription()` from each inflating the
+    number of disconnected components.
+
+!!! note "Comparing with other tools"
+    phpmetrics uses the Henderson-Sellers LCOM formula, whose values are on a
+    different scale. Its values are not directly comparable with Qualimetrix's
+    LCOM4 values.
 
 ---
 
@@ -44,7 +90,7 @@ Think of it like a dinner party: if every guest knows every other guest, the gro
 <!-- llms:skip-begin -->
 ### Thresholds
 
-TCC and LCC are currently reported as **metrics only** (visible in `--format=metrics` output). They do not produce violations on their own. Use them alongside [LCOM](design.md#lcom----lack-of-cohesion-of-methods) for a fuller picture of class cohesion.
+TCC and LCC are currently reported as **metrics only** (visible in `--format=metrics` output). They do not produce violations on their own. Use them alongside [LCOM](#lcom----lack-of-cohesion-of-methods) for a fuller picture of class cohesion.
 
 Recommended interpretation:
 

@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguratio
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
+use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Core\Progress\NullProgressReporter;
@@ -21,6 +22,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Configures runtime services (logger, progress reporter, profiler, rule options)
  * based on resolved configuration and CLI input.
+ *
+ * @qmx-threshold code-smell.constructor-overinjection warning=9 — The explicit runtime composition keeps three capability configurators independent instead of hiding them behind a generic registry.
+ * @qmx-threshold code-smell.long-parameter-list warning=9 — Constructor arguments are explicit runtime collaborators; a parameter bag would obscure their lifecycle.
  */
 final class RuntimeConfigurator
 {
@@ -31,6 +35,7 @@ final class RuntimeConfigurator
         private readonly AnalysisRuntimeConfigurator $analysisRuntimeConfigurator,
         private readonly ArchitecturePolicyConfiguratorInterface $architecturePolicyConfigurator,
         private readonly ComputedMetricConfiguratorInterface $computedMetricConfigurator,
+        private readonly CouplingConfiguratorInterface $couplingConfigurator,
         private readonly DiagnosticOutput $diagnosticOutput,
     ) {}
 
@@ -48,6 +53,7 @@ final class RuntimeConfigurator
 
         $this->configureArchitecturePolicy($resolved, $logger);
         $this->computedMetricConfigurator->configure($resolved->document);
+        $this->couplingConfigurator->configure($resolved->document);
 
         $this->configureMemoryLimit($resolved->runtime, $output);
         $this->configureProgressReporter($input, $output);

@@ -429,7 +429,7 @@ class OrderProcessor
 <!-- llms:skip-begin -->
 ### Implementation notes
 
-WMC is calculated as the sum of [Cyclomatic Complexity](#cyclomatic-complexity) of all methods in a class. Since Qualimetrix uses the CCN2+ variant (which counts `??` and `?->` as decision points), WMC values will be correspondingly higher than those reported by other tools.
+WMC is calculated as the sum of [Cyclomatic Complexity](#cyclomatic-complexity) of all methods in a class. The aggregator produces this class-level metric; the Complexity rule evaluates it and can exclude data classes. Since Qualimetrix uses the CCN2+ variant (which counts `??` and `?->` as decision points), WMC values will be correspondingly higher than those reported by other tools.
 
 <!-- llms:skip-end -->
 

@@ -18,6 +18,8 @@ use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
+use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentRule;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
@@ -59,8 +61,6 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Rules\CodeSmell\BooleanArgumentRule;
-use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
 use SplFileInfo;
 

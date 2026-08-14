@@ -7,10 +7,12 @@ declaration metrics, logical-class and namespace projections, aggregation,
 repository implementation, namespace attribution, collector runtime
 configuration, and the worker-safe collector contract.
 
-It is the owner of the measurement lifecycle, not of pipeline sequencing. Run
-passes file facts through its collection contracts; Measurement returns typed
-metric/repository data. The legacy `Metrics/` and `Rules/` category trees remain
-migration inputs for P7 and are not part of this leaf's public surface.
+It is the owner of the shared measurement lifecycle, not of pipeline sequencing
+or capability-specific evidence. Run passes file facts through its collection
+contracts; Measurement returns typed metric/repository data. CodeSmell,
+Cohesion, Complexity, Coupling, Design, Maintainability, Security, and Size own
+their collectors and rules, while depending on Measurement's public contracts
+for collection and repository interchange.
 
 ## Structure
 

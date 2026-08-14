@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricContributionReader;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
+use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurableInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfiguration;
 use Qualimetrix\Analysis\Evidence\Measurement\Runtime\CollectorRuntimeConfigurationStore;
@@ -25,7 +26,6 @@ use Qualimetrix\Analysis\Finding\Contract\RuleExclusionCaptureHolder;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
-use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
@@ -46,11 +46,12 @@ use Symfony\Component\Console\Output\OutputInterface;
 #[CoversClass(AnalysisRuntimeConfigurator::class)]
 #[CoversClass(HealthFormulaExcluder::class)]
 #[CoversClass(ArchitecturePolicy::class)]
+#[CoversClass(CouplingAnalysis::class)]
 final class RuntimeConfiguratorTest extends TestCase
 {
     private TransitionalRuntimeConfigurationProviderInterface&Stub $configProvider;
     private RuleOptionsRegistry $ruleOptionsRegistry;
-    private FrameworkNamespacesHolder $frameworkNamespacesHolder;
+    private CouplingAnalysis $couplingAnalysis;
     private ArchitecturePolicyConfiguratorInterface $architecturePolicy;
     private CollectorRuntimeConfigurationStore $collectorRuntimeConfigurationStore;
     private CacheFactory $cacheFactory;
@@ -60,7 +61,7 @@ final class RuntimeConfiguratorTest extends TestCase
     protected function setUp(): void
     {
         $this->ruleOptionsRegistry = new RuleOptionsRegistry();
-        $this->frameworkNamespacesHolder = new FrameworkNamespacesHolder();
+        $this->couplingAnalysis = new CouplingAnalysis();
         $this->architecturePolicy = new ArchitecturePolicy();
         $this->collectorRuntimeConfigurationStore = new CollectorRuntimeConfigurationStore();
 
@@ -111,12 +112,12 @@ final class RuntimeConfiguratorTest extends TestCase
                 $configProvider,
                 $this->ruleOptionsRegistry,
                 $ruleRegistry,
-                $this->frameworkNamespacesHolder,
                 $this->collectorRuntimeConfigurationStore,
                 $this->cacheFactory,
             ),
             $this->architecturePolicy,
             $this->computedMetricAnalysis,
+            $this->couplingAnalysis,
             new DiagnosticOutput(),
         );
     }
@@ -506,29 +507,28 @@ final class RuntimeConfiguratorTest extends TestCase
     }
 
     #[Test]
-    public function configureSetsFrameworkNamespacesFromConfig(): void
+    public function itConfiguresFrameworkNamespacesFromTheDocument(): void
     {
         $resolved = new TransitionalResolvedConfiguration(
             paths: ["."],
             pathExcludes: ["vendor", "node_modules", ".git"],
-            runtime: new TransitionalRuntimeConfiguration(frameworkNamespaces: ['Symfony', 'Doctrine']),
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [],
-            document: new ConfigurationDocument([]),
+            document: new ConfigurationDocument([["coupling" => ["frameworkNamespaces" => ['Symfony', 'Doctrine']]]]),
         );
 
         $input = $this->createCliInput([]);
 
         $this->configurator->configure($resolved, $input, $this->createOutput());
 
-        $namespaces = $this->frameworkNamespacesHolder->get();
-        self::assertFalse($namespaces->isEmpty());
-        self::assertTrue($namespaces->isFramework('Symfony\\Component\\Console'));
-        self::assertTrue($namespaces->isFramework('Doctrine\\ORM\\EntityManager'));
-        self::assertFalse($namespaces->isFramework('App\\Service\\UserService'));
+        self::assertFalse($this->couplingAnalysis->isEmpty());
+        self::assertTrue($this->couplingAnalysis->isFramework('Symfony\\Component\\Console'));
+        self::assertTrue($this->couplingAnalysis->isFramework('Doctrine\\ORM\\EntityManager'));
+        self::assertFalse($this->couplingAnalysis->isFramework('App\\Service\\UserService'));
     }
 
     #[Test]
-    public function resetClearsFrameworkNamespacesBetweenConfigureCalls(): void
+    public function itReplacesFrameworkNamespacesWithAnEmptyDocumentBetweenRuns(): void
     {
         $configProvider = $this->useConfigProviderMock();
 
@@ -536,9 +536,9 @@ final class RuntimeConfiguratorTest extends TestCase
         $resolved1 = new TransitionalResolvedConfiguration(
             paths: ["."],
             pathExcludes: ["vendor", "node_modules", ".git"],
-            runtime: new TransitionalRuntimeConfiguration(frameworkNamespaces: ['Symfony']),
+            runtime: new TransitionalRuntimeConfiguration(),
             ruleOptions: [],
-            document: new ConfigurationDocument([]),
+            document: new ConfigurationDocument([["coupling" => ["frameworkNamespaces" => ['Symfony']]]]),
         );
 
         $configProvider
@@ -550,8 +550,8 @@ final class RuntimeConfiguratorTest extends TestCase
 
         $this->configurator->configure($resolved1, $this->createCliInput([]), $this->createOutput());
 
-        self::assertFalse($this->frameworkNamespacesHolder->get()->isEmpty());
-        self::assertTrue($this->frameworkNamespacesHolder->get()->isFramework('Symfony\\Console'));
+        self::assertFalse($this->couplingAnalysis->isEmpty());
+        self::assertTrue($this->couplingAnalysis->isFramework('Symfony\\Console'));
 
         // Second configure: no framework namespaces
         $resolved2 = new TransitionalResolvedConfiguration(
@@ -565,10 +565,7 @@ final class RuntimeConfiguratorTest extends TestCase
         $this->configurator->configure($resolved2, $this->createCliInput([]), $this->createOutput());
 
         // Framework namespaces from first run should be cleared
-        self::assertTrue(
-            $this->frameworkNamespacesHolder->get()->isEmpty(),
-            'Framework namespaces from first configure() call should not leak into second call',
-        );
+        self::assertTrue($this->couplingAnalysis->isEmpty());
     }
 
     #[Test]
@@ -840,12 +837,12 @@ final class RuntimeConfiguratorTest extends TestCase
                 $this->configProvider,
                 $this->ruleOptionsRegistry,
                 $ruleRegistry,
-                $this->frameworkNamespacesHolder,
                 $this->collectorRuntimeConfigurationStore,
                 $this->cacheFactory,
             ),
             $this->architecturePolicy,
             $this->computedMetricAnalysis,
+            $this->couplingAnalysis,
             new DiagnosticOutput(),
         );
 

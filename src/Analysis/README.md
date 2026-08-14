@@ -6,27 +6,34 @@ boundaries.
 
 ## Current leaves
 
-| Leaf                                                                   | Subject                                                                   | Read first                                            |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------- |
-| [`Configuration`](Configuration/README.md)                             | configuration document resolution and transitional runtime configuration  | configuration schema, stages, and exit packages P5-P7 |
-| [`Evidence/DependencyModel`](Evidence/DependencyModel/README.md)       | dependency evidence, graph construction, and extraction                   | public graph/traversal contracts                      |
-| [`Evidence/Duplication`](Evidence/Duplication/README.md)               | file-set duplication evidence and one-run result                          | Run-port implementation and result lifecycle          |
-| [`Evidence/CircularDependency`](Evidence/CircularDependency/README.md) | SCC evidence, cycle values, rule, and one-run preparation                 | preparation contract and reset semantics              |
-| [`Evidence/Measurement`](Evidence/Measurement/README.md)               | metric facts, repository, namespace attribution, and aggregation          | metric/repository contracts and worker reconstruction |
-| [`Evidence/ComputedMetrics`](Evidence/ComputedMetrics/README.md)       | formula-defined metrics, instance-owned definitions, and Health semantics | lifecycle, evaluation contract, and Health contracts  |
-| [`Evidence/Prioritization`](Evidence/Prioritization/README.md)         | finding impact ranking and technical-debt evidence                        | ranking and debt contracts                            |
-| [`Finding`](Finding/README.md)                                         | rule language, execution, finding values, and filtering primitives        | public contracts and runtime-state ownership          |
-| [`Policy/Architecture`](Policy/Architecture/README.md)                 | declared-layer policy, preparation, and debug projection                  | contracts and internal-zone topology                  |
-| [`Policy/Baseline`](Policy/Baseline/README.md)                         | accepted-finding ceiling lifecycle                                        | file contract and fail-safe application               |
-| [`Policy/Inline`](Policy/Inline/README.md)                             | source annotation extraction and suppression controls                     | extraction and suppression contracts                  |
-| [`Run`](Run/README.md)                                                 | discovery, collection, phase ordering, coverage, and run results          | Pipeline and FileSet inspection contracts             |
+| Leaf                                                                   | Subject                                                                   | Read first                                              |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [`Configuration`](Configuration/README.md)                             | configuration document resolution and transitional runtime configuration  | schema, stages, and feature document contributions      |
+| [`Evidence/CodeSmell`](Evidence/CodeSmell/README.md)                   | code-smell collection and rules                                           | finding groups, visitors, options, and exact DI root    |
+| [`Evidence/Cohesion`](Evidence/Cohesion/README.md)                     | class cohesion evidence and rules                                         | TCC/LCC, LCOM, and unused-private semantics             |
+| [`Evidence/Complexity`](Evidence/Complexity/README.md)                 | cyclomatic, cognitive, NPath, and WMC evidence and rules                  | callable/class aggregation and thresholds               |
+| [`Evidence/Coupling`](Evidence/Coupling/README.md)                     | coupling evidence, rules, and run configuration                           | framework-namespace parsing and one-run state           |
+| [`Evidence/DependencyModel`](Evidence/DependencyModel/README.md)       | dependency evidence, graph construction, and extraction                   | public graph/traversal contracts                        |
+| [`Evidence/Design`](Evidence/Design/README.md)                         | inheritance and design evidence and rules                                 | DIT, NOC, data-class, god-class, and coverage semantics |
+| [`Evidence/Duplication`](Evidence/Duplication/README.md)               | file-set duplication evidence and one-run result                          | Run-port implementation and result lifecycle            |
+| [`Evidence/CircularDependency`](Evidence/CircularDependency/README.md) | SCC evidence, cycle values, rule, and one-run preparation                 | preparation contract and reset semantics                |
+| [`Evidence/Measurement`](Evidence/Measurement/README.md)               | metric facts, repository, namespace attribution, and aggregation          | metric/repository contracts and worker reconstruction   |
+| [`Evidence/ComputedMetrics`](Evidence/ComputedMetrics/README.md)       | formula-defined metrics, instance-owned definitions, and Health semantics | lifecycle, evaluation contract, and Health contracts    |
+| [`Evidence/Maintainability`](Evidence/Maintainability/README.md)       | Halstead and maintainability evidence and rules                           | formula semantics and exact DI root                     |
+| [`Evidence/Prioritization`](Evidence/Prioritization/README.md)         | finding impact ranking and technical-debt evidence                        | ranking and debt contracts                              |
+| [`Evidence/Security`](Evidence/Security/README.md)                     | security evidence and rules                                               | pattern detectors, findings, options, and visitors      |
+| [`Evidence/Size`](Evidence/Size/README.md)                             | size evidence and rules                                                   | LOC and member-count collection and thresholds          |
+| [`Finding`](Finding/README.md)                                         | rule language, execution, finding values, and filtering primitives        | public contracts and runtime-state ownership            |
+| [`Policy/Architecture`](Policy/Architecture/README.md)                 | declared-layer policy, preparation, and debug projection                  | contracts and internal-zone topology                    |
+| [`Policy/Baseline`](Policy/Baseline/README.md)                         | accepted-finding ceiling lifecycle                                        | file contract and fail-safe application                 |
+| [`Policy/Inline`](Policy/Inline/README.md)                             | source annotation extraction and suppression controls                     | extraction and suppression contracts                    |
+| [`Run`](Run/README.md)                                                 | discovery, collection, phase ordering, coverage, and run results          | Pipeline and FileSet inspection contracts               |
 
-P6 implementation has published the Finding, Inline, Baseline, Prioritization,
-and finding-projection boundaries, but P6 remains paused pending post-review
-closure and is not complete. P4 owns Architecture policy and circular evidence
-in their dedicated leaves; P5 owns ComputedMetrics and Health. The `Metrics/`,
-and `Rules/` trees stay physical migration inputs until their named packages
-land. Architecture, Baseline, and Inline are current Policy leaves.
+P1-P7 have published their accepted capability boundaries. P7 distributed the
+former Metrics and Rules role buckets among the eight evidence leaves listed
+above, and its final aggregate validation and independent review returned GO.
+Architecture, Baseline, and Inline are current Policy leaves; P8 remains
+pending as the next phase.
 
 ## Current execution flow
 

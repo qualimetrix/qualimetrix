@@ -79,6 +79,16 @@
                     "owner": "Analysis.Evidence.ComputedMetrics",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface",
                     "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Coupling",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingAnalysis",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Coupling",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\Contract\\Configuration\\CouplingConfiguratorInterface",
+                    "closes_in": null
                 }
             ]
         },
@@ -497,6 +507,614 @@
             "owner": "Analysis.Evidence.CircularDependency",
             "visibility": "internal",
             "closure_package": "P4",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\AbstractCodeSmellRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/AbstractCodeSmellRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\BooleanArgumentOptions": {
+            "path": "src/Analysis/Evidence/CodeSmell/BooleanArgumentOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\BooleanArgumentRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/BooleanArgumentRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\BooleanArgument\\BooleanArgumentSmells": {
+            "path": "src/Analysis/Evidence/CodeSmell/BooleanArgument/BooleanArgumentSmells.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\CodeSmellCollector": {
+            "path": "src/Analysis/Evidence/CodeSmell/CodeSmellCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\CodeSmellFinding": {
+            "path": "src/Analysis/Evidence/CodeSmell/CodeSmellFinding.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\CodeSmellLocation": {
+            "path": "src/Analysis/Evidence/CodeSmell/CodeSmellLocation.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\CodeSmellOptions": {
+            "path": "src/Analysis/Evidence/CodeSmell/CodeSmellOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\CodeSmellVisitor": {
+            "path": "src/Analysis/Evidence/CodeSmell/CodeSmellVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionOptions": {
+            "path": "src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ConstructorOverinjectionRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/ConstructorOverinjectionRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ControlFlow\\ControlFlowSmells": {
+            "path": "src/Analysis/Evidence/CodeSmell/ControlFlow/ControlFlowSmells.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\CountInLoopRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/CountInLoopRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\DebugCodeRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/DebugCodeRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\Debug\\DebugCodeSmells": {
+            "path": "src/Analysis/Evidence/CodeSmell/Debug/DebugCodeSmells.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\EmptyCatchRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/EmptyCatchRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\EntryFilteringOptionsInterface": {
+            "path": "src/Analysis/Evidence/CodeSmell/EntryFilteringOptionsInterface.php",
+            "kind": "interface",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ErrorSuppressionOptions": {
+            "path": "src/Analysis/Evidence/CodeSmell/ErrorSuppressionOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ErrorSuppressionRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/ErrorSuppressionRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\EvalRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/EvalRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ExitRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/ExitRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\GotoRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/GotoRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\IdenticalSubExpressionOptions": {
+            "path": "src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\IdenticalSubExpressionRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/IdenticalSubExpressionRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListOptions": {
+            "path": "src/Analysis/Evidence/CodeSmell/LongParameterListOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\LongParameterListRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/LongParameterListRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountCollector": {
+            "path": "src/Analysis/Evidence/CodeSmell/ParameterCountCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountVisitor": {
+            "path": "src/Analysis/Evidence/CodeSmell/ParameterCountVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\RepeatedExpression\\IdenticalSubExpressionCollector": {
+            "path": "src/Analysis/Evidence/CodeSmell/RepeatedExpression/IdenticalSubExpressionCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\RepeatedExpression\\IdenticalSubExpressionFinding": {
+            "path": "src/Analysis/Evidence/CodeSmell/RepeatedExpression/IdenticalSubExpressionFinding.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\RepeatedExpression\\IdenticalSubExpressionVisitor": {
+            "path": "src/Analysis/Evidence/CodeSmell/RepeatedExpression/IdenticalSubExpressionVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\RepeatedExpression\\RepeatedConditions": {
+            "path": "src/Analysis/Evidence/CodeSmell/RepeatedExpression/RepeatedConditions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\RepeatedExpression\\RepeatedExpressions": {
+            "path": "src/Analysis/Evidence/CodeSmell/RepeatedExpression/RepeatedExpressions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\SuperglobalsRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/SuperglobalsRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\TraitUsageResolver": {
+            "path": "src/Analysis/Evidence/CodeSmell/TraitUsageResolver.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeCollector": {
+            "path": "src/Analysis/Evidence/CodeSmell/UnreachableCodeCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeOptions": {
+            "path": "src/Analysis/Evidence/CodeSmell/UnreachableCodeOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/UnreachableCodeRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeVisitor": {
+            "path": "src/Analysis/Evidence/CodeSmell/UnreachableCodeVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateClassData": {
+            "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivateClassData.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector": {
+            "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateOptions": {
+            "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivateOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateRule": {
+            "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivateRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateVisitor": {
+            "path": "src/Analysis/Evidence/CodeSmell/UnusedPrivateVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UsageTrackingTrait": {
+            "path": "src/Analysis/Evidence/CodeSmell/UsageTrackingTrait.php",
+            "kind": "trait",
+            "owner": "Analysis.Evidence.CodeSmell",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Cohesion\\ClassVisitorStackTrait": {
+            "path": "src/Analysis/Evidence/Cohesion/ClassVisitorStackTrait.php",
+            "kind": "trait",
+            "owner": "Analysis.Evidence.Cohesion",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomClassData": {
+            "path": "src/Analysis/Evidence/Cohesion/LcomClassData.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Cohesion",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomCollector": {
+            "path": "src/Analysis/Evidence/Cohesion/LcomCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Cohesion",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomGraphCalculator": {
+            "path": "src/Analysis/Evidence/Cohesion/LcomGraphCalculator.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Cohesion",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomOptions": {
+            "path": "src/Analysis/Evidence/Cohesion/LcomOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Cohesion",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomRule": {
+            "path": "src/Analysis/Evidence/Cohesion/LcomRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Cohesion",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomVisitor": {
+            "path": "src/Analysis/Evidence/Cohesion/LcomVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Cohesion",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Cohesion\\TccLccClassData": {
+            "path": "src/Analysis/Evidence/Cohesion/TccLccClassData.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Cohesion",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Cohesion\\TccLccCollector": {
+            "path": "src/Analysis/Evidence/Cohesion/TccLccCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Cohesion",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Cohesion\\TccLccVisitor": {
+            "path": "src/Analysis/Evidence/Cohesion/TccLccVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Cohesion",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\ClassCognitiveComplexityOptions": {
+            "path": "src/Analysis/Evidence/Complexity/ClassCognitiveComplexityOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\ClassComplexityOptions": {
+            "path": "src/Analysis/Evidence/Complexity/ClassComplexityOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\ClassNpathComplexityOptions": {
+            "path": "src/Analysis/Evidence/Complexity/ClassNpathComplexityOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityCollector": {
+            "path": "src/Analysis/Evidence/Complexity/CognitiveComplexityCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityOptions": {
+            "path": "src/Analysis/Evidence/Complexity/CognitiveComplexityOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityRule": {
+            "path": "src/Analysis/Evidence/Complexity/CognitiveComplexityRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor": {
+            "path": "src/Analysis/Evidence/Complexity/CognitiveComplexityVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityOptions": {
+            "path": "src/Analysis/Evidence/Complexity/ComplexityOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\ComplexityRule": {
+            "path": "src/Analysis/Evidence/Complexity/ComplexityRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityCollector": {
+            "path": "src/Analysis/Evidence/Complexity/CyclomaticComplexityCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityVisitor": {
+            "path": "src/Analysis/Evidence/Complexity/CyclomaticComplexityVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\MethodCognitiveComplexityOptions": {
+            "path": "src/Analysis/Evidence/Complexity/MethodCognitiveComplexityOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\MethodComplexityOptions": {
+            "path": "src/Analysis/Evidence/Complexity/MethodComplexityOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\MethodNpathComplexityOptions": {
+            "path": "src/Analysis/Evidence/Complexity/MethodNpathComplexityOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityCollector": {
+            "path": "src/Analysis/Evidence/Complexity/NpathComplexityCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityOptions": {
+            "path": "src/Analysis/Evidence/Complexity/NpathComplexityOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityRule": {
+            "path": "src/Analysis/Evidence/Complexity/NpathComplexityRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityVisitor": {
+            "path": "src/Analysis/Evidence/Complexity/NpathComplexityVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathExpressionCalculator": {
+            "path": "src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcOptions": {
+            "path": "src/Analysis/Evidence/Complexity/WmcOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Complexity\\WmcRule": {
+            "path": "src/Analysis/Evidence/Complexity/WmcRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Complexity",
+            "visibility": "internal",
+            "closure_package": "P7",
             "consumers": []
         },
         "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricAnalysis": {
@@ -958,6 +1576,185 @@
             "closure_package": "P5",
             "consumers": []
         },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\AbstractnessCollector": {
+            "path": "src/Analysis/Evidence/Coupling/AbstractnessCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboOptions": {
+            "path": "src/Analysis/Evidence/Coupling/CboOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboRule": {
+            "path": "src/Analysis/Evidence/Coupling/CboRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassCboOptions": {
+            "path": "src/Analysis/Evidence/Coupling/ClassCboOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassInstabilityOptions": {
+            "path": "src/Analysis/Evidence/Coupling/ClassInstabilityOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankCollector": {
+            "path": "src/Analysis/Evidence/Coupling/ClassRankCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankOptions": {
+            "path": "src/Analysis/Evidence/Coupling/ClassRankOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRankRule": {
+            "path": "src/Analysis/Evidence/Coupling/ClassRankRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\ClassRfcData": {
+            "path": "src/Analysis/Evidence/Coupling/RfcVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\Contract\\Configuration\\CouplingConfiguratorInterface": {
+            "path": "src/Analysis/Evidence/Coupling/Contract/Configuration/CouplingConfiguratorInterface.php",
+            "kind": "interface",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "contract",
+            "closure_package": "P7",
+            "consumers": [
+                {
+                    "owner": "Infrastructure.Console",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuntimeConfigurator",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CouplingConfigurator",
+                    "closes_in": null
+                }
+            ]
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingAnalysis": {
+            "path": "src/Analysis/Evidence/Coupling/CouplingAnalysis.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingCollector": {
+            "path": "src/Analysis/Evidence/Coupling/CouplingCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceCollector": {
+            "path": "src/Analysis/Evidence/Coupling/DistanceCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceOptions": {
+            "path": "src/Analysis/Evidence/Coupling/DistanceOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule": {
+            "path": "src/Analysis/Evidence/Coupling/DistanceRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityOptions": {
+            "path": "src/Analysis/Evidence/Coupling/InstabilityOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule": {
+            "path": "src/Analysis/Evidence/Coupling/InstabilityRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\NamespaceCboOptions": {
+            "path": "src/Analysis/Evidence/Coupling/NamespaceCboOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\NamespaceInstabilityOptions": {
+            "path": "src/Analysis/Evidence/Coupling/NamespaceInstabilityOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector": {
+            "path": "src/Analysis/Evidence/Coupling/RfcCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcVisitor": {
+            "path": "src/Analysis/Evidence/Coupling/RfcVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Coupling",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\Dependency": {
             "path": "src/Analysis/Evidence/DependencyModel/Contract/Dependency.php",
             "kind": "class",
@@ -1245,6 +2042,174 @@
             "closure_package": "P3",
             "consumers": []
         },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassExclusionCheck": {
+            "path": "src/Analysis/Evidence/Design/DataClassExclusionCheck.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassOptions": {
+            "path": "src/Analysis/Evidence/Design/DataClassOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\DataClassRule": {
+            "path": "src/Analysis/Evidence/Design/DataClassRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\DitGlobalCollector": {
+            "path": "src/Analysis/Evidence/Design/DitGlobalCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassCriteriaEvaluator": {
+            "path": "src/Analysis/Evidence/Design/GodClassCriteriaEvaluator.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassCriterionResult": {
+            "path": "src/Analysis/Evidence/Design/GodClassCriterionResult.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassOptions": {
+            "path": "src/Analysis/Evidence/Design/GodClassOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\GodClassRule": {
+            "path": "src/Analysis/Evidence/Design/GodClassRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceClassInfo": {
+            "path": "src/Analysis/Evidence/Design/InheritanceClassInfo.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector": {
+            "path": "src/Analysis/Evidence/Design/InheritanceDepthCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthVisitor": {
+            "path": "src/Analysis/Evidence/Design/InheritanceDepthVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceOptions": {
+            "path": "src/Analysis/Evidence/Design/InheritanceOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceRule": {
+            "path": "src/Analysis/Evidence/Design/InheritanceRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\NocCollector": {
+            "path": "src/Analysis/Evidence/Design/NocCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\NocOptions": {
+            "path": "src/Analysis/Evidence/Design/NocOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\NocRule": {
+            "path": "src/Analysis/Evidence/Design/NocRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageCollector": {
+            "path": "src/Analysis/Evidence/Design/TypeCoverageCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageOptions": {
+            "path": "src/Analysis/Evidence/Design/TypeCoverageOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoveragePercentCollector": {
+            "path": "src/Analysis/Evidence/Design/TypeCoveragePercentCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageRule": {
+            "path": "src/Analysis/Evidence/Design/TypeCoverageRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageVisitor": {
+            "path": "src/Analysis/Evidence/Design/TypeCoverageVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Design",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Evidence\\Duplication\\CodeDuplicationOptions": {
             "path": "src/Analysis/Evidence/Duplication/CodeDuplicationOptions.php",
             "kind": "class",
@@ -1379,6 +2344,62 @@
             "owner": "Analysis.Evidence.Duplication",
             "visibility": "internal",
             "closure_package": "P1",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadCollector": {
+            "path": "src/Analysis/Evidence/Maintainability/HalsteadCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Maintainability",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadMetrics": {
+            "path": "src/Analysis/Evidence/Maintainability/HalsteadMetrics.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Maintainability",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadVisitor": {
+            "path": "src/Analysis/Evidence/Maintainability/HalsteadVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Maintainability",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityIndexCalculator": {
+            "path": "src/Analysis/Evidence/Maintainability/MaintainabilityIndexCalculator.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Maintainability",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityIndexCollector": {
+            "path": "src/Analysis/Evidence/Maintainability/MaintainabilityIndexCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Maintainability",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityOptions": {
+            "path": "src/Analysis/Evidence/Maintainability/MaintainabilityOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Maintainability",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityRule": {
+            "path": "src/Analysis/Evidence/Maintainability/MaintainabilityRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Maintainability",
+            "visibility": "internal",
+            "closure_package": "P7",
             "consumers": []
         },
         "Qualimetrix\\Analysis\\Evidence\\Measurement\\Aggregation\\AggregationHelper": {
@@ -2648,6 +3669,326 @@
                 }
             ]
         },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\AbstractSecurityPatternRule": {
+            "path": "src/Analysis/Evidence/Security/AbstractSecurityPatternRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\CommandInjectionDetector": {
+            "path": "src/Analysis/Evidence/Security/CommandInjectionDetector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\CommandInjectionRule": {
+            "path": "src/Analysis/Evidence/Security/CommandInjectionRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\Credential\\CredentialLiterals": {
+            "path": "src/Analysis/Evidence/Security/Credential/CredentialLiterals.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\Credential\\CredentialLocation": {
+            "path": "src/Analysis/Evidence/Security/Credential/CredentialLocation.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\Credential\\HardcodedCredentialsCollector": {
+            "path": "src/Analysis/Evidence/Security/Credential/HardcodedCredentialsCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\Credential\\HardcodedCredentialsVisitor": {
+            "path": "src/Analysis/Evidence/Security/Credential/HardcodedCredentialsVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\HardcodedCredentialsOptions": {
+            "path": "src/Analysis/Evidence/Security/HardcodedCredentialsOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\HardcodedCredentialsRule": {
+            "path": "src/Analysis/Evidence/Security/HardcodedCredentialsRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\SecurityPatternCollector": {
+            "path": "src/Analysis/Evidence/Security/SecurityPatternCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\SecurityPatternFinding": {
+            "path": "src/Analysis/Evidence/Security/SecurityPatternFinding.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\SecurityPatternLocation": {
+            "path": "src/Analysis/Evidence/Security/SecurityPatternLocation.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\SecurityPatternOptions": {
+            "path": "src/Analysis/Evidence/Security/SecurityPatternOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\SecurityPatternVisitor": {
+            "path": "src/Analysis/Evidence/Security/SecurityPatternVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\SensitiveNameMatcher": {
+            "path": "src/Analysis/Evidence/Security/SensitiveNameMatcher.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\SensitiveParameterCollector": {
+            "path": "src/Analysis/Evidence/Security/SensitiveParameterCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\SensitiveParameterLocation": {
+            "path": "src/Analysis/Evidence/Security/SensitiveParameterLocation.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\SensitiveParameterOptions": {
+            "path": "src/Analysis/Evidence/Security/SensitiveParameterOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\SensitiveParameterRule": {
+            "path": "src/Analysis/Evidence/Security/SensitiveParameterRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\SensitiveParameterVisitor": {
+            "path": "src/Analysis/Evidence/Security/SensitiveParameterVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\SqlInjectionDetector": {
+            "path": "src/Analysis/Evidence/Security/SqlInjectionDetector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\SqlInjectionRule": {
+            "path": "src/Analysis/Evidence/Security/SqlInjectionRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\SuperglobalAnalyzer": {
+            "path": "src/Analysis/Evidence/Security/SuperglobalAnalyzer.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\XssDetector": {
+            "path": "src/Analysis/Evidence/Security/XssDetector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Security\\XssRule": {
+            "path": "src/Analysis/Evidence/Security/XssRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Security",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountCollector": {
+            "path": "src/Analysis/Evidence/Size/ClassCountCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountOptions": {
+            "path": "src/Analysis/Evidence/Size/ClassCountOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountRule": {
+            "path": "src/Analysis/Evidence/Size/ClassCountRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\ClassCountVisitor": {
+            "path": "src/Analysis/Evidence/Size/ClassCountVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\LocCollector": {
+            "path": "src/Analysis/Evidence/Size/LocCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\LocVisitor": {
+            "path": "src/Analysis/Evidence/Size/LocVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountCollector": {
+            "path": "src/Analysis/Evidence/Size/MethodCountCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountMetrics": {
+            "path": "src/Analysis/Evidence/Size/MethodCountMetrics.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountOptions": {
+            "path": "src/Analysis/Evidence/Size/MethodCountOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountRule": {
+            "path": "src/Analysis/Evidence/Size/MethodCountRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountVisitor": {
+            "path": "src/Analysis/Evidence/Size/MethodCountVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\MethodStatementCountCollector": {
+            "path": "src/Analysis/Evidence/Size/MethodStatementCountCollector.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\MethodStatementCountVisitor": {
+            "path": "src/Analysis/Evidence/Size/MethodStatementCountVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountOptions": {
+            "path": "src/Analysis/Evidence/Size/PropertyCountOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Size\\PropertyCountRule": {
+            "path": "src/Analysis/Evidence/Size/PropertyCountRule.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Size",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Finding\\Contract\\AcceptedLevel": {
             "path": "src/Analysis/Finding/Contract/AcceptedLevel.php",
             "kind": "class",
@@ -3440,70 +4781,6 @@
                 }
             ]
         },
-        "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleDefinitionInterface": {
-            "path": "src/Analysis/Finding/Contract/Rule/RuleDefinitionInterface.php",
-            "kind": "interface",
-            "owner": "Analysis.Finding",
-            "visibility": "contract",
-            "closure_package": "P6",
-            "consumers": [
-                {
-                    "owner": "Analysis.Policy.Inline",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\RuleValidatorMapFactory",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Infrastructure.Console",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Infrastructure.DependencyInjection",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ParallelCollectorClassesCompilerPass",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Infrastructure.DependencyInjection",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleRegistryCompilerPass",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Infrastructure.DependencyInjection",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ThresholdValidatorMapCompilerPass",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Infrastructure.Parallel",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\FileProcessingTask",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Infrastructure.Parallel",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\FileProcessingTaskFactory",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Infrastructure.Parallel",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Infrastructure.Rule",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\KnownRuleNamesAdapter",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Infrastructure.Rule",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\RuleRegistry",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Infrastructure.Rule",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\RuleRegistryInterface",
-                    "closes_in": null
-                }
-            ]
-        },
         "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\HierarchicalRuleInterface": {
             "path": "src/Analysis/Finding/Contract/Rule/HierarchicalRuleInterface.php",
             "kind": "interface",
@@ -3780,6 +5057,70 @@
                 {
                     "owner": "Infrastructure.Rule",
                     "source_fqcn": null,
+                    "closes_in": null
+                }
+            ]
+        },
+        "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleDefinitionInterface": {
+            "path": "src/Analysis/Finding/Contract/Rule/RuleDefinitionInterface.php",
+            "kind": "interface",
+            "owner": "Analysis.Finding",
+            "visibility": "contract",
+            "closure_package": "P6",
+            "consumers": [
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\RuleValidatorMapFactory",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Console",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ParallelCollectorClassesCompilerPass",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleRegistryCompilerPass",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ThresholdValidatorMapCompilerPass",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Parallel",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\FileProcessingTask",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Parallel",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\FileProcessingTaskFactory",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Parallel",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Rule",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\KnownRuleNamesAdapter",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Rule",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\RuleRegistry",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Rule",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\RuleRegistryInterface",
                     "closes_in": null
                 }
             ]
@@ -6403,39 +7744,6 @@
                 }
             ]
         },
-        "Qualimetrix\\Core\\Coupling\\FrameworkNamespaces": {
-            "path": "src/Core/Coupling/FrameworkNamespaces.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "contract",
-            "closure_package": "P7",
-            "consumers": [
-                {
-                    "owner": "Infrastructure.Console",
-                    "source_fqcn": null,
-                    "closes_in": null
-                }
-            ]
-        },
-        "Qualimetrix\\Core\\Coupling\\FrameworkNamespacesHolder": {
-            "path": "src/Core/Coupling/FrameworkNamespacesHolder.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "contract",
-            "closure_package": "P7",
-            "consumers": [
-                {
-                    "owner": "Infrastructure.Console",
-                    "source_fqcn": null,
-                    "closes_in": null
-                },
-                {
-                    "owner": "Infrastructure.DependencyInjection",
-                    "source_fqcn": null,
-                    "closes_in": null
-                }
-            ]
-        },
         "Qualimetrix\\Core\\Exception\\ParseException": {
             "path": "src/Core/Exception/ParseException.php",
             "kind": "class",
@@ -8095,12 +9403,36 @@
             "closure_package": "P4",
             "consumers": []
         },
+        "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CodeSmellConfigurator": {
+            "path": "src/Infrastructure/DependencyInjection/Configurator/CodeSmellConfigurator.php",
+            "kind": "class",
+            "owner": "Infrastructure.DependencyInjection",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CohesionConfigurator": {
+            "path": "src/Infrastructure/DependencyInjection/Configurator/CohesionConfigurator.php",
+            "kind": "class",
+            "owner": "Infrastructure.DependencyInjection",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
         "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CollectorConfigurator": {
             "path": "src/Infrastructure/DependencyInjection/Configurator/CollectorConfigurator.php",
             "kind": "class",
             "owner": "Infrastructure.DependencyInjection",
             "visibility": "internal",
             "closure_package": "P8",
+            "consumers": []
+        },
+        "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ComplexityConfigurator": {
+            "path": "src/Infrastructure/DependencyInjection/Configurator/ComplexityConfigurator.php",
+            "kind": "class",
+            "owner": "Infrastructure.DependencyInjection",
+            "visibility": "internal",
+            "closure_package": "P7",
             "consumers": []
         },
         "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ComputedMetricsConfigurator": {
@@ -8135,12 +9467,28 @@
             "closure_package": "P8",
             "consumers": []
         },
+        "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CouplingConfigurator": {
+            "path": "src/Infrastructure/DependencyInjection/Configurator/CouplingConfigurator.php",
+            "kind": "class",
+            "owner": "Infrastructure.DependencyInjection",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
         "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\DependencyModelConfigurator": {
             "path": "src/Infrastructure/DependencyInjection/Configurator/DependencyModelConfigurator.php",
             "kind": "class",
             "owner": "Infrastructure.DependencyInjection",
             "visibility": "internal",
             "closure_package": "P3",
+            "consumers": []
+        },
+        "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\DesignConfigurator": {
+            "path": "src/Infrastructure/DependencyInjection/Configurator/DesignConfigurator.php",
+            "kind": "class",
+            "owner": "Infrastructure.DependencyInjection",
+            "visibility": "internal",
+            "closure_package": "P7",
             "consumers": []
         },
         "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\DuplicationConfigurator": {
@@ -8157,6 +9505,14 @@
             "owner": "Infrastructure.DependencyInjection",
             "visibility": "internal",
             "closure_package": "P6-A",
+            "consumers": []
+        },
+        "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MaintainabilityConfigurator": {
+            "path": "src/Infrastructure/DependencyInjection/Configurator/MaintainabilityConfigurator.php",
+            "kind": "class",
+            "owner": "Infrastructure.DependencyInjection",
+            "visibility": "internal",
+            "closure_package": "P7",
             "consumers": []
         },
         "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator": {
@@ -8189,6 +9545,22 @@
             "owner": "Infrastructure.DependencyInjection",
             "visibility": "internal",
             "closure_package": "P8",
+            "consumers": []
+        },
+        "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\SecurityConfigurator": {
+            "path": "src/Infrastructure/DependencyInjection/Configurator/SecurityConfigurator.php",
+            "kind": "class",
+            "owner": "Infrastructure.DependencyInjection",
+            "visibility": "internal",
+            "closure_package": "P7",
+            "consumers": []
+        },
+        "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\SizeConfigurator": {
+            "path": "src/Infrastructure/DependencyInjection/Configurator/SizeConfigurator.php",
+            "kind": "class",
+            "owner": "Infrastructure.DependencyInjection",
+            "visibility": "internal",
+            "closure_package": "P7",
             "consumers": []
         },
         "Qualimetrix\\Infrastructure\\DependencyInjection\\ContainerFactory": {
@@ -8590,638 +9962,6 @@
                     "closes_in": null
                 }
             ]
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\BooleanArgument\\BooleanArgumentSmells": {
-            "path": "src/Metrics/CodeSmell/BooleanArgument/BooleanArgumentSmells.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\CodeSmellCollector": {
-            "path": "src/Metrics/CodeSmell/CodeSmellCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\CodeSmellLocation": {
-            "path": "src/Metrics/CodeSmell/CodeSmellLocation.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\CodeSmellVisitor": {
-            "path": "src/Metrics/CodeSmell/CodeSmellVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\ControlFlow\\ControlFlowSmells": {
-            "path": "src/Metrics/CodeSmell/ControlFlow/ControlFlowSmells.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\Debug\\DebugCodeSmells": {
-            "path": "src/Metrics/CodeSmell/Debug/DebugCodeSmells.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\ParameterCountCollector": {
-            "path": "src/Metrics/CodeSmell/ParameterCountCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\ParameterCountVisitor": {
-            "path": "src/Metrics/CodeSmell/ParameterCountVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\RepeatedExpression\\IdenticalSubExpressionCollector": {
-            "path": "src/Metrics/CodeSmell/RepeatedExpression/IdenticalSubExpressionCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\RepeatedExpression\\IdenticalSubExpressionFinding": {
-            "path": "src/Metrics/CodeSmell/RepeatedExpression/IdenticalSubExpressionFinding.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\RepeatedExpression\\IdenticalSubExpressionVisitor": {
-            "path": "src/Metrics/CodeSmell/RepeatedExpression/IdenticalSubExpressionVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\RepeatedExpression\\RepeatedConditions": {
-            "path": "src/Metrics/CodeSmell/RepeatedExpression/RepeatedConditions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\RepeatedExpression\\RepeatedExpressions": {
-            "path": "src/Metrics/CodeSmell/RepeatedExpression/RepeatedExpressions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\UnreachableCodeCollector": {
-            "path": "src/Metrics/CodeSmell/UnreachableCodeCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\CodeSmell\\UnreachableCodeVisitor": {
-            "path": "src/Metrics/CodeSmell/UnreachableCodeVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityCollector": {
-            "path": "src/Metrics/Complexity/CognitiveComplexityCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Complexity\\CognitiveComplexityVisitor": {
-            "path": "src/Metrics/Complexity/CognitiveComplexityVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Complexity\\CyclomaticComplexityCollector": {
-            "path": "src/Metrics/Complexity/CyclomaticComplexityCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Complexity\\CyclomaticComplexityVisitor": {
-            "path": "src/Metrics/Complexity/CyclomaticComplexityVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Complexity\\NpathComplexityCollector": {
-            "path": "src/Metrics/Complexity/NpathComplexityCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Complexity\\NpathComplexityVisitor": {
-            "path": "src/Metrics/Complexity/NpathComplexityVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Complexity\\NpathExpressionCalculator": {
-            "path": "src/Metrics/Complexity/NpathExpressionCalculator.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Coupling\\AbstractnessCollector": {
-            "path": "src/Metrics/Coupling/AbstractnessCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Coupling\\ClassRankCollector": {
-            "path": "src/Metrics/Coupling/ClassRankCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Coupling\\CouplingCollector": {
-            "path": "src/Metrics/Coupling/CouplingCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Coupling\\DistanceCollector": {
-            "path": "src/Metrics/Coupling/DistanceCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Design\\TypeCoverageCollector": {
-            "path": "src/Metrics/Design/TypeCoverageCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Design\\TypeCoveragePercentCollector": {
-            "path": "src/Metrics/Design/TypeCoveragePercentCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Design\\TypeCoverageVisitor": {
-            "path": "src/Metrics/Design/TypeCoverageVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Halstead\\HalsteadCollector": {
-            "path": "src/Metrics/Halstead/HalsteadCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Maintainability",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Halstead\\HalsteadMetrics": {
-            "path": "src/Metrics/Halstead/HalsteadMetrics.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Maintainability",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Halstead\\HalsteadVisitor": {
-            "path": "src/Metrics/Halstead/HalsteadVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Maintainability",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Maintainability\\MaintainabilityIndexCalculator": {
-            "path": "src/Metrics/Maintainability/MaintainabilityIndexCalculator.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Maintainability",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Maintainability\\MaintainabilityIndexCollector": {
-            "path": "src/Metrics/Maintainability/MaintainabilityIndexCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Maintainability",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\CommandInjectionDetector": {
-            "path": "src/Metrics/Security/CommandInjectionDetector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\Credential\\CredentialLiterals": {
-            "path": "src/Metrics/Security/Credential/CredentialLiterals.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\Credential\\CredentialLocation": {
-            "path": "src/Metrics/Security/Credential/CredentialLocation.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\Credential\\HardcodedCredentialsCollector": {
-            "path": "src/Metrics/Security/Credential/HardcodedCredentialsCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\Credential\\HardcodedCredentialsVisitor": {
-            "path": "src/Metrics/Security/Credential/HardcodedCredentialsVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\SecurityPatternCollector": {
-            "path": "src/Metrics/Security/SecurityPatternCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\SecurityPatternLocation": {
-            "path": "src/Metrics/Security/SecurityPatternLocation.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\SecurityPatternVisitor": {
-            "path": "src/Metrics/Security/SecurityPatternVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\SensitiveNameMatcher": {
-            "path": "src/Metrics/Security/SensitiveNameMatcher.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\SensitiveParameterCollector": {
-            "path": "src/Metrics/Security/SensitiveParameterCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\SensitiveParameterLocation": {
-            "path": "src/Metrics/Security/SensitiveParameterLocation.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\SensitiveParameterVisitor": {
-            "path": "src/Metrics/Security/SensitiveParameterVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\SqlInjectionDetector": {
-            "path": "src/Metrics/Security/SqlInjectionDetector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\SuperglobalAnalyzer": {
-            "path": "src/Metrics/Security/SuperglobalAnalyzer.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Security\\XssDetector": {
-            "path": "src/Metrics/Security/XssDetector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Size\\ClassCountCollector": {
-            "path": "src/Metrics/Size/ClassCountCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Size\\ClassCountVisitor": {
-            "path": "src/Metrics/Size/ClassCountVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Size\\LocCollector": {
-            "path": "src/Metrics/Size/LocCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Size\\LocVisitor": {
-            "path": "src/Metrics/Size/LocVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Size\\MethodStatementCountCollector": {
-            "path": "src/Metrics/Size/MethodStatementCountCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Size\\MethodStatementCountVisitor": {
-            "path": "src/Metrics/Size/MethodStatementCountVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\ClassRfcData": {
-            "path": "src/Metrics/Structure/RfcVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\ClassVisitorStackTrait": {
-            "path": "src/Metrics/Structure/ClassVisitorStackTrait.php",
-            "kind": "trait",
-            "owner": "Analysis.Evidence.Cohesion",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\DitGlobalCollector": {
-            "path": "src/Metrics/Structure/DitGlobalCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\InheritanceClassInfo": {
-            "path": "src/Metrics/Structure/InheritanceClassInfo.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\InheritanceDepthCollector": {
-            "path": "src/Metrics/Structure/InheritanceDepthCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\InheritanceDepthVisitor": {
-            "path": "src/Metrics/Structure/InheritanceDepthVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\LcomClassData": {
-            "path": "src/Metrics/Structure/LcomClassData.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Cohesion",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\LcomCollector": {
-            "path": "src/Metrics/Structure/LcomCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Cohesion",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\LcomGraphCalculator": {
-            "path": "src/Metrics/Structure/LcomGraphCalculator.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Cohesion",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\LcomVisitor": {
-            "path": "src/Metrics/Structure/LcomVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Cohesion",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\MethodCountCollector": {
-            "path": "src/Metrics/Structure/MethodCountCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\MethodCountMetrics": {
-            "path": "src/Metrics/Structure/MethodCountMetrics.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\MethodCountVisitor": {
-            "path": "src/Metrics/Structure/MethodCountVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\NocCollector": {
-            "path": "src/Metrics/Structure/NocCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\RfcCollector": {
-            "path": "src/Metrics/Structure/RfcCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\RfcVisitor": {
-            "path": "src/Metrics/Structure/RfcVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\TccLccClassData": {
-            "path": "src/Metrics/Structure/TccLccClassData.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Cohesion",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\TccLccCollector": {
-            "path": "src/Metrics/Structure/TccLccCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Cohesion",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\TccLccVisitor": {
-            "path": "src/Metrics/Structure/TccLccVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Cohesion",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\TraitUsageResolver": {
-            "path": "src/Metrics/Structure/TraitUsageResolver.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\UnusedPrivateClassData": {
-            "path": "src/Metrics/Structure/UnusedPrivateClassData.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\UnusedPrivateCollector": {
-            "path": "src/Metrics/Structure/UnusedPrivateCollector.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\UnusedPrivateVisitor": {
-            "path": "src/Metrics/Structure/UnusedPrivateVisitor.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Metrics\\Structure\\UsageTrackingTrait": {
-            "path": "src/Metrics/Structure/UsageTrackingTrait.php",
-            "kind": "trait",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
         },
         "Qualimetrix\\Reporting\\CoverageFailure": {
             "path": "src/Reporting/CoverageFailure.php",
@@ -9857,678 +10597,6 @@
                     "closes_in": null
                 }
             ]
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\AbstractCodeSmellRule": {
-            "path": "src/Rules/CodeSmell/AbstractCodeSmellRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\BooleanArgumentOptions": {
-            "path": "src/Rules/CodeSmell/BooleanArgumentOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\BooleanArgumentRule": {
-            "path": "src/Rules/CodeSmell/BooleanArgumentRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\CodeSmellFinding": {
-            "path": "src/Rules/CodeSmell/CodeSmellFinding.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\CodeSmellOptions": {
-            "path": "src/Rules/CodeSmell/CodeSmellOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\ConstructorOverinjectionOptions": {
-            "path": "src/Rules/CodeSmell/ConstructorOverinjectionOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\ConstructorOverinjectionRule": {
-            "path": "src/Rules/CodeSmell/ConstructorOverinjectionRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\CountInLoopRule": {
-            "path": "src/Rules/CodeSmell/CountInLoopRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\DebugCodeRule": {
-            "path": "src/Rules/CodeSmell/DebugCodeRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\EmptyCatchRule": {
-            "path": "src/Rules/CodeSmell/EmptyCatchRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\EntryFilteringOptionsInterface": {
-            "path": "src/Rules/CodeSmell/EntryFilteringOptionsInterface.php",
-            "kind": "interface",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\ErrorSuppressionOptions": {
-            "path": "src/Rules/CodeSmell/ErrorSuppressionOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\ErrorSuppressionRule": {
-            "path": "src/Rules/CodeSmell/ErrorSuppressionRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\EvalRule": {
-            "path": "src/Rules/CodeSmell/EvalRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\ExitRule": {
-            "path": "src/Rules/CodeSmell/ExitRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\GotoRule": {
-            "path": "src/Rules/CodeSmell/GotoRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\IdenticalSubExpressionOptions": {
-            "path": "src/Rules/CodeSmell/IdenticalSubExpressionOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\IdenticalSubExpressionRule": {
-            "path": "src/Rules/CodeSmell/IdenticalSubExpressionRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\LongParameterListOptions": {
-            "path": "src/Rules/CodeSmell/LongParameterListOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\LongParameterListRule": {
-            "path": "src/Rules/CodeSmell/LongParameterListRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\SuperglobalsRule": {
-            "path": "src/Rules/CodeSmell/SuperglobalsRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\UnreachableCodeOptions": {
-            "path": "src/Rules/CodeSmell/UnreachableCodeOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\UnreachableCodeRule": {
-            "path": "src/Rules/CodeSmell/UnreachableCodeRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\UnusedPrivateOptions": {
-            "path": "src/Rules/CodeSmell/UnusedPrivateOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\CodeSmell\\UnusedPrivateRule": {
-            "path": "src/Rules/CodeSmell/UnusedPrivateRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.CodeSmell",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Complexity\\ClassCognitiveComplexityOptions": {
-            "path": "src/Rules/Complexity/ClassCognitiveComplexityOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Complexity\\ClassComplexityOptions": {
-            "path": "src/Rules/Complexity/ClassComplexityOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Complexity\\ClassNpathComplexityOptions": {
-            "path": "src/Rules/Complexity/ClassNpathComplexityOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Complexity\\CognitiveComplexityOptions": {
-            "path": "src/Rules/Complexity/CognitiveComplexityOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Complexity\\CognitiveComplexityRule": {
-            "path": "src/Rules/Complexity/CognitiveComplexityRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Complexity\\ComplexityOptions": {
-            "path": "src/Rules/Complexity/ComplexityOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Complexity\\ComplexityRule": {
-            "path": "src/Rules/Complexity/ComplexityRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Complexity\\MethodCognitiveComplexityOptions": {
-            "path": "src/Rules/Complexity/MethodCognitiveComplexityOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Complexity\\MethodComplexityOptions": {
-            "path": "src/Rules/Complexity/MethodComplexityOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Complexity\\MethodNpathComplexityOptions": {
-            "path": "src/Rules/Complexity/MethodNpathComplexityOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Complexity\\NpathComplexityOptions": {
-            "path": "src/Rules/Complexity/NpathComplexityOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Complexity\\NpathComplexityRule": {
-            "path": "src/Rules/Complexity/NpathComplexityRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Coupling\\CboOptions": {
-            "path": "src/Rules/Coupling/CboOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Coupling\\CboRule": {
-            "path": "src/Rules/Coupling/CboRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Coupling\\ClassCboOptions": {
-            "path": "src/Rules/Coupling/ClassCboOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Coupling\\ClassInstabilityOptions": {
-            "path": "src/Rules/Coupling/ClassInstabilityOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Coupling\\ClassRankOptions": {
-            "path": "src/Rules/Coupling/ClassRankOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Coupling\\ClassRankRule": {
-            "path": "src/Rules/Coupling/ClassRankRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Coupling\\DistanceOptions": {
-            "path": "src/Rules/Coupling/DistanceOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Coupling\\DistanceRule": {
-            "path": "src/Rules/Coupling/DistanceRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Coupling\\InstabilityOptions": {
-            "path": "src/Rules/Coupling/InstabilityOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Coupling\\InstabilityRule": {
-            "path": "src/Rules/Coupling/InstabilityRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Coupling\\NamespaceCboOptions": {
-            "path": "src/Rules/Coupling/NamespaceCboOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Coupling\\NamespaceInstabilityOptions": {
-            "path": "src/Rules/Coupling/NamespaceInstabilityOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Coupling",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Design\\DataClassExclusionCheck": {
-            "path": "src/Rules/Design/DataClassExclusionCheck.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Design\\DataClassOptions": {
-            "path": "src/Rules/Design/DataClassOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Design\\DataClassRule": {
-            "path": "src/Rules/Design/DataClassRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Design\\GodClassCriteriaEvaluator": {
-            "path": "src/Rules/Design/GodClassCriteriaEvaluator.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Design\\GodClassCriterionResult": {
-            "path": "src/Rules/Design/GodClassCriterionResult.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Design\\GodClassOptions": {
-            "path": "src/Rules/Design/GodClassOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Design\\GodClassRule": {
-            "path": "src/Rules/Design/GodClassRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Design\\TypeCoverageOptions": {
-            "path": "src/Rules/Design/TypeCoverageOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Design\\TypeCoverageRule": {
-            "path": "src/Rules/Design/TypeCoverageRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Maintainability\\MaintainabilityOptions": {
-            "path": "src/Rules/Maintainability/MaintainabilityOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Maintainability",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Maintainability\\MaintainabilityRule": {
-            "path": "src/Rules/Maintainability/MaintainabilityRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Maintainability",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Security\\AbstractSecurityPatternRule": {
-            "path": "src/Rules/Security/AbstractSecurityPatternRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Security\\CommandInjectionRule": {
-            "path": "src/Rules/Security/CommandInjectionRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Security\\HardcodedCredentialsOptions": {
-            "path": "src/Rules/Security/HardcodedCredentialsOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Security\\HardcodedCredentialsRule": {
-            "path": "src/Rules/Security/HardcodedCredentialsRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Security\\SecurityPatternFinding": {
-            "path": "src/Rules/Security/SecurityPatternFinding.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Security\\SecurityPatternOptions": {
-            "path": "src/Rules/Security/SecurityPatternOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Security\\SensitiveParameterOptions": {
-            "path": "src/Rules/Security/SensitiveParameterOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Security\\SensitiveParameterRule": {
-            "path": "src/Rules/Security/SensitiveParameterRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Security\\SqlInjectionRule": {
-            "path": "src/Rules/Security/SqlInjectionRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Security\\XssRule": {
-            "path": "src/Rules/Security/XssRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Security",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Size\\ClassCountOptions": {
-            "path": "src/Rules/Size/ClassCountOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Size\\ClassCountRule": {
-            "path": "src/Rules/Size/ClassCountRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Size\\MethodCountOptions": {
-            "path": "src/Rules/Size/MethodCountOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Size\\MethodCountRule": {
-            "path": "src/Rules/Size/MethodCountRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Size\\PropertyCountOptions": {
-            "path": "src/Rules/Size/PropertyCountOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Size\\PropertyCountRule": {
-            "path": "src/Rules/Size/PropertyCountRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Size",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Structure\\InheritanceOptions": {
-            "path": "src/Rules/Structure/InheritanceOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Structure\\InheritanceRule": {
-            "path": "src/Rules/Structure/InheritanceRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Structure\\LcomOptions": {
-            "path": "src/Rules/Structure/LcomOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Cohesion",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Structure\\LcomRule": {
-            "path": "src/Rules/Structure/LcomRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Cohesion",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Structure\\NocOptions": {
-            "path": "src/Rules/Structure/NocOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Structure\\NocRule": {
-            "path": "src/Rules/Structure/NocRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Design",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Structure\\WmcOptions": {
-            "path": "src/Rules/Structure/WmcOptions.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
-        },
-        "Qualimetrix\\Rules\\Structure\\WmcRule": {
-            "path": "src/Rules/Structure/WmcRule.php",
-            "kind": "class",
-            "owner": "Analysis.Evidence.Complexity",
-            "visibility": "internal",
-            "closure_package": "P7",
-            "consumers": []
         }
     },
     "temporary_internal_grants": [
@@ -10629,13 +10697,6 @@
             "owner": "Infrastructure.Parallel",
             "rationale": "Temporary composition-root access to a current internal declaration during modular migration.",
             "closes_in": "P8"
-        },
-        {
-            "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CollectorConfigurator",
-            "target_fqcn": "Qualimetrix\\Metrics\\Coupling\\CouplingCollector",
-            "owner": "Analysis.Evidence.Coupling",
-            "rationale": "Temporary composition-root access to a current internal declaration during modular migration.",
-            "closes_in": "P7"
         },
         {
             "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CoreServicesConfigurator",

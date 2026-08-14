@@ -28,7 +28,6 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Core\Profiler\ProfilerHolder;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
@@ -176,6 +175,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
     private function registerCli(ContainerBuilder $container): void
     {
         $computedMetricConfigurator = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Configuration\\ComputedMetricConfiguratorInterface';
+        $couplingConfigurator = 'Qualimetrix\\Analysis\\Evidence\\Coupling\\Contract\\Configuration\\CouplingConfiguratorInterface';
         $runtimeLoggerConfigurator = 'Qualimetrix\\Infrastructure\\Console\\RuntimeLoggerConfigurator';
         $suppressionFilter = 'Qualimetrix\\Analysis\\Policy\\Inline\\Suppression\\SuppressionFilter';
         $gitScopeQuery = 'Qualimetrix\\Infrastructure\\Git\\ReportingGitScopeQuery';
@@ -211,7 +211,6 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(TransitionalRuntimeConfigurationProviderInterface::class),
                 new Reference(RuleConfigurationInterface::class),
                 new Reference(RuleRegistryInterface::class),
-                new Reference(FrameworkNamespacesHolder::class),
                 new Reference(CollectorRuntimeConfigurationStoreInterface::class),
                 new Reference(CacheFactory::class),
             ]);
@@ -233,6 +232,7 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
                 new Reference(AnalysisRuntimeConfigurator::class),
                 new Reference(ArchitecturePolicyConfiguratorInterface::class),
                 new Reference($computedMetricConfigurator),
+                new Reference($couplingConfigurator),
                 new Reference(DiagnosticOutput::class),
             ]);
 

@@ -11,6 +11,30 @@ use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration
 use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Analysis\Configuration\Runtime\TransitionalRuntimeConfigurationHolder;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\CountInLoopRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\DebugCodeRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\EmptyCatchRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ErrorSuppressionRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\EvalRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ExitRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\SuperglobalsRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateRule;
+use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
+use Qualimetrix\Analysis\Evidence\Cohesion\LcomRule;
+use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\WmcRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
@@ -18,18 +42,45 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthF
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
+use Qualimetrix\Analysis\Evidence\Coupling\CboRule;
+use Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule;
+use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
+use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
+use Qualimetrix\Analysis\Evidence\Coupling\DistanceRule;
+use Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule;
+use Qualimetrix\Analysis\Evidence\Coupling\RfcCollector;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
+use Qualimetrix\Analysis\Evidence\Design\DataClassRule;
+use Qualimetrix\Analysis\Evidence\Design\GodClassRule;
+use Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector;
+use Qualimetrix\Analysis\Evidence\Design\InheritanceRule;
+use Qualimetrix\Analysis\Evidence\Design\NocRule;
+use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
+use Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurableInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
+use Qualimetrix\Analysis\Evidence\Security\CommandInjectionRule;
+use Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsRule;
+use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule;
+use Qualimetrix\Analysis\Evidence\Security\SqlInjectionRule;
+use Qualimetrix\Analysis\Evidence\Security\XssRule;
+use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
+use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
+use Qualimetrix\Analysis\Evidence\Size\LocCollector;
+use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
+use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
+use Qualimetrix\Analysis\Evidence\Size\PropertyCountRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
@@ -55,52 +106,9 @@ use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
 use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
-use Qualimetrix\Metrics\Complexity\CognitiveComplexityCollector;
-use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
-use Qualimetrix\Metrics\Complexity\NpathComplexityCollector;
-use Qualimetrix\Metrics\Halstead\HalsteadCollector;
-use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
-use Qualimetrix\Metrics\Size\ClassCountCollector;
-use Qualimetrix\Metrics\Size\LocCollector;
-use Qualimetrix\Metrics\Structure\InheritanceDepthCollector;
-use Qualimetrix\Metrics\Structure\LcomCollector;
-use Qualimetrix\Metrics\Structure\MethodCountCollector;
-use Qualimetrix\Metrics\Structure\RfcCollector;
-use Qualimetrix\Metrics\Structure\TccLccCollector;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
-use Qualimetrix\Rules\CodeSmell\BooleanArgumentRule;
-use Qualimetrix\Rules\CodeSmell\CountInLoopRule;
-use Qualimetrix\Rules\CodeSmell\DebugCodeRule;
-use Qualimetrix\Rules\CodeSmell\EmptyCatchRule;
-use Qualimetrix\Rules\CodeSmell\ErrorSuppressionRule;
-use Qualimetrix\Rules\CodeSmell\EvalRule;
-use Qualimetrix\Rules\CodeSmell\ExitRule;
-use Qualimetrix\Rules\CodeSmell\GotoRule;
-use Qualimetrix\Rules\CodeSmell\LongParameterListRule;
-use Qualimetrix\Rules\CodeSmell\SuperglobalsRule;
-use Qualimetrix\Rules\CodeSmell\UnreachableCodeRule;
-use Qualimetrix\Rules\Complexity\CognitiveComplexityRule;
-use Qualimetrix\Rules\Complexity\ComplexityRule;
-use Qualimetrix\Rules\Complexity\NpathComplexityRule;
-use Qualimetrix\Rules\Coupling\CboRule;
-use Qualimetrix\Rules\Coupling\ClassRankRule;
-use Qualimetrix\Rules\Coupling\DistanceRule;
-use Qualimetrix\Rules\Coupling\InstabilityRule;
-use Qualimetrix\Rules\Design\TypeCoverageRule;
-use Qualimetrix\Rules\Maintainability\MaintainabilityRule;
-use Qualimetrix\Rules\Security\CommandInjectionRule;
-use Qualimetrix\Rules\Security\SensitiveParameterRule;
-use Qualimetrix\Rules\Security\SqlInjectionRule;
-use Qualimetrix\Rules\Security\XssRule;
-use Qualimetrix\Rules\Size\ClassCountRule;
-use Qualimetrix\Rules\Size\MethodCountRule;
-use Qualimetrix\Rules\Size\PropertyCountRule;
-use Qualimetrix\Rules\Structure\InheritanceRule;
-use Qualimetrix\Rules\Structure\LcomRule;
-use Qualimetrix\Rules\Structure\NocRule;
-use Qualimetrix\Rules\Structure\WmcRule;
 use ReflectionClass;
 use ReflectionProperty;
 use SplFileInfo;
@@ -137,6 +145,9 @@ final class ContainerFactoryTest extends TestCase
 
         $excluder = $container->get(HealthFormulaExclusionInterface::class);
         self::assertInstanceOf(HealthFormulaExcluder::class, $excluder);
+
+        $couplingConfigurator = $container->get(CouplingConfiguratorInterface::class);
+        self::assertInstanceOf(CouplingAnalysis::class, $couplingConfigurator);
 
         $resolverProperty = new ReflectionProperty(ComputedMetricAnalysis::class, 'configResolver');
         $resolver = $resolverProperty->getValue($configurator);
@@ -426,8 +437,8 @@ PHP;
         $runtimeConstructor = (new ReflectionClass(RuntimeConfigurator::class))->getConstructor();
         self::assertNotNull($analysisRuntimeConstructor);
         self::assertNotNull($runtimeConstructor);
-        self::assertCount(6, $analysisRuntimeConstructor->getParameters());
-        self::assertCount(7, $runtimeConstructor->getParameters());
+        self::assertCount(5, $analysisRuntimeConstructor->getParameters());
+        self::assertCount(8, $runtimeConstructor->getParameters());
         $pipelineConstructor = (new ReflectionClass(AnalysisPipeline::class))->getConstructor();
         self::assertNotNull($pipelineConstructor);
         self::assertCount(11, $pipelineConstructor->getParameters());
@@ -727,19 +738,19 @@ PHP;
             SuperglobalsRule::class,
             UnreachableCodeRule::class,
             TypeCoverageRule::class,
-            \Qualimetrix\Rules\Security\HardcodedCredentialsRule::class,
+            HardcodedCredentialsRule::class,
             ClassRankRule::class,
             SqlInjectionRule::class,
             XssRule::class,
             CommandInjectionRule::class,
             SensitiveParameterRule::class,
-            \Qualimetrix\Rules\CodeSmell\UnusedPrivateRule::class,
-            \Qualimetrix\Rules\CodeSmell\IdenticalSubExpressionRule::class,
+            UnusedPrivateRule::class,
+            IdenticalSubExpressionRule::class,
             CodeDuplicationRule::class,
             \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule::class,
-            \Qualimetrix\Rules\CodeSmell\ConstructorOverinjectionRule::class,
-            \Qualimetrix\Rules\Design\DataClassRule::class,
-            \Qualimetrix\Rules\Design\GodClassRule::class,
+            ConstructorOverinjectionRule::class,
+            DataClassRule::class,
+            GodClassRule::class,
         ];
 
         $registeredClasses = $registry->getClasses();

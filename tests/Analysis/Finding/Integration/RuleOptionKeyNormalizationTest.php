@@ -8,21 +8,21 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions;
+use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule;
+use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
+use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Rules\CodeSmell\LongParameterListOptions;
-use Qualimetrix\Rules\CodeSmell\LongParameterListRule;
-use Qualimetrix\Rules\Design\TypeCoverageOptions;
-use Qualimetrix\Rules\Design\TypeCoverageRule;
 use Qualimetrix\Tests\Support\Logger\RecordingLogger;
 
 /**
  * Regression test: composite (multi-word) rule option names — `vo-warning` /
  * `vo-error` / `vo-threshold` for {@see LongParameterListRule}, and
  * `param_warning` / `param_error` / `param_threshold` (plus the `return_*` /
- * `property_*` equivalents) for {@see \Qualimetrix\Rules\Design\TypeCoverageRule}
+ * `property_*` equivalents) for {@see \Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule}
  * — must apply identically no matter which of the three channels sets them:
  *
  * 1. `qmx.yaml` / preset config-file options

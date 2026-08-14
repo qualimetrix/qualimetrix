@@ -20,6 +20,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- `Qualimetrix\Core\Coupling\FrameworkNamespaces` and
+  `Qualimetrix\Core\Coupling\FrameworkNamespacesHolder` were removed with no
+  compatibility shim. Coupling now owns its run-scoped framework-namespace
+  state. Composition consumers must inject
+  `Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface`
+  and call `configure(ConfigurationDocument $document)` for every run, including
+  an empty document to reset prior state. Configuration producers keep using
+  the canonical `coupling.framework_namespaces` document key; they must no
+  longer read or construct a Coupling field on
+  `TransitionalRuntimeConfiguration`.
+
 - Finding and policy ownership moved without aliases or shims. Replace
   `Qualimetrix\Analysis\RuleExecution\*`, `Qualimetrix\Core\Rule\*`, and
   `Qualimetrix\Core\Violation\*` imports with their

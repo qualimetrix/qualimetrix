@@ -35,7 +35,7 @@
 # exclude_paths:
 #   - src/Entity              # prefix: matches all files under src/Entity/
 #   - src/DTO                 # prefix: matches all files under src/DTO/
-#   - src/Metrics/*Visitor.php # glob: matches visitor files only
+#   - src/Analysis/Evidence/Complexity/*Visitor.php # glob: matches visitor files only
 
 
 # -----------------------------------------------------------------------------
@@ -118,7 +118,7 @@
 #     exclude_namespaces:
 #       - App\Core\ValueObject
 #     exclude_paths:
-#       - src/Metrics
+#       - src/Analysis/Evidence/Complexity
 #       - src/Infrastructure/DependencyInjection
 #
 # rules:

@@ -7,6 +7,8 @@ namespace Qualimetrix\Tests\Analysis\Policy\Inline\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
+use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
@@ -17,8 +19,6 @@ use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryComp
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ThresholdValidatorMapCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
-use Qualimetrix\Rules\Size\MethodCountOptions;
-use Qualimetrix\Rules\Size\MethodCountRule;
 use ReflectionClass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;

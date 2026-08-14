@@ -81,7 +81,17 @@ final class ThresholdValidatorAssignmentTest extends TestCase
     private function discoverThresholdAwareOptions(): iterable
     {
         $root = \dirname(__DIR__, 4) . '/src';
-        foreach ([$root . '/Rules', $root . '/Analysis/Evidence/Duplication'] as $optionsDir) {
+        foreach ([
+            $root . '/Analysis/Evidence/Duplication',
+            $root . '/Analysis/Evidence/CodeSmell',
+            $root . '/Analysis/Evidence/Cohesion',
+            $root . '/Analysis/Evidence/Complexity',
+            $root . '/Analysis/Evidence/Coupling',
+            $root . '/Analysis/Evidence/Design',
+            $root . '/Analysis/Evidence/Maintainability',
+            $root . '/Analysis/Evidence/Security',
+            $root . '/Analysis/Evidence/Size',
+        ] as $optionsDir) {
             $files = new RecursiveIteratorIterator(
                 new RecursiveDirectoryIterator($optionsDir, FilesystemIterator::SKIP_DOTS),
             );

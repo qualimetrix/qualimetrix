@@ -8,6 +8,9 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
@@ -20,9 +23,6 @@ use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarati
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
 use Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
-use Qualimetrix\Rules\CodeSmell\GotoRule;
-use Qualimetrix\Rules\Complexity\ComplexityRule;
-use Qualimetrix\Rules\Maintainability\MaintainabilityRule;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 #[CoversClass(ChannelDeclarationCompilerPass::class)]
@@ -176,8 +176,8 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
  *
  * The "declares nothing" exemplar for {@see ChannelDeclarationCompilerPassTest}.
  * Deliberately a dedicated fixture, not a production rule: every production
- * rule reachable from `src/Rules/**`,
- * `src/Analysis/Policy/Architecture/LayerViolation/*Rule.php`,
+ * rule reachable from the explicit capability roots,
+ * including `src/Analysis/Policy/Architecture/LayerViolation/*Rule.php`,
  * `src/Analysis/Evidence/CircularDependency/*Rule.php`, and
  * `src/Analysis/Evidence/Duplication/*Rule.php` now declares a channel under
  * ADR 0017, so pointing this test at

@@ -12,8 +12,6 @@ use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionCaptureHolder;
 use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
-use Qualimetrix\Core\Coupling\FrameworkNamespaces;
-use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Input\InputInterface;
@@ -25,7 +23,6 @@ final readonly class AnalysisRuntimeConfigurator
         private TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
         private RuleConfigurationInterface $ruleOptionsRegistry,
         private RuleRegistryInterface $ruleRegistry,
-        private FrameworkNamespacesHolder $frameworkNamespacesHolder,
         private CollectorRuntimeConfigurationStoreInterface $collectorConfigurationStore,
         private CacheFactory $cacheFactory,
     ) {}
@@ -46,12 +43,6 @@ final readonly class AnalysisRuntimeConfigurator
         $this->configurationProvider->setRuleOptions($ruleOptions);
         $this->configureCollectors($ruleOptions);
 
-        if ($resolved->runtime->frameworkNamespaces !== []) {
-            $this->frameworkNamespacesHolder->set(
-                new FrameworkNamespaces($resolved->runtime->frameworkNamespaces),
-            );
-        }
-
         $capture = $input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true;
         RuleExclusionCaptureHolder::set($capture);
     }
@@ -62,7 +53,6 @@ final readonly class AnalysisRuntimeConfigurator
         $this->cacheFactory->reset();
         $this->ruleOptionsRegistry->resetRuntimeState();
         $this->collectorConfigurationStore->reset();
-        $this->frameworkNamespacesHolder->reset();
     }
 
     /** @param array<string, array<string, mixed>> $ruleOptions */

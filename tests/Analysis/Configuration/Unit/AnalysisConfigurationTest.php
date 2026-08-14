@@ -327,7 +327,6 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertNull($config->workers);
         self::assertNull($config->failOn);
         self::assertFalse($config->includeGenerated);
-        self::assertSame([], $config->frameworkNamespaces);
         self::assertNull($config->memoryLimit);
     }
 
@@ -477,62 +476,55 @@ final class AnalysisConfigurationTest extends TestCase
         self::assertFalse($merged->failOn);
     }
 
-    // Framework namespaces tests
-
     #[Test]
-    public function itHasDefaultFrameworkNamespacesEmpty(): void
+    public function itExcludesFrameworkNamespacesFromDefaultRuntimeConfiguration(): void
     {
-        $config = new TransitionalRuntimeConfiguration();
-
-        self::assertSame([], $config->frameworkNamespaces);
+        self::assertArrayNotHasKey(
+            'frameworkNamespaces',
+            get_object_vars(new TransitionalRuntimeConfiguration()),
+        );
     }
 
     #[Test]
-    public function itFromArrayParsesFrameworkNamespaces(): void
+    public function itLeavesFlatCouplingConfigForTheConfigurationDocument(): void
     {
         $config = TransitionalRuntimeConfiguration::fromArray([
-            'coupling.framework_namespaces' => ['Symfony', 'PhpParser', 'Psr'],
+            ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES => ['Symfony', 'PhpParser', 'Psr'],
         ]);
 
-        self::assertSame(['Symfony', 'PhpParser', 'Psr'], $config->frameworkNamespaces);
+        self::assertArrayNotHasKey('frameworkNamespaces', get_object_vars($config));
     }
 
     #[Test]
-    public function itFromArrayParsesNestedFrameworkNamespaces(): void
+    public function itLeavesNestedCouplingConfigForTheConfigurationDocument(): void
     {
         $config = TransitionalRuntimeConfiguration::fromArray([
-            'coupling' => [
+            ConfigSchema::COUPLING => [
                 'framework_namespaces' => ['Symfony', 'Psr'],
             ],
         ]);
 
-        self::assertSame(['Symfony', 'Psr'], $config->frameworkNamespaces);
+        self::assertArrayNotHasKey('frameworkNamespaces', get_object_vars($config));
     }
 
     #[Test]
-    public function itMergeFrameworkNamespacesOverrides(): void
+    public function itDoesNotMergeCouplingConfigIntoRuntimeConfiguration(): void
     {
-        $base = new TransitionalRuntimeConfiguration(
-            frameworkNamespaces: ['Symfony'],
-        );
-
-        $merged = $base->merge([
-            'coupling.framework_namespaces' => ['PhpParser', 'Psr'],
+        $merged = (new TransitionalRuntimeConfiguration(memoryLimit: '1G'))->merge([
+            ConfigSchema::COUPLING_FRAMEWORK_NAMESPACES => ['PhpParser', 'Psr'],
         ]);
 
-        self::assertSame(['PhpParser', 'Psr'], $merged->frameworkNamespaces);
+        self::assertArrayNotHasKey('frameworkNamespaces', get_object_vars($merged));
+        self::assertSame('1G', $merged->memoryLimit);
     }
 
     #[Test]
-    public function itMergeFrameworkNamespacesPreservesWhenNotInOverrides(): void
+    public function itPreservesRuntimeValuesWhenCouplingConfigIsAbsent(): void
     {
-        $base = new TransitionalRuntimeConfiguration(
-            frameworkNamespaces: ['Symfony', 'Psr'],
-        );
+        $merged = (new TransitionalRuntimeConfiguration(workers: 3))->merge(['format' => 'json']);
 
-        $merged = $base->merge(['format' => 'json']);
-
-        self::assertSame(['Symfony', 'Psr'], $merged->frameworkNamespaces);
+        self::assertSame(3, $merged->workers);
+        self::assertArrayNotHasKey('frameworkNamespaces', get_object_vars($merged));
     }
 
     // --- memoryLimit tests ---

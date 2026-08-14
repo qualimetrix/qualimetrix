@@ -272,7 +272,12 @@ exec("convert " . escapeshellarg($_GET['filename']) . " output.png");
 
 Detects function and method parameters with sensitive names that are missing the `#[\SensitiveParameter]` attribute (available since PHP 8.2). Without this attribute, sensitive values like passwords and tokens will appear in plain text in stack traces, error logs, and exception reports.
 
-**Sensitive parameter names** include: `password`, `passwd`, `pwd`, `secret`, `token`, `apiKey`, `privateKey`, `credential`, and similar patterns.
+Sensitive parameter matching uses the same credential-name policy as hardcoded
+credential detection: standalone `password`, `passwd`, `pwd`, `secret`,
+`credential`, and `credentials` words are matched, while `key` and `token` require a qualifying
+prefix such as `api`, `auth`, `access`, `private`, or `refresh`. Contexts such
+as `passwordHash`, `tokenStorage`, `cacheKey`, and `OPTION_PASSWORD` are
+excluded.
 
 <!-- llms:skip-end -->
 

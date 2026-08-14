@@ -52,6 +52,7 @@ final class ConfigSchema
     public const string AGGREGATION_PREFIXES = 'aggregation.prefixes';
     public const string AGGREGATION_AUTO_DEPTH = 'aggregation.auto_depth';
     public const string PARALLEL_WORKERS = 'parallel.workers';
+    public const string COUPLING = 'coupling';
     public const string COUPLING_FRAMEWORK_NAMESPACES = 'coupling.framework_namespaces';
     public const string COMPUTED_METRICS = 'computedMetrics';
     public const string EXCLUDE_HEALTH = 'excludeHealth';
@@ -77,7 +78,7 @@ final class ConfigSchema
     public const array INTERNAL_KEYS = [self::PROJECT_ROOT];
 
     /** Capability-owned roots transported in ordered configuration documents. */
-    public const array DOCUMENT_ROOTS = [self::COMPUTED_METRICS, self::EXCLUDE_HEALTH, self::ARCHITECTURE];
+    public const array DOCUMENT_ROOTS = [self::COUPLING, self::COMPUTED_METRICS, self::EXCLUDE_HEALTH, self::ARCHITECTURE];
 
     // -------------------------------------------------------------------------
     // Root key types

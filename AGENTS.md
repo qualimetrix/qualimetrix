@@ -34,7 +34,8 @@ When starting a session in the web environment, `scripts/init-environment.sh` is
 
 **After implementing a component:**
 - Update README.md in the affected `src/` directory: add new files/classes to the structure diagram, update descriptions
-- If default thresholds changed, update the defaults table in `src/Rules/README.md`
+- If default thresholds changed, update the owning capability README and its
+  `website/docs/rules/{group}.md` page
 
 **Before planning a new feature:**
 - Read [docs/internal/PRODUCT_VISION.md](docs/internal/PRODUCT_VISION.md) — target users, design principles, scope boundaries
@@ -55,27 +56,20 @@ modular monolith** accepted in
 ADR 0012's substantial/thin hybrid direction; ADR 0010 is the historical
 Architecture pilot and ADR 0016 remains the governing subject-cohesion rule.
 
-P1 has landed Duplication, P2 has landed DependencyModel plus GraphProjection,
-P3 has landed Run, Measurement, and the transitional Configuration boundary,
-and P4 has landed Architecture policy plus CircularDependency evidence. P5 has
-landed ComputedMetrics plus Health. P6 implementation has published Finding,
-Inline and Baseline policy, Prioritization, and finding projection, but P6
-remains paused pending its post-review closure; it is not complete. P7-P8 remain
-pending. The tree below
+P1-P7 have landed their accepted capability boundaries. P7 is complete after
+its implementation, final aggregate validation, and independent review: the
+former Metrics and Rules role buckets have been distributed among eight
+evidence capabilities. P8 remains pending as the next phase. The tree below
 describes the current physical layout. P0 governance remains live: the
-versioned internal manifest is authoritative for all 754 current declarations
-in 752 files and 37 semantic owners. It generates a coarse qmx projection with
-37 owner layers, no singleton enforcement seams, final `external`, 51 exact
-internal grants collapsing to 8 owner pairs, and 223 declared allow edges.
-The earlier paused P6 checkpoint's 753 declarations in 751 files predates the
-published `RuleDefinitionInterface` boundary and is historical, not current
-authority.
+versioned internal manifest is
+authoritative for all 762 current declarations in 760 files and 37 semantic
+owners. It generates a coarse qmx projection with 37 owner layers, no singleton
+enforcement seams, final `external`, 50 exact internal grants collapsing to 7
+owner pairs, and 224 declared allow edges.
 
 ```
 src/
 ├── Core/              # Cross-cutting primitives (no dependencies)
-├── Metrics/{Category}/     # Thin metric features (P7 migration inputs)
-├── Rules/{Category}/       # Thin rule features (layered)
 ├── Analysis/          # Orchestration plus taxonomy-only capability grouping
 │   ├── Configuration/       # P3 transitional document resolution and runtime config
 │   ├── Finding/             # rule language, execution, violations and filtering
@@ -84,8 +78,16 @@ src/
 │   │   ├── Duplication/         # detection, result and rule; implements the Run-owned FileSet port
 │   │   ├── CircularDependency/  # P4 SCC evidence, rule and preparation contract
 │   │   ├── ComputedMetrics/      # P5 formulas, instance-owned catalog and Health semantics
+│   │   ├── CodeSmell/            # code-smell collection and rules
+│   │   ├── Cohesion/             # class cohesion evidence and rules
+│   │   ├── Complexity/           # cyclomatic, cognitive and NPath evidence and rules
+│   │   ├── Coupling/             # coupling evidence, rules and run configuration
+│   │   ├── Design/               # inheritance and design evidence and rules
+│   │   ├── Maintainability/      # Halstead and maintainability evidence and rules
 │   │   ├── Measurement/         # collection facts, repository, attribution, aggregation
-│   │   └── Prioritization/      # impact ranking and technical-debt evidence
+│   │   ├── Prioritization/      # impact ranking and technical-debt evidence
+│   │   ├── Security/             # security evidence and rules
+│   │   └── Size/                 # size evidence and rules
 │   ├── Policy/
 │   │   ├── Architecture/        # P4 declared-layer policy and debug contracts
 │   │   ├── Baseline/            # accepted-finding ceiling lifecycle
@@ -124,9 +126,8 @@ Two corollaries that settle recurring arguments:
 - "This feature has many adapters" is **not** an argument for a vertical slice:
   adapters live in `Infrastructure/` either way.
 
-The following ADR 0022 rules define the accepted target layout. P1-P5 and the
-implemented P6 boundaries are current physical architecture; P6 nevertheless
-remains paused, and the still-pending P7-P8 namespace moves are not landed:
+The following ADR 0022 rules define the accepted target layout. P1-P7 are the
+current physical architecture; P8 is not landed:
 
 - A leaf module is a subject with one owner and lifecycle. Internal folders
   follow the subject; do not create an empty role skeleton.
@@ -147,10 +148,9 @@ remains paused, and the still-pending P7-P8 namespace moves are not landed:
 - Every production namespace has one explicit leaf owner. Do not use an
   open-ended owner template that silently enrols a future sibling.
 
-Existing `Metrics/` and the remaining `Rules/` role buckets are migration
-inputs, not evidence that the rest of the target physical layout has landed.
-Follow the manifest-backed current ownership and the migration plan; do not
-claim or simulate later package moves before their review gates.
+The former `Metrics/` and `Rules/` role buckets have been removed. Follow the
+manifest-backed current ownership and the migration plan; do not simulate P8
+changes before its review gates.
 
 ### Adapter-exclusion principle
 
@@ -346,9 +346,11 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 4. CompilerPasses collect services by tags
 
 **Adding a new collector:**
-1. Create a class in `src/Metrics/{Category}/` (e.g., `src/Metrics/Complexity/`)
+1. Identify the owning capability and create the collector under its exact
+   `src/Analysis/Evidence/{Capability}/` root
 2. Implement `MetricCollectorInterface` (or `DerivedCollectorInterface`, `GlobalContextCollectorInterface`)
-3. The class will be registered **automatically** — NO need to modify `ContainerFactory`
+3. Extend only that capability's exact collector registration in its
+   Infrastructure configurator; do not add an open-ended sibling scan
 
 **Adding a new formatter:**
 1. Create a `*Formatter.php` class in `src/Reporting/Formatter/`
@@ -368,37 +370,23 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 
 **Adding a new rule:**
 
-Place the rule with its owning subject per ADR 0016 / ADR 0022. The remaining
-layered layout is a migration input, while an independent capability owns its
-rule directly:
+Place the rule with its owning subject per ADR 0016 / ADR 0022:
 
-- **Thin rule** (computes from pre-existing metrics, no Analysis-time
-  preparation, no companion debug command):
-  1. Create a `*Rule.php` class in `src/Rules/{Category}/` (e.g.,
-     `src/Rules/Complexity/`)
-  2. Implement the internal executable rule contract (or extend `AbstractRule`)
-  3. Expose only the Finding-owned `RuleDefinitionInterface` metadata contract
-     to cross-owner class-string consumers
-  4. Create an Options class in the same directory, implementing
-     `RuleOptionsInterface`
-  5. The class is registered **automatically** by `RuleConfigurator` — no
-     need to modify `ContainerFactory`
-- **Capability-owned rule** (the feature has its own lifecycle or otherwise
-  meets the subject-cohesion criteria):
-  - Place the rule with its owning capability according to that module's
-    subject-driven layout; a `Rules/` subdirectory is not mandatory
-  - Add (or extend) the capability's configurator under
-    `src/Infrastructure/DependencyInjection/Configurator/` so it registers the
-    exact implementation root without publishing module internals
-  - Current examples: `src/Analysis/Policy/Architecture/LayerViolation/` via
-    `ArchitectureConfigurator`, and
-    `src/Analysis/Evidence/Duplication/CodeDuplicationRule.php` via
-    `DuplicationConfigurator`
+1. Create the `*Rule.php` and its Options class inside the owning capability.
+2. Implement the internal executable rule contract (or extend `AbstractRule`)
+   and `RuleOptionsInterface` as appropriate.
+3. Expose only the Finding-owned `RuleDefinitionInterface` metadata contract
+   to cross-owner class-string consumers.
+4. Extend only the owning capability configurator's exact rule registration;
+   rules are lazy and deliberately not autowired.
 
 **How rule registration works:**
-1. `RuleConfigurator::registerClasses()` scans `src/Rules/**/*Rule.php` for
-   layered rules; each capability's configurator registers its exact rule root
-   (currently `ArchitectureConfigurator` and `DuplicationConfigurator`)
+1. `ArchitectureConfigurator`, `CircularDependencyConfigurator`,
+   `ComputedMetricsConfigurator`, `DuplicationConfigurator`, and the exact
+   `CodeSmell`, `Cohesion`, `Complexity`, `Coupling`, `Design`,
+   `Maintainability`, `Security`, and `Size` configurators register only their
+   owned rule roots. `RuleConfigurator` retains registry composition but does
+   not scan a role bucket.
 2. Cross-owner consumers of rule class strings depend only on
    `Analysis\Finding\Contract\Rule\RuleDefinitionInterface`, whose sole
    metadata operation returns the options class.
@@ -408,7 +396,9 @@ rule directly:
 **Important:** Finding and Infrastructure own executable-rule construction;
 cross-owner code must not construct rules or depend on their instances.
 
-**Important:** Collectors must be placed in subdirectories `src/Metrics/{Category}/`; files in the root of `src/Metrics/` (except base classes) are ignored.
+**Important:** A capability configurator must enumerate its exact collector and
+rule roots. Do not use a wildcard that silently enrols a future evidence
+capability.
 
 **Exclude patterns (not registered as services):**
 - `Abstract*.php` — abstract classes
@@ -602,7 +592,7 @@ Run `bin/qmx check src/` after modifying metric collection or aggregation logic 
 
 **How to interpret violations:**
 - **Invariant test failure** (e.g., parent.sum ≠ Σ children): **Bug** — fix immediately, add regression test
-- **Golden file test failure after intentional algorithm change**: Update expected values in `tests/Integration/Metrics/GoldenFileAggregationTest.php` after verifying new values are correct
+- **Golden file test failure after intentional algorithm change**: Update expected values in `tests/Analysis/Evidence/Measurement/Integration/Aggregation/GoldenFileAggregationTest.php` after verifying new values are correct
 - **Coupling violations** (high CBO, circular dependencies): **Architecture issue** — evaluate refactoring vs. threshold adjustment
 - **Complexity violations** (CCN > threshold): **Code quality signal** — normal for complex algorithms, investigate only if unexpected
 - **Health score regression** vs `composer benchmark:check`: May indicate **formula bug** if changes touched computed metrics
@@ -699,8 +689,14 @@ Key rules:
 - [src/Analysis/Policy/Architecture/README.md](src/Analysis/Policy/Architecture/README.md) — declared-layer policy capability
 - [src/Analysis/Evidence/CircularDependency/README.md](src/Analysis/Evidence/CircularDependency/README.md) — circular-dependency evidence capability
 - [src/Analysis/Evidence/Duplication/README.md](src/Analysis/Evidence/Duplication/README.md) — Duplication capability boundary, lifecycle, Run-port integration and tests
-- [src/Metrics/README.md](src/Metrics/README.md) — metric collectors
-- [src/Rules/README.md](src/Rules/README.md) — analysis rules
+- [src/Analysis/Evidence/CodeSmell/README.md](src/Analysis/Evidence/CodeSmell/README.md) — code-smell evidence and rules
+- [src/Analysis/Evidence/Cohesion/README.md](src/Analysis/Evidence/Cohesion/README.md) — cohesion evidence and rules
+- [src/Analysis/Evidence/Complexity/README.md](src/Analysis/Evidence/Complexity/README.md) — complexity evidence and rules
+- [src/Analysis/Evidence/Coupling/README.md](src/Analysis/Evidence/Coupling/README.md) — coupling evidence, rules, and configuration
+- [src/Analysis/Evidence/Design/README.md](src/Analysis/Evidence/Design/README.md) — design evidence and rules
+- [src/Analysis/Evidence/Maintainability/README.md](src/Analysis/Evidence/Maintainability/README.md) — maintainability evidence and rules
+- [src/Analysis/Evidence/Security/README.md](src/Analysis/Evidence/Security/README.md) — security evidence and rules
+- [src/Analysis/Evidence/Size/README.md](src/Analysis/Evidence/Size/README.md) — size evidence and rules
 - [src/Analysis/README.md](src/Analysis/README.md) — orchestration
 - [src/Reporting/README.md](src/Reporting/README.md) — formatting
 - [src/Analysis/Configuration/README.md](src/Analysis/Configuration/README.md) — configuration

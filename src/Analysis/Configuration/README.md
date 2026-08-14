@@ -9,13 +9,13 @@ current runtime object is deliberately named
 boundary, but it has not claimed that the mixed runtime DTO is a neutral final
 kernel.
 
-The module currently carries transitional fields for aggregation, namespace
-detection, and framework namespaces. Their owners are
-made explicit by later packages: P4 removed Architecture configuration and P5
-removed computed/health configuration from the central resolved object; P6 moved rule
-option state behind Finding-owned contracts and moved output format plus finding
-projection controls to Reporting-owned values; P7 moves Coupling's framework namespace field.
-Do not add a feature field to this DTO as a permanent integration pattern.
+The module currently carries transitional fields for shared aggregation and
+namespace detection. Their owners are made explicit by later packages: P4
+removed Architecture configuration, P5 removed computed/health configuration,
+P6 moved rule-option state behind Finding-owned contracts and moved output
+format plus finding projection controls to Reporting-owned values, and P7
+removed Coupling's framework-namespace field. Do not add a feature field to
+this DTO as a permanent integration pattern.
 
 ## Structure
 
@@ -51,7 +51,10 @@ logger exists, then returns typed warnings through its own contract. The
 central pipeline neither contains an Architecture object nor transports a
 feature-specific deferred warning. ComputedMetrics folds `computed_metrics` and
 `exclude_health` directly from the same ordered document and publishes an
-instance-owned catalog only after full validation.
+instance-owned catalog only after full validation. Coupling likewise folds the
+canonical `coupling.framework_namespaces` contribution into its own run-scoped
+state. The document root remains normalized and schema-governed even though the
+transitional DTO no longer copies that value.
 
 ## Public contracts and adapters
 

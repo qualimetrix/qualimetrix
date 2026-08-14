@@ -9,15 +9,15 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfiguration;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurationStoreInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTask;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
-use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
-use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
-use Qualimetrix\Rules\Complexity\ComplexityRule;
 use ReflectionProperty;
 use stdClass;
 

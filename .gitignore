@@ -64,7 +64,7 @@ examples/
 !/docs/internal/modular-architecture-manifest.json
 !/docs/internal/modular-architecture-manifest.schema.json
 !/tests/Fixtures/**/*.json
-!/scripts/tests/fixtures/*.json
+!/tests/Analysis/Evidence/Measurement/Fixtures/*.json
 # HTML report build manifest: without these the JS bundle cannot be rebuilt or
 # audited from a fresh clone, and dependency versions cannot be pinned.
 !/src/Reporting/Template/package.json

@@ -24,17 +24,25 @@ use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ThresholdValidat
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\AnalysisConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ArchitectureConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CircularDependencyConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CodeSmellConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CohesionConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CollectorConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ComplexityConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ComputedMetricsConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ConfigurationConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CoreServicesConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\CouplingConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DependencyModelConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DesignConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\DuplicationConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\FindingConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\MaintainabilityConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\MeasurementConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\OutputConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\ParserConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\Configurator\RuleConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\SecurityConfigurator;
+use Qualimetrix\Infrastructure\DependencyInjection\Configurator\SizeConfigurator;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Symfony\Component\DependencyInjection\Compiler\PassConfig;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -82,11 +90,19 @@ final class ContainerFactory
             new CoreServicesConfigurator(),
             new ConfigurationConfigurator($srcDir),
             new ParserConfigurator(),
-            new CollectorConfigurator($srcDir),
+            new CollectorConfigurator(),
+            new CodeSmellConfigurator($srcDir),
+            new CohesionConfigurator($srcDir),
+            new ComplexityConfigurator($srcDir),
+            new CouplingConfigurator($srcDir),
+            new DesignConfigurator($srcDir),
+            new MaintainabilityConfigurator($srcDir),
+            new SecurityConfigurator($srcDir),
+            new SizeConfigurator($srcDir),
             new MeasurementConfigurator(),
             new DependencyModelConfigurator(),
             new ComputedMetricsConfigurator(),
-            new RuleConfigurator($srcDir),
+            new RuleConfigurator(),
             new FindingConfigurator(),
             new ArchitectureConfigurator($srcDir),
             new CircularDependencyConfigurator($srcDir),

@@ -601,6 +601,9 @@ function stateScope(array $row): string
     if (str_contains($row['fqcn'], 'Registry') || str_contains($row['fqcn'], 'Pipeline')) {
         return 'runtime or composition registry';
     }
+    if ($row['fqcn'] === 'Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingAnalysis') {
+        return 'analysis-run configuration';
+    }
     if (str_starts_with($row['path'], 'src/Analysis/Evidence/Measurement/Repository/')) {
         return 'analysis-run repository';
     }
@@ -625,17 +628,17 @@ function phaseParticipants(): array
         ['phase' => 'discovery', 'participant' => 'FileDiscoveryInterface implementation', 'inputs' => 'AbsolutePath|list<AbsolutePath>', 'outputs' => 'iterable<AbsolutePath,SplFileInfo>', 'state_owner' => 'Analysis.Run', 'dependency' => 'first run phase; generated filter follows', 'source' => 'src/Analysis/Run/Contract/Discovery/FileDiscoveryInterface.php'],
         ['phase' => 'collection', 'participant' => 'CollectionOrchestratorInterface', 'inputs' => 'list<SplFileInfo>, MetricRepositoryInterface, AbsolutePath', 'outputs' => 'CollectionPhaseOutput', 'state_owner' => 'Analysis.Run', 'dependency' => 'after discovery', 'source' => 'src/Analysis/Run/Contract/Collection/CollectionOrchestratorInterface.php'],
         ['phase' => 'per-file measurement', 'participant' => '21 MetricCollectorInterface implementations plus DependencyTraversalParticipantInterface', 'inputs' => 'SplFileInfo, Node[]', 'outputs' => 'MetricBag, typed projections and list<Dependency>', 'state_owner' => 'Measurement and DependencyModel', 'dependency' => 'one AST traversal; reset per file', 'source' => 'src/Analysis/Evidence/Measurement/Contract/MetricCollectorInterface.php'],
-        ['phase' => 'per-file derivation', 'participant' => 'TypeCoveragePercentCollector', 'inputs' => 'MetricBag', 'outputs' => 'MetricBag(typeCoveragePct)', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'requires collector id type-coverage', 'source' => 'src/Metrics/Design/TypeCoveragePercentCollector.php'],
-        ['phase' => 'per-file derivation', 'participant' => 'MaintainabilityIndexCollector', 'inputs' => 'MetricBag', 'outputs' => 'MetricBag(maintainabilityIndex)', 'state_owner' => 'Analysis.Evidence.Maintainability', 'dependency' => 'requires halstead, cyclomatic-complexity, method-statement-count', 'source' => 'src/Metrics/Maintainability/MaintainabilityIndexCollector.php'],
+        ['phase' => 'per-file derivation', 'participant' => 'TypeCoveragePercentCollector', 'inputs' => 'MetricBag', 'outputs' => 'MetricBag(typeCoveragePct)', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'requires collector id type-coverage', 'source' => 'src/Analysis/Evidence/Design/TypeCoveragePercentCollector.php'],
+        ['phase' => 'per-file derivation', 'participant' => 'MaintainabilityIndexCollector', 'inputs' => 'MetricBag', 'outputs' => 'MetricBag(maintainabilityIndex)', 'state_owner' => 'Analysis.Evidence.Maintainability', 'dependency' => 'requires halstead, cyclomatic-complexity, method-statement-count', 'source' => 'src/Analysis/Evidence/Maintainability/MaintainabilityIndexCollector.php'],
         ['phase' => 'dependency graph', 'participant' => 'DependencyGraphBuilder', 'inputs' => 'list<Dependency>, list<LogicalClassPath>', 'outputs' => 'DependencyGraphInterface', 'state_owner' => 'Analysis.Evidence.DependencyModel', 'dependency' => 'consumes raw collection dependencies', 'source' => 'src/Analysis/Evidence/DependencyModel/DependencyGraphBuilder.php'],
         ['phase' => 'architecture preparation', 'participant' => 'LayerPolicyPreparationInterface', 'inputs' => 'DependencyGraphInterface, ClassSet, enabled', 'outputs' => 'leaf-owned prepared ArchitectureConfiguration', 'state_owner' => 'Analysis.Policy.Architecture', 'dependency' => 'Run selects it by rule state; disabled preparation clears state without expansion work', 'source' => 'src/Analysis/Policy/Architecture/Contract/LayerPolicyPreparationInterface.php'],
         ['phase' => 'aggregation', 'participant' => '4 AggregationPhaseInterface implementations', 'inputs' => 'MetricRepositoryInterface, list<MetricDefinition>', 'outputs' => 'repository enrichment and NamespaceTree', 'state_owner' => 'Analysis.Evidence.Measurement', 'dependency' => 'callable -> class -> namespace tree -> project', 'source' => 'src/Analysis/Evidence/Measurement/Aggregation'],
-        ['phase' => 'global derivation', 'participant' => 'CouplingCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'CA, CE, CBO, instability', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'no global predecessor', 'source' => 'src/Metrics/Coupling/CouplingCollector.php'],
-        ['phase' => 'global derivation', 'participant' => 'AbstractnessCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'abstractness', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires aggregated size type counts', 'source' => 'src/Metrics/Coupling/AbstractnessCollector.php'],
-        ['phase' => 'global derivation', 'participant' => 'ClassRankCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'classRank', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires CA and CE', 'source' => 'src/Metrics/Coupling/ClassRankCollector.php'],
-        ['phase' => 'global derivation', 'participant' => 'DistanceCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'distance', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires instability and abstractness', 'source' => 'src/Metrics/Coupling/DistanceCollector.php'],
-        ['phase' => 'global derivation', 'participant' => 'DitGlobalCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'DIT', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'no global predecessor; overwrites per-file DIT', 'source' => 'src/Metrics/Structure/DitGlobalCollector.php'],
-        ['phase' => 'global derivation', 'participant' => 'NocCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'NOC', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'no global predecessor', 'source' => 'src/Metrics/Structure/NocCollector.php'],
+        ['phase' => 'global derivation', 'participant' => 'CouplingCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'CA, CE, CBO, instability', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'no global predecessor', 'source' => 'src/Analysis/Evidence/Coupling/CouplingCollector.php'],
+        ['phase' => 'global derivation', 'participant' => 'AbstractnessCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'abstractness', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires aggregated size type counts', 'source' => 'src/Analysis/Evidence/Coupling/AbstractnessCollector.php'],
+        ['phase' => 'global derivation', 'participant' => 'ClassRankCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'classRank', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires CA and CE', 'source' => 'src/Analysis/Evidence/Coupling/ClassRankCollector.php'],
+        ['phase' => 'global derivation', 'participant' => 'DistanceCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'distance', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires instability and abstractness', 'source' => 'src/Analysis/Evidence/Coupling/DistanceCollector.php'],
+        ['phase' => 'global derivation', 'participant' => 'DitGlobalCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'DIT', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'no global predecessor; overwrites per-file DIT', 'source' => 'src/Analysis/Evidence/Design/DitGlobalCollector.php'],
+        ['phase' => 'global derivation', 'participant' => 'NocCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'NOC', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'no global predecessor', 'source' => 'src/Analysis/Evidence/Design/NocCollector.php'],
         ['phase' => 'global reaggregation', 'participant' => 'MeasurementAggregationService', 'inputs' => 'MetricRepositoryInterface, NamespaceTree', 'outputs' => 'namespace/project aggregates', 'state_owner' => 'Analysis.Evidence.Measurement', 'dependency' => 'after all global collectors', 'source' => 'src/Analysis/Evidence/Measurement/Aggregation/MeasurementAggregationService.php'],
         ['phase' => 'computed derivation', 'participant' => 'Contract\\Evaluation\\ComputedMetricEvaluator', 'inputs' => 'MetricRepositoryInterface, files analyzed; one catalog snapshot', 'outputs' => 'configured computed metrics', 'state_owner' => 'Analysis.Evidence.ComputedMetrics', 'dependency' => 'definition DAG; instance-owned catalog; skipped without files/definitions', 'source' => 'src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php'],
         ['phase' => 'graph inspection', 'participant' => 'CircularDependencyPreparationInterface', 'inputs' => 'DependencyGraphInterface, enabled', 'outputs' => 'leaf-owned list<Cycle>', 'state_owner' => 'Analysis.Evidence.CircularDependency', 'dependency' => 'Run invokes it after graph construction; disabled preparation clears state without SCC work', 'source' => 'src/Analysis/Evidence/CircularDependency/Contract/CircularDependencyPreparationInterface.php'],
@@ -959,14 +962,30 @@ foreach ($rows as $row) {
 usort($classStringTargetRows, static fn(array $left, array $right): int => $left <=> $right);
 
 $extensionDefinitions = [
-    'rule' => ['Qualimetrix\\Analysis\\Finding\\Rule\\RuleInterface', 'qmx.rule', 'RuleConfigurator + ArchitectureConfigurator -> rule compiler passes'],
-    'regular_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricCollectorInterface', 'qmx.collector', 'CollectorConfigurator -> CollectorCompilerPass -> CompositeCollector'],
-    'derived_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DerivedCollectorInterface', 'qmx.derived_collector', 'CollectorConfigurator -> CollectorCompilerPass -> CompositeCollector'],
-    'global_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\GlobalContextCollectorInterface', 'qmx.global_collector', 'CollectorConfigurator -> GlobalCollectorCompilerPass -> GlobalCollectorRunner'],
+    'rule' => ['Qualimetrix\\Analysis\\Finding\\Rule\\RuleInterface', 'qmx.rule', 'capability configurator -> rule compiler passes'],
+    'regular_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricCollectorInterface', 'qmx.collector', 'capability configurator -> CollectorCompilerPass -> CompositeCollector'],
+    'derived_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DerivedCollectorInterface', 'qmx.derived_collector', 'capability configurator -> CollectorCompilerPass -> CompositeCollector'],
+    'global_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\GlobalContextCollectorInterface', 'qmx.global_collector', 'capability configurator -> GlobalCollectorCompilerPass -> GlobalCollectorRunner'],
     'formatter' => ['Qualimetrix\\Reporting\\Formatter\\FormatterInterface', 'qmx.formatter', 'OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry'],
     'configuration_stage' => ['Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationStageInterface', 'qmx.configuration_stage', 'ConfigurationConfigurator -> ConfigurationStageCompilerPass -> ConfigurationPipeline'],
 ];
 $extensionRows = [];
+$capabilityConfigurators = [
+    'Analysis.Evidence.CodeSmell' => 'CodeSmellConfigurator',
+    'Analysis.Evidence.Cohesion' => 'CohesionConfigurator',
+    'Analysis.Evidence.Complexity' => 'ComplexityConfigurator',
+    'Analysis.Evidence.Coupling' => 'CouplingConfigurator',
+    'Analysis.Evidence.Design' => 'DesignConfigurator',
+    'Analysis.Evidence.Maintainability' => 'MaintainabilityConfigurator',
+    'Analysis.Evidence.Security' => 'SecurityConfigurator',
+    'Analysis.Evidence.Size' => 'SizeConfigurator',
+];
+$otherRuleConfigurators = [
+    'Analysis.Policy.Architecture' => 'ArchitectureConfigurator',
+    'Analysis.Evidence.CircularDependency' => 'CircularDependencyConfigurator',
+    'Analysis.Evidence.ComputedMetrics' => 'ComputedMetricsConfigurator',
+    'Analysis.Evidence.Duplication' => 'DuplicationConfigurator',
+];
 foreach ($extensionDefinitions as $family => [$target, $tag, $registration]) {
     $extensionCount = 0;
     foreach ($rows as $row) {
@@ -974,7 +993,12 @@ foreach ($extensionDefinitions as $family => [$target, $tag, $registration]) {
             continue;
         }
         $extensionCount++;
-        $extensionRows[] = [$family, $row['fqcn'], $row['path'], $tag, $registration];
+        $configurator = $capabilityConfigurators[$row['proposed_owner']]
+            ?? ($family === 'rule' ? ($otherRuleConfigurators[$row['proposed_owner']] ?? null) : null);
+        $registrationPath = $configurator === null
+            ? $registration
+            : $configurator . substr($registration, strlen('capability configurator'));
+        $extensionRows[] = [$family, $row['fqcn'], $row['path'], $tag, $registrationPath];
     }
     if ($extensionCount !== EXPECTED_EXTENSION_COUNTS[$family]) {
         fail("expected {$family} count " . EXPECTED_EXTENSION_COUNTS[$family] . ", got {$extensionCount}");
@@ -2011,6 +2035,14 @@ function documentationDisposition(string $path): array
         'src/Analysis/Evidence/Duplication/README.md' => ['Analysis.Evidence.Duplication', 'P1'],
         'src/Analysis/Evidence/Measurement/README.md' => ['Analysis.Evidence.Measurement', 'P3'],
         'src/Analysis/Evidence/Prioritization/README.md' => ['Analysis.Evidence.Prioritization', 'P6-D'],
+        'src/Analysis/Evidence/CodeSmell/README.md' => ['Analysis.Evidence.CodeSmell', 'P7'],
+        'src/Analysis/Evidence/Cohesion/README.md' => ['Analysis.Evidence.Cohesion', 'P7'],
+        'src/Analysis/Evidence/Complexity/README.md' => ['Analysis.Evidence.Complexity', 'P7'],
+        'src/Analysis/Evidence/Coupling/README.md' => ['Analysis.Evidence.Coupling', 'P7'],
+        'src/Analysis/Evidence/Design/README.md' => ['Analysis.Evidence.Design', 'P7'],
+        'src/Analysis/Evidence/Maintainability/README.md' => ['Analysis.Evidence.Maintainability', 'P7'],
+        'src/Analysis/Evidence/Security/README.md' => ['Analysis.Evidence.Security', 'P7'],
+        'src/Analysis/Evidence/Size/README.md' => ['Analysis.Evidence.Size', 'P7'],
         'src/Analysis/Finding/README.md' => ['Analysis.Finding', 'P6-A'],
         'src/Analysis/Policy/Inline/README.md' => ['Analysis.Policy.Inline', 'P6-B'],
         'src/Analysis/Run/README.md' => ['Analysis.Run', 'P3'],
@@ -2041,16 +2073,14 @@ function documentationDisposition(string $path): array
     }
 
     $prefixes = [
-        'src/Metrics/' => ['Analysis.Evidence.Measurement', 'P7'],
-        'src/Rules/' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/code-smell' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/cohesion' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/complexity' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/coupling' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/design' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/maintainability' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/security' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/size' => ['Analysis.Evidence.Measurement', 'P7'],
+        'website/docs/rules/code-smell' => ['Analysis.Evidence.CodeSmell', 'P7'],
+        'website/docs/rules/cohesion' => ['Analysis.Evidence.Cohesion', 'P7'],
+        'website/docs/rules/complexity' => ['Analysis.Evidence.Complexity', 'P7'],
+        'website/docs/rules/coupling' => ['Analysis.Evidence.Coupling', 'P7'],
+        'website/docs/rules/design' => ['Analysis.Evidence.Design', 'P7'],
+        'website/docs/rules/maintainability' => ['Analysis.Evidence.Maintainability', 'P7'],
+        'website/docs/rules/security' => ['Analysis.Evidence.Security', 'P7'],
+        'website/docs/rules/size' => ['Analysis.Evidence.Size', 'P7'],
     ];
     foreach ($prefixes as $prefix => [$owner, $closure]) {
         if (str_starts_with($path, $prefix)) {

@@ -337,8 +337,7 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
     }
 
     /**
-     * Scans the explicit rule roots registered by RuleConfigurator and
-     * DuplicationConfigurator, so capability extraction cannot silently
+     * Scans the complete explicit union of capability-owned rule roots, so extraction cannot silently
      * remove a threshold rule from this drift guard.
      *
      * @return list<class-string<RuleDefinitionInterface>>
@@ -353,8 +352,15 @@ final class RuleThresholdKeyGroupRegistryDriftTest extends TestCase
         $classes = [];
         $srcDir = \dirname(__DIR__, 4) . '/src';
         $roots = [
-            [$srcDir . '/Rules', 'Qualimetrix\\Rules\\'],
             [$srcDir . '/Analysis/Evidence/Duplication', 'Qualimetrix\\Analysis\\Evidence\\Duplication\\'],
+            [$srcDir . '/Analysis/Evidence/CodeSmell', 'Qualimetrix\\Analysis\\Evidence\\CodeSmell\\'],
+            [$srcDir . '/Analysis/Evidence/Cohesion', 'Qualimetrix\\Analysis\\Evidence\\Cohesion\\'],
+            [$srcDir . '/Analysis/Evidence/Complexity', 'Qualimetrix\\Analysis\\Evidence\\Complexity\\'],
+            [$srcDir . '/Analysis/Evidence/Coupling', 'Qualimetrix\\Analysis\\Evidence\\Coupling\\'],
+            [$srcDir . '/Analysis/Evidence/Design', 'Qualimetrix\\Analysis\\Evidence\\Design\\'],
+            [$srcDir . '/Analysis/Evidence/Maintainability', 'Qualimetrix\\Analysis\\Evidence\\Maintainability\\'],
+            [$srcDir . '/Analysis/Evidence/Security', 'Qualimetrix\\Analysis\\Evidence\\Security\\'],
+            [$srcDir . '/Analysis/Evidence/Size', 'Qualimetrix\\Analysis\\Evidence\\Size\\'],
         ];
 
         foreach ($roots as [$rulesDir, $namespace]) {

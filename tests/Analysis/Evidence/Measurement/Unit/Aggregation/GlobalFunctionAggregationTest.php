@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationHelper;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\AggregationMeta;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\CallableToClassAggregator;
@@ -27,7 +28,6 @@ use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
 
 /**
  * Tests that global functions (not in any class) are handled correctly

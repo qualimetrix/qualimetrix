@@ -280,10 +280,10 @@ The row-level authorities are tracked appendices, not prose summaries:
 Their embedded input checksums bind this design to the reviewed P5 snapshot.
 P6-0 must reproduce all three byte-for-byte or amend and re-review the plan.
 Reviewed appendix SHA-256 values are production
-`4066cf886d8f8a9b7ff61529b6c7bf731dbb85bbb6784de471d54f6be58161a8`,
-tests `4a9e62bd717656f11f0f4808be9516d18f0cc88756ed4fd551a0f3fab6101434`,
+`9bb72814f69adc9cc18b9d813e37e99697d38b55baaecf6113f90531f8cb71a8`,
+tests `b4cfec682fc760b8eff54468b80602206f7b5c465bd16fa439cf625ced507a19`,
 and relations
-`e13551182d29a0ac8b2783aeb2a3c50c42e1e62ef988e92e2f4b67ffeceb236f`.
+`df68971537a08b4d571fe577801b374d9eb1c7751d3fb37e6f533a8df4aaa080`.
 
 | Semantic owner                     | Exact current set                                                                                                                                                                                                                                                                    | Count   |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------: |

@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\NamespaceToProjectAggregator;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
@@ -21,7 +22,6 @@ use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
 
 #[CoversClass(NamespaceToProjectAggregator::class)]
 final class NamespaceToProjectAggregatorTest extends TestCase

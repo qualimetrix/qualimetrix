@@ -2,6 +2,10 @@
 
 Size rules catch classes and namespaces that have grown too large. Large classes are harder to understand, test, and maintain. These rules set upper bounds on how big your code units should be.
 
+The implementation belongs to the `Analysis\Evidence\Size` capability and
+continues to consume and publish Measurement metric facts; rule IDs and
+configuration remain unchanged.
+
 ---
 
 ## Method Count

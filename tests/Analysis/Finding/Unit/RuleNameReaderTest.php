@@ -8,8 +8,8 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
-use Qualimetrix\Rules\Complexity\ComplexityRule;
 
 #[CoversClass(RuleNameReader::class)]
 final class RuleNameReaderTest extends TestCase
@@ -35,7 +35,7 @@ final class RuleNameReaderTest extends TestCase
         self::expectException(LogicException::class);
         self::expectExceptionMessage('does not exist or cannot be autoloaded');
 
-        RuleNameReader::read('Qualimetrix\Rules\NoSuchRule');
+        RuleNameReader::read('Qualimetrix\Analysis\Evidence\Complexity\NoSuchRule');
     }
 
     #[Test]

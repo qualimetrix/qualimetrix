@@ -143,6 +143,10 @@ final class ConfigDataNormalizerTest extends TestCase
         ]);
 
         self::assertSame(['Symfony', 'PhpParser', 'Psr'], $result['coupling.framework_namespaces']);
+        self::assertSame(
+            ['frameworkNamespaces' => ['Symfony', 'PhpParser', 'Psr']],
+            $result['coupling'],
+        );
     }
 
     #[Test]

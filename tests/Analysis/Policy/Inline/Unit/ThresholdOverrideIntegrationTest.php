@@ -8,10 +8,30 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListOptions;
+use Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\ClassNpathComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\MethodComplexityOptions;
+use Qualimetrix\Analysis\Evidence\Complexity\WmcOptions;
+use Qualimetrix\Analysis\Evidence\Coupling\CboOptions;
+use Qualimetrix\Analysis\Evidence\Coupling\CboRule;
+use Qualimetrix\Analysis\Evidence\Coupling\ClassCboOptions;
+use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
+use Qualimetrix\Analysis\Evidence\Coupling\NamespaceInstabilityOptions;
+use Qualimetrix\Analysis\Evidence\Design\DataClassOptions;
+use Qualimetrix\Analysis\Evidence\Design\GodClassOptions;
+use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
+use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
+use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
+use Qualimetrix\Analysis\Evidence\Size\PropertyCountOptions;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
@@ -24,26 +44,6 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Rules\CodeSmell\LongParameterListOptions;
-use Qualimetrix\Rules\Complexity\ClassNpathComplexityOptions;
-use Qualimetrix\Rules\Complexity\ComplexityOptions;
-use Qualimetrix\Rules\Complexity\ComplexityRule;
-use Qualimetrix\Rules\Complexity\MethodComplexityOptions;
-use Qualimetrix\Rules\Coupling\CboOptions;
-use Qualimetrix\Rules\Coupling\CboRule;
-use Qualimetrix\Rules\Coupling\ClassCboOptions;
-use Qualimetrix\Rules\Coupling\DistanceOptions;
-use Qualimetrix\Rules\Coupling\NamespaceInstabilityOptions;
-use Qualimetrix\Rules\Design\DataClassOptions;
-use Qualimetrix\Rules\Design\GodClassOptions;
-use Qualimetrix\Rules\Design\TypeCoverageOptions;
-use Qualimetrix\Rules\Design\TypeCoverageRule;
-use Qualimetrix\Rules\Maintainability\MaintainabilityOptions;
-use Qualimetrix\Rules\Size\MethodCountOptions;
-use Qualimetrix\Rules\Size\MethodCountRule;
-use Qualimetrix\Rules\Size\PropertyCountOptions;
-use Qualimetrix\Rules\Structure\LcomOptions;
-use Qualimetrix\Rules\Structure\WmcOptions;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
@@ -460,8 +460,15 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     public function itPreservesAllFieldsViaReflectionForAllThresholdAwareOptions(): void
     {
         $optionsDirs = [
-            \dirname(__DIR__, 5) . '/src/Rules',
             \dirname(__DIR__, 5) . '/src/Analysis/Evidence/Duplication',
+            \dirname(__DIR__, 5) . '/src/Analysis/Evidence/CodeSmell',
+            \dirname(__DIR__, 5) . '/src/Analysis/Evidence/Cohesion',
+            \dirname(__DIR__, 5) . '/src/Analysis/Evidence/Complexity',
+            \dirname(__DIR__, 5) . '/src/Analysis/Evidence/Coupling',
+            \dirname(__DIR__, 5) . '/src/Analysis/Evidence/Design',
+            \dirname(__DIR__, 5) . '/src/Analysis/Evidence/Maintainability',
+            \dirname(__DIR__, 5) . '/src/Analysis/Evidence/Security',
+            \dirname(__DIR__, 5) . '/src/Analysis/Evidence/Size',
         ];
 
         $testedClasses = 0;

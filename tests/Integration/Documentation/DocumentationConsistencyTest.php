@@ -208,7 +208,7 @@ final class DocumentationConsistencyTest extends TestCase
         self::assertSame(
             $expected,
             $declaredWithoutCatalogOnly,
-            'Compact rule catalog in website/docs/rules/index.md drifted from src/Rules/. '
+            'Compact rule catalog in website/docs/rules/index.md drifted from capability-owned rule roots. '
             . 'Update the <!-- llms-only ... --> block to match.',
         );
     }
@@ -301,8 +301,7 @@ final class DocumentationConsistencyTest extends TestCase
      * Scans every current rule root for concrete RuleInterface
      * implementations.
      *
-     * Architecture, CircularDependency, and Duplication own rules outside the remaining layered
-     * src/Rules tree; every root is explicit so a future capability does not
+     * Every current capability root is explicit so a future capability does not
      * silently enroll itself in documentation discovery.
      *
      * @return iterable<array{fqcn: class-string<RuleDefinitionInterface>, reflection: ReflectionClass<RuleInterface>}>
@@ -310,10 +309,17 @@ final class DocumentationConsistencyTest extends TestCase
     private function scanRuleClasses(): iterable
     {
         $rulesDirs = [
-            self::$projectRoot . '/src/Rules',
             self::$projectRoot . '/src/Analysis/Policy/Architecture/LayerViolation',
             self::$projectRoot . '/src/Analysis/Evidence/CircularDependency',
             self::$projectRoot . '/src/Analysis/Evidence/Duplication',
+            self::$projectRoot . '/src/Analysis/Evidence/CodeSmell',
+            self::$projectRoot . '/src/Analysis/Evidence/Cohesion',
+            self::$projectRoot . '/src/Analysis/Evidence/Complexity',
+            self::$projectRoot . '/src/Analysis/Evidence/Coupling',
+            self::$projectRoot . '/src/Analysis/Evidence/Design',
+            self::$projectRoot . '/src/Analysis/Evidence/Maintainability',
+            self::$projectRoot . '/src/Analysis/Evidence/Security',
+            self::$projectRoot . '/src/Analysis/Evidence/Size',
         ];
 
         foreach ($rulesDirs as $rulesDir) {

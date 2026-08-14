@@ -17,7 +17,10 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
+use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
+use Qualimetrix\Analysis\Evidence\Coupling\CouplingCollector;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
@@ -33,6 +36,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Measurement\Runtime\CollectorRuntimeConfigurationStore;
+use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
@@ -74,11 +78,8 @@ use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
 use Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy;
 use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
 use Qualimetrix\Infrastructure\Parallel\Strategy\WorkerCountDetector;
-use Qualimetrix\Metrics\Coupling\CouplingCollector;
-use Qualimetrix\Metrics\Size\LocCollector;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\GraphProjectionRequest;
-use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
 use SplFileInfo;
@@ -394,7 +395,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         );
 
         // Create the real CouplingCollector as a global collector
-        $couplingCollector = new CouplingCollector(new \Qualimetrix\Core\Coupling\FrameworkNamespacesHolder());
+        $couplingCollector = new CouplingCollector(new CouplingAnalysis());
 
         // CompositeCollector has no per-file collectors for this test.
         $compositeCollector = new CompositeCollector([]);

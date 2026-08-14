@@ -8,12 +8,12 @@ use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\CodeSmell\AbstractCodeSmellRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
+use Qualimetrix\Analysis\Evidence\Security\AbstractSecurityPatternRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
-use Qualimetrix\Rules\CodeSmell\AbstractCodeSmellRule;
-use Qualimetrix\Rules\CodeSmell\GotoRule;
-use Qualimetrix\Rules\Security\AbstractSecurityPatternRule;
 use RuntimeException;
 
 #[CoversClass(ChannelDeclarationReader::class)]
@@ -130,7 +130,7 @@ final class ChannelDeclarationReaderTest extends TestCase
         self::expectExceptionMessage('does not exist or cannot be autoloaded');
 
         /** @phpstan-ignore argument.type (deliberately passing an unloadable class) */
-        ChannelDeclarationReader::read('Qualimetrix\Rules\NoSuchRule');
+        ChannelDeclarationReader::read('Qualimetrix\Analysis\Evidence\CodeSmell\NoSuchRule');
     }
 
     /**
