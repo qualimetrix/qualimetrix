@@ -24,7 +24,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * on the container handing it the *same shared instance* that
  * `AnalysisPipeline` just ran `execute()` on.
  *
- * The unit test ({@see \Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorTest})
+ * The unit test ({@see \Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorTest})
  * substitutes a stub `RuleExecutionInterface`, so it cannot see a wiring
  * regression (e.g. the service becoming non-shared or wrapped in a
  * decorator) — that would silently turn the feature into a no-op with every
