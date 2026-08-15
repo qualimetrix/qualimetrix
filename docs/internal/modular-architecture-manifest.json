@@ -1278,6 +1278,20 @@
             "closure_package": "P5",
             "consumers": []
         },
+        "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricConfigurationException": {
+            "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricConfigurationException.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.ComputedMetrics",
+            "visibility": "contract",
+            "closure_package": "P5",
+            "consumers": [
+                {
+                    "owner": "Infrastructure.Console",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+                    "closes_in": null
+                }
+            ]
+        },
         "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricDefaults": {
             "path": "src/Analysis/Evidence/ComputedMetrics/ComputedMetricDefaults.php",
             "kind": "class",
@@ -8351,6 +8365,11 @@
                 },
                 {
                     "owner": "Analysis.Evidence.CodeSmell",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\DebugCodeRule",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.CodeSmell",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\EmptyCatchRule",
                     "closes_in": null
                 },
@@ -10202,6 +10221,20 @@
             "visibility": "internal",
             "closure_package": "P6-C",
             "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoadException": {
+            "path": "src/Analysis/Policy/Baseline/BaselineLoadException.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Baseline",
+            "visibility": "contract",
+            "closure_package": "P6-C",
+            "consumers": [
+                {
+                    "owner": "Infrastructure.Console",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand",
+                    "closes_in": null
+                }
+            ]
         },
         "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader": {
             "path": "src/Analysis/Policy/Baseline/BaselineLoader.php",
@@ -15119,6 +15152,14 @@
         },
         "Qualimetrix\\Infrastructure\\Git\\ChangedFile": {
             "path": "src/Infrastructure/Git/ChangedFile.php",
+            "kind": "class",
+            "owner": "Infrastructure.Git",
+            "visibility": "internal",
+            "closure_package": "P8",
+            "consumers": []
+        },
+        "Qualimetrix\\Infrastructure\\Git\\Exception\\NotAGitRepositoryException": {
+            "path": "src/Infrastructure/Git/Exception/NotAGitRepositoryException.php",
             "kind": "class",
             "owner": "Infrastructure.Git",
             "visibility": "internal",
