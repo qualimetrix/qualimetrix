@@ -336,6 +336,13 @@ for methods with large `match` expressions. Qualimetrix's additive approach
 yields practical, actionable values. Values for these constructs change from
 earlier Qualimetrix releases and may require threshold/baseline recalibration.
 
+!!! info "Deviation from original spec"
+    NPath `try/catch` handling is a deliberate qmx extension. Qualimetrix computes
+    `(NPath(try) + Σ NPath(catch) + 1) × NPath(finally)`: the `+1` is a PMD-style
+    additive term for the no-exception path. A bare `try{}catch{}` therefore reports
+    NPath 3, whereas the original Nejmeh (1988) scheme — which predates exceptions —
+    would imply 2. This differs from phpmd/pdepend and is intentional.
+
 <!-- llms:skip-end -->
 
 ### Configuration

@@ -31,8 +31,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * - Method level: checks individual method NPath
  * - Class level: checks maximum NPath among class methods
  */
-#[CliAlias('npath-warning', 'method.warning')]
-#[CliAlias('npath-error', 'method.error')]
+#[CliAlias('npath-warning', 'callable.warning')]
+#[CliAlias('npath-error', 'callable.error')]
 #[CliAlias('npath-class-warning', 'class.max_warning')]
 #[CliAlias('npath-class-error', 'class.max_error')]
 final class NpathComplexityRule extends AbstractRule implements HierarchicalRuleInterface

@@ -366,7 +366,7 @@ final class CheckCommandDefinition
             $reflection = new ReflectionClass($optionsClass);
 
             foreach ($aliases as $alias => $optionName) {
-                // Option name may be nested (e.g., 'method.warning'), use the leaf
+                // Option name may be nested (e.g., 'callable.warning'), use the leaf
                 $leafName = str_contains($optionName, '.') ? substr($optionName, (int) strrpos($optionName, '.') + 1) : $optionName;
 
                 if ($reflection->hasProperty($leafName)) {

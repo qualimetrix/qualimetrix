@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Complexity\MethodComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
+use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -78,6 +79,21 @@ final class ComplexityRuleTest extends TestCase
         $rule = new ComplexityRule(new ComplexityOptions());
 
         self::assertSame([RuleLevel::Callable, RuleLevel::Class_], $rule->getSupportedLevels());
+    }
+
+    #[Test]
+    public function itGetsCliAliases(): void
+    {
+        $aliases = CliAliasReader::read(ComplexityRule::class);
+
+        self::assertArrayHasKey('cyclomatic-warning', $aliases);
+        self::assertArrayHasKey('cyclomatic-error', $aliases);
+        self::assertArrayHasKey('cyclomatic-class-warning', $aliases);
+        self::assertArrayHasKey('cyclomatic-class-error', $aliases);
+        self::assertSame('callable.warning', $aliases['cyclomatic-warning']);
+        self::assertSame('callable.error', $aliases['cyclomatic-error']);
+        self::assertSame('class.max_warning', $aliases['cyclomatic-class-warning']);
+        self::assertSame('class.max_error', $aliases['cyclomatic-class-error']);
     }
 
     // Method-level tests

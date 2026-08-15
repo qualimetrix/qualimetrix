@@ -29,8 +29,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * - Method level: checks individual method CCN
  * - Class level: checks maximum CCN among class methods
  */
-#[CliAlias('cyclomatic-warning', 'method.warning')]
-#[CliAlias('cyclomatic-error', 'method.error')]
+#[CliAlias('cyclomatic-warning', 'callable.warning')]
+#[CliAlias('cyclomatic-error', 'callable.error')]
 #[CliAlias('cyclomatic-class-warning', 'class.max_warning')]
 #[CliAlias('cyclomatic-class-error', 'class.max_error')]
 final class ComplexityRule extends AbstractRule implements HierarchicalRuleInterface

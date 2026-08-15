@@ -356,10 +356,11 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
 
     private function calculateTryCatchNpath(TryCatch $try): int
     {
-        // PMD/Checkstyle formula: (NPath(try) + Σ NPath(catch) + 1) * NPath(finally)
-        // The +1 accounts for the path where no exception is thrown.
-        // Note: this follows PMD convention (not original Nejmeh 1988, which predates exceptions).
-        // Reviewed and confirmed as intentional — matches industry-standard tools.
+        // (NPath(try) + Σ NPath(catch) + 1) * NPath(finally). The +1 accounts
+        // for the no-exception path — an additive PMD-style term that gives
+        // qmx NPath=3 for a bare try/catch where the original Nejmeh 1988
+        // scheme (which predates exceptions) would imply 2. This is a
+        // deliberate qmx choice, not an attempt at exact PMD parity.
         $npath = $this->calculateSequenceNpath($try->stmts);
 
         foreach ($try->catches as $catch) {
@@ -423,6 +424,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
             $expr instanceof BinaryOp\BooleanAnd, $expr instanceof BinaryOp\LogicalAnd => '&&/||',
             $expr instanceof BinaryOp\BooleanOr, $expr instanceof BinaryOp\LogicalOr => '&&/||',
             $expr instanceof BinaryOp\Coalesce => '??',
+            $expr instanceof Expr\AssignOp\Coalesce => '??=',
             $expr instanceof Expr\Match_ => 'match',
             $expr instanceof Expr\Assign, $expr instanceof Expr\AssignOp => $this->getExprTypeLabel($expr->expr),
             default => 'expr',

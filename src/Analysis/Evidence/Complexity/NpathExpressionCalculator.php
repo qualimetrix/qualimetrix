@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Evidence\Complexity;
 use PhpParser\Node;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\ArrowFunction;
+use PhpParser\Node\Expr\AssignOp;
 use PhpParser\Node\Expr\BinaryOp;
 use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\Match_;
@@ -26,7 +27,7 @@ use PhpParser\Node\Stmt\Class_;
  * Nested callable and anonymous-class bodies belong to separate analysis
  * scopes and are deliberately opaque.
  *
- * @qmx-threshold complexity.wmc warning=51 error=51 -- Finite php-parser expression algebra keeps exact NPath composition and saturation together.
+ * @qmx-threshold complexity.wmc warning=52 error=52 -- Finite php-parser expression algebra keeps exact NPath composition and saturation together (grew by one arm for the `??=` assignment-coalesce operator).
  */
 final class NpathExpressionCalculator
 {
@@ -48,7 +49,7 @@ final class NpathExpressionCalculator
      *
      * @return array{ordinary: int, nullsafe: int}
      *
-     * @qmx-threshold complexity.cyclomatic warning=14 error=14 -- Finite php-parser expression dispatch preserves the closed NPath contribution algebra.
+     * @qmx-threshold complexity.cyclomatic warning=15 error=15 -- Finite php-parser expression dispatch preserves the closed NPath contribution algebra (grew by one arm for the `??=` assignment-coalesce operator).
      */
     public function calculateContributions(Expr $expr): array
     {
@@ -63,6 +64,11 @@ final class NpathExpressionCalculator
                 $this->ordinaryContribution(1),
                 $this->calculateContributions($expr->left),
                 $this->calculateContributions($expr->right),
+            ),
+            $expr instanceof AssignOp\Coalesce => $this->addContributions(
+                $this->ordinaryContribution(1),
+                $this->calculateContributions($expr->var),
+                $this->calculateContributions($expr->expr),
             ),
             $expr instanceof Match_ => $this->calculateMatchContributions($expr),
             $expr instanceof NullsafeMethodCall,

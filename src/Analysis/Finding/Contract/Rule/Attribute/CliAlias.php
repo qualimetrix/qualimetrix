@@ -13,8 +13,8 @@ use Attribute;
  * Reflection by CliAliasReader — no rule instantiation required.
  *
  * Example:
- *   #[CliAlias('cyclomatic-warning', 'method.warning')]
- *   #[CliAlias('cyclomatic-error', 'method.error')]
+ *   #[CliAlias('cyclomatic-warning', 'callable.warning')]
+ *   #[CliAlias('cyclomatic-error', 'callable.error')]
  *   final class ComplexityRule extends AbstractRule { }
  */
 #[Attribute(Attribute::TARGET_CLASS | Attribute::IS_REPEATABLE)]
