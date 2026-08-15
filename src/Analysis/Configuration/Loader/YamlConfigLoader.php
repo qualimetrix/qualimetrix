@@ -195,6 +195,7 @@ final class YamlConfigLoader implements ConfigLoaderInterface
         $this->validateRulesSection($config, $path, $keyMap);
         $this->validateTypeConstraints($config, $path, $keyMap);
         $this->validateSectionSubKeys($config, $path, $rawConfig);
+        $this->validateScalarTypes($config, $path);
     }
 
     /**
@@ -333,6 +334,62 @@ final class YamlConfigLoader implements ConfigLoaderInterface
                 ),
             );
         }
+    }
+
+    /**
+     * Validates that scalar-typed leaves (cache.enabled, parallel.workers,
+     * include_generated, memory_limit) carry their documented value type.
+     *
+     * This closes the silent-misconfiguration class where a wrong-typed scalar
+     * (e.g. a quoted `cache.enabled: "false"`) is silently ignored by the
+     * downstream resolvers and falls back to a default.
+     *
+     * A `~` / null value is a valid "use the default" idiom and is not checked.
+     *
+     * @param array<string, mixed> $config Post-normalization config (camelCase keys)
+     */
+    private function validateScalarTypes(array $config, string $path): void
+    {
+        foreach (ConfigSchema::ENTRIES as [$sourcePath, $resultKey, , $scalarType]) {
+            if ($scalarType === null) {
+                continue;
+            }
+
+            $value = self::resolveNormalizedValue($config, $sourcePath);
+            if ($value === null) {
+                continue;
+            }
+
+            if (ConfigSchema::matchesScalarType($value, $scalarType)) {
+                continue;
+            }
+
+            throw ConfigLoadException::invalidStructure(
+                $path,
+                \sprintf(
+                    'Invalid value for "%s": expected %s, got %s',
+                    $resultKey,
+                    $scalarType,
+                    ConfigSchema::scalarTypeName($value),
+                ),
+            );
+        }
+    }
+
+    /**
+     * Resolves a camelCase source path from the post-normalization config map.
+     *
+     * @param array<string, mixed> $config
+     */
+    private static function resolveNormalizedValue(array $config, string $sourcePath): mixed
+    {
+        if (str_contains($sourcePath, '.')) {
+            [$section, $key] = explode('.', $sourcePath, 2);
+
+            return \is_array($config[$section] ?? null) ? ($config[$section][$key] ?? null) : null;
+        }
+
+        return $config[$sourcePath] ?? null;
     }
 
     /**

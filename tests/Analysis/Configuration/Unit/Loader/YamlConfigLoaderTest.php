@@ -396,6 +396,75 @@ YAML);
     }
 
     #[Test]
+    public function itRejectsWrongTypeCacheEnabled(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, "cache:\n  enabled: \"false\"\n");
+
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('Invalid value for "cache.enabled": expected boolean, got string');
+
+        $this->loader->load($path);
+    }
+
+    #[Test]
+    public function itRejectsWrongTypeParallelWorkers(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, "parallel:\n  workers: \"four\"\n");
+
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('Invalid value for "parallel.workers": expected integer, got string');
+
+        $this->loader->load($path);
+    }
+
+    #[Test]
+    public function itRejectsWrongTypeMemoryLimit(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, "memory_limit: 12345\n");
+
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('Invalid value for "memory_limit": expected string, got integer');
+
+        $this->loader->load($path);
+    }
+
+    #[Test]
+    public function itRejectsWrongTypeIncludeGenerated(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, "include_generated: \"yes\"\n");
+
+        self::expectException(ConfigLoadException::class);
+        self::expectExceptionMessage('Invalid value for "include_generated": expected boolean, got string');
+
+        $this->loader->load($path);
+    }
+
+    #[Test]
+    public function itAcceptsNullForTypedScalarKeys(): void
+    {
+        $path = $this->tempDir . '/config.yaml';
+        file_put_contents($path, <<<'YAML'
+cache:
+  enabled: ~
+parallel:
+  workers: ~
+include_generated: ~
+memory_limit: ~
+YAML);
+
+        $config = $this->loader->load($path);
+
+        self::assertNull($config['cache']['enabled']);
+        self::assertNull($config['parallel']['workers']);
+        self::assertNull($config['includeGenerated']);
+        self::assertNull($config['memoryLimit']);
+    }
+
+    #[Test]
     public function itAcceptsCouplingSection(): void
     {
         $path = $this->tempDir . '/config.yaml';

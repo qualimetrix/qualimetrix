@@ -73,9 +73,12 @@ final class ConfigSchema
     private const string LIST = 'list';
     private const string SCALAR = 'scalar';
     private const string MIXED = 'mixed';
+    private const string BOOLEAN = 'boolean';
+    private const string INTEGER = 'integer';
+    private const string STRING = 'string';
 
     /**
-     * Unified config entries: [sourcePath, resultKey, rootKeyType].
+     * Unified config entries: [sourcePath, resultKey, rootKeyType, scalarType].
      *
      * Source key path (camelCase — YamlConfigLoader normalizes snake_case before
      * ConfigDataNormalizer sees the data, so only camelCase paths are needed):
@@ -88,33 +91,39 @@ final class ConfigSchema
      * - 'mixed'   — array with special structure (rules, computed_metrics)
      * - null      — sub-key of a section (root is auto-typed as section)
      *
-     * @var list<array{string, string, string|null}>
+     * Scalar type (only for keys whose leaf value must be a precise scalar):
+     * - 'boolean' — must be a bool (cache.enabled, include_generated)
+     * - 'integer' — must be an int (parallel.workers)
+     * - 'string'  — must be a string (memory_limit)
+     * - null      — no precise scalar type (list/mixed/section/loose-scalar keys)
+     *
+     * @var list<array{string, string, string|null, string|null}>
      */
     public const array ENTRIES = [
         // Top-level keys with explicit types
-        [self::PATHS, self::PATHS, self::LIST],
-        ['exclude', self::EXCLUDES, self::LIST],
-        [self::FORMAT, self::FORMAT, self::SCALAR],
-        [self::RULES, self::RULES, self::MIXED],
-        ['disabledRules', self::DISABLED_RULES, self::LIST],
-        ['onlyRules', self::ONLY_RULES, self::LIST],
-        ['excludePaths', self::EXCLUDE_PATHS, self::LIST],
-        ['excludeNamespaces', self::EXCLUDE_NAMESPACES, self::LIST],
-        ['failOn', self::FAIL_ON, self::SCALAR],
+        [self::PATHS, self::PATHS, self::LIST, null],
+        ['exclude', self::EXCLUDES, self::LIST, null],
+        [self::FORMAT, self::FORMAT, self::SCALAR, null],
+        [self::RULES, self::RULES, self::MIXED, null],
+        ['disabledRules', self::DISABLED_RULES, self::LIST, null],
+        ['onlyRules', self::ONLY_RULES, self::LIST, null],
+        ['excludePaths', self::EXCLUDE_PATHS, self::LIST, null],
+        ['excludeNamespaces', self::EXCLUDE_NAMESPACES, self::LIST, null],
+        ['failOn', self::FAIL_ON, self::SCALAR, null],
 
         // Section sub-keys (root type derived as 'section')
-        ['cache.dir', self::CACHE_DIR, null],
-        ['cache.enabled', self::CACHE_ENABLED, null],
-        ['parallel.workers', self::PARALLEL_WORKERS, null],
-        ['coupling.frameworkNamespaces', self::COUPLING_FRAMEWORK_NAMESPACES, null],
+        ['cache.dir', self::CACHE_DIR, null, null],
+        ['cache.enabled', self::CACHE_ENABLED, null, self::BOOLEAN],
+        ['parallel.workers', self::PARALLEL_WORKERS, null, self::INTEGER],
+        ['coupling.frameworkNamespaces', self::COUPLING_FRAMEWORK_NAMESPACES, null, null],
 
         // Top-level camelCase keys (loader normalizes snake_case before these are resolved)
-        ['includeGenerated', self::INCLUDE_GENERATED, self::SCALAR],
-        ['memoryLimit', self::MEMORY_LIMIT, self::SCALAR],
+        ['includeGenerated', self::INCLUDE_GENERATED, self::SCALAR, self::BOOLEAN],
+        ['memoryLimit', self::MEMORY_LIMIT, self::SCALAR, self::STRING],
 
         // Architecture: free-form map with layers/allow/coverage sub-structure.
         // Treated as MIXED because sub-keys are user-defined layer names, not a fixed schema.
-        [self::ARCHITECTURE, self::ARCHITECTURE, self::MIXED],
+        [self::ARCHITECTURE, self::ARCHITECTURE, self::MIXED, null],
     ];
 
     /**
@@ -314,5 +323,38 @@ final class ConfigSchema
         $lists[self::EXCLUDE_HEALTH] = true;
 
         return array_keys($lists);
+    }
+
+    /**
+     * True when {@code $value} is well-typed for the given scalar marker
+     * (one of the boolean|integer|string markers carried by {@see ENTRIES}).
+     *
+     * A marker unknown to the schema is a programming error and throws.
+     */
+    public static function matchesScalarType(mixed $value, string $scalarType): bool
+    {
+        return match ($scalarType) {
+            self::BOOLEAN => \is_bool($value),
+            self::INTEGER => \is_int($value),
+            self::STRING => \is_string($value),
+            default => throw new LogicException(\sprintf('Unknown scalar type marker "%s" in ConfigSchema::ENTRIES.', $scalarType)),
+        };
+    }
+
+    /**
+     * Human-readable scalar type name in the schema vocabulary (boolean,
+     * integer, string, float, array, null), used in validation messages.
+     */
+    public static function scalarTypeName(mixed $value): string
+    {
+        return match (true) {
+            \is_bool($value) => self::BOOLEAN,
+            \is_int($value) => self::INTEGER,
+            \is_float($value) => 'float',
+            \is_string($value) => self::STRING,
+            \is_array($value) => 'array',
+            $value === null => 'null',
+            default => get_debug_type($value),
+        };
     }
 }

@@ -141,9 +141,12 @@ final class ConfigSchemaTest extends TestCase
         $lines = [];
         $handledRoots = [];
         $sectionSubKeys = [];
+        $scalarTypes = [];
 
         // Collect real sub-keys for sections from dotted source paths
-        foreach (ConfigSchema::ENTRIES as [$sourcePath]) {
+        foreach (ConfigSchema::ENTRIES as [$sourcePath, , , $scalarType]) {
+            $scalarTypes[$sourcePath] = $scalarType;
+
             if (str_contains($sourcePath, '.')) {
                 [$root, $subKey] = explode('.', $sourcePath, 2);
                 $sectionSubKeys[$root][] = $subKey;
@@ -162,7 +165,7 @@ final class ConfigSchemaTest extends TestCase
                 $lines[] = "{$root}:";
                 // Use real sub-keys from ENTRIES instead of dummy values
                 foreach ($sectionSubKeys[$root] ?? [] as $subKey) {
-                    $lines[] = "  {$subKey}: dummy";
+                    $lines[] = '  ' . $subKey . ': ' . self::dummyScalarValue($scalarTypes["{$root}.{$subKey}"] ?? null);
                 }
             } elseif (isset($lists[$root])) {
                 $lines[] = "{$root}:";
@@ -171,11 +174,23 @@ final class ConfigSchemaTest extends TestCase
                 $lines[] = "{$root}:";
                 $lines[] = '  dummy.rule: true';
             } else {
-                $lines[] = "{$root}: dummy";
+                $lines[] = $root . ': ' . self::dummyScalarValue($scalarTypes[$sourcePath] ?? null);
             }
         }
 
         return implode("\n", $lines) . "\n";
+    }
+
+    /**
+     * Returns a YAML literal whose type matches the given scalar marker.
+     */
+    private static function dummyScalarValue(?string $scalarType): string
+    {
+        return match ($scalarType) {
+            'boolean' => 'true',
+            'integer' => '4',
+            default => 'dummy',
+        };
     }
 
     #[Test]
