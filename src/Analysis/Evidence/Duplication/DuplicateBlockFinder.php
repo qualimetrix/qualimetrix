@@ -34,6 +34,28 @@ use Qualimetrix\Core\Path\RelativePath;
  */
 final class DuplicateBlockFinder
 {
+    /**
+     * Upper bound on bucket cardinality before a bucket is skipped as
+     * pathological.
+     *
+     * The pair loop in {@see evaluateBucket()} is O(n²): a single bucket with
+     * ~1150 positions (the doctrine-dbal keyword tables, or this repo's own
+     * builtin-class registry) forces ~660k {@see evaluatePair()} calls, each
+     * allocating a fresh {@see contentHash()} token array, which pushes peak
+     * memory past the configured limit and kills the process (exit 255). A
+     * bucket that large is near-certainly generated/boilerplate repetition,
+     * not meaningful duplication, so it is skipped whole rather than
+     * subsampled — a hard skip is loud and deterministic, unlike a silently
+     * partial result.
+     *
+     * Measured on this repo and its benchmark corpus: real duplication
+     * buckets top out around 30 positions, while the pathological data-table
+     * buckets run into the hundreds. 100 leaves ~3x headroom above the
+     * largest observed legitimate bucket while bounding the worst-case
+     * evaluated bucket to 100·99/2 = 4950 pair evaluations.
+     */
+    private const int MAX_BUCKET_POSITIONS = 100;
+
     private DuplicateSearchRequest $request;
     private ContentHintExtractor $hintExtractor;
 
@@ -74,6 +96,16 @@ final class DuplicateBlockFinder
     /**
      * Compares every pair of positions sharing one hash bucket.
      *
+     * A bucket whose position count exceeds {@see MAX_BUCKET_POSITIONS} is
+     * skipped outright before the all-pairs loop: the O(n²) pair evaluation
+     * and its per-pair {@see contentHash()} allocations would otherwise be
+     * unbounded, and a bucket that large is generated/boilerplate repetition
+     * rather than meaningful duplication (see the constant's docblock for
+     * the measured figures). Skipping here, rather than pruning the index
+     * earlier, keeps the exact candidate index faithful to what
+     * {@see HashIndexBuilder} promised and leaves the skip where its memory
+     * rationale is visible next to the loop it protects.
+     *
      * @param list<int> $positions
      *
      * @return list<DuplicateBlock>
@@ -82,6 +114,10 @@ final class DuplicateBlockFinder
     {
         $blocks = [];
         $count = \count($positions);
+
+        if ($count > self::MAX_BUCKET_POSITIONS) {
+            return $blocks;
+        }
 
         for ($i = 0; $i < $count - 1; $i++) {
             for ($j = $i + 1; $j < $count; $j++) {
