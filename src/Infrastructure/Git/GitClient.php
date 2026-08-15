@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Git;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Git\Exception\NotAGitRepositoryException;
 use Qualimetrix\Infrastructure\Git\Exception\UnresolvedGitReferenceException;
 use RuntimeException;
 use Symfony\Component\Process\Exception\ProcessFailedException;
@@ -74,6 +75,8 @@ final class GitClient
 
     public function validateScope(string $scope): void
     {
+        $this->assertInsideWorkTree();
+
         if ($scope === 'staged' || $scope === 'HEAD') {
             return;
         }
@@ -114,6 +117,26 @@ final class GitClient
             $reference,
             trim($process->getErrorOutput()),
         ));
+    }
+
+    /**
+     * Asserts that the project root is inside a git repository.
+     *
+     * `git diff --cached` outside a repository fails with an unrelated "unknown
+     * option" error, so relying on the downstream command's failure text cannot
+     * name the real problem. This probe is the single source of truth for the
+     * "not a git repository" case and yields a message the user can act on.
+     */
+    private function assertInsideWorkTree(): void
+    {
+        $process = new Process(['git', 'rev-parse', '--is-inside-work-tree'], $this->projectRoot->value());
+        $process->run();
+
+        if ($process->isSuccessful() && trim($process->getOutput()) === 'true') {
+            return;
+        }
+
+        throw new NotAGitRepositoryException();
     }
 
     /**

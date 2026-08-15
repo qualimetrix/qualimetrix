@@ -6,8 +6,10 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineLoadException;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
@@ -135,6 +137,13 @@ final class CheckCommand extends Command
             return self::EXIT_CONFIG_ERROR;
         } catch (InvalidArgumentException $e) {
             $this->resultPresenter->writeDiagnostic($output, \sprintf('<error>%s</error>', $e->getMessage()));
+
+            return self::EXIT_CONFIG_ERROR;
+        } catch (ComputedMetricConfigurationException|BaselineLoadException $e) {
+            // User-supplied formulas and baseline envelopes are input/configuration
+            // errors: a bad formula or an unreadable baseline is theirs to fix,
+            // not an internal crash.
+            $this->resultPresenter->writeDiagnostic($output, \sprintf('<error>Configuration error: %s</error>', $e->getMessage()));
 
             return self::EXIT_CONFIG_ERROR;
         } catch (Throwable $e) {

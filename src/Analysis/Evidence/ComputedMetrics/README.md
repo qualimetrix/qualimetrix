@@ -28,6 +28,7 @@ ComputedMetrics/
 │   └── ComputedMetricFindingBuilder.php
 ├── ComputedMetricAnalysis.php        # instance-owned catalog and configuration facade
 ├── ComputedMetricsConfigResolver.php # validated definition resolution
+├── ComputedMetricConfigurationException.php # invalid computed_metrics configuration (exit 3)
 ├── ComputedMetricFormulaValidator.php
 ├── ComputedMetricDependencyGraphCalculator.php
 ├── ComputedMetricDefaults.php

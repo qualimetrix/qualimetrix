@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
 
 use DateTimeImmutable;
 use JsonException;
-use RuntimeException;
 
 /**
  * Reads a version 11 baseline file.
@@ -39,31 +38,31 @@ final readonly class BaselineLoader
     ) {}
 
     /**
-     * @throws RuntimeException if the file is missing, unreadable, or its envelope is invalid
+     * @throws BaselineLoadException if the file is missing, unreadable, or its envelope is invalid
      */
     public function load(string $path): Baseline
     {
         if (!file_exists($path)) {
-            throw new RuntimeException("Baseline file not found: {$path}");
+            throw new BaselineLoadException("Baseline file not found: {$path}");
         }
 
         if (!is_readable($path)) {
-            throw new RuntimeException("Baseline file is not readable: {$path}");
+            throw new BaselineLoadException("Baseline file is not readable: {$path}");
         }
 
         $content = file_get_contents($path);
         if ($content === false) {
-            throw new RuntimeException("Failed to read baseline file: {$path}");
+            throw new BaselineLoadException("Failed to read baseline file: {$path}");
         }
 
         try {
             $data = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
-            throw new RuntimeException("Invalid JSON in baseline file: {$e->getMessage()}", 0, $e);
+            throw new BaselineLoadException("Invalid JSON in baseline file: {$e->getMessage()}", 0, $e);
         }
 
         if (!\is_array($data)) {
-            throw new RuntimeException('Baseline file must contain a JSON object');
+            throw new BaselineLoadException('Baseline file must contain a JSON object');
         }
 
         return $this->parseBaseline($data, hash('sha256', $content));
@@ -96,7 +95,7 @@ final readonly class BaselineLoader
     private function assertVersion(mixed $version): void
     {
         if (!\is_int($version)) {
-            throw new RuntimeException('Baseline "version" must be an integer');
+            throw new BaselineLoadException('Baseline "version" must be an integer');
         }
 
         if ($version === Baseline::VERSION) {
@@ -104,7 +103,7 @@ final readonly class BaselineLoader
         }
 
         if ($version === 10) {
-            throw new RuntimeException(
+            throw new BaselineLoadException(
                 'Baseline version 10 cannot be converted automatically because declaration identity cannot be inferred '
                 . 'from a logical symbol key. Run a fresh analysis, deliberately map or split accepted entries, then '
                 . 'write a new version 11 baseline (or regenerate and review the accepted state).',
@@ -112,7 +111,7 @@ final readonly class BaselineLoader
         }
 
         if ($version === 5) {
-            throw new RuntimeException(
+            throw new BaselineLoadException(
                 'This baseline is version 5, a historical format that cannot be loaded or converted to version 11 '
                 . 'because declaration identity cannot be inferred from a logical symbol key. Run a fresh analysis, '
                 . 'deliberately map or split accepted entries, review every mapping, then write a new version 11 '
@@ -120,7 +119,7 @@ final readonly class BaselineLoader
             );
         }
 
-        throw new RuntimeException(\sprintf(
+        throw new BaselineLoadException(\sprintf(
             'Unsupported baseline version: %d. Expected version %d.',
             $version,
             Baseline::VERSION,
@@ -142,7 +141,7 @@ final readonly class BaselineLoader
     private function parseGenerated(mixed $generated): DateTimeImmutable
     {
         if (!\is_string($generated)) {
-            throw new RuntimeException('Baseline "generated" must be a string (ISO 8601 datetime)');
+            throw new BaselineLoadException('Baseline "generated" must be a string (ISO 8601 datetime)');
         }
 
         foreach (self::GENERATED_FORMATS as $format) {
@@ -154,7 +153,7 @@ final readonly class BaselineLoader
             }
         }
 
-        throw new RuntimeException(\sprintf(
+        throw new BaselineLoadException(\sprintf(
             'Baseline "generated" must be an ISO 8601 datetime with an offset (for example '
             . '2026-08-05T12:00:00+03:00), got: %s',
             $generated,
@@ -171,13 +170,13 @@ final readonly class BaselineLoader
     private function parseScope(mixed $scope): array
     {
         if (!\is_array($scope) || !array_is_list($scope)) {
-            throw new RuntimeException('Baseline "scope" must be an array of analysed paths');
+            throw new BaselineLoadException('Baseline "scope" must be an array of analysed paths');
         }
 
         $paths = [];
         foreach ($scope as $path) {
             if (!\is_string($path)) {
-                throw new RuntimeException('Baseline "scope" must hold strings');
+                throw new BaselineLoadException('Baseline "scope" must hold strings');
             }
 
             $paths[] = $path;
@@ -200,7 +199,7 @@ final readonly class BaselineLoader
     private function parseEntries(mixed $entries): array
     {
         if (!\is_array($entries)) {
-            throw new RuntimeException('Baseline "entries" must be an object');
+            throw new BaselineLoadException('Baseline "entries" must be an object');
         }
 
         $parsed = [];

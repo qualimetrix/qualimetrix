@@ -46,7 +46,8 @@ Infrastructure/
 │   ├── ReportingGitScopeQuery.php   # Git adapter for Reporting finding projection
 │   ├── GitScopeResolver.php          # Resolves git scope from CLI options
 │   ├── GitScopeResolution.php        # Resolution result VO
-│   └── Exception/UnresolvedGitReferenceException.php # Invalid git revision input
+│   ├── Exception/UnresolvedGitReferenceException.php # Invalid git revision input
+│   └── Exception/NotAGitRepositoryException.php # --report=git:* outside a repository
 ├── Logging/                          # -> See Logging/README.md
 │   ├── LoggerFactory.php
 │   ├── LoggerHolder.php

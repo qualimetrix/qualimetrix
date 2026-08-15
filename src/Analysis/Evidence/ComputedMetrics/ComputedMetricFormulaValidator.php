@@ -6,7 +6,6 @@ namespace Qualimetrix\Analysis\Evidence\ComputedMetrics;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Core\Symbol\SymbolType;
-use RuntimeException;
 use Symfony\Component\ExpressionLanguage\ExpressionFunction;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\ExpressionLanguage\SyntaxError;
@@ -40,7 +39,7 @@ final class ComputedMetricFormulaValidator
      *
      * @param list<ComputedMetricDefinition> $definitions
      *
-     * @throws RuntimeException If any validation fails
+     * @throws ComputedMetricConfigurationException If any validation fails
      */
     public function validate(array $definitions): void
     {
@@ -71,7 +70,7 @@ final class ComputedMetricFormulaValidator
                 } catch (SyntaxError $e) {
                     $levelKey = $this->levelToString($level);
 
-                    throw new RuntimeException(\sprintf(
+                    throw new ComputedMetricConfigurationException(\sprintf(
                         'Invalid formula syntax for computed metric "%s" at level "%s": %s (formula: %s)',
                         $definition->name,
                         $levelKey,
@@ -96,7 +95,7 @@ final class ComputedMetricFormulaValidator
                 if ($formula === null) {
                     $levelKey = $this->levelToString($level);
 
-                    throw new RuntimeException(\sprintf(
+                    throw new ComputedMetricConfigurationException(\sprintf(
                         'Computed metric "%s" has no formula for level "%s"',
                         $definition->name,
                         $levelKey,
@@ -136,7 +135,7 @@ final class ComputedMetricFormulaValidator
                 $cycle = \array_slice($path, (int) $cycleStart);
                 $cycle[] = $node;
 
-                throw new RuntimeException(\sprintf(
+                throw new ComputedMetricConfigurationException(\sprintf(
                     'Circular dependency detected in computed metrics: %s',
                     implode(' -> ', $cycle),
                 ));
@@ -181,7 +180,7 @@ final class ComputedMetricFormulaValidator
             foreach ($definition->formulas as $formula) {
                 foreach ($this->extractComputedMetricReferences($formula) as $ref) {
                     if (!isset($nameSet[$ref])) {
-                        throw new RuntimeException(\sprintf(
+                        throw new ComputedMetricConfigurationException(\sprintf(
                             'Computed metric "%s" references unknown metric "%s" in formula: %s',
                             $definition->name,
                             $ref,

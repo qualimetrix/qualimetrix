@@ -10,7 +10,6 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Core\Symbol\SymbolType;
-use RuntimeException;
 
 /**
  * Merges default computed metric definitions with user overrides from YAML
@@ -80,7 +79,7 @@ final class ComputedMetricsConfigResolver
                 // Merge override into existing (health.*)
                 $definitions[$name] = $this->mergeDefinition($definitions[$name], $overrides);
             } elseif (str_starts_with($name, 'health.')) {
-                throw new RuntimeException(\sprintf(
+                throw new ComputedMetricConfigurationException(\sprintf(
                     'Computed metric name "%s" uses reserved "health.*" prefix. '
                     . 'Use "computed.*" prefix for user-defined metrics.',
                     $name,
@@ -246,7 +245,7 @@ final class ComputedMetricsConfigResolver
             'class' => SymbolType::Class_,
             'namespace' => SymbolType::Namespace_,
             'project' => SymbolType::Project,
-            default => throw new RuntimeException(\sprintf('Invalid computed metric level: "%s"', $level)),
+            default => throw new ComputedMetricConfigurationException(\sprintf('Invalid computed metric level: "%s"', $level)),
         };
     }
 
