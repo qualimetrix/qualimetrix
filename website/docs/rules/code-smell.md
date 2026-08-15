@@ -142,7 +142,9 @@ foreach ($items as $item) {
 <!-- llms:skip-begin -->
 ### What it measures
 
-Detects debugging functions left in production code: `var_dump()`, `print_r()`, `debug_print_backtrace()`, `debug_zval_dump()`, and similar.
+Detects debugging functions left in production code: `var_dump()`, `print_r()`, `var_export()`, `dd()`, `dump()`, `debug_print_backtrace()`, and `debug_zval_dump()`.
+
+Calls in return mode (`var_export($value, true)`) and calls inside debug API methods (`dump()`, `dd()`, `debug()`, `dumpRawSql()`, `dumpSql()`, `debugInfo()`, `__debugInfo()`) are not flagged.
 
 <!-- llms:skip-end -->
 

@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellLocation;
 /** Evaluates debug-call smells and their non-output exceptions. */
 final class DebugCodeSmells
 {
-    private const FUNCTIONS = ['var_dump', 'print_r', 'var_export', 'dd', 'dump', 'debug_print_backtrace'];
+    private const FUNCTIONS = ['var_dump', 'print_r', 'var_export', 'dd', 'dump', 'debug_print_backtrace', 'debug_zval_dump'];
     private const API_METHODS = ['dump', 'dd', 'debug', 'dumprawsql', 'dumpsql', 'debuginfo', '__debuginfo'];
 
     public function location(FuncCall $node, ?string $method, string $subjectId): ?CodeSmellLocation
