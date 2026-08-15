@@ -572,6 +572,27 @@ final class RuleExecutorTest extends TestCase
     }
 
     #[Test]
+    public function itFiltersFileSymbolViolationsBySubjectNamespaceExclusion(): void
+    {
+        $excludedViolation = $this->createFileSymbolViolationWithSubjectNamespace('rule1', 'App\\Tests');
+        $includedViolation = $this->createFileSymbolViolationWithSubjectNamespace('rule1', 'App\\Core');
+
+        $rule = $this->createRule('rule1', [$excludedViolation, $includedViolation]);
+
+        $exclusionProvider = new RuleNamespaceExclusionProvider();
+        $exclusionProvider->setExclusions('rule1', ['App\\Tests']);
+
+        $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
+        $provider = $this->createConfiguredProvider();
+        $executor = $this->createExecution([$rule], $registry);
+
+        $violations = $executor->execute($this->createMinimalContext());
+
+        self::assertCount(1, $violations);
+        self::assertSame($includedViolation, $violations[0]);
+    }
+
+    #[Test]
     public function itNamespaceExclusionPassesThroughNullNamespace(): void
     {
         $fileViolation = $this->createViolation('rule1');
@@ -940,6 +961,28 @@ final class RuleExecutorTest extends TestCase
             subject: MetricSubject::aggregate(SymbolPath::forNamespace($namespace)),
             ruleName: $ruleName,
             violationCode: $violationCode ?? $ruleName,
+            message: "Violation from $ruleName in $namespace",
+            severity: Severity::Warning,
+        );
+    }
+
+    private function createFileSymbolViolationWithSubjectNamespace(string $ruleName, string $namespace): Violation
+    {
+        $file = RelativePath::fromString('test/file.php');
+
+        return new Violation(
+            location: new Location(
+                file: $file,
+                line: 1,
+            ),
+            symbolPath: SymbolPath::forFile($file),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass($namespace, 'Helper'),
+                $file,
+                1,
+            )),
+            ruleName: $ruleName,
+            violationCode: $ruleName,
             message: "Violation from $ruleName in $namespace",
             severity: Severity::Warning,
         );
