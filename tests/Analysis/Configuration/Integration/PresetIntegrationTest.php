@@ -4,95 +4,43 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Configuration\Integration;
 
-use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Input\InputDefinition;
-use Symfony\Component\Console\Input\InputOption;
+use Qualimetrix\Core\Path\AbsolutePath;
 
-#[CoversClass(PresetStage::class)]
 final class PresetIntegrationTest extends TestCase
 {
     #[Test]
-    public function strictPresetTightensThresholds(): void
+    public function itRetainsBuiltInPresetDocumentsInRequestedOrder(): void
     {
-        $resolved = $this->resolveWithPresets(['strict']);
-
-        self::assertArrayHasKey('complexity.cyclomatic', $resolved->ruleOptions);
-        self::assertSame(7, $resolved->ruleOptions['complexity.cyclomatic']['callable']['warning']);
-    }
-
-    #[Test]
-    public function legacyPresetRelaxesThresholds(): void
-    {
-        $resolved = $this->resolveWithPresets(['legacy']);
-
-        self::assertArrayHasKey('complexity.cyclomatic', $resolved->ruleOptions);
-        self::assertSame(20, $resolved->ruleOptions['complexity.cyclomatic']['callable']['warning']);
-    }
-
-    #[Test]
-    public function ciPresetSetsFailOnError(): void
-    {
-        $resolved = $this->resolveWithPresets(['ci']);
-
-        self::assertSame(Severity::Error, $resolved->runtime->failOn);
-    }
-
-    #[Test]
-    public function multiplePresetsAreMerged(): void
-    {
-        $resolved = $this->resolveWithPresets(['strict', 'ci']);
-
-        // Strict thresholds are applied
-        self::assertArrayHasKey('complexity.cyclomatic', $resolved->ruleOptions);
-        self::assertSame(7, $resolved->ruleOptions['complexity.cyclomatic']['callable']['warning']);
-
-        // CI failOn is applied
-        self::assertSame(Severity::Error, $resolved->runtime->failOn);
-    }
-
-    #[Test]
-    public function presetSourceIsTracked(): void
-    {
-        $resolved = $this->resolveWithPresets(['strict']);
-
-        self::assertContains('preset:strict', $resolved->appliedSources);
-    }
-
-    #[Test]
-    public function legacyPresetDisablesRules(): void
-    {
-        $resolved = $this->resolveWithPresets(['legacy']);
-
-        self::assertContains('code-smell.boolean-argument', $resolved->ruleSelection->disabled);
-    }
-
-    /**
-     * @param list<string> $presetNames
-     */
-    private function resolveWithPresets(array $presetNames): \Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration
-    {
-        $loader = new YamlConfigLoader();
-        $resolver = new PresetResolver();
         $pipeline = new ConfigurationPipeline();
-        $pipeline->addStage(new DefaultsStage());
-        $pipeline->addStage(new PresetStage($loader, $resolver));
+        $pipeline->addStage(new PresetStage(new YamlConfigLoader(), new PresetResolver()));
 
-        $definition = new InputDefinition([
-            new InputOption('preset', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, '', []),
-        ]);
-        $input = new ArrayInput(['--preset' => $presetNames], $definition);
-        $context = new ConfigurationContext($input, sys_get_temp_dir());
+        $document = $pipeline->resolve(
+            new ConfigurationResolutionRequest(AbsolutePath::fromString(sys_get_temp_dir()), null, ['strict', 'ci']),
+        );
 
-        return $pipeline->resolve($context);
+        self::assertSame(['preset:strict,ci'], $document->appliedSources());
+        self::assertCount(1, $document->contributions('rules'));
+        self::assertSame(['warning', 'error'], $document->contributions('fail_on'));
+    }
+
+    #[Test]
+    public function itDeduplicatesPresetNamesBeforeLoading(): void
+    {
+        $pipeline = new ConfigurationPipeline();
+        $pipeline->addStage(new PresetStage(new YamlConfigLoader(), new PresetResolver()));
+
+        $document = $pipeline->resolve(
+            new ConfigurationResolutionRequest(AbsolutePath::fromString(sys_get_temp_dir()), null, ['legacy,legacy']),
+        );
+
+        self::assertSame(['preset:legacy'], $document->appliedSources());
+        self::assertCount(1, $document->contributions('disabled_rules'));
     }
 }

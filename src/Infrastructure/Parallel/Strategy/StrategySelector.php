@@ -7,9 +7,11 @@ namespace Qualimetrix\Infrastructure\Parallel\Strategy;
 use Psr\Log\LoggerInterface;
 
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
+use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
 use RuntimeException;
 
 /**
@@ -19,7 +21,7 @@ use RuntimeException;
  * 1. AmphpParallelStrategy - if amphp/parallel available and workers > 1
  * 2. SequentialStrategy - always available (fallback)
  *
- * Configuration is read from TransitionalRuntimeConfigurationProviderInterface:
+ * Configuration is read from the instance-owned Parallel configuration store:
  * - workers: number of parallel workers (null = auto-detect, 0/1 = sequential)
  * - projectRoot: project root directory (required for parallel)
  * - cacheDir: cache directory for AST caching
@@ -33,7 +35,8 @@ final class StrategySelector implements StrategySelectorInterface
     public function __construct(
         private readonly AmphpParallelStrategy $amphpStrategy,
         private readonly SequentialStrategy $sequentialStrategy,
-        private readonly TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
+        private readonly ParallelConfigurationStoreInterface $configurationStore,
+        private readonly CacheConfigurationStoreInterface $cacheConfigurationStore,
         private readonly WorkerCountDetector $workerCountDetector,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
@@ -46,16 +49,14 @@ final class StrategySelector implements StrategySelectorInterface
      * - projectRoot (required for parallel processing)
      * - cacheDir (optional, for AST caching in workers)
      */
-    public function select(): ExecutionStrategyInterface
+    public function select(AbsolutePath $projectRoot): ExecutionStrategyInterface
     {
-        $config = $this->configurationProvider->getConfiguration();
-
-        // Determine worker count
-        $requestedWorkers = $config->workers;
+        $requestedWorkers = $this->configurationStore->current()->workers;
+        $cache = $this->cacheConfigurationStore->current();
 
         $this->logger->debug('StrategySelector: selecting strategy', [
             'requestedWorkers' => $requestedWorkers,
-            'projectRoot' => $config->projectRoot->value(),
+            'projectRoot' => $projectRoot->value(),
         ]);
 
         // Explicit sequential mode (workers = 0 or 1)
@@ -98,26 +99,26 @@ final class StrategySelector implements StrategySelectorInterface
         // canonicalize() throws RuntimeException when the path does not exist —
         // map that to the sequential fallback the user has expected since v0.x.
         try {
-            $projectRoot = $config->projectRoot->canonicalize();
+            $projectRoot = $projectRoot->canonicalize();
         } catch (RuntimeException) {
             $this->logger->warning(
                 'StrategySelector: project root does not exist, using sequential fallback',
-                ['projectRoot' => $config->projectRoot->value()],
+                ['projectRoot' => $projectRoot->value()],
             );
 
             return $this->sequentialStrategy;
         }
         $this->amphpStrategy->setProjectRoot($projectRoot);
 
-        // Cache directory is already AbsolutePath-resolved against projectRoot in TransitionalRuntimeConfiguration.
-        $this->amphpStrategy->setCacheDir($config->cacheEnabled ? $config->cacheDir : null);
+        // Cache directory is already AbsolutePath-resolved against projectRoot by Cache configuration.
+        $this->amphpStrategy->setCacheDir($cache->enabled ? $cache->directory : null);
 
         $this->logger->info(
             'StrategySelector: using parallel strategy',
             [
                 'workers' => $workerCount,
                 'projectRoot' => $projectRoot->value(),
-                'cacheEnabled' => $config->cacheEnabled,
+                'cacheEnabled' => $cache->enabled,
             ],
         );
 

@@ -226,3 +226,8 @@ class GodClass  // Ca = 20, Ce = 0 — everything depends on it
     // 1000+ lines of concrete logic
 }
 ```
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

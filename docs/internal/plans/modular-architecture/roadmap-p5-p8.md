@@ -10,9 +10,11 @@
 > host `composer check` exited 0 (7,251 tests / 23,654 assertions / one skip,
 > 17 Python tests, PHPStan over 1,280 files, active/stale dogfood 0/0). P7 is
 > complete after its implementation, final aggregate validation, and
-> independent review returned GO. It lands at 762 declarations / 760 files, 37
-> owners / zero seams / 50 exact grants / 7 owner pairs, 224 qmx allows, and
-> 7,254 generated PHPUnit cases. P8 remains pending as the next phase.
+> independent review returned GO. The current measured P8 topology is 789
+> declarations / 787 files, 37 owners / zero seams, 64 permanent exact
+> composition bindings / 13 coarse owner pairs, 227 qmx allows, and 518
+> PHPUnit classes / 7,036 semantic IDs. Current phase status is owned only by
+> the plan overview.
 > **Prerequisites:** [Plan overview](../modular-architecture.md), [decisions and target](decisions-and-target.md), and the completed phase records linked there.
 ### P5 — Extract Analysis\Evidence\ComputedMetrics and remove static state
 
@@ -47,7 +49,9 @@ Files: `Baseline/**`, `Core/Suppression/**`, `Core/Violation/Filter/**`, suppres
 - Use the P0 context map for source annotations, rule/config exclusion, baseline ceiling, Git projection and presentation; name producer, semantic owner, consumer and order for every stage.
 - Apply the P6 manifest rows, regenerate qmx/inventories, and remove the `DeclarationBindings`, `SourceControls`, `RuleExecutor`, `RuleValidatorMapFactory`, `SuppressionFilter` and `RuleMatcher` singleton seams only after returning each declaration to its true owner leaves the projected graph acyclic. `Location` may still move or change with Finding, but P2 already removed its enforcement seam after inverting the DependencyModel location dependency.
 - Move neutral violation/rule/channel contracts to `Analysis\Finding`, source annotation ownership to `Analysis\Policy\Inline`, and retain `Analysis\Policy\Baseline` as its own capability.
-- Move the eight P3-deferred rule option/exclusion declarations from their exact current FQCNs and replace `TransitionalResolvedConfiguration::$ruleOptions`, the provider rule-options methods and the holder slot with Finding-owned contracts. Close the renamed `DeclarationBindings` seam here.
+- Move the eight P3-deferred rule option/exclusion declarations to
+  Finding-owned contracts. Rule options, selection, and exclusions resolve from
+  `ConfigurationDocument`; no mixed resolved DTO or holder slot is retained.
 - Put only cross-capability invocation order in `Analysis\Run`; do not create a `FindingEvaluation` module, shared policy-state holder, or use P3's file-set composite for policy work.
 - Move Git-scoped and other output-only projections to Reporting. Keep the Git client as an Infrastructure adapter behind a Reporting-owned port.
 - Move framework-free orchestration out of Console; Console only parses options and renders diagnostics.
@@ -71,9 +75,13 @@ DoD per batch: one owner for every moved class; no cross-check internal import; 
 
 Files: `qmx.yaml`, architecture fixtures, module READMEs, scripts/CI, ADR completion note.
 
-- Remove all exact temporary grants from the manifest and their derived coarse qmx edges.
-- Remove every temporary exact contract-consumer entry. Every new surviving contract consumer is permanent only with an observed exact source/target import, an exact `source_fqcn` and `closes_in: null`; legacy owner-wide permanent entries are not widened or copied.
-- Apply the P8 manifest rows, remove every now-unused grant/seam, and regenerate qmx/inventories until `--check` is clean.
+- The manifest records only reviewed permanent composition bindings and named contract consumers.
+  Every surviving consumer is permanent only with an observed exact
+  source/target import; owner-wide consumer entries are not widened or copied.
+- P8 publication removed the unused grants/seams and regenerated qmx and
+  inventories. Permanent DI-to-private-declaration access is a reviewed exact
+  `composition_binding`; its necessary coarse qmx edge is retained rather than
+  deleted speculatively.
 - Consolidate the duplicated `LoggerFactory` ownership/test locations in P8 according to the generated rows; do not leave parallel legacy and target test owners.
 - Treat the 28 generated orphan candidates as candidates only: prove absence of direct, dynamic, fixture-path and process consumers before deleting each row. Otherwise move it to its assigned owner and record the retained disposition.
 - Add a report/test listing public imports and fan-in per module; treat growth as review evidence, not an automatic design score.
@@ -93,8 +101,13 @@ DoD: no temporary contract consumer, temporary internal grant or singleton seam 
 
 P0 completed discovery, decision and enforcement; it does not authorise the unchanged remainder automatically. P0-A atomically established authority, generated qmx enforcement, reproducible evidence and freshness checks, including ownership of the qmx topology header immediately adjacent to its generated region. P0-B closed decision/general documentation, P0-C reconciled the baseline, and P0-D completed final review and shared-document dispositions. P1–P7 are complete. P4 published Architecture Policy and CircularDependency, P5 published ComputedMetrics and Health, P6 published Finding, Inline/Baseline policy, Prioritization, and FindingProjection, and P7 published the eight evidence capabilities. The native-codex closure is complete: `native-codex-01` passed independent address-check after implementation and fixes, `native-codex-02` closed confirmed documentation findings, and `native-codex-03` verified the ignored anchored lock behavior. The final host aggregate is green.
 
-P7 is complete after its final aggregate and independent review gates returned
-GO; P8 alone remains pending. Generated rows bearing an exact P1–P8 closure remain migration inputs; the completed phase records reclassify them by subject and name every integration writer. Documentation rows marked `P0-D`, `permanent`, or `shared` do not grant later package ownership and still change when the landed current state would otherwise make them false. The only P3 Run-owned new port is FileSetInspection; DependencyTraversal is a DependencyModel-owned promise to its named consumers. No graph-preparation, metric-derivation or generic lifecycle port is approved.
+Generated rows bearing an exact P1–P8 closure remain migration inputs; the
+completed phase records reclassify them by subject and name every integration
+writer. Documentation rows marked `P0-D`, `permanent`, or `shared` do not grant
+later package ownership and still change when the landed current state would
+otherwise make them false. The only P3 Run-owned new port is FileSetInspection;
+DependencyTraversal is a DependencyModel-owned promise to its named consumers.
+No graph-preparation, metric-derivation or generic lifecycle port is approved.
 
 Packages P1–P6 then land sequentially because they share Run, DI, configuration and topology seams. P1's temporary `MetricEnricher -> DuplicationInspectionInterface` relation created the explicit lifecycle dependency on P3; P3-A replaced it with FileSetInspection and deleted the temporary contract. P3-A migrated the original production/import/test/governance set and P3-B completed its documentation set. P3-R1 atomically owns the exact remediation source/tests plus finite manifest/generator/governance-source delta; P3-R2 owns only four named READMEs. P3-C owns only generated publication, qmx, baseline, PHPUnit discovery and the final status marker. P4 must prove any Architecture/CircularDependency boundary from its own inputs and closes the two physically renamed Configuration seams plus the transitional lifecycle/cycle result. P5 dissolves transitional enrichment and Health/computed fields; P6 closes the eight Finding deferrals and rule-option transport; P7 closes Coupling's framework namespace field. P7 batches may be delegated in parallel only after an execution plan enumerates exact non-overlapping production/tests/docs files; shared DI, `qmx.yaml`, `phpunit.xml.dist`, Composer dev-autoload/classmaps, root docs and generated inventories form a named serial integration package. No package described with `**` is eligible for parallel execution as-is.
 

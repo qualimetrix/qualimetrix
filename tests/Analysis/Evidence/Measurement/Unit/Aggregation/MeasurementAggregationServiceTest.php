@@ -19,17 +19,11 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Profiler\ProfilerInterface;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 
 #[CoversClass(MeasurementAggregationService::class)]
 final class MeasurementAggregationServiceTest extends TestCase
 {
-    protected function tearDown(): void
-    {
-        ProfilerHolder::reset();
-    }
-
     #[Test]
     public function itPreservesAggregationGlobalAndReaggregationSpansAndLogOrder(): void
     {
@@ -45,8 +39,6 @@ final class MeasurementAggregationServiceTest extends TestCase
                 $events[] = 'stop:' . $name;
             },
         );
-        ProfilerHolder::set($profiler);
-
         $logger = self::createStub(LoggerInterface::class);
         $logger->method('debug')->willReturnCallback(
             static function (string $message) use (&$events): void {
@@ -78,7 +70,7 @@ final class MeasurementAggregationServiceTest extends TestCase
         $fileCollector->method('getCollectors')->willReturn([]);
         $fileCollector->method('getDerivedCollectors')->willReturn([]);
 
-        (new MeasurementAggregationService([$collector], $fileCollector, $logger, new ProfilerHolder()))
+        (new MeasurementAggregationService([$collector], $fileCollector, $profiler, $logger))
             ->aggregate(new InMemoryMetricRepository(), self::createStub(DependencyGraphInterface::class));
 
         self::assertSame([
@@ -126,7 +118,11 @@ final class MeasurementAggregationServiceTest extends TestCase
             },
         );
 
-        $namespaceTree = (new MeasurementAggregationService([$collector2, $collector1], new CompositeCollector([])))
+        $namespaceTree = (new MeasurementAggregationService(
+            [$collector2, $collector1],
+            new CompositeCollector([]),
+            self::createStub(ProfilerInterface::class),
+        ))
             ->aggregate(new InMemoryMetricRepository(), self::createStub(DependencyGraphInterface::class));
 
         self::assertSame([], $namespaceTree->getAllNamespaces());
@@ -144,9 +140,7 @@ final class MeasurementAggregationServiceTest extends TestCase
         $profiler->method('stop')->willReturnCallback(static function (string $name) use (&$events): void {
             $events[] = 'stop:' . $name;
         });
-        ProfilerHolder::set($profiler);
-
-        $namespaceTree = (new MeasurementAggregationService([], new CompositeCollector([]), profilerHolder: new ProfilerHolder()))
+        $namespaceTree = (new MeasurementAggregationService([], new CompositeCollector([]), $profiler))
             ->aggregate(new InMemoryMetricRepository(), self::createStub(DependencyGraphInterface::class));
 
         self::assertSame([], $namespaceTree->getAllNamespaces());
@@ -171,7 +165,11 @@ final class MeasurementAggregationServiceTest extends TestCase
             $calls++;
         });
 
-        (new MeasurementAggregationService([$collector1, $collector2], new CompositeCollector([])))
+        (new MeasurementAggregationService(
+            [$collector1, $collector2],
+            new CompositeCollector([]),
+            self::createStub(ProfilerInterface::class),
+        ))
             ->aggregate(new InMemoryMetricRepository(), self::createStub(DependencyGraphInterface::class));
 
         self::assertSame(2, $calls);
@@ -194,7 +192,11 @@ final class MeasurementAggregationServiceTest extends TestCase
             },
         );
 
-        (new MeasurementAggregationService([$collector1, $collector2], new CompositeCollector([])))
+        (new MeasurementAggregationService(
+            [$collector1, $collector2],
+            new CompositeCollector([]),
+            self::createStub(ProfilerInterface::class),
+        ))
             ->aggregate(new InMemoryMetricRepository(), self::createStub(DependencyGraphInterface::class));
 
         self::assertSame(2, $runCount);

@@ -31,8 +31,7 @@ enum SectionNormalizationPolicy
      * Section sub-keys are camelCased at every level.
      *
      * Appropriate for typed sections where keys are schema-known options
-     * (e.g. {@code cache.dir}, {@code namespace.composer_json},
-     * {@code aggregation.auto_depth}). Also the implicit default the loader
+     * (e.g. {@code cache.dir} and {@code parallel.workers}). Also the implicit default the loader
      * used historically for any section not listed in the opt-out registries.
      */
     case NORMALIZE_TO_CAMEL_CASE;

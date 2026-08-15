@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage;
@@ -35,14 +36,19 @@ final class ArchitecturePolicy implements ArchitecturePolicyConfiguratorInterfac
         $this->expansionStage = $expansionStage ?? new LayerExpansionStage();
     }
 
-    public function configure(ConfigurationDocument $document): array
+    public function resolve(ConfigurationDocument $document): ResolvedArchitecturePolicyInterface
     {
-        $this->configured = null;
-        $this->prepared = null;
-        $result = $this->factory->fromContributions($document->contributions('architecture'));
-        $this->configured = $result->configuration;
+        return $this->factory->fromContributions($document->contributions('architecture'));
+    }
 
-        return $result->warnings;
+    public function replace(ResolvedArchitecturePolicyInterface $policy): void
+    {
+        if (!$policy instanceof \Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult) {
+            throw new LogicException('ArchitecturePolicy accepts only a policy resolved by its Architecture factory.');
+        }
+
+        $this->configured = $policy->configuration;
+        $this->prepared = null;
     }
 
     /** Internal test seam retained while the direct policy tests are migrated. */

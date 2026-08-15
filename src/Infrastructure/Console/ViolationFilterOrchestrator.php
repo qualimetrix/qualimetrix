@@ -11,6 +11,8 @@ use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Infrastructure\Git\GitScopeResolution;
+use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions;
+use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionResult;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
@@ -34,6 +36,37 @@ final readonly class ViolationFilterOrchestrator
         private RuleExecutionInterface $ruleExecutor,
         private DiagnosticOutput $diagnosticOutput = new DiagnosticOutput(),
     ) {}
+
+    public function projectionOptions(
+        ConfiguredFindingExclusions $configuredExclusions,
+        InputInterface $input,
+        GitScopeResolution $scope,
+    ): FindingProjectionOptions {
+        /** @var list<string> $cliExcludePaths */
+        $cliExcludePaths = $input->getOption('exclude-path');
+        /** @var list<string> $cliExcludeNamespaces */
+        $cliExcludeNamespaces = $input->getOption('exclude-namespace');
+        $exclusions = $configuredExclusions->withAdditional($cliExcludePaths, $cliExcludeNamespaces);
+
+        $gitScope = null;
+        if ($scope->gitClient !== null && $scope->reportScope !== null) {
+            $gitScope = new GitScopeRequest(
+                reference: $scope->reportScope->ref,
+                projectRoot: $scope->projectRoot,
+                includeParentNamespaces: !(bool) $input->getOption('report-strict'),
+            );
+        }
+
+        $baselinePath = $input->getOption('baseline');
+
+        return new FindingProjectionOptions(
+            baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
+            excludePaths: $exclusions->excludePaths,
+            excludeNamespaces: $exclusions->excludeNamespaces,
+            annotationSuppressionDisabled: (bool) $input->getOption('no-suppression-annotations'),
+            gitScope: $gitScope,
+        );
+    }
 
     /**
      * Loads suppressions, filters violations, and outputs filter-related messages.

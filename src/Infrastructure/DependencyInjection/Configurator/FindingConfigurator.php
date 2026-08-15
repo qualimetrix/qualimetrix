@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -34,6 +35,7 @@ final class FindingConfigurator implements ContainerConfiguratorInterface
         $container->register($ruleExecution)
             ->setArguments([
                 '$rules' => [],
+                '$profiler' => new Reference(ProfilerInterface::class),
                 '$ruleOptionsRegistry' => new Reference($ruleOptionsRegistry),
                 '$ruleSelector' => new Reference(RuleSelector::class),
             ]);

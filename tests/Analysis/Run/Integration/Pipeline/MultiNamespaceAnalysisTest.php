@@ -7,9 +7,9 @@ namespace Qualimetrix\Tests\Analysis\Run\Integration\Pipeline;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
-use Qualimetrix\Analysis\Evidence\Measurement\Runtime\CollectorRuntimeConfigurationStore;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
@@ -153,7 +153,7 @@ PHP
             }
 
             $strategy = new AmphpParallelStrategy(new FileProcessingTaskFactory(
-                new CollectorRuntimeConfigurationStore(),
+                new LcomCollectionConfigurationStore(),
                 DependencyVisitor::class,
                 [LocCollector::class, ClassCountCollector::class],
             ));

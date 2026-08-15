@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Configuration\Pipeline;
 
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 
 interface ConfigurationStageInterface
 {
@@ -12,5 +12,5 @@ interface ConfigurationStageInterface
 
     public function name(): string;
 
-    public function apply(ConfigurationContext $context): ?ConfigurationLayer;
+    public function apply(ConfigurationResolutionRequest $request): ?ConfigurationLayer;
 }

@@ -108,3 +108,8 @@ Measurement, DependencyModel, and Finding contracts. Update the two Design
 website pages when user-visible metric or rule behaviour changes. Adding a
 new external consumer requires an explicit, narrow contract decision rather
 than exposing a concrete collector or rule.
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

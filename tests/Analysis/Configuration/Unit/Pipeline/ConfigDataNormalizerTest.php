@@ -50,30 +50,6 @@ final class ConfigDataNormalizerTest extends TestCase
     }
 
     #[Test]
-    public function normalizesNamespaceSection(): void
-    {
-        $result = ConfigDataNormalizer::normalize([
-            'namespace' => ['strategy' => 'psr4', 'composerJson' => 'path'],
-        ]);
-
-        self::assertArrayNotHasKey('namespace', $result);
-        self::assertSame('psr4', $result['namespace.strategy']);
-        self::assertSame('path', $result['namespace.composer_json']);
-    }
-
-    #[Test]
-    public function normalizesAggregationSection(): void
-    {
-        $result = ConfigDataNormalizer::normalize([
-            'aggregation' => ['prefixes' => ['App\\'], 'autoDepth' => 2],
-        ]);
-
-        self::assertArrayNotHasKey('aggregation', $result);
-        self::assertSame(['App\\'], $result['aggregation.prefixes']);
-        self::assertSame(2, $result['aggregation.auto_depth']);
-    }
-
-    #[Test]
     public function normalizesRulesAsIs(): void
     {
         $rules = ['complexity.cyclomatic' => ['callable' => ['warning' => 7]]];

@@ -5,15 +5,9 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Configuration;
 
 use LogicException;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
 use Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
-use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationMerger;
-use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
-
-use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
-use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 
 /**
  * Single source of truth for all configuration keys.
@@ -21,8 +15,7 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
  * Every config key used anywhere in the pipeline is defined here as a constant.
  * The ENTRIES array unifies YAML-to-flat-key mappings with root key type constraints.
  *
- * Consumers (YamlConfigLoader, ConfigDataNormalizer, TransitionalRuntimeConfiguration,
- * DefaultsStage, CliStage, ConfigurationMerger, ConfigurationPipeline)
+ * Consumers (YamlConfigLoader, ConfigDataNormalizer, source stages, and owner resolvers)
  * all reference these constants instead of string literals.
  *
  * Adding a new config option:
@@ -47,10 +40,6 @@ final class ConfigSchema
     public const string FAIL_ON = 'fail_on';
     public const string CACHE_DIR = 'cache.dir';
     public const string CACHE_ENABLED = 'cache.enabled';
-    public const string NAMESPACE_STRATEGY = 'namespace.strategy';
-    public const string NAMESPACE_COMPOSER_JSON = 'namespace.composer_json';
-    public const string AGGREGATION_PREFIXES = 'aggregation.prefixes';
-    public const string AGGREGATION_AUTO_DEPTH = 'aggregation.auto_depth';
     public const string PARALLEL_WORKERS = 'parallel.workers';
     public const string COUPLING = 'coupling';
     public const string COUPLING_FRAMEWORK_NAMESPACES = 'coupling.framework_namespaces';
@@ -64,9 +53,6 @@ final class ConfigSchema
     // document. Its subject-owned syntax and merge semantics are not part of
     // this neutral schema.
 
-    /** Internal key: set by DefaultsStage only, not YAML-configurable. */
-    public const string PROJECT_ROOT = 'project_root';
-
     /**
      * Keys that are intentionally internal (no YAML path in ENTRIES).
      *
@@ -75,7 +61,7 @@ final class ConfigSchema
      *
      * @var list<string>
      */
-    public const array INTERNAL_KEYS = [self::PROJECT_ROOT];
+    public const array INTERNAL_KEYS = [];
 
     /** Capability-owned roots transported in ordered configuration documents. */
     public const array DOCUMENT_ROOTS = [self::COUPLING, self::COMPUTED_METRICS, self::EXCLUDE_HEALTH, self::ARCHITECTURE];
@@ -119,10 +105,6 @@ final class ConfigSchema
         // Section sub-keys (root type derived as 'section')
         ['cache.dir', self::CACHE_DIR, null],
         ['cache.enabled', self::CACHE_ENABLED, null],
-        ['namespace.strategy', self::NAMESPACE_STRATEGY, null],
-        ['namespace.composerJson', self::NAMESPACE_COMPOSER_JSON, null],
-        ['aggregation.prefixes', self::AGGREGATION_PREFIXES, null],
-        ['aggregation.autoDepth', self::AGGREGATION_AUTO_DEPTH, null],
         ['parallel.workers', self::PARALLEL_WORKERS, null],
         ['coupling.frameworkNamespaces', self::COUPLING_FRAMEWORK_NAMESPACES, null],
 
@@ -236,8 +218,6 @@ final class ConfigSchema
 
             // Typed sections — sub-keys are schema-known options.
             'cache' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
-            'namespace' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
-            'aggregation' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'parallel' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
             'coupling' => SectionNormalizationPolicy::NORMALIZE_TO_CAMEL_CASE,
 
@@ -282,7 +262,7 @@ final class ConfigSchema
      * Returns root keys that must be associative maps (not scalars, not lists).
      *
      * Includes:
-     * - Section keys (cache, namespace, aggregation, parallel, coupling) — sub-keys
+     * - Section keys (cache, parallel, coupling) — sub-keys
      *   are a fixed schema validated by {@see allowedSectionSubKeys()}.
      * - MIXED roots whose sub-keys are user-defined identifiers (rules,
      *   computed_metrics, architecture).

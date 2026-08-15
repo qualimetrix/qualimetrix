@@ -6,7 +6,7 @@ namespace Qualimetrix\Infrastructure\Console;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
-use Qualimetrix\Infrastructure\Logging\LoggerFactory;
+use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -15,7 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 final readonly class RuntimeLoggerConfigurator
 {
     public function __construct(
-        private LoggerFactory $loggerFactory,
+        private LoggerFactoryInterface $loggerFactory,
         private LoggerHolder $loggerHolder,
     ) {}
 

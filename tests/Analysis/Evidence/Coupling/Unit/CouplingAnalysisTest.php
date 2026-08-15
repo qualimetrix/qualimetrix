@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
+use Qualimetrix\Core\Path\AbsolutePath;
 
 #[CoversClass(CouplingAnalysis::class)]
 final class CouplingAnalysisTest extends TestCase
@@ -97,10 +98,10 @@ final class CouplingAnalysisTest extends TestCase
     public function itUsesTheLastFrameworkNamespaceContribution(): void
     {
         $analysis = new CouplingAnalysis();
-        $analysis->configure(new ConfigurationDocument([
+        $analysis->replace($analysis->resolve($this->document([
             ['coupling' => ['frameworkNamespaces' => ['Symfony']]],
             ['coupling' => ['frameworkNamespaces' => ['Psr']]],
-        ]));
+        ])));
 
         self::assertFalse($analysis->isFramework('Symfony\\Component\\Console'));
         self::assertTrue($analysis->isFramework('Psr\\Log\\LoggerInterface'));
@@ -111,9 +112,9 @@ final class CouplingAnalysisTest extends TestCase
     {
         $analysis = $this->configured(['Symfony']);
 
-        $analysis->configure(new ConfigurationDocument([
+        $analysis->replace($analysis->resolve($this->document([
             ['coupling' => ['frameworkNamespaces' => []]],
-        ]));
+        ])));
 
         self::assertTrue($analysis->isEmpty());
         self::assertFalse($analysis->isFramework('Symfony\\Component\\Console'));
@@ -125,7 +126,7 @@ final class CouplingAnalysisTest extends TestCase
         $analysis = $this->configured(['Symfony']);
 
         try {
-            $analysis->configure(new ConfigurationDocument([
+            $analysis->resolve($this->document([
                 ['coupling' => ['frameworkNamespaces' => ['Psr', 1]]],
             ]));
             self::fail('Invalid framework namespace configuration must fail.');
@@ -140,10 +141,19 @@ final class CouplingAnalysisTest extends TestCase
     private function configured(array $prefixes): CouplingAnalysis
     {
         $analysis = new CouplingAnalysis();
-        $analysis->configure(new ConfigurationDocument([
+        $analysis->replace($analysis->resolve($this->document([
             ['coupling' => ['frameworkNamespaces' => $prefixes]],
-        ]));
+        ])));
 
         return $analysis;
+    }
+
+    /** @param list<array<string, mixed>> $contributions */
+    private function document(array $contributions): ConfigurationDocument
+    {
+        return new ConfigurationDocument(array_map(
+            static fn(array $values): array => ['source' => 'test', 'values' => $values],
+            $contributions,
+        ), AbsolutePath::fromString('/project'));
     }
 }

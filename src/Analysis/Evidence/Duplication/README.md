@@ -70,12 +70,12 @@ P3 proves one narrow Run phase port. The generic composite invokes it without a
 Duplication-specific branch; Duplication retains its result and emits its own
 completion log through its implementation.
 
-| Dependency/port                                                                            | Owner                   | Direction                    | Typed input/output                           | Why required                                                                       |
-| ------------------------------------------------------------------------------------------ | ----------------------- | ---------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `FileSetInspectionParticipantInterface`                                                    | Run                     | Run -> Duplication           | `list<SplFileInfo>` -> provider-owned result | Run invokes a selected participant without importing the detector.                 |
-| `TransitionalRuntimeConfigurationProviderInterface`                                        | Analysis.Configuration  | Duplication -> Configuration | resolved rule options and project root       | Detection uses configured token/line thresholds and relative paths.                |
-| Path and symbol primitives                                                                 | Core.Path / Core.Symbol | Duplication -> Core          | absolute/relative paths and metric subjects  | Stable file, subject, and report identities.                                       |
-| Rule/finding contracts, including `Rules\AbstractRule` and `Rules\Support\ThresholdParser` | Analysis.Finding        | Duplication -> Finding       | rule/options/threshold APIs and violations   | The owned rule participates in Finding's current execution and reporting boundary. |
+| Dependency/port                                                                            | Owner                   | Direction                    | Typed input/output                           | Why required                                                                          |
+| ------------------------------------------------------------------------------------------ | ----------------------- | ---------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `FileSetInspectionParticipantInterface`                                                    | Run                     | Run -> Duplication           | `list<SplFileInfo>` -> provider-owned result | Run invokes a selected participant without importing the detector.                    |
+| `RuleConfigurationInterface` and Run file-set input                                        | Finding / Run           | Duplication -> Finding / Run | named rule options and project root          | Detection reads its named rule and receives root only through Run's participant call. |
+| Path and symbol primitives                                                                 | Core.Path / Core.Symbol | Duplication -> Core          | absolute/relative paths and metric subjects  | Stable file, subject, and report identities.                                          |
+| Rule/finding contracts, including `Rules\AbstractRule` and `Rules\Support\ThresholdParser` | Analysis.Finding        | Duplication -> Finding       | rule/options/threshold APIs and violations   | The owned rule participates in Finding's current execution and reporting boundary.    |
 
 ## Test ownership
 
@@ -112,3 +112,8 @@ and the capability-owned interface are deleted in P3. The final route is Run's
 FileSet participant port implemented by `DuplicationDetector`. Disabling
 `duplication.code-duplication` prevents both inspection and allocation; a second
 analysis run begins with an empty provider.
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

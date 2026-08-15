@@ -63,3 +63,8 @@ graph and class universe.
   when layer policy is disabled.
 - Update this README, the manifest inventory, topology tests, and exact
   generated projection whenever the leaf surface or zone DAG changes.
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
 
 /**
  * Result of {@see ArchitectureConfigurationFactory::fromArray()}.
@@ -15,7 +16,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationW
  * invokes that consumption after configuring the user logger and logs the returned
  * warning values immediately.
  */
-final readonly class ArchitectureFactoryResult
+final readonly class ArchitectureFactoryResult implements ResolvedArchitecturePolicyInterface
 {
     /**
      * @param list<ArchitectureConfigurationWarning> $warnings Non-fatal warnings emitted while resolving the architecture configuration.
@@ -24,4 +25,9 @@ final readonly class ArchitectureFactoryResult
         public ArchitectureConfiguration $configuration,
         public array $warnings = [],
     ) {}
+
+    public function warnings(): array
+    {
+        return $this->warnings;
+    }
 }

@@ -25,6 +25,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 #[CoversClass(DistanceRule::class)]
@@ -440,7 +441,7 @@ final class DistanceRuleTest extends TestCase
 
         (new MetricAggregator(AggregationHelper::collectDefinitions([
             new ClassCountCollector(),
-        ])))->aggregate($repository);
+        ]), self::createStub(ProfilerInterface::class)))->aggregate($repository);
         $repository->add(
             SymbolPath::forNamespace($namespace),
             MetricBag::fromArray([

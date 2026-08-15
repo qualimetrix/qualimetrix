@@ -204,28 +204,6 @@ final class YamlNormalizationCharacterizationTest extends TestCase
             ],
         ];
 
-        yield 'namespace: composer_json → composerJson' => [
-            'namespace section sub-keys are typed options — normalize at every level',
-            "namespace:\n  strategy: psr4\n  composer_json: ./composer.json\n",
-            [
-                'namespace' => [
-                    'strategy' => 'psr4',
-                    'composerJson' => './composer.json',
-                ],
-            ],
-        ];
-
-        yield 'aggregation: auto_depth → autoDepth' => [
-            'aggregation section sub-keys are typed options — normalize at every level',
-            "aggregation:\n  prefixes:\n    - App\n  auto_depth: true\n",
-            [
-                'aggregation' => [
-                    'prefixes' => ['App'],
-                    'autoDepth' => true,
-                ],
-            ],
-        ];
-
         yield 'parallel: workers' => [
             'parallel section sub-keys are typed options — already single-word, pass through',
             "parallel:\n  workers: 4\n",

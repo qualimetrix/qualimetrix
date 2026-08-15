@@ -3,26 +3,31 @@
 ## Subject and boundary
 
 `Analysis\\Evidence\\Cohesion` owns the LCOM4 and TCC/LCC class-cohesion
-collectors, their AST visitors and per-class calculation data, and the
-`design.lcom` rule with its options. `ClassVisitorStackTrait` is private
-scaffolding shared only by the two Cohesion visitors.
+collectors, their AST visitors and per-class calculation data, the
+`design.lcom` rule with its options, and the LCOM collection configuration
+needed by its named sequential and parallel consumers.
+`ClassVisitorStackTrait` is private scaffolding shared only by the two Cohesion
+visitors.
 
-The leaf has no `Contract/` surface. It consumes Measurement's collector,
-metric and aggregation contracts and Finding's rule, option and violation
-contracts. Measurement remains the owner of cross-capability metric APIs and
-the collector runtime configuration store.
+`Contract/Configuration/` exposes the exact
+`LcomCollectionConfiguration` value; `Runtime/` owns its scoped store and
+resolver. Measurement remains the owner of cross-capability metric and
+aggregation contracts, while Finding owns rule options and violations.
 
 ## Structure
 
 ```text
 Cohesion/
 ├── ClassVisitorStackTrait.php
+├── Contract/
+│   └── Configuration/       # LCOM configuration promise for named consumers
 ├── LcomClassData.php
 ├── LcomCollector.php
 ├── LcomGraphCalculator.php
 ├── LcomOptions.php
 ├── LcomRule.php
 ├── LcomVisitor.php
+├── Runtime/                 # LCOM store and owner-local resolver
 ├── TccLccClassData.php
 ├── TccLccCollector.php
 └── TccLccVisitor.php
@@ -37,9 +42,12 @@ definitions, visitor reset semantics, and anonymous-class exclusion.
 `design.lcom` remains the stable rule ID and retains its Design category,
 warning/error defaults of 3/5, readonly and minimum-method eligibility checks,
 CLI aliases, and threshold-override behaviour. `LcomOptions::excludeMethods`
-continues to configure the LCOM graph. The runtime adapter projects that option
-to Measurement's `CollectorRuntimeConfigurationStore`; it is an invocation
-seam, not a Cohesion public contract.
+continues to configure the LCOM graph. Finding resolves the effective rule
+configuration, and Cohesion projects its exact value to
+`LcomCollectionConfiguration`. The instance-owned
+`LcomCollectionConfigurationStore` supplies the main collector and the typed
+worker payload; it is Cohesion-owned invocation state with an explicit reset
+point.
 
 LCOM4 counts connected groups of instance methods through shared property
 access or `$this->method()` calls. Stateless constant methods are merged into a
@@ -64,3 +72,8 @@ eligibility, thresholds, controls and output identity.
 - `excludeMethods` affects both direct collection and configured runtime runs.
 - Visitor and runtime state are replaced between files and analysis runs.
 - LCOM and TCC/LCC continue to ignore anonymous classes.
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

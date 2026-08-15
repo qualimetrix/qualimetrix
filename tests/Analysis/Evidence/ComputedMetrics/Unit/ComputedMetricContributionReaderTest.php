@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricContributionReader;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
+use Qualimetrix\Core\Path\AbsolutePath;
 
 final class ComputedMetricContributionReaderTest extends TestCase
 {
@@ -21,7 +22,7 @@ final class ComputedMetricContributionReaderTest extends TestCase
     public function itReplacesTheWholeComputedMapAtTheLatestContributingStage(): void
     {
         $analysis = $this->analysis();
-        $analysis->configure(new ConfigurationDocument([
+        $this->configure($analysis, $this->document([
             ['computedMetrics' => ['computed.first' => ['formula' => '1']]],
             ['computedMetrics' => ['computed.second' => ['formula' => '2']]],
         ]));
@@ -34,7 +35,7 @@ final class ComputedMetricContributionReaderTest extends TestCase
     public function itKeepsThePreviousComputedMapWhenALaterStageOmitsTheKey(): void
     {
         $analysis = $this->analysis();
-        $analysis->configure(new ConfigurationDocument([
+        $this->configure($analysis, $this->document([
             ['computedMetrics' => ['computed.first' => ['formula' => '1']]],
             ['paths' => ['src']],
         ]));
@@ -46,7 +47,7 @@ final class ComputedMetricContributionReaderTest extends TestCase
     public function itTreatsAnExplicitEmptyComputedMapAsReplacement(): void
     {
         $analysis = $this->analysis();
-        $analysis->configure(new ConfigurationDocument([
+        $this->configure($analysis, $this->document([
             ['computedMetrics' => ['computed.first' => ['formula' => '1']]],
             ['computedMetrics' => []],
         ]));
@@ -60,7 +61,7 @@ final class ComputedMetricContributionReaderTest extends TestCase
     {
         $recorder = new RecordingHealthFormulaExcluder();
         $analysis = $this->analysis($recorder);
-        $analysis->configure(new ConfigurationDocument([
+        $this->configure($analysis, $this->document([
             ['excludeHealth' => ['typing', 'complexity']],
             ['excludeHealth' => ['typing', 'cohesion']],
         ]));
@@ -73,7 +74,7 @@ final class ComputedMetricContributionReaderTest extends TestCase
     {
         $recorder = new RecordingHealthFormulaExcluder();
         $analysis = $this->analysis($recorder);
-        $analysis->configure(new ConfigurationDocument([
+        $this->configure($analysis, $this->document([
             ['excludeHealth' => ['typing']],
             ['excludeHealth' => []],
         ]));
@@ -82,16 +83,16 @@ final class ComputedMetricContributionReaderTest extends TestCase
     }
 
     #[Test]
-    public function itClearsPriorRunDefinitionsWhenALaterContributionIsInvalid(): void
+    public function itPreservesPriorRunDefinitionsWhenALaterContributionIsInvalid(): void
     {
         $analysis = $this->analysis();
-        $analysis->configure(new ConfigurationDocument([]));
+        $this->configure($analysis, $this->document([]));
 
         try {
-            $analysis->configure(new ConfigurationDocument([['excludeHealth' => ['unknown']]]));
+            $analysis->resolve($this->document([['excludeHealth' => ['unknown']]]));
             self::fail('Expected invalid configuration.');
         } catch (InvalidArgumentException) {
-            self::assertSame([], $analysis->all());
+            self::assertNotNull($analysis->find('health.overall'));
         }
     }
 
@@ -101,6 +102,20 @@ final class ComputedMetricContributionReaderTest extends TestCase
             new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), $excluder ?? new HealthFormulaExcluder()),
             new ComputedMetricContributionReader(),
         );
+    }
+
+    private function configure(ComputedMetricAnalysis $analysis, ConfigurationDocument $document): void
+    {
+        $analysis->replace($analysis->resolve($document));
+    }
+
+    /** @param list<array<string, mixed>> $contributions */
+    private function document(array $contributions): ConfigurationDocument
+    {
+        return new ConfigurationDocument(array_map(
+            static fn(array $values): array => ['source' => 'test', 'values' => $values],
+            $contributions,
+        ), AbsolutePath::fromString('/project'));
     }
 }
 

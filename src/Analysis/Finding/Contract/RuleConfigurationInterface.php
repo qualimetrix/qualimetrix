@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract;
 
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Core\Path\RelativePath;
 
 /** Per-run rule options and exclusion state owned by Finding. */
 interface RuleConfigurationInterface
 {
-    public function configure(RuleOptionsDocument $document): void;
+    public function replace(FindingConfiguration $configuration): void;
 
     /** @param array<string, mixed> $options */
     public function configureCli(string $ruleName, array $options): void;
@@ -26,6 +27,10 @@ interface RuleConfigurationInterface
     public function configureSelection(RuleSelection $selection): void;
 
     public function selection(): RuleSelection;
+
+    public function captureExcludedViolations(): void;
+
+    public function capturesExcludedViolations(): bool;
 
     /** @param list<string> $patterns */
     public function configureNamespaceExclusions(string $ruleName, array $patterns): void;

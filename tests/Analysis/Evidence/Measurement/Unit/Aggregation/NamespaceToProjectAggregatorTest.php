@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -58,7 +59,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         $this->addMethodsWithMi($repository, 'App\\Repository', 'UserRepository', 'src/Repository/UserRepository.php', 8, 90.0);
 
         $collector = new MaintainabilityIndexCollector();
-        $aggregator = new MetricAggregator($collector->getMetricDefinitions());
+        $aggregator = new MetricAggregator($collector->getMetricDefinitions(), self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository);
 
         $projectMetrics = $repository->get(SymbolPath::forProject());
@@ -117,7 +118,7 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         ];
 
         $tree = new NamespaceTree(['App\\Service', 'App\\Repository']);
-        $aggregator = new NamespaceToProjectAggregator($tree);
+        $aggregator = new NamespaceToProjectAggregator($tree, self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository, $definitions);
 
         $projectMetrics = $repository->get(SymbolPath::forProject());
@@ -139,7 +140,10 @@ final class NamespaceToProjectAggregatorTest extends TestCase
             SymbolLevel::Project->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
         ])];
 
-        (new NamespaceToProjectAggregator(new NamespaceTree(['One', 'Two'])))
+        (new NamespaceToProjectAggregator(
+            new NamespaceTree(['One', 'Two']),
+            self::createStub(ProfilerInterface::class),
+        ))
             ->aggregate($repository, $definitions);
 
         $project = $repository->get(SymbolPath::forProject());

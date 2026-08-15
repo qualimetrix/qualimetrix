@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -65,9 +69,13 @@ final class ArchitectureConfigurator implements ContainerConfiguratorInterface
             ]);
         $container->register(self::LAYER_ASSIGNMENT_COMMAND)
             ->setArguments([
-                new Reference(ConfigurationPipelineInterface::class),
                 new Reference(self::RUNTIME_CONFIGURATOR),
                 new Reference(self::LAYER_ASSIGNMENT_RESOLVER),
+                new Reference(ConfigurationInputAdapter::class),
+                new Reference(RunConfigurationResolverInterface::class),
+                new Reference(CacheConfigurationResolverInterface::class),
+                new Reference(ParallelConfigurationResolverInterface::class),
+                new Reference(RuleInputValidator::class),
             ])
             ->setPublic(true);
     }

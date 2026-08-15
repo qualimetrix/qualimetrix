@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Finding;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
-use Qualimetrix\Analysis\Finding\Contract\RuleExclusionCaptureHolder;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleMetadata;
@@ -15,8 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Traversable;
 
 /**
@@ -39,7 +38,8 @@ final class RuleExecution implements RuleExecutionInterface
      */
     public function __construct(
         iterable $rules,
-        private readonly RuleOptionsRegistry $ruleOptionsRegistry = new RuleOptionsRegistry(),
+        private readonly ProfilerInterface $profiler,
+        private readonly RuleConfigurationInterface $ruleOptionsRegistry,
         ?RuleSelector $ruleSelector = null,
     ) {
         $this->allRules = $rules instanceof Traversable
@@ -52,7 +52,7 @@ final class RuleExecution implements RuleExecutionInterface
     public function execute(AnalysisContext $context): array
     {
         $violations = [];
-        $profiler = ProfilerHolder::get();
+        $profiler = $this->profiler;
 
         /** @var array<string, int> $namespaceExclusionCounts */
         $namespaceExclusionCounts = [];
@@ -61,12 +61,7 @@ final class RuleExecution implements RuleExecutionInterface
         /** @var list<Violation> $excludedViolations */
         $excludedViolations = [];
 
-        // Capturing full Violation objects (as opposed to just counting them) is
-        // opt-in: it exists purely so `--show-suppressed` can list them, and holding
-        // them for every run regardless would waste memory on codebases with wide
-        // per-rule exclusions. See RuleExclusionCaptureHolder for why this is a
-        // Core-level holder rather than a constructor flag threaded from Infrastructure.
-        $captureExcludedViolations = RuleExclusionCaptureHolder::isEnabled();
+        $captureExcludedViolations = $this->ruleOptionsRegistry->capturesExcludedViolations();
 
         $selection = $this->ruleOptionsRegistry->selection();
         foreach ($this->activeRuleInstances($selection) as $rule) {

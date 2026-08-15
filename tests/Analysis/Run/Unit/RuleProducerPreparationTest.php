@@ -21,7 +21,8 @@ use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
-use Qualimetrix\Core\Profiler\ProfilerInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 
 #[CoversClass(RuleProducerPreparation::class)]
 final class RuleProducerPreparationTest extends TestCase
@@ -51,7 +52,7 @@ final class RuleProducerPreparationTest extends TestCase
                 ++$this->resetCalls;
             }
 
-            public function inspect(array $eligibleFiles): void
+            public function inspect(array $eligibleFiles, AbsolutePath $projectRoot): void
             {
                 ++$this->inspectCalls;
             }
@@ -66,7 +67,7 @@ final class RuleProducerPreparationTest extends TestCase
             self::createStub(DependencyGraphInterface::class),
             self::createStub(ProfilerInterface::class),
         );
-        $preparation->inspectFiles([]);
+        $preparation->inspectFiles([], AbsolutePath::fromString('/project'));
 
         self::assertSame(1, $participant->resetCalls);
         self::assertSame(0, $participant->inspectCalls);
@@ -167,7 +168,11 @@ final class RuleProducerPreparationTest extends TestCase
         return new RuleProducerPreparation(
             $architecture ?? self::createStub(LayerPolicyPreparationInterface::class),
             $circular ?? self::createStub(CircularDependencyPreparationInterface::class),
-            new FileSetInspectionComposite($participants, new RuleSelectorProducerGate($selector)),
+            new FileSetInspectionComposite(
+                $participants,
+                new RuleSelectorProducerGate($selector),
+                self::createStub(ProfilerInterface::class),
+            ),
             $selector,
             $registry,
         );

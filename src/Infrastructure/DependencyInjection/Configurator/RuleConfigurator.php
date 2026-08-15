@@ -9,11 +9,13 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry;
+use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
 use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
@@ -67,15 +69,17 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
 
     private function registerRuleChannelSelection(ContainerBuilder $container): void
     {
-        $computedMetricCatalog = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface';
-
         $container->register(RuleChannelRegistry::class)
             ->setArguments([
                 '$staticChannelKeysByProducer' => [],
                 '$computedMetricRuleName' => '',
-                '$definitionCatalog' => new Reference($computedMetricCatalog),
+                '$definitions' => new Definition(
+                    'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ResolvedComputedMetricDefinitions',
+                    [[]],
+                ),
             ]);
         $container->setAlias(RuleChannelRegistryInterface::class, RuleChannelRegistry::class);
+        $container->setAlias(RuleChannelSnapshotFactoryInterface::class, RuleChannelRegistry::class);
 
         $container->register(RuleSelector::class)
             ->setArguments([

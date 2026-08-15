@@ -32,8 +32,7 @@ Console/
 ├── LayerAssignmentResolver.php      # Rebuilds collected project state for layer-assignment diagnostics
 ├── Progress/
 │   ├── ConsoleProgressBar.php
-│   ├── ProgressReporterHolder.php
-│   └── DelegatingProgressReporter.php
+│   └── SwitchableProgressReporter.php
 └── Command/
     ├── CheckCommand.php             # Main analysis command
     ├── BaselineCleanupCommand.php   # Cleanup stale baseline entries
@@ -72,6 +71,11 @@ diagnostics; it does not own a pipeline phase or finding-policy state. The
 Reporting-owned `FindingProjector` is the single authority for suppression,
 configured exclusions, baseline judgment, annotation rejoin, and Git-last
 projection.
+
+`RuleInputValidator` validates selectors against one immutable rule-channel
+snapshot for the resolved run. The snapshot is assembled by Infrastructure Rule
+from `ResolvedComputedMetricDefinitions`; Console consumes only that resolved
+snapshot while processing the invocation.
 
 `LayerAssignmentResolver` is an internal Console collaborator for
 `debug:layer-assignment`. It owns the adapter-side discovery, generated-file
@@ -290,3 +294,8 @@ bin/qmx hook:uninstall
 - Output formatting via FormatterRegistry
 - Unit tests for commands
 - End-to-end integration tests
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

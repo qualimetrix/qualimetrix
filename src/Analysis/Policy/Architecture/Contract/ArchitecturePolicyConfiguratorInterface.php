@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 
 interface ArchitecturePolicyConfiguratorInterface
 {
-    /** @return list<ArchitectureConfigurationWarning> */
-    public function configure(ConfigurationDocument $document): array;
+    public function resolve(ConfigurationDocument $document): ResolvedArchitecturePolicyInterface;
+
+    public function replace(ResolvedArchitecturePolicyInterface $policy): void;
 }

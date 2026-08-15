@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\FileParserFactory;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
+use Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver;
+use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -30,11 +33,13 @@ final class ParserConfigurator implements ContainerConfiguratorInterface
     private function registerCache(ContainerBuilder $container): void
     {
         $container->register(CacheKeyGenerator::class);
+        $container->register(CacheConfigurationStore::class);
+        $container->setAlias(CacheConfigurationStoreInterface::class, CacheConfigurationStore::class);
+        $container->register(CacheConfigurationResolver::class);
+        $container->setAlias(CacheConfigurationResolverInterface::class, CacheConfigurationResolver::class);
 
-        // CacheFactory creates FileCache lazily based on runtime configuration
-        // Note: TransitionalRuntimeConfigurationProviderInterface is synthetic, so we can't use autowiring here
         $container->register(CacheFactory::class)
-            ->setArguments([new Reference(TransitionalRuntimeConfigurationProviderInterface::class)])
+            ->setArguments([new Reference(CacheConfigurationStoreInterface::class)])
             ->setPublic(true);
 
         // CacheInterface is created through factory
@@ -63,7 +68,7 @@ final class ParserConfigurator implements ContainerConfiguratorInterface
                 new Reference(PhpFileParser::class),
                 new Reference(CacheFactory::class),
                 new Reference(CacheKeyGenerator::class),
-                new Reference(TransitionalRuntimeConfigurationProviderInterface::class),
+                new Reference(CacheConfigurationStoreInterface::class),
             ]);
 
         // Register FileParserInterface using factory

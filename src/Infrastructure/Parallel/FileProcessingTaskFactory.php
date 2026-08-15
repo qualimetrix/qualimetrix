@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Parallel;
 
 use InvalidArgumentException;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
@@ -22,7 +22,7 @@ final readonly class FileProcessingTaskFactory
      * @param list<class-string<RuleDefinitionInterface>> $ruleClasses
      */
     public function __construct(
-        private CollectorRuntimeConfigurationStoreInterface $collectorRuntimeConfigurationStore,
+        private LcomCollectionConfigurationStoreInterface $lcomConfigurationStore,
         private string $dependencyTraversalParticipantClass,
         private array $collectorClasses = [],
         private array $derivedCollectorClasses = [],
@@ -51,7 +51,7 @@ final readonly class FileProcessingTaskFactory
             dependencyTraversalParticipantClass: $this->dependencyTraversalParticipantClass,
             derivedCollectorClasses: $this->derivedCollectorClasses,
             cacheDir: $cacheDir,
-            collectorConfig: $this->collectorRuntimeConfigurationStore->current()->toPayload(),
+            lcomConfiguration: $this->lcomConfigurationStore->current(),
             ruleClasses: $this->ruleClasses,
         );
     }

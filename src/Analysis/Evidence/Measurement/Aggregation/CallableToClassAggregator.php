@@ -9,19 +9,20 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 
 final class CallableToClassAggregator implements AggregationPhaseInterface
 {
+    public function __construct(private readonly ProfilerInterface $profiler) {}
     /**
      * @param list<MetricDefinition> $definitions
      */
     public function aggregate(MetricRepositoryInterface $repository, array $definitions): void
     {
-        $profiler = ProfilerHolder::get();
+        $profiler = $this->profiler;
 
         $callableDefinitions = array_values(array_filter(
             $definitions,

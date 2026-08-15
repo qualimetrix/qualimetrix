@@ -9,12 +9,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfiguration;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurationStoreInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTask;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
@@ -24,12 +24,12 @@ use stdClass;
 #[CoversClass(FileProcessingTaskFactory::class)]
 final class FileProcessingTaskFactoryTest extends TestCase
 {
-    private CollectorRuntimeConfigurationStoreInterface&Stub $store;
+    private LcomCollectionConfigurationStoreInterface&Stub $store;
 
     protected function setUp(): void
     {
-        $this->store = self::createStub(CollectorRuntimeConfigurationStoreInterface::class);
-        $this->store->method('current')->willReturn(CollectorRuntimeConfiguration::empty());
+        $this->store = self::createStub(LcomCollectionConfigurationStoreInterface::class);
+        $this->store->method('current')->willReturn(LcomCollectionConfiguration::defaults());
     }
 
     #[Test]
@@ -58,20 +58,20 @@ final class FileProcessingTaskFactoryTest extends TestCase
     #[Test]
     public function itReadsRuntimeCollectorConfigurationForEveryTaskCreation(): void
     {
-        $store = $this->createMock(CollectorRuntimeConfigurationStoreInterface::class);
+        $store = $this->createMock(LcomCollectionConfigurationStoreInterface::class);
         $store->expects($this->exactly(2))
             ->method('current')
             ->willReturnOnConsecutiveCalls(
-                new CollectorRuntimeConfiguration(['first']),
-                new CollectorRuntimeConfiguration(['second']),
+                new LcomCollectionConfiguration(['first']),
+                new LcomCollectionConfiguration(['second']),
             );
         $factory = new FileProcessingTaskFactory($store, DependencyVisitor::class);
 
         $first = $factory->create(AbsolutePath::fromString('/project/First.php'), AbsolutePath::fromString('/project'), null);
         $second = $factory->create(AbsolutePath::fromString('/project/Second.php'), AbsolutePath::fromString('/project'), null);
 
-        self::assertSame(['lcom_excluded_methods' => ['first']], $this->property($first, 'collectorConfig'));
-        self::assertSame(['lcom_excluded_methods' => ['second']], $this->property($second, 'collectorConfig'));
+        self::assertSame(['first'], $this->property($first, 'lcomConfiguration')->excludedMethods);
+        self::assertSame(['second'], $this->property($second, 'lcomConfiguration')->excludedMethods);
     }
 
     #[Test]

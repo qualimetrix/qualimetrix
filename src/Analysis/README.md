@@ -8,7 +8,7 @@ boundaries.
 
 | Leaf                                                                   | Subject                                                                   | Read first                                              |
 | ---------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------- |
-| [`Configuration`](Configuration/README.md)                             | configuration document resolution and transitional runtime configuration  | schema, stages, and feature document contributions      |
+| [`Configuration`](Configuration/README.md)                             | ordered configuration document resolution                                 | schema, stages, and feature document contributions      |
 | [`Evidence/CodeSmell`](Evidence/CodeSmell/README.md)                   | code-smell collection and rules                                           | finding groups, visitors, options, and exact DI root    |
 | [`Evidence/Cohesion`](Evidence/Cohesion/README.md)                     | class cohesion evidence and rules                                         | TCC/LCC, LCOM, and unused-private semantics             |
 | [`Evidence/Complexity`](Evidence/Complexity/README.md)                 | cyclomatic, cognitive, NPath, and WMC evidence and rules                  | callable/class aggregation and thresholds               |
@@ -31,9 +31,9 @@ boundaries.
 
 P1-P7 have published their accepted capability boundaries. P7 distributed the
 former Metrics and Rules role buckets among the eight evidence leaves listed
-above, and its final aggregate validation and independent review returned GO.
-Architecture, Baseline, and Inline are current Policy leaves; P8 remains
-pending as the next phase.
+above. Architecture, Baseline, and Inline are current Policy leaves. Their
+runtime state and configuration projections remain with their named owners;
+the taxonomy itself owns neither.
 
 ## Current execution flow
 
@@ -69,3 +69,8 @@ semantic owner even when P3 rewrites their imports.
   allow-list target.
 - A phase change documents its input, output, state owner, and direct tests in
   the owning leaf README.
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

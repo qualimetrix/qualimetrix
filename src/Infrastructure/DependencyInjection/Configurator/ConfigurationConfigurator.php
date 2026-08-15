@@ -6,8 +6,6 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -23,8 +21,6 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
     private const string CONFIGURATION_PIPELINE = 'qmx.configuration.pipeline';
     private const string CONFIGURATION_PIPELINE_CLASS = 'Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationPipeline';
     private const string PRESET_RESOLVER_CLASS = 'Qualimetrix\\Analysis\\Configuration\\Preset\\PresetResolver';
-    private const string RUNTIME_CONFIGURATION_HOLDER = 'qmx.configuration.transitional_runtime_configuration_holder';
-    private const string RUNTIME_CONFIGURATION_HOLDER_CLASS = 'Qualimetrix\\Analysis\\Configuration\\Runtime\\TransitionalRuntimeConfigurationHolder';
     private const string YAML_CONFIG_LOADER = 'qmx.configuration.yaml_config_loader';
     private const string YAML_CONFIG_LOADER_CLASS = 'Qualimetrix\\Analysis\\Configuration\\Loader\\YamlConfigLoader';
     private const string COMPOSER_AUTOLOAD_READER = 'qmx.configuration.composer_autoload_reader';
@@ -36,26 +32,7 @@ final class ConfigurationConfigurator implements ContainerConfiguratorInterface
 
     public function configure(ContainerBuilder $container): void
     {
-        $this->registerConfigurationHolder($container);
         $this->registerConfigurationPipeline($container);
-    }
-
-    /**
-     * Registers configuration providers as mutable singletons.
-     *
-     * These are initialized with defaults and can be reconfigured at runtime
-     * through setConfiguration()/setCliOptions() before rules are instantiated.
-     */
-    private function registerConfigurationHolder(ContainerBuilder $container): void
-    {
-        // TransitionalRuntimeConfigurationHolder - mutable, configured at runtime with merged config
-        $container->register(self::RUNTIME_CONFIGURATION_HOLDER, self::RUNTIME_CONFIGURATION_HOLDER_CLASS)
-            ->addMethodCall('setConfiguration', [new TransitionalRuntimeConfiguration()])
-            ->setPublic(true);
-        $container->setAlias(
-            TransitionalRuntimeConfigurationProviderInterface::class,
-            self::RUNTIME_CONFIGURATION_HOLDER,
-        )->setPublic(true);
     }
 
     /**

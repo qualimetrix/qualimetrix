@@ -259,13 +259,13 @@ YAML);
     }
 
     #[Test]
-    public function itRejectsNonArrayNamespace(): void
+    public function itRejectsTheRemovedNamespaceRoot(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, 'namespace: not_an_array');
 
         self::expectException(ConfigLoadException::class);
-        self::expectExceptionMessage('"namespace" must be an associative array');
+        self::expectExceptionMessage('Unknown configuration key: "namespace"');
 
         $this->loader->load($path);
     }
@@ -293,11 +293,6 @@ rules:
 cache:
   enabled: true
 format: json
-namespace:
-  strategy: psr4
-aggregation:
-  prefixes:
-    - App
 disabled_rules:
   - size
 only_rules:
@@ -519,7 +514,7 @@ YAML);
     }
 
     #[Test]
-    public function itRejectsUnknownNamespaceSubKeyWithSuggestion(): void
+    public function itRejectsTheRemovedNamespaceRootRegardlessOfItsChildren(): void
     {
         $path = $this->tempDir . '/config.yaml';
         file_put_contents($path, <<<'YAML'
@@ -528,7 +523,7 @@ namespace:
 YAML);
 
         self::expectException(ConfigLoadException::class);
-        self::expectExceptionMessage('did you mean "strategy"?');
+        self::expectExceptionMessage('Unknown configuration key: "namespace"');
 
         $this->loader->load($path);
     }

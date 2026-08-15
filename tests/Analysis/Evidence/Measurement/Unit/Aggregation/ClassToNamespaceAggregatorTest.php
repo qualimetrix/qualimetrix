@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -62,7 +63,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
             ]),
         ];
 
-        (new ClassToNamespaceAggregator())->aggregate($repository, $definitions);
+        (new ClassToNamespaceAggregator(self::createStub(ProfilerInterface::class)))->aggregate($repository, $definitions);
 
         self::assertSame(8, $repository->get(SymbolPath::forNamespace('One'))->get('loc.sum'));
         self::assertSame(9, $repository->get(SymbolPath::forNamespace('Two'))->get('loc.sum'));
@@ -83,7 +84,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
             SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
         ])];
 
-        (new ClassToNamespaceAggregator())->aggregate($repository, $definitions);
+        (new ClassToNamespaceAggregator(self::createStub(ProfilerInterface::class)))->aggregate($repository, $definitions);
 
         $namespace = $repository->get(SymbolPath::forNamespace('App'));
         self::assertSame(30, $namespace->get('loc.sum'));
@@ -140,7 +141,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
 
         (new MetricAggregator(AggregationHelper::collectDefinitions([
             new ClassCountCollector(),
-        ])))->aggregate($repository);
+        ]), self::createStub(ProfilerInterface::class)))->aggregate($repository);
 
         foreach ([SymbolPath::forNamespace($namespace), SymbolPath::forNamespace('App\\Domain')] as $path) {
             $metrics = $repository->get($path);
@@ -177,7 +178,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
 
         $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([
             new LocCollector(),
-        ]));
+        ]), self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository);
 
         // Namespace-level LOC should include the procedural file's LOC
@@ -224,7 +225,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
 
         $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([
             new LocCollector(),
-        ]));
+        ]), self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository);
 
         // Namespace LOC should include both files
@@ -262,7 +263,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $this->addMethod($repository, 'App\\Service', 'OrderService', 'method2', 'src/Service/OrderService.php', 'mi', 60.0);
 
         $collector = new MaintainabilityIndexCollector();
-        $aggregator = new MetricAggregator($collector->getMetricDefinitions());
+        $aggregator = new MetricAggregator($collector->getMetricDefinitions(), self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository);
 
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
@@ -298,7 +299,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         $this->addMethod($repository, 'App\\Service', 'OrderService', 'process', 'src/Service/OrderService.php', 'mi', 60.0);
 
         $collector = new MaintainabilityIndexCollector();
-        $aggregator = new MetricAggregator($collector->getMetricDefinitions());
+        $aggregator = new MetricAggregator($collector->getMetricDefinitions(), self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository);
 
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
@@ -327,7 +328,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
         }
 
         $collector = new MaintainabilityIndexCollector();
-        $aggregator = new MetricAggregator($collector->getMetricDefinitions());
+        $aggregator = new MetricAggregator($collector->getMetricDefinitions(), self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository);
 
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Single'));
@@ -372,7 +373,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
             ],
         );
-        $aggregator = new MetricAggregator([$definition]);
+        $aggregator = new MetricAggregator([$definition], self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository);
 
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
@@ -418,7 +419,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average],
             ],
         );
-        $aggregator = new MetricAggregator([$definition]);
+        $aggregator = new MetricAggregator([$definition], self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository);
 
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));
@@ -500,7 +501,7 @@ final class ClassToNamespaceAggregatorTest extends TestCase
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Sum, AggregationStrategy::Average, AggregationStrategy::Max],
             ],
         );
-        $aggregator = new MetricAggregator([$definition]);
+        $aggregator = new MetricAggregator([$definition], self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository);
 
         $nsMetrics = $repository->get(SymbolPath::forNamespace('App\\Service'));

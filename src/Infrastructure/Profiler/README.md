@@ -6,13 +6,13 @@ Span-based profiler for measuring analysis pipeline performance.
 
 ```
 Core/Profiler/
-├── ProfilerInterface.php    # Profiler contract
-├── NullProfiler.php         # No-op implementation (default)
-├── ProfilerHolder.php       # Holder for runtime configuration
-└── Span.php                 # Value object for a single measurement
+└── Contract/ProfilerInterface.php # neutral instrumentation vocabulary
 
 Infrastructure/Profiler/
-├── Profiler.php             # Working implementation
+├── ProfileSession.php       # per-container state, Core port implementation
+├── Profiler.php             # internal recording engine
+├── Span.php                 # internal measurement value
+├── Contract/                # Console-facing session/report promises
 └── Export/
     ├── ProfileExporterInterface.php
     ├── JsonExporter.php          # Export to JSON
@@ -28,14 +28,10 @@ interface ProfilerInterface
 {
     public function start(string $name, string $category = 'default'): void;
     public function stop(string $name): void;
-    public function isEnabled(): bool;
-    public function getSummary(): array;
-    public function getSpans(): array;
-    public function export(string $format): string;
 }
 ```
 
-### Span
+### ProfileSession and Span
 
 Each `start()`/`stop()` creates a `Span` — a record of a single measurement:
 - `name` — operation name (e.g., `collection`, `aggregation`)
@@ -44,23 +40,11 @@ Each `start()`/`stop()` creates a `Span` — a record of a single measurement:
 - `duration` — duration in milliseconds
 - `memoryStart` / `memoryPeak` — memory usage
 
-### ProfilerHolder
-
-Holder pattern for late binding. Allows switching the profiler at runtime:
-
-```php
-// DI registers NullProfiler by default
-$holder = new ProfilerHolder();
-
-// CLI enables profiler with --profile
-if ($input->getOption('profile')) {
-    $holder->set(new Profiler());
-}
-
-// Pipeline uses current profiler
-$profiler = $holder->get();
-$profiler->start('collection', 'pipeline');
-```
+`ProfileSession` is the single per-container lifecycle object. It implements
+the Core instrumentation port, starts disabled, clears recorded spans whenever
+it is enabled or disabled, and exposes separate Profiler-owned control and
+report contracts to Console. Legacy holder/no-op types and static late binding
+do not exist.
 
 ## Usage
 
@@ -105,52 +89,50 @@ Format conforms to [Chrome Trace Event Format](https://docs.google.com/document/
 
 ```php
 // Phase 1: Discovery
-$profiler->start('discovery', 'pipeline');
+$this->profiler->start('discovery', 'pipeline');
 $files = iterator_to_array($discovery->discover($paths), false);
-$profiler->stop('discovery');
+$this->profiler->stop('discovery');
 
 // Phase 2: Collection (longest phase)
-$profiler->start('collection', 'pipeline');
+$this->profiler->start('collection', 'pipeline');
 $collectionResult = $this->collectionOrchestrator->collect(...);
-$profiler->stop('collection');
+$this->profiler->stop('collection');
 
 // Phase 3: Aggregation
-$profiler->start('aggregation', 'pipeline');
+$this->profiler->start('aggregation', 'pipeline');
 $this->aggregator->aggregate($repository);
-$profiler->stop('aggregation');
+$this->profiler->stop('aggregation');
 
 // Phase 4: Global collectors
-$profiler->start('global', 'pipeline');
+$this->profiler->start('global', 'pipeline');
 $this->globalCollectorRunner->run($graph, $repository);
-$profiler->stop('global');
+$this->profiler->stop('global');
 
 // Phase 5: Rule execution
-$profiler->start('rules', 'pipeline');
+$this->profiler->start('rules', 'pipeline');
 $violations = $this->ruleExecutor->execute($context);
-$profiler->stop('rules');
+$this->profiler->stop('rules');
 ```
 
 ## Adding Instrumentation
 
 To add profiling to a new component:
 
-1. Get ProfilerHolder via DI
-2. Use `$profiler->start()` and `$profiler->stop()`
+1. Inject `Core\Profiler\Contract\ProfilerInterface`.
+2. Use `$this->profiler->start()` and `$this->profiler->stop()`.
 
 ```php
 class MyService
 {
     public function __construct(
-        private readonly ProfilerHolder $profilerHolder,
+        private readonly ProfilerInterface $profiler,
     ) {}
 
     public function doWork(): void
     {
-        $profiler = $this->profilerHolder->get();
-
-        $profiler->start('my-operation', 'my-category');
+        $this->profiler->start('my-operation', 'my-category');
         // ... work ...
-        $profiler->stop('my-operation');
+        $this->profiler->stop('my-operation');
     }
 }
 ```
@@ -203,11 +185,9 @@ class MyService
 
 ## Definition of Done
 
-- [x] `ProfilerInterface` in `Core/Profiler/`
-- [x] `NullProfiler` — no-op implementation
-- [x] `Profiler` — working implementation
-- [x] `Span` — value object for measurements
-- [x] `ProfilerHolder` — holder for runtime
+- [x] `ProfilerInterface` in `Core/Profiler/Contract/`
+- [x] `ProfileSession` — disabled-by-default per-container session
+- [x] `Profiler` and `Span` — internal recording implementation
 - [x] JSON exporter
 - [x] Chrome Tracing exporter
 - [x] CLI flags `--profile`, `--profile-format`
@@ -218,3 +198,8 @@ class MyService
 
 - [AnalysisPipeline](../../Analysis/Pipeline/) — main profiler consumer
 - [CheckCommand](../Console/Command/) — CLI integration
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

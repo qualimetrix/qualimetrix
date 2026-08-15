@@ -7,9 +7,6 @@ namespace Qualimetrix\Tests\Integration\DependencyInjection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
-use Qualimetrix\Analysis\Configuration\Runtime\TransitionalRuntimeConfigurationHolder;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule;
@@ -25,6 +22,9 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\SuperglobalsRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateRule;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomRule;
 use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
@@ -64,8 +64,6 @@ use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
 use Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurableInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
@@ -82,30 +80,43 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
 use Qualimetrix\Analysis\Evidence\Size\PropertyCountRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
 use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
+use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
+use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
+use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
+use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
 use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
+use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
+use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
@@ -328,22 +339,12 @@ final class ContainerFactoryTest extends TestCase
             static fn(string $ruleClass): bool => $ruleClass === CodeDuplicationRule::class,
         )));
 
-        $configurationProvider = $container->get(TransitionalRuntimeConfigurationProviderInterface::class);
-        self::assertInstanceOf(TransitionalRuntimeConfigurationProviderInterface::class, $configurationProvider);
-        $enabledConfiguration = new TransitionalRuntimeConfiguration(
-            cacheEnabled: false,
-            workers: TransitionalRuntimeConfiguration::WORKERS_SEQUENTIAL,
-            projectRoot: AbsolutePath::fromString($this->tempDir),
-        );
-        $configurationProvider->setConfiguration($enabledConfiguration);
         $ruleConfiguration = $container->get(RuleConfigurationInterface::class);
         self::assertInstanceOf(RuleConfigurationInterface::class, $ruleConfiguration);
         $ruleConfiguration->configureSelection(new RuleSelection(only: [CodeDuplicationRule::NAME]));
-        $configurationProvider->setRuleOptions([
-            CodeDuplicationRule::NAME => [
-                'min_lines' => 2,
-                'min_tokens' => 10,
-            ],
+        $ruleConfiguration->configureCli(CodeDuplicationRule::NAME, [
+            'min_lines' => 2,
+            'min_tokens' => 10,
         ]);
 
         self::assertInstanceOf(AnalysisPipeline::class, $pipeline);
@@ -369,34 +370,40 @@ PHP;
         $duplicateFiles = [new SplFileInfo($firstPath), new SplFileInfo($secondPath)];
 
         $selection = $ruleConfiguration->selection();
-        $fileSetInspection->inspect($duplicateFiles, $selection->only, $selection->disabled);
+        $fileSetInspection->inspect(
+            $duplicateFiles,
+            AbsolutePath::fromString($this->tempDir),
+            $selection->only,
+            $selection->disabled,
+        );
         $resultProvider = $providerProperty->getValue($inspection);
         self::assertNotEmpty($resultProvider->all());
 
-        $configurationProvider->setConfiguration(new TransitionalRuntimeConfiguration(
-            cacheEnabled: false,
-            workers: TransitionalRuntimeConfiguration::WORKERS_SEQUENTIAL,
-            projectRoot: AbsolutePath::fromString($this->tempDir),
-        ));
         $ruleConfiguration->configureSelection(new RuleSelection(disabled: [CodeDuplicationRule::NAME]));
         $selection = $ruleConfiguration->selection();
         $fileSetInspection->inspect(
             $duplicateFiles,
+            AbsolutePath::fromString($this->tempDir),
             $selection->only,
             $selection->disabled,
         );
 
         self::assertSame([], $resultProvider->all());
 
-        $configurationProvider->setConfiguration($enabledConfiguration);
         $ruleConfiguration->configureSelection(new RuleSelection(only: [CodeDuplicationRule::NAME]));
         $selection = $ruleConfiguration->selection();
-        $fileSetInspection->inspect($duplicateFiles, $selection->only, $selection->disabled);
+        $fileSetInspection->inspect(
+            $duplicateFiles,
+            AbsolutePath::fromString($this->tempDir),
+            $selection->only,
+            $selection->disabled,
+        );
 
         self::assertNotEmpty($resultProvider->all());
 
         $fileSetInspection->inspect(
             [new SplFileInfo($firstPath)],
+            AbsolutePath::fromString($this->tempDir),
             $selection->only,
             $selection->disabled,
         );
@@ -424,31 +431,78 @@ PHP;
             (new ReflectionProperty(FileProcessingTaskFactory::class, 'dependencyTraversalParticipantClass'))->getValue($factory),
         );
 
-        $store = self::requireCollectorRuntimeConfigurationStore(
-            $container->get(CollectorRuntimeConfigurationStoreInterface::class),
-        );
+        $store = (new ReflectionProperty(FileProcessingTaskFactory::class, 'lcomConfigurationStore'))->getValue($factory);
+        self::assertInstanceOf(LcomCollectionConfigurationStoreInterface::class, $store);
         self::assertSame(
             $store,
-            (new ReflectionProperty(FileProcessingTaskFactory::class, 'collectorRuntimeConfigurationStore'))
+            (new ReflectionProperty(FileProcessingTaskFactory::class, 'lcomConfigurationStore'))
                 ->getValue($factory),
         );
-        self::assertSame(['lcom_excluded_methods' => []], $store->current()->toPayload());
+        self::assertSame([], $store->current()->excludedMethods);
         $analysisRuntimeConstructor = (new ReflectionClass(AnalysisRuntimeConfigurator::class))->getConstructor();
         $runtimeConstructor = (new ReflectionClass(RuntimeConfigurator::class))->getConstructor();
         self::assertNotNull($analysisRuntimeConstructor);
         self::assertNotNull($runtimeConstructor);
-        self::assertCount(5, $analysisRuntimeConstructor->getParameters());
-        self::assertCount(8, $runtimeConstructor->getParameters());
+        self::assertCount(7, $analysisRuntimeConstructor->getParameters());
+        self::assertCount(7, $runtimeConstructor->getParameters());
+        $checkConstructor = (new ReflectionClass(CheckCommand::class))->getConstructor();
+        $baselineRunConstructor = (new ReflectionClass(BaselineRun::class))->getConstructor();
+        $measuredViolationSetConstructor = (new ReflectionClass(MeasuredViolationSet::class))->getConstructor();
+        self::assertNotNull($checkConstructor);
+        self::assertNotNull($baselineRunConstructor);
+        self::assertNotNull($measuredViolationSetConstructor);
+        self::assertCount(12, $checkConstructor->getParameters());
+        self::assertCount(8, $baselineRunConstructor->getParameters());
+        self::assertCount(3, $measuredViolationSetConstructor->getParameters());
         $pipelineConstructor = (new ReflectionClass(AnalysisPipeline::class))->getConstructor();
         self::assertNotNull($pipelineConstructor);
-        self::assertCount(11, $pipelineConstructor->getParameters());
+        self::assertCount(10, $pipelineConstructor->getParameters());
+
+        $runtimeConfigurator = $container->get(RuntimeConfigurator::class);
+        self::assertInstanceOf(RuntimeConfigurator::class, $runtimeConfigurator);
+        $analysisRuntime = (new ReflectionProperty(RuntimeConfigurator::class, 'analysisRuntimeConfigurator'))->getValue($runtimeConfigurator);
+        self::assertInstanceOf(AnalysisRuntimeConfigurator::class, $analysisRuntime);
+        self::assertInstanceOf(
+            RuleConfigurationInterface::class,
+            (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'ruleOptionsRegistry'))->getValue($analysisRuntime),
+        );
+        self::assertInstanceOf(
+            LcomCollectionConfigurationResolverInterface::class,
+            (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'lcomConfigurationResolver'))->getValue($analysisRuntime),
+        );
+        self::assertInstanceOf(
+            LcomCollectionConfigurationStoreInterface::class,
+            (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'lcomConfigurationStore'))->getValue($analysisRuntime),
+        );
+        self::assertInstanceOf(
+            ArchitecturePolicyConfiguratorInterface::class,
+            (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'architecturePolicyConfigurator'))->getValue($analysisRuntime),
+        );
+        self::assertInstanceOf(
+            ComputedMetricConfiguratorInterface::class,
+            (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'computedMetricConfigurator'))->getValue($analysisRuntime),
+        );
+        self::assertInstanceOf(
+            CouplingConfiguratorInterface::class,
+            (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'couplingConfigurator'))->getValue($analysisRuntime),
+        );
+        $analysisRuleInputValidator = (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'ruleInputValidator'))
+            ->getValue($analysisRuntime);
+        self::assertInstanceOf(RuleInputValidator::class, $analysisRuleInputValidator);
+        $checkCommand = $container->get(CheckCommand::class);
+        self::assertSame(
+            $analysisRuleInputValidator,
+            (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($checkCommand),
+        );
+        self::assertFalse((new ReflectionClass(AnalysisRuntimeConfigurator::class))->hasProperty('ruleRegistry'));
+        self::assertFalse((new ReflectionClass(AnalysisRuntimeConfigurator::class))->hasProperty('findingConfigurationResolver'));
 
         $runtimeCollectors = (new ReflectionProperty($store, 'collectors'))->getValue($store);
         self::assertIsIterable($runtimeCollectors);
         $runtimeCollectors = [...$runtimeCollectors];
         self::assertNotEmpty($runtimeCollectors);
         foreach ($runtimeCollectors as $runtimeCollector) {
-            self::assertInstanceOf(CollectorRuntimeConfigurableInterface::class, $runtimeCollector);
+            self::assertInstanceOf(LcomCollectionConfigurableInterface::class, $runtimeCollector);
         }
 
         $producerPreparation = (new ReflectionProperty(AnalysisPipeline::class, 'ruleProducerPreparation'))->getValue($pipeline);
@@ -456,16 +510,6 @@ PHP;
         $participants = (new ReflectionProperty($fileSetComposite, 'participants'))->getValue($fileSetComposite);
         self::assertCount(1, $participants);
         self::assertInstanceOf(DuplicationDetector::class, $participants[0]);
-    }
-
-    private static function requireCollectorRuntimeConfigurationStore(
-        object $service,
-    ): CollectorRuntimeConfigurationStoreInterface {
-        if (!$service instanceof CollectorRuntimeConfigurationStoreInterface) {
-            self::fail('Collector runtime configuration store is not wired through its contract.');
-        }
-
-        return $service;
     }
 
     #[Test]
@@ -479,6 +523,36 @@ PHP;
         self::assertInstanceOf(
             CheckScopeResolver::class,
             (new ReflectionProperty(CheckCommand::class, 'checkScopeResolver'))->getValue($command),
+        );
+        self::assertInstanceOf(
+            RunConfigurationResolverInterface::class,
+            (new ReflectionProperty(CheckCommand::class, 'runConfigurationResolver'))->getValue($command),
+        );
+        self::assertInstanceOf(
+            CacheConfigurationResolverInterface::class,
+            (new ReflectionProperty(CheckCommand::class, 'cacheConfigurationResolver'))->getValue($command),
+        );
+        self::assertInstanceOf(
+            ParallelConfigurationResolverInterface::class,
+            (new ReflectionProperty(CheckCommand::class, 'parallelConfigurationResolver'))->getValue($command),
+        );
+        self::assertInstanceOf(
+            ConfiguredFindingExclusionsResolverInterface::class,
+            (new ReflectionProperty(CheckCommand::class, 'findingExclusionsResolver'))->getValue($command),
+        );
+        self::assertInstanceOf(
+            OutputFormatResolverInterface::class,
+            (new ReflectionProperty(CheckCommand::class, 'outputFormatResolver'))->getValue($command),
+        );
+        $ruleInputValidator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($command);
+        self::assertInstanceOf(RuleInputValidator::class, $ruleInputValidator);
+        self::assertInstanceOf(
+            FindingConfigurationResolverInterface::class,
+            (new ReflectionProperty(RuleInputValidator::class, 'findingConfigurationResolver'))->getValue($ruleInputValidator),
+        );
+        self::assertInstanceOf(
+            RuleChannelSnapshotFactoryInterface::class,
+            (new ReflectionProperty(RuleInputValidator::class, 'ruleChannelSnapshotFactory'))->getValue($ruleInputValidator),
         );
         self::assertFalse((new ReflectionClass(CheckCommand::class))->hasProperty('logger'));
         self::assertFalse((new ReflectionClass(CheckCommand::class))->hasProperty('gitScopeResolver'));
@@ -550,22 +624,19 @@ PHP;
     }
 
     #[Test]
-    public function itAllowsConfiguringConfigurationHolderAtRuntime(): void
+    public function itWiresOwnerLocalRuntimeConfiguration(): void
     {
         $container = $this->factory->create();
 
-        // Get TransitionalRuntimeConfigurationHolder and configure it
-        $configProvider = $container->get(TransitionalRuntimeConfigurationProviderInterface::class);
-        self::assertInstanceOf(TransitionalRuntimeConfigurationHolder::class, $configProvider);
-
-        $config = new TransitionalRuntimeConfiguration(
-            cacheDir: AbsolutePath::fromString($this->tempDir . '/cache'),
-            cacheEnabled: false,
+        $runtimeConfigurator = $container->get(RuntimeConfigurator::class);
+        self::assertInstanceOf(
+            CacheFactory::class,
+            (new ReflectionProperty(RuntimeConfigurator::class, 'cacheFactory'))->getValue($runtimeConfigurator),
         );
-        $configProvider->setConfiguration($config);
-
-        // Verify configuration was applied
-        self::assertSame($config, $configProvider->getConfiguration());
+        self::assertInstanceOf(
+            ParallelConfigurationStoreInterface::class,
+            (new ReflectionProperty(RuntimeConfigurator::class, 'parallelConfigurationStore'))->getValue($runtimeConfigurator),
+        );
     }
 
     #[Test]

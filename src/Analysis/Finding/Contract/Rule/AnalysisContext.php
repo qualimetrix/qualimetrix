@@ -14,27 +14,14 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 final readonly class AnalysisContext
 {
     /**
-     * @param array<string, mixed> $ruleOptions
      * @param array<string, list<ThresholdOverride>> $thresholdOverrides Per-file threshold overrides
      */
     public function __construct(
         public MetricRepositoryInterface $metrics,
-        public array $ruleOptions = [],
         public ?DependencyGraphInterface $dependencyGraph = null,
         public ?NamespaceTree $namespaceTree = null,
         public array $thresholdOverrides = [],
     ) {}
-
-    /**
-     * Gets options for a specific rule.
-     *
-     * @return array<string, mixed>
-     */
-    public function getOptionsForRule(string $ruleName): array
-    {
-        /** @var array<string, mixed> */
-        return $this->ruleOptions[$ruleName] ?? [];
-    }
 
     /**
      * Finds the most specific threshold override bound to an exact subject.

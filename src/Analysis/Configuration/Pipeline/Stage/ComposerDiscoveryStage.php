@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 
 use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
 
@@ -34,9 +34,9 @@ final class ComposerDiscoveryStage implements ConfigurationStageInterface
         return 'composer';
     }
 
-    public function apply(ConfigurationContext $context): ?ConfigurationLayer
+    public function apply(ConfigurationResolutionRequest $request): ?ConfigurationLayer
     {
-        $composerPath = $context->workingDirectory . '/composer.json';
+        $composerPath = $request->workingDirectory->value() . '/composer.json';
 
         $paths = $this->composerReader->extractAutoloadPaths($composerPath);
 

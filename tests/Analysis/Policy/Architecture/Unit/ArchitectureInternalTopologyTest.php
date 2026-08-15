@@ -21,6 +21,68 @@ use RecursiveIteratorIterator;
 
 final class ArchitectureInternalTopologyTest extends TestCase
 {
+    /** @var list<string> */
+    private const array ARCHITECTURE_DECLARATIONS = [
+        'Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\AllowValidator',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowAliasExpander',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowListEntry',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\AllowTarget',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\CaptureBinding',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\InvalidSelectorException',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelector',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\LayerSelectorParser',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\ParseCapturedState',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\SelectorKind',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\Allow\SelectorSegment',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureFactoryResult',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageValidator',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\ExactAllowCycleValidator',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\ExcludeBlockValidator',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayerCriterionNormalizer',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\LayersValidator',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\LongFormAllowEntryNormalizer',
+        'Qualimetrix\Analysis\Policy\Architecture\Configuration\WildcardSelfAllowDetector',
+        'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException',
+        'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationWarning',
+        'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface',
+        'Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException',
+        'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignment',
+        'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface',
+        'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch',
+        'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface',
+        'Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule',
+        'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassSet',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionListValidator',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionResult',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerInstantiator',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\TupleExtractor',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipResult',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition',
+    ];
+
     /** @var array<string, list<string>> */
     private const array ALLOWED = [
         'Contract' => [],
@@ -42,7 +104,15 @@ final class ArchitectureInternalTopologyTest extends TestCase
             $targets,
             static fn(mixed $target): bool => \is_array($target) && ($target['owner'] ?? null) === 'Analysis.Policy.Architecture',
         );
-        self::assertCount(57, $expected);
+        $declarations = array_keys($expected);
+        sort($declarations, \SORT_STRING);
+        self::assertSame(self::ARCHITECTURE_DECLARATIONS, $declarations);
+
+        $resolvedArchitecturePolicy = $targets['Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface'];
+        self::assertIsArray($resolvedArchitecturePolicy);
+        self::assertSame('Contract', $this->zoneForPath($resolvedArchitecturePolicy['path']));
+        self::assertSame('contract', $resolvedArchitecturePolicy['visibility']);
+        self::assertSame('Analysis.Policy.Architecture', $resolvedArchitecturePolicy['owner']);
 
         foreach ($expected as $fqcn => $target) {
             $path = $root . '/' . $target['path'];

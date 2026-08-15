@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Reporting\Profile\ProfileSummaryRenderer;
+use Qualimetrix\Infrastructure\Profiler\Contract\ProfileFormat;
+use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -15,7 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class ProfilePresenter
 {
     public function __construct(
-        private readonly ProfilerHolder $profilerHolder,
+        private readonly ProfileReportInterface $profileReport,
         private readonly ProfileSummaryRenderer $profileRenderer = new ProfileSummaryRenderer(),
         private readonly DiagnosticOutput $diagnosticOutput = new DiagnosticOutput(),
     ) {}
@@ -26,9 +26,7 @@ final class ProfilePresenter
     public function present(InputInterface $input, OutputInterface $output): void
     {
         $output = $this->diagnosticOutput->stream($output);
-        $profiler = $this->profilerHolder->get(); // @phpstan-ignore staticMethod.dynamicCall
-
-        if (!$profiler->isEnabled()) {
+        if (!$this->profileReport->isEnabled()) {
             return;
         }
 
@@ -36,7 +34,7 @@ final class ProfilePresenter
 
         // If --profile without value, output summary to stderr
         if ($profileOption === null) {
-            $summary = $this->profileRenderer->render($profiler->getSummary());
+            $summary = $this->profileRenderer->render($this->profileReport->summary());
             $output->writeln('', OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL);
             $output->writeln($summary, OutputInterface::OUTPUT_NORMAL | OutputInterface::VERBOSITY_NORMAL);
 
@@ -57,10 +55,7 @@ final class ProfilePresenter
             return;
         }
 
-        /** @var 'json'|'chrome-tracing' $format */
-        $format = $formatOption;
-
-        $profileData = $profiler->export($format);
+        $profileData = $this->profileReport->export(ProfileFormat::from($formatOption));
 
         // Atomic write: write to temp file first, then rename
         $tmpFile = $profileOption . '.tmp.' . getmypid();

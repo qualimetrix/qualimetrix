@@ -16,8 +16,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Profiler\ProfilerInterface;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use RuntimeException;
@@ -676,7 +675,8 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $catalog = $this->createMock(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->expects(self::once())->method('all')->willReturn([]);
 
-        (new ComputedMetricEvaluator($catalog))->evaluate(new InMemoryMetricRepository(), 1);
+        (new ComputedMetricEvaluator($catalog, self::createStub(ProfilerInterface::class)))
+            ->evaluate(new InMemoryMetricRepository(), 1);
     }
 
     #[Test]
@@ -686,7 +686,7 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->method('all')->willReturn(array_values(ComputedMetricDefaults::getDefaults()));
 
-        (new ComputedMetricEvaluator($catalog))->evaluate($repository, 0);
+        (new ComputedMetricEvaluator($catalog, self::createStub(ProfilerInterface::class)))->evaluate($repository, 0);
 
         self::assertSame([], $repository->get(SymbolPath::forProject())->all());
     }
@@ -703,24 +703,18 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $profiler->method('stop')->willReturnCallback(static function (string $name) use (&$stops): void {
             $stops[] = $name;
         });
-        ProfilerHolder::set($profiler);
+        $definition = new ComputedMetricDefinition(
+            name: 'computed.test',
+            formulas: ['project' => '1'],
+            description: 'Test',
+            levels: [SymbolType::Project],
+        );
+        $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $catalog->method('all')->willReturn([$definition]);
 
-        try {
-            $definition = new ComputedMetricDefinition(
-                name: 'computed.test',
-                formulas: ['project' => '1'],
-                description: 'Test',
-                levels: [SymbolType::Project],
-            );
-            $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
-            $catalog->method('all')->willReturn([$definition]);
-
-            (new ComputedMetricEvaluator($catalog))->evaluate(new InMemoryMetricRepository(), 1);
-            self::assertSame(['computed', 'pipeline'], $starts[0]);
-            self::assertSame(['computed.computed.test', 'computed'], $stops);
-        } finally {
-            ProfilerHolder::reset();
-        }
+        (new ComputedMetricEvaluator($catalog, $profiler))->evaluate(new InMemoryMetricRepository(), 1);
+        self::assertSame(['computed', 'pipeline'], $starts[0]);
+        self::assertSame(['computed.computed.test', 'computed'], $stops);
     }
 
     /** @param list<ComputedMetricDefinition> $definitions */
@@ -729,6 +723,6 @@ final class ComputedMetricEvaluatorTest extends TestCase
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->method('all')->willReturn($definitions);
 
-        (new ComputedMetricEvaluator($catalog))->evaluate($repository, 1);
+        (new ComputedMetricEvaluator($catalog, self::createStub(ProfilerInterface::class)))->evaluate($repository, 1);
     }
 }

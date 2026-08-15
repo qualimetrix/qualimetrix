@@ -7,9 +7,8 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Git;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Discovery\FileDiscoveryFactory;
 use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -27,12 +26,11 @@ final class GitScopeResolverTest extends TestCase
     {
         $projectRoot = AbsolutePath::fromString(\dirname(__DIR__, 4)); // repo root
 
-        $resolved = new TransitionalResolvedConfiguration(
-            paths: ['src'],
+        $resolved = new RunConfiguration(
+            paths: [AbsolutePath::fromString($projectRoot->value() . '/src')],
             pathExcludes: ['vendor', 'node_modules', '.git'],
-            runtime: new TransitionalRuntimeConfiguration(projectRoot: $projectRoot),
-            ruleOptions: [],
-            document: new ConfigurationDocument([]),
+            projectRoot: $projectRoot,
+            generatedFilePolicy: GeneratedFilePolicy::Exclude,
         );
 
         $definition = new InputDefinition([
@@ -57,12 +55,12 @@ final class GitScopeResolverTest extends TestCase
     #[Test]
     public function itDoesNotCreateGitClientWithoutGitOptions(): void
     {
-        $resolved = new TransitionalResolvedConfiguration(
-            paths: ['src'],
+        $projectRoot = AbsolutePath::fromString('/some/project');
+        $resolved = new RunConfiguration(
+            paths: [AbsolutePath::fromString('/some/project/src')],
             pathExcludes: ['vendor', 'node_modules', '.git'],
-            runtime: new TransitionalRuntimeConfiguration(projectRoot: AbsolutePath::fromString('/some/project')),
-            ruleOptions: [],
-            document: new ConfigurationDocument([]),
+            projectRoot: $projectRoot,
+            generatedFilePolicy: GeneratedFilePolicy::Exclude,
         );
 
         $definition = new InputDefinition([
@@ -82,12 +80,11 @@ final class GitScopeResolverTest extends TestCase
     {
         $projectRoot = AbsolutePath::fromString(\dirname(__DIR__, 4)); // repo root
 
-        $resolved = new TransitionalResolvedConfiguration(
-            paths: ['src'],
+        $resolved = new RunConfiguration(
+            paths: [AbsolutePath::fromString($projectRoot->value() . '/src')],
             pathExcludes: ['vendor', 'tests'],
-            runtime: new TransitionalRuntimeConfiguration(projectRoot: $projectRoot),
-            ruleOptions: [],
-            document: new ConfigurationDocument([]),
+            projectRoot: $projectRoot,
+            generatedFilePolicy: GeneratedFilePolicy::Exclude,
         );
 
         $definition = new InputDefinition([
@@ -111,12 +108,12 @@ final class GitScopeResolverTest extends TestCase
     #[Test]
     public function itReturnsFindDiscoveryForFullAnalysis(): void
     {
-        $resolved = new TransitionalResolvedConfiguration(
-            paths: ['src'],
+        $projectRoot = AbsolutePath::fromString('/some/project');
+        $resolved = new RunConfiguration(
+            paths: [AbsolutePath::fromString('/some/project/src')],
             pathExcludes: ['vendor', 'node_modules', '.git'],
-            runtime: new TransitionalRuntimeConfiguration(projectRoot: AbsolutePath::fromString('/some/project')),
-            ruleOptions: [],
-            document: new ConfigurationDocument([]),
+            projectRoot: $projectRoot,
+            generatedFilePolicy: GeneratedFilePolicy::Exclude,
         );
 
         $definition = new InputDefinition([

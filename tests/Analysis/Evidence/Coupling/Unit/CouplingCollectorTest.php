@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -895,10 +896,19 @@ final class CouplingCollectorTest extends TestCase
     private function configuredAnalysis(array $prefixes): CouplingAnalysis
     {
         $analysis = new CouplingAnalysis();
-        $analysis->configure(new ConfigurationDocument([
+        $analysis->replace($analysis->resolve($this->document([
             ['coupling' => ['frameworkNamespaces' => $prefixes]],
-        ]));
+        ])));
 
         return $analysis;
+    }
+
+    /** @param list<array<string, mixed>> $contributions */
+    private function document(array $contributions): ConfigurationDocument
+    {
+        return new ConfigurationDocument(array_map(
+            static fn(array $values): array => ['source' => 'test', 'values' => $values],
+            $contributions,
+        ), AbsolutePath::fromString('/project'));
     }
 }

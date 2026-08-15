@@ -8,11 +8,11 @@ use ArrayIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
 use Qualimetrix\Analysis\Run\Discovery\DiscoveredAnalysisFiles;
-use Qualimetrix\Analysis\Run\Discovery\GeneratedFilePolicy;
 use Qualimetrix\Core\Path\AbsolutePath;
 use SplFileInfo;
 

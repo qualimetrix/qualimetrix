@@ -48,13 +48,8 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface'
         - 'Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException'
         - 'Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface'
-        - 'Qualimetrix\Analysis\Configuration\Contract\OutputFormat'
-        - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext'
         - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface'
-        - 'Qualimetrix\Analysis\Configuration\Contract\ResolvedFindingExclusions'
-        - 'Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration'
-        - 'Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration'
-        - 'Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface'
+        - 'Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest'
         - 'Qualimetrix\Analysis\Configuration\Discovery\ComposerReader'
         - 'Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface'
         - 'Qualimetrix\Analysis\Configuration\Loader\SectionNormalizationPolicy'
@@ -71,7 +66,6 @@ architecture:
         - 'Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage'
         - 'Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage'
         - 'Qualimetrix\Analysis\Configuration\Preset\PresetResolver'
-        - 'Qualimetrix\Analysis\Configuration\Runtime\TransitionalRuntimeConfigurationHolder'
     - name: analysis-evidence-circulardependency
       patterns:
         - 'Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis'
@@ -131,12 +125,18 @@ architecture:
     - name: analysis-evidence-cohesion
       patterns:
         - 'Qualimetrix\Analysis\Evidence\Cohesion\ClassVisitorStackTrait'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\Configuration\LcomCollectionConfigurationResolver'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomClassData'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomGraphCalculator'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomOptions'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomRule'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor'
+        - 'Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\TccLccClassData'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector'
         - 'Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor'
@@ -178,6 +178,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\Finding\ComputedMetricFindingBuilder'
@@ -320,9 +321,6 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectionOutput'
-        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurableInterface'
-        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfiguration'
-        - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurationStoreInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface'
@@ -354,7 +352,6 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\MetricSubjectIndex'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\NamespaceMetricIndex'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\RepositoryMerge'
-        - 'Qualimetrix\Analysis\Evidence\Measurement\Runtime\CollectorRuntimeConfigurationStore'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorCallableMetadata'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorFileEntryScope'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorMethodContext'
@@ -413,10 +410,14 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Size\PropertyCountRule'
     - name: analysis-finding
       patterns:
+        - 'Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver'
         - 'Qualimetrix\Analysis\Finding\Contract\AcceptedLevel'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelShape'
+        - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides'
+        - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration'
+        - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Control\ControlScope'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter'
@@ -428,7 +429,6 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Location'
         - 'Qualimetrix\Analysis\Finding\Contract\OccurrenceKey'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface'
-        - 'Qualimetrix\Analysis\Finding\Contract\RuleExclusionCaptureHolder'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleExclusionStats'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\RuleMetadata'
@@ -510,6 +510,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule'
@@ -603,6 +604,7 @@ architecture:
       patterns:
         - 'Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator'
         - 'Qualimetrix\Analysis\Run\Collection\FileProcessor'
+        - 'Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind'
@@ -612,6 +614,9 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration'
+        - 'Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface'
@@ -624,12 +629,12 @@ architecture:
         - 'Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult'
         - 'Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface'
         - 'Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException'
+        - 'Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface'
         - 'Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery'
         - 'Qualimetrix\Analysis\Run\Discovery\DiscoveredAnalysisFiles'
         - 'Qualimetrix\Analysis\Run\Discovery\FileDiscoveryFactory'
         - 'Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery'
         - 'Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter'
-        - 'Qualimetrix\Analysis\Run\Discovery\GeneratedFilePolicy'
         - 'Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite'
         - 'Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate'
         - 'Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline'
@@ -651,6 +656,9 @@ architecture:
         - 'Qualimetrix\Core\Path\AbsolutePath'
         - 'Qualimetrix\Core\Path\PathFactory'
         - 'Qualimetrix\Core\Path\RelativePath'
+    - name: core-profiler
+      patterns:
+        - 'Qualimetrix\Core\Profiler\Contract\ProfilerInterface'
     - name: core-symbol
       patterns:
         - 'Qualimetrix\Core\Symbol\CallableKind'
@@ -670,10 +678,15 @@ architecture:
         - 'Qualimetrix\Infrastructure\Ast\PhpFileParser'
     - name: infrastructure-cache
       patterns:
+        - 'Qualimetrix\Infrastructure\Cache\CacheConfigurationResolver'
+        - 'Qualimetrix\Infrastructure\Cache\CacheConfigurationStore'
         - 'Qualimetrix\Infrastructure\Cache\CacheFactory'
         - 'Qualimetrix\Infrastructure\Cache\CacheInterface'
         - 'Qualimetrix\Infrastructure\Cache\CacheKeyGenerator'
         - 'Qualimetrix\Infrastructure\Cache\CacheWriteException'
+        - 'Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration'
+        - 'Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface'
+        - 'Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface'
         - 'Qualimetrix\Infrastructure\Cache\FileCache'
     - name: infrastructure-console
       patterns:
@@ -700,8 +713,10 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\Command\HookStatusCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\HookUninstallCommand'
         - 'Qualimetrix\Infrastructure\Console\Command\RulesCommand'
+        - 'Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter'
         - 'Qualimetrix\Infrastructure\Console\DiagnosticOutput'
         - 'Qualimetrix\Infrastructure\Console\ExitCodeResolver'
+        - 'Qualimetrix\Infrastructure\Console\ExitPolicy'
         - 'Qualimetrix\Infrastructure\Console\FilteredInputDefinition'
         - 'Qualimetrix\Infrastructure\Console\FormatterContextFactory'
         - 'Qualimetrix\Infrastructure\Console\LayerAssignmentResolver'
@@ -709,13 +724,15 @@ architecture:
         - 'Qualimetrix\Infrastructure\Console\MeasuredViolationSet'
         - 'Qualimetrix\Infrastructure\Console\OutputHelper'
         - 'Qualimetrix\Infrastructure\Console\ProfilePresenter'
+        - 'Qualimetrix\Infrastructure\Console\ProfileSummaryRenderer'
         - 'Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar'
-        - 'Qualimetrix\Infrastructure\Console\Progress\DelegatingProgressReporter'
-        - 'Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder'
+        - 'Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter'
         - 'Qualimetrix\Infrastructure\Console\ResolvedCheckScope'
         - 'Qualimetrix\Infrastructure\Console\ResultPresenter'
         - 'Qualimetrix\Infrastructure\Console\RuleInputValidator'
         - 'Qualimetrix\Infrastructure\Console\RuntimeConfigurator'
+        - 'Qualimetrix\Infrastructure\Console\RuntimeLimits'
+        - 'Qualimetrix\Infrastructure\Console\RuntimeLimitsController'
         - 'Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator'
         - 'Qualimetrix\Infrastructure\Console\ScopeWarningChecker'
         - 'Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator'
@@ -772,23 +789,21 @@ architecture:
     - name: infrastructure-logging
       patterns:
         - 'Qualimetrix\Infrastructure\Logging\ConsoleLogger'
+        - 'Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface'
         - 'Qualimetrix\Infrastructure\Logging\DelegatingLogger'
         - 'Qualimetrix\Infrastructure\Logging\FileLogger'
         - 'Qualimetrix\Infrastructure\Logging\LoggerFactory'
         - 'Qualimetrix\Infrastructure\Logging\LoggerHelperTrait'
         - 'Qualimetrix\Infrastructure\Logging\LoggerHolder'
-    - name: infrastructure-observability
-      patterns:
-        - 'Qualimetrix\Core\Profiler\NullProfiler'
-        - 'Qualimetrix\Core\Profiler\ProfilerHolder'
-        - 'Qualimetrix\Core\Profiler\ProfilerInterface'
-        - 'Qualimetrix\Core\Profiler\Span'
-        - 'Qualimetrix\Core\Progress\NullProgressReporter'
-        - 'Qualimetrix\Core\Progress\ProgressReporter'
     - name: infrastructure-parallel
       patterns:
+        - 'Qualimetrix\Infrastructure\Parallel\Configuration\ParallelConfigurationResolver'
+        - 'Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration'
+        - 'Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface'
+        - 'Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface'
         - 'Qualimetrix\Infrastructure\Parallel\FileProcessingTask'
         - 'Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory'
+        - 'Qualimetrix\Infrastructure\Parallel\Runtime\ParallelConfigurationStore'
         - 'Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy'
         - 'Qualimetrix\Infrastructure\Parallel\Strategy\SequentialStrategy'
         - 'Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector'
@@ -796,13 +811,20 @@ architecture:
         - 'Qualimetrix\Infrastructure\Parallel\WorkerBootstrap'
     - name: infrastructure-profiler
       patterns:
+        - 'Qualimetrix\Infrastructure\Profiler\Contract\ProfileFormat'
+        - 'Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface'
+        - 'Qualimetrix\Infrastructure\Profiler\Contract\ProfileSessionControlInterface'
+        - 'Qualimetrix\Infrastructure\Profiler\Contract\ProfileSummary'
         - 'Qualimetrix\Infrastructure\Profiler\Export\ChromeTracingExporter'
         - 'Qualimetrix\Infrastructure\Profiler\Export\JsonExporter'
         - 'Qualimetrix\Infrastructure\Profiler\Export\ProfileExporterInterface'
+        - 'Qualimetrix\Infrastructure\Profiler\ProfileSession'
         - 'Qualimetrix\Infrastructure\Profiler\Profiler'
+        - 'Qualimetrix\Infrastructure\Profiler\Span'
     - name: infrastructure-rule
       patterns:
         - 'Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry'
+        - 'Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface'
         - 'Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException'
         - 'Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter'
         - 'Qualimetrix\Infrastructure\Rule\RuleChannelRegistry'
@@ -816,8 +838,14 @@ architecture:
         - 'Qualimetrix\Infrastructure\Serializer\SerializerSelector'
     - name: reporting
       patterns:
+        - 'Qualimetrix\Reporting\Configuration\OutputFormatResolver'
+        - 'Qualimetrix\Reporting\Contract\OutputFormat'
+        - 'Qualimetrix\Reporting\Contract\OutputFormatResolverInterface'
         - 'Qualimetrix\Reporting\CoverageFailure'
         - 'Qualimetrix\Reporting\Filter\ViolationFilter'
+        - 'Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver'
+        - 'Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions'
+        - 'Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult'
@@ -865,7 +893,6 @@ architecture:
         - 'Qualimetrix\Reporting\Health\HealthHintProjector'
         - 'Qualimetrix\Reporting\Health\HealthScoreResolver'
         - 'Qualimetrix\Reporting\Health\SummaryEnricher'
-        - 'Qualimetrix\Reporting\Profile\ProfileSummaryRenderer'
         - 'Qualimetrix\Reporting\Report'
         - 'Qualimetrix\Reporting\ReportBuilder'
         - 'Qualimetrix\Reporting\ReportCoverage'
@@ -884,7 +911,6 @@ architecture:
 
   allow:
     analysis-configuration:
-      - analysis-finding
       - core-path
       - external
     analysis-evidence-circulardependency:
@@ -918,8 +944,8 @@ architecture:
       - analysis-configuration
       - analysis-evidence-measurement
       - analysis-finding
+      - core-profiler
       - core-symbol
-      - infrastructure-observability
       - external
     analysis-evidence-computedmetrics-health:
       - analysis-evidence-computedmetrics
@@ -950,7 +976,6 @@ architecture:
       - core-symbol
       - external
     analysis-evidence-duplication:
-      - analysis-configuration
       - analysis-finding
       - analysis-run
       - core-neutral
@@ -967,8 +992,8 @@ architecture:
     analysis-evidence-measurement:
       - analysis-evidence-dependencymodel
       - core-path
+      - core-profiler
       - core-symbol
-      - infrastructure-observability
       - external
     analysis-evidence-prioritization:
       - analysis-evidence-measurement
@@ -990,12 +1015,13 @@ architecture:
       - core-symbol
       - external
     analysis-finding:
+      - analysis-configuration
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
       - core-neutral
       - core-path
+      - core-profiler
       - core-symbol
-      - infrastructure-observability
       - external
     analysis-policy-architecture:
       - analysis-configuration
@@ -1029,19 +1055,20 @@ architecture:
       - analysis-policy-inline
       - core-neutral
       - core-path
+      - core-profiler
       - core-symbol
-      - infrastructure-observability
       - external
     core-neutral:
       - core-path
       - external
     core-path:
       - external
+    core-profiler:
+      - external
     core-symbol:
       - core-path
       - external
     infrastructure-ast:
-      - analysis-configuration
       - core-neutral
       - core-path
       - infrastructure-cache
@@ -1053,6 +1080,7 @@ architecture:
       - external
     infrastructure-console:
       - analysis-configuration
+      - analysis-evidence-cohesion
       - analysis-evidence-computedmetrics
       - analysis-evidence-coupling
       - analysis-evidence-dependencymodel
@@ -1063,11 +1091,12 @@ architecture:
       - analysis-run
       - core-neutral
       - core-path
+      - core-profiler
       - core-symbol
       - infrastructure-cache
       - infrastructure-git
       - infrastructure-logging
-      - infrastructure-observability
+      - infrastructure-parallel
       - infrastructure-profiler
       - infrastructure-rule
       - reporting
@@ -1076,6 +1105,7 @@ architecture:
     infrastructure-dependencyinjection:
       - analysis-configuration
       - analysis-evidence-circulardependency
+      - analysis-evidence-cohesion
       - analysis-evidence-computedmetrics
       - analysis-evidence-coupling
       - analysis-evidence-dependencymodel
@@ -1086,39 +1116,38 @@ architecture:
       - analysis-policy-inline
       - analysis-run
       - core-neutral
+      - core-profiler
       - infrastructure-ast
       - infrastructure-cache
       - infrastructure-console
       - infrastructure-git
       - infrastructure-logging
-      - infrastructure-observability
       - infrastructure-parallel
+      - infrastructure-profiler
       - infrastructure-rule
       - reporting
       - external
     infrastructure-git:
-      - analysis-configuration
       - analysis-run
       - core-path
       - reporting
       - external
     infrastructure-logging:
       - external
-    infrastructure-observability:
-      - external
     infrastructure-parallel:
       - analysis-configuration
+      - analysis-evidence-cohesion
       - analysis-evidence-dependencymodel
       - analysis-evidence-measurement
       - analysis-policy-inline
       - analysis-run
       - core-path
+      - core-profiler
       - infrastructure-ast
       - infrastructure-cache
-      - infrastructure-observability
       - external
     infrastructure-profiler:
-      - infrastructure-observability
+      - core-profiler
       - external
     infrastructure-rule:
       - analysis-configuration
@@ -1129,6 +1158,7 @@ architecture:
     infrastructure-serializer:
       - external
     reporting:
+      - analysis-configuration
       - analysis-evidence-computedmetrics
       - analysis-evidence-computedmetrics-health
       - analysis-evidence-measurement

@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -74,7 +75,12 @@ final class ComputedMetricRuleTest extends TestCase
     {
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->method('all')->willReturn([]);
-        $rule = new ComputedMetricRule(new ComputedMetricRuleOptions(enabled: false), $catalog, new ComputedMetricFindingBuilder());
+        $rule = new ComputedMetricRule(
+            new ComputedMetricRuleOptions(enabled: false),
+            $catalog,
+            new ComputedMetricFindingBuilder(),
+            self::createStub(ProfilerInterface::class),
+        );
 
         $repository = $this->createMock(MetricRepositoryInterface::class);
         $repository->expects(self::never())->method('allDeclarations');
@@ -407,7 +413,12 @@ final class ComputedMetricRuleTest extends TestCase
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->method('all')->willReturn($definitions);
 
-        return new ComputedMetricRule(new ComputedMetricRuleOptions(enabled: true), $catalog, new ComputedMetricFindingBuilder());
+        return new ComputedMetricRule(
+            new ComputedMetricRuleOptions(enabled: true),
+            $catalog,
+            new ComputedMetricFindingBuilder(),
+            self::createStub(ProfilerInterface::class),
+        );
     }
 
     private function repositoryWithExactClassDeclaration(

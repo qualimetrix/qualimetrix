@@ -9,11 +9,11 @@ use PhpParser\ParserFactory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomClassData;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
 use Qualimetrix\Analysis\Evidence\Cohesion\LcomVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfiguration;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use SplFileInfo;
@@ -1428,7 +1428,7 @@ PHP;
     #[Test]
     public function itRespectsExcludeMethodsFromConfig(): void
     {
-        $this->collector->applyRuntimeConfiguration(new CollectorRuntimeConfiguration(['getName']));
+        $this->collector->applyLcomCollectionConfiguration(new LcomCollectionConfiguration(['getName']));
 
         $code = <<<'PHP'
 <?php

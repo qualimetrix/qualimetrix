@@ -49,14 +49,8 @@ Core/
 ├── Namespace_/
 │   ├── NamespaceDetectorInterface.php
 │   └── ProjectNamespaceResolverInterface.php
-├── Progress/
-│   ├── ProgressReporter.php               # Progress reporting interface
-│   └── NullProgressReporter.php           # No-op implementation
 ├── Profiler/
-│   ├── ProfilerInterface.php              # Performance profiler interface
-│   ├── ProfilerHolder.php                 # Static holder for profiler instance
-│   ├── NullProfiler.php                   # No-op profiler
-│   └── Span.php                           # Profiling span VO
+│   └── Contract/ProfilerInterface.php     # Neutral instrumentation vocabulary
 ├── Observation/
 │   └── WorseDirection.php                 # Enum: higher-is-worse / lower-is-worse + the comparison operators
 ├── Util/
@@ -612,70 +606,17 @@ in P2. P4 moved cycle values and their preparation to
 
 ---
 
-## Progress Reporting
+## Progress and profiling boundaries
 
-### ProgressReporter
+Collection progress is a Run-owned consumer port implemented by the Console
+adapter. The Console switch is instance-owned and resets to no-op for quiet,
+non-TTY, and `--no-progress` runs; Core has no progress type.
 
-Interface for tracking analysis progress.
-
-**Methods:**
-- `start(int $total): void` — start tracking with total item count
-- `advance(int $step = 1): void` — advance by specified steps
-- `setMessage(string $message): void` — set current operation message
-- `finish(): void` — finish tracking and clean up
-
-### NullProgressReporter
-
-No-op implementation. Used in quiet mode, non-TTY output (CI, pipes), or with `--no-progress`.
-
----
-
-## Profiler Contracts
-
-### ProfilerInterface
-
-Interface for profiling performance metrics. Tracks execution time and memory usage using a tree of spans.
-
-**Methods:**
-- `start(string $name, ?string $category = null): void` — start a new span
-- `stop(string $name): void` — stop the most recent span with the given name
-- `isEnabled(): bool` — whether profiling is active
-- `getRootSpan(): ?Span` — root span of the profiling tree
-- `getSummary(): array` — aggregated statistics grouped by span name
-- `export(string $format): string` — export data (`'json'` or `'chrome-tracing'`)
-- `clear(): void` — reset all profiling data
-
-### ProfilerHolder
-
-Static holder for global profiler access. Returns `NullProfiler` if no profiler has been set.
-
-**Methods:**
-- `set(ProfilerInterface $profiler): void` — set the profiler instance (during container init)
-- `get(): ProfilerInterface` — get current profiler (or NullProfiler)
-- `reset(): void` — reset instance (for testing)
-
-### NullProfiler
-
-No-op profiler for production use. Provides minimal overhead when profiling is disabled.
-
-### Span
-
-Value Object representing a profiling span (time interval). Spans can be nested to create a tree structure.
-
-**Fields:**
-- `name: string` — span name (e.g., `"FileProcessor::process"`)
-- `category: ?string` — optional category (e.g., `"collection"`, `"analysis"`)
-- `startTime: float` — start timestamp in nanoseconds
-- `startMemory: int` — memory usage at start in bytes
-- `endTime: ?float` — end timestamp (null if running)
-- `endMemory: ?int` — memory at end (null if running)
-- `parent: ?Span` — parent span (null for root)
-- `children: list<Span>` — child spans
-
-**Methods:**
-- `getDuration(): ?float` — duration in milliseconds
-- `getMemoryDelta(): ?int` — memory delta in bytes
-- `isRunning(): bool` — whether span is still active
+`Core\Profiler\Contract\ProfilerInterface` contains only neutral
+instrumentation operations (`start()` and `stop()`). Profiling session state,
+spans, summaries, and exports belong to Infrastructure Profiler. The
+per-container session is disabled by default and exposes distinct control/report
+contracts to Console; no holder or public no-op implementation exists.
 
 ---
 
@@ -892,6 +833,12 @@ Determines whether a namespace belongs to the project (not an external dependenc
 - Unit tests for Violation::getFingerprint()
 - Unit tests for MetricDefinition::aggregatedName()
 - PHPStan level 8 with no errors
+
+## Locality
+
+Core publishes only neutral primitives that lack a natural leaf owner. Any new
+Core type must satisfy that ownership test and have subject-owned tests and
+documentation.
 
 ---
 

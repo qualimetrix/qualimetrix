@@ -6,27 +6,24 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
 use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
-use Qualimetrix\Analysis\Configuration\Contract\ResolvedFindingExclusions;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Infrastructure\Cache\CacheFactory;
-use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
-use Qualimetrix\Infrastructure\Console\DiagnosticOutput;
+use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\FilteredInputDefinition;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
+use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
-use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
-use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest;
-use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
+use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
+use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -44,27 +41,26 @@ final class CheckCommand extends Command
     /** @var list<string> Rule-specific option names hidden from --help */
     private array $hiddenOptionNames = [];
 
-    private ?FilteredInputDefinition $filteredDefinition = null;
-    private ?int $filteredDefinitionSource = null;
-
     public function __construct(
-        private readonly RuleRegistryInterface $ruleRegistry,
         private readonly AnalysisPipelineInterface $analyzer,
-        private readonly CacheFactory $cacheFactory,
         private readonly ViolationFilterOrchestrator $violationFilterOrchestrator,
-        private readonly ConfigurationPipelineInterface $configurationPipeline,
         private readonly RuntimeConfigurator $runtimeConfigurator,
         private readonly ResultPresenter $resultPresenter,
         private readonly RuleInputValidator $ruleInputValidator,
-        private readonly DiagnosticOutput $diagnosticOutput,
         private readonly CheckScopeResolver $checkScopeResolver,
+        private readonly ConfigurationInputAdapter $configurationInputAdapter,
+        private readonly RunConfigurationResolverInterface $runConfigurationResolver,
+        private readonly CacheConfigurationResolverInterface $cacheConfigurationResolver,
+        private readonly ParallelConfigurationResolverInterface $parallelConfigurationResolver,
+        private readonly ConfiguredFindingExclusionsResolverInterface $findingExclusionsResolver,
+        private readonly OutputFormatResolverInterface $outputFormatResolver,
     ) {
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this->hiddenOptionNames = CheckCommandDefinition::addOptions($this, $this->ruleRegistry);
+        $this->hiddenOptionNames = $this->ruleInputValidator->configureCheckCommand($this);
         $this->setHelp(
             'Run <info>bin/qmx rules</info> to see all available rules and their options.' . "\n"
             . 'Use <info>--rule-opt=rule-name:option=value</info> to set rule-specific thresholds.',
@@ -87,16 +83,12 @@ final class CheckCommand extends Command
             return $definition;
         }
 
-        // Rebuild when parent definition changes (e.g., after mergeApplicationDefinition)
-        if ($this->filteredDefinition === null || $this->filteredDefinitionSource !== spl_object_id($definition)) {
-            $this->filteredDefinition = new FilteredInputDefinition();
-            $this->filteredDefinition->setArguments($definition->getArguments());
-            $this->filteredDefinition->setOptions($definition->getOptions());
-            $this->filteredDefinition->setHiddenOptionNames($this->hiddenOptionNames);
-            $this->filteredDefinitionSource = spl_object_id($definition);
-        }
+        $filteredDefinition = new FilteredInputDefinition();
+        $filteredDefinition->setArguments($definition->getArguments());
+        $filteredDefinition->setOptions($definition->getOptions());
+        $filteredDefinition->setHiddenOptionNames($this->hiddenOptionNames);
 
-        return $this->filteredDefinition;
+        return $filteredDefinition;
     }
 
     /**
@@ -115,7 +107,7 @@ final class CheckCommand extends Command
         try {
             return $this->doExecute($input, $output);
         } catch (ConflictingCliAliasException $e) {
-            $this->diagnosticOutput->write($output, \sprintf(
+            $this->resultPresenter->writeDiagnostic($output, \sprintf(
                 '<error>CLI alias conflict: "%s" is used by both "%s" and "%s" rules</error>',
                 $e->alias,
                 $e->firstRule,
@@ -124,7 +116,7 @@ final class CheckCommand extends Command
 
             return self::EXIT_CONFIG_ERROR;
         } catch (ConfigLoadException|ArchitectureConfigurationException $e) {
-            $this->diagnosticOutput->write($output, \sprintf(
+            $this->resultPresenter->writeDiagnostic($output, \sprintf(
                 '<error>Configuration error: %s</error>',
                 $e->getMessage(),
             ));
@@ -135,26 +127,26 @@ final class CheckCommand extends Command
             // (typo'd templates, ceiling exceeded, name collisions). Surface them
             // with the same framing and exit code as ConfigLoadException so the
             // user sees them as configuration errors, not internal crashes.
-            $this->diagnosticOutput->write($output, \sprintf(
+            $this->resultPresenter->writeDiagnostic($output, \sprintf(
                 '<error>Architecture configuration error: %s</error>',
                 $e->getMessage(),
             ));
 
             return self::EXIT_CONFIG_ERROR;
         } catch (InvalidArgumentException $e) {
-            $this->diagnosticOutput->write($output, \sprintf('<error>%s</error>', $e->getMessage()));
+            $this->resultPresenter->writeDiagnostic($output, \sprintf('<error>%s</error>', $e->getMessage()));
 
             return self::EXIT_CONFIG_ERROR;
         } catch (Throwable $e) {
-            $this->diagnosticOutput->write($output, \sprintf(
+            $this->resultPresenter->writeDiagnostic($output, \sprintf(
                 '<error>Unexpected error: %s</error>',
                 $e->getMessage(),
             ));
 
             if ($output->isVerbose()) {
-                $this->diagnosticOutput->write($output, '');
-                $this->diagnosticOutput->write($output, '<comment>Stack trace:</comment>');
-                $this->diagnosticOutput->write($output, $e->getTraceAsString());
+                $this->resultPresenter->writeDiagnostic($output, '');
+                $this->resultPresenter->writeDiagnostic($output, '<comment>Stack trace:</comment>');
+                $this->resultPresenter->writeDiagnostic($output, $e->getTraceAsString());
             }
 
             return self::FAILURE;
@@ -168,50 +160,81 @@ final class CheckCommand extends Command
      */
     private function doExecute(InputInterface $input, OutputInterface $output): int
     {
+        $this->runtimeConfigurator->resetRunState();
+
         // Resolve configuration through pipeline
-        $resolved = $this->resolveConfiguration($input);
+        $document = $this->configurationInputAdapter->resolve($input);
+        $runConfiguration = $this->runConfigurationResolver->resolve($document);
+        $cacheConfiguration = $this->cacheConfigurationResolver->resolve($document, $runConfiguration->projectRoot);
+        $parallelConfiguration = $this->parallelConfigurationResolver->resolve($document);
+        $findingConfiguration = $this->ruleInputValidator->resolve($document, $input);
+        $findingExclusions = $this->findingExclusionsResolver->resolve($document);
+        $outputFormat = $this->outputFormatResolver->resolve($document);
+        $exitPolicy = $this->configurationInputAdapter->exitPolicy($document);
 
         // Configure runtime using resolved config
-        $this->runtimeConfigurator->configure($resolved, $input, $output);
+        $this->runtimeConfigurator->configure(
+            $document,
+            $findingConfiguration,
+            $cacheConfiguration,
+            $parallelConfiguration,
+            $input,
+            $output,
+        );
 
-        $this->ruleInputValidator->validate($resolved, $input);
+        if ($this->runtimeConfigurator->clearCacheIfRequested($input)) {
+            $this->resultPresenter->writeDiagnostic($output, '<info>Cache cleared.</info>');
+        }
 
-        $this->clearCacheIfRequested($input, $output);
+        $selectionWarning = $this->ruleInputValidator->conflictingSelectionWarning($findingConfiguration);
+        if ($selectionWarning !== null) {
+            $this->writeWarning($output, $selectionWarning);
+        }
+        if ($output->isVerbose() && $document->appliedSources() !== []) {
+            $this->resultPresenter->writeDiagnostic($output, \sprintf(
+                '<info>Configuration loaded from: %s</info>',
+                implode(', ', $document->appliedSources()),
+            ));
+        }
 
-        $this->validateWorkersOption($input);
-        $this->warnAboutConflictingRuleFilters($resolved, $output);
-        $this->logConfigSources($resolved, $output);
-
-        $resolvedScope = $this->checkScopeResolver->resolve($input, $resolved);
+        $resolvedScope = $this->checkScopeResolver->resolve($input, $runConfiguration);
         $scopeResolution = $resolvedScope->scope;
 
         $pathErrors = $this->validatePaths($scopeResolution->paths);
         if ($pathErrors !== []) {
             foreach ($pathErrors as $error) {
-                $this->diagnosticOutput->write($output, \sprintf('<error>%s</error>', $error));
+                $this->resultPresenter->writeDiagnostic($output, \sprintf('<error>%s</error>', $error));
             }
 
             return self::EXIT_CONFIG_ERROR;
         }
 
-        $projectRoot = $resolved->runtime->projectRoot;
+        $projectRoot = $runConfiguration->projectRoot;
         $this->warnIfComposerJsonMissing($projectRoot, $output);
         foreach ($resolvedScope->warnings as $warning) {
             $this->writeWarning($output, \sprintf('Warning: %s', $warning));
         }
 
-        $result = $this->runAnalysis($scopeResolution->paths, $scopeResolution->fileDiscovery);
+        $scopedRunConfiguration = new RunConfiguration(
+            $scopeResolution->paths,
+            $runConfiguration->pathExcludes,
+            $runConfiguration->projectRoot,
+            $runConfiguration->generatedFilePolicy,
+        );
+        $result = $this->runAnalysis($scopedRunConfiguration, $scopeResolution->fileDiscovery);
 
         $filterResult = $this->violationFilterOrchestrator->filterAndReport(
             $result,
             $input,
             $output,
             $scopeResolution,
-            $this->projectionOptions($resolved->findingExclusions, $input, $scopeResolution),
+            $this->violationFilterOrchestrator->projectionOptions(
+                $findingExclusions,
+                $input,
+                $scopeResolution,
+            ),
         );
         $filteredViolations = $filterResult->violations;
-
-        $scopedReporting = $scopeResolution->reportScope !== null;
 
         // `check` no longer writes baselines — `bin/qmx baseline:generate` does —
         // so ResultPresenter no longer has a "baseline was just captured, report
@@ -221,8 +244,10 @@ final class CheckCommand extends Command
             $result,
             $input,
             $output,
-            $scopedReporting,
-            $resolved->outputFormat,
+            $projectRoot,
+            outputFormat: $outputFormat,
+            exitPolicy: $exitPolicy,
+            reportScope: $scopeResolution->reportScope,
         );
 
         $this->resultPresenter->presentProfile($input, $output);
@@ -231,77 +256,11 @@ final class CheckCommand extends Command
     }
 
     /**
-     * Resolves configuration using the pipeline.
-     *
-     * Working directory is captured from getcwd() which is the project root
-     * (already changed by Application::doRun() if --working-dir was passed).
-     */
-    private function resolveConfiguration(InputInterface $input): TransitionalResolvedConfiguration
-    {
-        $configPath = $input->getOption('config');
-        $cwd = getcwd();
-        $workingDirectory = $cwd !== false ? $cwd : '.';
-
-        $context = new ConfigurationContext(
-            $input,
-            $workingDirectory,
-            \is_string($configPath) && $configPath !== '' ? $configPath : null,
-        );
-
-        return $this->configurationPipeline->resolve($context);
-    }
-
-    private function projectionOptions(
-        ResolvedFindingExclusions $configuredExclusions,
-        InputInterface $input,
-        \Qualimetrix\Infrastructure\Git\GitScopeResolution $scopeResolution,
-    ): FindingProjectionOptions {
-        /** @var list<string> $cliExcludePaths */
-        $cliExcludePaths = $input->getOption('exclude-path');
-        /** @var list<string> $cliExcludeNamespaces */
-        $cliExcludeNamespaces = $input->getOption('exclude-namespace');
-        $exclusions = $configuredExclusions->withAdditional($cliExcludePaths, $cliExcludeNamespaces);
-
-        $gitScope = null;
-        if ($scopeResolution->gitClient !== null && $scopeResolution->reportScope !== null) {
-            $gitScope = new GitScopeRequest(
-                reference: $scopeResolution->reportScope->ref,
-                projectRoot: $scopeResolution->projectRoot,
-                includeParentNamespaces: !(bool) $input->getOption('report-strict'),
-            );
-        }
-
-        $baselinePath = $input->getOption('baseline');
-
-        return new FindingProjectionOptions(
-            baselinePath: \is_string($baselinePath) && $baselinePath !== '' ? $baselinePath : null,
-            excludePaths: $exclusions->excludePaths,
-            excludeNamespaces: $exclusions->excludeNamespaces,
-            annotationSuppressionDisabled: (bool) $input->getOption('no-suppression-annotations'),
-            gitScope: $gitScope,
-        );
-    }
-
-    /**
-     * Clears cache if requested via CLI option.
-     */
-    private function clearCacheIfRequested(InputInterface $input, OutputInterface $output): void
-    {
-        if ($input->getOption('clear-cache') === true) {
-            $cache = $this->cacheFactory->create();
-            $cache->clear();
-            $this->diagnosticOutput->write($output, '<info>Cache cleared.</info>');
-        }
-    }
-
-    /**
      * Runs the analysis on specified paths.
-     *
-     * @param list<AbsolutePath> $paths
      */
-    private function runAnalysis(array $paths, \Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface $fileDiscovery): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
+    private function runAnalysis(RunConfiguration $configuration, \Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface $fileDiscovery): \Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult
     {
-        return $this->analyzer->analyze($paths, $fileDiscovery);
+        return $this->analyzer->analyze($configuration, $fileDiscovery);
     }
 
     /**
@@ -321,37 +280,6 @@ final class CheckCommand extends Command
         }
 
         return $errors;
-    }
-
-    /**
-     * Validates that --workers value is a non-negative integer.
-     */
-    private function validateWorkersOption(InputInterface $input): void
-    {
-        $workers = $input->getOption('workers');
-        if ($workers === null) {
-            return;
-        }
-
-        $filtered = filter_var($workers, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
-        if ($filtered === false) {
-            throw new InvalidArgumentException(
-                \sprintf('Invalid value "%s" for --workers. Expected a non-negative integer.', $workers),
-            );
-        }
-    }
-
-    /**
-     * Warns if both --disable-rule and --only-rule are used simultaneously.
-     */
-    private function warnAboutConflictingRuleFilters(TransitionalResolvedConfiguration $resolved, OutputInterface $output): void
-    {
-        if ($resolved->ruleSelection->disabled !== [] && $resolved->ruleSelection->only !== []) {
-            $this->writeWarning(
-                $output,
-                'Warning: both --disable-rule and --only-rule are active. This may result in no rules being enabled.',
-            );
-        }
     }
 
     /**
@@ -375,21 +303,6 @@ final class CheckCommand extends Command
         if ($output instanceof ConsoleOutputInterface) {
             $output->getErrorOutput()->writeln(\sprintf('<comment>%s</comment>', $message));
         }
-    }
-
-    /**
-     * Logs which configuration sources were applied (verbose mode only).
-     */
-    private function logConfigSources(TransitionalResolvedConfiguration $resolved, OutputInterface $output): void
-    {
-        if (!$output->isVerbose() || $resolved->appliedSources === []) {
-            return;
-        }
-
-        $this->diagnosticOutput->write($output, \sprintf(
-            '<info>Configuration loaded from: %s</info>',
-            implode(', ', $resolved->appliedSources),
-        ));
     }
 
 }

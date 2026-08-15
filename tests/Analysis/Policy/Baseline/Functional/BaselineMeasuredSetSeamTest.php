@@ -8,8 +8,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCleanupCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineExplainCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineGenerateCommand;
 use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
+use Qualimetrix\Infrastructure\Console\Command\BaselineUpdateCommand;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Tests\Analysis\Policy\Baseline\Support\TempDirectory;
@@ -67,14 +69,8 @@ final class BaselineMeasuredSetSeamTest extends TestCase
           health.complexity:
             warning: 99
             error: 5
-        rules:
-          size.property-count:
-            warning: 10
-            error: 20
-        exclude_paths:
-          - '*ConfiguredPath.php'
-        exclude_namespaces:
-          - App\ConfiguredNamespace
+        exclude:
+          - Excluded
         YAML;
 
     private const string CONFIG_WITHOUT_EXCLUSIONS = <<<'YAML'
@@ -82,14 +78,9 @@ final class BaselineMeasuredSetSeamTest extends TestCase
           health.complexity:
             warning: 99
             error: 5
-        rules:
-          size.property-count:
-            warning: 10
-            error: 20
         YAML;
 
     private const string EVAL_CHANNEL = 'code-smell.eval#code-smell.eval';
-    private const string PROPERTY_COUNT_CHANNEL = 'size.property-count#size.property-count';
 
     private string $tempDir;
     private string $configPath;
@@ -102,30 +93,8 @@ final class BaselineMeasuredSetSeamTest extends TestCase
         $this->baselinePath = $this->tempDir . '/baseline.json';
 
         file_put_contents($this->tempDir . '/Legacy.php', self::SOURCE . "\n");
-        file_put_contents($this->tempDir . '/ConfiguredPath.php', "<?php\neval('return 1;');\n");
-        file_put_contents(
-            $this->tempDir . '/ConfiguredNamespace.php',
-            <<<'PHP'
-            <?php
-
-            namespace App\ConfiguredNamespace;
-
-            final class OversizedState
-            {
-                public int $one;
-                public int $two;
-                public int $three;
-                public int $four;
-                public int $five;
-                public int $six;
-                public int $seven;
-                public int $eight;
-                public int $nine;
-                public int $ten;
-                public int $eleven;
-            }
-            PHP,
-        );
+        mkdir($this->tempDir . '/Excluded', 0o755, true);
+        file_put_contents($this->tempDir . '/Excluded/ConfiguredPath.php', "<?php\neval('return 1;');\n");
         file_put_contents($this->configPath, self::CONFIG . "\n");
     }
 
@@ -151,7 +120,6 @@ final class BaselineMeasuredSetSeamTest extends TestCase
         $this->runGenerate();
         $unfilteredChannels = self::capturedChannels($this->baselinePath);
         self::assertContains(self::EVAL_CHANNEL, $unfilteredChannels);
-        self::assertContains(self::PROPERTY_COUNT_CHANNEL, $unfilteredChannels);
 
         file_put_contents($this->configPath, self::CONFIG . "\n");
         $bare = $this->runCheck([]);
@@ -163,7 +131,6 @@ final class BaselineMeasuredSetSeamTest extends TestCase
         $filteredChannels = self::capturedChannels($this->baselinePath);
         self::assertContains(self::COMPUTED_CHANNEL, $filteredChannels);
         self::assertNotContains(self::EVAL_CHANNEL, $filteredChannels);
-        self::assertNotContains(self::PROPERTY_COUNT_CHANNEL, $filteredChannels);
 
         $checked = $this->runCheck(['--baseline' => $this->baselinePath]);
 
@@ -191,18 +158,60 @@ final class BaselineMeasuredSetSeamTest extends TestCase
     }
 
     #[Test]
-    public function itSelectsComputedFindingsByProducerCodeAndFullChannelAcrossLifecycleCommands(): void
+    public function itAppliesDiscoveryExclusionBeforeEveryBaselineLifecycleMeasurement(): void
     {
-        foreach (['computed.health', 'health.complexity', self::COMPUTED_CHANNEL] as $selector) {
-            $check = $this->runCheck(['--only-rule' => [$selector]]);
+        file_put_contents($this->configPath, self::CONFIG_WITHOUT_EXCLUSIONS . "\n");
+        $this->runGenerate(['--only-rule' => ['code-smell.eval']]);
+        $subject = self::capturedSubject($this->baselinePath, self::EVAL_CHANNEL);
 
-            self::assertStringContainsString('health.complexity', $check->getDisplay());
-            self::assertStringNotContainsString('does not match any registered rule', $check->getDisplay());
+        file_put_contents($this->configPath, self::CONFIG . "\n");
+
+        $update = $this->runUpdate(['--only-rule' => ['code-smell.eval']]);
+        self::assertSame(0, $update->getStatusCode(), $update->getDisplay());
+        self::assertMatchesRegularExpression(
+            '/skipped  ' . preg_quote($subject . ' ' . self::EVAL_CHANNEL, '/')
+            . ' \[[a-f0-9]{64}\] \(not reported by this run\)/',
+            $update->getDisplay(),
+        );
+        self::assertStringContainsString('0 updated, 0 refused, 1 skipped', $update->getDisplay());
+        self::assertStringContainsString('No entry moved', $update->getDisplay());
+
+        $cleanup = $this->runCleanup();
+        self::assertSame(0, $cleanup->getStatusCode(), $cleanup->getDisplay());
+        self::assertStringContainsString(self::EVAL_CHANNEL, $cleanup->getDisplay());
+
+        $explain = $this->runExplain($subject);
+        self::assertSame(0, $explain->getStatusCode(), $explain->getDisplay());
+        self::assertStringContainsString(self::EVAL_CHANNEL, $explain->getDisplay());
+        self::assertStringContainsString('nothing reported', $explain->getDisplay());
+
+        $this->runGenerate(['--force' => true]);
+        self::assertNotContains(self::EVAL_CHANNEL, self::capturedChannels($this->baselinePath));
+    }
+
+    #[Test]
+    public function itValidatesDynamicComputedSelectorsForEveryBaselineLifecycleCommand(): void
+    {
+        $this->runGenerate();
+        $subject = self::capturedSubject($this->baselinePath, self::COMPUTED_CHANNEL);
+        $selectors = ['computed.health', 'health.complexity', self::COMPUTED_CHANNEL];
+
+        foreach ([
+            BaselineGenerateCommand::class,
+            BaselineUpdateCommand::class,
+            BaselineCleanupCommand::class,
+            BaselineExplainCommand::class,
+        ] as $commandClass) {
+            foreach ($selectors as $selector) {
+                $tester = $this->execute($commandClass, $this->baselineInput($commandClass, $subject, $selector));
+                self::assertSame(0, $tester->getStatusCode(), $commandClass . ': ' . $tester->getDisplay());
+                self::assertStringNotContainsString('does not match any registered', $tester->getDisplay());
+            }
+
+            $tester = $this->execute($commandClass, $this->baselineInput($commandClass, $subject, 'computed.stale'));
+            self::assertNotSame(0, $tester->getStatusCode(), $commandClass . ': ' . $tester->getDisplay());
+            self::assertStringContainsString('does not match any registered', $tester->getDisplay());
         }
-
-        $this->runGenerate(['--only-rule' => ['health.complexity']]);
-
-        self::assertContains(self::COMPUTED_CHANNEL, self::capturedChannels($this->baselinePath));
     }
 
     /**
@@ -221,7 +230,7 @@ final class BaselineMeasuredSetSeamTest extends TestCase
     /**
      * @param array<string, mixed> $options
      */
-    private function runGenerate(array $options = []): void
+    private function runGenerate(array $options = []): CommandTester
     {
         $tester = $this->execute(BaselineGenerateCommand::class, [
             'baseline' => $this->baselinePath,
@@ -231,6 +240,8 @@ final class BaselineMeasuredSetSeamTest extends TestCase
         ]);
 
         self::assertSame(0, $tester->getStatusCode(), $tester->getDisplay());
+
+        return $tester;
     }
 
     private function runCleanup(): CommandTester
@@ -240,6 +251,55 @@ final class BaselineMeasuredSetSeamTest extends TestCase
             'paths' => [$this->tempDir],
             '--config' => $this->configPath,
         ]);
+    }
+
+    /** @param array<string, mixed> $options */
+    private function runUpdate(array $options = []): CommandTester
+    {
+        return $this->execute(BaselineUpdateCommand::class, [
+            'baseline' => $this->baselinePath,
+            'paths' => [$this->tempDir],
+            '--config' => $this->configPath,
+            ...$options,
+        ]);
+    }
+
+    private function runExplain(string $subject): CommandTester
+    {
+        return $this->execute(BaselineExplainCommand::class, [
+            'subject' => $subject,
+            'paths' => [$this->tempDir],
+            '--config' => $this->configPath,
+            '--baseline' => $this->baselinePath,
+            '--channel' => self::EVAL_CHANNEL,
+        ]);
+    }
+
+    /**
+     * @param class-string<Command> $commandClass
+     *
+     * @return array<string, mixed>
+     */
+    private function baselineInput(string $commandClass, string $subject, string $selector): array
+    {
+        $baseline = $commandClass === BaselineGenerateCommand::class
+            ? $this->tempDir . '/selector-' . hash('sha256', $selector) . '.json'
+            : $this->baselinePath;
+        $input = [
+            'paths' => [$this->tempDir],
+            '--config' => $this->configPath,
+            '--only-rule' => [$selector],
+        ];
+
+        if ($commandClass === BaselineExplainCommand::class) {
+            $input['subject'] = $subject;
+            $input['--channel'] = self::COMPUTED_CHANNEL;
+            $input['--baseline'] = $baseline;
+        } else {
+            $input['baseline'] = $baseline;
+        }
+
+        return $input;
     }
 
     /**
@@ -278,5 +338,21 @@ final class BaselineMeasuredSetSeamTest extends TestCase
         }
 
         return $channels;
+    }
+
+    private static function capturedSubject(string $path, string $channel): string
+    {
+        /** @var array{entries: array<string, list<array{channel: string}>>} $data */
+        $data = json_decode((string) file_get_contents($path), true, flags: \JSON_THROW_ON_ERROR);
+
+        foreach ($data['entries'] as $subject => $entries) {
+            foreach ($entries as $entry) {
+                if ($entry['channel'] === $channel) {
+                    return $subject;
+                }
+            }
+        }
+
+        self::fail(\sprintf('Baseline does not contain expected channel "%s".', $channel));
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface;
@@ -24,9 +23,9 @@ use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Infrastructure\Console\Progress\DelegatingProgressReporter;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -103,7 +102,8 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(FileProcessorInterface::class),
                 new Reference(StrategySelectorInterface::class),
                 new Reference(DerivedMetricExtractorInterface::class),
-                new Reference(DelegatingProgressReporter::class),
+                new Reference(ProgressReporterInterface::class),
+                new Reference(ProfilerInterface::class),
                 new Reference(DelegatingLogger::class),
             ]);
         $container->setAlias(CollectionOrchestratorInterface::class, self::COLLECTION_ORCHESTRATOR);
@@ -122,7 +122,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 '$participants' => [],
                 '$producerGate' => new Reference(self::RULE_SELECTOR_PRODUCER_GATE),
-                '$profilerHolder' => new Reference(ProfilerHolder::class),
+                '$profiler' => new Reference(ProfilerInterface::class),
             ]);
 
         $this->registerRuleProducerPreparation($container);
@@ -152,14 +152,13 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 new Reference(self::ANALYSIS_FILE_DISCOVERY),
                 new Reference(CollectionOrchestratorInterface::class),
                 new Reference(RuleExecutionInterface::class),
-                new Reference(TransitionalRuntimeConfigurationProviderInterface::class),
                 new Reference(self::RULE_PRODUCER_PREPARATION),
                 new Reference(MeasurementAggregationInterface::class),
                 new Reference($computedMetricEvaluation),
                 new Reference(DependencyGraphBuilderInterface::class),
                 new Reference(MetricRepositoryFactoryInterface::class),
+                new Reference(ProfilerInterface::class),
                 new Reference(DelegatingLogger::class),
-                new Reference(ProfilerHolder::class),
             ])
             ->setPublic(true);
         $container->setAlias(AnalysisPipelineInterface::class, self::ANALYSIS_PIPELINE)

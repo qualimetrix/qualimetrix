@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -455,7 +456,12 @@ final class ComputedMetricFindingBuilderTest extends TestCase
         $catalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
         $catalog->method('all')->willReturn($definitions);
 
-        return new ComputedMetricRule(new ComputedMetricRuleOptions(enabled: true), $catalog, new ComputedMetricFindingBuilder());
+        return new ComputedMetricRule(
+            new ComputedMetricRuleOptions(enabled: true),
+            $catalog,
+            new ComputedMetricFindingBuilder(),
+            self::createStub(ProfilerInterface::class),
+        );
     }
 
     private static function subjectInfo(\Qualimetrix\Core\Symbol\SymbolPath $symbolPath, ?\Qualimetrix\Core\Path\RelativePath $file, ?int $line): \Qualimetrix\Core\Symbol\SymbolInfo

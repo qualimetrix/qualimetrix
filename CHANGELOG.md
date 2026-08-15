@@ -20,6 +20,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- The mixed configuration runtime surface was removed without compatibility
+  aliases: `TransitionalResolvedConfiguration`,
+  `TransitionalRuntimeConfiguration`, its provider/holder, and
+  `ConfigurationContext` no longer exist. Invoke
+  `ConfigurationPipelineInterface::resolve(ConfigurationResolutionRequest)` and
+  pass the concrete `ConfigurationDocument` only to a named owner resolver.
+  Use `RunConfigurationResolverInterface` for invocation data,
+  `FindingConfigurationResolverInterface` for rule configuration, and the
+  Cache, Parallel, Reporting, or Console resolver that owns the remaining
+  value. This removes unrelated feature state from a universal runtime carrier.
+
+- `CollectorConfigHolder`, `CollectorRuntimeConfiguration`, and their generic
+  stores/configurable contracts were removed. The only configured collector is
+  LCOM, so its exact value is now
+  `Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration`, applied
+  through the Cohesion-owned store and worker contract. Consumers must not add
+  another feature setting to a generic collector payload.
+
+- `Core\Progress\*`, `ProfilerHolder`, `NullProfiler`, and Core-owned
+  `Span` were removed. Collection code imports
+  `Analysis\Run\Contract\Progress\ProgressReporterInterface`; instrumentation
+  imports `Core\Profiler\Contract\ProfilerInterface`; Console uses the
+  Profiler-owned session control/report contracts. These changes keep delivery
+  modes and profiling state instance-owned rather than globally mutable.
+
+- The YAML keys `namespace.strategy`, `namespace.composer_json`,
+  `aggregation.prefixes`, and `aggregation.auto_depth` were removed and are now
+  rejected as unknown. Project namespace discovery uses the invocation working
+  directory's `composer.json`, and aggregation follows analyzed declarations.
+
+- Private Symfony container references are now recorded as permanent exact
+  `composition_binding` entries in the internal manifest. A binding has one DI
+  source, private target, and observed container operation; it is not a public
+  contract and does not authorize another source. Add a named public contract
+  for cross-owner use, or add a reviewed exact binding for composition only.
+
 - `Qualimetrix\Core\Coupling\FrameworkNamespaces` and
   `Qualimetrix\Core\Coupling\FrameworkNamespacesHolder` were removed with no
   compatibility shim. Coupling now owns its run-scoped framework-namespace
@@ -28,8 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and call `configure(ConfigurationDocument $document)` for every run, including
   an empty document to reset prior state. Configuration producers keep using
   the canonical `coupling.framework_namespaces` document key; they must no
-  longer read or construct a Coupling field on
-  `TransitionalRuntimeConfiguration`.
+  longer read or construct a Coupling field on a generic configuration carrier.
 
 - Finding and policy ownership moved without aliases or shims. Replace
   `Qualimetrix\Analysis\RuleExecution\*`, `Qualimetrix\Core\Rule\*`, and
@@ -97,11 +132,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the corresponding `Measurement\Contract\*` type; repository indexes,
   visitors, and aggregation implementations are internal.
 - Configuration moved without aliases from `Qualimetrix\Configuration\*` to
-  `Qualimetrix\Analysis\Configuration\*` where P3 moved the type. Use
-  `TransitionalRuntimeConfigurationProviderInterface` and the named pipeline
-  contracts rather than the old provider and resolved-configuration names. The
-  remaining rule-option and computed-metric classes are deliberate P5/P6
-  migration inputs, not compatibility shims.
+  `Qualimetrix\Analysis\Configuration\*` where P3 moved the type. The final
+  surface is `ConfigurationPipelineInterface::resolve()` returning concrete
+  `ConfigurationDocument`; use the named owner resolver rather than a generic
+  provider or resolved-configuration carrier. The remaining rule-option and
+  computed-metric classes are deliberate P5/P6 migration inputs, not
+  compatibility shims.
 - Dependency extraction moved inside DependencyModel. Replace direct imports of
   `Analysis\Collection\Dependency\DependencyResolver`, `DependencyVisitor`,
   and handler types with the declared
@@ -118,7 +154,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Violation JSON and fingerprints now use exact declaration subjects plus semantic occurrence and dependency edge where present. Consumers that persisted or joined findings by logical `symbol` alone must use `channel + subject + optional occurrence + optional edge`.
 - A `Violation` carrying `dependencyTarget` without `dependencyType` now emits JSON `edge: {"target": "..."}` instead of `edge: null`, and its GitLab/SARIF fingerprint includes a collision-safe target-only edge component instead of colliding with the no-edge finding. No-edge and fully typed edge fingerprints are unchanged; baseline v11 already retained target-only edges, so no baseline migration is required.
 - Layer-violation findings now project an owned logical target to each exact target declaration; an unowned target remains on the exact source declaration. Update symbol-scoped suppressions and baseline mappings to the projected target subject; physical next-line/file controls still use the dependency use-site.
-- `CollectionOrchestrator` no longer creates default null progress/logger collaborators. Pass mandatory `ProgressReporter` and `LoggerInterface` instances; shipped DI already injects `DelegatingProgressReporter` and `DelegatingLogger`, while every direct constructor call must provide its chosen implementations. No nullable/default overload or compatibility shim is provided.
+- `CollectionOrchestrator` no longer creates default null progress/logger collaborators. Pass mandatory Run progress and PSR logger instances; shipped DI injects the instance-owned Console progress switch and `DelegatingLogger`, while every direct constructor call must provide its chosen implementations. No nullable/default overload or compatibility shim is provided.
 - `FileParserInterface` now requires `parseContent(SplFileInfo $file, string $content): array`. Implementations must parse the supplied bytes while using `$file` as diagnostic source identity.
 - `DependencyGraphAnalyzerInterface`, `DependencyGraphAnalyzer`, and `DependencyGraphAnalysisResult` moved from `Qualimetrix\Analysis\Collection\Dependency` to `Qualimetrix\Analysis\Pipeline`. Update imports and fully qualified type references to the new namespace; their constructor and method contracts are unchanged, and no compatibility aliases are provided.
 

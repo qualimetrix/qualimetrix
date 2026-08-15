@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Parallel;
 use Amp\Cancellation;
 use Amp\Parallel\Worker\Task;
 use Amp\Sync\Channel;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
@@ -38,7 +39,7 @@ final class FileProcessingTask implements Task
      * @param class-string<DependencyTraversalParticipantInterface> $dependencyTraversalParticipantClass
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses Derived collector class names
      * @param AbsolutePath|null $cacheDir Optional cache directory for AST caching
-     * @param array<string, mixed> $collectorConfig Collector-level configuration (e.g., LCOM exclude methods)
+     * @param LcomCollectionConfiguration $lcomConfiguration Exact Cohesion-owned worker configuration
      * @param list<class-string<RuleDefinitionInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
      */
     public function __construct(
@@ -48,7 +49,7 @@ final class FileProcessingTask implements Task
         private readonly string $dependencyTraversalParticipantClass,
         private readonly array $derivedCollectorClasses = [],
         private readonly ?AbsolutePath $cacheDir = null,
-        private readonly array $collectorConfig = [],
+        private readonly LcomCollectionConfiguration $lcomConfiguration = new LcomCollectionConfiguration(),
         private readonly array $ruleClasses = [],
     ) {}
 
@@ -75,7 +76,7 @@ final class FileProcessingTask implements Task
             dependencyTraversalParticipantClass: $this->dependencyTraversalParticipantClass,
             derivedCollectorClasses: $this->derivedCollectorClasses,
             cacheDir: $this->cacheDir,
-            collectorConfig: $this->collectorConfig,
+            lcomConfiguration: $this->lcomConfiguration,
             ruleClasses: $this->ruleClasses,
         );
 

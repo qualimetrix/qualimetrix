@@ -24,3 +24,12 @@ produces them from source annotations, Run transports them, and Finding applies
 them while selecting effective rule thresholds.
 
 Infrastructure composes these internals through `FindingConfigurator`. Rule discovery and container construction remain Infrastructure concerns.
+
+For a configured run, Infrastructure passes Finding an immutable
+`RuleChannelRegistryInterface` snapshot. Finding neither resolves computed
+definitions nor retains Infrastructure-owned definition state.
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

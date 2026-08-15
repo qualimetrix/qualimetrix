@@ -8,7 +8,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 
 /**
  * Aggregates metrics from lower levels (Callable, File) to higher levels (Class, Namespace, Project).
@@ -21,7 +21,7 @@ final class MetricAggregator
     /**
      * @param list<MetricDefinition> $definitions
      */
-    public function __construct(private readonly array $definitions) {}
+    public function __construct(private readonly array $definitions, private readonly ProfilerInterface $profiler) {}
 
     private function hasCallableLevelDefinitions(): bool
     {
@@ -45,20 +45,20 @@ final class MetricAggregator
             return $existingTree ?? new NamespaceTree([]);
         }
 
-        $profiler = ProfilerHolder::get();
+        $profiler = $this->profiler;
 
         // Skip callable→class phase when no callable-level definitions exist
         // (e.g., during re-aggregation of global collector metrics).
         if ($this->hasCallableLevelDefinitions()) {
             $profiler->start('aggregation.callables_to_classes', 'aggregation');
-            (new CallableToClassAggregator())->aggregate($repository, $this->definitions);
+            (new CallableToClassAggregator($profiler))->aggregate($repository, $this->definitions);
             $profiler->stop('aggregation.callables_to_classes');
         }
 
         // Class→namespace aggregation: runs even during re-aggregation because
         // global collectors add new class-level metrics that need namespace rollup.
         $profiler->start('aggregation.to_namespaces', 'aggregation');
-        (new ClassToNamespaceAggregator())->aggregate($repository, $this->definitions);
+        (new ClassToNamespaceAggregator($profiler))->aggregate($repository, $this->definitions);
         $profiler->stop('aggregation.to_namespaces');
 
         // Reuse pre-built tree when available (re-aggregation pass) to avoid
@@ -72,7 +72,7 @@ final class MetricAggregator
 
         // Project-level aggregation
         $profiler->start('aggregation.to_project', 'aggregation');
-        (new NamespaceToProjectAggregator($tree))->aggregate($repository, $this->definitions);
+        (new NamespaceToProjectAggregator($tree, $profiler))->aggregate($repository, $this->definitions);
         $profiler->stop('aggregation.to_project');
 
         return $tree;

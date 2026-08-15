@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -43,7 +43,7 @@ final class DuplicationConfigurator implements ContainerConfiguratorInterface
         $container->register(self::DETECTOR, self::DETECTOR)
             ->setAutoconfigured(true)
             ->setArguments([
-                '$configurationProvider' => new Reference(TransitionalRuntimeConfigurationProviderInterface::class),
+                '$ruleConfiguration' => new Reference(RuleConfigurationInterface::class),
                 '$resultProvider' => new Reference(self::RESULT_PROVIDER),
                 '$logger' => new Reference('Qualimetrix\\Infrastructure\\Logging\\DelegatingLogger'),
             ]);

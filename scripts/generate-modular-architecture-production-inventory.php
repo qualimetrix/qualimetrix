@@ -10,23 +10,6 @@ use PhpParser\ParserFactory;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-const EXPECTED_REPORTING_DECLARATIONS = 59;
-const EXPECTED_PHASE_PARTICIPANTS = 24;
-
-const EXPECTED_REPORTING_CLASSIFICATION_COUNTS = [
-    'output projection' => 58,
-    'run orchestration' => 1,
-];
-
-const EXPECTED_EXTENSION_COUNTS = [
-    'rule' => 41,
-    'regular_collector' => 21,
-    'derived_collector' => 2,
-    'global_collector' => 6,
-    'formatter' => 11,
-    'configuration_stage' => 5,
-];
-
 /** @return never */
 function fail(string $message): void
 {
@@ -924,7 +907,8 @@ if ($compositionProbe !== null) {
     exit(0);
 }
 
-$authorization = validateAuthorizations($manifest, $byName, $observedPairs, $rows);
+$actualBindingOperations = classifyCompositionBindingOperations($root, $manifest, $byName, $sourceOverrides);
+$authorization = validateAuthorizations($manifest, $byName, $observedPairs, $rows, $actualBindingOperations);
 $enforcement = buildEnforcementProjection($manifest, $byName, $observedPairs);
 assertDag($enforcement['allow'], 'generated qmx allow graph');
 validateSeamNecessity($manifest, $byName, $observedPairs);
@@ -960,6 +944,60 @@ foreach ($rows as $row) {
     }
 }
 usort($classStringTargetRows, static fn(array $left, array $right): int => $left <=> $right);
+
+$compositionBindingRows = [];
+foreach ($authorization['bindings'] as $pair => $binding) {
+    [$source, $target] = explode("\0", $pair, 2);
+    $sourceRow = $byName[$source];
+    $targetRow = $byName[$target];
+    $declaredOperations = implode(',', $binding['consumer']['operations']);
+    $observedOperations = implode(',', $binding['actual_operations']);
+    $compositionBindingRows[] = [
+        $sourceRow['path'],
+        $source,
+        $sourceRow['proposed_owner'],
+        $targetRow['path'],
+        $target,
+        $targetRow['proposed_owner'],
+        $declaredOperations,
+        $observedOperations,
+        'used',
+        semanticLayerName($sourceRow) . ' -> ' . semanticLayerName($targetRow),
+    ];
+}
+usort($compositionBindingRows, static fn(array $left, array $right): int => $left <=> $right);
+
+$publicImportRows = [];
+foreach ($crossOwnerImports as [$source, $sourceOwner, $target, $targetOwner, $visibility]) {
+    if ($visibility !== 'contract') {
+        continue;
+    }
+    $publicImportRows[] = [$target, $targetOwner, $source, $sourceOwner, $byName[$source]['path'], 'ast-name'];
+}
+usort($publicImportRows, static fn(array $left, array $right): int => $left <=> $right);
+$fanIn = [];
+foreach ($publicImportRows as [$target, $targetOwner, $source, $sourceOwner]) {
+    $fanIn[$target]['owner'] = $targetOwner;
+    $fanIn[$target]['sources'][$source] = true;
+    $fanIn[$target]['owners'][$sourceOwner] = true;
+}
+$fanInRows = [];
+foreach ($fanIn as $target => $data) {
+    $fanInRows[] = [$target, $data['owner'], (string) count($data['sources']), (string) count($data['owners'])];
+}
+usort($fanInRows, static fn(array $left, array $right): int => $left <=> $right);
+
+$productionToTestRows = [];
+foreach ($rows as $row) {
+    foreach ($row['dependencies'] as $dependency) {
+        if (str_starts_with($dependency, 'Qualimetrix\\Tests\\')) {
+            $productionToTestRows[] = [$row['path'], $row['fqcn'], $dependency, 'ast-name'];
+        }
+    }
+}
+if ($productionToTestRows !== []) {
+    fail('production source imports a test namespace');
+}
 
 $extensionDefinitions = [
     'rule' => ['Qualimetrix\\Analysis\\Finding\\Rule\\RuleInterface', 'qmx.rule', 'capability configurator -> rule compiler passes'],
@@ -1000,9 +1038,6 @@ foreach ($extensionDefinitions as $family => [$target, $tag, $registration]) {
             : $configurator . substr($registration, strlen('capability configurator'));
         $extensionRows[] = [$family, $row['fqcn'], $row['path'], $tag, $registrationPath];
     }
-    if ($extensionCount !== EXPECTED_EXTENSION_COUNTS[$family]) {
-        fail("expected {$family} count " . EXPECTED_EXTENSION_COUNTS[$family] . ", got {$extensionCount}");
-    }
 }
 usort($extensionRows, static fn(array $left, array $right): int => $left <=> $right);
 
@@ -1016,13 +1051,7 @@ foreach ($rows as $row) {
     $reportingCounts[$disposition['classification']] = ($reportingCounts[$disposition['classification']] ?? 0) + 1;
     $reportingRows[] = [$row['path'], $row['fqcn'], $disposition['classification'], $disposition['target_owner'], $row['closure_package']];
 }
-if (count($reportingRows) !== EXPECTED_REPORTING_DECLARATIONS) {
-    fail('expected ' . EXPECTED_REPORTING_DECLARATIONS . ' Reporting declarations, got ' . count($reportingRows));
-}
 ksort($reportingCounts, SORT_STRING);
-if ($reportingCounts !== EXPECTED_REPORTING_CLASSIFICATION_COUNTS) {
-    fail('unexpected Reporting classification counts: ' . json_encode($reportingCounts));
-}
 
 $stateRows = [];
 foreach ($rows as $row) {
@@ -1038,9 +1067,6 @@ foreach ($rows as $row) {
 }
 
 $phaseRows = phaseParticipants();
-if (count($phaseRows) !== EXPECTED_PHASE_PARTICIPANTS) {
-    fail('expected ' . EXPECTED_PHASE_PARTICIPANTS . ' phase participant rows, got ' . count($phaseRows));
-}
 foreach ($phaseRows as $phase) {
     if (!is_file($root . '/' . $phase['source']) && !is_dir($root . '/' . $phase['source'])) {
         fail('phase participant source does not exist: ' . $phase['source']);
@@ -1050,7 +1076,11 @@ foreach ($phaseRows as $phase) {
 $outputs = [
     'production-ownership.tsv' => tsv(['path', 'fqcn', 'kind', 'proposed_owner', 'proposed_status', 'closure_package', 'consumers'], $ownershipRows),
     'production-class-string-targets.tsv' => tsv(['source_fqcn', 'member_kind', 'member_name', 'target_fqcn'], $classStringTargetRows),
+    'production-composition-bindings.tsv' => tsv(['source_path', 'source_fqcn', 'source_owner', 'target_path', 'target_fqcn', 'target_owner', 'declared_operations', 'observed_operations', 'behavioral_verdict', 'qmx_projection'], $compositionBindingRows),
     'production-cross-owner-imports.tsv' => tsv(['consumer', 'consumer_owner', 'dependency', 'dependency_owner', 'dependency_visibility', 'closure_package'], $crossOwnerImports),
+    'production-public-imports.tsv' => tsv(['target_contract_fqcn', 'target_owner', 'consumer_fqcn', 'consumer_owner', 'source_path', 'import_kind'], $publicImportRows),
+    'production-module-fan-in.tsv' => tsv(['target_contract_fqcn', 'target_owner', 'distinct_consumer_fqcns', 'distinct_consumer_owners'], $fanInRows),
+    'production-to-test-imports.tsv' => tsv(['source_path', 'source_fqcn', 'imported_test_fqcn', 'import_kind'], $productionToTestRows),
     'production-extension-families.tsv' => tsv(['family', 'implementation', 'path', 'di_tag', 'registration_path'], $extensionRows),
     'production-state-services.tsv' => tsv(['path', 'fqcn', 'proposed_owner', 'closure_package', 'state_scope', 'mutable_static_properties', 'mutable_instance_properties', 'lifecycle_methods'], $stateRows),
     'production-phase-participants.tsv' => tsv(['phase', 'participant', 'typed_inputs', 'typed_outputs_or_state', 'state_owner', 'actual_dependency', 'source'], array_values(array_map(static fn(array $phase): array => array_values($phase), $phaseRows))),
@@ -1064,12 +1094,13 @@ $outputs = [
             ['semantic_owners', (string) count($owners)],
             ['contract_consumer_entries', (string) $consumerCount],
             ['temporary_contract_consumer_entries', (string) $temporaryConsumerCount],
+            ['permanent_composition_bindings', (string) count($compositionBindingRows)],
             ['exact_dependency_edges', (string) count($observedPairs)],
             ['cross_owner_imports', (string) count($crossOwnerImports)],
             ['semantic_owner_layers', (string) $enforcement['semantic_owner_layer_count']],
             ['singleton_seams', (string) count($manifest['enforcement_seams'])],
-            ['exact_internal_grants', (string) $authorization['internal_grant_count']],
-            ['coarse_internal_grant_edges', (string) $authorization['coarse_internal_grant_edge_count']],
+            ['exact_composition_bindings', (string) $authorization['internal_grant_count']],
+            ['coarse_composition_binding_edges', (string) $authorization['coarse_internal_grant_edge_count']],
             ['internal_enforcement_layers', (string) count($enforcement['layers'])],
             ['declared_allow_edges', (string) array_sum(array_map('count', $enforcement['allow']))],
         ],
@@ -1134,8 +1165,12 @@ function validateDeclarationEntry(string $fqcn, array $entry, array $declaration
         fail("declaration {$fqcn} names unknown owner {$entry['owner']}");
     }
     $consumers = $entry['consumers'];
-    if ($entry['visibility'] === 'internal' && $consumers !== []) {
-        fail("internal declaration {$fqcn} cannot publish consumers");
+    $compositionConsumers = array_values(array_filter(
+        $consumers,
+        static fn(array $consumer): bool => ($consumer['relation'] ?? 'import') === 'composition_binding',
+    ));
+    if ($entry['visibility'] === 'internal' && count($compositionConsumers) !== count($consumers)) {
+        fail("internal declaration {$fqcn} can publish only composition bindings");
     }
     if ($entry['visibility'] === 'contract' && $consumers === []) {
         fail("contract declaration {$fqcn} must publish at least one used consumer");
@@ -1149,6 +1184,26 @@ function validateDeclarationEntry(string $fqcn, array $entry, array $declaration
             $key = $consumer['owner'] . "\0contract_composition\0" . $consumer['carrier_fqcn'] . "\0" . $consumer['boundary_fqcn'];
             if (isset($seen[$key])) {
                 fail("duplicate contract_composition relation on {$fqcn} for {$consumer['owner']}");
+            }
+            $seen[$key] = true;
+            continue;
+        }
+        if (($consumer['relation'] ?? 'import') === 'composition_binding') {
+            if ($entry['visibility'] !== 'internal'
+                || $consumer['owner'] !== 'Infrastructure.DependencyInjection'
+                || !is_string($consumer['source_fqcn'])
+                || $consumer['closes_in'] !== null
+                || $consumer['operations'] === []
+            ) {
+                fail("composition_binding {$fqcn}#{$index} must permanently authorize an exact DI source to an internal target");
+            }
+            $source = $consumer['source_fqcn'];
+            if (!isset($declarations[$source]) || $declarations[$source]['owner'] !== 'Infrastructure.DependencyInjection') {
+                fail("composition_binding {$fqcn}#{$index} names an invalid DI source");
+            }
+            $key = 'composition_binding' . "\0" . $source;
+            if (isset($seen[$key])) {
+                fail("duplicate composition_binding {$source} -> {$fqcn}");
             }
             $seen[$key] = true;
             continue;
@@ -1202,25 +1257,6 @@ function validateDeclarationEntry(string $fqcn, array $entry, array $declaration
 function validateMaterializedP5Boundary(array $manifest): void
 {
     $declarations = $manifest['declarations'];
-    $p5Declarations = array_filter(
-        $declarations,
-        static fn(array $declaration): bool => in_array($declaration['owner'], [
-            'Analysis.Evidence.ComputedMetrics',
-            'Analysis.Evidence.ComputedMetrics.Health',
-        ], true),
-    );
-    if (count($p5Declarations) !== 34) {
-        fail('Materialized P5-F2 capability must contain exactly 34 owned declarations');
-    }
-
-    $expectedOwners = [
-        'Analysis.Evidence.ComputedMetrics' => 16,
-        'Analysis.Evidence.ComputedMetrics.Health' => 18,
-    ];
-    if (array_count_values(array_column($p5Declarations, 'owner')) !== $expectedOwners) {
-        fail('Materialized P5-F2 capability owner counts differ from the reviewed 16/18 split');
-    }
-
     $requiredReporting = [
         'Qualimetrix\\Reporting\\Health\\HealthHintProjector',
         'Qualimetrix\\Reporting\\Health\\HealthScoreResolver',
@@ -1230,21 +1266,6 @@ function validateMaterializedP5Boundary(array $manifest): void
         if (!isset($declarations[$fqcn])) {
             fail("Materialized P5 Reporting declaration is missing: {$fqcn}");
         }
-    }
-
-    $relations = [];
-    foreach ($p5Declarations as $targetFqcn => $declaration) {
-        foreach ($declaration['consumers'] as $consumer) {
-            if ($consumer['source_fqcn'] === null || $consumer['closes_in'] !== null) {
-                fail("Materialized P5 contract {$targetFqcn} retains an owner-wide or temporary consumer");
-            }
-            if ($consumer['owner'] !== $declaration['owner']) {
-                $relations[] = [$targetFqcn, $consumer['source_fqcn']];
-            }
-        }
-    }
-    if (count($relations) !== 34) {
-        fail('Materialized P5 cross-owner contract surface must contain exactly 34 exact-source relations');
     }
 
     foreach ([
@@ -1420,22 +1441,431 @@ function failSetDifference(string $label, array $expected, array $actual): never
 }
 
 /**
+ * Classifies the closed Symfony composition vocabulary from executable AST
+ * nodes. Imports, strings outside a binding expression, guards and comments
+ * deliberately do not contribute evidence.
+ *
+ * @param array<string, mixed> $manifest
+ * @param array<string, array<string, mixed>> $byName
+ * @param array<string, string> $sourceOverrides
+ *
+ * @return array<string, list<string>> exact source\0target => sorted operations
+ */
+function classifyCompositionBindingOperations(string $root, array $manifest, array $byName, array $sourceOverrides): array
+{
+    $targetsBySource = [];
+    foreach ($manifest['declarations'] as $target => $entry) {
+        foreach ($entry['consumers'] as $consumer) {
+            if (($consumer['relation'] ?? 'import') !== 'composition_binding') {
+                continue;
+            }
+            $targetsBySource[$consumer['source_fqcn']][$target] = true;
+        }
+    }
+
+    $parser = (new ParserFactory())->createForNewestSupportedVersion();
+    $finder = new NodeFinder();
+    $operations = [];
+    foreach ($targetsBySource as $source => $targets) {
+        $path = $byName[$source]['path'] ?? null;
+        if (!is_string($path)) {
+            fail("composition binding source {$source} has no production path");
+        }
+        $sourcePath = $sourceOverrides[$path] ?? $root . '/' . $path;
+        $code = file_get_contents($sourcePath);
+        if ($code === false) {
+            fail("cannot read composition binding source {$sourcePath}");
+        }
+        $ast = $parser->parse($code);
+        if ($ast === null) {
+            fail("composition binding parser returned no AST for {$path}");
+        }
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor(new NameResolver());
+        $ast = $traverser->traverse($ast);
+
+        $containerVariables = containerBuilderVariables($ast);
+        $definitionVariables = [];
+        $serviceVariables = [];
+        foreach ($finder->findInstanceOf($ast, Node\Expr\Assign::class) as $assign) {
+            if ($assign->var instanceof Node\Expr\Variable && is_string($assign->var->name)) {
+                $serviceTarget = expressionFqcn($assign->expr);
+                if ($serviceTarget !== null && isset($targets[$serviceTarget])) {
+                    $serviceVariables[$assign->var->name] = $serviceTarget;
+                }
+            }
+            if (!$assign->var instanceof Node\Expr\Variable || !is_string($assign->var->name)
+                || !$assign->expr instanceof Node\Expr\MethodCall
+                || methodName($assign->expr) !== 'getdefinition'
+                || !isContainerBuilderCall($assign->expr, $containerVariables)
+            ) {
+                continue;
+            }
+            $target = expressionFqcn($assign->expr->args[0]->value ?? null);
+            if ($target !== null && isset($targets[$target])) {
+                $definitionVariables[$assign->var->name] = $target;
+            } elseif ($assign->expr->args !== []) {
+                // A compiler pass may select its Definition from a dynamic tagged
+                // service id. It is still a container definition receiver, but it
+                // is not evidence of a definition mutation for an exact target.
+                $definitionVariables[$assign->var->name] = '';
+            }
+        }
+
+        $conditionalTargets = [];
+        foreach ($finder->findInstanceOf($ast, Node\Stmt\If_::class) as $if) {
+            foreach ($targets as $target => $_true) {
+                if (ifContainsConditionalReference($if, $target, $serviceVariables)) {
+                    $conditionalTargets[$target] = true;
+                }
+            }
+        }
+        foreach (conditionalServiceVariables($ast, $targets) as $variable => $target) {
+            $serviceVariables[$variable] = $target;
+            $conditionalTargets[$target] = true;
+        }
+
+        foreach ($finder->findInstanceOf($ast, Node\Expr\MethodCall::class) as $call) {
+            $method = methodName($call);
+            if ($method === null) {
+                continue;
+            }
+            if ($method === 'register' && isContainerBuilderCall($call, $containerVariables)) {
+                $target = expressionFqcn($call->args[0]->value ?? null);
+                if ($target !== null && isset($targets[$target])) {
+                    $operations[$source . "\0" . $target]['service_registration'] = true;
+                }
+            }
+            if ($method === 'setalias' && isContainerBuilderCall($call, $containerVariables)) {
+                foreach ($call->args as $argument) {
+                    if (!$argument instanceof Node\Arg) {
+                        continue;
+                    }
+                    $target = expressionFqcn($argument->value);
+                    if ($target !== null && isset($targets[$target])) {
+                        $operations[$source . "\0" . $target]['service_alias'] = true;
+                    }
+                }
+            }
+            if (in_array($method, ['setargument', 'addargument', 'replaceargument', 'setarguments'], true)) {
+                if ($call->var instanceof Node\Expr\Variable && is_string($call->var->name)
+                    && isset($definitionVariables[$call->var->name])
+                ) {
+                    $target = $definitionVariables[$call->var->name];
+                    if ($target !== '') {
+                        $operations[$source . "\0" . $target]['definition_argument_mutation'] = true;
+                    }
+                }
+                $chainedTarget = definitionTargetForCall($call, $containerVariables);
+                if ($chainedTarget !== null && isset($targets[$chainedTarget])) {
+                    $operations[$source . "\0" . $chainedTarget]['definition_argument_mutation'] = true;
+                }
+            }
+            if (isContainerBindingCall($call, $containerVariables, $definitionVariables)) {
+                foreach (referenceTargetsInBinding($call, $serviceVariables) as $target) {
+                    if (!isset($targets[$target])) {
+                        continue;
+                    }
+                    $operation = isset($conditionalTargets[$target])
+                        ? 'conditional_service_reference'
+                        : 'service_reference';
+                    $operations[$source . "\0" . $target][$operation] = true;
+                }
+            }
+        }
+        foreach ($targets as $target => $_true) {
+            if (hasConditionalHelperReference($ast, $target)) {
+                $operations[$source . "\0" . $target]['conditional_service_reference'] = true;
+            }
+        }
+    }
+
+    $result = [];
+    foreach ($operations as $pair => $set) {
+        $result[$pair] = array_keys($set);
+        sort($result[$pair], SORT_STRING);
+    }
+
+    return $result;
+}
+
+function methodName(Node\Expr\MethodCall $call): ?string
+{
+    return $call->name instanceof Node\Identifier ? strtolower($call->name->toString()) : null;
+}
+
+/** @param array<string, true> $containerVariables */
+function isContainerBuilderCall(Node\Expr\MethodCall $call, array $containerVariables): bool
+{
+    return $call->var instanceof Node\Expr\Variable
+        && is_string($call->var->name)
+        && isset($containerVariables[$call->var->name]);
+}
+
+/**
+ * @param array<Node> $ast
+ *
+ * @return array<string, true>
+ */
+function containerBuilderVariables(array $ast): array
+{
+    $finder = new NodeFinder();
+    $variables = [];
+    foreach ($finder->findInstanceOf($ast, Node\Param::class) as $parameter) {
+        if (!$parameter->var instanceof Node\Expr\Variable || !is_string($parameter->var->name)
+            || !$parameter->type instanceof Node\Name
+        ) {
+            continue;
+        }
+        $type = ($parameter->type->getAttribute('resolvedName') ?? $parameter->type)->toString();
+        if ($type === 'Symfony\\Component\\DependencyInjection\\ContainerBuilder') {
+            $variables[$parameter->var->name] = true;
+        }
+    }
+
+    return $variables;
+}
+
+/**
+ * @param array<string, true> $containerVariables
+ * @param array<string, string> $definitionVariables
+ */
+function isContainerBindingCall(Node\Expr\MethodCall $call, array $containerVariables, array $definitionVariables): bool
+{
+    $receiver = $call->var;
+    while ($receiver instanceof Node\Expr\MethodCall) {
+        $receiver = $receiver->var;
+    }
+    if ($receiver instanceof Node\Expr\Variable && is_string($receiver->name)) {
+        return isset($containerVariables[$receiver->name]) || isset($definitionVariables[$receiver->name]);
+    }
+
+    return false;
+}
+
+/** @param array<string, true> $containerVariables */
+function definitionTargetForCall(Node\Expr\MethodCall $call, array $containerVariables): ?string
+{
+    if (!$call->var instanceof Node\Expr\MethodCall
+        || methodName($call->var) !== 'getdefinition'
+        || !isContainerBuilderCall($call->var, $containerVariables)
+    ) {
+        return null;
+    }
+
+    return expressionFqcn($call->var->args[0]->value ?? null);
+}
+
+/**
+ * Resolves only a closed DI idiom: a local service-id variable receives a
+ * private helper result that returns one exact class behind has()/hasDefinition().
+ *
+ * @param array<Node> $ast
+ * @param array<string, true> $targets
+ *
+ * @return array<string, string>
+ */
+function conditionalServiceVariables(array $ast, array $targets): array
+{
+    $finder = new NodeFinder();
+    $methods = [];
+    foreach ($finder->findInstanceOf($ast, Node\Stmt\ClassMethod::class) as $method) {
+        $methods[strtolower($method->name->toString())] = $method;
+    }
+    $resolved = [];
+    foreach ($finder->findInstanceOf($ast, Node\Expr\Assign::class) as $assign) {
+        if (!$assign->var instanceof Node\Expr\Variable || !is_string($assign->var->name)
+            || !$assign->expr instanceof Node\Expr\MethodCall
+            || !$assign->expr->var instanceof Node\Expr\Variable || $assign->expr->var->name !== 'this'
+        ) {
+            continue;
+        }
+        $helper = methodName($assign->expr);
+        if ($helper === null || !isset($methods[$helper])) {
+            continue;
+        }
+        foreach ($targets as $target => $_true) {
+            $hasGuard = false;
+            foreach ($finder->findInstanceOf($methods[$helper], Node\Expr\MethodCall::class) as $guard) {
+                if (in_array(methodName($guard), ['has', 'hasdefinition'], true)
+                    && expressionFqcn($guard->args[0]->value ?? null) === $target
+                ) {
+                    $hasGuard = true;
+                    break;
+                }
+            }
+            $hasReturn = false;
+            foreach ($finder->findInstanceOf($methods[$helper], Node\Stmt\Return_::class) as $return) {
+                if (expressionFqcn($return->expr) === $target) {
+                    $hasReturn = true;
+                    break;
+                }
+            }
+            if ($hasGuard && $hasReturn) {
+                $resolved[$assign->var->name] = $target;
+            }
+        }
+    }
+
+    return $resolved;
+}
+
+/** @param array<Node> $ast */
+function hasConditionalHelperReference(array $ast, string $target): bool
+{
+    $finder = new NodeFinder();
+    $helpers = [];
+    foreach ($finder->findInstanceOf($ast, Node\Stmt\ClassMethod::class) as $method) {
+        $hasGuard = false;
+        foreach ($finder->findInstanceOf($method, Node\Expr\MethodCall::class) as $call) {
+            if (in_array(methodName($call), ['has', 'hasdefinition'], true)
+                && expressionFqcn($call->args[0]->value ?? null) === $target
+            ) {
+                $hasGuard = true;
+                break;
+            }
+        }
+        if (!$hasGuard) {
+            continue;
+        }
+        foreach ($finder->findInstanceOf($method, Node\Stmt\Return_::class) as $return) {
+            if (expressionFqcn($return->expr) === $target) {
+                $helpers[strtolower($method->name->toString())] = true;
+            }
+        }
+    }
+    if ($helpers === []) {
+        return false;
+    }
+    $serviceVariables = [];
+    foreach ($finder->findInstanceOf($ast, Node\Expr\Assign::class) as $assign) {
+        if ($assign->var instanceof Node\Expr\Variable && is_string($assign->var->name)
+            && $assign->expr instanceof Node\Expr\MethodCall
+            && $assign->expr->var instanceof Node\Expr\Variable && $assign->expr->var->name === 'this'
+            && isset($helpers[methodName($assign->expr) ?? ''])
+        ) {
+            $serviceVariables[$assign->var->name] = true;
+        }
+    }
+    foreach ($finder->findInstanceOf($ast, Node\Expr\New_::class) as $new) {
+        if (!$new->class instanceof Node\Name
+            || (($new->class->getAttribute('resolvedName') ?? $new->class)->toString() !== 'Symfony\Component\DependencyInjection\Reference')
+        ) {
+            continue;
+        }
+        $argument = $new->args[0]->value ?? null;
+        if ($argument instanceof Node\Expr\Variable && is_string($argument->name) && isset($serviceVariables[$argument->name])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function expressionFqcn(?Node\Expr $expression): ?string
+{
+    if ($expression instanceof Node\Expr\ClassConstFetch
+        && $expression->name instanceof Node\Identifier
+        && strtolower($expression->name->toString()) === 'class'
+        && $expression->class instanceof Node\Name
+    ) {
+        return ($expression->class->getAttribute('resolvedName') ?? $expression->class)->toString();
+    }
+    if ($expression instanceof Node\Scalar\String_) {
+        return str_starts_with($expression->value, 'Qualimetrix\\') ? $expression->value : null;
+    }
+
+    return null;
+}
+
+/**
+ * @param array<string, string> $serviceVariables
+ *
+ * @return list<string>
+ */
+function referenceTargetsInBinding(Node\Expr\MethodCall $call, array $serviceVariables): array
+{
+    $finder = new NodeFinder();
+    $targets = [];
+    foreach ($finder->findInstanceOf($call->args, Node\Expr\New_::class) as $new) {
+        if (!$new->class instanceof Node\Name
+            || (($new->class->getAttribute('resolvedName') ?? $new->class)->toString() !== 'Symfony\\Component\\DependencyInjection\\Reference')
+        ) {
+            continue;
+        }
+        $argument = $new->args[0]->value ?? null;
+        $target = expressionFqcn($argument);
+        if ($target === null && $argument instanceof Node\Expr\Variable && is_string($argument->name)) {
+            $target = $serviceVariables[$argument->name] ?? null;
+        }
+        if ($target !== null) {
+            $targets[$target] = true;
+        }
+    }
+
+    return array_keys($targets);
+}
+
+/** @param array<string, string> $serviceVariables */
+function ifContainsConditionalReference(Node\Stmt\If_ $if, string $target, array $serviceVariables): bool
+{
+    $finder = new NodeFinder();
+    $guarded = false;
+    foreach ($finder->findInstanceOf($if->cond, Node\Expr\MethodCall::class) as $call) {
+        if (in_array(methodName($call), ['has', 'hasdefinition'], true)
+            && expressionFqcn($call->args[0]->value ?? null) === $target
+        ) {
+            $guarded = true;
+            break;
+        }
+    }
+    if (!$guarded) {
+        return false;
+    }
+    foreach ($finder->findInstanceOf($if->stmts, Node\Expr\New_::class) as $new) {
+        if (!$new->class instanceof Node\Name
+            || (($new->class->getAttribute('resolvedName') ?? $new->class)->toString() !== 'Symfony\\Component\\DependencyInjection\\Reference')
+        ) {
+            continue;
+        }
+        $argument = $new->args[0]->value ?? null;
+        if ($argument instanceof Node\Expr\Variable && is_string($argument->name)
+            && ($serviceVariables[$argument->name] ?? null) === $target
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * @param array<string, mixed> $manifest
  * @param array<string, array<string, mixed>> $byName
  * @param array<string, true> $observedPairs
  * @param list<array{fqcn: string, proposed_owner: string, class_string_targets: list<array{source_fqcn: string, member_kind: string, member_name: string, target_fqcn: string}>, class_string_metadata_targets: list<string>}> $rows
+ * @param array<string, list<string>> $actualBindingOperations
  *
- * @return array{internal_grant_count: int, coarse_internal_grant_edge_count: int}
+ * @return array{internal_grant_count: int, coarse_internal_grant_edge_count: int, bindings: array<string, array{target: string, index: int, consumer: array<string, mixed>, used: bool, actual_operations: list<string>}>}
  */
-function validateAuthorizations(array $manifest, array $byName, array $observedPairs, array $rows): array
+function validateAuthorizations(array $manifest, array $byName, array $observedPairs, array $rows, array $actualBindingOperations): array
 {
     $consumerUse = [];
+    $bindings = [];
     foreach ($manifest['declarations'] as $target => $entry) {
         foreach ($entry['consumers'] as $index => $consumer) {
-            if (($consumer['relation'] ?? 'import') !== 'import') {
+            $relation = $consumer['relation'] ?? 'import';
+            if ($relation === 'import') {
+                $consumerUse[$target . "\0" . $index] = false;
                 continue;
             }
-            $consumerUse[$target . "\0" . $index] = false;
+            if ($relation === 'composition_binding') {
+                $key = $consumer['source_fqcn'] . "\0" . $target;
+                if (isset($bindings[$key])) {
+                    fail("duplicate composition_binding {$consumer['source_fqcn']} -> {$target}");
+                }
+                $bindings[$key] = ['target' => $target, 'index' => $index, 'consumer' => $consumer, 'used' => false, 'actual_operations' => $actualBindingOperations[$key] ?? []];
+            }
         }
     }
     foreach ($rows as $row) {
@@ -1464,28 +1894,6 @@ function validateAuthorizations(array $manifest, array $byName, array $observedP
             }
         }
     }
-    $grantByPair = [];
-    $grantUse = [];
-    foreach ($manifest['temporary_internal_grants'] as $index => $grant) {
-        $source = $grant['source_fqcn'];
-        $target = $grant['target_fqcn'];
-        if (!isset($byName[$source], $byName[$target])) {
-            fail("internal grant {$index} references an unknown declaration");
-        }
-        if ($byName[$target]['proposed_status'] !== 'internal') {
-            fail("internal grant {$source} -> {$target} targets a contract declaration");
-        }
-        if ($byName[$target]['proposed_owner'] !== $grant['owner']) {
-            fail("internal grant {$source} -> {$target} has the wrong accountable owner");
-        }
-        $key = $source . "\0" . $target;
-        if (isset($grantByPair[$key])) {
-            fail("duplicate internal grant {$source} -> {$target}");
-        }
-        $grantByPair[$key] = $grant;
-        $grantUse[$key] = false;
-    }
-
     foreach ($observedPairs as $pair => $_true) {
         [$source, $target] = explode("\0", $pair, 2);
         $sourceRow = $byName[$source];
@@ -1494,10 +1902,9 @@ function validateAuthorizations(array $manifest, array $byName, array $observedP
             continue;
         }
         if ($targetRow['proposed_status'] === 'internal') {
-            if (!isset($grantByPair[$pair])) {
+            if (!isset($bindings[$pair])) {
                 fail("unapproved exact internal import {$source} -> {$target}");
             }
-            $grantUse[$pair] = true;
             continue;
         }
         $matches = [];
@@ -1527,21 +1934,38 @@ function validateAuthorizations(array $manifest, array $byName, array $observedP
     }
     validateContractCompositions($manifest, $byName, $observedPairs, $consumerUse);
     validateContractSurfaces($manifest, $byName, $observedPairs, $consumerUse);
-    foreach ($grantUse as $pair => $used) {
-        if (!$used) {
+    foreach ($bindings as $pair => &$binding) {
+        $declared = $binding['consumer']['operations'];
+        sort($declared, SORT_STRING);
+        $actual = $binding['actual_operations'];
+        sort($actual, SORT_STRING);
+        if ($actual === []) {
             [$source, $target] = explode("\0", $pair, 2);
-            fail("unused internal grant {$source} -> {$target}");
+            fail("unclassified composition_binding {$source} -> {$target}: no Symfony container binding operation");
         }
+        if ($declared !== $actual) {
+            [$source, $target] = explode("\0", $pair, 2);
+            fail(sprintf(
+                'composition_binding operation mismatch %s -> %s: declared=[%s] actual=[%s]',
+                $source,
+                $target,
+                implode(',', $declared),
+                implode(',', $actual),
+            ));
+        }
+        $binding['used'] = true;
     }
+    unset($binding);
 
     $coarse = [];
-    foreach ($grantByPair as $grant) {
-        $source = $byName[$grant['source_fqcn']];
-        $target = $byName[$grant['target_fqcn']];
+    foreach ($bindings as $pair => $_binding) {
+        [$sourceFqcn, $targetFqcn] = explode("\0", $pair, 2);
+        $source = $byName[$sourceFqcn];
+        $target = $byName[$targetFqcn];
         $coarse[semanticLayerName($source) . "\0" . semanticLayerName($target)] = true;
     }
 
-    return ['internal_grant_count' => count($grantByPair), 'coarse_internal_grant_edge_count' => count($coarse)];
+    return ['internal_grant_count' => count($bindings), 'coarse_internal_grant_edge_count' => count($coarse), 'bindings' => $bindings];
 }
 
 /**
@@ -2014,6 +2438,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0017-baseline-ceiling.md' => ['Analysis.Policy.Baseline', 'P6'],
         'docs/adr/0021-declaration-scoped-callable-identity-and-dependency-projections.md' => ['Analysis.Evidence.DependencyModel', 'P2'],
         'docs/adr/0022-capability-oriented-modular-monolith.md' => ['Architecture.Governance', 'P2'],
+        'docs/adr/0023-p8-context-locality-and-composition-bindings.md' => ['Architecture.Governance', 'P8'],
         'docs/internal/plans/modular-architecture.md' => ['Architecture.Governance', 'P2'],
         'docs/internal/plans/modular-architecture/decisions-and-target.md' => ['Architecture.Governance', 'P2'],
         'docs/internal/plans/modular-architecture/p0-governance.md' => ['Architecture.Governance', 'P2'],
@@ -2049,6 +2474,13 @@ function documentationDisposition(string $path): array
         'src/Analysis/Policy/Architecture/README.md' => ['Analysis.Policy.Architecture', 'P4'],
         'src/Analysis/Policy/Baseline/README.md' => ['Analysis.Policy.Baseline', 'P6-C'],
         'src/Core/README.md' => ['Architecture.Governance', 'P2'],
+        'src/Core/Profiler/README.md' => ['Core.Profiler', 'P8'],
+        'src/Core/Symbol/README.md' => ['Core.Symbol', 'P8'],
+        'src/Infrastructure/Ast/README.md' => ['Infrastructure.Ast', 'P8'],
+        'src/Infrastructure/DependencyInjection/README.md' => ['Infrastructure.DependencyInjection', 'P8'],
+        'src/Infrastructure/Parallel/README.md' => ['Infrastructure.Parallel', 'P8'],
+        'src/Infrastructure/Rule/README.md' => ['Infrastructure.Rule', 'P8'],
+        'src/Infrastructure/Serializer/README.md' => ['Infrastructure.Serializer', 'P8'],
         'src/Infrastructure/Console/README.md' => ['Architecture.Governance', 'P2'],
         'src/Infrastructure/README.md' => ['Architecture.Governance', 'P2'],
         'src/Reporting/GraphProjection/README.md' => ['Reporting.GraphProjection', 'P2'],

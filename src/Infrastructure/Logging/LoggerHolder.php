@@ -5,16 +5,14 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Logging;
 
 use Psr\Log\LoggerInterface;
-
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Configuration\Runtime\TransitionalRuntimeConfigurationHolder;
 
 /**
- * Mutable holder for the current logger instance.
+ * Mutable logger switch owned by one container instance.
  *
- * This allows runtime configuration of logging (similar to TransitionalRuntimeConfigurationHolder).
- * Initially contains NullLogger, but can be reconfigured in CheckCommand
- * based on CLI options (-v, --log-file, etc.).
+ * It starts with a NullLogger. Configuring a console run replaces only this
+ * holder's instance, allowing long-lived services to delegate without static
+ * runtime state.
  */
 final class LoggerHolder
 {

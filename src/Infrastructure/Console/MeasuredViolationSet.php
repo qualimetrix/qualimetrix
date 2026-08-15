@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Qualimetrix\Reporting\FindingProjection\FindingProjector;
 
@@ -15,22 +16,23 @@ final readonly class MeasuredViolationSet
     public function __construct(
         private AnalysisPipelineInterface $analyzer,
         private FindingProjector $projector,
+        private FileDiscoveryFactoryInterface $fileDiscoveryFactory,
     ) {}
 
     /**
-     * @param list<AbsolutePath> $paths
-     *
      * @return list<\Qualimetrix\Analysis\Finding\Contract\Violation>
      */
-    public function forPaths(array $paths, ?FileDiscoveryInterface $fileDiscovery = null, FindingProjectionOptions $options = new FindingProjectionOptions()): array
+    public function forRun(RunConfiguration $configuration, ?FileDiscoveryInterface $fileDiscovery = null, FindingProjectionOptions $options = new FindingProjectionOptions()): array
     {
-        return $this->runForPaths($paths, $fileDiscovery, $options)->violations;
+        return $this->run($configuration, $fileDiscovery, $options)->violations;
     }
 
-    /** @param list<AbsolutePath> $paths */
-    public function runForPaths(array $paths, ?FileDiscoveryInterface $fileDiscovery = null, FindingProjectionOptions $options = new FindingProjectionOptions()): MeasuredAnalysisRun
+    public function run(RunConfiguration $configuration, ?FileDiscoveryInterface $fileDiscovery = null, FindingProjectionOptions $options = new FindingProjectionOptions()): MeasuredAnalysisRun
     {
-        $result = $this->analyzer->analyze($paths, $fileDiscovery);
+        $result = $this->analyzer->analyze(
+            $configuration,
+            $fileDiscovery ?? $this->fileDiscoveryFactory->create($configuration->pathExcludes),
+        );
         $projection = $this->projector->project(
             $result->violations,
             $result->suppressions,

@@ -1,6 +1,12 @@
 path	fqcn	classification	target_owner	closure_package
+src/Reporting/Configuration/OutputFormatResolver.php	Qualimetrix\Reporting\Configuration\OutputFormatResolver	"output projection"	Reporting	P8
+src/Reporting/Contract/OutputFormat.php	Qualimetrix\Reporting\Contract\OutputFormat	"output projection"	Reporting	P8
+src/Reporting/Contract/OutputFormatResolverInterface.php	Qualimetrix\Reporting\Contract\OutputFormatResolverInterface	"output projection"	Reporting	P8
 src/Reporting/CoverageFailure.php	Qualimetrix\Reporting\CoverageFailure	"output projection"	Reporting	P6
 src/Reporting/Filter/ViolationFilter.php	Qualimetrix\Reporting\Filter\ViolationFilter	"output projection"	Reporting	P6
+src/Reporting/FindingProjection/Configuration/ConfiguredFindingExclusionsResolver.php	Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver	"output projection"	Reporting	P8
+src/Reporting/FindingProjection/Contract/ConfiguredFindingExclusions.php	Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusions	"output projection"	Reporting	P8
+src/Reporting/FindingProjection/Contract/ConfiguredFindingExclusionsResolverInterface.php	Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface	"output projection"	Reporting	P8
 src/Reporting/FindingProjection/Contract/GitScopeQueryInterface.php	Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface	"output projection"	Reporting	P6-D
 src/Reporting/FindingProjection/Contract/GitScopeRequest.php	Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest	"output projection"	Reporting	P6-D
 src/Reporting/FindingProjection/Contract/GitScopeResult.php	Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult	"output projection"	Reporting	P6-D
@@ -54,7 +60,6 @@ src/Reporting/GroupBy.php	Qualimetrix\Reporting\GroupBy	"output projection"	Repo
 src/Reporting/Health/HealthHintProjector.php	Qualimetrix\Reporting\Health\HealthHintProjector	"output projection"	Reporting	P5
 src/Reporting/Health/HealthScoreResolver.php	Qualimetrix\Reporting\Health\HealthScoreResolver	"output projection"	Reporting	P6
 src/Reporting/Health/SummaryEnricher.php	Qualimetrix\Reporting\Health\SummaryEnricher	"run orchestration"	Reporting	P6
-src/Reporting/Profile/ProfileSummaryRenderer.php	Qualimetrix\Reporting\Profile\ProfileSummaryRenderer	"output projection"	Reporting	P6
 src/Reporting/Report.php	Qualimetrix\Reporting\Report	"output projection"	Reporting	P6
 src/Reporting/ReportBuilder.php	Qualimetrix\Reporting\ReportBuilder	"output projection"	Reporting	P6
 src/Reporting/ReportCoverage.php	Qualimetrix\Reporting\ReportCoverage	"output projection"	Reporting	P6

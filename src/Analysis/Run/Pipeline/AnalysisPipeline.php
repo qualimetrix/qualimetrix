@@ -7,7 +7,6 @@ namespace Qualimetrix\Analysis\Run\Pipeline;
 use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
@@ -29,6 +28,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
@@ -36,12 +36,11 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
-use Qualimetrix\Analysis\Run\Discovery\GeneratedFilePolicy;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -68,26 +67,25 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         private readonly AnalysisFileDiscovery $analysisFileDiscovery,
         private readonly CollectionOrchestratorInterface $collectionOrchestrator,
         private readonly RuleExecutionInterface $ruleExecutor,
-        private readonly TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
         private readonly RuleProducerPreparation $ruleProducerPreparation,
         private readonly MeasurementAggregationInterface $measurementAggregation,
         private readonly ComputedMetricEvaluator $computedMetricEvaluation,
         DependencyGraphBuilderInterface $graphBuilder,
         private readonly MetricRepositoryFactoryInterface $repositoryFactory,
+        private readonly ProfilerInterface $profiler,
         private readonly LoggerInterface $logger = new NullLogger(),
-        private readonly ?ProfilerHolder $profilerHolder = null,
     ) {
         $this->graphBuilder = $graphBuilder;
     }
 
-    public function analyze(AbsolutePath|array $paths, ?FileDiscoveryInterface $discovery = null): AnalysisResult
+    public function analyze(RunConfiguration $configuration, ?FileDiscoveryInterface $discovery = null): AnalysisResult
     {
         $startTime = microtime(true);
-        $profiler = $this->profilerHolder?->get() ?? ProfilerHolder::get(); // @phpstan-ignore staticMethod.dynamicCall
+        $profiler = $this->profiler;
 
         $profiler->start('analysis', 'pipeline');
 
-        $pathList = $paths instanceof AbsolutePath ? [$paths] : array_values($paths);
+        $pathList = $configuration->paths;
 
         $this->logger->info('Starting analysis', [
             'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $pathList),
@@ -96,11 +94,10 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $repository = $this->repositoryFactory->create();
         // Phase 1: Discovery
         $profiler->start('discovery', 'pipeline');
-        $config = $this->configurationProvider->getConfiguration();
         $discoveredFiles = $this->analysisFileDiscovery->discover(
             $pathList,
-            $config->projectRoot,
-            $config->includeGenerated ? GeneratedFilePolicy::Include : GeneratedFilePolicy::Exclude,
+            $configuration->projectRoot,
+            $configuration->generatedFilePolicy,
             $discovery,
         );
         $files = $discoveredFiles->eligibleFiles;
@@ -119,7 +116,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $this->logger->debug('Starting collection phase', ['files' => \count($files)]);
 
         $profiler->start('collection', 'pipeline');
-        $collectionOutput = $this->collectionOrchestrator->collect($files, $repository, $config->projectRoot);
+        $collectionOutput = $this->collectionOrchestrator->collect($files, $repository, $configuration->projectRoot);
         $collectionResult = $collectionOutput;
         $profiler->stop('collection');
 
@@ -166,7 +163,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         );
 
         // Phase 6: File-set inspection.
-        $this->ruleProducerPreparation->inspectFiles($files);
+        $this->ruleProducerPreparation->inspectFiles($files, $configuration->projectRoot);
 
         // Phase 7: Rule execution.
         $phaseStartTime = microtime(true);
@@ -187,7 +184,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         $eligiblePaths = array_map(
             static fn(SplFileInfo $file): RelativePath => PathFactory::bestEffortRelative(
                 $file->getPathname(),
-                $config->projectRoot,
+                $configuration->projectRoot,
             ),
             $files,
         );
@@ -230,7 +227,6 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
     ): array {
         $context = new AnalysisContext(
             metrics: $repository,
-            ruleOptions: $this->configurationProvider->getRuleOptions(),
             dependencyGraph: $graph,
             namespaceTree: $namespaceTree,
             thresholdOverrides: $collectionResult->thresholdOverrides,

@@ -59,7 +59,7 @@
             "Qualimetrix\\PhpStan\\": "tools/phpstan/"
         },
         "classmap": [
-            "tests/Unit/PhpStan/Rules/data/"
+            "tests/TestSupport/ArchitectureStaticAnalysis/Unit/Fixtures/"
         ]
     },
     "bin": [

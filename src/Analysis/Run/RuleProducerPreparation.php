@@ -10,7 +10,8 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
-use Qualimetrix\Core\Profiler\ProfilerInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
@@ -72,9 +73,9 @@ final readonly class RuleProducerPreparation
     /**
      * @param list<SplFileInfo> $eligibleFiles
      */
-    public function inspectFiles(array $eligibleFiles): void
+    public function inspectFiles(array $eligibleFiles, AbsolutePath $projectRoot): void
     {
         $selection = $this->ruleConfiguration->selection();
-        $this->fileSetInspection->inspect($eligibleFiles, $selection->only, $selection->disabled);
+        $this->fileSetInspection->inspect($eligibleFiles, $projectRoot, $selection->only, $selection->disabled);
     }
 }

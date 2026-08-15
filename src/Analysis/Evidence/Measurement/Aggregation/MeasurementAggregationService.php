@@ -13,8 +13,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Profiler\ProfilerInterface;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 
 /** Owns initial aggregation, global collection, and global re-aggregation. */
 final class MeasurementAggregationService implements MeasurementAggregationInterface
@@ -32,8 +31,8 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
     public function __construct(
         iterable $collectors,
         FileMeasurementCollectorInterface $fileCollector,
+        private readonly ProfilerInterface $profiler,
         private readonly LoggerInterface $logger = new NullLogger(),
-        private readonly ?ProfilerHolder $profilerHolder = null,
     ) {
         $this->sortedCollectors = (new GlobalCollectorSorter())->sort($collectors);
         $regularDefinitions = AggregationHelper::collectDefinitions($fileCollector->getCollectors());
@@ -44,11 +43,11 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
 
     public function aggregate(MetricRepositoryInterface $repository, DependencyGraphInterface $dependencies): NamespaceTree
     {
-        $profiler = $this->profilerHolder === null ? null : ProfilerHolder::get();
+        $profiler = $this->profiler;
         $phaseStartTime = microtime(true);
         $this->logger->debug('Starting aggregation phase');
         self::start($profiler, 'aggregation');
-        $namespaceTree = (new MetricAggregator($this->allDefinitions))->aggregate($repository);
+        $namespaceTree = (new MetricAggregator($this->allDefinitions, $profiler))->aggregate($repository);
         self::stop($profiler, 'aggregation');
         $this->logger->info('Aggregation completed', [
             'duration' => \sprintf('%.2fs', microtime(true) - $phaseStartTime),
@@ -65,7 +64,7 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
 
         if ($this->globalDefinitions !== []) {
             self::start($profiler, 'aggregation.global');
-            (new MetricAggregator($this->globalDefinitions))->aggregate($repository, $namespaceTree);
+            (new MetricAggregator($this->globalDefinitions, $profiler))->aggregate($repository, $namespaceTree);
             self::stop($profiler, 'aggregation.global');
         }
 
@@ -87,13 +86,13 @@ final class MeasurementAggregationService implements MeasurementAggregationInter
         return $definitions;
     }
 
-    private static function start(?ProfilerInterface $profiler, string $name): void
+    private static function start(ProfilerInterface $profiler, string $name): void
     {
-        $profiler?->start($name, 'pipeline');
+        $profiler->start($name, 'pipeline');
     }
 
-    private static function stop(?ProfilerInterface $profiler, string $name): void
+    private static function stop(ProfilerInterface $profiler, string $name): void
     {
-        $profiler?->stop($name);
+        $profiler->stop($name);
     }
 }

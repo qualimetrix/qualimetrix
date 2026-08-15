@@ -13,7 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -26,6 +26,7 @@ final class ComputedMetricRule extends AbstractRule
         ComputedMetricRuleOptions $options,
         private readonly ComputedMetricDefinitionCatalogInterface $definitionCatalog,
         private readonly ComputedMetricFindingBuilder $findingBuilder,
+        private readonly ProfilerInterface $profiler,
     ) {
         parent::__construct($options);
     }
@@ -63,7 +64,7 @@ final class ComputedMetricRule extends AbstractRule
         }
 
         $violations = [];
-        $profiler = ProfilerHolder::get();
+        $profiler = $this->profiler;
 
         foreach ($this->definitionCatalog->all() as $definition) {
             // Skip definitions without thresholds

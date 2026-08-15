@@ -40,16 +40,19 @@ final class MetricInvariantTest extends TestCase
     {
         $containerFactory = new ContainerFactory();
         $container = $containerFactory->create();
+        $fixturesPath = \dirname(__DIR__, 2) . '/Fixtures/GoldenMetrics';
+        $fixtureRoot = AbsolutePath::fromString($fixturesPath);
 
         /** @var ArchitecturePolicyConfiguratorInterface $architecturePolicy */
         $architecturePolicy = $container->get(ArchitecturePolicyConfiguratorInterface::class);
-        $architecturePolicy->configure(new ConfigurationDocument([]));
+        $document = new ConfigurationDocument([], $fixtureRoot);
+        $architecturePolicy->replace($architecturePolicy->resolve($document));
 
         /** @var AnalysisPipelineInterface $pipeline */
         $pipeline = $container->get(AnalysisPipelineInterface::class);
 
-        $fixturesPath = \dirname(__DIR__, 2) . '/Fixtures/GoldenMetrics';
-        $result = $pipeline->analyze(AbsolutePath::fromString($fixturesPath));
+        $root = AbsolutePath::fromString((string) getcwd());
+        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$fixtureRoot], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
         self::$repository = $result->metrics;
         self::assertNotNull($result->namespaceTree, 'NamespaceTree must be present in analysis result');

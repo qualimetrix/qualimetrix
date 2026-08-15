@@ -168,7 +168,8 @@ final class FailClosedModularTopologyIntegrationTest extends TestCase
         $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
 
-        return $pipeline->analyze(AbsolutePath::fromString($path));
+        $root = AbsolutePath::fromString($path);
+        return $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
     }
 
     /** @param list<Violation> $violations */

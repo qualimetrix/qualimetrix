@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Infrastructure\Git\GitScopeResolver;
 use Symfony\Component\Console\Input\InputInterface;
 
@@ -18,7 +18,7 @@ final readonly class CheckScopeResolver
 
     public function resolve(
         InputInterface $input,
-        TransitionalResolvedConfiguration $configuration,
+        RunConfiguration $configuration,
     ): ResolvedCheckScope {
         $scope = $this->gitScopeResolver->resolve($input, $configuration);
 
@@ -27,4 +27,5 @@ final readonly class CheckScopeResolver
             $this->scopeWarningChecker->check($scope->projectRoot, $scope->paths),
         );
     }
+
 }

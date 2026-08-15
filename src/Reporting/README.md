@@ -713,3 +713,11 @@ Possible extensions:
 
 - **Markdown** — for documentation and PR comments
 - **JUnit XML** — for integration with test frameworks
+
+## Locality
+
+Reporting owns output projection and formatter composition, not feature state.
+It consumes named capability contracts and resolves its immutable output and
+finding-projection values from `ConfigurationDocument`; delivery adapters remain
+in Infrastructure. Keep formatter tests, templates, and documentation with
+their Reporting subject, and keep runtime values with their named owners.

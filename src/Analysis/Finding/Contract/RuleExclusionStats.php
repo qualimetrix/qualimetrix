@@ -26,8 +26,8 @@ final readonly class RuleExclusionStats
      *                                                      `exclude_namespaces` or `exclude_namespace_channels`
      * @param array<string, int> $pathExclusionsByRule Rule name => suppressed violation count
      * @param list<Violation> $excludedViolations All violations dropped by any per-rule exclusion, in encounter order.
-     *                                            Populated only when {@see \Qualimetrix\Analysis\Finding\Contract\RuleExclusionCaptureHolder} is enabled (set by
-     *                                            `RuntimeConfigurator` from `--show-suppressed`) — the counts above are always collected, but retaining
+     *                                            Populated only when the current {@see RuleConfigurationInterface} enables capture from
+     *                                            `RuntimeConfigurator`'s `--show-suppressed` policy — the counts above are always collected, but retaining
      *                                            every dropped `Violation` object is opt-in to avoid the memory cost when nothing will display them.
      */
     public function __construct(

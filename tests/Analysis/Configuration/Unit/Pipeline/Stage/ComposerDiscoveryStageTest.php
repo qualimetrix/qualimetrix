@@ -6,120 +6,53 @@ namespace Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\Stage;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
-use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
+use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
-use Symfony\Component\Console\Input\ArrayInput;
+use Qualimetrix\Core\Path\AbsolutePath;
 
 #[CoversClass(ComposerDiscoveryStage::class)]
 final class ComposerDiscoveryStageTest extends TestCase
 {
-    private string $tempDir;
+    private ComposerAutoloadPathReaderInterface&MockObject $reader;
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/composer_discovery_stage_test_' . uniqid();
-        mkdir($this->tempDir, 0777, true);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->removeDir($this->tempDir);
+        $this->reader = $this->createMock(ComposerAutoloadPathReaderInterface::class);
     }
 
     #[Test]
-    public function hasPriorityTen(): void
+    public function itHasComposerSourceIdentity(): void
     {
-        $stage = new ComposerDiscoveryStage(new ComposerReader());
-
+        $this->reader->expects(self::never())->method('extractAutoloadPaths');
+        $stage = new ComposerDiscoveryStage($this->reader);
         self::assertSame(10, $stage->priority());
-    }
-
-    #[Test]
-    public function hasNameComposer(): void
-    {
-        $stage = new ComposerDiscoveryStage(new ComposerReader());
-
         self::assertSame('composer', $stage->name());
     }
 
     #[Test]
-    public function returnsNullWhenNoPathsFound(): void
+    public function itReturnsNullWhenComposerHasNoAutoloadPaths(): void
     {
-        $stage = new ComposerDiscoveryStage(new ComposerReader());
-        $context = new ConfigurationContext(new ArrayInput([]), $this->tempDir);
+        $this->reader->expects(self::once())->method('extractAutoloadPaths')
+            ->with('/project/composer.json')->willReturn([]);
 
-        $layer = $stage->apply($context);
-
-        self::assertNull($layer);
+        self::assertNull((new ComposerDiscoveryStage($this->reader))
+            ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project'))));
     }
 
     #[Test]
-    public function returnsLayerWithDiscoveredPaths(): void
+    public function itPublishesDiscoveredPathsFromTheInvocationDirectory(): void
     {
-        $this->writeComposerJson([
-            'autoload' => [
-                'psr-4' => [
-                    'App\\' => 'src/',
-                    'Tests\\' => 'lib/',
-                ],
-            ],
-        ]);
+        $this->reader->expects(self::once())->method('extractAutoloadPaths')
+            ->with('/project/composer.json')->willReturn(['src', 'tests']);
 
-        $stage = new ComposerDiscoveryStage(new ComposerReader());
-        $context = new ConfigurationContext(new ArrayInput([]), $this->tempDir);
-
-        $layer = $stage->apply($context);
+        $layer = (new ComposerDiscoveryStage($this->reader))
+            ->apply(new ConfigurationResolutionRequest(AbsolutePath::fromString('/project')));
 
         self::assertNotNull($layer);
         self::assertSame('composer.json', $layer->source);
-        self::assertSame(['src', 'lib'], $layer->values['paths']);
-    }
-
-    #[Test]
-    public function passesCorrectPathToReader(): void
-    {
-        $this->writeComposerJson([
-            'autoload' => [
-                'psr-4' => [
-                    'App\\' => 'src/',
-                ],
-            ],
-        ]);
-
-        $stage = new ComposerDiscoveryStage(new ComposerReader());
-        $context = new ConfigurationContext(new ArrayInput([]), $this->tempDir);
-
-        $layer = $stage->apply($context);
-
-        self::assertNotNull($layer);
-        self::assertSame(['src'], $layer->values['paths']);
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function writeComposerJson(array $data): void
-    {
-        file_put_contents(
-            $this->tempDir . '/composer.json',
-            json_encode($data, \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR),
-        );
-    }
-
-    private function removeDir(string $dir): void
-    {
-        if (!is_dir($dir)) {
-            return;
-        }
-
-        $files = array_diff((scandir($dir) !== false ? scandir($dir) : []), ['.', '..']);
-        foreach ($files as $file) {
-            $path = $dir . '/' . $file;
-            is_dir($path) ? $this->removeDir($path) : unlink($path);
-        }
-
-        rmdir($dir);
+        self::assertSame(['paths' => ['src', 'tests']], $layer->values);
     }
 }

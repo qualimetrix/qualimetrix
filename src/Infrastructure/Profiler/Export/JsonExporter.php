@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Profiler\Export;
 
-use Qualimetrix\Core\Profiler\Span;
+use Qualimetrix\Infrastructure\Profiler\Span;
 
 /**
  * Exports profiling data as JSON.

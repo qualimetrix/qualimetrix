@@ -48,8 +48,10 @@ landed `Analysis\Run`, `Analysis\Evidence\Measurement`, and
 landed `Analysis\Finding`,
 `Analysis\Policy\Inline`, `Analysis\Policy\Baseline`,
 `Analysis\Evidence\Prioritization`, and `Reporting\FindingProjection`, with
-Git retained as an Infrastructure adapter behind the Reporting port. P7-P8
-remain future work. The versioned internal
+Git retained as an Infrastructure adapter behind the Reporting port. P8 closed
+the remaining locality and composition concerns: configuration resolves to a
+concrete ordered `ConfigurationDocument`, runtime state stays with its named
+owner, and DI records private wiring exactly. The versioned internal
 manifest is authoritative for the current declarations and semantic owners,
 and its generated qmx projection enforces their coarse topology.
 
@@ -107,31 +109,34 @@ this decision does not legitimise them by analogy.
   and support are subdivisions within the owning subject. A production move
   includes its owned tests and discovery wiring.
 - The current internal owner manifest is the authoritative governance input for
-  owner/visibility, named contract consumers and temporary grants. It generates
+owner/visibility, named contract consumers and permanent composition bindings.
+It generates
   the qmx owner block and production inventories; it does not duplicate DI
   registration.
 - Generated ownership/import inventories are deterministic review projections,
   not the manifest and not an independent source of ownership truth.
 
 Every current production declaration has one explicit semantic owner in the
-internal manifest. The post-P5 snapshot contains 739 declarations in 737 files
-and 37 owners. The generator projects that intent into a coarse qmx owner/seam
-block and review inventories. Open-ended owner templates such as a category
-wildcard are prohibited because a new sibling would be silently enrolled.
-Temporary grants name the exact edge, accountable owner and package/condition
-that removes it; the manifest checker, not qmx, enforces that exactness.
+internal manifest: 789 declarations in 787 files and 37 owners. The generator
+projects that intent into a coarse qmx owner block and review inventories.
+Open-ended owner templates such as a category wildcard are prohibited because a
+new sibling would be silently enrolled. A permanent composition binding names
+one exact DI source, internal target, and observed container operation; the
+manifest checker, not qmx, enforces that exactness.
 
 ### Fail-closed project topology
 
-The P5 manifest has 37 semantic-owner layers, 6 singleton enforcement seams,
-and 62 exact internal grants collapsing to 10 coarse owner pairs. The generated
-qmx projection has 250 declared allow edges; generated output is not a second
-source of truth.
+The manifest has 37 semantic-owner layers, zero singleton enforcement seams,
+and 64 permanent exact composition bindings collapsing to 13 required coarse
+owner pairs. The generated qmx projection has 227 declared allow edges;
+generated output is not a second source of truth.
+The published topology also records 659 governed test/support/fixture artifacts,
+102 fixture directories, 518 PHPUnit classes, and 7,036 semantic test IDs.
 `external` excludes `Qualimetrix\**`, and `coverage: error`
 includes every analysed logical class outside all declared layers even when it
 has no dependency edges, as well as unclassified dependency endpoints. The qmx
 allow graph is deliberately coarse; `composer architecture:check` validates
-exact manifest visibility, consumers and temporary grants before selfcheck.
+exact manifest visibility, consumers and composition bindings before selfcheck.
 
 The declared exact allow graph must be a DAG, independently of actual code
 cycles. This validation is already implemented: at configuration load, every
@@ -168,17 +173,17 @@ architectural allow edge must be removed or pointed in the dependency direction.
 - ADR 0012's “substantial vertical / thin layered” direction is superseded.
   ADR 0010 remains the historical Architecture pilot, while ADR 0016 remains
   the governing test for subject cohesion.
-- Capabilities may initially coexist with legacy role buckets, but every grant
-  has a closure package; no new code is auto-owned by a wildcard template.
+- No new code is auto-owned by a wildcard template. Composition-root access to
+  a private declaration is recorded as one permanent exact binding, not a
+  public contract or generic allow-list grant.
 - Consumers depend on smaller, named contracts and orchestration no longer
   needs feature payloads in universal contexts.
 - Configuration that previously relied on exact cyclic permissions must be
   migrated before analysis can start.
 - Fail-closed ownership detects both edge-connected and isolated unowned code.
 - The internal owner manifest remains the source for generated qmx ownership
-  and inventories while P7-P8 close the remaining temporary grants. Generated
-  inventories remain auditable projections and can be deleted and regenerated
-  without affecting runtime behaviour.
+  and inventories. Generated inventories remain auditable projections and can
+  be deleted and regenerated without affecting runtime behaviour.
 
 ## References
 

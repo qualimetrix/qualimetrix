@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -48,6 +49,7 @@ final class ComputedMetricsConfigurator implements ContainerConfiguratorInterfac
         ]);
         $container->register($evaluator)->setArguments([
             new Reference(self::CATALOG),
+            new Reference(ProfilerInterface::class),
             new Reference($delegatingLogger),
         ]);
         $container->setAlias(self::CONFIGURATOR, $analysis)->setPublic(true);

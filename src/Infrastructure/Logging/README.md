@@ -112,3 +112,8 @@ bin/qmx check src/ --log-level=debug --log-file=/tmp/qmx.log
 - `-v` flag enables console logging
 - Parse errors are logged but analysis continues
 - Unit tests for all loggers
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

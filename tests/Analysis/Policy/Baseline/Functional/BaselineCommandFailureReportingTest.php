@@ -10,24 +10,61 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\Configuration\LcomCollectionConfigurationResolver;
+use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
+use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineConflictException;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Cache\CacheConfigurationStore;
 use Qualimetrix\Infrastructure\Cache\CacheFactory;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
 use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
 use Qualimetrix\Infrastructure\Console\Command\BaselineCommand;
+use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
-use Qualimetrix\Infrastructure\Console\DiagnosticOutput;
+use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
+use Qualimetrix\Infrastructure\Console\ExitCodeResolver;
+use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
+use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
+use Qualimetrix\Infrastructure\Console\ProfilePresenter;
+use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
 use Qualimetrix\Infrastructure\Console\ResultPresenter;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\RuntimeLimitsController;
+use Qualimetrix\Infrastructure\Console\RuntimeLoggerConfigurator;
 use Qualimetrix\Infrastructure\Console\ViolationFilterOrchestrator;
+use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
+use Qualimetrix\Infrastructure\Logging\LoggerHolder;
+use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
+use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Parallel\Runtime\ParallelConfigurationStore;
+use Qualimetrix\Infrastructure\Profiler\ProfileSession;
+use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
+use Qualimetrix\Reporting\Filter\ViolationFilter;
+use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
+use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
+use Qualimetrix\Reporting\Health\SummaryEnricher;
 use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
@@ -174,6 +211,59 @@ final class BaselineCommandFailureReportingTest extends TestCase
         self::assertSame('Failed to load configuration: template expansion failed', trim($preparation->getDisplay()));
     }
 
+    #[Test]
+    public function itResetsSharedBaselineRuntimeBeforeConfigurationLoadingFails(): void
+    {
+        $runtime = self::runtimeConfigurator();
+        $runtimeReflection = new ReflectionClass($runtime);
+        $analysisRuntime = $runtimeReflection->getProperty('analysisRuntimeConfigurator')->getValue($runtime);
+        self::assertInstanceOf(AnalysisRuntimeConfigurator::class, $analysisRuntime);
+        $validator = (new ReflectionClass($analysisRuntime))->getProperty('ruleInputValidator')->getValue($analysisRuntime);
+        self::assertInstanceOf(RuleInputValidator::class, $validator);
+        $selector = (new ReflectionClass($validator))->getProperty('ruleSelector')->getValue($validator);
+        self::assertInstanceOf(RuleSelector::class, $selector);
+        $staticChannels = (new ReflectionClass($selector))->getProperty('defaultChannels')->getValue($selector);
+        $selector->replaceChannels(self::createStub(RuleChannelRegistryInterface::class));
+
+        $cacheFactory = $runtimeReflection->getProperty('cacheFactory')->getValue($runtime);
+        self::assertInstanceOf(CacheFactory::class, $cacheFactory);
+        $cacheStore = (new ReflectionClass($cacheFactory))->getProperty('configurationStore')->getValue($cacheFactory);
+        self::assertInstanceOf(CacheConfigurationStore::class, $cacheStore);
+        $cacheFactory->replaceConfiguration(new CacheConfiguration(AbsolutePath::fromString('/custom-cache'), false));
+        $parallelStore = $runtimeReflection->getProperty('parallelConfigurationStore')->getValue($runtime);
+        self::assertInstanceOf(ParallelConfigurationStore::class, $parallelStore);
+        $parallelStore->replace(new ParallelConfiguration(3));
+        $profile = $runtimeReflection->getProperty('profileSession')->getValue($runtime);
+        self::assertInstanceOf(ProfileSession::class, $profile);
+        $profile->enable();
+
+        $pipeline = self::createStub(ConfigurationPipelineInterface::class);
+        $pipeline->method('resolve')->willThrowException(ConfigLoadException::fileNotFound('qmx.yaml'));
+        $baselineRun = new BaselineRun(
+            $runtime,
+            self::withoutConstructor(MeasuredViolationSet::class),
+            self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)),
+            self::configurationInputAdapter($pipeline),
+            self::createStub(RunConfigurationResolverInterface::class),
+            self::createStub(ConfiguredFindingExclusionsResolverInterface::class),
+            self::createStub(CacheConfigurationResolverInterface::class),
+            self::createStub(ParallelConfigurationResolverInterface::class),
+        );
+
+        try {
+            $baselineRun->measure(new ArrayInput([]), new BufferedOutput());
+            self::fail('Configuration loading must fail.');
+        } catch (ConfigLoadException) {
+            self::assertSame(
+                $staticChannels,
+                (new ReflectionClass($selector))->getProperty('channels')->getValue($selector),
+            );
+            self::assertTrue($cacheStore->current()->enabled);
+            self::assertNull($parallelStore->current()->workers);
+            self::assertFalse($profile->isEnabled());
+        }
+    }
+
     private static function execute(Throwable $thrown, bool $verbose): CommandTester
     {
         $command = new class ($thrown) extends BaselineCommand {
@@ -204,16 +294,18 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $rules->method('getAllCliAliases')->willReturn([]);
 
         $command = new CheckCommand(
-            $rules,
             self::createStub(AnalysisPipelineInterface::class),
-            self::withoutConstructor(CacheFactory::class),
             self::withoutConstructor(ViolationFilterOrchestrator::class),
-            $pipeline,
-            self::withoutConstructor(RuntimeConfigurator::class),
-            self::withoutConstructor(ResultPresenter::class),
-            self::withoutConstructor(RuleInputValidator::class),
-            new DiagnosticOutput(),
+            self::runtimeConfigurator(),
+            self::resultPresenter(),
+            self::ruleInputValidator($rules),
             self::withoutConstructor(CheckScopeResolver::class),
+            self::configurationInputAdapter($pipeline),
+            self::createStub(RunConfigurationResolverInterface::class),
+            self::createStub(CacheConfigurationResolverInterface::class),
+            self::createStub(ParallelConfigurationResolverInterface::class),
+            self::createStub(ConfiguredFindingExclusionsResolverInterface::class),
+            self::createStub(OutputFormatResolverInterface::class),
         );
 
         $diagnostics = new BufferedOutput();
@@ -229,9 +321,13 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $pipeline = self::createStub(ConfigurationPipelineInterface::class);
         $pipeline->method('resolve')->willThrowException($thrown);
         $command = new LayerAssignmentCommand(
-            $pipeline,
-            self::withoutConstructor(RuntimeConfigurator::class),
+            self::runtimeConfigurator(),
             self::withoutConstructor(LayerAssignmentResolver::class),
+            self::configurationInputAdapter($pipeline),
+            self::createStub(RunConfigurationResolverInterface::class),
+            self::createStub(CacheConfigurationResolverInterface::class),
+            self::createStub(ParallelConfigurationResolverInterface::class),
+            self::ruleInputValidator(self::createStub(RuleRegistryInterface::class)),
         );
         $tester = new CommandTester($command);
         $tester->execute(['fqn' => 'App\\Service\\Example']);
@@ -249,5 +345,77 @@ final class BaselineCommandFailureReportingTest extends TestCase
     private static function withoutConstructor(string $class): object
     {
         return (new ReflectionClass($class))->newInstanceWithoutConstructor();
+    }
+
+    private static function runtimeConfigurator(): RuntimeConfigurator
+    {
+        $cacheStore = new CacheConfigurationStore();
+        $parallelStore = new ParallelConfigurationStore();
+        $ruleOptions = new RuleOptionsRegistry();
+        $loggerFactory = self::createStub(LoggerFactoryInterface::class);
+        $loggerFactory->method('create')->willReturn(new NullLogger());
+        $architecture = self::createStub(ArchitecturePolicyConfiguratorInterface::class);
+        $ruleRegistry = self::createStub(RuleRegistryInterface::class);
+        $staticChannels = new RuleChannelRegistry([], 'computed.health', new ResolvedComputedMetricDefinitions([]));
+        $ruleSelector = new RuleSelector($staticChannels);
+        $ruleInputValidator = new RuleInputValidator(
+            $ruleRegistry,
+            $ruleSelector,
+            new FindingConfigurationResolver(),
+            $staticChannels,
+        );
+
+        return new RuntimeConfigurator(
+            new RuntimeLoggerConfigurator($loggerFactory, new LoggerHolder()),
+            new SwitchableProgressReporter(),
+            new ProfileSession(),
+            new AnalysisRuntimeConfigurator(
+                $ruleOptions,
+                new LcomCollectionConfigurationResolver(),
+                new LcomCollectionConfigurationStore(),
+                $architecture,
+                self::createStub(ComputedMetricConfiguratorInterface::class),
+                self::createStub(CouplingConfiguratorInterface::class),
+                $ruleInputValidator,
+            ),
+            new CacheFactory($cacheStore),
+            $parallelStore,
+            new RuntimeLimitsController(),
+        );
+    }
+
+    private static function ruleInputValidator(RuleRegistryInterface $rules): RuleInputValidator
+    {
+        $staticChannels = new RuleChannelRegistry([], 'computed.health', new ResolvedComputedMetricDefinitions([]));
+
+        return new RuleInputValidator(
+            $rules,
+            new RuleSelector($staticChannels),
+            new FindingConfigurationResolver(),
+            $staticChannels,
+        );
+    }
+
+    private static function configurationInputAdapter(
+        ConfigurationPipelineInterface $pipeline,
+    ): ConfigurationInputAdapter {
+        return new ConfigurationInputAdapter(
+            $pipeline,
+        );
+    }
+
+    private static function resultPresenter(): ResultPresenter
+    {
+        $profile = new ProfileSession();
+
+        return new ResultPresenter(
+            self::createStub(FormatterRegistryInterface::class),
+            $profile,
+            self::withoutConstructor(SummaryEnricher::class),
+            new ProfilePresenter($profile),
+            new ExitCodeResolver(),
+            new ViolationFilter(),
+            new FormatterContextFactory(),
+        );
     }
 }

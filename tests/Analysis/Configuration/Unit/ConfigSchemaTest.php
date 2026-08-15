@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Configuration\ConfigSchema;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use ReflectionClass;
 use ReflectionNamedType;
 
@@ -29,8 +31,8 @@ final class ConfigSchemaTest extends TestCase
 
         // Section keys (derived from dotted entries)
         self::assertContains('cache', $keys);
-        self::assertContains('namespace', $keys);
-        self::assertContains('aggregation', $keys);
+        self::assertNotContains('namespace', $keys);
+        self::assertNotContains('aggregation', $keys);
         self::assertContains('coupling', $keys);
         self::assertContains('parallel', $keys);
 
@@ -48,8 +50,8 @@ final class ConfigSchemaTest extends TestCase
         $sections = ConfigSchema::sectionKeys();
 
         self::assertContains('cache', $sections);
-        self::assertContains('namespace', $sections);
-        self::assertContains('aggregation', $sections);
+        self::assertNotContains('namespace', $sections);
+        self::assertNotContains('aggregation', $sections);
         self::assertContains('coupling', $sections);
         self::assertContains('parallel', $sections);
 
@@ -182,8 +184,8 @@ final class ConfigSchemaTest extends TestCase
         $subKeys = ConfigSchema::allowedSectionSubKeys();
 
         self::assertSame(['dir', 'enabled'], $subKeys['cache']);
-        self::assertSame(['strategy', 'composerJson'], $subKeys['namespace']);
-        self::assertSame(['prefixes', 'autoDepth'], $subKeys['aggregation']);
+        self::assertArrayNotHasKey('namespace', $subKeys);
+        self::assertArrayNotHasKey('aggregation', $subKeys);
         self::assertSame(['workers'], $subKeys['parallel']);
         self::assertSame(['frameworkNamespaces'], $subKeys['coupling']);
 
@@ -261,9 +263,15 @@ final class ConfigSchemaTest extends TestCase
     #[Test]
     public function noConstantIsDangling(): void
     {
-        $configDir = \dirname(__DIR__, 4) . '/src/Analysis/Configuration';
-        $consumerFiles = (glob($configDir . '/{,*/,*/*/}*.php', \GLOB_BRACE) !== false ? glob($configDir . '/{,*/,*/*/}*.php', \GLOB_BRACE) : []);
-        self::assertNotEmpty($consumerFiles, 'No PHP files found in src/Analysis/Configuration/');
+        $sourceDir = \dirname(__DIR__, 4) . '/src';
+        $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($sourceDir));
+        $consumerFiles = [];
+        foreach ($iterator as $file) {
+            if ($file->isFile() && $file->getExtension() === 'php') {
+                $consumerFiles[] = $file->getPathname();
+            }
+        }
+        self::assertNotEmpty($consumerFiles, 'No PHP files found in src/.');
 
         // Exclude ConfigSchema itself — we check consumers, not the definition
         $consumerFiles = array_filter(

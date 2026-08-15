@@ -13,9 +13,14 @@ final class CouplingAnalysis implements CouplingConfiguratorInterface
     /** @var list<string> */
     private array $frameworkNamespaces = [];
 
-    public function configure(ConfigurationDocument $document): void
+    public function resolve(ConfigurationDocument $document): array
     {
-        $this->frameworkNamespaces = $this->frameworkNamespacesFrom($document);
+        return $this->frameworkNamespacesFrom($document);
+    }
+
+    public function replace(array $frameworkNamespaces): void
+    {
+        $this->frameworkNamespaces = $frameworkNamespaces;
     }
 
     /** @return list<string> */

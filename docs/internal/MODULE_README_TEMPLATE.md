@@ -14,9 +14,8 @@ not create an empty `Contract/` or internal folder merely to match the template.
 ## External consumers and contracts
 
 List every external owner-consumer and the exact contract types it imports. A
-permanent consumer is owner-wide for that exact target contract declaration. A
-temporary consumer names one exact source FQCN and its P1-P8 closure package;
-do not generalise it to a fourth declaration of the same owner. If there are no
+permanent consumer is owner-wide for that exact target contract declaration. Do
+not generalise a declared consumer to a fourth declaration of the same owner. If there are no
 named consumers, state “Private leaf; no external contract” and do not add a
 `Contract/` directory.
 
@@ -67,14 +66,13 @@ family, implementation path, DI configurator/scanner, tag, composite/registry
 consumer, deterministic id/order contract and duplicate-id behaviour. Write
 “None” when it has no extension point.
 
-## Temporary grants and closure
+## Composition bindings and locality check
 
-Permanent dependencies belong in the sections above. For every migration grant,
-name the exact edge/import, owner, reason, closure package and machine-checkable
-removal condition. The manifest checker enforces the exact pair; a generated
-coarse qmx owner edge is not the grant. No wildcard sibling access or taxonomy
-allow target is valid.
-
-| Exact grant | Owner | Reason | Closure package/condition | Verification |
-| ----------- | ----- | ------ | ------------------------- | ------------ |
-|             |       |        |                           |              |
+Document a private declaration referenced directly by the composition root as a
+permanent exact `composition_binding`: name its DI source, target, container
+operation, and the coarse qmx pair it retains. A binding is not a public
+contract, a general owner permission, or an exemption from the manifest check.
+For every change, confirm that code, tests, fixtures, support, and documentation
+move with their subject; external consumers use declared contracts; and mutable
+state has one owner, reset point, and typed readers. No wildcard sibling access
+or taxonomy allow target is valid.

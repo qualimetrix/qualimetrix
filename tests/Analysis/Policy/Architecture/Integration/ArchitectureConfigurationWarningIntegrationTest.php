@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Integration;
 
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
@@ -15,13 +16,12 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputDefinition;
-use Symfony\Component\Console\Input\InputOption;
 
 /** Exercises Architecture-owned warning semantics over normalized YAML contributions. */
 #[CoversClass(ArchitecturePolicy::class)]
@@ -52,12 +52,15 @@ architecture:
     domain-*: ['domain-*']
 YAML);
 
-        $resolved = $this->createPipeline()->resolve(
-            new ConfigurationContext($this->createInput(), $this->tempDir),
+        $document = $this->createPipeline()->resolve(
+            new ConfigurationResolutionRequest(AbsolutePath::fromString($this->tempDir)),
         );
-        self::assertCount(1, $resolved->document->contributions('architecture'));
+        self::assertCount(1, $document->contributions('architecture'));
 
-        $warnings = (new ArchitecturePolicy())->configure($resolved->document);
+        $policy = new ArchitecturePolicy();
+        $resolved = $policy->resolve($document);
+        $policy->replace($resolved);
+        $warnings = $resolved->warnings();
 
         self::assertCount(1, $warnings);
         self::assertStringContainsString('wildcard-self-allow', $warnings[0]->message);
@@ -78,12 +81,49 @@ architecture:
     controller: ['service']
 YAML);
 
-        $resolved = $this->createPipeline()->resolve(
-            new ConfigurationContext($this->createInput(), $this->tempDir),
+        $document = $this->createPipeline()->resolve(
+            new ConfigurationResolutionRequest(AbsolutePath::fromString($this->tempDir)),
         );
-        self::assertCount(1, $resolved->document->contributions('architecture'));
+        self::assertCount(1, $document->contributions('architecture'));
 
-        self::assertSame([], (new ArchitecturePolicy())->configure($resolved->document));
+        $policy = new ArchitecturePolicy();
+        $resolved = $policy->resolve($document);
+        $policy->replace($resolved);
+
+        self::assertSame([], $resolved->warnings());
+    }
+
+    #[Test]
+    public function itRejectsAForeignResolvedTokenBeforeChangingInstalledState(): void
+    {
+        $policy = new ArchitecturePolicy();
+        $resolved = $policy->resolve($this->createPipeline()->resolve(
+            new ConfigurationResolutionRequest(AbsolutePath::fromString($this->tempDir)),
+        ));
+        $policy->replace($resolved);
+        $policy->prepare(self::createStub(DependencyGraphInterface::class), []);
+        $installed = $policy->getPreparedConfiguration();
+        $warnings = $resolved->warnings();
+
+        $foreign = new class implements ResolvedArchitecturePolicyInterface {
+            public function warnings(): array
+            {
+                return [];
+            }
+        };
+
+        try {
+            $policy->replace($foreign);
+            self::fail('A foreign Architecture resolution token must be rejected.');
+        } catch (LogicException $exception) {
+            self::assertSame(
+                'ArchitecturePolicy accepts only a policy resolved by its Architecture factory.',
+                $exception->getMessage(),
+            );
+        }
+
+        self::assertSame($installed, $policy->getPreparedConfiguration());
+        self::assertSame($warnings, $resolved->warnings());
     }
 
     private function createPipeline(): ConfigurationPipeline
@@ -95,23 +135,6 @@ YAML);
         $pipeline->addStage(new CliStage());
 
         return $pipeline;
-    }
-
-    private function createInput(): ArrayInput
-    {
-        $definition = new InputDefinition([
-            new InputArgument('paths', InputArgument::OPTIONAL | InputArgument::IS_ARRAY, 'Paths to analyze', []),
-            new InputOption('exclude', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Exclude directories'),
-            new InputOption('format', 'f', InputOption::VALUE_REQUIRED, 'Output format'),
-            new InputOption('no-cache', null, InputOption::VALUE_NONE, 'Disable caching'),
-            new InputOption('cache-dir', null, InputOption::VALUE_REQUIRED, 'Cache directory'),
-            new InputOption('disable-rule', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Disable rules'),
-            new InputOption('only-rule', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Only rules'),
-        ]);
-        $input = new ArrayInput([], $definition);
-        $input->setInteractive(false);
-
-        return $input;
     }
 
     private function removeTempDir(): void

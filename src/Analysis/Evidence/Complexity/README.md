@@ -263,3 +263,8 @@ integration test verifies WMC aggregation and reporting. The package is done
 when all 14 test classes (374 PHPUnit IDs) are discovered, collector
 `requires()`/`provides()` sets and all rule IDs/channels/options are unchanged,
 and no old Complexity production or test FQCN remains in this leaf.
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

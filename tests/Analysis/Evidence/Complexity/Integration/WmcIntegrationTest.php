@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -47,7 +48,7 @@ final class WmcIntegrationTest extends TestCase
 
         // Create aggregator with CCN collector
         $collector = new CyclomaticComplexityCollector();
-        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]));
+        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]), self::createStub(ProfilerInterface::class));
 
         // Aggregate
         $aggregator->aggregate($repository);
@@ -76,7 +77,7 @@ final class WmcIntegrationTest extends TestCase
 
         // Aggregate
         $collector = new CyclomaticComplexityCollector();
-        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]));
+        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]), self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository);
 
         // Verify WMC === ccn.sum
@@ -102,7 +103,7 @@ final class WmcIntegrationTest extends TestCase
 
         // Aggregate
         $collector = new CyclomaticComplexityCollector();
-        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]));
+        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]), self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository);
 
         // Verify class has no WMC metric (since no methods)
@@ -148,7 +149,7 @@ final class WmcIntegrationTest extends TestCase
 
         // Aggregate
         $collector = new CyclomaticComplexityCollector();
-        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]));
+        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collector]), self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository);
 
         // Verify both classes have WMC

@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Run\FileSetInspection;
 
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use SplFileInfo;
 
 final readonly class FileSetInspectionComposite
@@ -16,7 +17,7 @@ final readonly class FileSetInspectionComposite
     public function __construct(
         private array $participants,
         private RuleSelectorProducerGate $producerGate,
-        private ?ProfilerHolder $profilerHolder = null,
+        private ProfilerInterface $profiler,
     ) {}
 
     /**
@@ -24,7 +25,7 @@ final readonly class FileSetInspectionComposite
      * @param list<string> $onlyRules
      * @param list<string> $disabledRules
      */
-    public function inspect(array $eligibleFiles, array $onlyRules, array $disabledRules): void
+    public function inspect(array $eligibleFiles, AbsolutePath $projectRoot, array $onlyRules, array $disabledRules): void
     {
         foreach ($this->participants as $participant) {
             $participant->resetForRun();
@@ -36,12 +37,11 @@ final readonly class FileSetInspectionComposite
             }
 
             $span = 'file-set-inspection.' . $participant::participantId();
-            $profiler = $this->profilerHolder?->get(); // @phpstan-ignore staticMethod.dynamicCall
-            $profiler?->start($span, 'pipeline');
+            $this->profiler->start($span, 'pipeline');
             try {
-                $participant->inspect($eligibleFiles);
+                $participant->inspect($eligibleFiles, $projectRoot);
             } finally {
-                $profiler?->stop($span);
+                $this->profiler->stop($span);
             }
         }
     }

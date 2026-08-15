@@ -45,7 +45,8 @@ final class LayerViolationIntegrationTest extends TestCase
     {
         $pipeline = $this->createPipelineWithArchitecture(null);
 
-        $result = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
         $layerViolations = $this->filterByRule($result->violations, LayerViolationRule::NAME);
         $coverageDiagnostics = $this->filterByRule($result->violations, LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME);
@@ -59,7 +60,8 @@ final class LayerViolationIntegrationTest extends TestCase
     {
         $pipeline = $this->createPipelineWithArchitecture($this->buildPolicy(CoverageMode::Ignore));
 
-        $result = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
         $layerViolations = $this->filterByRule($result->violations, LayerViolationRule::NAME);
         self::assertNotEmpty(
@@ -106,7 +108,8 @@ final class LayerViolationIntegrationTest extends TestCase
         $architecture = new ArchitectureConfiguration($registry, $policy, CoverageMode::Warn);
 
         $pipeline = $this->createPipelineWithArchitecture($architecture);
-        $result = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
         $diagnostics = $this->filterByRule($result->violations, LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME);
         self::assertCount(1, $diagnostics, 'Exactly one coverage diagnostic expected in warn mode.');
@@ -131,7 +134,8 @@ final class LayerViolationIntegrationTest extends TestCase
     public function goldenFileMatchesFullPolicyOutput(): void
     {
         $pipeline = $this->createPipelineWithArchitecture($this->buildPolicy(CoverageMode::Ignore));
-        $result = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
         $actual = ArchitectureViolationProjector::project($result->violations);
         $goldenPath = self::FIXTURE_PATH . '/expected-violations.json';
@@ -170,7 +174,8 @@ final class LayerViolationIntegrationTest extends TestCase
         $architecture = new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore);
 
         $pipeline = $this->createPipelineWithArchitecture($architecture);
-        $result = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
         $diagnostics = $this->filterByRule($result->violations, LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME);
         self::assertSame([], $diagnostics);

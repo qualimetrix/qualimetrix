@@ -19,7 +19,7 @@ it consumes immutable Health contracts and never imports Health internals.
 ComputedMetrics/
 ├── Contract/                         # exact promises consumed outside the root owner
 │   ├── Configuration/                # runtime configuration and Health exclusion promises
-│   ├── Definition/                   # definitions, dimensions, and catalog promise
+│   ├── Definition/                   # definitions, dimensions, and immutable resolved snapshot
 │   ├── Evaluation/                   # concrete evaluation service consumed by Run
 │   └── Finding/                      # computed finding channel family
 ├── Configuration/
@@ -48,26 +48,32 @@ ComputedMetrics/
 
 ## Lifecycle and phase
 
-`RuntimeConfigurator` calls `ComputedMetricConfiguratorInterface::configure()`
-before a run. Configuration always clears the prior catalog first, folds the
-ordered `computed_metrics` and `exclude_health` contributions through
-`ComputedMetricContributionReader`, validates the
-whole dependency graph, and publishes only a successful definition set. A
-failed second configuration cannot leak definitions from the first run.
+`AnalysisRuntimeConfigurator` resolves
+`ResolvedComputedMetricDefinitions` from the ordered `computed_metrics` and
+`exclude_health` contributions before mutating any owner state. It passes that
+immutable value to selector validation, which obtains the exact rule-channel
+snapshot. Only after all resolution and validation succeeds does the runtime
+replace the ComputedMetrics token and commit the selector snapshot. Run reset
+discards the selector snapshot; a failed resolution or validation leaves the
+previous stores untouched and the selector static-only.
 
 `AnalysisPipeline` calls `ComputedMetricEvaluator::evaluate()` after
 Measurement aggregation and before CircularDependency preparation. Evaluation
-reads one immutable catalog snapshot, mutates only `MetricRepositoryInterface`,
-owns the `computed` profiler span, and is a no-op when no files or definitions
-exist.
+reads the replaced immutable definition token, mutates only
+`MetricRepositoryInterface`, owns the `computed` profiler span, and is a no-op
+when no files or definitions exist.
 
 ## Public contracts and named consumers
 
-- `ComputedMetricConfiguratorInterface` — `Infrastructure\Console\RuntimeConfigurator`.
+- `ComputedMetricConfiguratorInterface` —
+  `Infrastructure\Console\AnalysisRuntimeConfigurator`.
 - `ComputedMetricEvaluator` — `Analysis\Run\Pipeline\AnalysisPipeline`.
-- `ComputedMetricDefinitionCatalogInterface` — the two Infrastructure rule
-  registries, Reporting's `HtmlTreeBuilder`, Health's summary builder, and both
-  Health drill-down services.
+- `ResolvedComputedMetricDefinitions` — immutable definitions resolved for one
+  run. Infrastructure Rule receives it only as the input to its exact
+  `RuleChannelSnapshotFactoryInterface`; it consumes no retained definition
+  state.
+- `ComputedMetricDefinitionCatalogInterface` — Health and Reporting's named
+  projection consumers.
 - `ComputedMetricChannelFamily` — the channel declaration compiler pass.
 - `HealthFormulaExclusionInterface` and `ComputedMetricDefinition` — Health's
   exclusion implementation.
@@ -98,14 +104,17 @@ behavior, and report schemas are unchanged by the ownership migration.
 Owned tests live under `tests/Analysis/Evidence/ComputedMetrics/`. The
 materialized P5-F2 slice contains 28 PHPUnit classes, 281 discovered IDs, one
 support class, and no fixtures when the three retained Reporting assembly tests
-are included. Topology tests classify all 39 raw cross-owner Contract imports
-exactly: 34 manifest-authorized consumer relations and five immutable
-carrier/composition imports. Reverse, unknown-zone, cross-owner internal, and
-unclassified Contract imports fail closed.
+are included. Topology tests classify 43 raw relations exactly: 38 classified
+relations (22 non-Health and 16 Health) plus five unchanged composed carriers.
+The classified set includes `ResolvedComputedMetricDefinitions` relations to
+`AnalysisRuntimeConfigurator`, `RuleInputValidator`, `RuleChannelRegistry`, and
+`RuleChannelSnapshotFactoryInterface`. Reverse, unknown-zone, cross-owner
+internal, and unclassified Contract imports fail closed.
 
 ## Definition of Done
 
-- Definitions are instance-owned and replaced atomically between runs.
+- Definitions are resolved as `ResolvedComputedMetricDefinitions` and replaced
+  atomically between runs; Infrastructure Rule receives only the run value.
 - Run depends only on the evaluation contract and stores no capability state.
 - Health imports no Reporting type; Reporting imports only root/Health
   contracts for computed-metric semantics.
@@ -113,3 +122,8 @@ unclassified Contract imports fail closed.
   preserve their existing behavior.
 - Manifest, generated ownership evidence, PHPUnit discovery, and dogfooding are
   fresh and green.
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

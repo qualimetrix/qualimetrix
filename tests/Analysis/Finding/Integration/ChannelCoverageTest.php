@@ -8,8 +8,6 @@ use ArrayIterator;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyAnalysis;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
@@ -54,6 +52,8 @@ use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
@@ -66,6 +66,7 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
 use RuntimeException;
 
@@ -357,26 +358,25 @@ final class ChannelCoverageTest extends TestCase
             ),
         ]);
 
-        $configurationProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
-        $configurationProvider->method('getConfiguration')->willReturn(new TransitionalRuntimeConfiguration());
-        $configurationProvider->method('getRuleOptions')->willReturn([]);
-
+        $profiler = new ProfileSession();
         $fileCollector = new CompositeCollector([]);
         $pipeline = TestPipelineBuilder::create()
             ->withDefaultDiscovery($discovery)
             ->withCollectionOrchestrator($collectionOrchestrator)
             ->withRuleExecution($ruleExecutor)
-            ->withConfigurationProvider($configurationProvider)
-            ->withMeasurementAggregation(new MeasurementAggregationService([], $fileCollector))
+            ->withMeasurementAggregation(new MeasurementAggregationService([], $fileCollector, $profiler))
             ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
             ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
             ->withFileSetInspection(new FileSetInspectionComposite(
                 [],
                 new RuleSelectorProducerGate(new RuleSelector(new InMemoryRuleChannelRegistry())),
+                $profiler,
             ))
+            ->withProfiler($profiler)
             ->build();
 
-        $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
+        $root = AbsolutePath::fromString('/path/to/src');
+        $result = $pipeline->analyze(new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include));
 
         self::assertCount(1, $result->violations);
         $channel = $result->violations[0]->channel();
@@ -413,26 +413,25 @@ final class ChannelCoverageTest extends TestCase
         $ruleExecutor->method('execute')->willReturn([]);
         $ruleExecutor->method('allRules')->willReturn([]);
 
-        $configurationProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
-        $configurationProvider->method('getConfiguration')->willReturn(new TransitionalRuntimeConfiguration());
-        $configurationProvider->method('getRuleOptions')->willReturn([]);
-
+        $profiler = new ProfileSession();
         $fileCollector = new CompositeCollector([]);
         $pipeline = TestPipelineBuilder::create()
             ->withDefaultDiscovery($discovery)
             ->withCollectionOrchestrator($collectionOrchestrator)
             ->withRuleExecution($ruleExecutor)
-            ->withConfigurationProvider($configurationProvider)
-            ->withMeasurementAggregation(new MeasurementAggregationService([], $fileCollector))
+            ->withMeasurementAggregation(new MeasurementAggregationService([], $fileCollector, $profiler))
             ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
             ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
             ->withFileSetInspection(new FileSetInspectionComposite(
                 [],
                 new RuleSelectorProducerGate(new RuleSelector(new InMemoryRuleChannelRegistry())),
+                $profiler,
             ))
+            ->withProfiler($profiler)
             ->build();
 
-        $result = $pipeline->analyze(AbsolutePath::fromString('/path/to/src'));
+        $root = AbsolutePath::fromString('/path/to/src');
+        $result = $pipeline->analyze(new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include));
 
         self::assertCount(1, $result->violations);
         $channel = $result->violations[0]->channel();

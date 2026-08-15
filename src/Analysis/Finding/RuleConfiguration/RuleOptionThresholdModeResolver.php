@@ -18,9 +18,7 @@ namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
  * though the higher-priority layer clearly meant to switch modes, not to
  * combine them.
  *
- * {@see evictOverriddenMode()} is called by the merge functions in
- * {@see \Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationMerger} (preset ↔
- * config file, and multi-preset merging) and
+ * {@see evictOverriddenMode()} is called by Finding-owned configuration folding and
  * {@see \Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory} (config file ↔ CLI)
  * before they merge two layers together: it strips the *lower*-priority
  * layer's keys that belong to the mode the *higher*-priority layer just

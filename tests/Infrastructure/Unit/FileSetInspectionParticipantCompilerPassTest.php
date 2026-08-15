@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\FileSetInspectionParticipantCompilerPass;
 use ReflectionProperty;
 use SplFileInfo;
@@ -152,7 +153,7 @@ abstract class TestFileSetInspectionParticipant implements FileSetInspectionPart
     public function resetForRun(): void {}
 
     /** @param list<SplFileInfo> $eligibleFiles */
-    public function inspect(array $eligibleFiles): void {}
+    public function inspect(array $eligibleFiles, AbsolutePath $projectRoot): void {}
 }
 
 final class AlphaParticipant extends TestFileSetInspectionParticipant

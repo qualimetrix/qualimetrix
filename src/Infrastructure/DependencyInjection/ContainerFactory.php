@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection;
 
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurableInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
@@ -56,9 +55,8 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * - CheckCommand with injected dependencies
  * - All analysis services (Analyzer, Collectors, Rules, etc.)
  *
- * Runtime configuration is handled through TransitionalRuntimeConfigurationProviderInterface and
- * RuleOptionsRegistry, which can be configured after container creation but
- * before rules are instantiated (rules are lazy-loaded).
+ * Runtime configuration is composed into owner-local stores by RuntimeConfigurator
+ * before analysis begins; RuleOptionsRegistry retains the Finding-owned rule state.
  *
  * Service registration is delegated to dedicated configurators, each responsible
  * for a cohesive group of services. Configurators are bootstrapping-code and
@@ -69,12 +67,8 @@ final class ContainerFactory
     /**
      * Create a fully configured container.
      *
-     * The container is created with default configuration. Runtime configuration
-     * (from CLI or config file) should be set through:
-     * - TransitionalRuntimeConfigurationProviderInterface::setConfiguration()
-     * - RuleOptionsRegistry::setCliOptions()
-     *
-     * These must be called BEFORE rules are used (e.g., before Analyzer::analyze()).
+     * The container starts with default owner-local state. RuntimeConfigurator
+     * resolves each CLI/configuration run and applies it before pipeline execution.
      */
     public function create(): ContainerBuilder
     {
@@ -148,8 +142,8 @@ final class ContainerFactory
         $container->registerForAutoconfiguration(GlobalContextCollectorInterface::class)
             ->addTag(GlobalCollectorCompilerPass::TAG);
 
-        $container->registerForAutoconfiguration(CollectorRuntimeConfigurableInterface::class)
-            ->addTag('qmx.measurement.runtime_configurable_collector');
+        $container->registerForAutoconfiguration(LcomCollectionConfigurableInterface::class)
+            ->addTag('qmx.cohesion.lcom_configurable_collector');
 
         $container->registerForAutoconfiguration(FileSetInspectionParticipantInterface::class)
             ->addTag(FileSetInspectionParticipantCompilerPass::TAG);

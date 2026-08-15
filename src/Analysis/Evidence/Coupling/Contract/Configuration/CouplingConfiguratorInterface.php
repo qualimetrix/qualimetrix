@@ -8,5 +8,9 @@ use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 
 interface CouplingConfiguratorInterface
 {
-    public function configure(ConfigurationDocument $document): void;
+    /** @return list<string> */
+    public function resolve(ConfigurationDocument $document): array;
+
+    /** @param list<string> $frameworkNamespaces */
+    public function replace(array $frameworkNamespaces): void;
 }

@@ -375,15 +375,10 @@ By default, Qualimetrix auto-detects the optimal worker count based on CPU cores
 
 ### Namespace Detection
 
-Control how Qualimetrix resolves namespace-to-directory mapping:
-
-```yaml
-namespace:
-  strategy: chain          # Default: chain (try psr4, then tokenizer)
-  # strategy: psr4         # PSR-4 only (requires composer.json)
-  # strategy: tokenizer    # Parse namespace from PHP tokens
-  composer_json: composer.json   # Path to composer.json for PSR-4 detection
-```
+Qualimetrix derives project namespaces from the invocation working directory's
+`composer.json` and falls back to source parsing where needed. Namespace
+detection is not configurable: `namespace.strategy` and
+`namespace.composer_json` are rejected as unknown keys.
 
 ### Coupling
 
@@ -402,15 +397,9 @@ When no `framework-namespaces` are configured, `cbo_app` equals `cbo` (no effect
 
 ### Aggregation
 
-Control how namespaces are grouped for aggregated metrics:
-
-```yaml
-aggregation:
-  prefixes:
-    - App\Domain
-    - App\Infrastructure
-  auto_depth: 2    # Auto-detect depth for namespace grouping
-```
+Namespace aggregation follows the analyzed declarations. Custom
+`aggregation.prefixes` and `aggregation.auto_depth` settings are no longer
+supported and are rejected as unknown keys.
 
 ### Architecture
 

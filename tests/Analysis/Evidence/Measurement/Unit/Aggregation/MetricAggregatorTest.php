@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -297,7 +298,10 @@ final class MetricAggregatorTest extends TestCase
             10,
         );
 
-        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions([$collectorWithoutDefinitions]));
+        $aggregator = new MetricAggregator(
+            AggregationHelper::collectDefinitions([$collectorWithoutDefinitions]),
+            self::createStub(ProfilerInterface::class),
+        );
         $aggregator->aggregate($repository);
 
         // Should not crash, no class-level metrics should be added
@@ -360,7 +364,10 @@ final class MetricAggregatorTest extends TestCase
             new LocCollector(),
         ];
 
-        $aggregator = new MetricAggregator(AggregationHelper::collectDefinitions($collectors));
+        $aggregator = new MetricAggregator(
+            AggregationHelper::collectDefinitions($collectors),
+            self::createStub(ProfilerInterface::class),
+        );
         $repository = new InMemoryMetricRepository();
 
         // Add test data
@@ -439,7 +446,7 @@ final class MetricAggregatorTest extends TestCase
             new CyclomaticComplexityCollector(),
             new ClassCountCollector(),
             new LocCollector(),
-        ]));
+        ]), self::createStub(ProfilerInterface::class));
     }
 
     private function addCallable(InMemoryMetricRepository $repository, SymbolPath $symbol, MetricBag $metrics, RelativePath $file, int $startFilePos): void

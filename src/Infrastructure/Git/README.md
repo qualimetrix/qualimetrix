@@ -112,3 +112,8 @@ fi
 - Pre-commit hook example works
 - Unit tests with real git repo
 - End-to-end integration test
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

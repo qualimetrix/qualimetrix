@@ -61,11 +61,6 @@
 # parallel:
 #   workers: 0                 # 0 = auto-detect, 1 = sequential, N = N workers
 
-# Namespace detection strategy: psr4, tokenizer, chain (default: chain)
-# namespace:
-#   strategy: chain
-#   composer_json: composer.json
-
 # Include auto-generated files in analysis (default: false)
 # include_generated: true
 
@@ -84,18 +79,6 @@
 #     - Doctrine
 #     - Psr
 #     - Illuminate
-
-
-# -----------------------------------------------------------------------------
-# Aggregation
-# -----------------------------------------------------------------------------
-
-# Custom namespace prefixes for aggregation grouping
-# aggregation:
-#   prefixes:
-#     - App\Domain
-#     - App\Infrastructure
-#   auto_depth: 2
 
 
 # -----------------------------------------------------------------------------

@@ -7,7 +7,6 @@ namespace Qualimetrix\Tests\Analysis\Run\Support\Pipeline;
 use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
@@ -29,7 +28,7 @@ use Qualimetrix\Analysis\Run\Discovery\GeneratedFileFilter;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
 /**
@@ -64,8 +63,6 @@ final class TestPipelineBuilder
 
     private ?RuleConfigurationInterface $ruleConfiguration = null;
 
-    private ?TransitionalRuntimeConfigurationProviderInterface $configurationProvider = null;
-
     private ?MeasurementAggregationInterface $measurementAggregation = null;
 
     private ?ComputedMetricEvaluator $computedMetricEvaluation = null;
@@ -84,7 +81,7 @@ final class TestPipelineBuilder
 
     private ?LoggerInterface $logger = null;
 
-    private ?ProfilerHolder $profilerHolder = null;
+    private ?ProfilerInterface $profiler = null;
 
     private ?RuleSelector $ruleSelector = null;
 
@@ -119,13 +116,6 @@ final class TestPipelineBuilder
     public function withRuleConfiguration(RuleConfigurationInterface $ruleConfiguration): self
     {
         $this->ruleConfiguration = $ruleConfiguration;
-
-        return $this;
-    }
-
-    public function withConfigurationProvider(TransitionalRuntimeConfigurationProviderInterface $provider): self
-    {
-        $this->configurationProvider = $provider;
 
         return $this;
     }
@@ -203,9 +193,9 @@ final class TestPipelineBuilder
         return $this;
     }
 
-    public function withProfilerHolder(?ProfilerHolder $holder): self
+    public function withProfiler(ProfilerInterface $profiler): self
     {
-        $this->profilerHolder = $holder;
+        $this->profiler = $profiler;
 
         return $this;
     }
@@ -232,9 +222,6 @@ final class TestPipelineBuilder
             ruleExecutor: $this->ruleExecutor ?? throw new LogicException(
                 'TestPipelineBuilder: ruleExecutor is required (call withRuleExecution())',
             ),
-            configurationProvider: $this->configurationProvider ?? throw new LogicException(
-                'TestPipelineBuilder: configurationProvider is required (call withConfigurationProvider())',
-            ),
             ruleProducerPreparation: new RuleProducerPreparation(
                 $this->resolveLayerPolicyPreparation(),
                 $this->circularDependencyPreparation ?? throw new LogicException(
@@ -256,7 +243,9 @@ final class TestPipelineBuilder
             repositoryFactory: $this->repositoryFactory ?? new DefaultMetricRepositoryFactory(),
             graphBuilder: $this->graphBuilder ?? AdjacencyGraphBuilder::builder(),
             logger: $this->logger ?? new NullLogger(),
-            profilerHolder: $this->profilerHolder,
+            profiler: $this->profiler ?? throw new LogicException(
+                'TestPipelineBuilder: profiler is required (call withProfiler())',
+            ),
         );
     }
 

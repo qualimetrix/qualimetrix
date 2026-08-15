@@ -9,52 +9,43 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricCo
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinition;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 
 final class ComputedMetricAnalysis implements
     ComputedMetricConfiguratorInterface,
     ComputedMetricDefinitionCatalogInterface
 {
-    /** @var list<ComputedMetricDefinition> */
-    private array $definitions = [];
+    private ResolvedComputedMetricDefinitions $definitions;
 
     public function __construct(
         private readonly ComputedMetricsConfigResolver $configResolver,
         private readonly ComputedMetricContributionReader $contributionReader,
-    ) {}
+    ) {
+        $this->definitions = new ResolvedComputedMetricDefinitions([]);
+    }
 
-    public function configure(ConfigurationDocument $document): void
+    public function resolve(ConfigurationDocument $document): ResolvedComputedMetricDefinitions
     {
-        $this->definitions = [];
-
         $contributions = $this->contributionReader->read($document);
-        $this->publishDefinitions($this->configResolver->resolve($contributions['computedMetrics'], $contributions['excludeHealth']));
+
+        return new ResolvedComputedMetricDefinitions(
+            $this->configResolver->resolve($contributions['computedMetrics'], $contributions['excludeHealth']),
+        );
+    }
+
+    public function replace(ResolvedComputedMetricDefinitions $definitions): void
+    {
+        $this->definitions = $definitions;
     }
 
     public function all(): array
     {
-        return $this->definitions;
+        return $this->definitions->all();
     }
 
     public function find(string $name): ?ComputedMetricDefinition
     {
-        foreach ($this->definitions as $definition) {
-            if ($definition->name === $name) {
-                return $definition;
-            }
-        }
-
-        return null;
+        return $this->definitions->find($name);
     }
 
-    /** @param list<ComputedMetricDefinition> $definitions */
-    private function publishDefinitions(array $definitions): void
-    {
-        $this->clearDefinitions();
-        $this->definitions = $definitions;
-    }
-
-    private function clearDefinitions(): void
-    {
-        $this->definitions = [];
-    }
 }

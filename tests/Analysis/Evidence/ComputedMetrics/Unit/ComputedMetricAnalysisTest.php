@@ -14,6 +14,8 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Configuration\ComputedMetricContributionReader;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
+use Qualimetrix\Core\Path\AbsolutePath;
+use ReflectionClass;
 
 #[CoversClass(ComputedMetricAnalysis::class)]
 final class ComputedMetricAnalysisTest extends TestCase
@@ -28,23 +30,29 @@ final class ComputedMetricAnalysisTest extends TestCase
     public function itSetAndGetDefinitions(): void
     {
         $analysis = $this->analysis();
-        $analysis->configure(new ConfigurationDocument([]));
+        $resolved = $analysis->resolve($this->document([]));
+        $analysis->replace($resolved);
 
         self::assertCount(6, $analysis->all());
         self::assertNotNull($analysis->find('health.overall'));
+        self::assertSame($resolved->all(), $analysis->all());
+        self::assertSame(
+            $resolved,
+            (new ReflectionClass($analysis))->getProperty('definitions')->getValue($analysis),
+        );
     }
 
     #[Test]
-    public function itReset(): void
+    public function itPreservesInstalledDefinitionsWhenResolutionFails(): void
     {
         $analysis = $this->analysis();
-        $analysis->configure(new ConfigurationDocument([]));
+        $analysis->replace($analysis->resolve($this->document([])));
 
         try {
-            $analysis->configure(new ConfigurationDocument([['excludeHealth' => ['unknown']]]));
+            $analysis->resolve($this->document([['excludeHealth' => ['unknown']]]));
             self::fail('Expected invalid configuration.');
         } catch (InvalidArgumentException) {
-            self::assertSame([], $analysis->all());
+            self::assertNotNull($analysis->find('health.overall'));
         }
     }
 
@@ -52,10 +60,10 @@ final class ComputedMetricAnalysisTest extends TestCase
     public function itSetDefinitionsReplacePrevious(): void
     {
         $analysis = $this->analysis();
-        $analysis->configure(new ConfigurationDocument([["computedMetrics" => ['computed.first' => ['formula' => '1']]]]));
+        $analysis->replace($analysis->resolve($this->document([["computedMetrics" => ['computed.first' => ['formula' => '1']]]])));
         self::assertNotNull($analysis->find('computed.first'));
 
-        $analysis->configure(new ConfigurationDocument([["computedMetrics" => ['computed.second' => ['formula' => '2']]]]));
+        $analysis->replace($analysis->resolve($this->document([["computedMetrics" => ['computed.second' => ['formula' => '2']]]])));
         self::assertNull($analysis->find('computed.first'));
         self::assertNotNull($analysis->find('computed.second'));
     }
@@ -66,5 +74,14 @@ final class ComputedMetricAnalysisTest extends TestCase
             new ComputedMetricsConfigResolver(new ComputedMetricFormulaValidator(), new HealthFormulaExcluder()),
             new ComputedMetricContributionReader(),
         );
+    }
+
+    /** @param list<array<string, mixed>> $contributions */
+    private function document(array $contributions): ConfigurationDocument
+    {
+        return new ConfigurationDocument(array_map(
+            static fn(array $values): array => ['source' => 'test', 'values' => $values],
+            $contributions,
+        ), AbsolutePath::fromString('/project'));
     }
 }

@@ -1,6 +1,7 @@
 # Modular architecture decisions and target
 
-> **Status:** Cross-phase decision record and P0 design-gate evidence.
+> **Status:** Durable cross-phase decision record. Current phase status is owned
+> only by the plan overview.
 > **Read first:** [Plan overview](../modular-architecture.md) and [ADR 0022](../../../adr/0022-capability-oriented-modular-monolith.md).
 > **Related phase records:** [P0](p0-governance.md), [P1](p1-duplication.md), [P2](p2-dependency-model.md), [P3](p3-run-measurement-configuration.md), [P4](p4-architecture-policy.md), [P5](p5-computed-metrics.md), and [P5–P8](roadmap-p5-p8.md).
 ## Architectural decisions
@@ -13,10 +14,21 @@
 6. Mutable per-run state is instance-owned and reset through lifecycle ports. Static feature holders are removed. Process-wide logging/profiling proxies are reviewed separately and are not silently legitimised by this migration.
 7. `Core` shrinks to neutral value types with no natural subject owner. “Many imports” is not a reason to put a type there.
 8. `Infrastructure` is delivery/composition only. Business/application pipelines such as finding evaluation do not live under Console.
-9. `qmx.yaml` is a generated coarse enforcement projection: every production declaration belongs to its one semantic-owner layer except an explicitly declared singleton seam, and uncovered namespaces and projected graph cycles fail self-check. Exact `internal|contract` visibility, contract consumers and temporary grants live only in the authoritative internal manifest. Its checker runs before selfcheck and rejects an unlisted import even when the coarse owner/seam qmx allow would permit it.
+9. `qmx.yaml` is a generated coarse enforcement projection: every production declaration belongs to one semantic-owner layer, no singleton enforcement seam remains, and uncovered namespaces and projected graph cycles fail self-check. Exact `internal|contract` visibility, contract consumers, and permanent exact composition bindings live only in the authoritative internal manifest. Its checker runs before selfcheck and rejects an unlisted import even when a coarse qmx owner edge would permit it.
 10. Namespace depth communicates subject scale, not dependency privilege. `Analysis\Evidence\Duplication` and `Analysis\Policy\Baseline` are grouped for navigation; neither parent namespace is an allow-list target or a shared implementation home.
 11. Cross-capability sequencing belongs to `Analysis\Run`. The capability that defines an operation owns its state and semantics; run orchestration owns only when it is invoked. Output-only projections, including Git-scoped views, belong to `Reporting`, not to policy evaluation.
 12. Tests follow the owning subject. Test level (`Unit`, `Integration`, `Functional`) is an internal subdivision of a module, not the first directory level. A production move and its owned tests/fixtures/support move in the same package; no package may rely on the legacy role-first test tree remaining discoverable.
+
+## Current measured topology
+
+The manifest governs 789 declarations in 787 files through 37 semantic owners
+and zero enforcement seams. It records 64 permanent exact composition bindings,
+which retain 13 required coarse owner pairs; qmx has 227 declared allow edges.
+The generated test topology records 659 governed artifacts, 102 fixture
+directories, 518 PHPUnit classes, and 7,036 semantic IDs. The self-analysis
+input has 787 analyzed files, 269 active baseline groups across 203 subjects,
+and zero dogfood findings. These are measured publication facts, not a separate
+source of architectural authority.
 13. P0's participant inventory and the P1/P2 pilots inform the rejected phase-port hypotheses below, but do not make them binding. P3 introduces only the reviewed FileSetInspection and DependencyTraversal contracts and their contract tests. P4 and later packages must prove any further port from their actual input, output and consumers. The ADR must not describe unimplemented ports or target namespaces as current architecture.
 
 ## P0 design gate: manifest and generated enforcement
@@ -63,57 +75,25 @@ A temporary internal grant is an exact observed `source_fqcn -> target_fqcn` imp
 
 The generator parses the current production AST and fails unless each declaration has exactly one manifest entry and each manifest declaration exists exactly once in the AST. It emits the production, import, participant, state, Reporting, test, fixture, documentation and PHPUnit-discovery inventories under `docs/internal/generated/modular-architecture/`, including owner/status and `closure_package` columns where migration closure applies. Documentation rows outside P1-P8 use exactly one shared-governance disposition: `P0-D`, `permanent`, or `shared`. It also replaces only marked generated ownership/allow regions in `qmx.yaml`. Its `--check` mode renders to memory or a temporary location and compares all outputs without writing the worktree. This adds no public qmx schema, manifest option or runtime API.
 
-### Feasibility evidence from the current snapshot
+### Current measured topology
 
-These figures describe the generated snapshot reviewed at the P0 design gate; they are assertions over today's inputs, not constants that a future generator may hardcode:
+The generated authority currently records 789 declarations in 787 files and
+37 semantic owners. All 659 governed artifacts, 102 fixture directories, 518
+PHPUnit classes, and 7,019 expanded test IDs have one accountable owner or
+explicit shared-governance disposition.
 
-| Evidence                                        | Current result                          | Consequence                                                                                         |
-| ----------------------------------------------- | --------------------------------------: | --------------------------------------------------------------------------------------------------- |
-| AST declarations / source files                 | 695 / 693                               | ownership is declaration-based; two multi-declaration files must not be collapsed to file ownership |
-| Exact FQCN dependency graph                     | 695 vertices / 2,951 edges / DAG        | current code cycles are not the cause of the projected owner cycles                                 |
-| Cross-owner exact imports                       | 1,945 pairs; generated-inventory diff 0 | manifest and projection use the same current dependency extraction                                  |
-| Semantic-owner graph before seams               | 37 vertices / 191 edges                 | coarse aggregation creates two SCCs, of sizes 10 and 2                                              |
-| Exact imports targeting `internal` declarations | 85 unique source/target FQCN pairs      | the manifest validates every pair as an exact temporary grant                                       |
-| Coarse owner edges projected from those grants  | 16                                      | qmx cannot authorise exact imports; the mandatory manifest checker rejects every unlisted pair      |
-| Graph after inclusion-minimal seams             | 51 vertices / 245 edges / no SCC        | 37 non-empty semantic-owner layers plus 14 singleton seams form an internal DAG                     |
-| Final graph including `external`                | 52 layers / 296 allow edges             | 51 internal layers each add one edge to the final no-dependency `external` layer                    |
+| Evidence                       | Current result                                                  | Consequence                                                                                         |
+| ------------------------------ | --------------------------------------------------------------: | --------------------------------------------------------------------------------------------------- |
+| Exact owner graph              | 37 owner layers, 0 seams                                        | qmx enforces only semantic-owner topology; no declaration is split into a synthetic layer.          |
+| Permanent composition bindings | 64 exact rows → 13 coarse qmx pairs                             | the manifest authorizes exact composition imports; qmx retains the corresponding coarse pair edges. |
+| Generated qmx projection       | final `external`, 227 declared allow edges                      | uncovered declarations and coarse owner cycles fail closed.                                         |
+| Self-analysis                  | 787 files, active baseline 269 groups / 203 subjects, dogfood 0 | current repository analysis has no new accepted-warning delta.                                      |
 
-The rejected partial 41-layer `qmx.yaml` draft proved only selected explicit
-Metrics ownership. It auto-enrolled declarations through broad role buckets and
-did **not** satisfy the owner-level P0 DoD. The current generated projection has
-replaced that draft with semantic-owner/seam membership; its presence is P0-A
-implementation evidence, not acceptance of the proposed P1-P8 physical layout.
-
-The current generated projection uses the following 14 singleton enforcement seams. A seam changes only the qmx enforcement vertex for one exact legacy FQCN; its true `semantic_owner` and `visibility` remain manifest facts. All 37 owner layers remain non-empty (the smallest retains three declarations). The set is inclusion-minimal: returning any one row to its owner recreates the cycle named in the reason column.
-
-| Exact seam FQCN                                                   | True owner / visibility                        | Closure | Incoming → outgoing projection and removal proof                                                                          |
-| ----------------------------------------------------------------- | ---------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `Qualimetrix\Analysis\Collection\Declaration\DeclarationBindings` | `Analysis.Run` / contract                      | P6      | Run/SourceControls → Measurement/Inline/Core.Path/Core.Symbol; removal cycles Run ↔ Inline                                |
-| `Qualimetrix\Analysis\Collection\SourceControl\SourceControls`    | `Analysis.Policy.Inline` / contract            | P6      | Run → Inline/DeclarationBindings; removal cycles Inline ↔ Run                                                             |
-| `Qualimetrix\Analysis\RuleExecution\RuleExecutor`                 | `Analysis.Finding` / internal                  | P6      | DI → Configuration/Finding/Observability; removal closes Configuration→ComputedMetrics→Finding→Configuration              |
-| `Qualimetrix\Architecture\Processing\ArchitectureLifecycleHook`   | `Analysis.Policy.Architecture` / internal      | P4      | none → Configuration/Architecture/Run; removal cycles Configuration ↔ Architecture                                        |
-| `Qualimetrix\Baseline\Suppression\RuleValidatorMapFactory`        | `Analysis.Policy.Inline` / contract            | P6      | DI/Parallel → Finding; removal cycles Finding ↔ Inline                                                                    |
-| `Qualimetrix\Baseline\Suppression\SuppressionFilter`              | `Analysis.Policy.Inline` / contract            | P6      | Console/DI → Finding/Inline; removal cycles Finding ↔ Inline                                                              |
-| `Qualimetrix\Configuration\ComputedMetricsConfigResolver`         | `Analysis.Evidence.ComputedMetrics` / contract | P5      | Console/DI → Configuration/Computed/Finding/Symbol; removal cycles Config↔Computed                                        |
-| `Qualimetrix\Configuration\Exception\ConfigLoadException`         | `Analysis.Configuration` / contract            | P4      | Configuration/Architecture/Console → seam; removal cycles Config ↔ Architecture                                           |
-| `Qualimetrix\Configuration\Pipeline\DeferredWarning`              | `Analysis.Configuration` / contract            | P4      | P3 physically renames the seam; P4 removes Architecture warning transport, otherwise Configuration ↔ Architecture remains |
-| `Qualimetrix\Core\Metric\GlobalContextCollectorInterface`         | `Analysis.Evidence.Measurement` / contract     | P2      | Coupling/Design/Run/DI → DependencyModel/Measurement; removal cycles Measurement ↔ DependencyModel                        |
-| `Qualimetrix\Core\Rule\RuleMatcher`                               | `Analysis.Finding` / contract                  | P6      | Configuration/Finding/Inline/Run → seam; removal cycles Finding ↔ Inline                                                  |
-| `Qualimetrix\Core\Violation\Location`                             | `Analysis.Finding` / contract                  | P6      | capabilities/policies/Run/Reporting → Path; removal cycles Finding→DependencyModel                                        |
-| `Qualimetrix\Reporting\Health\HealthReasonBuilder`                | `Reporting` / contract                         | P5      | Health/Reporting → Computed/MetricHint; removal cycles Health ↔ Reporting                                                 |
-| `Qualimetrix\Reporting\Health\MetricHintProvider`                 | `Reporting` / contract                         | P5      | Health/Reporting/HealthReasonBuilder → seam; removal cycles Health ↔ Reporting                                            |
-
-The resulting current projection has 37 semantic-owner layers plus 14 seams and final `external`: 52 qmx layers total. Its 245-edge internal graph is a DAG; adding the 51 project-to-external edges keeps it a DAG. A seam is neither a module nor a publication decision, and its qmx permissions remain coarse. The mandatory manifest checker runs before selfcheck and remains the sole exact visibility/import authority.
-
-### Rejected owner/status projection
-
-The earlier 60 owner/status layers plus nine status-oriented seams are retained only as rejected feasibility evidence. The live probe found same-owner `contract ↔ internal` cycles before qmx generation. Omitting those same-owner edges made the declaration graph look acyclic but produced 637 architecture errors in sequential selfcheck (`MetricBag → DataBag`, `Baseline → BaselineIdentity`, Run internal → contract, and others). Adding more status seams would encode scattered legacy internals as false architectural boundaries. Visibility therefore remains exact manifest policy, not qmx layer identity.
-
-Alternatives rejected at this gate:
-
-- a public qmx manifest plus temporary-import overlay would make an internal migration escape hatch part of qmx's public schema and API;
-- an inventory-only ratchet outside qmx would leave broad qmx ownership in place or duplicate the dependency-policy engine;
-- deriving consumers and grants from observed imports would approve the very dependency that fail-closed enforcement must review.
+Composition bindings are permanent policy, not migration exceptions. They are
+reviewed exact source/target declarations in the manifest and remain stable
+when multiple exact bindings collapse into one coarse qmx owner pair. The
+manifest checker remains the sole exact visibility/import authority and runs
+before selfcheck; qmx does not authorize an unlisted exact import.
 
 ## Target topology
 
@@ -123,7 +103,7 @@ src/
     Run/                            # run orchestration kernel
       Contract/                     # proven Run promises: FileSet inspection and run APIs
       Discovery|Collection|Pipeline|FileSetInspection/...
-    Configuration/                  # source merging plus explicitly transitional mixed configuration
+    Configuration/                  # ordered document resolution and owner-local runtime state
       Contract/?                    # only if a named external consumer needs it
     Finding/                        # finding, rule and channel contracts
       Contract/

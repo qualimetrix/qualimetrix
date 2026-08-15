@@ -8,10 +8,9 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Analysis\Configuration\Contract\Discovery\ComposerAutoloadPathReaderInterface;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -119,16 +118,20 @@ final class CheckScopeResolverTest extends TestCase
     }
 
     /** @param list<string> $paths */
-    private function configuration(?AbsolutePath $projectRoot = null, array $paths = ['src']): TransitionalResolvedConfiguration
+    private function configuration(?AbsolutePath $projectRoot = null, array $paths = ['src']): RunConfiguration
     {
-        return new TransitionalResolvedConfiguration(
-            paths: $paths,
-            pathExcludes: ['vendor'],
-            runtime: new TransitionalRuntimeConfiguration(
-                projectRoot: $projectRoot ?? AbsolutePath::fromString((string) getcwd()),
+        $root = $projectRoot ?? AbsolutePath::fromString((string) getcwd());
+
+        return new RunConfiguration(
+            paths: array_map(
+                static fn(string $path): AbsolutePath => AbsolutePath::fromString(
+                    str_starts_with($path, '/') ? $path : $root->value() . '/' . $path,
+                ),
+                $paths,
             ),
-            ruleOptions: [],
-            document: new ConfigurationDocument([]),
+            pathExcludes: ['vendor'],
+            projectRoot: $root,
+            generatedFilePolicy: GeneratedFilePolicy::Exclude,
         );
     }
 }

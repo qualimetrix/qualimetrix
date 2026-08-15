@@ -8,12 +8,11 @@
         "version",
         "owners",
         "declarations",
-        "temporary_internal_grants",
         "enforcement_seams"
     ],
     "properties": {
         "version": {
-            "const": 1
+            "const": 2
         },
         "owners": {
             "type": "array",
@@ -28,12 +27,6 @@
             "type": "object",
             "additionalProperties": {
                 "$ref": "#/$defs/declaration"
-            }
-        },
-        "temporary_internal_grants": {
-            "type": "array",
-            "items": {
-                "$ref": "#/$defs/internalGrant"
             }
         },
         "enforcement_seams": {
@@ -220,6 +213,46 @@
                         "carrier_fqcn": {
                             "type": "string",
                             "minLength": 1
+                        }
+                    }
+                },
+                {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                        "owner",
+                        "relation",
+                        "source_fqcn",
+                        "closes_in",
+                        "operations"
+                    ],
+                    "properties": {
+                        "owner": {
+                            "const": "Infrastructure.DependencyInjection"
+                        },
+                        "relation": {
+                            "const": "composition_binding"
+                        },
+                        "source_fqcn": {
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "closes_in": {
+                            "type": "null"
+                        },
+                        "operations": {
+                            "type": "array",
+                            "minItems": 1,
+                            "uniqueItems": true,
+                            "items": {
+                                "enum": [
+                                    "service_registration",
+                                    "definition_argument_mutation",
+                                    "service_reference",
+                                    "service_alias",
+                                    "conditional_service_reference"
+                                ]
+                            }
                         }
                     }
                 }

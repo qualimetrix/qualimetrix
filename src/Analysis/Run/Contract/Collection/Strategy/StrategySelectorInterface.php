@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Run\Contract\Collection\Strategy;
 
+use Qualimetrix\Core\Path\AbsolutePath;
+
 /**
  * Interface for strategy selection.
  *
@@ -19,5 +21,5 @@ interface StrategySelectorInterface
      * This method should be called lazily (when strategy is needed),
      * not at service construction time.
      */
-    public function select(): ExecutionStrategyInterface;
+    public function select(AbsolutePath $projectRoot): ExecutionStrategyInterface;
 }

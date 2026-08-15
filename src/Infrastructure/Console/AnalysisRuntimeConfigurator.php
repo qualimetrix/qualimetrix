@@ -4,71 +4,91 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfiguration;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurationStoreInterface;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleExclusionCaptureHolder;
-use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
-use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
-use Qualimetrix\Infrastructure\Cache\CacheFactory;
-use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
 use Symfony\Component\Console\Input\InputInterface;
 
 /** Configures the analysis engine's per-run rule, collector, and feature state. */
 final readonly class AnalysisRuntimeConfigurator
 {
     public function __construct(
-        private TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
         private RuleConfigurationInterface $ruleOptionsRegistry,
-        private RuleRegistryInterface $ruleRegistry,
-        private CollectorRuntimeConfigurationStoreInterface $collectorConfigurationStore,
-        private CacheFactory $cacheFactory,
+        private LcomCollectionConfigurationResolverInterface $lcomConfigurationResolver,
+        private LcomCollectionConfigurationStoreInterface $lcomConfigurationStore,
+        private ArchitecturePolicyConfiguratorInterface $architecturePolicyConfigurator,
+        private ComputedMetricConfiguratorInterface $computedMetricConfigurator,
+        private CouplingConfiguratorInterface $couplingConfigurator,
+        private RuleInputValidator $ruleInputValidator,
     ) {}
 
-    public function configure(TransitionalResolvedConfiguration $resolved, InputInterface $input): void
+    public function resolveArchitecturePolicy(ConfigurationDocument $document): ResolvedArchitecturePolicyInterface
     {
-        $parser = (new RuleOptionsParserFactory())->createFromClasses($this->ruleRegistry->getClasses());
-        $cliRuleOptions = (new CliOptionsParser($parser))->parseRuleOptions($input);
+        return $this->architecturePolicyConfigurator->resolve($document);
+    }
 
-        $this->ruleOptionsRegistry->configure(new RuleOptionsDocument($resolved->ruleOptions));
-        $this->ruleOptionsRegistry->configureSelection($resolved->ruleSelection);
-        foreach ($cliRuleOptions as $ruleName => $options) {
-            $this->ruleOptionsRegistry->configureCli($ruleName, $options);
-        }
+    public function resolveComputedMetrics(ConfigurationDocument $document): ResolvedComputedMetricDefinitions
+    {
+        return $this->computedMetricConfigurator->resolve($document);
+    }
 
-        $ruleOptions = array_replace_recursive($resolved->ruleOptions, $cliRuleOptions);
-        $this->configurationProvider->setConfiguration($resolved->runtime);
-        $this->configurationProvider->setRuleOptions($ruleOptions);
-        $this->configureCollectors($ruleOptions);
+    /** @return list<string> */
+    public function resolveCoupling(ConfigurationDocument $document): array
+    {
+        return $this->couplingConfigurator->resolve($document);
+    }
 
-        $capture = $input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true;
-        RuleExclusionCaptureHolder::set($capture);
+    public function resolveLcom(FindingConfiguration $findingConfiguration): LcomCollectionConfiguration
+    {
+        return $this->lcomConfigurationResolver->resolve($findingConfiguration);
+    }
+
+    public function resolveRuleChannels(
+        InputInterface $input,
+        FindingConfiguration $findingConfiguration,
+        ResolvedComputedMetricDefinitions $definitions,
+    ): RuleChannelRegistryInterface {
+        return $this->ruleInputValidator->validate($input, $findingConfiguration, $definitions);
+    }
+
+    /**
+     * @param list<string> $frameworkNamespaces
+     */
+    public function replace(
+        FindingConfiguration $findingConfiguration,
+        LcomCollectionConfiguration $lcomConfiguration,
+        ResolvedArchitecturePolicyInterface $architecturePolicy,
+        ResolvedComputedMetricDefinitions $computedMetrics,
+        array $frameworkNamespaces,
+        RuleChannelRegistryInterface $channels,
+    ): void {
+        $this->architecturePolicyConfigurator->replace($architecturePolicy);
+        $this->computedMetricConfigurator->replace($computedMetrics);
+        $this->couplingConfigurator->replace($frameworkNamespaces);
+        $this->ruleOptionsRegistry->replace($findingConfiguration);
+        $this->lcomConfigurationStore->replace($lcomConfiguration);
+        $this->ruleInputValidator->replaceChannels($channels);
+    }
+
+    public function captureExcludedViolations(): void
+    {
+        $this->ruleOptionsRegistry->captureExcludedViolations();
     }
 
     /** Clears state that must never leak into logger setup or the next run. */
     public function resetRunState(): void
     {
-        $this->cacheFactory->reset();
         $this->ruleOptionsRegistry->resetRuntimeState();
-        $this->collectorConfigurationStore->reset();
-    }
-
-    /** @param array<string, array<string, mixed>> $ruleOptions */
-    private function configureCollectors(array $ruleOptions): void
-    {
-        $lcomConfig = $ruleOptions['design.lcom'] ?? [];
-        $excludeKey = $lcomConfig['exclude_methods'] ?? $lcomConfig['excludeMethods'] ?? null;
-
-        $excludeMethods = match (true) {
-            \is_string($excludeKey) && str_contains($excludeKey, ',') => array_map('trim', explode(',', $excludeKey)),
-            \is_string($excludeKey) => [$excludeKey],
-            \is_array($excludeKey) => array_values($excludeKey),
-            default => [],
-        };
-
-        $configuration = new CollectorRuntimeConfiguration($excludeMethods);
-        $this->collectorConfigurationStore->replace($configuration);
+        $this->lcomConfigurationStore->reset();
+        $this->ruleInputValidator->resetChannels();
     }
 }

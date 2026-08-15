@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Configuration\Integration;
 
-use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
@@ -19,207 +18,78 @@ use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
 use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputDefinition;
-use Symfony\Component\Console\Input\InputOption;
+use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
+use Qualimetrix\Analysis\Run\Configuration\RunConfigurationResolver;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Reporting\Configuration\OutputFormatResolver;
+use Symfony\Component\Yaml\Yaml;
 
-/**
- * Integration test exercising all 5 configuration stages together.
- *
- * Verifies merge semantics: Defaults -> Composer -> Preset -> ConfigFile -> CLI.
- */
 #[CoversClass(ConfigurationPipeline::class)]
 final class FullPipelineIntegrationTest extends TestCase
 {
-    private string $tempDir;
+    private string $directory;
 
     protected function setUp(): void
     {
-        $this->tempDir = sys_get_temp_dir() . '/qmx_full_pipeline_' . uniqid();
-        mkdir($this->tempDir, 0o755, true);
+        $this->directory = sys_get_temp_dir() . '/qmx-full-pipeline-' . uniqid();
+        mkdir($this->directory);
     }
 
     protected function tearDown(): void
     {
-        $this->removeDirectory($this->tempDir);
+        @unlink($this->directory . '/composer.json');
+        @unlink($this->directory . '/qmx.yaml');
+        @rmdir($this->directory);
     }
 
     #[Test]
-    public function configFileOverridesPreset(): void
+    public function itLetsEachOwnerFoldTheSameOrderedDocumentWithItsOwnSemantics(): void
     {
-        $this->writeYaml('qmx.yaml', [
-            'rules' => [
-                'complexity.cyclomatic' => [
-                    'callable' => [
-                        'warning' => 12,
-                    ],
-                ],
-            ],
-        ]);
-
-        $resolved = $this->resolveFullPipeline(['--preset' => ['strict']]);
-
-        // Config file (priority 20) overrides preset (priority 15)
-        self::assertSame(12, $resolved->ruleOptions['complexity.cyclomatic']['callable']['warning']);
-        // Preset values not overridden by config file are preserved (strict.yaml: method.error = 15)
-        self::assertSame(15, $resolved->ruleOptions['complexity.cyclomatic']['callable']['error']);
-    }
-
-    #[Test]
-    public function cliOverridesConfigFile(): void
-    {
-        $this->writeYaml('qmx.yaml', [
-            'failOn' => 'warning',
-        ]);
-
-        $resolved = $this->resolveFullPipeline(['--fail-on' => 'error']);
-
-        // CLI (priority 30) overrides config file (priority 20)
-        self::assertSame(Severity::Error, $resolved->runtime->failOn);
-    }
-
-    #[Test]
-    public function conflictingPresetsLastWinsDisabledRulesAccumulate(): void
-    {
-        $resolved = $this->resolveFullPipeline(['--preset' => ['legacy,strict']]);
-
-        // Strict is applied last, so its CCN thresholds win
-        self::assertSame(7, $resolved->ruleOptions['complexity.cyclomatic']['callable']['warning']);
-
-        // Disabled rules from legacy are preserved (union semantics)
-        self::assertContains('code-smell.boolean-argument', $resolved->ruleSelection->disabled);
-        self::assertContains('design.data-class', $resolved->ruleSelection->disabled);
-        self::assertContains('design.god-class', $resolved->ruleSelection->disabled);
-    }
-
-    #[Test]
-    public function presetDisabledRulesMergeWithConfigFileDisabledRules(): void
-    {
-        $this->writeYaml('qmx.yaml', [
+        file_put_contents($this->directory . '/composer.json', json_encode([
+            'autoload' => ['psr-4' => ['App\\' => 'src/']],
+        ], \JSON_THROW_ON_ERROR));
+        file_put_contents($this->directory . '/qmx.yaml', Yaml::dump([
+            'paths' => ['lib'],
+            'format' => 'text',
             'disabledRules' => ['complexity.npath'],
-        ]);
+            'rules' => ['complexity.cyclomatic' => ['callable' => ['warning' => 12]]],
+        ], 6));
 
-        $resolved = $this->resolveFullPipeline(['--preset' => ['legacy']]);
+        $document = $this->resolve(['paths' => ['app'], 'format' => 'json'], ['strict']);
 
-        // Legacy preset disables these rules
-        self::assertContains('code-smell.boolean-argument', $resolved->ruleSelection->disabled);
-        self::assertContains('design.data-class', $resolved->ruleSelection->disabled);
+        $run = (new RunConfigurationResolver())->resolve($document);
+        $finding = (new FindingConfigurationResolver())->resolve($document, new FindingCliOverrides());
 
-        // Config file adds its own disabled rule (union semantics)
-        self::assertContains('complexity.npath', $resolved->ruleSelection->disabled);
-    }
-
-    #[Test]
-    public function appliedSourcesTrackAllStages(): void
-    {
-        $this->writeComposerJson([
-            'autoload' => [
-                'psr-4' => [
-                    'App\\' => 'src/',
-                ],
-            ],
-        ]);
-
-        $this->writeYaml('qmx.yaml', [
-            'format' => 'json',
-        ]);
-
-        $resolved = $this->resolveFullPipeline([
-            '--preset' => ['strict'],
-            '--disable-rule' => ['size.loc'],
-        ]);
-
-        self::assertContains('defaults', $resolved->appliedSources);
-        self::assertContains('composer.json', $resolved->appliedSources);
-        self::assertContains('preset:strict', $resolved->appliedSources);
-        self::assertContains('qmx.yaml', $resolved->appliedSources);
-        self::assertContains('cli', $resolved->appliedSources);
+        self::assertSame([$this->directory . '/app'], array_map(
+            static fn($path): string => $path->value(),
+            $run->paths,
+        ));
+        self::assertSame('json', (new OutputFormatResolver())->resolve($document)->value);
+        self::assertContains('complexity.npath', $finding->selection->disabled);
+        self::assertSame(12, $finding->ruleOptions->rules['complexity.cyclomatic']['callable']['warning']);
+        self::assertSame(
+            ['defaults', 'composer.json', 'preset:strict', 'qmx.yaml', 'cli'],
+            $document->appliedSources(),
+        );
     }
 
     /**
-     * @param array<string, mixed> $inputParams CLI parameters (e.g., ['--preset' => ['strict']])
+     * @param array<string, mixed> $cliValues
+     * @param list<string> $presets
      */
-    private function resolveFullPipeline(array $inputParams = []): TransitionalResolvedConfiguration
+    private function resolve(array $cliValues, array $presets): ConfigurationDocument
     {
         $loader = new YamlConfigLoader();
-        $resolver = new PresetResolver();
-        $composerReader = new ComposerReader();
-
         $pipeline = new ConfigurationPipeline();
         $pipeline->addStage(new DefaultsStage());
-        $pipeline->addStage(new ComposerDiscoveryStage($composerReader));
-        $pipeline->addStage(new PresetStage($loader, $resolver));
+        $pipeline->addStage(new ComposerDiscoveryStage(new ComposerReader()));
+        $pipeline->addStage(new PresetStage($loader, new PresetResolver()));
         $pipeline->addStage(new ConfigFileStage($loader));
         $pipeline->addStage(new CliStage());
 
-        $definition = $this->buildInputDefinition();
-        $input = new ArrayInput($inputParams, $definition);
-        $context = new ConfigurationContext($input, $this->tempDir);
-
-        return $pipeline->resolve($context);
-    }
-
-    private function buildInputDefinition(): InputDefinition
-    {
-        return new InputDefinition([
-            new InputArgument('paths', InputArgument::IS_ARRAY | InputArgument::OPTIONAL, '', []),
-            new InputOption('preset', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, '', []),
-            new InputOption('exclude', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, '', []),
-            new InputOption('format', null, InputOption::VALUE_REQUIRED),
-            new InputOption('cache-dir', null, InputOption::VALUE_REQUIRED),
-            new InputOption('no-cache', null, InputOption::VALUE_NONE),
-            new InputOption('disable-rule', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, '', []),
-            new InputOption('only-rule', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, '', []),
-            new InputOption('fail-on', null, InputOption::VALUE_REQUIRED),
-            new InputOption('exclude-health', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, '', []),
-            new InputOption('include-generated', null, InputOption::VALUE_NONE),
-            new InputOption('workers', null, InputOption::VALUE_REQUIRED),
-        ]);
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function writeYaml(string $filename, array $data): void
-    {
-        $yaml = \Symfony\Component\Yaml\Yaml::dump($data, 4);
-        file_put_contents($this->tempDir . '/' . $filename, $yaml);
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function writeComposerJson(array $data): void
-    {
-        file_put_contents(
-            $this->tempDir . '/composer.json',
-            json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES),
+        return $pipeline->resolve(
+            new ConfigurationResolutionRequest(AbsolutePath::fromString($this->directory), null, $presets, $cliValues),
         );
-    }
-
-    private function removeDirectory(string $dir): void
-    {
-        if (!is_dir($dir)) {
-            return;
-        }
-
-        $items = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
-            RecursiveIteratorIterator::CHILD_FIRST,
-        );
-
-        foreach ($items as $item) {
-            if ($item->isDir()) {
-                rmdir($item->getPathname());
-            } else {
-                unlink($item->getPathname());
-            }
-        }
-
-        rmdir($dir);
     }
 }

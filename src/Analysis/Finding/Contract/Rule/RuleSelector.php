@@ -13,11 +13,25 @@ use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
  * a producer rule, a channel rule name, or a violation code. A selector in
  * `ruleName#violationCode` form addresses both channel components explicitly.
  */
-final readonly class RuleSelector
+final class RuleSelector
 {
+    private RuleChannelRegistryInterface $channels;
+
     public function __construct(
-        private RuleChannelRegistryInterface $channels,
-    ) {}
+        private readonly RuleChannelRegistryInterface $defaultChannels,
+    ) {
+        $this->channels = $defaultChannels;
+    }
+
+    public function replaceChannels(RuleChannelRegistryInterface $channels): void
+    {
+        $this->channels = $channels;
+    }
+
+    public function resetChannels(): void
+    {
+        $this->channels = $this->defaultChannels;
+    }
 
     /**
      * @param list<string> $onlySelectors
@@ -68,8 +82,19 @@ final readonly class RuleSelector
      */
     public function matchesKnown(string $selector, array $producerRuleNames): bool
     {
+        return $this->matchesKnownIn($selector, $producerRuleNames, $this->channels);
+    }
+
+    /**
+     * @param list<string> $producerRuleNames
+     */
+    public function matchesKnownIn(
+        string $selector,
+        array $producerRuleNames,
+        RuleChannelRegistryInterface $channels,
+    ): bool {
         foreach ($producerRuleNames as $producerRuleName) {
-            if ($this->selectorMatchesProducer($selector, $producerRuleName)) {
+            if ($this->selectorMatchesProducer($selector, $producerRuleName, $channels)) {
                 return true;
             }
         }
@@ -95,7 +120,7 @@ final readonly class RuleSelector
     private function matchesProducer(array $selectors, string $producerRuleName): bool
     {
         foreach ($selectors as $selector) {
-            if ($this->selectorMatchesProducer($selector, $producerRuleName)) {
+            if ($this->selectorMatchesProducer($selector, $producerRuleName, $this->channels)) {
                 return true;
             }
         }
@@ -120,8 +145,11 @@ final readonly class RuleSelector
         return false;
     }
 
-    private function selectorMatchesProducer(string $selector, string $producerRuleName): bool
-    {
+    private function selectorMatchesProducer(
+        string $selector,
+        string $producerRuleName,
+        RuleChannelRegistryInterface $channels,
+    ): bool {
         if (!str_contains($selector, '#')) {
             if (RuleMatcher::matches($selector, $producerRuleName)
                 || RuleMatcher::matches($producerRuleName, $selector)
@@ -130,7 +158,7 @@ final readonly class RuleSelector
             }
         }
 
-        foreach ($this->channels->channelsProducedBy($producerRuleName) as $channel) {
+        foreach ($channels->channelsProducedBy($producerRuleName) as $channel) {
             if ($this->matchesChannel($selector, $channel)) {
                 return true;
             }

@@ -32,9 +32,10 @@ use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing;
+use Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Progress\ProgressReporter;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -49,7 +50,7 @@ final class CollectionOrchestratorTest extends TestCase
     private FileProcessorInterface&Stub $fileProcessor;
     private ExecutionStrategyInterface&Stub $strategy;
     private StrategySelectorInterface&Stub $strategySelector;
-    private ProgressReporter&Stub $progress;
+    private ProgressReporterInterface&Stub $progress;
     private LoggerInterface&Stub $logger;
     private DerivedMetricExtractor $derivedMetricExtractor;
 
@@ -59,7 +60,7 @@ final class CollectionOrchestratorTest extends TestCase
         $this->strategy = self::createStub(ExecutionStrategyInterface::class);
         $this->strategySelector = self::createStub(StrategySelectorInterface::class);
         $this->strategySelector->method('select')->willReturn($this->strategy);
-        $this->progress = self::createStub(ProgressReporter::class);
+        $this->progress = self::createStub(ProgressReporterInterface::class);
         $this->logger = self::createStub(LoggerInterface::class);
         $this->derivedMetricExtractor = new DerivedMetricExtractor(new CompositeCollector([]));
     }
@@ -111,7 +112,7 @@ final class CollectionOrchestratorTest extends TestCase
 
         $this->strategy->method('execute')->willReturn($processingResults);
 
-        $progress = $this->createMock(ProgressReporter::class);
+        $progress = $this->createMock(ProgressReporterInterface::class);
         $progress->expects(self::once())->method('start')->with(2);
         $progress->expects(self::exactly(2))->method('advance');
         $progress->expects(self::once())->method('finish');
@@ -283,6 +284,7 @@ final class CollectionOrchestratorTest extends TestCase
             $this->strategySelector,
             $extractor,
             $this->progress,
+            self::createStub(ProfilerInterface::class),
             $this->logger,
         );
         $repository = new InMemoryMetricRepository();
@@ -520,7 +522,7 @@ final class CollectionOrchestratorTest extends TestCase
                 $warningContexts[] = $context;
             },
         );
-        $progress = $this->createMock(ProgressReporter::class);
+        $progress = $this->createMock(ProgressReporterInterface::class);
         $progressMessages = [];
         $progress->expects(self::once())->method('start')->with(5);
         $progress->expects(self::exactly(5))->method('setMessage')->willReturnCallback(
@@ -600,6 +602,7 @@ final class CollectionOrchestratorTest extends TestCase
             $selector,
             $this->derivedMetricExtractor,
             $this->progress,
+            self::createStub(ProfilerInterface::class),
             $this->logger,
         );
 
@@ -641,7 +644,7 @@ final class CollectionOrchestratorTest extends TestCase
         $this->strategy->method('execute')->willReturn($processingResults);
 
         // Verify progress reporting sequence
-        $progress = $this->createMock(ProgressReporter::class);
+        $progress = $this->createMock(ProgressReporterInterface::class);
         $progress->expects(self::once())->method('start')->with(2);
         $progress->expects(self::exactly(2))->method('setMessage')
             ->willReturnCallback(function (string $message): void {
@@ -729,6 +732,7 @@ final class CollectionOrchestratorTest extends TestCase
             strategySelector: $this->strategySelector,
             derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
+            profiler: self::createStub(ProfilerInterface::class),
             logger: $this->logger,
         );
 
@@ -775,6 +779,7 @@ final class CollectionOrchestratorTest extends TestCase
             strategySelector: $this->strategySelector,
             derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
+            profiler: self::createStub(ProfilerInterface::class),
             logger: $this->logger,
         );
 
@@ -822,6 +827,7 @@ final class CollectionOrchestratorTest extends TestCase
             strategySelector: $this->strategySelector,
             derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
+            profiler: self::createStub(ProfilerInterface::class),
             logger: $this->logger,
         );
 
@@ -872,6 +878,7 @@ final class CollectionOrchestratorTest extends TestCase
             strategySelector: $this->strategySelector,
             derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
+            profiler: self::createStub(ProfilerInterface::class),
             logger: $this->logger,
         );
 
@@ -925,6 +932,7 @@ final class CollectionOrchestratorTest extends TestCase
             strategySelector: $this->strategySelector,
             derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
+            profiler: self::createStub(ProfilerInterface::class),
             logger: $this->logger,
         );
 
@@ -974,6 +982,7 @@ final class CollectionOrchestratorTest extends TestCase
             strategySelector: $this->strategySelector,
             derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
+            profiler: self::createStub(ProfilerInterface::class),
             logger: $this->logger,
         );
 
@@ -1021,6 +1030,7 @@ final class CollectionOrchestratorTest extends TestCase
             strategySelector: $this->strategySelector,
             derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
+            profiler: self::createStub(ProfilerInterface::class),
             logger: $this->logger,
         );
 
@@ -1073,6 +1083,7 @@ final class CollectionOrchestratorTest extends TestCase
             strategySelector: $this->strategySelector,
             derivedMetricExtractor: new DerivedMetricExtractor($compositeCollector),
             progress: $this->progress,
+            profiler: self::createStub(ProfilerInterface::class),
             logger: $this->logger,
         );
 
@@ -1122,13 +1133,14 @@ final class CollectionOrchestratorTest extends TestCase
             strategySelector: $this->strategySelector,
             derivedMetricExtractor: $this->derivedMetricExtractor,
             progress: $this->progress,
+            profiler: self::createStub(ProfilerInterface::class),
             logger: $this->logger,
         );
     }
 
     private function createOrchestratorWith(
         ?StrategySelectorInterface $strategySelector = null,
-        ?ProgressReporter $progress = null,
+        ?ProgressReporterInterface $progress = null,
         ?LoggerInterface $logger = null,
     ): CollectionOrchestrator {
         return new CollectionOrchestrator(
@@ -1136,6 +1148,7 @@ final class CollectionOrchestratorTest extends TestCase
             strategySelector: $strategySelector ?? $this->strategySelector,
             derivedMetricExtractor: $this->derivedMetricExtractor,
             progress: $progress ?? $this->progress,
+            profiler: self::createStub(ProfilerInterface::class),
             logger: $logger ?? $this->logger,
         );
     }

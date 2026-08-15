@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
@@ -115,7 +116,7 @@ final class AbstractnessCollectorTest extends TestCase
 
         (new MetricAggregator(AggregationHelper::collectDefinitions([
             new ClassCountCollector(),
-        ])))->aggregate($repository);
+        ]), self::createStub(ProfilerInterface::class)))->aggregate($repository);
         $this->collector->calculate($this->createEmptyGraph(), $repository);
 
         self::assertSame(6, $repository->get(SymbolPath::forNamespace($namespace))->get('classCount.sum'));

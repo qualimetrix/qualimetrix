@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
-use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider;
@@ -32,6 +32,8 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
 
     private RuleSelection $selection;
 
+    private bool $capturesExcludedViolations = false;
+
     public function __construct(
         private readonly RuleNamespaceExclusionProvider $exclusionProvider = new RuleNamespaceExclusionProvider(),
         private readonly RulePathExclusionProvider $pathExclusionProvider = new RulePathExclusionProvider(),
@@ -52,9 +54,11 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
         $this->configFileOptions = $options;
     }
 
-    public function configure(RuleOptionsDocument $document): void
+    public function replace(FindingConfiguration $configuration): void
     {
-        $this->configFileOptions = $document->rules;
+        $this->configFileOptions = $configuration->ruleOptions->rules;
+        $this->cliOptions = $configuration->cliOverrides->options;
+        $this->selection = $configuration->selection;
     }
 
     /**
@@ -129,6 +133,16 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
         return $this->selection;
     }
 
+    public function captureExcludedViolations(): void
+    {
+        $this->capturesExcludedViolations = true;
+    }
+
+    public function capturesExcludedViolations(): bool
+    {
+        return $this->capturesExcludedViolations;
+    }
+
     /**
      * Resets CLI options only, preserving config file options.
      *
@@ -144,13 +158,14 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
     /**
      * Resets all runtime state between analysis runs.
      *
-     * Clears CLI options and exclusion providers while preserving config file options
-     * (which are re-set later via setConfigFileOptions()).
+     * Clears all invocation state before the next configuration is resolved.
      */
     public function resetRuntimeState(): void
     {
+        $this->configFileOptions = [];
         $this->cliOptions = [];
         $this->selection = new RuleSelection();
+        $this->capturesExcludedViolations = false;
         $this->exclusionProvider->reset();
         $this->pathExclusionProvider->reset();
     }
@@ -163,6 +178,7 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
         $this->configFileOptions = [];
         $this->cliOptions = [];
         $this->selection = new RuleSelection();
+        $this->capturesExcludedViolations = false;
         $this->exclusionProvider->reset();
         $this->pathExclusionProvider->reset();
     }

@@ -12,7 +12,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMe
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use RuntimeException;
@@ -26,6 +26,7 @@ class ComputedMetricEvaluator
 
     public function __construct(
         private readonly ComputedMetricDefinitionCatalogInterface $definitionCatalog,
+        private readonly ProfilerInterface $profiler,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {
         $this->expressionLanguage = new ExpressionLanguage();
@@ -40,7 +41,7 @@ class ComputedMetricEvaluator
             return;
         }
 
-        $profiler = ProfilerHolder::get();
+        $profiler = $this->profiler;
         $profiler->start('computed', 'pipeline');
 
         // Build dependency graph and topological sort

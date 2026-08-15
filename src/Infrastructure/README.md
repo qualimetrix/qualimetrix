@@ -134,8 +134,7 @@ Infrastructure/
     ├── FilteredInputDefinition.php    # InputDefinition that hides rule-specific options from --help
     ├── Progress/
     │   ├── ConsoleProgressBar.php
-    │   ├── ProgressReporterHolder.php
-    │   └── DelegatingProgressReporter.php
+    │   └── SwitchableProgressReporter.php
     └── Command/
         ├── CheckCommand.php           # Thin orchestrator (delegates to extracted classes)
         ├── BaselineCommand.php              # Base class for the four lifecycle commands: shared error-to-exit-code mapping and scope validation
@@ -167,17 +166,17 @@ ContainerFactory.create()
         |
    Unified container with:
    - Lazy Rules (created on first use)
-   - TransitionalRuntimeConfigurationProviderInterface
-   - Mutable RuleOptionsRegistry read by RuleOptionsFactory
+   - owner-local runtime stores and sessions
+   - Finding RuleConfigurationInterface read by rule construction
    - CacheFactory for lazy cache creation
         |
    CheckCommand receives all dependencies via constructor
         |
    In execute():
-   1. Configuration resolution -> TransitionalResolvedConfiguration
-   2. RuntimeConfigurator resets cache and run-scoped state
-   3. AnalysisRuntimeConfigurator sets runtime configuration and rule options
-   4. Analyzer.analyze() -> lazy Rules read their configured Options
+   1. Configuration resolution -> ConfigurationDocument
+   2. RuntimeConfigurator resets owner-local state
+   3. named owner resolvers compute and replace their values
+   4. AnalysisPipeline analyzes RunConfiguration; lazy rules read Finding state
 ```
 
 ### ContainerFactory (Decomposed)
@@ -185,10 +184,10 @@ ContainerFactory.create()
 Creates a unified Symfony DI ContainerBuilder without parameters. Delegates configuration to specialized configurators implementing `ContainerConfiguratorInterface`:
 
 - `CoreServicesConfigurator` — core services (logger, profiler, etc.)
-- `ConfigurationConfigurator` — Analysis.Configuration pipeline and transitional runtime provider
+- `ConfigurationConfigurator` — Analysis.Configuration pipeline and ordered document source seam
 - `DependencyModelConfigurator` — graph/traversal contracts and extraction registration
 - `ComputedMetricsConfigurator` — private root/Health implementation tree, capability-owned rule, and four public contract aliases
-- `MeasurementConfigurator` — repository, aggregation, collector runtime configuration, and worker reconstruction
+- `MeasurementConfigurator` — repository, aggregation, Cohesion LCOM configuration, and worker reconstruction
 - `ParserConfigurator` — AST parser and caching
 - `CollectorConfigurator` — collector compiler-pass and parallel-class composition; it does not scan capability implementations
 - `RuleConfigurator` — rule registries, channels, selector, and compiler passes; it does not scan capability implementations
@@ -209,19 +208,19 @@ Creates a unified Symfony DI ContainerBuilder without parameters. Delegates conf
 - `create(): ContainerBuilder` — runs all configurators and returns a compiled container
 
 **Runtime configuration:**
-Configuration is set via mutable services AFTER container creation through
-`TransitionalRuntimeConfigurationProviderInterface`. Finding owns the separate
-`RuleConfigurationInterface` transport for per-run rule options and exclusions;
-no rule-option state belongs in the transitional configuration holder.
-`RuntimeConfigurator` owns cache reset before logger setup, delegates logger
-creation/publication to `RuntimeLoggerConfigurator`, and delegates
-shared analysis-state reset/application to `AnalysisRuntimeConfigurator`. It
-also passes the ordered `ConfigurationDocument` to
-`CouplingConfiguratorInterface::configure()` on every run, including an empty
-document, so a configured run cannot leak into the next run.
-`CollectorRuntimeConfigurationStore` owns applying replacement and reset values
-to every tagged runtime-configurable collector, so the outer configurator does
-not iterate Measurement implementations.
+Configuration is resolved after container creation to `ConfigurationDocument`.
+`RuntimeConfigurator` resets Cache, Parallel, Finding, Cohesion LCOM, profiling,
+and progress state before any resolver runs. Run, Finding, Cache, Parallel,
+Reporting, and Console each resolve their own immutable values; stores are
+replaced only after all resolution succeeds. This prevents a failed or prior run
+from leaking values into the next one. There is no transitional provider and no
+generic collector-runtime store: Cohesion owns the only collector-specific
+configuration projection.
+
+Rule selector validation uses an immutable `RuleChannelRegistryInterface`
+snapshot assembled from the resolved computed-metric definitions. Infrastructure
+Rule owns the snapshot factory; Console and Finding receive only the resulting
+run snapshot through their named contracts.
 
 **Tags:**
 - `qmx.collector` — metric collectors
@@ -230,7 +229,6 @@ not iterate Measurement implementations.
 - `qmx.formatter` — output formatters
 - `qmx.configuration_stage` — configuration pipeline stages
 - `qmx.analysis.run.file_set_inspection_participant` — Run-owned whole-file-set participants
-- `qmx.measurement.runtime_configurable_collector` — collectors receiving run-scoped settings
 
 ### Lazy Services
 
@@ -332,10 +330,10 @@ Factory with runtime configuration awareness.
 - `PhpFileParser $parser`
 - `CacheFactory $cacheFactory`
 - `CacheKeyGenerator $keyGenerator`
-- `TransitionalRuntimeConfigurationProviderInterface $configurationProvider`
+- `CacheConfigurationStoreInterface $configurationStore`
 
 **Method:**
-- `create(): FileParserInterface` — returns `CachedFileParser` or `PhpFileParser` depending on `config.cacheEnabled`
+- `create(): FileParserInterface` — returns `CachedFileParser` or `PhpFileParser` depending on the current Cache-owned configuration
 
 ---
 
@@ -351,11 +349,9 @@ Factory with runtime configuration awareness.
 
 **Runtime configuration:**
 - CLI options are parsed in `CheckCommand::execute()`
-- `RuntimeConfigurator` delegates run-scoped configuration to
-  `AnalysisRuntimeConfigurator`, which updates
-  `TransitionalRuntimeConfigurationProviderInterface` and `RuleOptionsRegistry`
-  before analysis; RuntimeConfigurator separately applies the ordered document
-  to Coupling's public configuration contract
+- `RuntimeConfigurator` resolves the ordered document through exact owner
+  resolvers, resets/replaces their local state, then passes RunConfiguration to
+  the analysis pipeline
 - `LayerAssignmentCommand` delegates collected-state reconstruction to the
   internal Console `LayerAssignmentResolver`
 - Lazy rules are created with correct options
@@ -382,3 +378,8 @@ Factory with runtime configuration awareness.
 - All CLI options work (including aliases --cyclomatic-warning, --cyclomatic-error)
 - Exit codes are correct
 - No ServiceLocator (all dependencies via constructor)
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

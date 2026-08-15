@@ -8,8 +8,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Infrastructure\Console\FormatterContextFactory;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\GroupBy;
@@ -27,11 +26,7 @@ final class FormatterContextFactoryTest extends TestCase
 
     protected function setUp(): void
     {
-        $config = new TransitionalRuntimeConfiguration();
-        $configProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
-        $configProvider->method('getConfiguration')->willReturn($config);
-
-        $this->factory = new FormatterContextFactory($configProvider);
+        $this->factory = new FormatterContextFactory();
         $this->formatter = self::createStub(FormatterInterface::class);
         $this->formatter->method('getDefaultGroupBy')->willReturn(GroupBy::None);
         $this->output = new NullOutput();
@@ -42,7 +37,7 @@ final class FormatterContextFactoryTest extends TestCase
     {
         $input = $this->createInput(['--all' => true]);
 
-        $context = $this->factory->create($input, $this->output, $this->formatter);
+        $context = $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());
 
         self::assertSame('all', $context->getOption('violations'));
     }
@@ -52,7 +47,7 @@ final class FormatterContextFactoryTest extends TestCase
     {
         $input = $this->createInput(['--all' => true]);
 
-        $context = $this->factory->create($input, $this->output, $this->formatter);
+        $context = $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());
 
         self::assertSame(0, $context->detailLimit);
     }
@@ -65,7 +60,7 @@ final class FormatterContextFactoryTest extends TestCase
             '--format-opt' => ['violations=all'],
         ]);
 
-        $context = $this->factory->create($input, $this->output, $this->formatter);
+        $context = $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());
 
         self::assertSame('all', $context->getOption('violations'));
         self::assertSame(0, $context->detailLimit);
@@ -82,7 +77,7 @@ final class FormatterContextFactoryTest extends TestCase
         self::expectException(InvalidArgumentException::class);
         self::expectExceptionMessage('Conflicting options: --all cannot be combined with --format-opt=violations=N');
 
-        $this->factory->create($input, $this->output, $this->formatter);
+        $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());
     }
 
     #[Test]
@@ -93,7 +88,7 @@ final class FormatterContextFactoryTest extends TestCase
             '--detail' => '50',
         ]);
 
-        $context = $this->factory->create($input, $this->output, $this->formatter);
+        $context = $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());
 
         // --all overrides --detail=50 to unlimited (0)
         self::assertSame(0, $context->detailLimit);
@@ -104,7 +99,7 @@ final class FormatterContextFactoryTest extends TestCase
     {
         $input = $this->createInput([]);
 
-        $context = $this->factory->create($input, $this->output, $this->formatter);
+        $context = $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());
 
         // No violations option set
         self::assertSame('', $context->getOption('violations'));
@@ -119,7 +114,7 @@ final class FormatterContextFactoryTest extends TestCase
             '--format-opt' => ['violations=all'],
         ]);
 
-        $context = $this->factory->create($input, $this->output, $this->formatter);
+        $context = $this->factory->create($input, $this->output, $this->formatter, $this->projectRoot());
 
         self::assertSame('all', $context->getOption('violations'));
     }
@@ -140,5 +135,10 @@ final class FormatterContextFactoryTest extends TestCase
         ]);
 
         return new ArrayInput($parameters, $definition);
+    }
+
+    private function projectRoot(): AbsolutePath
+    {
+        return AbsolutePath::fromString((string) getcwd());
     }
 }

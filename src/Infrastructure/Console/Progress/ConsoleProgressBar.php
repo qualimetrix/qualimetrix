@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Progress;
 
-use Qualimetrix\Core\Progress\ProgressReporter;
+use Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -18,7 +18,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * Uses null-safe operations to ensure no errors when progress bar is disabled.
  */
-final class ConsoleProgressBar implements ProgressReporter
+final class ConsoleProgressBar implements ProgressReporterInterface
 {
     private ?ProgressBar $progressBar = null;
 

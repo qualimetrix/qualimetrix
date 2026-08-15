@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedMetricExtractor;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -440,8 +441,9 @@ final class DerivedMetricExtractorTest extends TestCase
             SymbolLevel::Class_->value => [AggregationStrategy::Average],
             SymbolLevel::Namespace_->value => [AggregationStrategy::Average],
         ]);
-        (new CallableToClassAggregator())->aggregate($repository, [$definition]);
-        (new ClassToNamespaceAggregator())->aggregate($repository, [$definition]);
+        $profiler = self::createStub(ProfilerInterface::class);
+        (new CallableToClassAggregator($profiler))->aggregate($repository, [$definition]);
+        (new ClassToNamespaceAggregator($profiler))->aggregate($repository, [$definition]);
 
         self::assertSame(70.0, $repository->get(SymbolPath::forClass('App', 'Service'))->get('mi.avg'));
         $namespace = $repository->get(SymbolPath::forNamespace('App'));

@@ -87,7 +87,7 @@ final class YamlKeyReachabilityTest extends TestCase
      * {@see ConfigSchema::ENTRIES}. Snake_case inputs must reach the
      * documented camelCase form so downstream consumers
      * ({@see \Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage},
-     * {@see \Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration}) find them.
+     * owner-specific configuration resolvers find them.
      *
      * @param non-empty-string $yaml
      * @param non-empty-list<string|int> $path Dot-separated path through the
@@ -104,8 +104,7 @@ final class YamlKeyReachabilityTest extends TestCase
 
     /**
      * Section sub-keys: keys living under a section root
-     * ({@code cache.*}, {@code namespace.*}, {@code aggregation.*},
-     * {@code parallel.*}, {@code coupling.*}). The loader normalizes their
+     * ({@code cache.*}, {@code parallel.*}, {@code coupling.*}). The loader normalizes their
      * snake_case form to camelCase per {@see ConfigSchema::ENTRIES}.
      *
      * @param non-empty-list<string|int> $path
@@ -300,34 +299,6 @@ final class YamlKeyReachabilityTest extends TestCase
             'cache.enabled',
             "cache:\n  enabled: true\n",
             ['cache', 'enabled'],
-            true,
-        ];
-
-        yield 'namespace.strategy (string)' => [
-            'namespace.strategy',
-            "namespace:\n  strategy: psr4\n",
-            ['namespace', 'strategy'],
-            'psr4',
-        ];
-
-        yield 'namespace.composer_json → namespace.composerJson (string)' => [
-            'namespace.composer_json',
-            "namespace:\n  composer_json: ./composer.json\n",
-            ['namespace', 'composerJson'],
-            './composer.json',
-        ];
-
-        yield 'aggregation.prefixes (list)' => [
-            'aggregation.prefixes',
-            "aggregation:\n  prefixes:\n    - App\n",
-            ['aggregation', 'prefixes'],
-            ['App'],
-        ];
-
-        yield 'aggregation.auto_depth → aggregation.autoDepth (bool)' => [
-            'aggregation.auto_depth',
-            "aggregation:\n  auto_depth: true\n",
-            ['aggregation', 'autoDepth'],
             true,
         ];
 

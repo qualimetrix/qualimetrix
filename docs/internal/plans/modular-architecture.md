@@ -11,7 +11,11 @@ This plan deliberately migrates the proven scattered capabilities first. Thin me
 
 ## Current status and reading guide
 
-P0–P7 are completed and independently reviewed. P6 closed at 754 declarations
+P0–P8 are completed and independently reviewed; final P8 authority records 789
+declarations / 787 files, 37 owners, zero seams, 64 exact permanent composition
+bindings collapsing to 13 owner pairs, 227 qmx allows, 659 artifacts, 102 fixture
+directories, 518 PHPUnit classes / 7,036 semantic IDs, and a 269-group /
+203-subject baseline. P6 closed at 754 declarations
 / 752 files, 37 owners, zero seams, 51 exact grants collapsing to 8 owner
 pairs, and 223 qmx allows; generated discovery contains 509 PHPUnit classes /
 7,251 semantic IDs. Final host `composer check` exited 0: 7,251 tests / 23,654
@@ -27,7 +31,7 @@ performed; HEAD was `57fa22fa0d0f074cb11590e358fc01faff3eccf1` on
 Rules role buckets and completed its implementation, final aggregate
 validation, and independent review at 762 declarations / 760 files, 37 owners,
 50 exact grants collapsing to 7 owner pairs, 224 qmx allows, and 7,254 generated
-PHPUnit cases. P8 alone remains pending and requires a new explicit request.
+PHPUnit cases. P8 completes the migration; no migration phase or package remains pending.
 
 Read the documents by concern rather than loading the historical record as one context:
 
@@ -41,7 +45,7 @@ Read the documents by concern rather than loading the historical record as one c
 | Completed P4 Architecture policy and CircularDependency work                          | [P4 Architecture policy](modular-architecture/p4-architecture-policy.md)                           |
 | Completed P5 ComputedMetrics and Health remediation and republish                     | [P5 ComputedMetrics and Health](modular-architecture/p5-computed-metrics.md)                       |
 | Completed P6 Finding/Policy record and final closure evidence                         | [P6 Finding and Policy](modular-architecture/p6-finding-policy.md)                                 |
-| Completed P7, pending P8, dependency graph, regression matrix, and non-goals          | [P5–P8 roadmap](modular-architecture/roadmap-p5-p8.md)                                             |
+| Completed P7 and P8, dependency graph, regression matrix, and non-goals               | [P5–P8 roadmap](modular-architecture/roadmap-p5-p8.md)                                             |
 
 ## Work packages
 
@@ -53,8 +57,8 @@ complete after three review findings were fixed, the independent reviewer
 returned GO and the post-review aggregate passed. P6 is complete after its
 three review findings were closed, the independent address-check returned GO,
 and the final host aggregate passed. P7 is complete after its implementation,
-final aggregate validation, and independent review returned GO. P8 is the next
-phase and remains eligible only on a new explicit request.
+final aggregate validation, and independent review returned GO. P8 is complete;
+no migration phase or package remains pending.
 Detailed package
 dependencies and all edge-case/non-goal
 statements remain in the [P5–P8 roadmap](modular-architecture/roadmap-p5-p8.md).

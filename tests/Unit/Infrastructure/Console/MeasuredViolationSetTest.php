@@ -17,6 +17,10 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
@@ -57,7 +61,7 @@ final class MeasuredViolationSetTest extends TestCase
             ],
         );
 
-        self::assertSame([$reported], $set->forPaths([AbsolutePath::fromString(sys_get_temp_dir())]));
+        self::assertSame([$reported], $set->forRun($this->configuration()));
     }
 
     #[Test]
@@ -76,8 +80,8 @@ final class MeasuredViolationSetTest extends TestCase
             $options,
         );
 
-        self::assertSame([$reported], $set->forPaths(
-            [AbsolutePath::fromString(sys_get_temp_dir())],
+        self::assertSame([$reported], $set->forRun(
+            $this->configuration(),
             options: $options,
         ));
     }
@@ -98,13 +102,13 @@ final class MeasuredViolationSetTest extends TestCase
 
         self::assertSame(
             [$onlyExcludedByAFlag],
-            $set->forPaths([AbsolutePath::fromString(sys_get_temp_dir())]),
+            $set->forRun($this->configuration()),
         );
 
         // The same narrowing, supplied as a flag, does remove it from the
         // run — it just does not redefine what the baseline measures.
-        self::assertSame([], $set->forPaths(
-            [AbsolutePath::fromString(sys_get_temp_dir())],
+        self::assertSame([], $set->forRun(
+            $this->configuration(),
             options: new FindingProjectionOptions(excludePaths: ['vendor']),
         ));
     }
@@ -123,7 +127,7 @@ final class MeasuredViolationSetTest extends TestCase
     }
 
     /**
-     * `runForPaths()` must return the same measured set `forPaths()` does —
+     * `run()` must return the same measured set `forRun()` does —
      * the two are not two definitions, one is the other with the run kept —
      * and must expose the {@see AnalysisResult} the run itself produced,
      * not a rebuilt or partial one.
@@ -144,10 +148,53 @@ final class MeasuredViolationSetTest extends TestCase
             ],
         );
 
-        $run = $set->runForPaths([AbsolutePath::fromString(sys_get_temp_dir())]);
+        $run = $set->run($this->configuration());
 
         self::assertSame([$reported], $run->violations);
         self::assertSame([$ignored, $reported], $run->result->violations);
+    }
+
+    #[Test]
+    public function itBuildsDefaultDiscoveryFromTheRunPathExcludes(): void
+    {
+        $root = AbsolutePath::fromString(sys_get_temp_dir());
+        $configuration = new RunConfiguration(
+            [$root],
+            ['vendor', 'node_modules', '.git', 'generated'],
+            $root,
+            GeneratedFilePolicy::Exclude,
+        );
+        $discovery = self::createStub(FileDiscoveryInterface::class);
+        $factory = self::createMock(FileDiscoveryFactoryInterface::class);
+        $factory->expects(self::once())
+            ->method('create')
+            ->with($configuration->pathExcludes)
+            ->willReturn($discovery);
+        $analyzer = self::createMock(AnalysisPipelineInterface::class);
+        $analyzer->expects(self::once())
+            ->method('analyze')
+            ->with($configuration, $discovery)
+            ->willReturn(self::analysisResult([]));
+
+        $this->createSet([], new FindingProjectionOptions(), analyzer: $analyzer, discoveryFactory: $factory)
+            ->run($configuration);
+    }
+
+    #[Test]
+    public function itUsesExplicitDiscoveryWithoutCallingTheFactory(): void
+    {
+        $configuration = $this->configuration();
+        $discovery = self::createStub(FileDiscoveryInterface::class);
+        $factory = self::createMock(FileDiscoveryFactoryInterface::class);
+        $factory->expects(self::never())->method('create');
+        $analyzer = self::createMock(AnalysisPipelineInterface::class);
+        $analyzer->expects(self::once())
+            ->method('analyze')
+            ->with($configuration, $discovery)
+            ->willReturn(self::analysisResult([]));
+
+        $this->createSet([], new FindingProjectionOptions(), analyzer: $analyzer, discoveryFactory: $factory)
+            ->run($configuration, $discovery);
     }
 
     /**
@@ -158,15 +205,17 @@ final class MeasuredViolationSetTest extends TestCase
         array $violations,
         FindingProjectionOptions $configuration,
         array $suppressions = [],
+        ?AnalysisPipelineInterface $analyzer = null,
+        ?FileDiscoveryFactoryInterface $discoveryFactory = null,
     ): MeasuredViolationSet {
-        $analyzer = self::createStub(AnalysisPipelineInterface::class);
-        $analyzer->method('analyze')->willReturn(new AnalysisResult(
-            violations: $violations,
-            duration: 0.1,
-            metrics: self::createStub(MetricRepositoryInterface::class),
-            coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
-            suppressions: $suppressions,
-        ));
+        if ($analyzer === null) {
+            $analyzer = self::createStub(AnalysisPipelineInterface::class);
+            $analyzer->method('analyze')->willReturn(self::analysisResult($violations, $suppressions));
+        }
+        if ($discoveryFactory === null) {
+            $discoveryFactory = self::createStub(FileDiscoveryFactoryInterface::class);
+            $discoveryFactory->method('create')->willReturn(self::createStub(FileDiscoveryInterface::class));
+        }
 
         $declarations = StubChannelDeclarationRegistry::withDefaults();
         $projector = new FindingProjector(
@@ -181,7 +230,29 @@ final class MeasuredViolationSetTest extends TestCase
             },
         );
 
-        return new MeasuredViolationSet($analyzer, $projector);
+        return new MeasuredViolationSet($analyzer, $projector, $discoveryFactory);
+    }
+
+    /**
+     * @param list<Violation> $violations
+     * @param array<string, list<Suppression>> $suppressions
+     */
+    private static function analysisResult(array $violations, array $suppressions = []): AnalysisResult
+    {
+        return new AnalysisResult(
+            violations: $violations,
+            duration: 0.1,
+            metrics: self::createStub(MetricRepositoryInterface::class),
+            coverage: new AnalysisCoverage([RelativePath::fromString('Fixture.php')], [], []),
+            suppressions: $suppressions,
+        );
+    }
+
+    private function configuration(): RunConfiguration
+    {
+        $root = AbsolutePath::fromString(sys_get_temp_dir());
+
+        return new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Exclude);
     }
 
     private static function violation(string $file, string $namespace, string $class): Violation

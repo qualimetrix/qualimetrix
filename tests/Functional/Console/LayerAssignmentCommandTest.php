@@ -272,7 +272,7 @@ final class LayerAssignmentCommandTest extends TestCase
         $resolverConstructor = (new ReflectionClass(LayerAssignmentResolver::class))->getConstructor();
         self::assertNotNull($commandConstructor);
         self::assertNotNull($resolverConstructor);
-        self::assertCount(3, $commandConstructor->getParameters());
+        self::assertCount(7, $commandConstructor->getParameters());
         self::assertCount(6, $resolverConstructor->getParameters());
     }
 
@@ -501,6 +501,31 @@ final class LayerAssignmentCommandTest extends TestCase
         );
     }
 
+    #[Test]
+    public function validatesDynamicComputedSelectorsFromYamlBeforeResolvingAssignment(): void
+    {
+        foreach (['computed.health', 'health.complexity', 'computed.health#health.complexity'] as $selector) {
+            $configPath = $this->writeConfigWithComputedSelector($selector);
+            $tester = $this->newTester();
+            $exit = $tester->execute([
+                'fqn' => 'App\\Service\\UserService',
+                '--config' => $configPath,
+            ]);
+
+            self::assertSame(Command::SUCCESS, $exit, $tester->getDisplay());
+            self::assertStringContainsString('Assigned to: service', $tester->getDisplay());
+        }
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Service\\UserService',
+            '--config' => $this->writeConfigWithComputedSelector('computed.stale'),
+        ]);
+
+        self::assertSame(Command::FAILURE, $exit);
+        self::assertStringContainsString('does not match any registered', $tester->getDisplay());
+    }
+
     private function newTester(): CommandTester
     {
         return new CommandTester($this->buildCommand());
@@ -547,6 +572,24 @@ final class LayerAssignmentCommandTest extends TestCase
 
         $path = $this->tempDir . '/qmx-' . uniqid() . '.yaml';
         file_put_contents($path, $yaml);
+
+        return $path;
+    }
+
+    private function writeConfigWithComputedSelector(string $selector): string
+    {
+        $path = $this->writeConfig([
+            ['service', ['App\\Service\\**']],
+        ]);
+        file_put_contents(
+            $path,
+            (string) file_get_contents($path)
+            . "computed_metrics:\n"
+            . "  computed.local:\n"
+            . "    formula: '1'\n"
+            . "    levels: [class]\n"
+            . "only_rules: ['{$selector}']\n",
+        );
 
         return $path;
     }

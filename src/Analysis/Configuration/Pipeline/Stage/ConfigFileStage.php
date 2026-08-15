@@ -7,7 +7,7 @@ namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
 
 use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
@@ -41,9 +41,9 @@ final class ConfigFileStage implements ConfigurationStageInterface
         return 'config_file';
     }
 
-    public function apply(ConfigurationContext $context): ?ConfigurationLayer
+    public function apply(ConfigurationResolutionRequest $request): ?ConfigurationLayer
     {
-        $configPath = $this->resolveConfigPath($context);
+        $configPath = $this->resolveConfigPath($request);
 
         if ($configPath === null) {
             return null;
@@ -65,17 +65,17 @@ final class ConfigFileStage implements ConfigurationStageInterface
      * If an explicit path was provided via --config, uses that (throws on missing file).
      * Otherwise, auto-detects qmx.yaml or qmx.yml in the working directory.
      */
-    private function resolveConfigPath(ConfigurationContext $context): ?string
+    private function resolveConfigPath(ConfigurationResolutionRequest $request): ?string
     {
-        if ($context->configFilePath !== null) {
-            if (!file_exists($context->configFilePath)) {
-                throw ConfigLoadException::fileNotFound($context->configFilePath);
+        if ($request->configFilePath !== null) {
+            if (!file_exists($request->configFilePath)) {
+                throw ConfigLoadException::fileNotFound($request->configFilePath);
             }
 
-            return $context->configFilePath;
+            return $request->configFilePath;
         }
 
-        return $this->findConfigFile($context->workingDirectory);
+        return $this->findConfigFile($request->workingDirectory->value());
     }
 
     private function findConfigFile(string $dir): ?string

@@ -22,6 +22,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
@@ -77,7 +78,7 @@ final class GlobalFunctionAggregationTest extends TestCase
         $this->addCallable($repository, $functionPath, $functionMetrics, RelativePath::fromString('src/Utils/helpers.php'), 100);
 
         $definitions = AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]);
-        $aggregator = new CallableToClassAggregator();
+        $aggregator = new CallableToClassAggregator(self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository, $definitions);
 
         // No class-level metrics should be created for the function
@@ -105,7 +106,7 @@ final class GlobalFunctionAggregationTest extends TestCase
         $this->addCallable($repository, $methodPath, $methodMetrics, RelativePath::fromString('src/Service/UserService.php'), 200);
 
         $definitions = AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]);
-        $aggregator = new CallableToClassAggregator();
+        $aggregator = new CallableToClassAggregator(self::createStub(ProfilerInterface::class));
         $aggregator->aggregate($repository, $definitions);
 
         // Class aggregation should only include the method, not the function
@@ -129,7 +130,7 @@ final class GlobalFunctionAggregationTest extends TestCase
         self::assertSame(SymbolType::Function_, $functionPath->getType());
 
         $definitions = AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]);
-        $aggregator = new CallableToClassAggregator();
+        $aggregator = new CallableToClassAggregator(self::createStub(ProfilerInterface::class));
 
         // Should not throw any errors
         $aggregator->aggregate($repository, $definitions);
@@ -151,11 +152,11 @@ final class GlobalFunctionAggregationTest extends TestCase
         $definitions = AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]);
 
         // Method→Class does nothing for functions (correct behavior)
-        $methodToClass = new CallableToClassAggregator();
+        $methodToClass = new CallableToClassAggregator(self::createStub(ProfilerInterface::class));
         $methodToClass->aggregate($repository, $definitions);
 
         // Class→Namespace should pick up the function's CCN
-        $classToNamespace = new ClassToNamespaceAggregator();
+        $classToNamespace = new ClassToNamespaceAggregator(self::createStub(ProfilerInterface::class));
         $classToNamespace->aggregate($repository, $definitions);
 
         $namespaceBag = $repository->get(SymbolPath::forNamespace('App\\Utils'));
@@ -173,14 +174,14 @@ final class GlobalFunctionAggregationTest extends TestCase
 
         $definitions = AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]);
 
-        $methodToClass = new CallableToClassAggregator();
+        $methodToClass = new CallableToClassAggregator(self::createStub(ProfilerInterface::class));
         $methodToClass->aggregate($repository, $definitions);
 
-        $classToNamespace = new ClassToNamespaceAggregator();
+        $classToNamespace = new ClassToNamespaceAggregator(self::createStub(ProfilerInterface::class));
         $classToNamespace->aggregate($repository, $definitions);
 
         $tree = new NamespaceTree($repository->getNamespaces());
-        $namespaceToProject = new NamespaceToProjectAggregator($tree);
+        $namespaceToProject = new NamespaceToProjectAggregator($tree, self::createStub(ProfilerInterface::class));
         $namespaceToProject->aggregate($repository, $definitions);
 
         $projectBag = $repository->get(SymbolPath::forProject());
@@ -227,11 +228,11 @@ final class GlobalFunctionAggregationTest extends TestCase
         $definitions = AggregationHelper::collectDefinitions([new CyclomaticComplexityCollector()]);
 
         // Method→Class aggregation: only aggregates the method
-        $methodToClass = new CallableToClassAggregator();
+        $methodToClass = new CallableToClassAggregator(self::createStub(ProfilerInterface::class));
         $methodToClass->aggregate($repository, $definitions);
 
         // Class→Namespace: should include class CCN (3 from .sum) + function CCN (10 raw)
-        $classToNamespace = new ClassToNamespaceAggregator();
+        $classToNamespace = new ClassToNamespaceAggregator(self::createStub(ProfilerInterface::class));
         $classToNamespace->aggregate($repository, $definitions);
 
         $namespaceBag = $repository->get(SymbolPath::forNamespace('App\\Service'));
@@ -278,7 +279,7 @@ final class GlobalFunctionAggregationTest extends TestCase
                 SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
             ]),
         ];
-        (new ClassToNamespaceAggregator())->aggregate($repository, $definitions);
+        (new ClassToNamespaceAggregator(self::createStub(ProfilerInterface::class)))->aggregate($repository, $definitions);
 
         $namespace = $repository->get(SymbolPath::forNamespace('App\\Service'));
         self::assertSame(7, $namespace->get('firstProviderMetric.sum'));

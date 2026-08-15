@@ -4,8 +4,8 @@
 
 `Analysis\\Evidence\\Measurement` owns metric collection facts, exact
 declaration metrics, logical-class and namespace projections, aggregation,
-repository implementation, namespace attribution, collector runtime
-configuration, and the worker-safe collector contract.
+repository implementation, namespace attribution, and the worker-safe
+collector contract.
 
 It is the owner of the shared measurement lifecycle, not of pipeline sequencing
 or capability-specific evidence. Run passes file facts through its collection
@@ -23,7 +23,6 @@ Measurement/
 ├── FileMeasurement/    # file collectors and derived metrics
 ├── Namespace_/         # project namespace attribution
 ├── Repository/         # in-memory repository and indexes
-├── Runtime/            # instance-owned collector configuration
 └── Visitor/             # AST visitor state and metadata
 ```
 
@@ -45,11 +44,12 @@ namespace aggregation.
 
 `FileMeasurementCollectorInterface` supplies collectors and derived collectors.
 Only `ParallelSafeCollectorInterface` implementations are reconstructed in a
-parallel worker. `CollectorRuntimeConfiguration` is an immutable, wire-safe
-payload held by `CollectorRuntimeConfigurationStore`; `WorkerBootstrap` rebuilds
-the collector graph from registered class names and applies that payload before
-file processing. This prevents a worker from receiving a container service or
-state from a prior run.
+parallel worker. Capability-specific collection values stay with their owning
+capability: Cohesion supplies its typed `LcomCollectionConfiguration` through
+its exact contract. `WorkerBootstrap` rebuilds the collector graph from
+registered class names and receives that value before file processing,
+preventing a worker from receiving a container service or state from a prior
+run.
 
 ## Aggregation
 
@@ -58,8 +58,9 @@ collectors, and re-aggregation of global metric definitions. It consumes the
 DependencyModel graph through `DependencyGraphInterface`; the graph itself and
 its extraction internals remain DependencyModel-owned.
 
-The service resolves one profiler per call. An injected `ProfilerHolder`
-supplies it; without one the service uses `NullProfiler` and deliberately does
+The service receives the neutral Core profiler port through constructor
+injection. The per-container Infrastructure `ProfileSession` provides disabled
+no-op behaviour and deliberately does
 not consult mutable global profiler state. The exact span order is initial
 `aggregation`, `global`, and optional `aggregation.global`, with the completion
 log between the first two spans.
@@ -77,11 +78,15 @@ role.
 
 Owned tests live under `tests/Analysis/Evidence/Measurement/`. They cover
 repository identity, file and derived collection, aggregation, namespace
-attribution, runtime configuration replacement, and sequential/parallel worker
-equivalence.
+attribution, and sequential/parallel worker equivalence.
 
-- Collectors reset for each file and runtime configuration is replaced for each
-  analysis run.
+- Collectors reset for each file; capability-owned configuration is resolved
+  before each analysis run.
 - Worker serialization contains only contracts and values, never services.
 - Aggregation preserves exact declaration evidence and deterministic namespace
   and project projections.
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

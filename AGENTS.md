@@ -56,22 +56,19 @@ modular monolith** accepted in
 ADR 0012's substantial/thin hybrid direction; ADR 0010 is the historical
 Architecture pilot and ADR 0016 remains the governing subject-cohesion rule.
 
-P1-P7 have landed their accepted capability boundaries. P7 is complete after
-its implementation, final aggregate validation, and independent review: the
-former Metrics and Rules role buckets have been distributed among eight
-evidence capabilities. P8 remains pending as the next phase. The tree below
-describes the current physical layout. P0 governance remains live: the
-versioned internal manifest is
-authoritative for all 762 current declarations in 760 files and 37 semantic
-owners. It generates a coarse qmx projection with 37 owner layers, no singleton
-enforcement seams, final `external`, 50 exact internal grants collapsing to 7
-owner pairs, and 224 declared allow edges.
+The accepted capability boundaries distribute the former Metrics and Rules role
+buckets among eight evidence capabilities. The tree below describes the current
+physical layout. P0 governance remains live: the versioned internal manifest is
+authoritative for 789 declarations in 787 files and 37 semantic owners. It
+generates a coarse qmx projection with 37 owner layers, no singleton
+enforcement seams, final `external`, and 64 permanent exact composition
+bindings that retain 13 coarse owner pairs (227 declared allow edges).
 
 ```
 src/
 ├── Core/              # Cross-cutting primitives (no dependencies)
 ├── Analysis/          # Orchestration plus taxonomy-only capability grouping
-│   ├── Configuration/       # P3 transitional document resolution and runtime config
+│   ├── Configuration/       # ordered configuration document resolution
 │   ├── Finding/             # rule language, execution, violations and filtering
 │   ├── Evidence/
 │   │   ├── DependencyModel/     # graph model plus P3 extraction/traversal contract
@@ -365,7 +362,9 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 **Adding a new config option (YAML key):**
 1. Add a constant to `src/Analysis/Configuration/ConfigSchema.php` (e.g., `public const MY_OPTION = 'my.option'`)
 2. Add an entry to `ConfigSchema::ENTRIES` (source path, result key, root type)
-3. Add handling in the appropriate consumer (`TransitionalRuntimeConfiguration`, `DefaultsStage`, `CliStage`, etc.)
+3. Add handling in the owning resolver or adapter (`DefaultsStage`, `CliStage`,
+   `RunConfigurationResolver`, or another exact consumer); do not add a
+   cross-owner runtime field to Configuration.
 4. All consumers must reference the constant, not a string literal
 
 **Adding a new rule:**

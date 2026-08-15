@@ -8,7 +8,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
@@ -16,6 +16,7 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
 {
     public function __construct(
         private readonly NamespaceTree $tree,
+        private readonly ProfilerInterface $profiler,
     ) {}
 
     /**
@@ -23,7 +24,7 @@ final class NamespaceToProjectAggregator implements AggregationPhaseInterface
      */
     public function aggregate(MetricRepositoryInterface $repository, array $definitions): void
     {
-        $profiler = ProfilerHolder::get();
+        $profiler = $this->profiler;
 
         $projectDefinitions = array_values(array_filter(
             $definitions,

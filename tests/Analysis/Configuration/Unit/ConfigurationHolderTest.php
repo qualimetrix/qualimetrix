@@ -7,90 +7,35 @@ namespace Qualimetrix\Tests\Analysis\Configuration\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
-use Qualimetrix\Analysis\Configuration\Runtime\TransitionalRuntimeConfigurationHolder;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
 use Qualimetrix\Core\Path\AbsolutePath;
-use RuntimeException;
+use ReflectionClass;
 
-#[CoversClass(TransitionalRuntimeConfigurationHolder::class)]
+#[CoversClass(ConfigurationDocument::class)]
 final class ConfigurationHolderTest extends TestCase
 {
     #[Test]
-    public function itInitiallyHasNoConfiguration(): void
+    public function itTracksAppliedSourcesInPrecedenceOrder(): void
     {
-        $provider = new TransitionalRuntimeConfigurationHolder();
+        $document = new ConfigurationDocument([
+            ['source' => 'defaults', 'values' => []],
+            ['source' => 'strict', 'values' => ['format' => 'text']],
+            ['source' => 'strict', 'values' => ['fail_on' => 'warning']],
+            ['source' => 'cli', 'values' => ['format' => 'json']],
+        ], AbsolutePath::fromString('/project'));
 
-        self::assertFalse($provider->hasConfiguration());
+        self::assertSame(['defaults', 'strict', 'cli'], $document->appliedSources());
     }
 
     #[Test]
-    public function itThrowsWhenGettingConfigurationNotSet(): void
+    public function itDoesNotProvideMutableReplacementOperations(): void
     {
-        $provider = new TransitionalRuntimeConfigurationHolder();
-
-        self::expectException(RuntimeException::class);
-        self::expectExceptionMessage('Configuration not set');
-
-        $provider->getConfiguration();
-    }
-
-    #[Test]
-    public function itSetsAndGetsConfiguration(): void
-    {
-        $provider = new TransitionalRuntimeConfigurationHolder();
-        $config = new TransitionalRuntimeConfiguration(
-            cacheDir: AbsolutePath::fromString('/custom/cache'),
+        $methodNames = array_map(
+            static fn($method): string => $method->getName(),
+            (new ReflectionClass(ConfigurationDocument::class))->getMethods(),
         );
 
-        $provider->setConfiguration($config);
-
-        self::assertTrue($provider->hasConfiguration());
-        self::assertSame($config, $provider->getConfiguration());
-    }
-
-    #[Test]
-    public function itHasRuleOptionsInitiallyEmpty(): void
-    {
-        $provider = new TransitionalRuntimeConfigurationHolder();
-
-        self::assertSame([], $provider->getRuleOptions());
-    }
-
-    #[Test]
-    public function itSetsAndGetsRuleOptions(): void
-    {
-        $provider = new TransitionalRuntimeConfigurationHolder();
-        $options = [
-            'cyclomatic-complexity' => ['threshold' => 15],
-            'namespace-size' => ['max_classes' => 20],
-        ];
-
-        $provider->setRuleOptions($options);
-
-        self::assertSame($options, $provider->getRuleOptions());
-    }
-
-    #[Test]
-    public function itAllowsConfigurationToBeReplaced(): void
-    {
-        $provider = new TransitionalRuntimeConfigurationHolder();
-        $config1 = new TransitionalRuntimeConfiguration(cacheEnabled: true);
-        $config2 = new TransitionalRuntimeConfiguration(cacheEnabled: false);
-
-        $provider->setConfiguration($config1);
-        $provider->setConfiguration($config2);
-
-        self::assertSame($config2, $provider->getConfiguration());
-    }
-
-    #[Test]
-    public function itAllowsRuleOptionsToBeReplaced(): void
-    {
-        $provider = new TransitionalRuntimeConfigurationHolder();
-
-        $provider->setRuleOptions(['rule1' => ['a' => 1]]);
-        $provider->setRuleOptions(['rule2' => ['b' => 2]]);
-
-        self::assertSame(['rule2' => ['b' => 2]], $provider->getRuleOptions());
+        self::assertNotContains('replace', $methodNames);
+        self::assertNotContains('setConfiguration', $methodNames);
     }
 }

@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurationStoreInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
+use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
 use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -33,8 +34,8 @@ final class DependencyModelConfigurator implements ContainerConfiguratorInterfac
 
         $container->getDefinition(self::FILE_PROCESSING_TASK_FACTORY_SERVICE_ID)
             ->setArgument(
-                '$collectorRuntimeConfigurationStore',
-                new Reference(CollectorRuntimeConfigurationStoreInterface::class),
+                '$lcomConfigurationStore',
+                new Reference(LcomCollectionConfigurationStoreInterface::class),
             )
             ->setArgument('$dependencyTraversalParticipantClass', self::TRAVERSAL_PARTICIPANT_CLASS);
 
@@ -42,7 +43,8 @@ final class DependencyModelConfigurator implements ContainerConfiguratorInterfac
             ->setArguments([
                 '$amphpStrategy' => new Reference(self::AMPHP_PARALLEL_STRATEGY_SERVICE_ID),
                 '$sequentialStrategy' => new Reference(self::SEQUENTIAL_STRATEGY_SERVICE_ID),
-                '$configurationProvider' => new Reference(TransitionalRuntimeConfigurationProviderInterface::class),
+                '$configurationStore' => new Reference(ParallelConfigurationStoreInterface::class),
+                '$cacheConfigurationStore' => new Reference(CacheConfigurationStoreInterface::class),
                 '$workerCountDetector' => new Reference(self::WORKER_COUNT_DETECTOR_SERVICE_ID),
                 '$logger' => new Reference(DelegatingLogger::class),
             ]);

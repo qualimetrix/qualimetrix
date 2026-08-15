@@ -33,20 +33,23 @@ final class GoldenFileAggregationTest extends TestCase
     {
         $containerFactory = new ContainerFactory();
         $container = $containerFactory->create();
+        $fixturesPath = \dirname(__DIR__, 2) . '/Fixtures/GoldenMetrics';
+        $fixtureRoot = AbsolutePath::fromString($fixturesPath);
+        $document = new ConfigurationDocument([], $fixtureRoot);
 
         /** @var ComputedMetricConfiguratorInterface $computedMetrics */
         $computedMetrics = $container->get(ComputedMetricConfiguratorInterface::class);
-        $computedMetrics->configure(new ConfigurationDocument([]));
+        $computedMetrics->replace($computedMetrics->resolve($document));
 
         /** @var ArchitecturePolicyConfiguratorInterface $architecturePolicy */
         $architecturePolicy = $container->get(ArchitecturePolicyConfiguratorInterface::class);
-        $architecturePolicy->configure(new ConfigurationDocument([]));
+        $architecturePolicy->replace($architecturePolicy->resolve($document));
 
         /** @var AnalysisPipelineInterface $pipeline */
         $pipeline = $container->get(AnalysisPipelineInterface::class);
 
-        $fixturesPath = \dirname(__DIR__, 2) . '/Fixtures/GoldenMetrics';
-        $result = $pipeline->analyze(AbsolutePath::fromString($fixturesPath));
+        $root = AbsolutePath::fromString((string) getcwd());
+        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$fixtureRoot], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
         self::$repository = $result->metrics;
     }

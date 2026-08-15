@@ -7,14 +7,13 @@ namespace Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfiguration;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicateBlock;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
 use Qualimetrix\Analysis\Evidence\Duplication\NormalizedToken;
 use Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use SplFileInfo;
@@ -494,20 +493,17 @@ PHP;
 
     private function createDetector(int $minTokens = 70, int $minLines = 5): DuplicationDetector
     {
-        $configProvider = self::createStub(TransitionalRuntimeConfigurationProviderInterface::class);
-        $configProvider->method('getRuleOptions')->willReturn([
+        $ruleConfiguration = new RuleOptionsRegistry();
+        $ruleConfiguration->setConfigFileOptions([
             'duplication.code-duplication' => [
                 'min_tokens' => $minTokens,
                 'min_lines' => $minLines,
             ],
         ]);
-        $configProvider->method('getConfiguration')->willReturn(
-            new TransitionalRuntimeConfiguration(projectRoot: AbsolutePath::fromString($this->tmpDir)),
-        );
 
         $this->resultProvider = new DuplicationResultProvider();
 
-        return new DuplicationDetector($configProvider, $this->resultProvider);
+        return new DuplicationDetector($ruleConfiguration, $this->resultProvider);
     }
 
     /**
@@ -517,7 +513,7 @@ PHP;
      */
     private function inspect(DuplicationDetector $detector, array $files): array
     {
-        $detector->inspect($files);
+        $detector->inspect($files, AbsolutePath::fromString($this->tmpDir));
 
         return $this->resultProvider->all();
     }

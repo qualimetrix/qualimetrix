@@ -46,7 +46,8 @@ evidence into `Analysis\Evidence\CircularDependency`; each leaf owns its own
 prepared state and capability-specific preparation contract. Run owns
 discovery, collection and ordering; Measurement owns collection facts,
 repository, namespace attribution and aggregation; Configuration owns document
-resolution through a deliberately transitional runtime DTO. P5 landed
+resolution through its concrete ordered `ConfigurationDocument`; owner-specific
+resolvers and runtime stores keep mutable state local. P5 landed
 `Analysis\Evidence\ComputedMetrics` plus its Health subdomain: definitions are
 instance-owned, Run invokes only the evaluation contract, and Reporting
 consumes immutable Health contracts. P6 implementation has published
@@ -55,17 +56,25 @@ consumes immutable Health contracts. P6 implementation has published
 Infrastructure keeps the Console, Git, DI, and worker adapters behind those
 public contracts. P6 and P7 are complete. P7 distributed the former Metrics and
 Rules role buckets among CodeSmell, Cohesion, Complexity, Coupling, Design,
-Maintainability, Security, and Size, and its final aggregate validation and
-independent review returned GO. P8 remains the final locality/grant closure.
+Maintainability, Security, and Size. The resulting locality model has no
+universal invocation context, generic runtime store, or generic collector
+configuration carrier.
 
 P0 governance implements the current enforcement model. The versioned internal
-manifest covers all 762 declarations in 760 files and names 37 semantic
-owners. The current P7 tree has no singleton enforcement seam and 50 exact
-internal grants, which collapse to 7 coarse owner pairs and produce 224 declared qmx allow
-edges. Generated artifacts are deterministic projections rather than a second
-source of truth.
+manifest covers 789 declarations in 787 files and names 37 semantic owners. It
+has no singleton enforcement seam. Its 64 permanent exact composition bindings
+retain 13 required coarse owner pairs and the generated qmx projection has 227
+declared allow edges. A permanent binding is one observed DI source-to-private
+target reference; it is neither a public contract nor an owner-wide permission.
+Generated artifacts are deterministic projections rather than a second source
+of truth.
 `external` excludes `Qualimetrix\**`; `coverage: error` makes
 an uncovered project class fail even when it has no dependency edges.
+
+The published topology records 659 governed test/support/fixture artifacts,
+102 fixture directories, 518 PHPUnit classes, and 7,036 semantic test IDs. The
+self-analysis input contains 787 analyzed files; its active v11 baseline has
+269 groups across 203 subjects, and the current dogfood result is zero findings.
 
 The manifest checker is the exact owner/visibility/import authority. It runs as
 `composer architecture:check` before selfcheck and rejects unlisted imports even
@@ -75,6 +84,12 @@ review projections, not the manifest or a runtime/DI registry. A direct
 `composer check` for complete repository governance. Exact declared allow
 cycles fail configuration loading, while `architecture.circular-dependency`
 checks cycles in actual class dependencies.
+
+`ConfigurationDocument` is the concrete public source seam. It preserves the
+ordered contributions and invocation working directory only; it is not a
+generic configuration interface or invocation context. Run, Finding, Cache,
+Parallel, Reporting, and Console resolve their own values from it, retaining
+mutable state only inside the owner that needs a per-container store.
 
 ### 2. Five-Phase Pipeline
 
@@ -220,6 +235,7 @@ Current capability examples include Architecture,
 
 1. Add a constant to `src/Analysis/Configuration/ConfigSchema.php` (e.g., `public const MY_OPTION = 'my.option'`)
 2. Add an entry to `ConfigSchema::ENTRIES` (if YAML-configurable)
-3. Add handling in the appropriate consumer (`TransitionalRuntimeConfiguration`, pipeline stage, etc.)
+3. Add handling in the owning resolver or adapter; do not add a mixed runtime
+   carrier to Configuration.
 
 **Details** — in the README.md of the corresponding directory.

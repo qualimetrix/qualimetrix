@@ -5,19 +5,17 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console\Command;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration;
-use Qualimetrix\Analysis\Configuration\Contract\TransitionalRuntimeConfigurationProviderInterface;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Path\PathFactory;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
+use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -42,39 +40,46 @@ use Symfony\Component\Console\Output\OutputInterface;
 final readonly class BaselineRun implements BaselineRunInterface
 {
     public function __construct(
-        private ConfigurationPipelineInterface $configurationPipeline,
         private RuntimeConfigurator $runtimeConfigurator,
         private MeasuredViolationSet $measuredViolationSet,
-        private TransitionalRuntimeConfigurationProviderInterface $configurationProvider,
         private RuleInputValidator $ruleInputValidator,
-        private FileDiscoveryFactoryInterface $fileDiscoveryFactory,
+        private ConfigurationInputAdapter $configurationInputAdapter,
+        private RunConfigurationResolverInterface $runConfigurationResolver,
+        private ConfiguredFindingExclusionsResolverInterface $findingExclusionsResolver,
+        private CacheConfigurationResolverInterface $cacheConfigurationResolver,
+        private ParallelConfigurationResolverInterface $parallelConfigurationResolver,
     ) {}
 
     public function measure(InputInterface $input, OutputInterface $output): BaselineRunContext
     {
-        $resolved = $this->resolveConfiguration($input);
+        $this->runtimeConfigurator->resetRunState();
+        $document = $this->configurationInputAdapter->resolve($input);
+        $configuration = $this->runConfigurationResolver->resolve($document);
+        $cacheConfiguration = $this->cacheConfigurationResolver->resolve($document, $configuration->projectRoot);
+        $parallelConfiguration = $this->parallelConfigurationResolver->resolve($document);
+        $findingConfiguration = $this->ruleInputValidator->resolve($document, $input);
+        $exclusions = $this->findingExclusionsResolver->resolve($document);
 
         // The same per-run setup `check` performs: memory limit, logger,
         // progress reporter, rule options, feature lifecycle hooks. Without
         // it the analysis below runs under defaults that `check` never uses,
         // and the two would measure different sets on the same project.
-        $this->runtimeConfigurator->configure($resolved, $input, $output);
-        $this->ruleInputValidator->validate($resolved, $input);
-
-        $cwd = AbsolutePath::fromString((string) getcwd());
-        $paths = array_map(
-            static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $cwd),
-            $resolved->paths,
+        $this->runtimeConfigurator->configure(
+            $document,
+            $findingConfiguration,
+            $cacheConfiguration,
+            $parallelConfiguration,
+            $input,
+            $output,
         );
+        $this->assertPathsExist($configuration->paths);
 
-        $this->assertPathsExist($paths);
-
-        $run = $this->measuredViolationSet->runForPaths(
-            $paths,
-            $this->fileDiscoveryFactory->create($resolved->pathExcludes),
+        $run = $this->measuredViolationSet->run(
+            $configuration,
+            null,
             new FindingProjectionOptions(
-                excludePaths: $resolved->findingExclusions->excludePaths,
-                excludeNamespaces: $resolved->findingExclusions->excludeNamespaces,
+                excludePaths: $exclusions->excludePaths,
+                excludeNamespaces: $exclusions->excludeNamespaces,
             ),
         );
 
@@ -87,29 +92,9 @@ final readonly class BaselineRun implements BaselineRunInterface
             throw new IncompleteAnalysisException($run->result->coverage);
         }
 
-        $projectRoot = $this->configurationProvider->getConfiguration()->projectRoot;
+        $projectRoot = $configuration->projectRoot;
 
-        return new BaselineRunContext($run, RunScope::record($paths, $projectRoot), $projectRoot);
-    }
-
-    /**
-     * @throws ConfigLoadException
-     */
-    private function resolveConfiguration(InputInterface $input): TransitionalResolvedConfiguration
-    {
-        /** @var string|null $configPath */
-        $configPath = $input->getOption('config');
-        $cwd = getcwd();
-
-        if ($configPath !== null && $configPath !== '' && !file_exists($configPath)) {
-            throw ConfigLoadException::fileNotFound($configPath);
-        }
-
-        return $this->configurationPipeline->resolve(new ConfigurationContext(
-            $input,
-            $cwd !== false ? $cwd : '.',
-            $configPath !== null && $configPath !== '' ? $configPath : null,
-        ));
+        return new BaselineRunContext($run, RunScope::record($configuration->paths, $projectRoot), $projectRoot);
     }
 
     /**

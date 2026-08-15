@@ -6,14 +6,18 @@ namespace Qualimetrix\Infrastructure\Console\Command\Debug;
 
 use Exception;
 use Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch;
+use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
+use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
+use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -48,9 +52,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class LayerAssignmentCommand extends Command
 {
     public function __construct(
-        private readonly ConfigurationPipelineInterface $configurationPipeline,
         private readonly RuntimeConfigurator $runtimeConfigurator,
         private readonly LayerAssignmentResolver $layerAssignmentResolver,
+        private readonly ConfigurationInputAdapter $configurationInputAdapter,
+        private readonly RunConfigurationResolverInterface $runConfigurationResolver,
+        private readonly CacheConfigurationResolverInterface $cacheConfigurationResolver,
+        private readonly ParallelConfigurationResolverInterface $parallelConfigurationResolver,
+        private readonly RuleInputValidator $ruleInputValidator,
     ) {
         parent::__construct();
     }
@@ -103,19 +111,30 @@ final class LayerAssignmentCommand extends Command
         $normalized = $this->fqnFor($symbol);
 
         try {
-            $resolved = $this->loadResolvedConfiguration($input);
-            $this->runtimeConfigurator->configure($resolved, $input, $output);
-            $resolution = $resolved->runtime->includeGenerated
+            $this->runtimeConfigurator->resetRunState();
+            $document = $this->configurationInputAdapter->resolve($input);
+            $configuration = $this->runConfigurationResolver->resolve($document);
+            $findingConfiguration = $this->ruleInputValidator->resolve($document, $input);
+            $this->runtimeConfigurator->configure(
+                $document,
+                $findingConfiguration,
+                $this->cacheConfigurationResolver->resolve($document, $configuration->projectRoot),
+                $this->parallelConfigurationResolver->resolve($document),
+                $input,
+                $output,
+            );
+            $paths = array_map(static fn($path): string => $path->value(), $configuration->paths);
+            $resolution = $configuration->generatedFilePolicy === GeneratedFilePolicy::Include
                 ? $this->layerAssignmentResolver->resolveIncludingGenerated(
-                    $resolved->paths,
-                    $resolved->pathExcludes,
-                    $resolved->runtime->projectRoot,
+                    $paths,
+                    $configuration->pathExcludes,
+                    $configuration->projectRoot,
                     $symbol,
                 )
                 : $this->layerAssignmentResolver->resolve(
-                    $resolved->paths,
-                    $resolved->pathExcludes,
-                    $resolved->runtime->projectRoot,
+                    $paths,
+                    $configuration->pathExcludes,
+                    $configuration->projectRoot,
                     $symbol,
                 );
         } catch (ConfigLoadException|ArchitectureConfigurationException $e) {
@@ -138,29 +157,6 @@ final class LayerAssignmentCommand extends Command
         $this->renderReport($output, $normalized, $resolution['matches'], $resolution['hasLayers']);
 
         return self::SUCCESS;
-    }
-
-    /**
-     * Loads the resolved configuration via the configuration pipeline.
-     */
-    private function loadResolvedConfiguration(InputInterface $input): \Qualimetrix\Analysis\Configuration\Contract\TransitionalResolvedConfiguration
-    {
-        /** @var string|null $configPath */
-        $configPath = $input->getOption('config');
-        $cwd = getcwd();
-        $workingDirectory = $cwd !== false ? $cwd : '.';
-
-        if ($configPath !== null && $configPath !== '' && !file_exists($configPath)) {
-            throw ConfigLoadException::fileNotFound($configPath);
-        }
-
-        $context = new ConfigurationContext(
-            $input,
-            $workingDirectory,
-            \is_string($configPath) && $configPath !== '' ? $configPath : null,
-        );
-
-        return $this->configurationPipeline->resolve($context);
     }
 
     /**

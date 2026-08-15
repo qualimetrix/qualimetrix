@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Parallel;
 
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurableInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfiguration;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
@@ -66,7 +66,7 @@ final class WorkerBootstrap
      * @param string $dependencyTraversalParticipantClass Validated class-string at the worker trust boundary
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses Derived collector class names
      * @param AbsolutePath|null $cacheDir Cache directory (null to disable caching)
-     * @param array<string, mixed> $collectorConfig Collector-level configuration (e.g., LCOM exclude methods)
+     * @param LcomCollectionConfiguration $lcomConfiguration Exact Cohesion-owned worker configuration
      * @param list<class-string<RuleDefinitionInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
      */
     public static function getFileProcessor(
@@ -75,21 +75,19 @@ final class WorkerBootstrap
         string $dependencyTraversalParticipantClass,
         array $derivedCollectorClasses = [],
         ?AbsolutePath $cacheDir = null,
-        array $collectorConfig = [],
+        LcomCollectionConfiguration $lcomConfiguration = new LcomCollectionConfiguration(),
         array $ruleClasses = [],
     ): FileProcessorInterface {
         $dependencyTraversalParticipantClass = self::validateDependencyTraversalParticipantClass(
             $dependencyTraversalParticipantClass,
         );
-        $runtimeConfiguration = CollectorRuntimeConfiguration::fromPayload($collectorConfig);
-        $normalizedPayload = $runtimeConfiguration->toPayload();
         $newCacheKey = self::buildCacheKey(
             $projectRoot,
             $collectorClasses,
             $dependencyTraversalParticipantClass,
             $derivedCollectorClasses,
             $cacheDir,
-            $normalizedPayload,
+            $lcomConfiguration,
             $ruleClasses,
         );
 
@@ -103,7 +101,7 @@ final class WorkerBootstrap
             $projectRoot,
             $collectorClasses,
             $dependencyTraversalParticipantClass,
-            $runtimeConfiguration,
+            $lcomConfiguration,
             $derivedCollectorClasses,
             $cacheDir,
             $ruleClasses,
@@ -128,7 +126,6 @@ final class WorkerBootstrap
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses
      * @param class-string<DependencyTraversalParticipantInterface> $dependencyTraversalParticipantClass
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses
-     * @param array<string, mixed> $collectorConfig
      * @param list<class-string<RuleDefinitionInterface>> $ruleClasses
      */
     private static function buildCacheKey(
@@ -137,7 +134,7 @@ final class WorkerBootstrap
         string $dependencyTraversalParticipantClass,
         array $derivedCollectorClasses,
         ?AbsolutePath $cacheDir,
-        array $collectorConfig = [],
+        LcomCollectionConfiguration $lcomConfiguration = new LcomCollectionConfiguration(),
         array $ruleClasses = [],
     ): string {
         // Include collector and rule classes in cache key to detect changes.
@@ -153,7 +150,7 @@ final class WorkerBootstrap
 
         $collectorsHash = md5(implode('|', $sortedCollectors) . '||' . implode('|', $sortedDerived));
         $rulesHash = md5(implode('|', $sortedRules));
-        $configHash = md5(serialize($collectorConfig));
+        $configHash = md5(serialize($lcomConfiguration));
 
         return $projectRoot->value()
             . '|' . ($cacheDir?->value() ?? 'no-cache')
@@ -175,7 +172,7 @@ final class WorkerBootstrap
         AbsolutePath $projectRoot,
         array $collectorClasses,
         string $dependencyTraversalParticipantClass,
-        CollectorRuntimeConfiguration $runtimeConfiguration,
+        LcomCollectionConfiguration $lcomConfiguration,
         array $derivedCollectorClasses,
         ?AbsolutePath $cacheDir,
         array $ruleClasses = [],
@@ -192,8 +189,8 @@ final class WorkerBootstrap
         }
 
         // Create collectors from class names
-        $collectors = self::instantiateCollectors($collectorClasses, $runtimeConfiguration);
-        $derivedCollectors = self::instantiateDerivedCollectors($derivedCollectorClasses, $runtimeConfiguration);
+        $collectors = self::instantiateCollectors($collectorClasses, $lcomConfiguration);
+        $derivedCollectors = self::instantiateDerivedCollectors($derivedCollectorClasses, $lcomConfiguration);
 
         /** @var DependencyTraversalParticipantInterface $dependencyTraversalParticipant */
         $dependencyTraversalParticipant = new $dependencyTraversalParticipantClass();
@@ -262,7 +259,7 @@ final class WorkerBootstrap
      */
     private static function instantiateCollectors(
         array $classNames,
-        CollectorRuntimeConfiguration $runtimeConfiguration,
+        LcomCollectionConfiguration $lcomConfiguration,
     ): array {
         $collectors = [];
 
@@ -273,7 +270,7 @@ final class WorkerBootstrap
 
             /** @var MetricCollectorInterface $collector */
             $collector = new $className();
-            self::applyRuntimeConfiguration($collector, $runtimeConfiguration);
+            self::applyRuntimeConfiguration($collector, $lcomConfiguration);
             $collectors[] = $collector;
         }
 
@@ -293,7 +290,7 @@ final class WorkerBootstrap
      */
     private static function instantiateDerivedCollectors(
         array $classNames,
-        CollectorRuntimeConfiguration $runtimeConfiguration,
+        LcomCollectionConfiguration $lcomConfiguration,
     ): array {
         $collectors = [];
 
@@ -304,7 +301,7 @@ final class WorkerBootstrap
 
             /** @var DerivedCollectorInterface $collector */
             $collector = new $className();
-            self::applyRuntimeConfiguration($collector, $runtimeConfiguration);
+            self::applyRuntimeConfiguration($collector, $lcomConfiguration);
             $collectors[] = $collector;
         }
 
@@ -344,10 +341,10 @@ final class WorkerBootstrap
 
     private static function applyRuntimeConfiguration(
         object $collector,
-        CollectorRuntimeConfiguration $configuration,
+        LcomCollectionConfiguration $configuration,
     ): void {
-        if ($collector instanceof CollectorRuntimeConfigurableInterface) {
-            $collector->applyRuntimeConfiguration($configuration);
+        if ($collector instanceof LcomCollectionConfigurableInterface) {
+            $collector->applyLcomCollectionConfiguration($configuration);
         }
     }
 

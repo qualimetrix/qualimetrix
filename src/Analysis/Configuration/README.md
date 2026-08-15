@@ -3,49 +3,43 @@
 ## Subject and current boundary
 
 `Analysis\\Configuration` owns loading, normalizing, merging, validating, and
-resolving the configuration document used for one analysis invocation. Its
-current runtime object is deliberately named
-`TransitionalRuntimeConfiguration`: P3 has moved the physical configuration
-boundary, but it has not claimed that the mixed runtime DTO is a neutral final
-kernel.
+resolving the ordered `ConfigurationDocument` used for one analysis invocation.
+It owns source resolution and schema semantics, not a cross-owner runtime DTO.
+Each feature resolves its own immutable projection from that concrete document;
+owner-local runtime state exists only where a long-lived service needs it.
 
-The module currently carries transitional fields for shared aggregation and
-namespace detection. Their owners are made explicit by later packages: P4
-removed Architecture configuration, P5 removed computed/health configuration,
-P6 moved rule-option state behind Finding-owned contracts and moved output
-format plus finding projection controls to Reporting-owned values, and P7
-removed Coupling's framework-namespace field. Do not add a feature field to
-this DTO as a permanent integration pattern.
+The document is a narrow public source seam: its contributions and working
+directory are consumed by named owners, while Symfony input remains inside the
+Console adapter. It does not expose a generic configuration interface, a
+universal invocation context, or a carrier for feature fields.
 
 ## Structure
 
 ```text
 Configuration/
 ├── Contract/
-│   ├── Discovery/      # Composer autoload-path reader
-│   ├── Exception/      # configuration load error
-│   ├── Pipeline/       # context and pipeline contracts
-│   ├── OutputFormat.php
-│   ├── ResolvedFindingExclusions.php
-│   └── Transitional*   # current runtime/resolved configuration promises
+│   ├── ConfigurationDocument.php # immutable ordered source contributions
+│   ├── Discovery/                # Composer autoload-path reader
+│   ├── Exception/                # configuration load error
+│   └── Pipeline/                 # resolution request and pipeline contracts
 ├── Discovery/          # Composer metadata reader
 ├── Loader/             # YAML load and section normalization
 ├── Pipeline/Stage/     # defaults, preset, file, Composer, CLI stages
 ├── Preset/             # built-in and custom preset resolution
-└── Runtime/            # instance-owned runtime configuration holder
+└── ConfigurationMerger.php # document-layer merge mechanics
 ```
 
 ## Resolution model
 
 `ConfigurationPipelineInterface` runs ordered stages over a
-`ConfigurationContext`, then produces `TransitionalResolvedConfiguration`.
+`ConfigurationResolutionRequest`, then produces `ConfigurationDocument`.
 `ConfigSchema` remains the single source of YAML key names and types. The
 precedence order is defaults, presets, configuration files, Composer discovery,
 and CLI options; later layers override earlier scalar values while the schema
 defines merge semantics for collection values.
 
-The immutable contract `ConfigurationDocument` preserves ordered source
-contributions. Feature leaves consume their own contribution key: for example,
+`ConfigurationDocument` preserves ordered source contributions. Feature leaves
+consume their own contribution key: for example,
 Architecture policy parses and merges only `architecture` after the Console
 logger exists, then returns typed warnings through its own contract. The
 central pipeline neither contains an Architecture object nor transports a
@@ -54,22 +48,19 @@ feature-specific deferred warning. ComputedMetrics folds `computed_metrics` and
 instance-owned catalog only after full validation. Coupling likewise folds the
 canonical `coupling.framework_namespaces` contribution into its own run-scoped
 state. The document root remains normalized and schema-governed even though the
-transitional DTO no longer copies that value.
+mixed carrier copies that value.
 
 ## Public contracts and adapters
 
 External consumers use only declared `Contract/` promises. Loader types,
 including `Loader/ConfigLoaderInterface`, are internal and are composed behind
-the Configuration boundary. Infrastructure composition registers the configuration pipeline and
-its stages; Console resolves configuration and sets the
-`TransitionalRuntimeConfigurationProviderInterface` for one run. No consumer
-may construct a feature configuration factory through this mixed boundary.
-
-The resolved boundary now publishes `RuleSelection`, `OutputFormat`, and
-`FindingProjectionOptions`. Console configures Finding once, passes projection
-options to Reporting, and passes the output-format value to the presenter. The
-transitional runtime DTO no longer carries `disabledRules`, `onlyRules`,
-`excludePaths`, `excludeNamespaces`, or `format`.
+the Configuration boundary. Infrastructure composition registers the pipeline
+and its stages; Console adapts Symfony input into the resolution request.
+Consumers resolve only their named value: Run produces `RunConfiguration`,
+Finding produces `FindingConfiguration`, Cache and Parallel produce their local
+configurations, and Reporting resolves output and finding-projection values.
+No consumer may construct a feature configuration factory through Configuration
+or add a feature field to a shared carrier.
 
 ## CLI option aliases
 
@@ -168,7 +159,12 @@ Use `--rule-opt=RULE:OPTION=VALUE` for every option without a short alias.
 
 - The same input layers resolve deterministically and invalid document data
   fails with `ConfigLoadException`.
-- Two analysis invocations in one process do not leak runtime or rule-option
-  state.
+- Two analysis invocations in one process do not leak owner-local runtime or
+  rule-option state.
 - Every new YAML key is added to `ConfigSchema` and consumed by its natural
-  owner, rather than extending the transitional DTO by default.
+  owner, rather than extending a generic configuration carrier.
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

@@ -16,7 +16,7 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
-use Qualimetrix\Tests\Support\Logger\RecordingLogger;
+use Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger;
 
 /**
  * Regression test: composite (multi-word) rule option names — `vo-warning` /

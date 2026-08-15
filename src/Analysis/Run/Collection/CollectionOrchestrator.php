@@ -19,11 +19,11 @@ use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface;
+use Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Progress\ProgressReporter;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 use Throwable;
@@ -40,7 +40,8 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         private readonly FileProcessorInterface $fileProcessor,
         private readonly StrategySelectorInterface $strategySelector,
         private readonly DerivedMetricExtractorInterface $derivedMetricExtractor,
-        private readonly ProgressReporter $progress,
+        private readonly ProgressReporterInterface $progress,
+        private readonly ProfilerInterface $profiler,
         private readonly LoggerInterface $logger,
     ) {}
 
@@ -58,7 +59,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         // which calls the same setter on the worker side.
         $this->fileProcessor->setProjectRoot($projectRoot);
 
-        $profiler = ProfilerHolder::get();
+        $profiler = $this->profiler;
 
         // Single-phase collection: metrics + dependencies in one AST traversal
         $this->progress->start(\count($files));
@@ -68,7 +69,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         ]);
 
         $profiler->start('collection.execute_strategy', 'collection');
-        $results = $this->strategySelector->select()->execute(
+        $results = $this->strategySelector->select($projectRoot)->execute(
             $files,
             fn(SplFileInfo $file): FileProcessingResult => $this->processSafely($file, $projectRoot),
             true, // Allow parallelization
@@ -89,7 +90,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
         iterable $results,
         MetricRepositoryInterface $repository,
     ): CollectionPhaseOutput {
-        $profiler = ProfilerHolder::get();
+        $profiler = $this->profiler;
         $profiler->start('collection.register_results', 'collection');
         /** @var list<RelativePath> $analyzedFiles */
         $analyzedFiles = [];

@@ -11,9 +11,9 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
-use Qualimetrix\Analysis\Evidence\Measurement\Runtime\CollectorRuntimeConfigurationStore;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;
@@ -512,7 +512,7 @@ final class AmphpParallelStrategyTest extends TestCase
     ): AmphpParallelStrategy {
         return new AmphpParallelStrategy(
             new FileProcessingTaskFactory(
-                new CollectorRuntimeConfigurationStore(),
+                new LcomCollectionConfigurationStore(),
                 DependencyVisitor::class,
                 $collectorClasses,
                 $derivedCollectorClasses,

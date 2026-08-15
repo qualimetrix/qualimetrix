@@ -70,3 +70,8 @@ When changing an inline annotation or its wire value:
 - Source controls survive PHP and igbinary worker round trips unchanged.
 - Two sequential runs cannot retain a previous suppression or threshold set.
 - Inline has no dependency on Baseline or Reporting.
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

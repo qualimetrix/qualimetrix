@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Profiler;
 
 use InvalidArgumentException;
-use Qualimetrix\Core\Profiler\ProfilerInterface;
-use Qualimetrix\Core\Profiler\Span;
 use Qualimetrix\Infrastructure\Profiler\Export\ChromeTracingExporter;
 use Qualimetrix\Infrastructure\Profiler\Export\JsonExporter;
 use Qualimetrix\Infrastructure\Profiler\Export\ProfileExporterInterface;
@@ -17,7 +15,7 @@ use Qualimetrix\Infrastructure\Profiler\Export\ProfileExporterInterface;
  * Uses a stack to track nested spans and builds a tree structure
  * representing the call hierarchy.
  */
-final class Profiler implements ProfilerInterface
+final class Profiler
 {
     /**
      * @var list<Span> Stack of active spans
@@ -52,8 +50,7 @@ final class Profiler implements ProfilerInterface
         // If there's an active span, make this span its child
         if ($this->stack !== []) {
             $parent = $this->stack[array_key_last($this->stack)];
-            $span->parent = $parent;
-            $parent->children[] = $span;
+            $span->attachTo($parent);
         } else {
             // This is a root span
             $this->rootSpans[] = $span;
@@ -85,40 +82,18 @@ final class Profiler implements ProfilerInterface
         for ($i = \count($this->stack) - 1; $i > $index; $i--) {
             $aboveSpan = $this->stack[$i];
             if ($aboveSpan->endTime === null) {
-                $aboveSpan->endTime = $now;
-                $aboveSpan->endMemory = $memory;
-                $aboveSpan->updatePeak($memory);
+                $aboveSpan->finish($now, $memory);
                 $this->propagatePeakToParent($aboveSpan);
             }
         }
 
         // Stop the target span
         $span = $this->stack[$index];
-        $span->endTime = $now;
-        $span->endMemory = $memory;
-        $span->updatePeak($memory);
+        $span->finish($now, $memory);
         $this->propagatePeakToParent($span);
 
         // Remove the target span and all spans above it from the stack
         array_splice($this->stack, $index);
-    }
-
-    public function snapshot(): void
-    {
-        if ($this->stack === []) {
-            return;
-        }
-
-        $memory = memory_get_usage(true);
-
-        foreach ($this->stack as $span) {
-            $span->updatePeak($memory);
-        }
-    }
-
-    public function isEnabled(): bool
-    {
-        return true;
     }
 
     public function getRootSpan(): ?Span
@@ -134,6 +109,7 @@ final class Profiler implements ProfilerInterface
         return $this->rootSpans;
     }
 
+    /** @return array<string, array{total: float, count: int, avg: float, memory: int, peak_memory: int}> */
     public function getSummary(): array
     {
         if ($this->rootSpans === []) {

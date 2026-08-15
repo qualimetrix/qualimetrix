@@ -6,11 +6,10 @@ namespace Qualimetrix\Analysis\Configuration\Pipeline\Stage;
 
 use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
 
-use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationContext;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
 use Qualimetrix\Analysis\Configuration\Loader\ConfigLoaderInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigDataNormalizer;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationLayer;
-use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationMerger;
 use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationStageInterface;
 use Qualimetrix\Analysis\Configuration\Pipeline\RuleNameValidator;
 use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
@@ -43,27 +42,22 @@ final class PresetStage implements ConfigurationStageInterface
         return 'preset';
     }
 
-    public function apply(ConfigurationContext $context): ?ConfigurationLayer
+    public function apply(ConfigurationResolutionRequest $request): ?ConfigurationLayer
     {
-        $presetNames = $this->extractPresetNames($context);
+        $presetNames = $this->extractPresetNames($request);
 
         if ($presetNames === []) {
             return null;
         }
 
-        $documents = $this->loadPresets($presetNames, $context->workingDirectory);
-        $merged = [];
-        foreach ($documents as $document) {
-            $merged = ConfigurationMerger::merge($merged, $document);
-        }
-
-        if ($merged === []) {
+        $documents = $this->loadPresets($presetNames, $request->workingDirectory->value());
+        if ($documents === []) {
             return null;
         }
 
         return new ConfigurationLayer(
             'preset:' . implode(',', $presetNames),
-            $merged,
+            [],
             $documents,
         );
     }
@@ -76,26 +70,15 @@ final class PresetStage implements ConfigurationStageInterface
      *
      * @return list<string>
      */
-    private function extractPresetNames(ConfigurationContext $context): array
+    private function extractPresetNames(ConfigurationResolutionRequest $request): array
     {
-        $input = $context->input;
-
-        if (!$input->hasOption('preset')) {
-            return [];
-        }
-
-        $rawValues = $input->getOption('preset');
-
-        if (!\is_array($rawValues) || $rawValues === []) {
+        if ($request->presetNames === []) {
             return [];
         }
 
         // Split comma-separated values and flatten
         $names = [];
-        foreach ($rawValues as $value) {
-            if (!\is_string($value) || $value === '') {
-                continue;
-            }
+        foreach ($request->presetNames as $value) {
             foreach (explode(',', $value) as $part) {
                 $trimmed = trim($part);
                 if ($trimmed !== '') {

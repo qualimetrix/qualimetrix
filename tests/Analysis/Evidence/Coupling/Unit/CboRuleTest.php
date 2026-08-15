@@ -31,7 +31,7 @@ use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Tests\Support\Logger\RecordingLogger;
+use Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger;
 
 #[CoversClass(CboRule::class)]
 #[CoversClass(CboOptions::class)]

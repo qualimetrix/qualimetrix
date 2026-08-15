@@ -375,15 +375,10 @@ parallel:
 
 ### Определение неймспейсов (namespace)
 
-Стратегия определения соответствия неймспейсов и директорий:
-
-```yaml
-namespace:
-  strategy: chain          # По умолчанию: chain (сначала psr4, затем tokenizer)
-  # strategy: psr4         # Только PSR-4 (требует composer.json)
-  # strategy: tokenizer    # Парсинг неймспейса из PHP-токенов
-  composer_json: composer.json   # Путь к composer.json для PSR-4
-```
+Qualimetrix определяет неймспейсы проекта по `composer.json` в рабочей
+директории запуска и при необходимости разбирает исходный код. Настройка
+определения неймспейсов не поддерживается: `namespace.strategy` и
+`namespace.composer_json` отклоняются как неизвестные ключи.
 
 ### Связанность (coupling)
 
@@ -402,15 +397,9 @@ coupling:
 
 ### Агрегация (aggregation)
 
-Управление группировкой неймспейсов для агрегированных метрик:
-
-```yaml
-aggregation:
-  prefixes:
-    - App\Domain
-    - App\Infrastructure
-  auto_depth: 2    # Автоопределение глубины группировки
-```
+Агрегация неймспейсов следует анализируемым объявлениям. Пользовательские
+настройки `aggregation.prefixes` и `aggregation.auto_depth` больше не
+поддерживаются и отклоняются как неизвестные ключи.
 
 ### Архитектура (architecture)
 

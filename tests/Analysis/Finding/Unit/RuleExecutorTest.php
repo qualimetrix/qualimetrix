@@ -15,7 +15,6 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
-use Qualimetrix\Analysis\Finding\Contract\RuleExclusionCaptureHolder;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
@@ -26,6 +25,7 @@ use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -33,6 +33,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 #[CoversClass(RuleExecution::class)]
 final class RuleExecutorTest extends TestCase
 {
+    private bool $captureExcludedViolations = true;
+
     /**
      * Every existing test in this class predates the capture toggle and
      * asserts on `$stats->excludedViolations` directly, so it is enabled by
@@ -40,19 +42,14 @@ final class RuleExecutorTest extends TestCase
      */
     protected function setUp(): void
     {
-        RuleExclusionCaptureHolder::set(true);
-    }
-
-    protected function tearDown(): void
-    {
-        RuleExclusionCaptureHolder::reset();
+        $this->captureExcludedViolations = true;
     }
 
     #[Test]
     public function itExecutesWithNoRules(): void
     {
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([], $provider);
+        $executor = $this->createExecution([], $provider);
 
         $context = $this->createMinimalContext();
 
@@ -64,7 +61,7 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itPublishesRuleMetadataWithExactAliasMappingWithoutConcreteRuleInstances(): void
     {
-        $execution = new RuleExecution([new RuleMetadataFixtureRule()]);
+        $execution = $this->createExecution([new RuleMetadataFixtureRule()]);
 
         self::assertEquals([
             new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(
@@ -82,7 +79,7 @@ final class RuleExecutorTest extends TestCase
     public function itExclusionStatsAreEmptyBeforeFirstExecute(): void
     {
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([], $provider);
+        $executor = $this->createExecution([], $provider);
 
         $stats = $executor->exclusionStats();
 
@@ -99,7 +96,7 @@ final class RuleExecutorTest extends TestCase
         $rule = $this->createRule('rule1', [$violation]);
 
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule], $provider);
+        $executor = $this->createExecution([$rule], $provider);
 
         $violations = $executor->execute($this->createMinimalContext());
         $stats = $executor->exclusionStats();
@@ -122,7 +119,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule], $registry);
+        $executor = $this->createExecution([$rule], $registry);
 
         $violations = $executor->execute($this->createMinimalContext());
         $stats = $executor->exclusionStats();
@@ -149,7 +146,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule], $registry);
+        $executor = $this->createExecution([$rule], $registry);
 
         $violations = $executor->execute($this->createMinimalContext());
         $stats = $executor->exclusionStats();
@@ -176,7 +173,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule1, $rule2], $registry);
+        $executor = $this->createExecution([$rule1, $rule2], $registry);
 
         $executor->execute($this->createMinimalContext());
         $stats = $executor->exclusionStats();
@@ -196,7 +193,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule], $registry);
+        $executor = $this->createExecution([$rule], $registry);
 
         // Two consecutive execute() calls on the same executor: if the running
         // executor accumulated counts instead of resetting them, the second
@@ -219,7 +216,7 @@ final class RuleExecutorTest extends TestCase
         $rule2 = $this->createRule('rule2', [$violation2]);
 
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule1, $rule2], $provider);
+        $executor = $this->createExecution([$rule1, $rule2], $provider);
 
         $context = $this->createMinimalContext();
         $violations = $executor->execute($context);
@@ -241,7 +238,7 @@ final class RuleExecutorTest extends TestCase
 
         $config = new RuleSelection(disabled: ['rule1']);
         $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecution([$rule1, $rule2], $provider);
+        $executor = $this->createExecution([$rule1, $rule2], $provider);
 
         $context = $this->createMinimalContext();
         $violations = $executor->execute($context);
@@ -263,7 +260,7 @@ final class RuleExecutorTest extends TestCase
 
         $config = new RuleSelection(only: ['rule1', 'rule3']);
         $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecution([$rule1, $rule2, $rule3], $provider);
+        $executor = $this->createExecution([$rule1, $rule2, $rule3], $provider);
 
         $context = $this->createMinimalContext();
         $violations = $executor->execute($context);
@@ -281,7 +278,7 @@ final class RuleExecutorTest extends TestCase
 
         $config = new RuleSelection(disabled: ['disabled-rule']);
         $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecution([$rule1, $rule2], $provider);
+        $executor = $this->createExecution([$rule1, $rule2], $provider);
 
         $activeRules = $executor->activeRules($provider->selection());
 
@@ -297,7 +294,7 @@ final class RuleExecutorTest extends TestCase
 
         $config = new RuleSelection(disabled: ['rule1']);
         $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecution([$rule1, $rule2], $provider);
+        $executor = $this->createExecution([$rule1, $rule2], $provider);
 
         self::assertSame(2, $executor->totalRuleCount());
         self::assertCount(1, $executor->activeRules($provider->selection()));
@@ -314,7 +311,7 @@ final class RuleExecutorTest extends TestCase
         })();
 
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution($generator, $provider);
+        $executor = $this->createExecution($generator, $provider);
 
         $context = $this->createMinimalContext();
         $violations = $executor->execute($context);
@@ -334,7 +331,7 @@ final class RuleExecutorTest extends TestCase
             only: ['rule1'],
         );
         $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecution([$rule], $provider);
+        $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
         $violations = $executor->execute($context);
@@ -359,7 +356,7 @@ final class RuleExecutorTest extends TestCase
         // Disable entire complexity group
         $config = new RuleSelection(disabled: ['complexity']);
         $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecution([$rule1, $rule2, $rule3], $provider);
+        $executor = $this->createExecution([$rule1, $rule2, $rule3], $provider);
 
         $context = $this->createMinimalContext();
         $violations = $executor->execute($context);
@@ -386,7 +383,7 @@ final class RuleExecutorTest extends TestCase
         // Disable only class-level violations
         $config = new RuleSelection(disabled: ['complexity.cyclomatic.class']);
         $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecution([$rule], $provider);
+        $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
         $violations = $executor->execute($context);
@@ -404,7 +401,7 @@ final class RuleExecutorTest extends TestCase
 
         $config = new RuleSelection(only: ['complexity']);
         $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecution([$rule1, $rule2, $rule3], $provider);
+        $executor = $this->createExecution([$rule1, $rule2, $rule3], $provider);
 
         $activeRules = $executor->activeRules($provider->selection());
 
@@ -416,7 +413,7 @@ final class RuleExecutorTest extends TestCase
     {
         $finding = $this->createViolation('computed.health', violationCode: 'health.complexity');
         $rule = $this->createRule('computed.health', [$finding]);
-        $executor = new RuleExecution(
+        $executor = $this->createExecution(
             [$rule],
             $this->createConfiguredProvider(new RuleSelection(only: ['computed.health'])),
             ruleSelector: $this->computedRuleSelector(),
@@ -432,7 +429,7 @@ final class RuleExecutorTest extends TestCase
         $cohesion = $this->createViolation('computed.health', violationCode: 'health.cohesion');
         $rule = $this->createRule('computed.health', [$complexity, $cohesion]);
         $provider = $this->createConfiguredProvider(new RuleSelection(only: ['health.complexity']));
-        $executor = new RuleExecution(
+        $executor = $this->createExecution(
             [$rule],
             $provider,
             ruleSelector: $this->computedRuleSelector(),
@@ -463,7 +460,7 @@ final class RuleExecutorTest extends TestCase
         );
 
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule], $provider);
+        $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
         $violations = $executor->execute($context);
@@ -491,7 +488,7 @@ final class RuleExecutorTest extends TestCase
         // Disable class-level violations via violationCode filtering
         $config = new RuleSelection(disabled: ['complexity.class']);
         $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecution([$rule], $provider);
+        $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
         $violations = $executor->execute($context);
@@ -516,7 +513,7 @@ final class RuleExecutorTest extends TestCase
         // Disable entire rule
         $config = new RuleSelection(disabled: ['complexity']);
         $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecution([$rule], $provider);
+        $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
         $violations = $executor->execute($context);
@@ -542,7 +539,7 @@ final class RuleExecutorTest extends TestCase
         // Only enable callable-level violations
         $config = new RuleSelection(only: ['complexity.callable']);
         $provider = $this->createConfiguredProvider($config);
-        $executor = new RuleExecution([$rule], $provider);
+        $executor = $this->createExecution([$rule], $provider);
 
         $context = $this->createMinimalContext();
         $violations = $executor->execute($context);
@@ -566,7 +563,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule], $registry);
+        $executor = $this->createExecution([$rule], $registry);
 
         $violations = $executor->execute($this->createMinimalContext());
 
@@ -585,7 +582,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule], $registry);
+        $executor = $this->createExecution([$rule], $registry);
 
         $violations = $executor->execute($this->createMinimalContext());
 
@@ -603,7 +600,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule], $registry);
+        $executor = $this->createExecution([$rule], $registry);
 
         $violations = $executor->execute($this->createMinimalContext());
 
@@ -624,7 +621,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule1, $rule2], $registry);
+        $executor = $this->createExecution([$rule1, $rule2], $registry);
 
         $violations = $executor->execute($this->createMinimalContext());
 
@@ -655,7 +652,7 @@ final class RuleExecutorTest extends TestCase
         );
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
-        $executor = new RuleExecution(
+        $executor = $this->createExecution(
             [$rule],
             $registry,
             $this->computedRuleSelector(),
@@ -701,7 +698,7 @@ final class RuleExecutorTest extends TestCase
         );
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
-        $executor = new RuleExecution(
+        $executor = $this->createExecution(
             [$rule],
             $registry,
             $this->computedRuleSelector(),
@@ -733,7 +730,7 @@ final class RuleExecutorTest extends TestCase
         $exclusionProvider->setChannelExclusions('computed.health', 'health', ['*']);
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
-        $executor = new RuleExecution(
+        $executor = $this->createExecution(
             [$rule],
             $registry,
             $this->computedRuleSelector(),
@@ -746,12 +743,12 @@ final class RuleExecutorTest extends TestCase
         );
     }
 
-    // --- RuleExclusionCaptureHolder toggle tests ---
+    // --- Finding-owned excluded-violation capture policy tests ---
 
     #[Test]
     public function itDoesNotCaptureExcludedViolationsWhenCaptureHolderIsDisabled(): void
     {
-        RuleExclusionCaptureHolder::set(false);
+        $this->captureExcludedViolations = false;
 
         $excludedViolation = $this->createViolationWithNamespace('rule1', 'App\\Tests');
         $rule = $this->createRule('rule1', [$excludedViolation]);
@@ -761,7 +758,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule], $registry);
+        $executor = $this->createExecution([$rule], $registry);
 
         $executor->execute($this->createMinimalContext());
         $stats = $executor->exclusionStats();
@@ -776,7 +773,7 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itDoesNotCaptureExcludedPathViolationsWhenCaptureHolderIsDisabled(): void
     {
-        RuleExclusionCaptureHolder::set(false);
+        $this->captureExcludedViolations = false;
 
         $excludedViolation = $this->createViolationWithFile('rule1', 'src/Generated/Model.php');
         $rule = $this->createRule('rule1', [$excludedViolation]);
@@ -786,7 +783,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule], $registry);
+        $executor = $this->createExecution([$rule], $registry);
 
         $executor->execute($this->createMinimalContext());
         $stats = $executor->exclusionStats();
@@ -799,7 +796,7 @@ final class RuleExecutorTest extends TestCase
     #[Test]
     public function itCapturesExcludedViolationsWhenCaptureHolderIsEnabled(): void
     {
-        RuleExclusionCaptureHolder::set(true);
+        $this->captureExcludedViolations = true;
 
         $excludedViolation = $this->createViolationWithNamespace('rule1', 'App\\Tests');
         $rule = $this->createRule('rule1', [$excludedViolation]);
@@ -809,7 +806,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule], $registry);
+        $executor = $this->createExecution([$rule], $registry);
 
         $executor->execute($this->createMinimalContext());
         $stats = $executor->exclusionStats();
@@ -824,6 +821,27 @@ final class RuleExecutorTest extends TestCase
         $provider->configureSelection($selection);
 
         return $provider;
+    }
+
+    /**
+     * @param iterable<RuleInterface> $rules
+     */
+    private function createExecution(
+        iterable $rules,
+        ?RuleOptionsRegistry $registry = null,
+        ?RuleSelector $ruleSelector = null,
+    ): RuleExecution {
+        $registry ??= new RuleOptionsRegistry();
+        if ($this->captureExcludedViolations) {
+            $registry->captureExcludedViolations();
+        }
+
+        return new RuleExecution(
+            $rules,
+            self::createStub(ProfilerInterface::class),
+            $registry,
+            $ruleSelector,
+        );
     }
 
     /**
@@ -871,7 +889,7 @@ final class RuleExecutorTest extends TestCase
         $repository = self::createStub(\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface::class);
         $repository->method('all')->willReturn([]);
 
-        return new AnalysisContext($repository, []);
+        return new AnalysisContext($repository);
     }
 
     /**
@@ -942,7 +960,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule], $registry);
+        $executor = $this->createExecution([$rule], $registry);
 
         $violations = $executor->execute($this->createMinimalContext());
 
@@ -964,7 +982,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule1, $rule2], $registry);
+        $executor = $this->createExecution([$rule1, $rule2], $registry);
 
         $violations = $executor->execute($this->createMinimalContext());
 
@@ -984,7 +1002,7 @@ final class RuleExecutorTest extends TestCase
 
         $registry = new RuleOptionsRegistry(pathExclusionProvider: $pathExclusionProvider);
         $provider = $this->createConfiguredProvider();
-        $executor = new RuleExecution([$rule], $registry);
+        $executor = $this->createExecution([$rule], $registry);
 
         $violations = $executor->execute($this->createMinimalContext());
 

@@ -6,12 +6,12 @@ namespace Qualimetrix\Analysis\Evidence\Cohesion;
 
 use Override;
 use PhpParser\Node;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfigurableInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectorRuntimeConfiguration;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
@@ -35,19 +35,19 @@ use SplFileInfo;
  *
  * Anonymous classes are ignored.
  */
-final class LcomCollector extends AbstractCollector implements ClassMetricsProviderInterface, CollectorRuntimeConfigurableInterface
+final class LcomCollector extends AbstractCollector implements ClassMetricsProviderInterface, LcomCollectionConfigurableInterface
 {
     private const NAME = 'lcom';
 
-    private CollectorRuntimeConfiguration $runtimeConfiguration;
+    private LcomCollectionConfiguration $runtimeConfiguration;
 
     public function __construct()
     {
         $this->visitor = new LcomVisitor();
-        $this->runtimeConfiguration = CollectorRuntimeConfiguration::empty();
+        $this->runtimeConfiguration = LcomCollectionConfiguration::defaults();
     }
 
-    public function applyRuntimeConfiguration(CollectorRuntimeConfiguration $configuration): void
+    public function applyLcomCollectionConfiguration(LcomCollectionConfiguration $configuration): void
     {
         $this->runtimeConfiguration = $configuration;
     }
@@ -116,7 +116,7 @@ final class LcomCollector extends AbstractCollector implements ClassMetricsProvi
      */
     private function adjustedLcom(LcomClassData $classData): int
     {
-        $lcom = $classData->calculateLcom($this->runtimeConfiguration->lcomExcludedMethods);
+        $lcom = $classData->calculateLcom($this->runtimeConfiguration->excludedMethods);
 
         return ($lcom > 1 && $classData->hasOnlyTrivialMethods()) ? 1 : $lcom;
     }

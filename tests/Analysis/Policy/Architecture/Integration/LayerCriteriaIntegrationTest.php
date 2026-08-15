@@ -86,7 +86,8 @@ final class LayerCriteriaIntegrationTest extends TestCase
             new ArchitectureConfiguration($registry, $policy, CoverageMode::Warn),
         );
 
-        $result = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
         $layerOf = $this->buildPerSourceLayerMap($result->violations);
 
@@ -146,7 +147,8 @@ final class LayerCriteriaIntegrationTest extends TestCase
             new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore),
         );
 
-        $result = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
         $layerSources = $this->collectSourceFqns(
             $this->filterByRule($result->violations, LayerViolationRule::NAME),
@@ -205,7 +207,8 @@ final class LayerCriteriaIntegrationTest extends TestCase
             new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore),
         );
 
-        $result = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
 
         $layerSources = $this->collectSourceFqns(
             $this->filterByRule($result->violations, LayerViolationRule::NAME),
@@ -272,7 +275,8 @@ final class LayerCriteriaIntegrationTest extends TestCase
             new ArchitectureConfiguration($registry, $policy, CoverageMode::Ignore),
         );
 
-        $result = $pipeline->analyze(AbsolutePath::fromString(self::FIXTURE_PATH));
+        $root = AbsolutePath::fromString(self::FIXTURE_PATH);
+        $result = $pipeline->analyze(new \Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration([$root], [], $root, \Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy::Include));
         $violations = $this->filterByRule($result->violations, LayerViolationRule::NAME);
 
         $expectedTrailers = [

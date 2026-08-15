@@ -23,7 +23,7 @@ use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptions;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsNoConstructor;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsWithRequiredParams;
 use Qualimetrix\Tests\Analysis\Configuration\Fixtures\TestRuleOptionsWithUnionType;
-use Qualimetrix\Tests\Support\Logger\RecordingLogger;
+use Qualimetrix\Tests\TestSupport\Logging\Support\RecordingLogger;
 use RuntimeException;
 use stdClass;
 
