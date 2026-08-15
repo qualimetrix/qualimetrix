@@ -6,11 +6,10 @@ namespace Qualimetrix\Core\Symbol;
 
 use InvalidArgumentException;
 
-use Qualimetrix\Analysis\Evidence\Measurement\DataBag;
 use Qualimetrix\Core\Path\RelativePath;
 
 /**
- * Scalar wire codec for a MetricSubject stored in a DataBag entry.
+ * Scalar wire codec for a MetricSubject stored in a data-bag entry.
  *
  * The file is deliberately supplied by the rule that reads the entry: a
  * collector must never serialize paths or identity objects through IPC.

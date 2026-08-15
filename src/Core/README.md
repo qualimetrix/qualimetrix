@@ -13,51 +13,38 @@ dependencies except PHP and php-parser (only for Node types).
 
 ```
 Core/
-├── Metric/
-│   ├── BaseCollectorInterface.php         # Common contract for all collector types
-│   ├── DataBag.php                        # Immutable container for structured non-numeric data
-│   ├── MetricBag.php                      # Immutable container for scalar metrics + DataBag
-│   ├── MetricName.php                     # Canonical metric name constants
-│   ├── MetricCollectorInterface.php
-│   ├── MetricDefinition.php              # VO for aggregation descriptions
-│   ├── MetricRepositoryInterface.php
-│   ├── CallableMetricsProviderInterface.php
-│   ├── CallableWithMetrics.php
-│   ├── ClassMetricsProviderInterface.php  # Provider for class-level metrics
-│   ├── ClassWithMetrics.php               # VO for class with metrics
-│   ├── NamespaceMetricProviderInterface.php # Provider for namespace-owned contributions
-│   ├── NamespaceWithMetrics.php            # VO for namespace source metrics
-│   ├── DerivedCollectorInterface.php      # Derived (composite) collectors
-│   ├── GlobalContextCollectorInterface.php # Cross-file collectors
-│   ├── AggregationMeta.php                # Constants for aggregation-injected counters
-│   ├── AggregationStrategy.php            # Strategy enum
-│   ├── SymbolLevel.php                    # Hierarchy level enum
-│   └── ParallelSafeCollectorInterface.php # Marker for parallel-safe collectors
+├── Ast/
+│   └── FileParserInterface.php            # AST parsing contract
+├── Exception/
+│   └── ParseException.php                 # Parse error value
+├── Observation/
+│   └── WorseDirection.php                 # Enum: higher-is-worse / lower-is-worse + the comparison operators
+├── Path/
+│   ├── AbsolutePath.php                   # Absolute file path value object
+│   ├── PathFactory.php                    # Boundary factory creating absolute/relative paths
+│   └── RelativePath.php                   # Relative file path value object
+├── Profiler/
+│   └── Contract/
+│       └── ProfilerInterface.php          # Neutral instrumentation vocabulary
 ├── Symbol/
 │   ├── CallableKind.php                   # PHP callable declaration kind enum
+│   ├── ClassType.php
 │   ├── DeclarationPath.php                # Durable source declaration identity
 │   ├── LogicalClassPath.php               # Validated class-level logical identity
 │   ├── MetricSubject.php                  # Declaration, class, or aggregate metric subject
 │   ├── MetricSubjectCodec.php             # Scalar wire codec for metric subjects
-│   ├── SymbolType.php
-│   ├── SymbolPath.php                     # Stable symbol identifier (moved from Violation/)
+│   ├── PhpBuiltinClassRegistry.php        # Single source of truth for PHP built-in classes
 │   ├── SymbolInfo.php
-│   ├── ClassType.php
-│   └── PhpBuiltinClassRegistry.php        # Single source of truth for PHP built-in classes
-├── Ast/
-│   └── FileParserInterface.php
-├── Namespace_/
-│   ├── NamespaceDetectorInterface.php
-│   └── ProjectNamespaceResolverInterface.php
-├── Profiler/
-│   └── Contract/ProfilerInterface.php     # Neutral instrumentation vocabulary
-├── Observation/
-│   └── WorseDirection.php                 # Enum: higher-is-worse / lower-is-worse + the comparison operators
+│   ├── SymbolPath.php                     # Stable symbol identifier
+│   └── SymbolType.php
+├── Time/
+│   ├── ClockInterface.php                 # "What time is it?" contract
+│   └── SystemClock.php                    # Wall-clock reading of ClockInterface
 ├── Util/
-│   ├── StringSet.php                      # Immutable set of unique strings
-│   └── PathMatcher.php                    # Glob pattern matching for file paths
-└── Exception/
-    └── ParseException.php
+│   ├── NamespaceMatcher.php               # Glob pattern matching for namespaces
+│   ├── PathMatcher.php                    # Glob pattern matching for file paths
+│   └── StringSet.php                      # Immutable set of unique strings
+└── Version.php                            # Package version at runtime
 ```
 
 ---
@@ -576,7 +563,7 @@ Suppresses violations whose file path matches configured exclusion patterns (the
 
 ### NamespaceExclusionFilter
 
-Suppresses violations whose symbol namespace matches configured exclusion patterns (the global `exclude_namespaces` / `--exclude-namespace` mechanism). `architecture.*` rule violations (e.g., `architecture.layer-violation`, `architecture.circular-dependency`) are always exempt — a layer-policy violation is not a metric, so a namespace exclusion aimed at quieting noisy metrics must not double as a silent way to disable architecture enforcement. The exemption is name-based (`RuleCategory::Architecture` prefix on `Violation::$ruleName`), not a hardcoded string.
+Suppresses violations whose symbol namespace matches configured exclusion patterns (the global `exclude_namespaces` / `--exclude-namespace` mechanism). `architecture.*` rule violations (e.g., `architecture.layer-violation`, `architecture.circular-dependency`) are always exempt — a layer-policy violation is not a metric, so a namespace exclusion aimed at quieting noisy metrics must not double as a silent way to disable architecture enforcement. The exemption is name-based (`RuleCategory::Architecture` prefix on `Violation::$ruleName`), not a hardcoded string. Occurrence-style violations (code-smell, security) carry a file symbol path whose namespace is `null`; the filter falls back to the declaring namespace on `Violation::$subject` so those findings are still suppressible per namespace.
 
 **Constructor:** `__construct(NamespaceMatcher $namespaceMatcher)`
 

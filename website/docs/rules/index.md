@@ -180,7 +180,7 @@ This is useful for test code, generated code, or legacy modules that you want to
 Override any threshold via the command line:
 
 ```bash
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:method.warning=15"
+bin/qmx check src/ --rule-opt="complexity.cyclomatic:callable.warning=15"
 bin/qmx check src/ --rule-opt="size.method-count:warning=25"
 ```
 
