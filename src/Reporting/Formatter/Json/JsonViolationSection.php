@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Json;
 
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Reporting\FormatterContext;
 
 final class JsonViolationSection

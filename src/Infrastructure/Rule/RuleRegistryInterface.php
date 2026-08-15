@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Rule;
 
-use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
 use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 
 /**
@@ -19,7 +19,7 @@ interface RuleRegistryInterface
     /**
      * Returns class names of all registered rules.
      *
-     * @return list<class-string<RuleInterface>>
+     * @return list<class-string<RuleDefinitionInterface>>
      */
     public function getClasses(): array;
 

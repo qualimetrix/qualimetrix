@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
 use LogicException;
-use Qualimetrix\Core\Rule\ChannelDeclarationReader;
-use Qualimetrix\Core\Rule\RuleInterface;
-use Qualimetrix\Core\Rule\RuleNameReader;
-use Qualimetrix\Core\Violation\ChannelDeclaration;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Finding\ComputedMetricChannelFamily;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
-use Qualimetrix\Rules\ComputedMetric\ComputedMetricRule;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -34,16 +33,15 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
  * pass does no pairing of its own — it only detects the same key declared
  * twice.
  *
- * `ComputedMetricRule::NAME` is read here, in
- * `Infrastructure\DependencyInjection`, where depending on rule classes to
- * wire the container is already normal (see {@see RuleCompilerPass},
- * {@see RuleOptionsCompilerPass}), and passed to the registry as a plain
- * string constructor argument. This keeps `Infrastructure\Rule` — the
- * registry's own layer — free of a `rules` dependency edge it would
- * otherwise need just to read one constant.
+ * The capability-owned channel family contract supplies the producer name as
+ * a plain string constructor argument. The compiler pass never imports the
+ * internal rule, and `Infrastructure\Rule` remains independent of capability
+ * internals.
  */
 final class ChannelDeclarationCompilerPass implements CompilerPassInterface
 {
+    private const string RULE_INTERFACE = 'Qualimetrix\\Analysis\\Finding\\Rule\\RuleInterface';
+
     public function process(ContainerBuilder $container): void
     {
         if (!$container->hasDefinition(ChannelDeclarationRegistry::class)) {
@@ -65,22 +63,21 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
                 continue;
             }
 
-            // Narrows $class to class-string<RuleInterface> for
-            // ChannelDeclarationReader::read() below (mirrors
-            // RuleOptionsCompilerPass's is_a() narrowing). Unlike that pass,
-            // a failing check here throws rather than skips: every service
+            // Validate the exact rule contract before reading metadata. Unlike
+            // RuleOptionsCompilerPass, a failing check here throws rather than
+            // skips: every service
             // reaching this loop is already tagged qmx.rule, which
             // autoconfiguration only applies to RuleInterface implementers —
             // a mismatch would mean the tag and the class have drifted apart,
             // and the rule's declarations should not silently vanish from
             // the registry because of it.
-            if (!is_a($class, RuleInterface::class, true)) {
+            if (!is_a($class, self::RULE_INTERFACE, true)) {
                 throw new LogicException(\sprintf(
                     'Service "%s" is tagged "%s" but its class %s does not implement %s.',
                     $id,
                     RuleRegistryCompilerPass::TAG,
                     $class,
-                    RuleInterface::class,
+                    self::RULE_INTERFACE,
                 ));
             }
 
@@ -105,12 +102,12 @@ final class ChannelDeclarationCompilerPass implements CompilerPassInterface
         }
 
         $definition->setArgument('$staticDeclarations', $declarations);
-        $definition->setArgument('$computedMetricRuleName', ComputedMetricRule::NAME);
+        $definition->setArgument('$computedMetricRuleName', ComputedMetricChannelFamily::PRODUCER_RULE_NAME);
 
         if ($container->hasDefinition(RuleChannelRegistry::class)) {
             $container->getDefinition(RuleChannelRegistry::class)
                 ->setArgument('$staticChannelKeysByProducer', $channelKeysByProducer)
-                ->setArgument('$computedMetricRuleName', ComputedMetricRule::NAME);
+                ->setArgument('$computedMetricRuleName', ComputedMetricChannelFamily::PRODUCER_RULE_NAME);
         }
     }
 }

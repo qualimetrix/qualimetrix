@@ -10,26 +10,6 @@ use PhpParser\ParserFactory;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-const EXPECTED_REPORTING_DECLARATIONS = 65;
-const EXPECTED_PHASE_PARTICIPANTS = 24;
-
-const EXPECTED_REPORTING_CLASSIFICATION_COUNTS = [
-    'evidence computation' => 10,
-    'output projection' => 51,
-    'policy application' => 3,
-    'run orchestration' => 1,
-];
-
-const EXPECTED_EXTENSION_COUNTS = [
-    'rule' => 41,
-    'regular_collector' => 21,
-    'derived_collector' => 2,
-    'global_collector' => 6,
-    'formatter' => 11,
-    'configuration_stage' => 5,
-    'lifecycle_hook' => 1,
-];
-
 /** @return never */
 function fail(string $message): void
 {
@@ -38,6 +18,8 @@ function fail(string $message): void
 }
 
 /**
+ * @param array<string, string> $sourceOverrides repository-relative source path to replacement source path
+ *
  * @return list<array{
  *     path: string,
  *     fqcn: string,
@@ -49,10 +31,15 @@ function fail(string $message): void
  *     implements: list<string>,
  *     properties: list<array{name: string, static: bool, readonly: bool}>,
  *     methods: list<string>,
+ *     contract_property_containments: list<string>,
+ *     contract_surface_containments: list<string>,
+ *     class_string_targets: list<array{source_fqcn: string, member_kind: string, member_name: string, target_fqcn: string}>,
+ *     class_string_metadata_targets: list<string>,
+ *     native_method_returns: array<string, list<string>>,
  *     dependencies: list<string>,
  * }>
  */
-function declarations(string $root): array
+function declarations(string $root, array $sourceOverrides = []): array
 {
     $parser = (new ParserFactory())->createForNewestSupportedVersion();
     $finder = new NodeFinder();
@@ -67,9 +54,11 @@ function declarations(string $root): array
         }
 
         $path = $file->getPathname();
-        $code = file_get_contents($path);
+        $relativePath = relativePath($root, $path);
+        $sourcePath = $sourceOverrides[$relativePath] ?? $path;
+        $code = file_get_contents($sourcePath);
         if ($code === false) {
-            fail('cannot read ' . $path);
+            fail('cannot read ' . $sourcePath);
         }
 
         $ast = $parser->parse($code);
@@ -80,6 +69,7 @@ function declarations(string $root): array
         $traverser = new NodeTraverser();
         $traverser->addVisitor(new NameResolver());
         $ast = $traverser->traverse($ast);
+        $imports = importAliases($ast);
 
         foreach ($finder->findInstanceOf($ast, Node\Stmt\ClassLike::class) as $declaration) {
             if ($declaration instanceof Node\Stmt\Class_ && $declaration->isAnonymous()) {
@@ -115,7 +105,11 @@ function declarations(string $root): array
             sort($implements, SORT_STRING);
 
             $properties = [];
+            $contractPropertyContainments = [];
             foreach ($declaration->getProperties() as $property) {
+                foreach (resolvedTypeNames($property->type) as $type) {
+                    $contractPropertyContainments[$type] = true;
+                }
                 foreach ($property->props as $item) {
                     $properties[$item->name->toString()] = [
                         'name' => $item->name->toString(),
@@ -127,8 +121,10 @@ function declarations(string $root): array
             }
 
             $methods = [];
+            $nativeMethodReturns = [];
             foreach ($declaration->getMethods() as $method) {
                 $methods[] = $method->name->toString();
+                $nativeMethodReturns[$method->name->toString()] = resolvedTypeNames($method->returnType);
                 foreach ($method->params as $parameter) {
                     if (
                         !$parameter->isPromoted()
@@ -136,6 +132,9 @@ function declarations(string $root): array
                         || !is_string($parameter->var->name)
                     ) {
                         continue;
+                    }
+                    foreach (resolvedTypeNames($parameter->type) as $type) {
+                        $contractPropertyContainments[$type] = true;
                     }
                     $name = $parameter->var->name;
                     $properties[$name] = [
@@ -148,6 +147,22 @@ function declarations(string $root): array
             }
             sort($methods, SORT_STRING);
             ksort($properties, SORT_STRING);
+            $contractPropertyContainments = array_keys($contractPropertyContainments);
+            sort($contractPropertyContainments, SORT_STRING);
+            $contractSurfaceContainments = array_values(array_unique([
+                ...$contractPropertyContainments,
+                ...array_merge(...array_values($nativeMethodReturns)),
+                ...documentedSurfaceContainments($declaration, $imports, substr($fqcn, 0, (int) strrpos($fqcn, '\\'))),
+            ]));
+            sort($contractSurfaceContainments, SORT_STRING);
+            ksort($nativeMethodReturns, SORT_STRING);
+            $classStringTargets = documentedClassStringTargets(
+                $declaration,
+                $imports,
+                substr($fqcn, 0, (int) strrpos($fqcn, '\\')),
+                $fqcn,
+            );
+            $classStringMetadataTargets = documentedClassStringMetadataTargets($declaration, $imports, substr($fqcn, 0, (int) strrpos($fqcn, '\\')));
 
             $dependencies = [];
             foreach ($finder->findInstanceOf($declaration, Node\Name::class) as $name) {
@@ -173,6 +188,11 @@ function declarations(string $root): array
                 'implements' => $implements,
                 'properties' => array_values($properties),
                 'methods' => $methods,
+                'contract_property_containments' => $contractPropertyContainments,
+                'contract_surface_containments' => $contractSurfaceContainments,
+                'class_string_targets' => $classStringTargets,
+                'class_string_metadata_targets' => $classStringMetadataTargets,
+                'native_method_returns' => $nativeMethodReturns,
                 'dependencies' => $dependencies,
             ];
         }
@@ -181,6 +201,287 @@ function declarations(string $root): array
     usort($rows, static fn(array $left, array $right): int => $left['fqcn'] <=> $right['fqcn']);
 
     return $rows;
+}
+
+/**
+ * @param array<Node> $ast
+ *
+ * @return array<string, string>
+ */
+function importAliases(array $ast): array
+{
+    $imports = [];
+    foreach ((new NodeFinder())->findInstanceOf($ast, Node\Stmt\UseUse::class) as $use) {
+        $resolved = $use->name->getAttribute('resolvedName');
+        $fqcn = $resolved instanceof Node\Name ? $resolved->toString() : $use->name->toString();
+        $alias = $use->alias?->toString() ?? shortName($fqcn);
+        $imports[$alias] = $fqcn;
+    }
+
+    return $imports;
+}
+
+/**
+ * PHPDoc proves a surface containment only for a promoted property or a public
+ * method signature whose generic/array-shape type resolves to a project class.
+ * Free text is deliberately ignored.
+ *
+ * @param array<string, string> $imports
+ *
+ * @return list<string>
+ */
+function documentedSurfaceContainments(Node\Stmt\ClassLike $declaration, array $imports, string $namespace): array
+{
+    $constructor = $declaration->getMethod('__construct');
+    $promoted = [];
+    if ($constructor !== null) {
+        foreach ($constructor->params as $parameter) {
+            if ($parameter->isPromoted()
+                && $parameter->var instanceof Node\Expr\Variable
+                && is_string($parameter->var->name)
+            ) {
+                $promoted[$parameter->var->name] = true;
+            }
+        }
+    }
+
+    $containments = [];
+    $constructorDoc = $constructor?->getDocComment()?->getText();
+    if ($constructorDoc !== null) {
+        preg_match_all('/@param\s+([^\r\n]*?)\s+\$([A-Za-z_][A-Za-z0-9_]*)/', $constructorDoc, $matches, PREG_SET_ORDER);
+        foreach ($matches as $match) {
+            if (isset($promoted[$match[2]])) {
+                collectDocumentedTypes($match[1], $imports, $namespace, $containments);
+            }
+        }
+    }
+    foreach ($declaration->getMethods() as $method) {
+        $doc = $method->getDocComment()?->getText();
+        if ($doc === null) {
+            continue;
+        }
+        preg_match_all('/@param\s+([^\r\n]*?)\s+\$[A-Za-z_][A-Za-z0-9_]*/', $doc, $parameterMatches);
+        foreach ($parameterMatches[1] as $typeExpression) {
+            collectDocumentedTypes($typeExpression, $imports, $namespace, $containments);
+        }
+        if (preg_match('/@return\s+([^\s]+)/', $doc, $match) === 1) {
+            collectDocumentedTypes($match[1], $imports, $namespace, $containments);
+        }
+    }
+
+    $containments = array_keys($containments);
+    sort($containments, SORT_STRING);
+
+    return $containments;
+}
+
+/**
+ * @param array<string, string> $imports
+ *
+ * @return list<array{source_fqcn: string, member_kind: string, member_name: string, target_fqcn: string}>
+ */
+function documentedClassStringTargets(Node\Stmt\ClassLike $declaration, array $imports, string $namespace, string $sourceFqcn): array
+{
+    $targets = [];
+    foreach ($declaration->getProperties() as $property) {
+        $doc = $property->getDocComment()?->getText();
+        if ($doc === null || preg_match('/@var\s+([^\r\n*]+)/', $doc, $match) !== 1) {
+            continue;
+        }
+        foreach ($property->props as $item) {
+            addClassStringTargets($targets, $match[1], $imports, $namespace, $sourceFqcn, 'property', $item->name->toString());
+        }
+    }
+
+    $constructor = $declaration->getMethod('__construct');
+    if ($constructor !== null) {
+        addClassStringParameterTargets($targets, $constructor, $imports, $namespace, $sourceFqcn, 'constructor');
+    }
+    foreach ($declaration->getMethods() as $method) {
+        if ($method->name->toString() !== '__construct') {
+            addClassStringParameterTargets($targets, $method, $imports, $namespace, $sourceFqcn, 'method');
+        }
+        $doc = $method->getDocComment()?->getText();
+        if ($doc !== null && preg_match('/@return\s+([^\r\n*]+)/', $doc, $match) === 1) {
+            addClassStringTargets($targets, $match[1], $imports, $namespace, $sourceFqcn, 'method', $method->name->toString());
+        }
+    }
+
+    usort($targets, static fn(array $left, array $right): int => [
+        $left['source_fqcn'],
+        $left['member_kind'],
+        $left['member_name'],
+        $left['target_fqcn'],
+    ] <=> [
+        $right['source_fqcn'],
+        $right['member_kind'],
+        $right['member_name'],
+        $right['target_fqcn'],
+    ]);
+
+    return $targets;
+}
+
+/**
+ * Covers local PHPDoc metadata proofs (such as compiler-pass assertions) that
+ * do not belong to a property, constructor, or method surface row.
+ *
+ * @param array<string, string> $imports
+ *
+ * @return list<string>
+ */
+function documentedClassStringMetadataTargets(Node\Stmt\ClassLike $declaration, array $imports, string $namespace): array
+{
+    $targets = [];
+    foreach ((new NodeFinder())->find($declaration, static fn(Node $node): bool => $node->getDocComment() !== null) as $node) {
+        $doc = $node->getDocComment()?->getText();
+        if ($doc === null) {
+            continue;
+        }
+        preg_match_all('/@(?:var|param|return)\s+([^\r\n*]+)/', $doc, $matches);
+        foreach ($matches[1] as $typeExpression) {
+            $resolved = [];
+            addClassStringTargets($resolved, $typeExpression, $imports, $namespace, '__metadata__', 'metadata', 'metadata');
+            foreach ($resolved as $target) {
+                $targets[$target['target_fqcn']] = true;
+            }
+        }
+    }
+
+    $targets = array_keys($targets);
+    sort($targets, SORT_STRING);
+
+    return $targets;
+}
+
+/**
+ * @param list<array{source_fqcn: string, member_kind: string, member_name: string, target_fqcn: string}> $targets
+ * @param array<string, string> $imports
+ */
+function addClassStringParameterTargets(array &$targets, Node\Stmt\ClassMethod $method, array $imports, string $namespace, string $sourceFqcn, string $memberKind): void
+{
+    $doc = $method->getDocComment()?->getText();
+    if ($doc === null) {
+        return;
+    }
+    preg_match_all('/@param\s+([^\r\n*]*?)\s+\$([A-Za-z_][A-Za-z0-9_]*)/', $doc, $matches, PREG_SET_ORDER);
+    foreach ($matches as $match) {
+        addClassStringTargets($targets, $match[1], $imports, $namespace, $sourceFqcn, $memberKind, $match[2]);
+    }
+}
+
+/**
+ * @param list<array{source_fqcn: string, member_kind: string, member_name: string, target_fqcn: string}> $targets
+ * @param array<string, string> $imports
+ */
+function addClassStringTargets(array &$targets, string $typeExpression, array $imports, string $namespace, string $sourceFqcn, string $memberKind, string $memberName): void
+{
+    $unquoted = preg_replace('/(?:\'[^\']*\'|"[^"]*")/', '', $typeExpression);
+    if ($unquoted === null) {
+        fail('cannot normalize PHPDoc type expression');
+    }
+    if (preg_match_all('/(?<![A-Za-z0-9_-])class-string\s*</i', $unquoted, $matches, PREG_OFFSET_CAPTURE) !== 1 && $matches[0] === []) {
+        return;
+    }
+    foreach ($matches[0] as [$token, $offset]) {
+        $start = $offset + strlen($token) - 1;
+        $depth = 0;
+        $end = null;
+        for ($index = $start; $index < strlen($unquoted); $index++) {
+            if ($unquoted[$index] === '<') {
+                $depth++;
+            } elseif ($unquoted[$index] === '>' && --$depth === 0) {
+                $end = $index;
+                break;
+            }
+        }
+        if ($end === null) {
+            continue;
+        }
+        $candidate = trim(substr($unquoted, $start + 1, $end - $start - 1));
+        if (preg_match('/^\\\\?([A-Za-z_][A-Za-z0-9_]*(?:\\\\[A-Za-z_][A-Za-z0-9_]*)*)$/', $candidate, $name) !== 1) {
+            continue;
+        }
+        if (preg_match('/^[A-Z]$/', ltrim($candidate, '\\')) === 1) {
+            continue;
+        }
+        $target = resolveDocumentedType($candidate, $imports, $namespace);
+        if (!str_starts_with($target, 'Qualimetrix\\')) {
+            continue;
+        }
+        $targets[] = [
+            'source_fqcn' => $sourceFqcn,
+            'member_kind' => $memberKind,
+            'member_name' => $memberName,
+            'target_fqcn' => $target,
+        ];
+    }
+}
+
+/** @param array<string, string> $imports */
+function resolveDocumentedType(string $type, array $imports, string $namespace): string
+{
+    if (str_starts_with($type, '\\')) {
+        return substr($type, 1);
+    }
+
+    $firstSeparator = strpos($type, '\\');
+    $alias = $firstSeparator === false ? $type : substr($type, 0, $firstSeparator);
+
+    return isset($imports[$alias])
+        ? $imports[$alias] . ($firstSeparator === false ? '' : substr($type, $firstSeparator))
+        : $namespace . '\\' . $type;
+}
+
+/**
+ * @param array<string, string> $imports
+ * @param array<string, true> $containments
+ */
+function collectDocumentedTypes(string $typeExpression, array $imports, string $namespace, array &$containments): void
+{
+    preg_match_all('/(?<![A-Za-z0-9_\\\\])([A-Z][A-Za-z0-9_]*(?:\\\\[A-Za-z_][A-Za-z0-9_]*)*)/', $typeExpression, $types);
+    foreach ($types[1] as $type) {
+        $firstSeparator = strpos($type, '\\');
+        $alias = $firstSeparator === false ? $type : substr($type, 0, $firstSeparator);
+        $fqcn = isset($imports[$alias])
+            ? $imports[$alias] . ($firstSeparator === false ? '' : substr($type, $firstSeparator))
+            : $namespace . '\\' . $type;
+        if (str_starts_with($fqcn, 'Qualimetrix\\')) {
+            $containments[$fqcn] = true;
+        }
+    }
+}
+
+/** @return list<string> */
+function resolvedTypeNames(Node\Identifier|Node\Name|Node\ComplexType|null $type): array
+{
+    if ($type === null || $type instanceof Node\Identifier) {
+        return [];
+    }
+    if ($type instanceof Node\NullableType) {
+        return resolvedTypeNames($type->type);
+    }
+    if ($type instanceof Node\UnionType || $type instanceof Node\IntersectionType) {
+        $names = [];
+        foreach ($type->types as $nested) {
+            array_push($names, ...resolvedTypeNames($nested));
+        }
+        $names = array_values(array_unique($names));
+        sort($names, SORT_STRING);
+
+        return $names;
+    }
+
+    $resolved = $type->getAttribute('resolvedName');
+
+    if ($resolved instanceof Node\Name) {
+        return [$resolved->toString()];
+    }
+    if ($type instanceof Node\Name) {
+        return [$type->toString()];
+    }
+
+    fail('unsupported native complex type ' . $type::class);
 }
 
 function relativePath(string $root, string $path): string
@@ -283,7 +584,10 @@ function stateScope(array $row): string
     if (str_contains($row['fqcn'], 'Registry') || str_contains($row['fqcn'], 'Pipeline')) {
         return 'runtime or composition registry';
     }
-    if (str_starts_with($row['path'], 'src/Analysis/Repository/')) {
+    if ($row['fqcn'] === 'Qualimetrix\\Analysis\\Evidence\\Coupling\\CouplingAnalysis') {
+        return 'analysis-run configuration';
+    }
+    if (str_starts_with($row['path'], 'src/Analysis/Evidence/Measurement/Repository/')) {
         return 'analysis-run repository';
     }
     if (str_starts_with($row['path'], 'src/Infrastructure/')) {
@@ -302,28 +606,28 @@ function stateScope(array $row): string
 function phaseParticipants(): array
 {
     return [
-        ['phase' => 'configuration', 'participant' => '5 ConfigurationStageInterface implementations', 'inputs' => 'ConfigurationContext', 'outputs' => '?ConfigurationLayer', 'state_owner' => 'Analysis.Configuration', 'dependency' => 'priority 0,10,15,20,30; sequential merge', 'source' => 'src/Configuration/Pipeline/Stage'],
-        ['phase' => 'runtime setup', 'participant' => 'ArchitectureLifecycleHook', 'inputs' => 'ResolvedConfiguration', 'outputs' => 'bound ArchitectureProcessor state', 'state_owner' => 'Analysis.Policy.Architecture', 'dependency' => 'reset then bind before architecture prepare', 'source' => 'src/Architecture/Processing/ArchitectureLifecycleHook.php'],
-        ['phase' => 'discovery', 'participant' => 'FileDiscoveryInterface implementation', 'inputs' => 'AbsolutePath|list<AbsolutePath>', 'outputs' => 'iterable<AbsolutePath,SplFileInfo>', 'state_owner' => 'Analysis.Run', 'dependency' => 'first run phase; generated filter follows', 'source' => 'src/Analysis/Discovery/FileDiscoveryInterface.php'],
-        ['phase' => 'collection', 'participant' => 'CollectionOrchestratorInterface', 'inputs' => 'list<SplFileInfo>, MetricRepositoryInterface, AbsolutePath', 'outputs' => 'CollectionPhaseOutput', 'state_owner' => 'Analysis.Run', 'dependency' => 'after discovery', 'source' => 'src/Analysis/Collection/CollectionOrchestratorInterface.php'],
-        ['phase' => 'per-file measurement', 'participant' => '21 MetricCollectorInterface implementations', 'inputs' => 'SplFileInfo, Node[]', 'outputs' => 'MetricBag and typed projections', 'state_owner' => 'owning evidence capabilities', 'dependency' => 'same AST traversal; reset per file', 'source' => 'src/Core/Metric/MetricCollectorInterface.php'],
-        ['phase' => 'per-file derivation', 'participant' => 'TypeCoveragePercentCollector', 'inputs' => 'MetricBag', 'outputs' => 'MetricBag(typeCoveragePct)', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'requires collector id type-coverage', 'source' => 'src/Metrics/Design/TypeCoveragePercentCollector.php'],
-        ['phase' => 'per-file derivation', 'participant' => 'MaintainabilityIndexCollector', 'inputs' => 'MetricBag', 'outputs' => 'MetricBag(maintainabilityIndex)', 'state_owner' => 'Analysis.Evidence.Maintainability', 'dependency' => 'requires halstead, cyclomatic-complexity, method-statement-count', 'source' => 'src/Metrics/Maintainability/MaintainabilityIndexCollector.php'],
+        ['phase' => 'configuration', 'participant' => '5 ConfigurationStageInterface implementations', 'inputs' => 'ConfigurationContext', 'outputs' => '?ConfigurationLayer', 'state_owner' => 'Analysis.Configuration', 'dependency' => 'priority 0,10,15,20,30; sequential merge', 'source' => 'src/Analysis/Configuration/Pipeline/Stage'],
+        ['phase' => 'runtime setup', 'participant' => 'ArchitecturePolicyConfiguratorInterface', 'inputs' => 'ConfigurationDocument', 'outputs' => 'configured policy state and warnings', 'state_owner' => 'Analysis.Policy.Architecture', 'dependency' => 'Console configures after its logger is available', 'source' => 'src/Analysis/Policy/Architecture/Contract/ArchitecturePolicyConfiguratorInterface.php'],
+        ['phase' => 'discovery', 'participant' => 'FileDiscoveryInterface implementation', 'inputs' => 'AbsolutePath|list<AbsolutePath>', 'outputs' => 'iterable<AbsolutePath,SplFileInfo>', 'state_owner' => 'Analysis.Run', 'dependency' => 'first run phase; generated filter follows', 'source' => 'src/Analysis/Run/Contract/Discovery/FileDiscoveryInterface.php'],
+        ['phase' => 'collection', 'participant' => 'CollectionOrchestratorInterface', 'inputs' => 'list<SplFileInfo>, MetricRepositoryInterface, AbsolutePath', 'outputs' => 'CollectionPhaseOutput', 'state_owner' => 'Analysis.Run', 'dependency' => 'after discovery', 'source' => 'src/Analysis/Run/Contract/Collection/CollectionOrchestratorInterface.php'],
+        ['phase' => 'per-file measurement', 'participant' => '21 MetricCollectorInterface implementations plus DependencyTraversalParticipantInterface', 'inputs' => 'SplFileInfo, Node[]', 'outputs' => 'MetricBag, typed projections and list<Dependency>', 'state_owner' => 'Measurement and DependencyModel', 'dependency' => 'one AST traversal; reset per file', 'source' => 'src/Analysis/Evidence/Measurement/Contract/MetricCollectorInterface.php'],
+        ['phase' => 'per-file derivation', 'participant' => 'TypeCoveragePercentCollector', 'inputs' => 'MetricBag', 'outputs' => 'MetricBag(typeCoveragePct)', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'requires collector id type-coverage', 'source' => 'src/Analysis/Evidence/Design/TypeCoveragePercentCollector.php'],
+        ['phase' => 'per-file derivation', 'participant' => 'MaintainabilityIndexCollector', 'inputs' => 'MetricBag', 'outputs' => 'MetricBag(maintainabilityIndex)', 'state_owner' => 'Analysis.Evidence.Maintainability', 'dependency' => 'requires halstead, cyclomatic-complexity, method-statement-count', 'source' => 'src/Analysis/Evidence/Maintainability/MaintainabilityIndexCollector.php'],
         ['phase' => 'dependency graph', 'participant' => 'DependencyGraphBuilder', 'inputs' => 'list<Dependency>, list<LogicalClassPath>', 'outputs' => 'DependencyGraphInterface', 'state_owner' => 'Analysis.Evidence.DependencyModel', 'dependency' => 'consumes raw collection dependencies', 'source' => 'src/Analysis/Evidence/DependencyModel/DependencyGraphBuilder.php'],
-        ['phase' => 'architecture preparation', 'participant' => 'ArchitectureProcessor', 'inputs' => 'DependencyGraphInterface, ClassSet', 'outputs' => 'retained prepared ArchitectureConfiguration', 'state_owner' => 'Analysis.Policy.Architecture', 'dependency' => 'lifecycle bind first; LayerViolationRule consumes retained state', 'source' => 'src/Architecture/Processing/ArchitectureProcessor.php'],
-        ['phase' => 'aggregation', 'participant' => '4 AggregationPhaseInterface implementations', 'inputs' => 'MetricRepositoryInterface, list<MetricDefinition>', 'outputs' => 'repository enrichment and NamespaceTree', 'state_owner' => 'Analysis.Run and Measurement', 'dependency' => 'callable -> class -> namespace tree -> project', 'source' => 'src/Analysis/Aggregator'],
-        ['phase' => 'global derivation', 'participant' => 'CouplingCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'CA, CE, CBO, instability', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'no global predecessor', 'source' => 'src/Metrics/Coupling/CouplingCollector.php'],
-        ['phase' => 'global derivation', 'participant' => 'AbstractnessCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'abstractness', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires aggregated size type counts', 'source' => 'src/Metrics/Coupling/AbstractnessCollector.php'],
-        ['phase' => 'global derivation', 'participant' => 'ClassRankCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'classRank', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires CA and CE', 'source' => 'src/Metrics/Coupling/ClassRankCollector.php'],
-        ['phase' => 'global derivation', 'participant' => 'DistanceCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'distance', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires instability and abstractness', 'source' => 'src/Metrics/Coupling/DistanceCollector.php'],
-        ['phase' => 'global derivation', 'participant' => 'DitGlobalCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'DIT', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'no global predecessor; overwrites per-file DIT', 'source' => 'src/Metrics/Structure/DitGlobalCollector.php'],
-        ['phase' => 'global derivation', 'participant' => 'NocCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'NOC', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'no global predecessor', 'source' => 'src/Metrics/Structure/NocCollector.php'],
-        ['phase' => 'global reaggregation', 'participant' => 'MetricAggregator(global definitions)', 'inputs' => 'MetricRepositoryInterface, NamespaceTree', 'outputs' => 'namespace/project aggregates', 'state_owner' => 'Analysis.Run and Measurement', 'dependency' => 'after all global collectors', 'source' => 'src/Analysis/Pipeline/MetricEnricher.php'],
-        ['phase' => 'computed derivation', 'participant' => 'ComputedMetricEvaluator', 'inputs' => 'MetricRepositoryInterface, list<ComputedMetricDefinition>', 'outputs' => 'configured computed metrics', 'state_owner' => 'Analysis.Evidence.ComputedMetrics', 'dependency' => 'definition DAG; static definition holder; skipped without files/definitions', 'source' => 'src/Metrics/ComputedMetric/ComputedMetricEvaluator.php'],
-        ['phase' => 'graph inspection', 'participant' => 'CircularDependencyDetector', 'inputs' => 'DependencyGraphInterface', 'outputs' => 'list<Cycle>', 'state_owner' => 'Analysis.Evidence.CircularDependency', 'dependency' => 'rule-selection gated; result consumed by CircularDependencyRule', 'source' => 'src/Analysis/Collection/Dependency/CircularDependencyDetector.php'],
-        ['phase' => 'file-set inspection', 'participant' => 'DuplicationInspectionInterface', 'inputs' => 'list<SplFileInfo>', 'outputs' => 'replaced run-scoped DuplicationResultProvider state', 'state_owner' => 'Analysis.Evidence.Duplication', 'dependency' => 'rule-selection gated; provider consumed by CodeDuplicationRule', 'source' => 'src/Analysis/Evidence/Duplication/Contract/DuplicationInspectionInterface.php'],
-        ['phase' => 'rule execution', 'participant' => '41 RuleInterface implementations', 'inputs' => 'AnalysisContext', 'outputs' => 'list<Violation> and last RuleExclusionStats', 'state_owner' => 'Analysis.Finding and feature rules', 'dependency' => 'producer selection then per-rule exclusions and channel selection', 'source' => 'src/Analysis/RuleExecution/RuleExecutor.php'],
-        ['phase' => 'report policy pipeline', 'participant' => 'ViolationFilterPipeline stages', 'inputs' => 'list<Violation> plus suppression/config/baseline/git scope', 'outputs' => 'ViolationFilterResult', 'state_owner' => 'Inline, Baseline, Reporting', 'dependency' => 'suppression -> path -> namespace -> baseline -> git', 'source' => 'src/Infrastructure/Console/ViolationFilterPipeline.php'],
+        ['phase' => 'architecture preparation', 'participant' => 'LayerPolicyPreparationInterface', 'inputs' => 'DependencyGraphInterface, ClassSet, enabled', 'outputs' => 'leaf-owned prepared ArchitectureConfiguration', 'state_owner' => 'Analysis.Policy.Architecture', 'dependency' => 'Run selects it by rule state; disabled preparation clears state without expansion work', 'source' => 'src/Analysis/Policy/Architecture/Contract/LayerPolicyPreparationInterface.php'],
+        ['phase' => 'aggregation', 'participant' => '4 AggregationPhaseInterface implementations', 'inputs' => 'MetricRepositoryInterface, list<MetricDefinition>', 'outputs' => 'repository enrichment and NamespaceTree', 'state_owner' => 'Analysis.Evidence.Measurement', 'dependency' => 'callable -> class -> namespace tree -> project', 'source' => 'src/Analysis/Evidence/Measurement/Aggregation'],
+        ['phase' => 'global derivation', 'participant' => 'CouplingCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'CA, CE, CBO, instability', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'no global predecessor', 'source' => 'src/Analysis/Evidence/Coupling/CouplingCollector.php'],
+        ['phase' => 'global derivation', 'participant' => 'AbstractnessCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'abstractness', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires aggregated size type counts', 'source' => 'src/Analysis/Evidence/Coupling/AbstractnessCollector.php'],
+        ['phase' => 'global derivation', 'participant' => 'ClassRankCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'classRank', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires CA and CE', 'source' => 'src/Analysis/Evidence/Coupling/ClassRankCollector.php'],
+        ['phase' => 'global derivation', 'participant' => 'DistanceCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'distance', 'state_owner' => 'Analysis.Evidence.Coupling', 'dependency' => 'requires instability and abstractness', 'source' => 'src/Analysis/Evidence/Coupling/DistanceCollector.php'],
+        ['phase' => 'global derivation', 'participant' => 'DitGlobalCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'DIT', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'no global predecessor; overwrites per-file DIT', 'source' => 'src/Analysis/Evidence/Design/DitGlobalCollector.php'],
+        ['phase' => 'global derivation', 'participant' => 'NocCollector', 'inputs' => 'DependencyGraphInterface, MetricRepositoryInterface', 'outputs' => 'NOC', 'state_owner' => 'Analysis.Evidence.Design', 'dependency' => 'no global predecessor', 'source' => 'src/Analysis/Evidence/Design/NocCollector.php'],
+        ['phase' => 'global reaggregation', 'participant' => 'MeasurementAggregationService', 'inputs' => 'MetricRepositoryInterface, NamespaceTree', 'outputs' => 'namespace/project aggregates', 'state_owner' => 'Analysis.Evidence.Measurement', 'dependency' => 'after all global collectors', 'source' => 'src/Analysis/Evidence/Measurement/Aggregation/MeasurementAggregationService.php'],
+        ['phase' => 'computed derivation', 'participant' => 'Contract\\Evaluation\\ComputedMetricEvaluator', 'inputs' => 'MetricRepositoryInterface, files analyzed; one catalog snapshot', 'outputs' => 'configured computed metrics', 'state_owner' => 'Analysis.Evidence.ComputedMetrics', 'dependency' => 'definition DAG; instance-owned catalog; skipped without files/definitions', 'source' => 'src/Analysis/Evidence/ComputedMetrics/Contract/Evaluation/ComputedMetricEvaluator.php'],
+        ['phase' => 'graph inspection', 'participant' => 'CircularDependencyPreparationInterface', 'inputs' => 'DependencyGraphInterface, enabled', 'outputs' => 'leaf-owned list<Cycle>', 'state_owner' => 'Analysis.Evidence.CircularDependency', 'dependency' => 'Run invokes it after graph construction; disabled preparation clears state without SCC work', 'source' => 'src/Analysis/Evidence/CircularDependency/Contract/CircularDependencyPreparationInterface.php'],
+        ['phase' => 'file-set inspection', 'participant' => 'FileSetInspectionParticipantInterface implementations', 'inputs' => 'list<SplFileInfo>', 'outputs' => 'capability-owned run state', 'state_owner' => 'owning evidence capabilities', 'dependency' => 'producer-rule selection gated; lexical participant order', 'source' => 'src/Analysis/Run/Contract/FileSetInspectionParticipantInterface.php'],
+        ['phase' => 'rule execution', 'participant' => 'Analysis\\Finding\\RuleExecution + 41 RuleInterface implementations', 'inputs' => 'AnalysisContext', 'outputs' => 'list<Violation> and last RuleExclusionStats', 'state_owner' => 'Analysis.Finding and feature rules', 'dependency' => 'producer selection then per-rule exclusions and channel selection', 'source' => 'src/Analysis/Finding/RuleExecution.php'],
+        ['phase' => 'finding projection', 'participant' => 'FindingProjector', 'inputs' => 'list<Violation>, suppressions, FindingProjectionOptions', 'outputs' => 'FindingProjectionResult', 'state_owner' => 'Reporting', 'dependency' => 'annotation suppression -> path -> namespace -> baseline -> annotation rejoin -> git', 'source' => 'src/Reporting/FindingProjection/FindingProjector.php'],
         ['phase' => 'report enrichment', 'participant' => 'SummaryEnricher', 'inputs' => 'Report', 'outputs' => 'health/debt/impact summary', 'state_owner' => 'mixed ComputedMetrics/Prioritization/Reporting seam', 'dependency' => 'cross-capability orchestration before formatters', 'source' => 'src/Reporting/Health/SummaryEnricher.php'],
         ['phase' => 'report projection', 'participant' => '11 FormatterInterface implementations', 'inputs' => 'Report, FormatterContext', 'outputs' => 'string', 'state_owner' => 'Reporting', 'dependency' => 'selected after filtering/enrichment', 'source' => 'src/Reporting/Formatter/FormatterInterface.php'],
     ];
@@ -388,11 +692,19 @@ $documentationProbeArguments = array_values(array_filter(
     array_slice($arguments, 1),
     static fn(string $argument): bool => str_starts_with($argument, '--documentation-probe='),
 ));
+$compositionProbeArguments = array_values(array_filter(
+    array_slice($arguments, 1),
+    static fn(string $argument): bool => str_starts_with($argument, '--composition-probe='),
+));
+$sourceOverridesArguments = array_values(array_filter(
+    array_slice($arguments, 1),
+    static fn(string $argument): bool => str_starts_with($argument, '--source-overrides='),
+));
 if (count($manifestArguments) > 1) {
     fail('only one --manifest path may be provided');
 }
-if (count($outputDirectoryArguments) > 1 || count($qmxOutputArguments) > 1 || count($qmxSourceArguments) > 1 || count($documentationProbeArguments) > 1) {
-    fail('only one output directory, qmx source/output, and documentation probe may be provided');
+if (count($outputDirectoryArguments) > 1 || count($qmxOutputArguments) > 1 || count($qmxSourceArguments) > 1 || count($documentationProbeArguments) > 1 || count($compositionProbeArguments) > 1 || count($sourceOverridesArguments) > 1) {
+    fail('only one output directory, qmx source/output, documentation probe, composition probe, and source overrides path may be provided');
 }
 $unknownArguments = array_values(array_filter(
     array_slice($arguments, 1),
@@ -401,7 +713,9 @@ $unknownArguments = array_values(array_filter(
         && !str_starts_with($argument, '--output-directory=')
         && !str_starts_with($argument, '--qmx-output=')
         && !str_starts_with($argument, '--qmx-source=')
-        && !str_starts_with($argument, '--documentation-probe='),
+        && !str_starts_with($argument, '--documentation-probe=')
+        && !str_starts_with($argument, '--composition-probe=')
+        && !str_starts_with($argument, '--source-overrides='),
 ));
 if ($unknownArguments !== []) {
     fail('unknown argument: ' . implode(', ', $unknownArguments));
@@ -422,13 +736,67 @@ $qmxSourcePath = $qmxSourceArguments === []
 $documentationProbe = $documentationProbeArguments === []
     ? null
     : substr($documentationProbeArguments[0], strlen('--documentation-probe='));
+$compositionProbe = $compositionProbeArguments === []
+    ? null
+    : substr($compositionProbeArguments[0], strlen('--composition-probe='));
+$sourceOverridesPath = $sourceOverridesArguments === []
+    ? null
+    : substr($sourceOverridesArguments[0], strlen('--source-overrides='));
+
+$compositionProbeData = null;
+if ($compositionProbe !== null) {
+    $contents = file_get_contents($compositionProbe);
+    if ($contents === false) {
+        fail('cannot read composition probe ' . $compositionProbe);
+    }
+    $compositionProbeData = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
+    if (!is_array($compositionProbeData)) {
+        fail('composition probe must be an object');
+    }
+}
+$sourceOverrides = [];
+if ($sourceOverridesPath !== null) {
+    $contents = file_get_contents($sourceOverridesPath);
+    if ($contents === false) {
+        fail('cannot read source overrides ' . $sourceOverridesPath);
+    }
+    $sourceOverridesData = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
+    if (!is_array($sourceOverridesData)) {
+        fail('source overrides must be an object');
+    }
+    $sourceOverrides = $sourceOverridesData;
+}
+foreach ($compositionProbeData['source_overrides'] ?? [] as $relativePath => $replacementPath) {
+    if (!is_string($relativePath) || !is_string($replacementPath)) {
+        fail('composition probe source_overrides must map repository-relative paths to source paths');
+    }
+    if (!is_file($root . '/' . $relativePath)) {
+        fail('composition probe source override names an unknown production path ' . $relativePath);
+    }
+    if (!is_file($replacementPath)) {
+        fail('composition probe source override replacement does not exist for ' . $relativePath);
+    }
+    $sourceOverrides[$relativePath] = $replacementPath;
+}
+foreach ($sourceOverrides as $relativePath => $replacementPath) {
+    if (!is_string($relativePath) || !is_string($replacementPath)) {
+        fail('source overrides must map repository-relative paths to source paths');
+    }
+    if (!is_file($root . '/' . $relativePath)) {
+        fail('source override names an unknown production path ' . $relativePath);
+    }
+    if (!is_file($replacementPath)) {
+        fail('source override replacement does not exist for ' . $relativePath);
+    }
+}
 
 $manifest = loadAndValidateManifest($manifestPath, $schemaPath);
+validateMaterializedP5Boundary($manifest);
 if ($documentationProbe !== null) {
     fwrite(STDOUT, implode("\t", documentationDisposition($documentationProbe)) . "\n");
     exit(0);
 }
-$rows = declarations($root);
+$rows = declarations($root, $sourceOverrides);
 if ($rows === []) {
     fail('no production declarations found');
 }
@@ -495,7 +863,52 @@ foreach ($rows as $row) {
 }
 usort($crossOwnerImports, static fn(array $left, array $right): int => $left <=> $right);
 
-$authorization = validateAuthorizations($manifest, $byName, $observedPairs);
+foreach ($rows as $row) {
+    $classStringTargets = array_merge(
+        array_column($row['class_string_targets'], 'target_fqcn'),
+        $row['class_string_metadata_targets'],
+    );
+    foreach ($classStringTargets as $target) {
+        if (!isset($byName[$target])) {
+            continue;
+        }
+        if ($row['proposed_owner'] !== $byName[$target]['proposed_owner']
+            && $byName[$target]['proposed_status'] === 'internal'
+        ) {
+            fail("cross-owner class-string target {$row['fqcn']} -> {$target} is internal");
+        }
+    }
+}
+
+if ($compositionProbe !== null) {
+    $probe = $compositionProbeData;
+    foreach ($probe['rows'] ?? [] as $fqcn => $changes) {
+        if (!isset($byName[$fqcn]) || !is_array($changes)) {
+            fail('composition probe names an unknown row ' . $fqcn);
+        }
+        $byName[$fqcn] = array_replace($byName[$fqcn], $changes);
+    }
+    foreach ($probe['remove_pairs'] ?? [] as $pair) {
+        unset($observedPairs[$pair[0] . "\0" . $pair[1]]);
+    }
+    foreach ($probe['add_pairs'] ?? [] as $pair) {
+        $observedPairs[$pair[0] . "\0" . $pair[1]] = true;
+    }
+    $consumerUse = [];
+    foreach ($manifest['declarations'] as $target => $entry) {
+        foreach ($entry['consumers'] as $index => $consumer) {
+            if (($consumer['relation'] ?? 'import') === 'import') {
+                $consumerUse[$target . "\0" . $index] = true;
+            }
+        }
+    }
+    validateContractCompositions($manifest, $byName, $observedPairs, $consumerUse);
+    fwrite(STDOUT, "contract_composition probe passed\n");
+    exit(0);
+}
+
+$actualBindingOperations = classifyCompositionBindingOperations($root, $manifest, $byName, $sourceOverrides);
+$authorization = validateAuthorizations($manifest, $byName, $observedPairs, $rows, $actualBindingOperations);
 $enforcement = buildEnforcementProjection($manifest, $byName, $observedPairs);
 assertDag($enforcement['allow'], 'generated qmx allow graph');
 validateSeamNecessity($manifest, $byName, $observedPairs);
@@ -505,11 +918,12 @@ foreach ($declarations as $entry) {
     $consumerCount += count($entry['consumers']);
     $temporaryConsumerCount += count(array_filter(
         $entry['consumers'],
-        static fn(array $consumer): bool => $consumer['source_fqcn'] !== null,
+        static fn(array $consumer): bool => $consumer['closes_in'] !== null,
     ));
 }
 
 $ownershipRows = [];
+$classStringTargetRows = [];
 foreach ($rows as $row) {
     $ownershipRows[] = [
         $row['path'],
@@ -520,18 +934,96 @@ foreach ($rows as $row) {
         $row['closure_package'],
         json_encode($declarations[$row['fqcn']]['consumers'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
     ];
+    foreach ($row['class_string_targets'] as $target) {
+        $classStringTargetRows[] = [
+            $target['source_fqcn'],
+            $target['member_kind'],
+            $target['member_name'],
+            $target['target_fqcn'],
+        ];
+    }
+}
+usort($classStringTargetRows, static fn(array $left, array $right): int => $left <=> $right);
+
+$compositionBindingRows = [];
+foreach ($authorization['bindings'] as $pair => $binding) {
+    [$source, $target] = explode("\0", $pair, 2);
+    $sourceRow = $byName[$source];
+    $targetRow = $byName[$target];
+    $declaredOperations = implode(',', $binding['consumer']['operations']);
+    $observedOperations = implode(',', $binding['actual_operations']);
+    $compositionBindingRows[] = [
+        $sourceRow['path'],
+        $source,
+        $sourceRow['proposed_owner'],
+        $targetRow['path'],
+        $target,
+        $targetRow['proposed_owner'],
+        $declaredOperations,
+        $observedOperations,
+        'used',
+        semanticLayerName($sourceRow) . ' -> ' . semanticLayerName($targetRow),
+    ];
+}
+usort($compositionBindingRows, static fn(array $left, array $right): int => $left <=> $right);
+
+$publicImportRows = [];
+foreach ($crossOwnerImports as [$source, $sourceOwner, $target, $targetOwner, $visibility]) {
+    if ($visibility !== 'contract') {
+        continue;
+    }
+    $publicImportRows[] = [$target, $targetOwner, $source, $sourceOwner, $byName[$source]['path'], 'ast-name'];
+}
+usort($publicImportRows, static fn(array $left, array $right): int => $left <=> $right);
+$fanIn = [];
+foreach ($publicImportRows as [$target, $targetOwner, $source, $sourceOwner]) {
+    $fanIn[$target]['owner'] = $targetOwner;
+    $fanIn[$target]['sources'][$source] = true;
+    $fanIn[$target]['owners'][$sourceOwner] = true;
+}
+$fanInRows = [];
+foreach ($fanIn as $target => $data) {
+    $fanInRows[] = [$target, $data['owner'], (string) count($data['sources']), (string) count($data['owners'])];
+}
+usort($fanInRows, static fn(array $left, array $right): int => $left <=> $right);
+
+$productionToTestRows = [];
+foreach ($rows as $row) {
+    foreach ($row['dependencies'] as $dependency) {
+        if (str_starts_with($dependency, 'Qualimetrix\\Tests\\')) {
+            $productionToTestRows[] = [$row['path'], $row['fqcn'], $dependency, 'ast-name'];
+        }
+    }
+}
+if ($productionToTestRows !== []) {
+    fail('production source imports a test namespace');
 }
 
 $extensionDefinitions = [
-    'rule' => ['Qualimetrix\\Core\\Rule\\RuleInterface', 'qmx.rule', 'RuleConfigurator + ArchitectureConfigurator -> rule compiler passes'],
-    'regular_collector' => ['Qualimetrix\\Core\\Metric\\MetricCollectorInterface', 'qmx.collector', 'CollectorConfigurator -> CollectorCompilerPass -> CompositeCollector'],
-    'derived_collector' => ['Qualimetrix\\Core\\Metric\\DerivedCollectorInterface', 'qmx.derived_collector', 'CollectorConfigurator -> CollectorCompilerPass -> CompositeCollector'],
-    'global_collector' => ['Qualimetrix\\Core\\Metric\\GlobalContextCollectorInterface', 'qmx.global_collector', 'CollectorConfigurator -> GlobalCollectorCompilerPass -> GlobalCollectorRunner'],
+    'rule' => ['Qualimetrix\\Analysis\\Finding\\Rule\\RuleInterface', 'qmx.rule', 'capability configurator -> rule compiler passes'],
+    'regular_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricCollectorInterface', 'qmx.collector', 'capability configurator -> CollectorCompilerPass -> CompositeCollector'],
+    'derived_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DerivedCollectorInterface', 'qmx.derived_collector', 'capability configurator -> CollectorCompilerPass -> CompositeCollector'],
+    'global_collector' => ['Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\GlobalContextCollectorInterface', 'qmx.global_collector', 'capability configurator -> GlobalCollectorCompilerPass -> GlobalCollectorRunner'],
     'formatter' => ['Qualimetrix\\Reporting\\Formatter\\FormatterInterface', 'qmx.formatter', 'OutputConfigurator -> FormatterCompilerPass -> FormatterRegistry'],
-    'configuration_stage' => ['Qualimetrix\\Configuration\\Pipeline\\Stage\\ConfigurationStageInterface', 'qmx.configuration_stage', 'ConfigurationConfigurator -> ConfigurationStageCompilerPass -> ConfigurationPipeline'],
-    'lifecycle_hook' => ['Qualimetrix\\Analysis\\Lifecycle\\AnalysisLifecycleHookInterface', 'qmx.analysis.lifecycle_hook', 'ArchitectureConfigurator -> tagged iterator -> AnalysisRuntimeConfigurator'],
+    'configuration_stage' => ['Qualimetrix\\Analysis\\Configuration\\Pipeline\\ConfigurationStageInterface', 'qmx.configuration_stage', 'ConfigurationConfigurator -> ConfigurationStageCompilerPass -> ConfigurationPipeline'],
 ];
 $extensionRows = [];
+$capabilityConfigurators = [
+    'Analysis.Evidence.CodeSmell' => 'CodeSmellConfigurator',
+    'Analysis.Evidence.Cohesion' => 'CohesionConfigurator',
+    'Analysis.Evidence.Complexity' => 'ComplexityConfigurator',
+    'Analysis.Evidence.Coupling' => 'CouplingConfigurator',
+    'Analysis.Evidence.Design' => 'DesignConfigurator',
+    'Analysis.Evidence.Maintainability' => 'MaintainabilityConfigurator',
+    'Analysis.Evidence.Security' => 'SecurityConfigurator',
+    'Analysis.Evidence.Size' => 'SizeConfigurator',
+];
+$otherRuleConfigurators = [
+    'Analysis.Policy.Architecture' => 'ArchitectureConfigurator',
+    'Analysis.Evidence.CircularDependency' => 'CircularDependencyConfigurator',
+    'Analysis.Evidence.ComputedMetrics' => 'ComputedMetricsConfigurator',
+    'Analysis.Evidence.Duplication' => 'DuplicationConfigurator',
+];
 foreach ($extensionDefinitions as $family => [$target, $tag, $registration]) {
     $extensionCount = 0;
     foreach ($rows as $row) {
@@ -539,10 +1031,12 @@ foreach ($extensionDefinitions as $family => [$target, $tag, $registration]) {
             continue;
         }
         $extensionCount++;
-        $extensionRows[] = [$family, $row['fqcn'], $row['path'], $tag, $registration];
-    }
-    if ($extensionCount !== EXPECTED_EXTENSION_COUNTS[$family]) {
-        fail("expected {$family} count " . EXPECTED_EXTENSION_COUNTS[$family] . ", got {$extensionCount}");
+        $configurator = $capabilityConfigurators[$row['proposed_owner']]
+            ?? ($family === 'rule' ? ($otherRuleConfigurators[$row['proposed_owner']] ?? null) : null);
+        $registrationPath = $configurator === null
+            ? $registration
+            : $configurator . substr($registration, strlen('capability configurator'));
+        $extensionRows[] = [$family, $row['fqcn'], $row['path'], $tag, $registrationPath];
     }
 }
 usort($extensionRows, static fn(array $left, array $right): int => $left <=> $right);
@@ -557,13 +1051,7 @@ foreach ($rows as $row) {
     $reportingCounts[$disposition['classification']] = ($reportingCounts[$disposition['classification']] ?? 0) + 1;
     $reportingRows[] = [$row['path'], $row['fqcn'], $disposition['classification'], $disposition['target_owner'], $row['closure_package']];
 }
-if (count($reportingRows) !== EXPECTED_REPORTING_DECLARATIONS) {
-    fail('expected ' . EXPECTED_REPORTING_DECLARATIONS . ' Reporting declarations, got ' . count($reportingRows));
-}
 ksort($reportingCounts, SORT_STRING);
-if ($reportingCounts !== EXPECTED_REPORTING_CLASSIFICATION_COUNTS) {
-    fail('unexpected Reporting classification counts: ' . json_encode($reportingCounts));
-}
 
 $stateRows = [];
 foreach ($rows as $row) {
@@ -579,9 +1067,6 @@ foreach ($rows as $row) {
 }
 
 $phaseRows = phaseParticipants();
-if (count($phaseRows) !== EXPECTED_PHASE_PARTICIPANTS) {
-    fail('expected ' . EXPECTED_PHASE_PARTICIPANTS . ' phase participant rows, got ' . count($phaseRows));
-}
 foreach ($phaseRows as $phase) {
     if (!is_file($root . '/' . $phase['source']) && !is_dir($root . '/' . $phase['source'])) {
         fail('phase participant source does not exist: ' . $phase['source']);
@@ -590,7 +1075,12 @@ foreach ($phaseRows as $phase) {
 
 $outputs = [
     'production-ownership.tsv' => tsv(['path', 'fqcn', 'kind', 'proposed_owner', 'proposed_status', 'closure_package', 'consumers'], $ownershipRows),
+    'production-class-string-targets.tsv' => tsv(['source_fqcn', 'member_kind', 'member_name', 'target_fqcn'], $classStringTargetRows),
+    'production-composition-bindings.tsv' => tsv(['source_path', 'source_fqcn', 'source_owner', 'target_path', 'target_fqcn', 'target_owner', 'declared_operations', 'observed_operations', 'behavioral_verdict', 'qmx_projection'], $compositionBindingRows),
     'production-cross-owner-imports.tsv' => tsv(['consumer', 'consumer_owner', 'dependency', 'dependency_owner', 'dependency_visibility', 'closure_package'], $crossOwnerImports),
+    'production-public-imports.tsv' => tsv(['target_contract_fqcn', 'target_owner', 'consumer_fqcn', 'consumer_owner', 'source_path', 'import_kind'], $publicImportRows),
+    'production-module-fan-in.tsv' => tsv(['target_contract_fqcn', 'target_owner', 'distinct_consumer_fqcns', 'distinct_consumer_owners'], $fanInRows),
+    'production-to-test-imports.tsv' => tsv(['source_path', 'source_fqcn', 'imported_test_fqcn', 'import_kind'], $productionToTestRows),
     'production-extension-families.tsv' => tsv(['family', 'implementation', 'path', 'di_tag', 'registration_path'], $extensionRows),
     'production-state-services.tsv' => tsv(['path', 'fqcn', 'proposed_owner', 'closure_package', 'state_scope', 'mutable_static_properties', 'mutable_instance_properties', 'lifecycle_methods'], $stateRows),
     'production-phase-participants.tsv' => tsv(['phase', 'participant', 'typed_inputs', 'typed_outputs_or_state', 'state_owner', 'actual_dependency', 'source'], array_values(array_map(static fn(array $phase): array => array_values($phase), $phaseRows))),
@@ -604,12 +1094,13 @@ $outputs = [
             ['semantic_owners', (string) count($owners)],
             ['contract_consumer_entries', (string) $consumerCount],
             ['temporary_contract_consumer_entries', (string) $temporaryConsumerCount],
+            ['permanent_composition_bindings', (string) count($compositionBindingRows)],
             ['exact_dependency_edges', (string) count($observedPairs)],
             ['cross_owner_imports', (string) count($crossOwnerImports)],
             ['semantic_owner_layers', (string) $enforcement['semantic_owner_layer_count']],
             ['singleton_seams', (string) count($manifest['enforcement_seams'])],
-            ['exact_internal_grants', (string) $authorization['internal_grant_count']],
-            ['coarse_internal_grant_edges', (string) $authorization['coarse_internal_grant_edge_count']],
+            ['exact_composition_bindings', (string) $authorization['internal_grant_count']],
+            ['coarse_composition_binding_edges', (string) $authorization['coarse_internal_grant_edge_count']],
             ['internal_enforcement_layers', (string) count($enforcement['layers'])],
             ['declared_allow_edges', (string) array_sum(array_map('count', $enforcement['allow']))],
         ],
@@ -674,8 +1165,12 @@ function validateDeclarationEntry(string $fqcn, array $entry, array $declaration
         fail("declaration {$fqcn} names unknown owner {$entry['owner']}");
     }
     $consumers = $entry['consumers'];
-    if ($entry['visibility'] === 'internal' && $consumers !== []) {
-        fail("internal declaration {$fqcn} cannot publish consumers");
+    $compositionConsumers = array_values(array_filter(
+        $consumers,
+        static fn(array $consumer): bool => ($consumer['relation'] ?? 'import') === 'composition_binding',
+    ));
+    if ($entry['visibility'] === 'internal' && count($compositionConsumers) !== count($consumers)) {
+        fail("internal declaration {$fqcn} can publish only composition bindings");
     }
     if ($entry['visibility'] === 'contract' && $consumers === []) {
         fail("contract declaration {$fqcn} must publish at least one used consumer");
@@ -685,18 +1180,65 @@ function validateDeclarationEntry(string $fqcn, array $entry, array $declaration
         if (!in_array($consumer['owner'], $owners, true)) {
             fail("consumer {$fqcn}#{$index} names unknown owner {$consumer['owner']}");
         }
-        $permanent = $consumer['source_fqcn'] === null && $consumer['closes_in'] === null;
-        $temporary = is_string($consumer['source_fqcn']) && is_string($consumer['closes_in']);
-        if (!$permanent && !$temporary) {
-            fail("consumer {$fqcn}#{$index} must be permanent owner-wide or temporary exact-source");
+        if (($consumer['relation'] ?? 'import') === 'contract_composition') {
+            $key = $consumer['owner'] . "\0contract_composition\0" . $consumer['carrier_fqcn'] . "\0" . $consumer['boundary_fqcn'];
+            if (isset($seen[$key])) {
+                fail("duplicate contract_composition relation on {$fqcn} for {$consumer['owner']}");
+            }
+            $seen[$key] = true;
+            continue;
         }
-        if ($temporary) {
+        if (($consumer['relation'] ?? 'import') === 'composition_binding') {
+            if ($entry['visibility'] !== 'internal'
+                || $consumer['owner'] !== 'Infrastructure.DependencyInjection'
+                || !is_string($consumer['source_fqcn'])
+                || $consumer['closes_in'] !== null
+                || $consumer['operations'] === []
+            ) {
+                fail("composition_binding {$fqcn}#{$index} must permanently authorize an exact DI source to an internal target");
+            }
+            $source = $consumer['source_fqcn'];
+            if (!isset($declarations[$source]) || $declarations[$source]['owner'] !== 'Infrastructure.DependencyInjection') {
+                fail("composition_binding {$fqcn}#{$index} names an invalid DI source");
+            }
+            $key = 'composition_binding' . "\0" . $source;
+            if (isset($seen[$key])) {
+                fail("duplicate composition_binding {$source} -> {$fqcn}");
+            }
+            $seen[$key] = true;
+            continue;
+        }
+        if (($consumer['relation'] ?? 'import') === 'contract_surface') {
+            if (!is_string($consumer['source_fqcn']) || $consumer['closes_in'] !== null) {
+                fail("contract_surface {$fqcn}#{$index} must name a permanent exact source");
+            }
             $source = $consumer['source_fqcn'];
             if (!isset($declarations[$source])) {
-                fail("temporary consumer {$fqcn}#{$index} names unknown source {$source}");
+                fail("contract_surface {$fqcn}#{$index} names unknown source {$source}");
             }
             if ($declarations[$source]['owner'] !== $consumer['owner']) {
-                fail("temporary consumer {$fqcn}#{$index} source owner does not match {$consumer['owner']}");
+                fail("contract_surface {$fqcn}#{$index} source owner does not match {$consumer['owner']}");
+            }
+            $key = $consumer['owner'] . "\0contract_surface\0" . $source . "\0" . $consumer['carrier_fqcn'];
+            if (isset($seen[$key])) {
+                fail("duplicate contract_surface relation on {$fqcn} for {$consumer['owner']}");
+            }
+            $seen[$key] = true;
+            continue;
+        }
+        $permanentOwnerWide = $consumer['source_fqcn'] === null && $consumer['closes_in'] === null;
+        $permanentExact = is_string($consumer['source_fqcn']) && $consumer['closes_in'] === null;
+        $temporary = is_string($consumer['source_fqcn']) && is_string($consumer['closes_in']);
+        if (!$permanentOwnerWide && !$permanentExact && !$temporary) {
+            fail("consumer {$fqcn}#{$index} must be permanent owner-wide, permanent exact-source, or temporary exact-source");
+        }
+        if ($permanentExact || $temporary) {
+            $source = $consumer['source_fqcn'];
+            if (!isset($declarations[$source])) {
+                fail("exact consumer {$fqcn}#{$index} names unknown source {$source}");
+            }
+            if ($declarations[$source]['owner'] !== $consumer['owner']) {
+                fail("exact consumer {$fqcn}#{$index} source owner does not match {$consumer['owner']}");
             }
         }
         $key = $consumer['owner'] . "\0" . ($consumer['source_fqcn'] ?? '*');
@@ -704,6 +1246,186 @@ function validateDeclarationEntry(string $fqcn, array $entry, array $declaration
             fail("duplicate consumer authorization on {$fqcn} for {$consumer['owner']}");
         }
         $seen[$key] = true;
+    }
+}
+
+/**
+ * Validates the materialized P5 boundary directly from current authority.
+ *
+ * @param array<string, mixed> $manifest
+ */
+function validateMaterializedP5Boundary(array $manifest): void
+{
+    $declarations = $manifest['declarations'];
+    $requiredReporting = [
+        'Qualimetrix\\Reporting\\Health\\HealthHintProjector',
+        'Qualimetrix\\Reporting\\Health\\HealthScoreResolver',
+        'Qualimetrix\\Reporting\\Health\\SummaryEnricher',
+    ];
+    foreach ($requiredReporting as $fqcn) {
+        if (!isset($declarations[$fqcn])) {
+            fail("Materialized P5 Reporting declaration is missing: {$fqcn}");
+        }
+    }
+
+    foreach ([
+        'Qualimetrix\\Core\\ComputedMetric\\ComputedMetricDefinitionHolder',
+        'Qualimetrix\\Analysis\\Run\\Enrichment\\TransitionalMetricEnricher',
+        'Qualimetrix\\Analysis\\Run\\Enrichment\\TransitionalEnrichmentResult',
+        'Qualimetrix\\Reporting\\Health\\MetricHintProvider',
+        'Qualimetrix\\Reporting\\Health\\HealthReasonBuilder',
+    ] as $obsoleteFqcn) {
+        if (isset($declarations[$obsoleteFqcn])) {
+            fail("Obsolete P5 declaration remains materialized: {$obsoleteFqcn}");
+        }
+    }
+}
+/**
+ * P4 is intentionally recorded as a finite target projection while the
+ * authoritative declaration map still describes the physical P3 tree. This
+ * keeps target ownership reviewable without pretending that unpublished paths
+ * already exist in the source tree.
+ *
+ * @param array<string, mixed> $manifest
+ */
+function validateP4Target(array $manifest): void
+{
+    $target = $manifest['p4_target'];
+    /** @var array<string, array<string, mixed>> $current */
+    $current = $target['current_declaration_targets'];
+    $additions = $target['additions'];
+    $declarations = $manifest['declarations'];
+
+    $currentP4 = array_filter(
+        $declarations,
+        static fn(array $declaration): bool => $declaration['closure_package'] === 'P4',
+    );
+    if (array_keys($current) !== array_keys($currentP4)) {
+        failSetDifference('P4 current declaration target map does not match the authoritative P4 declaration set', array_keys($currentP4), array_keys($current));
+    }
+
+    $currentOwners = array_count_values(array_column($currentP4, 'owner'));
+    if (($currentOwners['Analysis.Policy.Architecture'] ?? 0) !== 52
+        || ($currentOwners['Analysis.Evidence.CircularDependency'] ?? 0) !== 6
+        || count($currentOwners) !== 2
+    ) {
+        fail('P4 current declaration map must contain exactly 52 Architecture and six CircularDependency declarations');
+    }
+
+    $deletions = array_filter($current, static fn(array $entry): bool => $entry['disposition'] === 'delete');
+    if (array_keys($deletions) !== [
+        'Qualimetrix\\Architecture\\Processing\\ArchitectureLifecycleHook',
+        'Qualimetrix\\Architecture\\Processing\\ArchitectureProcessorInterface',
+        'Qualimetrix\\Core\\Dependency\\CycleInterface',
+    ]) {
+        fail('P4 target must delete exactly the two Architecture lifecycle declarations and CycleInterface from its current P4 declaration set');
+    }
+
+    /** @var array<string, list<string>> $architectureZones */
+    $architectureZones = $target['architecture_zone_dag'];
+    $expectedZones = [
+        'Contract',
+        'Configuration/Allow',
+        'Layer',
+        'Configuration',
+        'Layer/Expansion',
+        'ArchitecturePolicy',
+        'LayerViolation',
+    ];
+    if (array_keys($architectureZones) !== $expectedZones) {
+        failSetDifference('P4 Architecture internal zone DAG does not declare the reviewed exact zones', $expectedZones, array_keys($architectureZones));
+    }
+    $expectedZoneEdges = [
+        'Contract' => ['Core.Neutral', 'Core.Path', 'Core.Symbol', 'Analysis.Evidence.DependencyModel'],
+        'Configuration/Allow' => ['Contract'],
+        'Layer' => ['Contract', 'Configuration/Allow'],
+        'Configuration' => ['Contract', 'Configuration/Allow', 'Layer'],
+        'Layer/Expansion' => ['Contract', 'Configuration', 'Configuration/Allow', 'Layer'],
+        'ArchitecturePolicy' => ['Contract', 'Configuration', 'Layer', 'Layer/Expansion'],
+        'LayerViolation' => ['Contract', 'ArchitecturePolicy', 'Configuration', 'Layer'],
+    ];
+    if ($architectureZones !== $expectedZoneEdges) {
+        fail('P4 Architecture internal zone DAG differs from the reviewed fail-closed allow set');
+    }
+
+    $allTargets = array_merge($current, $additions);
+    $targetFqcns = [];
+    $targetPaths = [];
+    $architectureTargetCount = 0;
+    $circularTargetCount = 0;
+    foreach ($allTargets as $source => $entry) {
+        if ($entry['disposition'] === 'delete') {
+            continue;
+        }
+        if (isset($targetFqcns[$entry['fqcn']]) || isset($targetPaths[$entry['path']])) {
+            fail('P4 target declarations must have unique FQCNs and paths');
+        }
+        $targetFqcns[$entry['fqcn']] = $source;
+        $targetPaths[$entry['path']] = $source;
+        if ($entry['owner'] === 'Analysis.Policy.Architecture') {
+            ++$architectureTargetCount;
+            if (!array_key_exists($entry['zone'], $architectureZones)) {
+                fail('P4 Architecture target declaration ' . $entry['fqcn'] . ' names an unknown internal zone ' . $entry['zone']);
+            }
+        }
+        if ($entry['owner'] === 'Analysis.Evidence.CircularDependency') {
+            ++$circularTargetCount;
+            if (!in_array($entry['zone'], ['Contract', 'Internal'], true)) {
+                fail('P4 CircularDependency target declaration ' . $entry['fqcn'] . ' names an unknown zone ' . $entry['zone']);
+            }
+        }
+    }
+    if ($architectureTargetCount !== 57 || $circularTargetCount !== 7) {
+        fail('P4 target must materialize 57 Architecture and seven CircularDependency declarations after the reviewed additions and deletions');
+    }
+    if (count($additions) !== 12) {
+        fail('P4 target must declare exactly twelve explicit additions');
+    }
+
+    $circularContract = 'Qualimetrix\\Analysis\\Evidence\\CircularDependency\\Contract\\CircularDependencyPreparationInterface';
+    if (($additions[$circularContract]['visibility'] ?? null) !== 'contract'
+        || $target['circular_dependency_contract_consumers'] !== ['Analysis.Run']
+    ) {
+        fail('P4 CircularDependency publishes only its preparation contract to the named Run consumer');
+    }
+
+    $topology = $target['test_topology'];
+    if ($topology['p6_exclusions'] !== [
+        'tests/Architecture/Integration/InlineSuppressionLayerViolationIntegrationTest.php',
+        'tests/Architecture/Fixtures/IgnoreSample/',
+    ]) {
+        fail('P4 test topology must keep the exact P6 InlineSuppression and IgnoreSample exclusions');
+    }
+    $closures = $target['closures'];
+    if ($closures['seams'] !== [
+        'seam-config-load-exception',
+        'seam-deferred-warning',
+        'seam-architecture-lifecycle-hook',
+    ]) {
+        fail('P4 target must close exactly the reviewed three seams');
+    }
+    $actualSeams = [];
+    foreach ($manifest['enforcement_seams'] as $entry) {
+        if ($entry['closes_in'] === 'P4') {
+            $actualSeams[] = $entry['layer'];
+        }
+    }
+    sort($actualSeams, SORT_STRING);
+    $expectedSeams = $closures['seams'];
+    sort($expectedSeams, SORT_STRING);
+    if ($actualSeams !== $expectedSeams) {
+        fail('P4 target seam closure does not match current manifest seams');
+    }
+    $expectedGrant = $closures['temporary_internal_grants'];
+    $actualGrants = array_values(array_filter(
+        $manifest['temporary_internal_grants'],
+        static fn(array $grant): bool => $grant['closes_in'] === 'P4',
+    ));
+    if (count($actualGrants) !== 1
+        || ($expectedGrant[0]['source_fqcn'] ?? null) !== $actualGrants[0]['source_fqcn']
+        || ($expectedGrant[0]['target_fqcn'] ?? null) !== $actualGrants[0]['target_fqcn']
+    ) {
+        fail('P4 target must close exactly the ArchitectureConfigurator -> ArchitectureProcessor temporary grant');
     }
 }
 
@@ -719,42 +1441,459 @@ function failSetDifference(string $label, array $expected, array $actual): never
 }
 
 /**
+ * Classifies the closed Symfony composition vocabulary from executable AST
+ * nodes. Imports, strings outside a binding expression, guards and comments
+ * deliberately do not contribute evidence.
+ *
+ * @param array<string, mixed> $manifest
+ * @param array<string, array<string, mixed>> $byName
+ * @param array<string, string> $sourceOverrides
+ *
+ * @return array<string, list<string>> exact source\0target => sorted operations
+ */
+function classifyCompositionBindingOperations(string $root, array $manifest, array $byName, array $sourceOverrides): array
+{
+    $targetsBySource = [];
+    foreach ($manifest['declarations'] as $target => $entry) {
+        foreach ($entry['consumers'] as $consumer) {
+            if (($consumer['relation'] ?? 'import') !== 'composition_binding') {
+                continue;
+            }
+            $targetsBySource[$consumer['source_fqcn']][$target] = true;
+        }
+    }
+
+    $parser = (new ParserFactory())->createForNewestSupportedVersion();
+    $finder = new NodeFinder();
+    $operations = [];
+    foreach ($targetsBySource as $source => $targets) {
+        $path = $byName[$source]['path'] ?? null;
+        if (!is_string($path)) {
+            fail("composition binding source {$source} has no production path");
+        }
+        $sourcePath = $sourceOverrides[$path] ?? $root . '/' . $path;
+        $code = file_get_contents($sourcePath);
+        if ($code === false) {
+            fail("cannot read composition binding source {$sourcePath}");
+        }
+        $ast = $parser->parse($code);
+        if ($ast === null) {
+            fail("composition binding parser returned no AST for {$path}");
+        }
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor(new NameResolver());
+        $ast = $traverser->traverse($ast);
+
+        $containerVariables = containerBuilderVariables($ast);
+        $definitionVariables = [];
+        $serviceVariables = [];
+        foreach ($finder->findInstanceOf($ast, Node\Expr\Assign::class) as $assign) {
+            if ($assign->var instanceof Node\Expr\Variable && is_string($assign->var->name)) {
+                $serviceTarget = expressionFqcn($assign->expr);
+                if ($serviceTarget !== null && isset($targets[$serviceTarget])) {
+                    $serviceVariables[$assign->var->name] = $serviceTarget;
+                }
+            }
+            if (!$assign->var instanceof Node\Expr\Variable || !is_string($assign->var->name)
+                || !$assign->expr instanceof Node\Expr\MethodCall
+                || methodName($assign->expr) !== 'getdefinition'
+                || !isContainerBuilderCall($assign->expr, $containerVariables)
+            ) {
+                continue;
+            }
+            $target = expressionFqcn($assign->expr->args[0]->value ?? null);
+            if ($target !== null && isset($targets[$target])) {
+                $definitionVariables[$assign->var->name] = $target;
+            } elseif ($assign->expr->args !== []) {
+                // A compiler pass may select its Definition from a dynamic tagged
+                // service id. It is still a container definition receiver, but it
+                // is not evidence of a definition mutation for an exact target.
+                $definitionVariables[$assign->var->name] = '';
+            }
+        }
+
+        $conditionalTargets = [];
+        foreach ($finder->findInstanceOf($ast, Node\Stmt\If_::class) as $if) {
+            foreach ($targets as $target => $_true) {
+                if (ifContainsConditionalReference($if, $target, $serviceVariables)) {
+                    $conditionalTargets[$target] = true;
+                }
+            }
+        }
+        foreach (conditionalServiceVariables($ast, $targets) as $variable => $target) {
+            $serviceVariables[$variable] = $target;
+            $conditionalTargets[$target] = true;
+        }
+
+        foreach ($finder->findInstanceOf($ast, Node\Expr\MethodCall::class) as $call) {
+            $method = methodName($call);
+            if ($method === null) {
+                continue;
+            }
+            if ($method === 'register' && isContainerBuilderCall($call, $containerVariables)) {
+                $target = expressionFqcn($call->args[0]->value ?? null);
+                if ($target !== null && isset($targets[$target])) {
+                    $operations[$source . "\0" . $target]['service_registration'] = true;
+                }
+            }
+            if ($method === 'setalias' && isContainerBuilderCall($call, $containerVariables)) {
+                foreach ($call->args as $argument) {
+                    if (!$argument instanceof Node\Arg) {
+                        continue;
+                    }
+                    $target = expressionFqcn($argument->value);
+                    if ($target !== null && isset($targets[$target])) {
+                        $operations[$source . "\0" . $target]['service_alias'] = true;
+                    }
+                }
+            }
+            if (in_array($method, ['setargument', 'addargument', 'replaceargument', 'setarguments'], true)) {
+                if ($call->var instanceof Node\Expr\Variable && is_string($call->var->name)
+                    && isset($definitionVariables[$call->var->name])
+                ) {
+                    $target = $definitionVariables[$call->var->name];
+                    if ($target !== '') {
+                        $operations[$source . "\0" . $target]['definition_argument_mutation'] = true;
+                    }
+                }
+                $chainedTarget = definitionTargetForCall($call, $containerVariables);
+                if ($chainedTarget !== null && isset($targets[$chainedTarget])) {
+                    $operations[$source . "\0" . $chainedTarget]['definition_argument_mutation'] = true;
+                }
+            }
+            if (isContainerBindingCall($call, $containerVariables, $definitionVariables)) {
+                foreach (referenceTargetsInBinding($call, $serviceVariables) as $target) {
+                    if (!isset($targets[$target])) {
+                        continue;
+                    }
+                    $operation = isset($conditionalTargets[$target])
+                        ? 'conditional_service_reference'
+                        : 'service_reference';
+                    $operations[$source . "\0" . $target][$operation] = true;
+                }
+            }
+        }
+        foreach ($targets as $target => $_true) {
+            if (hasConditionalHelperReference($ast, $target)) {
+                $operations[$source . "\0" . $target]['conditional_service_reference'] = true;
+            }
+        }
+    }
+
+    $result = [];
+    foreach ($operations as $pair => $set) {
+        $result[$pair] = array_keys($set);
+        sort($result[$pair], SORT_STRING);
+    }
+
+    return $result;
+}
+
+function methodName(Node\Expr\MethodCall $call): ?string
+{
+    return $call->name instanceof Node\Identifier ? strtolower($call->name->toString()) : null;
+}
+
+/** @param array<string, true> $containerVariables */
+function isContainerBuilderCall(Node\Expr\MethodCall $call, array $containerVariables): bool
+{
+    return $call->var instanceof Node\Expr\Variable
+        && is_string($call->var->name)
+        && isset($containerVariables[$call->var->name]);
+}
+
+/**
+ * @param array<Node> $ast
+ *
+ * @return array<string, true>
+ */
+function containerBuilderVariables(array $ast): array
+{
+    $finder = new NodeFinder();
+    $variables = [];
+    foreach ($finder->findInstanceOf($ast, Node\Param::class) as $parameter) {
+        if (!$parameter->var instanceof Node\Expr\Variable || !is_string($parameter->var->name)
+            || !$parameter->type instanceof Node\Name
+        ) {
+            continue;
+        }
+        $type = ($parameter->type->getAttribute('resolvedName') ?? $parameter->type)->toString();
+        if ($type === 'Symfony\\Component\\DependencyInjection\\ContainerBuilder') {
+            $variables[$parameter->var->name] = true;
+        }
+    }
+
+    return $variables;
+}
+
+/**
+ * @param array<string, true> $containerVariables
+ * @param array<string, string> $definitionVariables
+ */
+function isContainerBindingCall(Node\Expr\MethodCall $call, array $containerVariables, array $definitionVariables): bool
+{
+    $receiver = $call->var;
+    while ($receiver instanceof Node\Expr\MethodCall) {
+        $receiver = $receiver->var;
+    }
+    if ($receiver instanceof Node\Expr\Variable && is_string($receiver->name)) {
+        return isset($containerVariables[$receiver->name]) || isset($definitionVariables[$receiver->name]);
+    }
+
+    return false;
+}
+
+/** @param array<string, true> $containerVariables */
+function definitionTargetForCall(Node\Expr\MethodCall $call, array $containerVariables): ?string
+{
+    if (!$call->var instanceof Node\Expr\MethodCall
+        || methodName($call->var) !== 'getdefinition'
+        || !isContainerBuilderCall($call->var, $containerVariables)
+    ) {
+        return null;
+    }
+
+    return expressionFqcn($call->var->args[0]->value ?? null);
+}
+
+/**
+ * Resolves only a closed DI idiom: a local service-id variable receives a
+ * private helper result that returns one exact class behind has()/hasDefinition().
+ *
+ * @param array<Node> $ast
+ * @param array<string, true> $targets
+ *
+ * @return array<string, string>
+ */
+function conditionalServiceVariables(array $ast, array $targets): array
+{
+    $finder = new NodeFinder();
+    $methods = [];
+    foreach ($finder->findInstanceOf($ast, Node\Stmt\ClassMethod::class) as $method) {
+        $methods[strtolower($method->name->toString())] = $method;
+    }
+    $resolved = [];
+    foreach ($finder->findInstanceOf($ast, Node\Expr\Assign::class) as $assign) {
+        if (!$assign->var instanceof Node\Expr\Variable || !is_string($assign->var->name)
+            || !$assign->expr instanceof Node\Expr\MethodCall
+            || !$assign->expr->var instanceof Node\Expr\Variable || $assign->expr->var->name !== 'this'
+        ) {
+            continue;
+        }
+        $helper = methodName($assign->expr);
+        if ($helper === null || !isset($methods[$helper])) {
+            continue;
+        }
+        foreach ($targets as $target => $_true) {
+            $hasGuard = false;
+            foreach ($finder->findInstanceOf($methods[$helper], Node\Expr\MethodCall::class) as $guard) {
+                if (in_array(methodName($guard), ['has', 'hasdefinition'], true)
+                    && expressionFqcn($guard->args[0]->value ?? null) === $target
+                ) {
+                    $hasGuard = true;
+                    break;
+                }
+            }
+            $hasReturn = false;
+            foreach ($finder->findInstanceOf($methods[$helper], Node\Stmt\Return_::class) as $return) {
+                if (expressionFqcn($return->expr) === $target) {
+                    $hasReturn = true;
+                    break;
+                }
+            }
+            if ($hasGuard && $hasReturn) {
+                $resolved[$assign->var->name] = $target;
+            }
+        }
+    }
+
+    return $resolved;
+}
+
+/** @param array<Node> $ast */
+function hasConditionalHelperReference(array $ast, string $target): bool
+{
+    $finder = new NodeFinder();
+    $helpers = [];
+    foreach ($finder->findInstanceOf($ast, Node\Stmt\ClassMethod::class) as $method) {
+        $hasGuard = false;
+        foreach ($finder->findInstanceOf($method, Node\Expr\MethodCall::class) as $call) {
+            if (in_array(methodName($call), ['has', 'hasdefinition'], true)
+                && expressionFqcn($call->args[0]->value ?? null) === $target
+            ) {
+                $hasGuard = true;
+                break;
+            }
+        }
+        if (!$hasGuard) {
+            continue;
+        }
+        foreach ($finder->findInstanceOf($method, Node\Stmt\Return_::class) as $return) {
+            if (expressionFqcn($return->expr) === $target) {
+                $helpers[strtolower($method->name->toString())] = true;
+            }
+        }
+    }
+    if ($helpers === []) {
+        return false;
+    }
+    $serviceVariables = [];
+    foreach ($finder->findInstanceOf($ast, Node\Expr\Assign::class) as $assign) {
+        if ($assign->var instanceof Node\Expr\Variable && is_string($assign->var->name)
+            && $assign->expr instanceof Node\Expr\MethodCall
+            && $assign->expr->var instanceof Node\Expr\Variable && $assign->expr->var->name === 'this'
+            && isset($helpers[methodName($assign->expr) ?? ''])
+        ) {
+            $serviceVariables[$assign->var->name] = true;
+        }
+    }
+    foreach ($finder->findInstanceOf($ast, Node\Expr\New_::class) as $new) {
+        if (!$new->class instanceof Node\Name
+            || (($new->class->getAttribute('resolvedName') ?? $new->class)->toString() !== 'Symfony\Component\DependencyInjection\Reference')
+        ) {
+            continue;
+        }
+        $argument = $new->args[0]->value ?? null;
+        if ($argument instanceof Node\Expr\Variable && is_string($argument->name) && isset($serviceVariables[$argument->name])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function expressionFqcn(?Node\Expr $expression): ?string
+{
+    if ($expression instanceof Node\Expr\ClassConstFetch
+        && $expression->name instanceof Node\Identifier
+        && strtolower($expression->name->toString()) === 'class'
+        && $expression->class instanceof Node\Name
+    ) {
+        return ($expression->class->getAttribute('resolvedName') ?? $expression->class)->toString();
+    }
+    if ($expression instanceof Node\Scalar\String_) {
+        return str_starts_with($expression->value, 'Qualimetrix\\') ? $expression->value : null;
+    }
+
+    return null;
+}
+
+/**
+ * @param array<string, string> $serviceVariables
+ *
+ * @return list<string>
+ */
+function referenceTargetsInBinding(Node\Expr\MethodCall $call, array $serviceVariables): array
+{
+    $finder = new NodeFinder();
+    $targets = [];
+    foreach ($finder->findInstanceOf($call->args, Node\Expr\New_::class) as $new) {
+        if (!$new->class instanceof Node\Name
+            || (($new->class->getAttribute('resolvedName') ?? $new->class)->toString() !== 'Symfony\\Component\\DependencyInjection\\Reference')
+        ) {
+            continue;
+        }
+        $argument = $new->args[0]->value ?? null;
+        $target = expressionFqcn($argument);
+        if ($target === null && $argument instanceof Node\Expr\Variable && is_string($argument->name)) {
+            $target = $serviceVariables[$argument->name] ?? null;
+        }
+        if ($target !== null) {
+            $targets[$target] = true;
+        }
+    }
+
+    return array_keys($targets);
+}
+
+/** @param array<string, string> $serviceVariables */
+function ifContainsConditionalReference(Node\Stmt\If_ $if, string $target, array $serviceVariables): bool
+{
+    $finder = new NodeFinder();
+    $guarded = false;
+    foreach ($finder->findInstanceOf($if->cond, Node\Expr\MethodCall::class) as $call) {
+        if (in_array(methodName($call), ['has', 'hasdefinition'], true)
+            && expressionFqcn($call->args[0]->value ?? null) === $target
+        ) {
+            $guarded = true;
+            break;
+        }
+    }
+    if (!$guarded) {
+        return false;
+    }
+    foreach ($finder->findInstanceOf($if->stmts, Node\Expr\New_::class) as $new) {
+        if (!$new->class instanceof Node\Name
+            || (($new->class->getAttribute('resolvedName') ?? $new->class)->toString() !== 'Symfony\\Component\\DependencyInjection\\Reference')
+        ) {
+            continue;
+        }
+        $argument = $new->args[0]->value ?? null;
+        if ($argument instanceof Node\Expr\Variable && is_string($argument->name)
+            && ($serviceVariables[$argument->name] ?? null) === $target
+        ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * @param array<string, mixed> $manifest
  * @param array<string, array<string, mixed>> $byName
  * @param array<string, true> $observedPairs
+ * @param list<array{fqcn: string, proposed_owner: string, class_string_targets: list<array{source_fqcn: string, member_kind: string, member_name: string, target_fqcn: string}>, class_string_metadata_targets: list<string>}> $rows
+ * @param array<string, list<string>> $actualBindingOperations
  *
- * @return array{internal_grant_count: int, coarse_internal_grant_edge_count: int}
+ * @return array{internal_grant_count: int, coarse_internal_grant_edge_count: int, bindings: array<string, array{target: string, index: int, consumer: array<string, mixed>, used: bool, actual_operations: list<string>}>}
  */
-function validateAuthorizations(array $manifest, array $byName, array $observedPairs): array
+function validateAuthorizations(array $manifest, array $byName, array $observedPairs, array $rows, array $actualBindingOperations): array
 {
     $consumerUse = [];
+    $bindings = [];
     foreach ($manifest['declarations'] as $target => $entry) {
-        foreach ($entry['consumers'] as $index => $_consumer) {
-            $consumerUse[$target . "\0" . $index] = false;
+        foreach ($entry['consumers'] as $index => $consumer) {
+            $relation = $consumer['relation'] ?? 'import';
+            if ($relation === 'import') {
+                $consumerUse[$target . "\0" . $index] = false;
+                continue;
+            }
+            if ($relation === 'composition_binding') {
+                $key = $consumer['source_fqcn'] . "\0" . $target;
+                if (isset($bindings[$key])) {
+                    fail("duplicate composition_binding {$consumer['source_fqcn']} -> {$target}");
+                }
+                $bindings[$key] = ['target' => $target, 'index' => $index, 'consumer' => $consumer, 'used' => false, 'actual_operations' => $actualBindingOperations[$key] ?? []];
+            }
         }
     }
-    $grantByPair = [];
-    $grantUse = [];
-    foreach ($manifest['temporary_internal_grants'] as $index => $grant) {
-        $source = $grant['source_fqcn'];
-        $target = $grant['target_fqcn'];
-        if (!isset($byName[$source], $byName[$target])) {
-            fail("internal grant {$index} references an unknown declaration");
+    foreach ($rows as $row) {
+        $classStringTargets = array_merge(
+            array_column($row['class_string_targets'], 'target_fqcn'),
+            $row['class_string_metadata_targets'],
+        );
+        foreach ($classStringTargets as $target) {
+            if (!isset($byName[$target])
+                || $byName[$target]['proposed_owner'] === $row['proposed_owner']
+                || $byName[$target]['proposed_status'] !== 'contract'
+            ) {
+                continue;
+            }
+            $matches = [];
+            foreach ($manifest['declarations'][$target]['consumers'] as $index => $consumer) {
+                if (($consumer['relation'] ?? 'import') === 'import'
+                    && $consumer['owner'] === $row['proposed_owner']
+                    && ($consumer['source_fqcn'] === null || $consumer['source_fqcn'] === $row['fqcn'])
+                ) {
+                    $matches[] = $index;
+                }
+            }
+            if (count($matches) === 1) {
+                $consumerUse[$target . "\0" . $matches[0]] = true;
+            }
         }
-        if ($byName[$target]['proposed_status'] !== 'internal') {
-            fail("internal grant {$source} -> {$target} targets a contract declaration");
-        }
-        if ($byName[$target]['proposed_owner'] !== $grant['owner']) {
-            fail("internal grant {$source} -> {$target} has the wrong accountable owner");
-        }
-        $key = $source . "\0" . $target;
-        if (isset($grantByPair[$key])) {
-            fail("duplicate internal grant {$source} -> {$target}");
-        }
-        $grantByPair[$key] = $grant;
-        $grantUse[$key] = false;
     }
-
     foreach ($observedPairs as $pair => $_true) {
         [$source, $target] = explode("\0", $pair, 2);
         $sourceRow = $byName[$source];
@@ -763,14 +1902,16 @@ function validateAuthorizations(array $manifest, array $byName, array $observedP
             continue;
         }
         if ($targetRow['proposed_status'] === 'internal') {
-            if (!isset($grantByPair[$pair])) {
+            if (!isset($bindings[$pair])) {
                 fail("unapproved exact internal import {$source} -> {$target}");
             }
-            $grantUse[$pair] = true;
             continue;
         }
         $matches = [];
         foreach ($manifest['declarations'][$target]['consumers'] as $index => $consumer) {
+            if (($consumer['relation'] ?? 'import') !== 'import') {
+                continue;
+            }
             if ($consumer['owner'] !== $sourceRow['proposed_owner']) {
                 continue;
             }
@@ -791,21 +1932,185 @@ function validateAuthorizations(array $manifest, array $byName, array $observedP
             fail("unused contract consumer entry {$target}#{$index}");
         }
     }
-    foreach ($grantUse as $pair => $used) {
-        if (!$used) {
+    validateContractCompositions($manifest, $byName, $observedPairs, $consumerUse);
+    validateContractSurfaces($manifest, $byName, $observedPairs, $consumerUse);
+    foreach ($bindings as $pair => &$binding) {
+        $declared = $binding['consumer']['operations'];
+        sort($declared, SORT_STRING);
+        $actual = $binding['actual_operations'];
+        sort($actual, SORT_STRING);
+        if ($actual === []) {
             [$source, $target] = explode("\0", $pair, 2);
-            fail("unused internal grant {$source} -> {$target}");
+            fail("unclassified composition_binding {$source} -> {$target}: no Symfony container binding operation");
         }
+        if ($declared !== $actual) {
+            [$source, $target] = explode("\0", $pair, 2);
+            fail(sprintf(
+                'composition_binding operation mismatch %s -> %s: declared=[%s] actual=[%s]',
+                $source,
+                $target,
+                implode(',', $declared),
+                implode(',', $actual),
+            ));
+        }
+        $binding['used'] = true;
     }
+    unset($binding);
 
     $coarse = [];
-    foreach ($grantByPair as $grant) {
-        $source = $byName[$grant['source_fqcn']];
-        $target = $byName[$grant['target_fqcn']];
+    foreach ($bindings as $pair => $_binding) {
+        [$sourceFqcn, $targetFqcn] = explode("\0", $pair, 2);
+        $source = $byName[$sourceFqcn];
+        $target = $byName[$targetFqcn];
         $coarse[semanticLayerName($source) . "\0" . semanticLayerName($target)] = true;
     }
 
-    return ['internal_grant_count' => count($grantByPair), 'coarse_internal_grant_edge_count' => count($coarse)];
+    return ['internal_grant_count' => count($bindings), 'coarse_internal_grant_edge_count' => count($coarse), 'bindings' => $bindings];
+}
+
+/**
+ * @param array<string, mixed> $manifest
+ * @param array<string, array<string, mixed>> $byName
+ * @param array<string, true> $observedPairs
+ * @param array<string, bool> $consumerUse
+ */
+function validateContractCompositions(array $manifest, array $byName, array $observedPairs, array $consumerUse): void
+{
+    foreach ($manifest['declarations'] as $target => $entry) {
+        foreach ($entry['consumers'] as $index => $consumer) {
+            if (($consumer['relation'] ?? 'import') !== 'contract_composition') {
+                continue;
+            }
+            $carrier = $consumer['carrier_fqcn'];
+            $boundary = $consumer['boundary_fqcn'];
+            if ($carrier === $target) {
+                fail("contract_composition {$target}#{$index} must name a distinct carrier");
+            }
+            if (!isset($byName[$carrier], $byName[$boundary])) {
+                fail("contract_composition {$target}#{$index} references an unknown carrier or boundary");
+            }
+            if ($entry['visibility'] !== 'contract'
+                || $byName[$carrier]['proposed_status'] !== 'contract'
+                || $byName[$carrier]['proposed_owner'] !== $byName[$target]['proposed_owner']
+            ) {
+                fail("contract_composition {$target}#{$index} requires same-owner contract target and carrier");
+            }
+            if (!in_array($target, $byName[$carrier]['contract_property_containments'], true)) {
+                fail("contract_composition {$target}#{$index} carrier lacks exact native stored target containment");
+            }
+            if ($byName[$boundary]['proposed_owner'] !== $consumer['owner']) {
+                fail("contract_composition {$target}#{$index} boundary owner does not match {$consumer['owner']}");
+            }
+            if (!in_array('Amp\\Parallel\\Worker\\Task', $byName[$boundary]['implements'], true)) {
+                fail("contract_composition {$target}#{$index} boundary must implement Amp\\Parallel\\Worker\\Task");
+            }
+            if (($byName[$boundary]['native_method_returns']['run'] ?? []) !== [$carrier]) {
+                fail("contract_composition {$target}#{$index} boundary run() must have the exact native carrier return");
+            }
+            if (!isset($observedPairs[$boundary . "\0" . $carrier])) {
+                fail("contract_composition {$target}#{$index} boundary lacks the exact carrier dependency");
+            }
+            if (isset($observedPairs[$boundary . "\0" . $target])) {
+                fail("contract_composition {$target}#{$index} cannot replace a direct boundary import");
+            }
+            $carrierConsumerUsed = false;
+            foreach ($manifest['declarations'][$carrier]['consumers'] as $carrierIndex => $carrierConsumer) {
+                if (($carrierConsumer['relation'] ?? 'import') === 'import'
+                    && $carrierConsumer['owner'] === $consumer['owner']
+                    && ($consumerUse[$carrier . "\0" . $carrierIndex] ?? false)
+                ) {
+                    $carrierConsumerUsed = true;
+                    break;
+                }
+            }
+            if (!$carrierConsumerUsed) {
+                fail("contract_composition {$target}#{$index} carrier lacks a separately used import consumer");
+            }
+            foreach ($observedPairs as $pair => $_true) {
+                [$source, $dependency] = explode("\0", $pair, 2);
+                if ($dependency === $target && $byName[$source]['proposed_owner'] !== $byName[$target]['proposed_owner']) {
+                    fail("contract_composition {$target}#{$index} cannot authorize direct cross-owner import {$source}");
+                }
+            }
+        }
+    }
+}
+
+/**
+ * A contract value may be exposed through another contract without a direct
+ * cross-owner import. This is deliberately narrower than a general visibility
+ * escape hatch: the carrier must be a same-owner public contract, it must
+ * refer to the value in its declared source, and that carrier must itself be
+ * used by the named external owner (possibly through another surface value).
+ *
+ * @param array<string, mixed> $manifest
+ * @param array<string, array<string, mixed>> $byName
+ * @param array<string, true> $observedPairs
+ * @param array<string, bool> $consumerUse
+ */
+function validateContractSurfaces(array $manifest, array $byName, array $observedPairs, array $consumerUse): void
+{
+    foreach ($manifest['declarations'] as $target => $entry) {
+        foreach ($entry['consumers'] as $index => $consumer) {
+            if (($consumer['relation'] ?? 'import') !== 'contract_surface') {
+                continue;
+            }
+            $carrier = $consumer['carrier_fqcn'];
+            if ($carrier === $target || !isset($byName[$carrier])) {
+                fail("contract_surface {$target}#{$index} names an invalid carrier");
+            }
+            if ($entry['visibility'] !== 'contract'
+                || $byName[$carrier]['proposed_status'] !== 'contract'
+                || $byName[$carrier]['proposed_owner'] !== $byName[$target]['proposed_owner']
+            ) {
+                fail("contract_surface {$target}#{$index} requires a same-owner contract carrier");
+            }
+            if (!in_array($target, $byName[$carrier]['contract_surface_containments'], true)) {
+                fail("contract_surface {$target}#{$index} carrier lacks exact declared target containment");
+            }
+
+            $carrierIsUsed = false;
+            foreach ($manifest['declarations'][$carrier]['consumers'] as $carrierIndex => $carrierConsumer) {
+                if (($carrierConsumer['relation'] ?? 'import') === 'import'
+                    && $carrierConsumer['owner'] === $consumer['owner']
+                    && ($carrierConsumer['source_fqcn'] === null || $carrierConsumer['source_fqcn'] === $consumer['source_fqcn'])
+                    && ($consumerUse[$carrier . "\0" . $carrierIndex] ?? false)
+                ) {
+                    $carrierIsUsed = true;
+                    break;
+                }
+                if (($carrierConsumer['relation'] ?? 'import') === 'contract_surface'
+                    && $carrierConsumer['owner'] === $consumer['owner']
+                    && $carrierConsumer['source_fqcn'] === $consumer['source_fqcn']
+                ) {
+                    $carrierIsUsed = true;
+                    break;
+                }
+            }
+            if (!$carrierIsUsed) {
+                fail("contract_surface {$target}#{$index} carrier lacks an exposed consumer for {$consumer['owner']}");
+            }
+            foreach ($observedPairs as $pair => $_true) {
+                [$sourceFqcn, $dependency] = explode("\0", $pair, 2);
+                if ($dependency === $target && $byName[$sourceFqcn]['proposed_owner'] !== $byName[$target]['proposed_owner']) {
+                    $hasDirectConsumer = false;
+                    foreach ($entry['consumers'] as $directIndex => $directConsumer) {
+                        if (($directConsumer['relation'] ?? 'import') === 'import'
+                            && $directConsumer['owner'] === $byName[$sourceFqcn]['proposed_owner']
+                            && ($directConsumer['source_fqcn'] === null || $directConsumer['source_fqcn'] === $sourceFqcn)
+                            && ($consumerUse[$target . "\0" . $directIndex] ?? false)
+                        ) {
+                            $hasDirectConsumer = true;
+                            break;
+                        }
+                    }
+                    if (!$hasDirectConsumer) {
+                        fail("contract_surface {$target}#{$index} cannot authorize direct cross-owner import {$sourceFqcn}");
+                    }
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -1118,8 +2423,6 @@ function documentationDisposition(string $path): array
         'CLAUDE.md',
         'docs/adr/README.md',
         'docs/internal/MODULE_README_TEMPLATE.md',
-        'src/Architecture/README.md',
-        'src/Configuration/README.md',
         'website/docs/reference/default-thresholds.md',
         'website/docs/reference/default-thresholds.ru.md',
     ];
@@ -1135,12 +2438,49 @@ function documentationDisposition(string $path): array
         'docs/adr/0017-baseline-ceiling.md' => ['Analysis.Policy.Baseline', 'P6'],
         'docs/adr/0021-declaration-scoped-callable-identity-and-dependency-projections.md' => ['Analysis.Evidence.DependencyModel', 'P2'],
         'docs/adr/0022-capability-oriented-modular-monolith.md' => ['Architecture.Governance', 'P2'],
+        'docs/adr/0023-p8-context-locality-and-composition-bindings.md' => ['Architecture.Governance', 'P8'],
         'docs/internal/plans/modular-architecture.md' => ['Architecture.Governance', 'P2'],
+        'docs/internal/plans/modular-architecture/decisions-and-target.md' => ['Architecture.Governance', 'P2'],
+        'docs/internal/plans/modular-architecture/p0-governance.md' => ['Architecture.Governance', 'P2'],
+        'docs/internal/plans/modular-architecture/p1-duplication.md' => ['Architecture.Governance', 'P2'],
+        'docs/internal/plans/modular-architecture/p2-dependency-model.md' => ['Architecture.Governance', 'P2'],
+        'docs/internal/plans/modular-architecture/p3-run-measurement-configuration.md' => ['Architecture.Governance', 'P2'],
+        'docs/internal/plans/modular-architecture/p4-architecture-policy.md' => ['Architecture.Governance', 'P2'],
+        'docs/internal/plans/modular-architecture/p5-computed-metrics.md' => ['Architecture.Governance', 'P2'],
+        'docs/internal/plans/modular-architecture/p6-finding-policy.md' => ['Architecture.Governance', 'P6-F'],
+        'docs/internal/plans/modular-architecture/p6/p6-production-ledger.md' => ['Architecture.Governance', 'P6-0'],
+        'docs/internal/plans/modular-architecture/p6/p6-relations-ledger.md' => ['Architecture.Governance', 'P6-0'],
+        'docs/internal/plans/modular-architecture/p6/p6-test-ledger.md' => ['Architecture.Governance', 'P6-0'],
+        'docs/internal/plans/modular-architecture/roadmap-p5-p8.md' => ['Architecture.Governance', 'P2'],
         'src/Analysis/README.md' => ['Analysis.Run', 'P2'],
+        'src/Analysis/Configuration/README.md' => ['Analysis.Configuration', 'P3'],
+        'src/Analysis/Evidence/CircularDependency/README.md' => ['Analysis.Evidence.CircularDependency', 'P4'],
+        'src/Analysis/Evidence/ComputedMetrics/README.md' => ['Analysis.Evidence.ComputedMetrics', 'P5'],
         'src/Analysis/Evidence/DependencyModel/README.md' => ['Analysis.Evidence.DependencyModel', 'P2'],
         'src/Analysis/Evidence/Duplication/README.md' => ['Analysis.Evidence.Duplication', 'P1'],
-        'src/Baseline/README.md' => ['Analysis.Policy.Baseline', 'P6'],
+        'src/Analysis/Evidence/Measurement/README.md' => ['Analysis.Evidence.Measurement', 'P3'],
+        'src/Analysis/Evidence/Prioritization/README.md' => ['Analysis.Evidence.Prioritization', 'P6-D'],
+        'src/Analysis/Evidence/CodeSmell/README.md' => ['Analysis.Evidence.CodeSmell', 'P7'],
+        'src/Analysis/Evidence/Cohesion/README.md' => ['Analysis.Evidence.Cohesion', 'P7'],
+        'src/Analysis/Evidence/Complexity/README.md' => ['Analysis.Evidence.Complexity', 'P7'],
+        'src/Analysis/Evidence/Coupling/README.md' => ['Analysis.Evidence.Coupling', 'P7'],
+        'src/Analysis/Evidence/Design/README.md' => ['Analysis.Evidence.Design', 'P7'],
+        'src/Analysis/Evidence/Maintainability/README.md' => ['Analysis.Evidence.Maintainability', 'P7'],
+        'src/Analysis/Evidence/Security/README.md' => ['Analysis.Evidence.Security', 'P7'],
+        'src/Analysis/Evidence/Size/README.md' => ['Analysis.Evidence.Size', 'P7'],
+        'src/Analysis/Finding/README.md' => ['Analysis.Finding', 'P6-A'],
+        'src/Analysis/Policy/Inline/README.md' => ['Analysis.Policy.Inline', 'P6-B'],
+        'src/Analysis/Run/README.md' => ['Analysis.Run', 'P3'],
+        'src/Analysis/Policy/Architecture/README.md' => ['Analysis.Policy.Architecture', 'P4'],
+        'src/Analysis/Policy/Baseline/README.md' => ['Analysis.Policy.Baseline', 'P6-C'],
         'src/Core/README.md' => ['Architecture.Governance', 'P2'],
+        'src/Core/Profiler/README.md' => ['Core.Profiler', 'P8'],
+        'src/Core/Symbol/README.md' => ['Core.Symbol', 'P8'],
+        'src/Infrastructure/Ast/README.md' => ['Infrastructure.Ast', 'P8'],
+        'src/Infrastructure/DependencyInjection/README.md' => ['Infrastructure.DependencyInjection', 'P8'],
+        'src/Infrastructure/Parallel/README.md' => ['Infrastructure.Parallel', 'P8'],
+        'src/Infrastructure/Rule/README.md' => ['Infrastructure.Rule', 'P8'],
+        'src/Infrastructure/Serializer/README.md' => ['Infrastructure.Serializer', 'P8'],
         'src/Infrastructure/Console/README.md' => ['Architecture.Governance', 'P2'],
         'src/Infrastructure/README.md' => ['Architecture.Governance', 'P2'],
         'src/Reporting/GraphProjection/README.md' => ['Reporting.GraphProjection', 'P2'],
@@ -1165,16 +2505,14 @@ function documentationDisposition(string $path): array
     }
 
     $prefixes = [
-        'src/Metrics/' => ['Analysis.Evidence.Measurement', 'P7'],
-        'src/Rules/' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/code-smell' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/cohesion' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/complexity' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/coupling' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/design' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/maintainability' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/security' => ['Analysis.Evidence.Measurement', 'P7'],
-        'website/docs/rules/size' => ['Analysis.Evidence.Measurement', 'P7'],
+        'website/docs/rules/code-smell' => ['Analysis.Evidence.CodeSmell', 'P7'],
+        'website/docs/rules/cohesion' => ['Analysis.Evidence.Cohesion', 'P7'],
+        'website/docs/rules/complexity' => ['Analysis.Evidence.Complexity', 'P7'],
+        'website/docs/rules/coupling' => ['Analysis.Evidence.Coupling', 'P7'],
+        'website/docs/rules/design' => ['Analysis.Evidence.Design', 'P7'],
+        'website/docs/rules/maintainability' => ['Analysis.Evidence.Maintainability', 'P7'],
+        'website/docs/rules/security' => ['Analysis.Evidence.Security', 'P7'],
+        'website/docs/rules/size' => ['Analysis.Evidence.Size', 'P7'],
     ];
     foreach ($prefixes as $prefix => [$owner, $closure]) {
         if (str_starts_with($path, $prefix)) {

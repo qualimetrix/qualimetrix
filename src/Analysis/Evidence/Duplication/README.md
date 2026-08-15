@@ -11,15 +11,13 @@
   `tests/Analysis/Evidence/Duplication/`, and the English/Russian Duplication
   rule pages.
 - **Non-goals:** file discovery and run sequencing belong to `Analysis.Run`;
-  configuration source merging belongs to `Analysis.Configuration`; finding
-  primitives and rule execution belong to `Analysis.Finding`.
+  configuration source merging belongs to `Analysis.Configuration`; Finding
+  owns rule and finding primitives plus `Analysis\Finding\RuleExecution`.
 
 ## Structure
 
 ```text
 Duplication/
-├── Contract/
-│   └── DuplicationInspectionInterface.php
 ├── DuplicationDetector.php
 ├── DuplicationResultProvider.php
 ├── ContentHintExtractor.php
@@ -39,22 +37,20 @@ Duplication/
 └── CodeDuplicationRule.php
 ```
 
-## External consumers and contracts
+## External integration
 
-`DuplicationInspectionInterface` is the module's only public contract.
-Detection entities, options, the result provider, and the rule implementation
-are internal.
-
-| Consumer owner                       | Source FQCN (`null` if permanent)              | Contract type                                                                       | `closes_in` | Promise used                                               |
-| ------------------------------------ | ---------------------------------------------- | ----------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------------- |
-| `Analysis.Run`                       | `Qualimetrix\Analysis\Pipeline\MetricEnricher` | `Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface` | `P3`        | Reset run state and inspect the discovered file set.       |
-| `Infrastructure.DependencyInjection` | `null`                                         | `Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface` | `null`      | Compose the implementation and expose the contract to Run. |
+Duplication publishes no contract of its own. `DuplicationDetector` implements
+the consumer-owned
+`Analysis\Run\Contract\FileSetInspectionParticipantInterface`; every
+Duplication entity, option, result provider, rule, and detector remains internal.
+Infrastructure registers the detector as a FileSet participant by
+autoconfiguration and never publishes a Duplication alias.
 
 ## State and lifecycle
 
-| State                  | Scope   | Owner                       | Created/reset by                                                                                  | Typed readers         |
-| ---------------------- | ------- | --------------------------- | ------------------------------------------------------------------------------------------------- | --------------------- |
-| `list<DuplicateBlock>` | per-run | `DuplicationResultProvider` | Created by `DuplicationDetector::inspect()` and cleared in O(1) by `DuplicationDetector::reset()` | `CodeDuplicationRule` |
+| State                  | Scope   | Owner                       | Created/reset by                                                                                        | Typed readers         |
+| ---------------------- | ------- | --------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------- |
+| `list<DuplicateBlock>` | per-run | `DuplicationResultProvider` | Created by `DuplicationDetector::inspect()` and cleared in O(1) by `DuplicationDetector::resetForRun()` | `CodeDuplicationRule` |
 
 `inspect()` computes a complete local result before replacing the provider's
 value. Replacement never appends to a previous run, and `all()` returns the
@@ -70,15 +66,16 @@ weaken the class rather than improve it.
 
 ## Dependencies and ports
 
-P3's generic phase ports remain non-binding. The current temporary Run seam is
-the capability-specific inspection contract above.
+P3 proves one narrow Run phase port. The generic composite invokes it without a
+Duplication-specific branch; Duplication retains its result and emits its own
+completion log through its implementation.
 
-| Dependency/port                  | Owner                  | Direction                    | Typed input/output                           | Why required                                                         |
-| -------------------------------- | ---------------------- | ---------------------------- | -------------------------------------------- | -------------------------------------------------------------------- |
-| `DuplicationInspectionInterface` | Duplication            | Run -> Duplication           | `list<SplFileInfo>` -> provider-owned result | Run triggers the file-set inspection without importing the detector. |
-| `ConfigurationProviderInterface` | Analysis.Configuration | Duplication -> Configuration | resolved rule options and project root       | Detection uses configured token/line thresholds and relative paths.  |
-| Path primitives                  | Core.Path              | Duplication -> Core.Path     | absolute/relative paths                      | Stable file identity and report locations.                           |
-| Rule/finding contracts           | Analysis.Finding       | Duplication -> Finding       | options, context and violations              | The owned rule participates in common rule execution and reporting.  |
+| Dependency/port                                                                            | Owner                   | Direction                    | Typed input/output                           | Why required                                                                          |
+| ------------------------------------------------------------------------------------------ | ----------------------- | ---------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `FileSetInspectionParticipantInterface`                                                    | Run                     | Run -> Duplication           | `list<SplFileInfo>` -> provider-owned result | Run invokes a selected participant without importing the detector.                    |
+| `RuleConfigurationInterface` and Run file-set input                                        | Finding / Run           | Duplication -> Finding / Run | named rule options and project root          | Detection reads its named rule and receives root only through Run's participant call. |
+| Path and symbol primitives                                                                 | Core.Path / Core.Symbol | Duplication -> Core          | absolute/relative paths and metric subjects  | Stable file, subject, and report identities.                                          |
+| Rule/finding contracts, including `Rules\AbstractRule` and `Rules\Support\ThresholdParser` | Analysis.Finding        | Duplication -> Finding       | rule/options/threshold APIs and violations   | The owned rule participates in Finding's current execution and reporting boundary.    |
 
 ## Test ownership
 
@@ -108,8 +105,15 @@ to the infrastructure `DuplicationConfigurator`; compiler passes inject its
 options, add it to rule/channel registries, and reject duplicate rule/channel
 identities. The rule's deterministic id is `duplication.code-duplication`.
 
-## Temporary grants and closure
+## Run integration
 
-| Exact grant                                                                                                                           | Owner          | Reason                                                           | Closure package/condition                                                    | Verification                                                                                       |
-| ------------------------------------------------------------------------------------------------------------------------------------- | -------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `Qualimetrix\Analysis\Pipeline\MetricEnricher` -> `Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface` | `Analysis.Run` | Preserve current file-set sequencing during the namespace pilot. | P3: replace the capability-specific Run import with the accepted phase port. | The manifest rejects every additional Run source and requires this exact entry to disappear in P3. |
+The former `MetricEnricher -> DuplicationInspectionInterface` temporary import
+and the capability-owned interface are deleted in P3. The final route is Run's
+FileSet participant port implemented by `DuplicationDetector`. Disabling
+`duplication.code-duplication` prevents both inspection and allocation; a second
+analysis run begins with an empty provider.
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

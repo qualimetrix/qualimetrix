@@ -20,16 +20,141 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+- The mixed configuration runtime surface was removed without compatibility
+  aliases: `TransitionalResolvedConfiguration`,
+  `TransitionalRuntimeConfiguration`, its provider/holder, and
+  `ConfigurationContext` no longer exist. Invoke
+  `ConfigurationPipelineInterface::resolve(ConfigurationResolutionRequest)` and
+  pass the concrete `ConfigurationDocument` only to a named owner resolver.
+  Use `RunConfigurationResolverInterface` for invocation data,
+  `FindingConfigurationResolverInterface` for rule configuration, and the
+  Cache, Parallel, Reporting, or Console resolver that owns the remaining
+  value. This removes unrelated feature state from a universal runtime carrier.
+
+- `CollectorConfigHolder`, `CollectorRuntimeConfiguration`, and their generic
+  stores/configurable contracts were removed. The only configured collector is
+  LCOM, so its exact value is now
+  `Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration`, applied
+  through the Cohesion-owned store and worker contract. Consumers must not add
+  another feature setting to a generic collector payload.
+
+- `Core\Progress\*`, `ProfilerHolder`, `NullProfiler`, and Core-owned
+  `Span` were removed. Collection code imports
+  `Analysis\Run\Contract\Progress\ProgressReporterInterface`; instrumentation
+  imports `Core\Profiler\Contract\ProfilerInterface`; Console uses the
+  Profiler-owned session control/report contracts. These changes keep delivery
+  modes and profiling state instance-owned rather than globally mutable.
+
+- The YAML keys `namespace.strategy`, `namespace.composer_json`,
+  `aggregation.prefixes`, and `aggregation.auto_depth` were removed and are now
+  rejected as unknown. Project namespace discovery uses the invocation working
+  directory's `composer.json`, and aggregation follows analyzed declarations.
+
+- Private Symfony container references are now recorded as permanent exact
+  `composition_binding` entries in the internal manifest. A binding has one DI
+  source, private target, and observed container operation; it is not a public
+  contract and does not authorize another source. Add a named public contract
+  for cross-owner use, or add a reviewed exact binding for composition only.
+
+- `Qualimetrix\Core\Coupling\FrameworkNamespaces` and
+  `Qualimetrix\Core\Coupling\FrameworkNamespacesHolder` were removed with no
+  compatibility shim. Coupling now owns its run-scoped framework-namespace
+  state. Composition consumers must inject
+  `Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface`
+  and call `configure(ConfigurationDocument $document)` for every run, including
+  an empty document to reset prior state. Configuration producers keep using
+  the canonical `coupling.framework_namespaces` document key; they must no
+  longer read or construct a Coupling field on a generic configuration carrier.
+
+- Finding and policy ownership moved without aliases or shims. Replace
+  `Qualimetrix\Analysis\RuleExecution\*`, `Qualimetrix\Core\Rule\*`, and
+  `Qualimetrix\Core\Violation\*` imports with their
+  `Qualimetrix\Analysis\Finding\*` counterparts and consume only the named
+  Finding contracts for rule configuration, execution metadata/statistics,
+  filters, and violations. Source controls and annotation suppression moved
+  from `Core\Suppression` / Baseline internals to
+  `Analysis\Policy\Inline`; baseline lifecycle and accepted-boundary types now
+  live under `Analysis\Policy\Baseline`. Impact ranking and technical-debt
+  calculation moved to `Analysis\Evidence\Prioritization`. Replace direct
+  Console `ViolationFilterPipeline` and Infrastructure `GitScopeFilter`
+  composition with `Reporting\FindingProjection\FindingProjector` and its
+  `GitScopeQueryInterface`; the shipped adapter is
+  `Infrastructure\Git\ReportingGitScopeQuery`. The transitional Configuration
+  rule-option, selection, output-format, and finding-exclusion fields were
+  replaced by the corresponding Finding/Configuration contracts. Update test
+  namespaces with their subjects; removed provider getters, concrete rule-list
+  exposure, old pipeline/result types, and old FQCNs have no compatibility
+  replacement.
+
+- Computed metrics and Health moved without aliases or shims into the
+  `Qualimetrix\Analysis\Evidence\ComputedMetrics` capability. Replace
+  `Qualimetrix\Configuration\ComputedMetricsConfigResolver` and
+  `Qualimetrix\Configuration\ComputedMetricFormulaValidator` with the
+  same-named classes at the new capability root. Replace
+  `Qualimetrix\Configuration\ComputedMetrics\Contract\HealthFormulaExclusionInterface`
+  with `Contract\Configuration\HealthFormulaExclusionInterface` and
+  `Qualimetrix\Configuration\HealthFormulaExcluder` with
+  `Health\Configuration\HealthFormulaExcluder` under that root. Move remaining
+  `Core\ComputedMetric\*`, `Metrics\ComputedMetric\*`,
+  `Rules\ComputedMetric\*`, and `Reporting\Health` score, offender, metadata,
+  ranking, and drill-down imports to their corresponding root, `Contract\*`,
+  and `Health\*` declarations under the new capability;
+  Reporting retains only thin report assembly and projection consumers. The
+  evaluator API changes from `compute($repository, $definitions)` to
+  `evaluate($repository, $filesAnalyzed)`: definitions and configuration now
+  belong to the injected, instance-owned catalog instead of caller-supplied or
+  process-global state. Update imports and direct constructor calls, and wire
+  the published ComputedMetrics contracts through DI; removed holder,
+  evaluator-interface, Health builder-interface, and legacy drill-down
+  surfaces have no compatibility replacement.
+
+- Architecture implementation moved without aliases. Replace
+  `Qualimetrix\Architecture\*` imports with either
+  `Qualimetrix\Analysis\Policy\Architecture\*` for declared-layer policy or
+  `Qualimetrix\Analysis\Evidence\CircularDependency\*` for SCC evidence.
+  `ArchitectureProcessorInterface`, `ArchitectureLifecycleHook`,
+  `AnalysisLifecycleHookInterface`, `CycleInterface`, and the Configuration
+  deferred-warning transport were removed. External consumers use only the new
+  named leaf contracts; no compatibility shims are provided.
+
+- Analysis orchestration moved without aliases. Replace imports under
+  `Qualimetrix\Analysis\Pipeline\*`, `Analysis\Collection\*`,
+  `Analysis\Discovery\*`, and `Analysis\Lifecycle\*` with their
+  `Qualimetrix\Analysis\Run\Contract\*`, `Analysis\Run\Collection\*`,
+  `Analysis\Run\Discovery\*`, and `Analysis\Run\Pipeline\*` counterparts.
+  In particular, use `Run\Contract\Pipeline\AnalysisPipelineInterface` for
+  adapters and `Run\Contract\FileSetInspectionParticipantInterface` for the
+  file-set invocation seam. There are no compatibility aliases.
+- Measurement moved without aliases. Replace
+  `Qualimetrix\Analysis\Aggregator\*`, `Analysis\Repository\*`,
+  `Analysis\Namespace_\*`, and shared collection metric contracts with
+  `Qualimetrix\Analysis\Evidence\Measurement\*`. External consumers must use
+  the corresponding `Measurement\Contract\*` type; repository indexes,
+  visitors, and aggregation implementations are internal.
+- Configuration moved without aliases from `Qualimetrix\Configuration\*` to
+  `Qualimetrix\Analysis\Configuration\*` where P3 moved the type. The final
+  surface is `ConfigurationPipelineInterface::resolve()` returning concrete
+  `ConfigurationDocument`; use the named owner resolver rather than a generic
+  provider or resolved-configuration carrier. The remaining rule-option and
+  computed-metric classes are deliberate P5/P6 migration inputs, not
+  compatibility shims.
+- Dependency extraction moved inside DependencyModel. Replace direct imports of
+  `Analysis\Collection\Dependency\DependencyResolver`, `DependencyVisitor`,
+  and handler types with the declared
+  `Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface`
+  where an external promise is needed. Extraction internals have no public
+  replacement. Tests move with their subject and must be discovered from their
+  new `tests/Analysis/...` paths.
 - Dependency graph types moved without aliases: replace `Qualimetrix\Core\Dependency\Dependency`, `DependencyType`, and `DependencyGraphInterface` with their `Qualimetrix\Analysis\Evidence\DependencyModel\Contract\*` equivalents; replace `EmptyDependencyGraph` with the internal capability implementation only inside composition. Replace the concrete `Analysis\Collection\Dependency\DependencyGraphBuilder` dependency with `Contract\DependencyGraphBuilderInterface`; graph implementations are no longer public module dependencies.
 - Graph export is now a Reporting projection contract. Replace `Analysis\Collection\Dependency\Export\GraphExporterInterface` and direct `DotExporter`/`JsonGraphExporter` construction with `Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface::project()` plus `GraphProjectionRequest`. The old exporter interface was removed, implementations moved under `Reporting\GraphProjection`, and no compatibility aliases or shims are provided.
-- Duplication implementation moved without aliases or shims: update `Qualimetrix\Analysis\Duplication\*`, `Qualimetrix\Core\Duplication\*`, and `Qualimetrix\Rules\Duplication\*` imports to `Qualimetrix\Analysis\Evidence\Duplication\*`. The former `DuplicationDetectorInterface::detect(array): array` contract was replaced by `Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface::reset(): void` plus `inspect(array): void`; detection results are now provider-owned. Remove `duplicateBlocks` arguments/reads from `AnalysisContext` and `EnrichmentResult`, inject the capability contract for inspection or the internal `DuplicationResultProvider` for the capability-owned rule, and update `DuplicateBlock`, `DuplicateLocation`, `CodeDuplicationRule`, and `CodeDuplicationOptions` imports to their new namespace.
+- Duplication implementation moved without aliases or shims: update `Qualimetrix\Analysis\Duplication\*`, `Qualimetrix\Core\Duplication\*`, and `Qualimetrix\Rules\Duplication\*` imports to `Qualimetrix\Analysis\Evidence\Duplication\*`. The intermediate `DuplicationInspectionInterface` is removed; final composition registers the internal `DuplicationDetector` as an implementation of `Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface`. Remove `duplicateBlocks` arguments/reads from `AnalysisContext` and `EnrichmentResult`; no Duplication-owned public inspection contract remains. The capability-owned rule reads the internal `DuplicationResultProvider`.
 - `architecture.allow` now rejects every directed cycle made only of exact selectors with `ConfigLoadException`. Exact self-references were previously stripped silently and exact mutual permissions only warned; remove redundant self-edges and break or reorient at least one allow edge in every cycle. Glob and captured selectors remain outside this static DAG check.
 - Callable-level contracts now use `Callable` instead of `Method`, including symbol/rule levels and `*.callable` channels. Update enum cases, configuration selectors, stored channel names, and integrations; there are no `Method` aliases.
 - Baselines now require version 11 typed subjects with optional semantic occurrence and dependency-edge identity. Version 5 and version 10 files are rejected because exact declaration identities cannot be inferred; run a fresh analysis, deliberately map or split accepted entries, and write a reviewed v11 file. The historical `baseline:migrate` command was removed and has no replacement shim.
 - Violation JSON and fingerprints now use exact declaration subjects plus semantic occurrence and dependency edge where present. Consumers that persisted or joined findings by logical `symbol` alone must use `channel + subject + optional occurrence + optional edge`.
 - A `Violation` carrying `dependencyTarget` without `dependencyType` now emits JSON `edge: {"target": "..."}` instead of `edge: null`, and its GitLab/SARIF fingerprint includes a collision-safe target-only edge component instead of colliding with the no-edge finding. No-edge and fully typed edge fingerprints are unchanged; baseline v11 already retained target-only edges, so no baseline migration is required.
 - Layer-violation findings now project an owned logical target to each exact target declaration; an unowned target remains on the exact source declaration. Update symbol-scoped suppressions and baseline mappings to the projected target subject; physical next-line/file controls still use the dependency use-site.
-- `CollectionOrchestrator` no longer creates default null progress/logger collaborators. Pass mandatory `ProgressReporter` and `LoggerInterface` instances; shipped DI already injects `DelegatingProgressReporter` and `DelegatingLogger`, while every direct constructor call must provide its chosen implementations. No nullable/default overload or compatibility shim is provided.
+- `CollectionOrchestrator` no longer creates default null progress/logger collaborators. Pass mandatory Run progress and PSR logger instances; shipped DI injects the instance-owned Console progress switch and `DelegatingLogger`, while every direct constructor call must provide its chosen implementations. No nullable/default overload or compatibility shim is provided.
 - `FileParserInterface` now requires `parseContent(SplFileInfo $file, string $content): array`. Implementations must parse the supplied bytes while using `$file` as diagnostic source identity.
 - `DependencyGraphAnalyzerInterface`, `DependencyGraphAnalyzer`, and `DependencyGraphAnalysisResult` moved from `Qualimetrix\Analysis\Collection\Dependency` to `Qualimetrix\Analysis\Pipeline`. Update imports and fully qualified type references to the new namespace; their constructor and method contracts are unchanged, and no compatibility aliases are provided.
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Core\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use ReflectionClass;
 use ReflectionNamedType;

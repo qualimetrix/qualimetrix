@@ -1,0 +1,365 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Evidence\Size;
+
+use Override;
+use PhpParser\Node;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use SplFileInfo;
+
+/**
+ * Collects method count and property count metrics for classes.
+ *
+ * Metrics per class:
+ * - methodCount: methods excluding getters/setters
+ * - methodCountTotal: all methods
+ * - methodCountPublic: public methods (excluding getters/setters)
+ * - methodCountProtected: protected methods (excluding getters/setters)
+ * - methodCountPrivate: private methods (excluding getters/setters)
+ * - getterCount: getter methods (get*, is*, has*)
+ * - setterCount: setter methods (set*)
+ * - propertyCount: total number of properties
+ * - propertyCountPublic: public properties
+ * - propertyCountProtected: protected properties
+ * - propertyCountPrivate: private properties
+ * - promotedPropertyCount: constructor promoted properties (PHP 8+)
+ * - woc: Weight of Class (ratio of all public methods incl. getters/setters to total methods, 0-100)
+ *
+ * Anonymous classes are ignored.
+ */
+final class MethodCountCollector extends AbstractCollector implements ClassMetricsProviderInterface
+{
+    private const NAME = 'method-count';
+
+    public const string METRIC_METHOD_COUNT_TOTAL = 'methodCountTotal';
+    public const string METRIC_METHOD_COUNT_PUBLIC = 'methodCountPublic';
+    public const string METRIC_METHOD_COUNT_PROTECTED = 'methodCountProtected';
+    public const string METRIC_METHOD_COUNT_PRIVATE = 'methodCountPrivate';
+    public const string METRIC_GETTER_COUNT = 'getterCount';
+    public const string METRIC_SETTER_COUNT = 'setterCount';
+    public const string METRIC_PROPERTY_COUNT_PUBLIC = 'propertyCountPublic';
+    public const string METRIC_PROPERTY_COUNT_PROTECTED = 'propertyCountProtected';
+    public const string METRIC_PROPERTY_COUNT_PRIVATE = 'propertyCountPrivate';
+    public const string METRIC_PROMOTED_PROPERTY_COUNT = 'promotedPropertyCount';
+
+    // RFC-008: Class characteristics for false positive reduction
+
+    // PDepend WOC metric — see MetricName::STRUCTURE_WOC
+
+    public function __construct()
+    {
+        $this->visitor = new MethodCountVisitor();
+    }
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function provides(): array
+    {
+        return [
+            MetricName::STRUCTURE_METHOD_COUNT,
+            self::METRIC_METHOD_COUNT_TOTAL,
+            self::METRIC_METHOD_COUNT_PUBLIC,
+            self::METRIC_METHOD_COUNT_PROTECTED,
+            self::METRIC_METHOD_COUNT_PRIVATE,
+            self::METRIC_GETTER_COUNT,
+            self::METRIC_SETTER_COUNT,
+            MetricName::STRUCTURE_PROPERTY_COUNT,
+            self::METRIC_PROPERTY_COUNT_PUBLIC,
+            self::METRIC_PROPERTY_COUNT_PROTECTED,
+            self::METRIC_PROPERTY_COUNT_PRIVATE,
+            self::METRIC_PROMOTED_PROPERTY_COUNT,
+            // RFC-008: Class characteristics for false positive reduction
+            MetricName::STRUCTURE_IS_READONLY,
+            MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY,
+            MetricName::STRUCTURE_IS_DATA_CLASS,
+            MetricName::STRUCTURE_IS_ABSTRACT,
+            MetricName::STRUCTURE_IS_INTERFACE,
+            MetricName::STRUCTURE_IS_EXCEPTION,
+            // PDepend WOC metric
+            MetricName::STRUCTURE_WOC,
+        ];
+    }
+
+    /**
+     * @param Node[] $ast
+     */
+    public function collect(SplFileInfo $file, array $ast): MetricBag
+    {
+        $bag = new MetricBag();
+
+        \assert($this->visitor instanceof MethodCountVisitor);
+
+        foreach ($this->visitor->getClassMetrics() as $classFqn => $metrics) {
+            // RFC-008: Calculate derived class characteristics
+            // isPromotedPropertiesOnly = all properties are promoted
+            $isPromotedOnly = $metrics->propertyCount > 0
+                && $metrics->propertyCount === $metrics->promotedPropertyCount;
+
+            // isDataClass = only getters/setters/constructor (no other logic)
+            $nonAccessorMethods = $metrics->methodCountTotal
+                - $metrics->getterCount
+                - $metrics->setterCount
+                - ($metrics->hasConstructor ? 1 : 0);
+            $isDataClass = $nonAccessorMethods === 0;
+
+            // WOC = allPublicMethods / totalMethods (percentage 0-100)
+            // Higher WOC = more public surface, potentially less encapsulation
+            // Uses methodCountPublicAll which includes getters/setters
+            $woc = $metrics->methodCountTotal > 0
+                ? (int) round(($metrics->methodCountPublicAll / $metrics->methodCountTotal) * 100)
+                : 0;
+
+            $bag = $bag
+                ->with(MetricName::STRUCTURE_METHOD_COUNT . ':' . $classFqn, $metrics->methodCount())
+                ->with(self::METRIC_METHOD_COUNT_TOTAL . ':' . $classFqn, $metrics->methodCountTotal)
+                ->with(self::METRIC_METHOD_COUNT_PUBLIC . ':' . $classFqn, $metrics->methodCountPublic)
+                ->with(self::METRIC_METHOD_COUNT_PROTECTED . ':' . $classFqn, $metrics->methodCountProtected)
+                ->with(self::METRIC_METHOD_COUNT_PRIVATE . ':' . $classFqn, $metrics->methodCountPrivate)
+                ->with(self::METRIC_GETTER_COUNT . ':' . $classFqn, $metrics->getterCount)
+                ->with(self::METRIC_SETTER_COUNT . ':' . $classFqn, $metrics->setterCount)
+                ->with(MetricName::STRUCTURE_PROPERTY_COUNT . ':' . $classFqn, $metrics->propertyCount)
+                ->with(self::METRIC_PROPERTY_COUNT_PUBLIC . ':' . $classFqn, $metrics->propertyCountPublic)
+                ->with(self::METRIC_PROPERTY_COUNT_PROTECTED . ':' . $classFqn, $metrics->propertyCountProtected)
+                ->with(self::METRIC_PROPERTY_COUNT_PRIVATE . ':' . $classFqn, $metrics->propertyCountPrivate)
+                ->with(self::METRIC_PROMOTED_PROPERTY_COUNT . ':' . $classFqn, $metrics->promotedPropertyCount)
+                // RFC-008: Class characteristics for false positive reduction
+                ->with(MetricName::STRUCTURE_IS_READONLY . ':' . $classFqn, $metrics->isReadonly ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY . ':' . $classFqn, $isPromotedOnly ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_DATA_CLASS . ':' . $classFqn, $isDataClass ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_ABSTRACT . ':' . $classFqn, $metrics->isAbstract ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_INTERFACE . ':' . $classFqn, $metrics->isInterface ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_EXCEPTION . ':' . $classFqn, $metrics->isException ? 1 : 0)
+                // PDepend WOC metric
+                ->with(MetricName::STRUCTURE_WOC . ':' . $classFqn, $woc);
+        }
+
+        return $bag;
+    }
+
+    /**
+     * @return list<ClassWithMetrics>
+     */
+    public function getClassesWithMetrics(RelativePath $file): array
+    {
+        \assert($this->visitor instanceof MethodCountVisitor);
+
+        $result = [];
+
+        foreach ($this->visitor->getClassMetrics() as $metrics) {
+            // RFC-008: Calculate derived class characteristics
+            $isPromotedOnly = $metrics->propertyCount > 0
+                && $metrics->propertyCount === $metrics->promotedPropertyCount;
+
+            $nonAccessorMethods = $metrics->methodCountTotal
+                - $metrics->getterCount
+                - $metrics->setterCount
+                - (int) $metrics->hasConstructor;
+            $isDataClass = $nonAccessorMethods === 0;
+
+            // WOC = allPublicMethods / totalMethods (percentage 0-100)
+            // Uses methodCountPublicAll which includes getters/setters
+            $woc = (int) round(($metrics->methodCountPublicAll / max(1, $metrics->methodCountTotal)) * 100);
+
+            $bag = (new MetricBag())
+                ->with(MetricName::STRUCTURE_METHOD_COUNT, $metrics->methodCount())
+                ->with(self::METRIC_METHOD_COUNT_TOTAL, $metrics->methodCountTotal)
+                ->with(self::METRIC_METHOD_COUNT_PUBLIC, $metrics->methodCountPublic)
+                ->with(self::METRIC_METHOD_COUNT_PROTECTED, $metrics->methodCountProtected)
+                ->with(self::METRIC_METHOD_COUNT_PRIVATE, $metrics->methodCountPrivate)
+                ->with(self::METRIC_GETTER_COUNT, $metrics->getterCount)
+                ->with(self::METRIC_SETTER_COUNT, $metrics->setterCount)
+                ->with(MetricName::STRUCTURE_PROPERTY_COUNT, $metrics->propertyCount)
+                ->with(self::METRIC_PROPERTY_COUNT_PUBLIC, $metrics->propertyCountPublic)
+                ->with(self::METRIC_PROPERTY_COUNT_PROTECTED, $metrics->propertyCountProtected)
+                ->with(self::METRIC_PROPERTY_COUNT_PRIVATE, $metrics->propertyCountPrivate)
+                ->with(self::METRIC_PROMOTED_PROPERTY_COUNT, $metrics->promotedPropertyCount)
+                // RFC-008: Class characteristics for false positive reduction
+                ->with(MetricName::STRUCTURE_IS_READONLY, $metrics->isReadonly ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY, $isPromotedOnly ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_DATA_CLASS, $isDataClass ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_ABSTRACT, $metrics->isAbstract ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_INTERFACE, $metrics->isInterface ? 1 : 0)
+                ->with(MetricName::STRUCTURE_IS_EXCEPTION, $metrics->isException ? 1 : 0)
+                // PDepend WOC metric
+                ->with(MetricName::STRUCTURE_WOC, $woc);
+
+            $result[] = new ClassWithMetrics(
+                declarationPath: new DeclarationPath(SymbolPath::forClass($metrics->namespace ?? '', $metrics->className), $file, $metrics->startFilePos),
+                line: $metrics->line,
+                metrics: $bag,
+            );
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return list<MetricDefinition>
+     */
+    #[Override]
+    public function getMetricDefinitions(): array
+    {
+        $aggregations = [
+            SymbolLevel::Namespace_->value => [
+                AggregationStrategy::Sum,
+                AggregationStrategy::Average,
+                AggregationStrategy::Max,
+                AggregationStrategy::Percentile95,
+            ],
+            SymbolLevel::Project->value => [
+                AggregationStrategy::Sum,
+                AggregationStrategy::Average,
+                AggregationStrategy::Max,
+                AggregationStrategy::Percentile95,
+            ],
+        ];
+
+        return [
+            new MetricDefinition(
+                name: MetricName::STRUCTURE_METHOD_COUNT,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: $aggregations,
+            ),
+            new MetricDefinition(
+                name: self::METRIC_METHOD_COUNT_TOTAL,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: $aggregations,
+            ),
+            new MetricDefinition(
+                name: self::METRIC_METHOD_COUNT_PUBLIC,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: $aggregations,
+            ),
+            new MetricDefinition(
+                name: self::METRIC_METHOD_COUNT_PROTECTED,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: $aggregations,
+            ),
+            new MetricDefinition(
+                name: self::METRIC_METHOD_COUNT_PRIVATE,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: $aggregations,
+            ),
+            new MetricDefinition(
+                name: self::METRIC_GETTER_COUNT,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: $aggregations,
+            ),
+            new MetricDefinition(
+                name: self::METRIC_SETTER_COUNT,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: $aggregations,
+            ),
+            new MetricDefinition(
+                name: MetricName::STRUCTURE_PROPERTY_COUNT,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: $aggregations,
+            ),
+            new MetricDefinition(
+                name: self::METRIC_PROPERTY_COUNT_PUBLIC,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: $aggregations,
+            ),
+            new MetricDefinition(
+                name: self::METRIC_PROPERTY_COUNT_PROTECTED,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: $aggregations,
+            ),
+            new MetricDefinition(
+                name: self::METRIC_PROPERTY_COUNT_PRIVATE,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: $aggregations,
+            ),
+            new MetricDefinition(
+                name: self::METRIC_PROMOTED_PROPERTY_COUNT,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: $aggregations,
+            ),
+            // RFC-008: Class characteristics for false positive reduction
+            // These are boolean flags (0/1), so Sum gives count of matching classes
+            new MetricDefinition(
+                name: MetricName::STRUCTURE_IS_READONLY,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
+                ],
+            ),
+            new MetricDefinition(
+                name: MetricName::STRUCTURE_IS_PROMOTED_PROPERTIES_ONLY,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
+                ],
+            ),
+            new MetricDefinition(
+                name: MetricName::STRUCTURE_IS_DATA_CLASS,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
+                ],
+            ),
+            new MetricDefinition(
+                name: MetricName::STRUCTURE_IS_ABSTRACT,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
+                ],
+            ),
+            new MetricDefinition(
+                name: MetricName::STRUCTURE_IS_INTERFACE,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
+                ],
+            ),
+            new MetricDefinition(
+                name: MetricName::STRUCTURE_IS_EXCEPTION,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [AggregationStrategy::Sum],
+                    SymbolLevel::Project->value => [AggregationStrategy::Sum],
+                ],
+            ),
+            // PDepend WOC metric (percentage 0-100)
+            new MetricDefinition(
+                name: MetricName::STRUCTURE_WOC,
+                collectedAt: SymbolLevel::Class_,
+                aggregations: [
+                    SymbolLevel::Namespace_->value => [
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Min,
+                        AggregationStrategy::Max,
+                    ],
+                    SymbolLevel::Project->value => [
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Min,
+                        AggregationStrategy::Max,
+                    ],
+                ],
+            ),
+        ];
+    }
+}

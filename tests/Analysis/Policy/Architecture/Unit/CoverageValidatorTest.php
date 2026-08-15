@@ -1,0 +1,92 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageValidator;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
+
+#[CoversClass(CoverageValidator::class)]
+final class CoverageValidatorTest extends TestCase
+{
+    private CoverageValidator $validator;
+
+    protected function setUp(): void
+    {
+        $this->validator = new CoverageValidator();
+    }
+
+    #[Test]
+    public function nullDefaultsToIgnore(): void
+    {
+        self::assertSame(CoverageMode::Ignore, $this->validator->validate(null));
+    }
+
+    #[Test]
+    public function ignoreIsParsed(): void
+    {
+        self::assertSame(CoverageMode::Ignore, $this->validator->validate('ignore'));
+    }
+
+    #[Test]
+    public function warnIsParsed(): void
+    {
+        self::assertSame(CoverageMode::Warn, $this->validator->validate('warn'));
+    }
+
+    #[Test]
+    public function errorIsParsed(): void
+    {
+        self::assertSame(CoverageMode::Error, $this->validator->validate('error'));
+    }
+
+    #[Test]
+    public function coverageIsCaseInsensitive(): void
+    {
+        self::assertSame(CoverageMode::Error, $this->validator->validate('ERROR'));
+        self::assertSame(CoverageMode::Warn, $this->validator->validate('Warn'));
+    }
+
+    #[Test]
+    public function unknownCoverageValueIsRejected(): void
+    {
+        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectExceptionMessage('architecture.coverage');
+
+        $this->validator->validate('verbose');
+    }
+
+    #[Test]
+    public function coverageOfWrongTypeIsRejected(): void
+    {
+        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectExceptionMessage('architecture.coverage');
+
+        $this->validator->validate(42);
+    }
+
+    #[Test]
+    public function coverageOfBoolTypeIsRejected(): void
+    {
+        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectExceptionMessageMatches('/got bool/');
+
+        $this->validator->validate(true);
+    }
+
+    #[Test]
+    public function configPathIsArchitectureForAllErrors(): void
+    {
+        try {
+            $this->validator->validate('verbose');
+            self::fail('Expected ArchitectureConfigurationException');
+        } catch (ArchitectureConfigurationException $e) {
+            self::assertSame('architecture', $e->configPath);
+        }
+    }
+}

@@ -2,12 +2,12 @@
 
 ## Overview
 
-Core contains base contracts, Value Objects and Enums used by all other domains. Core has no dependencies except PHP and php-parser (only for Node types).
+Core contains neutral primitives with no natural capability owner. Core has no
+dependencies except PHP and php-parser (only for Node types).
 
-> **Note.** The former `Core/Architecture/` sub-tree moved into the
-> Architecture vertical slice ([ADR 0010](../../docs/adr/0010-architecture-vertical-slice.md)).
-> Layer primitives, allow-list types, capture grammar, registry, and policy
-> now live under [`src/Architecture/Domain/`](../Architecture/README.md).
+> **Note.** Layer primitives, allow-list types, capture grammar, registry, and
+> declared-layer policy now belong to
+> [`Analysis\\Policy\\Architecture`](../Analysis/Policy/Architecture/README.md).
 
 ## Structure
 
@@ -33,28 +33,6 @@ Core/
 │   ├── AggregationStrategy.php            # Strategy enum
 │   ├── SymbolLevel.php                    # Hierarchy level enum
 │   └── ParallelSafeCollectorInterface.php # Marker for parallel-safe collectors
-├── Rule/
-│   ├── RuleInterface.php
-│   ├── RuleCategory.php
-│   ├── RuleOptionsInterface.php           # Base options interface
-│   ├── AnalysisContext.php                # Context for rule analysis (metrics, graph, duplicates)
-│   ├── HierarchicalRuleInterface.php      # Multi-level rules
-│   ├── HierarchicalRuleOptionsInterface.php
-│   ├── LevelOptionsInterface.php          # Level-specific options
-│   ├── ThresholdAwareOptionsInterface.php # Options that support @qmx-threshold overrides
-│   ├── RuleLevel.php                      # Rule level enum
-│   ├── RuleOptionKey.php                  # Common option key constants (enabled, warning, error, threshold)
-│   ├── ShorthandOptionKeysInterface.php   # Options that accept a bare-value shorthand (e.g. `threshold: 10`)
-│   ├── AdditionalOptionKeysInterface.php  # Options that accept other top-level configuration keys
-│   ├── RuleMatcher.php                    # Prefix matching utility
-│   ├── RuleSelector.php                   # Channel-aware only/disable selection for producer rules and findings
-│   ├── RuleChannelRegistryInterface.php   # Producer rule -> emitted channels contract
-│   ├── InMemoryRuleChannelRegistry.php    # Immutable declarations for isolated composition roots and tests
-│   ├── RuleNameReader.php                 # Reads the NAME constant (reflection, no instantiation)
-│   ├── CliAliasReader.php                 # Reads #[CliAlias] attributes (reflection, no instantiation)
-│   ├── ChannelDeclarationReader.php       # Reads the optional channelDeclarations() method (reflection, no instantiation)
-│   └── Attribute/
-│       └── CliAlias.php                   # Repeatable attribute declaring a rule's CLI aliases
 ├── Symbol/
 │   ├── CallableKind.php                   # PHP callable declaration kind enum
 │   ├── DeclarationPath.php                # Durable source declaration identity
@@ -71,45 +49,8 @@ Core/
 ├── Namespace_/
 │   ├── NamespaceDetectorInterface.php
 │   └── ProjectNamespaceResolverInterface.php
-├── Dependency/
-│   └── CycleInterface.php                 # Circular-dependency result contract; moves in P4
-├── Violation/
-│   ├── Violation.php
-│   ├── OccurrenceKey.php                 # Stable SHA-256 discriminator for one semantic occurrence
-│   ├── ViolationChannel.php               # VO: (ruleName, violationCode) — the address of a kind of finding
-│   ├── ChannelShape.php                   # Enum: magnitude / occurrence — what a channel's metricValue means for baseline purposes
-│   ├── ChannelDeclaration.php             # VO: a channel's shape plus, for magnitude channels, its WorseDirection
-│   ├── ChannelDeclarationRegistryInterface.php # Contract: (ruleName, violationCode) -> ChannelDeclaration; implemented in Infrastructure\Rule
-│   ├── AcceptedLevel.php                  # VO: the magnitudes/count a baseline entry accepted a finding's group at
-│   ├── Severity.php
-│   ├── Location.php
-│   ├── RuleExclusionCaptureHolder.php     # Static holder: whether RuleExecutor retains suppressed Violation objects
-│   └── Filter/
-│       ├── ViolationFilterInterface.php   # Per-violation predicate: shouldInclude(Violation): bool
-│       ├── ViolationFilterStageInterface.php # Transforming stage: list<Violation> in, list<Violation> out
-│       ├── ViolationFilterStage.php       # Enum: the ordered stages (suppression, exclusions, baseline, git scope); definesMeasuredSet() marks which of them produce the set a baseline measures
-│       ├── ViolationFilterStageResult.php # VO: what one stage produced, and what it removed
-│       ├── PredicateFilterStage.php       # Adapter running a ViolationFilterInterface as a stage
-│       ├── PathExclusionFilter.php        # Filters by file path patterns; exempts architecture.* rules
-│       └── NamespaceExclusionFilter.php   # Filters by namespace patterns; exempts architecture.* rules
-├── Progress/
-│   ├── ProgressReporter.php               # Progress reporting interface
-│   └── NullProgressReporter.php           # No-op implementation
 ├── Profiler/
-│   ├── ProfilerInterface.php              # Performance profiler interface
-│   ├── ProfilerHolder.php                 # Static holder for profiler instance
-│   ├── NullProfiler.php                   # No-op profiler
-│   └── Span.php                           # Profiling span VO
-├── ComputedMetric/
-│   ├── ComputedMetricDefinition.php       # VO: computed metric definition (name, formulas, levels, thresholds)
-│   ├── ComputedMetricDefaults.php         # Default health.* definitions (6 built-in scores)
-│   ├── ComputedMetricDefinitionHolder.php # Static runtime holder for resolved definitions
-│   └── HealthDimension.php               # Enum: health dimension identifiers (complexity, cohesion, etc.)
-├── Suppression/
-│   ├── ControlScope.php                  # Declaration scope and precedence: hook > property > callable > class
-│   ├── Suppression.php                    # VO: suppression tag from docblock (@qmx-ignore)
-│   ├── SuppressionType.php                # Enum: suppression scope (symbol/next-line/file)
-│   └── ThresholdOverride.php              # VO: threshold override from docblock (@qmx-threshold)
+│   └── Contract/ProfilerInterface.php     # Neutral instrumentation vocabulary
 ├── Observation/
 │   └── WorseDirection.php                 # Enum: higher-is-worse / lower-is-worse + the comparison operators
 ├── Util/
@@ -375,60 +316,14 @@ and produce non-actionable violations (e.g., "namespace too large" when it is pr
 
 ---
 
-## Rule Contracts
+## Finding Contracts
 
-### RuleInterface
-
-A rule analyzes metrics and generates violations. **Completely stateless.**
-
-**Methods:**
-- `getName(): string` — unique rule name (slug in `group.rule-name` format)
-- `getDescription(): string` — human-readable description
-- `getCategory(): RuleCategory` — category for grouping
-- `requires(): array<string>` — required metrics (for auto-activation of collectors)
-- `analyze(AnalysisContext $context): array<Violation>` — analyze metrics, generate violations
-
-**Static:**
-- `getOptionsClass(): class-string<RuleOptionsInterface>` — rule options class
-
-**CLI aliases** are declared via the repeatable class-level attribute
-`#[CliAlias('alias', 'optionName')]` (see `src/Core/Rule/Attribute/CliAlias.php`).
-They are read by `CliAliasReader::read(class-string): array<string, string>` via
-reflection, so no rule instantiation is required to enumerate them.
-
-**Rule name** — every rule class must declare a `public const string NAME` with
-its slug. It is read by `RuleNameReader::read(class-string): string` via
-reflection (missing or non-string `NAME` throws `LogicException`, and the
-container build fails). Reflection is mandatory here because rules may take
-constructor dependencies beyond their Options object, so rule metadata must be
-obtainable without instantiation and rule instances must come from the DI
-container.
-
-**Channel declarations** (baseline) — a rule may optionally declare a static
-`channelDeclarations(): array<string, ChannelDeclaration>` method, keyed by
-the **full channel key** (`ViolationChannel::toKey()`'s `ruleName#violationCode`
-form) — not by a bare `violationCode` paired implicitly with the rule's own
-`NAME`, because a rule may emit a channel under a `ruleName` other than its
-own (`LayerViolationRule` does this for four of its five channels).
-This is deliberately not part of `RuleInterface` and not an attribute: an
-interface method would force every rule — including the majority that
-declares nothing — to implement a no-op override. It is read by
-`ChannelDeclarationReader::read(class-string): array<string, ChannelDeclaration>`
-via reflection, mirroring `RuleNameReader`/`CliAliasReader`; a rule with no
-such method is untouched and `read()` returns `[]`. See `ChannelDeclaration`
-below and `Core\Violation\ChannelDeclarationRegistryInterface` (implemented by
-`Infrastructure\Rule\ChannelDeclarationRegistry`) for how the declarations
-are assembled and consumed.
-
-**DI Tags:** `qmx.rule`
-
-### HierarchicalRuleInterface
-
-Extends `RuleInterface` for rules that operate on multiple levels of code hierarchy (callable, class, namespace), with different thresholds and logic for each level.
-
-**Methods:**
-- `getSupportedLevels(): list<RuleLevel>` — levels at which this rule operates
-- `analyzeLevel(RuleLevel $level, AnalysisContext $context): list<Violation>` — analyze at a specific level
+Finding owns rule vocabulary, executable rules, finding values, filtering, and
+inline control values. Its public class-string metadata boundary is
+`Analysis\Finding\Contract\Rule\RuleDefinitionInterface`, which provides only
+`getOptionsClass(): class-string<RuleOptionsInterface>`. The extended
+`RuleInterface` is the internal executable contract; it does not publish an
+instance API, factory, registration mechanism, or optional reflection metadata.
 
 ### RuleOptionsInterface
 
@@ -530,35 +425,13 @@ same explicit contract where a composition root already owns the complete declar
 | `CodeSmell`       | Boolean Arguments, Debug Code, etc.    |
 
 **Methods:**
-- `matches(string $ruleName): bool` — whether a rule's `NAME` slug (`group.rule-name`) belongs to this
+- `matches(string $ruleName): bool` — whether a rule slug (`group.rule-name`) belongs to this
   category. Single point of truth used by both `PathExclusionFilter` and `NamespaceExclusionFilter` to
   exempt `architecture.*` violations from global exclusion patterns.
 
 ---
 
-## Violation Value Objects
-
-### Severity (Enum)
-
-| Value     | Exit Code | Description        |
-| --------- | --------- | ------------------ |
-| `Warning` | 1         | Requires attention |
-| `Error`   | 2         | Critical issue     |
-
-### Location
-
-Physical location of a violation in the file system.
-
-**Fields:**
-- `file: string` — file path (empty string for `none()`)
-- `line: ?int` — line number (null for namespace-level)
-
-**Factory methods:**
-- `none(): self` — creates a location for architectural violations not tied to a specific file
-
-**Methods:**
-- `isNone(): bool` — returns true if this location has no associated file
-- `toString(): string` — `"file.php:42"` or `"file.php"`
+## Symbol Contracts
 
 ### SymbolPath
 
@@ -600,6 +473,13 @@ ingress. It selects exactly `subjectKind`, `logicalKind`, `namespace`, `class`,
 delegates all grammar validation to `decode()`. Unrelated entry data is ignored;
 a retained bool or float is dropped and therefore fails when the component is
 required. Entry data can never replace the caller-supplied container path.
+
+## Finding Values and Filtering
+
+Finding owns `Violation`, `Severity`, `Location`, `OccurrenceKey`,
+`ViolationChannel`, channel declarations, filtering contracts, and rule-exclusion
+capture. Their current definitions and lifecycle are documented in
+[`Analysis/Finding`](../Analysis/Finding/README.md).
 
 ### Violation
 
@@ -679,7 +559,7 @@ The two facts a channel declares for baseline purposes: its shape, and — for a
 - `magnitude(WorseDirection $direction): self`
 - `occurrence(): self`
 
-A channel that declares no `ChannelDeclaration` at all is not an error — it is simply not baselineable. See `Core\Rule\ChannelDeclarationReader` (how a rule declares its channels) and `Core\Violation\ChannelDeclarationRegistryInterface` (how declarations are assembled, including the run-time `computed.*` / `health.*` family — implemented by `Infrastructure\Rule\ChannelDeclarationRegistry`).
+A channel that declares no `ChannelDeclaration` at all is not an error — it is simply not baselineable. Finding owns declaration discovery and the channel registry, including the run-time `computed.*` / `health.*` family.
 
 ### ViolationFilterInterface
 
@@ -702,7 +582,13 @@ Suppresses violations whose symbol namespace matches configured exclusion patter
 
 ### RuleExclusionCaptureHolder
 
-Static holder (same pattern as `ProfilerHolder`) controlling whether `Analysis\RuleExecution\RuleExecutor` retains the individual `Violation` objects it suppresses via per-rule `exclude_namespaces` / `exclude_paths`, as opposed to just counting them. Defaults to `false`; `Infrastructure\Console\RuntimeConfigurator` enables it from `--show-suppressed` before the analysis pipeline runs. Exists so `RuleExecutor` (Analysis layer) never has to know about the CLI flag directly, keeping the `Infrastructure -> Analysis -> ... -> Core` dependency graph flowing downward only.
+Finding-owned static holder controlling whether `Analysis\Finding\RuleExecution`
+retains individual `Violation` objects suppressed by per-rule
+`exclude_namespaces` / `exclude_paths`, rather than only their counts. It
+defaults to `false`; `Infrastructure\Console\AnalysisRuntimeConfigurator`
+sets it from `--show-suppressed` before the analysis pipeline runs. This keeps
+the CLI option at the Infrastructure boundary and the capture state with
+Finding.
 
 **Methods:**
 - `set(bool $enabled): void`
@@ -715,78 +601,22 @@ Static holder (same pattern as `ProfilerHolder`) controlling whether `Analysis\R
 
 Dependency edges, types, graph queries, location and builder contracts moved to
 [`Analysis/Evidence/DependencyModel`](../Analysis/Evidence/DependencyModel/README.md)
-in P2. Core retains only the still-pending P4 cycle contract.
-
-### CycleInterface
-
-Interface for circular dependency detection results.
+in P2. P4 moved cycle values and their preparation to
+[`Analysis/Evidence/CircularDependency`](../Analysis/Evidence/CircularDependency/README.md).
 
 ---
 
-## Progress Reporting
+## Progress and profiling boundaries
 
-### ProgressReporter
+Collection progress is a Run-owned consumer port implemented by the Console
+adapter. The Console switch is instance-owned and resets to no-op for quiet,
+non-TTY, and `--no-progress` runs; Core has no progress type.
 
-Interface for tracking analysis progress.
-
-**Methods:**
-- `start(int $total): void` — start tracking with total item count
-- `advance(int $step = 1): void` — advance by specified steps
-- `setMessage(string $message): void` — set current operation message
-- `finish(): void` — finish tracking and clean up
-
-### NullProgressReporter
-
-No-op implementation. Used in quiet mode, non-TTY output (CI, pipes), or with `--no-progress`.
-
----
-
-## Profiler Contracts
-
-### ProfilerInterface
-
-Interface for profiling performance metrics. Tracks execution time and memory usage using a tree of spans.
-
-**Methods:**
-- `start(string $name, ?string $category = null): void` — start a new span
-- `stop(string $name): void` — stop the most recent span with the given name
-- `isEnabled(): bool` — whether profiling is active
-- `getRootSpan(): ?Span` — root span of the profiling tree
-- `getSummary(): array` — aggregated statistics grouped by span name
-- `export(string $format): string` — export data (`'json'` or `'chrome-tracing'`)
-- `clear(): void` — reset all profiling data
-
-### ProfilerHolder
-
-Static holder for global profiler access. Returns `NullProfiler` if no profiler has been set.
-
-**Methods:**
-- `set(ProfilerInterface $profiler): void` — set the profiler instance (during container init)
-- `get(): ProfilerInterface` — get current profiler (or NullProfiler)
-- `reset(): void` — reset instance (for testing)
-
-### NullProfiler
-
-No-op profiler for production use. Provides minimal overhead when profiling is disabled.
-
-### Span
-
-Value Object representing a profiling span (time interval). Spans can be nested to create a tree structure.
-
-**Fields:**
-- `name: string` — span name (e.g., `"FileProcessor::process"`)
-- `category: ?string` — optional category (e.g., `"collection"`, `"analysis"`)
-- `startTime: float` — start timestamp in nanoseconds
-- `startMemory: int` — memory usage at start in bytes
-- `endTime: ?float` — end timestamp (null if running)
-- `endMemory: ?int` — memory at end (null if running)
-- `parent: ?Span` — parent span (null for root)
-- `children: list<Span>` — child spans
-
-**Methods:**
-- `getDuration(): ?float` — duration in milliseconds
-- `getMemoryDelta(): ?int` — memory delta in bytes
-- `isRunning(): bool` — whether span is still active
+`Core\Profiler\Contract\ProfilerInterface` contains only neutral
+instrumentation operations (`start()` and `stop()`). Profiling session state,
+spans, summaries, and exports belong to Infrastructure Profiler. The
+per-container session is disabled by default and exposes distinct control/report
+contracts to Console; no holder or public no-op implementation exists.
 
 ---
 
@@ -831,7 +661,13 @@ Matches namespaces against patterns. Same dual-mode logic as `PathMatcher` but u
 
 ---
 
-## Suppression Value Objects
+## Finding Control Values
+
+Finding owns `ControlScope` and `ThresholdOverride` under its `Contract`
+surface. Inline extracts those values from source annotations, while Finding
+applies them when it resolves effective rule thresholds. See
+[`Analysis/Policy/Inline`](../Analysis/Policy/Inline/README.md) for extraction
+and suppression lifecycle.
 
 ### ControlScope (Enum)
 
@@ -900,48 +736,12 @@ annotation wins when spans are equal.
 
 ---
 
-## Computed Metric Contracts
+## Computed Metrics
 
-### ComputedMetricDefinition
-
-Value Object — defines a computed (derived) metric evaluated from aggregated raw metrics using Symfony Expression Language formulas.
-
-**Fields:**
-- `name: string` — metric name, must start with `health.` or `computed.` (e.g., `health.complexity`, `computed.risk_score`)
-- `formulas: array<string, string>` — formulas per level (`class`, `namespace`, `project`). Project inherits from namespace if not explicitly set
-- `description: string` — human-readable description
-- `levels: list<SymbolType>` — levels at which to evaluate (`Class_`, `Namespace_`, `Project`)
-- `inverted: bool` — if true, higher values are better (below threshold = violation)
-- `warningThreshold: ?float` — warning threshold (null = no warning)
-- `errorThreshold: ?float` — error threshold (null = no error)
-
-**Methods:**
-- `getFormulaForLevel(SymbolType $level): ?string` — gets formula for the given level
-- `hasLevel(SymbolType $level): bool` — checks if the definition operates at this level
-
-**Formula variable mapping:** Metric names use `__` as separator in formulas (ExpressionLanguage does not support `.` in identifiers). Examples: `ccn__avg` maps to `ccn.avg`, `health__complexity` maps to `health.complexity`.
-
-### ComputedMetricDefaults
-
-Static factory providing 6 default health score definitions:
-- `health.complexity` — CCN + cognitive complexity with p95 outlier penalties (inverted, 0-100)
-- `health.cohesion` — TCC + LCOM (inverted, 0-100)
-- `health.coupling` — CBO + distance (inverted, 0-100)
-- `health.typing` — type coverage percentage (inverted, 0-100)
-- `health.maintainability` — MI passthrough (inverted, 0-100)
-- `health.overall` — weighted average of the 5 sub-scores (inverted, 0-100)
-
-**Methods:**
-- `getDefaults(): array<string, ComputedMetricDefinition>` — returns all default definitions
-
-### ComputedMetricDefinitionHolder
-
-Static runtime holder for resolved computed metric definitions. Similar to `ProfilerHolder` — used to pass definitions from the configuration layer to rule options without DI wiring.
-
-**Methods:**
-- `setDefinitions(list<ComputedMetricDefinition> $definitions): void` — set definitions
-- `getDefinitions(): list<ComputedMetricDefinition>` — get current definitions
-- `reset(): void` — reset (for testing)
+Formula definitions, defaults, evaluation, Health semantics, and their public
+contracts belong to
+[`Analysis\\Evidence\\ComputedMetrics`](../Analysis/Evidence/ComputedMetrics/README.md).
+Core contains no computed-metric holder or capability-specific value type.
 
 ---
 
@@ -1033,6 +833,12 @@ Determines whether a namespace belongs to the project (not an external dependenc
 - Unit tests for Violation::getFingerprint()
 - Unit tests for MetricDefinition::aggregatedName()
 - PHPStan level 8 with no errors
+
+## Locality
+
+Core publishes only neutral primitives that lack a natural leaf owner. Any new
+Core type must satisfy that ownership test and have subject-owned tests and
+documentation.
 
 ---
 

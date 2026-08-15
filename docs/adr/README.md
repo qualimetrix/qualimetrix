@@ -62,4 +62,11 @@ What follows from this decision — trade-offs, constraints, future implications
 - [0019 — Namespace Metric Ownership and Attribution](0019-namespace-metric-ownership-and-attribution.md) — explicit namespace source contributions while physical file bags remain the project-total source
 - [0020 — Method Size and NPath Semantics](0020-method-size-and-npath-semantics.md) — dedicated method statement count, MI migration, and recursive expression-path accounting
 - [0021 — Declaration-Scoped Callable Identity and Dependency Projections](0021-declaration-scoped-callable-identity-and-dependency-projections.md) — intrinsic declaration identity, callable ownership, and separate architecture/coupling/ClassRank projections
-- [0022 — Capability-Oriented Modular Monolith](0022-capability-oriented-modular-monolith.md) — accepted capability-oriented direction over current manifest-generated owner enforcement; supersedes ADR 0012, with physical P1-P8 migration still pending
+- [0022 — Capability-Oriented Modular Monolith](0022-capability-oriented-modular-monolith.md) — accepted capability-oriented direction, manifest-governed ownership, and final locality boundaries; supersedes ADR 0012
+- [0023 — P8 Context Locality and Composition Bindings](0023-p8-context-locality-and-composition-bindings.md) — concrete configuration-document seam, owner-local runtime state, and permanent exact DI composition bindings
+
+
+## Index maintenance
+
+Keep the index aligned with accepted ADRs. Architecture locality and permanent
+composition-binding policy are defined by ADR 0022 and ADR 0023.

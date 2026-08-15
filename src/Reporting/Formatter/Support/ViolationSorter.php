@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Support;
 
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Reporting\GroupBy;
 
 /**

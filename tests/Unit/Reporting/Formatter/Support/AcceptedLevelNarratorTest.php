@@ -7,14 +7,14 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Support;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\AcceptedLevel;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Formatter\Support\AcceptedLevelNarrator;
 
 #[CoversClass(AcceptedLevelNarrator::class)]

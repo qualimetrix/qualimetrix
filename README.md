@@ -82,6 +82,7 @@ bin/qmx check src/ --baseline=baseline.json
 
 - [Quick Start](https://qualimetrix.dev/getting-started/quick-start/)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Analysis capability index](src/Analysis/README.md)
 - [GitHub Action](https://qualimetrix.dev/ci-cd/github-actions/)
 - [Changelog](CHANGELOG.md)
 - [llms.txt](https://qualimetrix.dev/llms.txt) — concise reference for AI agents

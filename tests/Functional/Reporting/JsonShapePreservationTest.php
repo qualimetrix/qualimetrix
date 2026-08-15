@@ -7,13 +7,17 @@ namespace Qualimetrix\Tests\Functional\Reporting;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Reporting\Debt\DebtCalculator;
-use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter;
 use Qualimetrix\Reporting\Formatter\Json\JsonFormatter;
@@ -26,8 +30,6 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
-use Qualimetrix\Reporting\Health\NamespaceDrillDown;
 use Qualimetrix\Reporting\ReportBuilder;
 
 /**
@@ -120,14 +122,16 @@ final class JsonShapePreservationTest extends TestCase
     #[Test]
     public function itPreservesATargetOnlyEdgeThroughTheJsonFormatter(): void
     {
-        $hintProvider = new MetricHintProvider();
-        $namespaceDrillDown = new NamespaceDrillDown($hintProvider);
+        $hintProvider = new HealthMetricCatalog();
+        $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $healthScoreDrillDown = new HealthScoreDrillDown($hintProvider, $definitionCatalog);
+        $worstClassDrillDown = new WorstClassDrillDown($definitionCatalog);
         $sanitizer = new JsonSanitizer();
         $registry = new RemediationTimeRegistry();
         $formatter = new JsonFormatter(
             new DebtCalculator($registry),
-            new JsonHealthSection(new HealthScoreResolver($namespaceDrillDown), $sanitizer),
-            new JsonOffenderSection($namespaceDrillDown, new ViolationFilter(), $sanitizer),
+            new JsonHealthSection(new HealthScoreResolver($healthScoreDrillDown), $sanitizer),
+            new JsonOffenderSection($worstClassDrillDown, new ViolationFilter(), $sanitizer),
             new JsonViolationSection($registry, $sanitizer),
         );
         $violation = self::violation(
@@ -177,24 +181,24 @@ final class JsonShapePreservationTest extends TestCase
      * subject, preserving the production contract without hiding it behind a
      * legacy fallback.
      *
-     * @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations
+     * @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations
      */
     private static function violation(
-        \Qualimetrix\Core\Violation\Location $location,
+        \Qualimetrix\Analysis\Finding\Contract\Location $location,
         \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
         string $ruleName,
         string $violationCode,
         string $message,
-        \Qualimetrix\Core\Violation\Severity $severity,
+        \Qualimetrix\Analysis\Finding\Contract\Severity $severity,
         int|float|null $metricValue = null,
-        ?\Qualimetrix\Core\Rule\RuleLevel $level = null,
+        ?\Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel $level = null,
         array $relatedLocations = [],
         ?string $recommendation = null,
         int|float|null $threshold = null,
         ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
         ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null,
-        ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null,
-        ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null,
+        ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
     ): Violation {
         $subject ??= match ($symbolPath->getType()) {

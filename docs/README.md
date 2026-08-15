@@ -27,9 +27,9 @@ Understand the internals and design principles of Qualimetrix.
 
 Documentation for individual components of the analysis system.
 
-- **[Metric Collectors](../src/Metrics/README.md)** — metric collectors (Cyclomatic Complexity, LOC, Class Count, etc.)
-- **[Analysis Rules](../src/Rules/README.md)** — analysis rules and metric interpretation (ComplexityRule, SizeRule, etc.)
-- **[Analysis Orchestration](../src/Analysis/README.md)** — four-phase pipeline (Collection -> Aggregation -> Analysis -> Reporting)
+- **[Analysis capabilities](../src/Analysis/README.md)** — subject-owned evidence, rules, policies, configuration, and orchestration
+- **[CodeSmell](../src/Analysis/Evidence/CodeSmell/README.md), [Cohesion](../src/Analysis/Evidence/Cohesion/README.md), [Complexity](../src/Analysis/Evidence/Complexity/README.md), [Coupling](../src/Analysis/Evidence/Coupling/README.md)** — evidence collectors, options, and rules
+- **[Design](../src/Analysis/Evidence/Design/README.md), [Maintainability](../src/Analysis/Evidence/Maintainability/README.md), [Security](../src/Analysis/Evidence/Security/README.md), [Size](../src/Analysis/Evidence/Size/README.md)** — evidence collectors, options, and rules
 - **[Reporting](../src/Reporting/README.md)** — output formatting (Text, JSON, Checkstyle formats)
 
 ---
@@ -38,7 +38,7 @@ Documentation for individual components of the analysis system.
 
 Tool configuration, CLI interface, DI container, and caching.
 
-- **[Configuration](../src/Configuration/README.md)** — configuration management system (YAML, defaults, CLI options)
+- **[Configuration](../src/Analysis/Configuration/README.md)** — configuration management system (YAML, defaults, CLI options)
 - **[Infrastructure](../src/Infrastructure/README.md)** — CLI (Symfony Console), DI container, PHP parser, progress reporting, caching
 
 ---

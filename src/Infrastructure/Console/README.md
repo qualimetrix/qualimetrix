@@ -17,30 +17,31 @@ Console/
 ├── Application.php
 ├── CliOptionsParser.php
 ├── MeasuredViolationSet.php         # The set a baseline measures (ADR 0017): the pipeline's findings before the baseline stage. Defined by config + source annotations; a CLI flag may narrow it, never widen it
-├── ViolationFilterPipeline.php      # suppression -> path exclusion -> namespace exclusion -> baseline -> git scope; --no-suppression-annotations restores annotated findings after the baseline stage
-├── ViolationFilterOptions.php
-├── CliOnlyNarrowing.php             # check-only narrowing: --exclude-path / --exclude-namespace / --no-suppression-annotations
-├── ViolationFilterResult.php
-├── GitScopeFilterConfig.php
+├── ViolationFilterOrchestrator.php  # Builds Reporting projection options and renders stage diagnostics; policy and ordering remain in Reporting
 ├── RuntimeConfigurator.php
-├── AnalysisRuntimeConfigurator.php  # Per-run rule, collector, computed-metric, and feature state
+├── RuntimeLoggerConfigurator.php    # Creates, publishes, and returns the logger for one run
+├── AnalysisRuntimeConfigurator.php  # Per-run rule, collector, cache, and feature state
+├── CheckScopeResolver.php           # Git scope first, then warnings for that exact scope
+├── ResolvedCheckScope.php           # Resolved Git scope plus deferred warning messages
 ├── DiagnosticOutput.php              # Human diagnostics routed to stderr
 ├── RuleInputValidator.php            # Fail-closed selector/option-owner validation
 ├── ResultPresenter.php
 ├── CheckCommandDefinition.php
 ├── FilteredInputDefinition.php      # InputDefinition that hides rule-specific options from --help
 ├── OutputHelper.php                 # Line-by-line output with flush (avoids PTY truncation)
+├── LayerAssignmentResolver.php      # Rebuilds collected project state for layer-assignment diagnostics
 ├── Progress/
 │   ├── ConsoleProgressBar.php
-│   ├── ProgressReporterHolder.php
-│   └── DelegatingProgressReporter.php
+│   └── SwitchableProgressReporter.php
 └── Command/
     ├── CheckCommand.php             # Main analysis command
     ├── BaselineCleanupCommand.php   # Cleanup stale baseline entries
     ├── GraphExportCommand.php       # Export dependency graph (DOT, JSON)
     ├── HookInstallCommand.php       # Install pre-commit hook
     ├── HookStatusCommand.php        # Check hook status
-    └── HookUninstallCommand.php     # Remove pre-commit hook
+    ├── HookUninstallCommand.php     # Remove pre-commit hook
+    └── Debug/
+        └── LayerAssignmentCommand.php # Validate input, configure runtime, and render layer matches
 ```
 
 ## Commands
@@ -49,14 +50,39 @@ Console/
 
 **Name:** `check`
 
-**Dependencies (via constructor):**
-- `RuleRegistryInterface` — for CLI option discovery
-- `ConfigLoaderInterface` — loading config files
-- `AnalyzerInterface` — running analysis
-- `FormatterRegistryInterface` — output formatting
-- `CacheFactory` — for --clear-cache
-- `ConfigurationProviderInterface` — setting runtime config
-- `RuleOptionsFactory` — setting CLI options
+`CheckCommand` has ten constructor dependencies and thirteen properties. Its
+direct collaborators are `RuleRegistryInterface`, `AnalysisPipelineInterface`,
+`CacheFactory`, `ViolationFilterOrchestrator`,
+`ConfigurationPipelineInterface`, `RuntimeConfigurator`, `ResultPresenter`,
+`RuleInputValidator`, `DiagnosticOutput`, and `CheckScopeResolver`. The command
+has no logger, `GitScopeResolver`, or `ScopeWarningChecker` property.
+
+`CheckScopeResolver` owns the narrow scope seam. It resolves
+`GitScopeResolution` first, so invalid Git references fail before warnings or a
+payload are produced, and only then computes partial-autoload warnings for the
+resolved project root and paths. `ResolvedCheckScope` returns that unchanged
+scope with its warning messages. `CheckCommand` validates the resolved paths
+before emitting the messages through its stderr-only warning route; structured
+stdout remains a clean report payload.
+
+The Console package is an adapter. It imports Run, Configuration, Finding, and
+Reporting contracts, parses options, configures one run, and renders
+diagnostics; it does not own a pipeline phase or finding-policy state. The
+Reporting-owned `FindingProjector` is the single authority for suppression,
+configured exclusions, baseline judgment, annotation rejoin, and Git-last
+projection.
+
+`RuleInputValidator` validates selectors against one immutable rule-channel
+snapshot for the resolved run. The snapshot is assembled by Infrastructure Rule
+from `ResolvedComputedMetricDefinitions`; Console consumes only that resolved
+snapshot while processing the invocation.
+
+`LayerAssignmentResolver` is an internal Console collaborator for
+`debug:layer-assignment`. It owns the adapter-side discovery, generated-file
+filtering, collection, dependency-graph and class-set preparation needed to
+query `LayerAssignmentInspectorInterface`; the command retains input validation, runtime
+configuration, error mapping and rendering. This keeps both declarations below
+their constructor-dependency thresholds without introducing a public port.
 
 **Arguments:**
 - `paths` (required, array) — paths for analysis
@@ -268,3 +294,8 @@ bin/qmx hook:uninstall
 - Output formatting via FormatterRegistry
 - Unit tests for commands
 - End-to-end integration tests
+
+
+## Locality
+
+This README is part of the subject boundary: keep its production code, tests, fixtures, support, and documentation with the named owner. External consumers use declared contracts only; mutable runtime state has one owner, reset point, and typed readers. Composition-only access to a private declaration requires a reviewed exact binding, not a generic qmx permission.

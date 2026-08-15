@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Rule;
 
-use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Observation\WorseDirection;
-use Qualimetrix\Core\Violation\ChannelDeclaration;
-use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
-use Qualimetrix\Core\Violation\ViolationChannel;
 
 /**
  * Assembles the static per-rule declarations with the run-time
@@ -21,10 +21,8 @@ use Qualimetrix\Core\Violation\ViolationChannel;
  * compiler pass rather than discovering it. `Core` may not depend on
  * `Rules`, so nothing under `Core` could have assembled this map either way.
  *
- * The run-time half is resolved on every lookup from
- * {@see ComputedMetricDefinitionHolder} — the same static holder
- * `ComputedMetricRuleOptions` already reads to receive config-resolved
- * definitions without DI wiring (see its README entry). A `computed.*` /
+ * The run-time half is resolved on every lookup from the injected definition
+ * catalog. A `computed.*` /
  * `health.*` channel's vocabulary is open-ended (users define computed
  * metrics in `qmx.yaml`), so no compile-time map could enumerate it; both
  * facts the ceiling needs — shape (always `magnitude`) and direction (from
@@ -44,7 +42,7 @@ final readonly class ChannelDeclarationRegistry implements ChannelDeclarationReg
      *                                       `health.*` scores and any user-defined `computed.*` metric).
      *                                       {@see declarationFor()} compares an incoming channel's
      *                                       `ruleName` against this value to decide whether to resolve it
-     *                                       from {@see ComputedMetricDefinitionHolder} instead of the
+     *                                       from the definition catalog instead of the
      *                                       static map. Injected rather than read from the constant
      *                                       directly so this class — `Infrastructure\Rule` — needs no
      *                                       `qmx.yaml` dependency edge onto `Rules` just to know one string;
@@ -54,6 +52,7 @@ final readonly class ChannelDeclarationRegistry implements ChannelDeclarationReg
     public function __construct(
         private array $staticDeclarations,
         private string $computedMetricRuleName,
+        private ComputedMetricDefinitionCatalogInterface $definitionCatalog,
     ) {}
 
     public function declarationFor(ViolationChannel $channel): ?ChannelDeclaration
@@ -80,14 +79,10 @@ final readonly class ChannelDeclarationRegistry implements ChannelDeclarationReg
      */
     private function resolveComputedMetricDeclaration(ViolationChannel $channel): ?ChannelDeclaration
     {
-        foreach (ComputedMetricDefinitionHolder::getDefinitions() as $definition) {
-            if ($definition->name === $channel->violationCode) {
-                return ChannelDeclaration::magnitude(
-                    $definition->inverted ? WorseDirection::Lower : WorseDirection::Higher,
-                );
-            }
-        }
+        $definition = $this->definitionCatalog->find($channel->violationCode);
 
-        return null;
+        return $definition === null ? null : ChannelDeclaration::magnitude(
+            $definition->inverted ? WorseDirection::Lower : WorseDirection::Higher,
+        );
     }
 }

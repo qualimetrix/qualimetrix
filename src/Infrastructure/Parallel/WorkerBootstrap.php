@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Parallel;
 
-use Qualimetrix\Analysis\Collection\Dependency\DependencyResolver;
-use Qualimetrix\Analysis\Collection\Dependency\DependencyVisitor;
-use Qualimetrix\Analysis\Collection\FileProcessor;
-use Qualimetrix\Analysis\Collection\FileProcessorInterface;
-use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
-use Qualimetrix\Baseline\Suppression\RuleValidatorMapFactory;
-use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
-use Qualimetrix\Core\Metric\CollectorConfigHolder;
-use Qualimetrix\Core\Metric\DerivedCollectorInterface;
-use Qualimetrix\Core\Metric\MetricCollectorInterface;
-use Qualimetrix\Core\Metric\ParallelSafeCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ParallelSafeCollectorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory;
+use Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Rule\RuleInterface;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Cache\CacheKeyGenerator;
@@ -40,6 +41,10 @@ use RuntimeException;
  */
 final class WorkerBootstrap
 {
+    private const string FILE_MEASUREMENT_COLLECTOR_CLASS = 'Qualimetrix\\Analysis\\Evidence\\Measurement\\FileMeasurement\\CompositeCollector';
+    private const string FILE_PROCESSOR_CLASS = 'Qualimetrix\\Analysis\\Run\\Collection\\FileProcessor';
+    private const string SOURCE_CONTROL_EXTRACTOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor';
+
     /**
      * Cached FileProcessor instance (static for persistence across tasks).
      */
@@ -58,40 +63,50 @@ final class WorkerBootstrap
      *
      * @param AbsolutePath $projectRoot Project root directory
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses Collector class names from DI
+     * @param string $dependencyTraversalParticipantClass Validated class-string at the worker trust boundary
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses Derived collector class names
      * @param AbsolutePath|null $cacheDir Cache directory (null to disable caching)
-     * @param array<string, mixed> $collectorConfig Collector-level configuration (e.g., LCOM exclude methods)
-     * @param list<class-string<RuleInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
+     * @param LcomCollectionConfiguration $lcomConfiguration Exact Cohesion-owned worker configuration
+     * @param list<class-string<RuleDefinitionInterface>> $ruleClasses Rule class names (worker rebuilds threshold-override validator map)
      */
     public static function getFileProcessor(
         AbsolutePath $projectRoot,
         array $collectorClasses,
+        string $dependencyTraversalParticipantClass,
         array $derivedCollectorClasses = [],
         ?AbsolutePath $cacheDir = null,
-        array $collectorConfig = [],
+        LcomCollectionConfiguration $lcomConfiguration = new LcomCollectionConfiguration(),
         array $ruleClasses = [],
     ): FileProcessorInterface {
-        $newCacheKey = self::buildCacheKey($projectRoot, $collectorClasses, $derivedCollectorClasses, $cacheDir, $collectorConfig, $ruleClasses);
+        $dependencyTraversalParticipantClass = self::validateDependencyTraversalParticipantClass(
+            $dependencyTraversalParticipantClass,
+        );
+        $newCacheKey = self::buildCacheKey(
+            $projectRoot,
+            $collectorClasses,
+            $dependencyTraversalParticipantClass,
+            $derivedCollectorClasses,
+            $cacheDir,
+            $lcomConfiguration,
+            $ruleClasses,
+        );
 
         // Return cached processor if configuration hasn't changed
         if (self::$processor !== null && self::$cacheKey === $newCacheKey) {
-            // Apply collector config (must be set on each call, not just on cache miss,
-            // because static state resets between worker process reuse scenarios)
-            foreach ($collectorConfig as $key => $value) {
-                CollectorConfigHolder::set($key, $value);
-            }
-
             return self::$processor;
         }
 
         // Create new processor
-        self::$processor = self::createFileProcessor($projectRoot, $collectorClasses, $derivedCollectorClasses, $cacheDir, $ruleClasses);
+        self::$processor = self::createFileProcessor(
+            $projectRoot,
+            $collectorClasses,
+            $dependencyTraversalParticipantClass,
+            $lcomConfiguration,
+            $derivedCollectorClasses,
+            $cacheDir,
+            $ruleClasses,
+        );
         self::$cacheKey = $newCacheKey;
-
-        // Apply collector config
-        foreach ($collectorConfig as $key => $value) {
-            CollectorConfigHolder::set($key, $value);
-        }
 
         return self::$processor;
     }
@@ -109,16 +124,17 @@ final class WorkerBootstrap
      * Builds a unique cache key for the configuration.
      *
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses
+     * @param class-string<DependencyTraversalParticipantInterface> $dependencyTraversalParticipantClass
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses
-     * @param array<string, mixed> $collectorConfig
-     * @param list<class-string<RuleInterface>> $ruleClasses
+     * @param list<class-string<RuleDefinitionInterface>> $ruleClasses
      */
     private static function buildCacheKey(
         AbsolutePath $projectRoot,
         array $collectorClasses,
+        string $dependencyTraversalParticipantClass,
         array $derivedCollectorClasses,
         ?AbsolutePath $cacheDir,
-        array $collectorConfig = [],
+        LcomCollectionConfiguration $lcomConfiguration = new LcomCollectionConfiguration(),
         array $ruleClasses = [],
     ): string {
         // Include collector and rule classes in cache key to detect changes.
@@ -134,23 +150,29 @@ final class WorkerBootstrap
 
         $collectorsHash = md5(implode('|', $sortedCollectors) . '||' . implode('|', $sortedDerived));
         $rulesHash = md5(implode('|', $sortedRules));
-        $sortedConfig = $collectorConfig;
-        ksort($sortedConfig);
-        $configHash = $sortedConfig !== [] ? md5(serialize($sortedConfig)) : '';
+        $configHash = md5(serialize($lcomConfiguration));
 
-        return $projectRoot->value() . '|' . ($cacheDir?->value() ?? 'no-cache') . '|' . $collectorsHash . '|' . $rulesHash . '|' . $configHash;
+        return $projectRoot->value()
+            . '|' . ($cacheDir?->value() ?? 'no-cache')
+            . '|' . $collectorsHash
+            . '|' . $rulesHash
+            . '|' . $configHash
+            . '|' . $dependencyTraversalParticipantClass;
     }
 
     /**
      * Creates a new FileProcessor with collectors from passed class names.
      *
      * @param list<class-string<MetricCollectorInterface>> $collectorClasses
+     * @param class-string<DependencyTraversalParticipantInterface> $dependencyTraversalParticipantClass
      * @param list<class-string<DerivedCollectorInterface>> $derivedCollectorClasses
-     * @param list<class-string<RuleInterface>> $ruleClasses
+     * @param list<class-string<RuleDefinitionInterface>> $ruleClasses
      */
     private static function createFileProcessor(
         AbsolutePath $projectRoot,
         array $collectorClasses,
+        string $dependencyTraversalParticipantClass,
+        LcomCollectionConfiguration $lcomConfiguration,
         array $derivedCollectorClasses,
         ?AbsolutePath $cacheDir,
         array $ruleClasses = [],
@@ -167,27 +189,61 @@ final class WorkerBootstrap
         }
 
         // Create collectors from class names
-        $collectors = self::instantiateCollectors($collectorClasses);
-        $derivedCollectors = self::instantiateDerivedCollectors($derivedCollectorClasses);
+        $collectors = self::instantiateCollectors($collectorClasses, $lcomConfiguration);
+        $derivedCollectors = self::instantiateDerivedCollectors($derivedCollectorClasses, $lcomConfiguration);
 
-        $compositeCollector = new CompositeCollector($collectors, $derivedCollectors);
-
-        // Create and set dependency visitor for unified AST traversal
-        $dependencyVisitor = new DependencyVisitor(new DependencyResolver());
-        $compositeCollector->setDependencyVisitor($dependencyVisitor);
+        /** @var DependencyTraversalParticipantInterface $dependencyTraversalParticipant */
+        $dependencyTraversalParticipant = new $dependencyTraversalParticipantClass();
+        $fileMeasurementCollectorClass = self::validatedImplementationClass(
+            self::FILE_MEASUREMENT_COLLECTOR_CLASS,
+            FileMeasurementCollectorInterface::class,
+        );
+        $compositeCollector = new $fileMeasurementCollectorClass(
+            $collectors,
+            $derivedCollectors,
+            $dependencyTraversalParticipant,
+        );
 
         // Build per-rule threshold-override validator map (static lookup, no DI)
         $validators = RuleValidatorMapFactory::build($ruleClasses);
-        $extractor = new ThresholdOverrideExtractor($validators);
+        $thresholdOverrideExtractor = new ThresholdOverrideExtractor($validators);
+        $sourceControlExtractorClass = self::validatedImplementationClass(
+            self::SOURCE_CONTROL_EXTRACTOR_CLASS,
+            SourceControlExtractorInterface::class,
+        );
+        $sourceControlExtractor = new $sourceControlExtractorClass(
+            new SuppressionExtractor(),
+            $thresholdOverrideExtractor,
+        );
 
-        $processor = new FileProcessor(
+        $fileProcessorClass = self::validatedImplementationClass(
+            self::FILE_PROCESSOR_CLASS,
+            FileProcessorInterface::class,
+        );
+        $processor = new $fileProcessorClass(
             parser: $parser,
             collector: $compositeCollector,
-            thresholdOverrideExtractor: $extractor,
+            sourceControlExtractor: $sourceControlExtractor,
         );
         $processor->setProjectRoot($projectRoot);
 
         return $processor;
+    }
+
+    /**
+     * @template T of object
+     *
+     * @param class-string<T> $contract
+     *
+     * @return class-string<T>
+     */
+    private static function validatedImplementationClass(string $implementation, string $contract): string
+    {
+        if (!is_a($implementation, $contract, true)) {
+            throw new RuntimeException(\sprintf('%s must implement %s', $implementation, $contract));
+        }
+
+        return $implementation;
     }
 
     /**
@@ -201,8 +257,10 @@ final class WorkerBootstrap
      *
      * @return list<MetricCollectorInterface>
      */
-    private static function instantiateCollectors(array $classNames): array
-    {
+    private static function instantiateCollectors(
+        array $classNames,
+        LcomCollectionConfiguration $lcomConfiguration,
+    ): array {
         $collectors = [];
 
         foreach ($classNames as $className) {
@@ -212,6 +270,7 @@ final class WorkerBootstrap
 
             /** @var MetricCollectorInterface $collector */
             $collector = new $className();
+            self::applyRuntimeConfiguration($collector, $lcomConfiguration);
             $collectors[] = $collector;
         }
 
@@ -229,8 +288,10 @@ final class WorkerBootstrap
      *
      * @return list<DerivedCollectorInterface>
      */
-    private static function instantiateDerivedCollectors(array $classNames): array
-    {
+    private static function instantiateDerivedCollectors(
+        array $classNames,
+        LcomCollectionConfiguration $lcomConfiguration,
+    ): array {
         $collectors = [];
 
         foreach ($classNames as $className) {
@@ -240,6 +301,7 @@ final class WorkerBootstrap
 
             /** @var DerivedCollectorInterface $collector */
             $collector = new $className();
+            self::applyRuntimeConfiguration($collector, $lcomConfiguration);
             $collectors[] = $collector;
         }
 
@@ -275,5 +337,39 @@ final class WorkerBootstrap
         }
 
         return true;
+    }
+
+    private static function applyRuntimeConfiguration(
+        object $collector,
+        LcomCollectionConfiguration $configuration,
+    ): void {
+        if ($collector instanceof LcomCollectionConfigurableInterface) {
+            $collector->applyLcomCollectionConfiguration($configuration);
+        }
+    }
+
+    /** @return class-string<DependencyTraversalParticipantInterface> */
+    private static function validateDependencyTraversalParticipantClass(string $className): string
+    {
+        if ($className === '') {
+            throw new RuntimeException('WorkerBootstrap: dependency traversal participant class must not be empty.');
+        }
+
+        if (!class_exists($className)) {
+            throw new RuntimeException(\sprintf(
+                "WorkerBootstrap: dependency traversal participant class '%s' does not exist.",
+                $className,
+            ));
+        }
+
+        if (!is_subclass_of($className, DependencyTraversalParticipantInterface::class)) {
+            throw new RuntimeException(\sprintf(
+                "WorkerBootstrap: dependency traversal participant class '%s' must implement %s.",
+                $className,
+                DependencyTraversalParticipantInterface::class,
+            ));
+        }
+
+        return $className;
     }
 }

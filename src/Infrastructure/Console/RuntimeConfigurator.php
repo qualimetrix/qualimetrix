@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Psr\Log\LogLevel;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Progress\NullProgressReporter;
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Infrastructure\Cache\CacheFactory;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
 use Qualimetrix\Infrastructure\Console\Progress\ConsoleProgressBar;
-use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
-use Qualimetrix\Infrastructure\Logging\LoggerFactory;
-use Qualimetrix\Infrastructure\Logging\LoggerHolder;
-use Qualimetrix\Infrastructure\Profiler\Profiler;
+use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
+use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
+use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
+use Qualimetrix\Infrastructure\Profiler\Contract\ProfileSessionControlInterface;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -24,36 +24,87 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class RuntimeConfigurator
 {
     public function __construct(
-        private readonly LoggerFactory $loggerFactory,
-        private readonly LoggerHolder $loggerHolder,
-        private readonly ProgressReporterHolder $progressReporterHolder,
-        private readonly ProfilerHolder $profilerHolder,
+        private readonly RuntimeLoggerConfigurator $runtimeLoggerConfigurator,
+        private readonly SwitchableProgressReporter $progressReporter,
+        private readonly ProfileSessionControlInterface $profileSession,
         private readonly AnalysisRuntimeConfigurator $analysisRuntimeConfigurator,
-        private readonly DiagnosticOutput $diagnosticOutput = new DiagnosticOutput(),
+        private readonly CacheFactory $cacheFactory,
+        private readonly ParallelConfigurationStoreInterface $parallelConfigurationStore,
+        private readonly RuntimeLimitsController $runtimeLimitsController,
     ) {}
+
+    /** Resets every mutable per-run seam before configuration resolution starts. */
+    public function resetRunState(): void
+    {
+        $this->cacheFactory->resetConfiguration();
+        $this->parallelConfigurationStore->reset();
+        $this->analysisRuntimeConfigurator->resetRunState();
+        $this->profileSession->disable();
+        $this->progressReporter->reset();
+        $this->runtimeLimitsController->reset();
+    }
 
     /**
      * Configures all runtime services from resolved configuration and CLI input.
      */
     public function configure(
-        ResolvedConfiguration $resolved,
+        ConfigurationDocument $document,
+        FindingConfiguration $findingConfiguration,
+        CacheConfiguration $cacheConfiguration,
+        ParallelConfiguration $parallelConfiguration,
         InputInterface $input,
         OutputInterface $output,
     ): void {
-        $this->analysisRuntimeConfigurator->resetRunState();
+        // Pure preflight: no store or external-effect mutation is allowed
+        // until every owner has accepted its immutable value.
+        $architecturePolicy = $this->analysisRuntimeConfigurator->resolveArchitecturePolicy($document);
+        $computedMetrics = $this->analysisRuntimeConfigurator->resolveComputedMetrics($document);
+        $frameworkNamespaces = $this->analysisRuntimeConfigurator->resolveCoupling($document);
+        $lcomConfiguration = $this->analysisRuntimeConfigurator->resolveLcom($findingConfiguration);
+        $runtimeLimits = $this->resolveRuntimeLimits($document);
+        $capture = $input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true;
+        $channels = $this->analysisRuntimeConfigurator->resolveRuleChannels(
+            $input,
+            $findingConfiguration,
+            $computedMetrics,
+        );
 
-        $this->configureLogger($input, $output);
+        // Built-in stores commit only after complete preflight. An unexpected
+        // custom-store failure is fail-closed, but is not claimed to roll back.
+        $this->cacheFactory->replaceConfiguration($cacheConfiguration);
+        $this->parallelConfigurationStore->replace($parallelConfiguration);
+        $this->analysisRuntimeConfigurator->replace(
+            $findingConfiguration,
+            $lcomConfiguration,
+            $architecturePolicy,
+            $computedMetrics,
+            $frameworkNamespaces,
+            $channels,
+        );
+        if ($capture) {
+            $this->analysisRuntimeConfigurator->captureExcludedViolations();
+        }
 
-        // Drain warnings captured during configuration resolution (e.g. wildcard
-        // self-allow detection). These were buffered as
-        // DeferredWarning records because the user-facing logger was not yet
-        // configured at that point — replay them now that it is.
-        $this->drainDeferredWarnings($resolved);
-
-        $this->configureMemoryLimit($resolved->analysis, $output);
+        // These are fallible process/output effects. Failure aborts before
+        // analysis; committed stores are reset at the next invocation entry.
+        $this->runtimeLimitsController->apply($runtimeLimits);
+        $logger = $this->runtimeLoggerConfigurator->configure($input, $output);
+        foreach ($architecturePolicy->warnings() as $warning) {
+            $logger->warning($warning->message, $warning->context);
+        }
         $this->configureProgressReporter($input, $output);
         $this->configureProfiler($input);
-        $this->analysisRuntimeConfigurator->configure($resolved, $input);
+    }
+
+    public function clearCacheIfRequested(InputInterface $input): bool
+    {
+        if (!$input->hasOption('clear-cache') || $input->getOption('clear-cache') !== true) {
+            return false;
+        }
+
+        $this->cacheFactory->create()->clear();
+
+        return true;
     }
 
     /**
@@ -62,116 +113,49 @@ final class RuntimeConfigurator
      * The default (512M) is set in DefaultsStage and can be overridden
      * via qmx.yaml or --memory-limit CLI option.
      */
-    private function configureMemoryLimit(AnalysisConfiguration $config, OutputInterface $output): void
+    private function resolveRuntimeLimits(ConfigurationDocument $document): RuntimeLimits
     {
-        if ($config->memoryLimit === null) {
-            return;
+        $value = null;
+        foreach ($document->contributions(ConfigSchema::MEMORY_LIMIT) as $candidate) {
+            if (\is_string($candidate)) {
+                $value = $candidate;
+            }
         }
 
-        $result = ini_set('memory_limit', $config->memoryLimit);
-
-        if ($result === false) {
-            $this->diagnosticOutput->write($output, \sprintf(
-                '<comment>Warning: failed to set memory_limit to %s. ini_set() may be disabled.</comment>',
-                $config->memoryLimit,
-            ));
-        }
-    }
-
-    /**
-     * Configures logger based on CLI options.
-     *
-     * Creates appropriate logger using LoggerFactory and sets it in LoggerHolder
-     * so that all components (Analyzer, PhpFileParser) can use it.
-     *
-     * Defensive about option presence: commands other than `check` (e.g.
-     * `debug:layer-assignment`) reuse this configurator to apply the YAML
-     * `memory_limit` before parallel collection, but don't expose every
-     * logging/profiling option. Missing options fall back to defaults.
-     */
-    private function configureLogger(InputInterface $input, OutputInterface $output): void
-    {
-        // Get log file path and level from CLI options
-        $logFile = $input->hasOption('log-file') ? $input->getOption('log-file') : null;
-        $logLevel = $input->hasOption('log-level') ? $input->getOption('log-level') : null;
-
-        // Validate log file path
-        if (!\is_string($logFile) && $logFile !== null) {
-            $logFile = null;
-        }
-
-        // Validate log level
-        if (!\is_string($logLevel)) {
-            $logLevel = LogLevel::INFO;
-        }
-
-        // Normalize log level
-        $logLevel = strtolower($logLevel);
-        $validLevels = ['debug', 'info', 'warning', 'error'];
-        if (!\in_array($logLevel, $validLevels, true)) {
-            $logLevel = LogLevel::INFO;
-        }
-
-        // Create logger
-        $logger = $this->loggerFactory->create($output, $logFile, $logLevel);
-
-        // Set logger in holder so all components can use it
-        $this->loggerHolder->setLogger($logger);
-    }
-
-    /**
-     * Replays warnings captured during configuration resolution.
-     *
-     * Configuration resolution happens before {@see self::configureLogger()},
-     * so the {@see LoggerHolder} still carries a NullLogger when the
-     * architecture factory runs. To prevent its allow-list warnings from being
-     * dropped, the factory buffers them in
-     * {@see \Qualimetrix\Configuration\Pipeline\ResolvedConfiguration::$deferredWarnings};
-     * this method drains the buffer through the now-configured logger.
-     */
-    private function drainDeferredWarnings(ResolvedConfiguration $resolved): void
-    {
-        if ($resolved->deferredWarnings === []) {
-            return;
-        }
-
-        $logger = $this->loggerHolder->getLogger();
-        foreach ($resolved->deferredWarnings as $warning) {
-            $logger->log($warning->level, $warning->message, $warning->context);
-        }
+        return new RuntimeLimits($value);
     }
 
     /**
      * Configures progress reporter based on CLI options.
      *
-     * Creates appropriate progress reporter and sets it in ProgressReporterHolder
-     * so that Analyzer can report progress during analysis.
+     * Selects the per-run reporter on the stable console-owned switch so the
+     * analysis pipeline can report progress without owning adapter state.
      */
     private function configureProgressReporter(InputInterface $input, OutputInterface $output): void
     {
         // Disable for non-TTY (CI, pipes)
         if (!$output->isDecorated()) {
-            $this->progressReporterHolder->setReporter(new NullProgressReporter());
+            $this->progressReporter->reset();
 
             return;
         }
 
         // Explicit disable
         if ($input->hasOption('no-progress') && $input->getOption('no-progress') === true) {
-            $this->progressReporterHolder->setReporter(new NullProgressReporter());
+            $this->progressReporter->reset();
 
             return;
         }
 
         // Disable for quiet mode
         if ($output->getVerbosity() === OutputInterface::VERBOSITY_QUIET) {
-            $this->progressReporterHolder->setReporter(new NullProgressReporter());
+            $this->progressReporter->reset();
 
             return;
         }
 
         // Use console progress bar
-        $this->progressReporterHolder->setReporter(new ConsoleProgressBar($output));
+        $this->progressReporter->enable(new ConsoleProgressBar($output));
     }
 
     /**
@@ -180,19 +164,16 @@ final class RuntimeConfigurator
     private function configureProfiler(InputInterface $input): void
     {
         if (!$input->hasOption('profile')) {
-            // Command does not expose `--profile`; profiler stays as NullProfiler.
             return;
         }
 
         $profileOption = $input->getOption('profile');
-
-        // If --profile was not provided, profiler stays as NullProfiler (default)
         if ($profileOption === false) {
             return;
         }
 
         // Enable profiler if --profile or --profile=file was provided
-        $this->profilerHolder->set(new Profiler()); // @phpstan-ignore staticMethod.dynamicCall
+        $this->profileSession->enable();
     }
 
 }

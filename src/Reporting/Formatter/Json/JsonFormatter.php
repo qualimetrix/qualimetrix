@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Json;
 
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Version;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Reporting\Debt\DebtCalculator;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\Formatter\Support\ViolationSorter;
 use Qualimetrix\Reporting\FormatterContext;
@@ -142,9 +142,9 @@ final class JsonFormatter implements FormatterInterface
     /**
      * Filters top issues by namespace/class drill-down context.
      *
-     * @param list<\Qualimetrix\Reporting\Impact\RankedIssue> $issues
+     * @param list<\Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue> $issues
      *
-     * @return list<\Qualimetrix\Reporting\Impact\RankedIssue>
+     * @return list<\Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue>
      */
     private function filterTopIssuesByContext(array $issues, FormatterContext $context): array
     {

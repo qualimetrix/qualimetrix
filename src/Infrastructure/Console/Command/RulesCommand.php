@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Core\Rule\CliAliasReader;
-use Qualimetrix\Core\Rule\RuleInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -26,11 +25,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class RulesCommand extends Command
 {
-    /**
-     * @param iterable<RuleInterface> $rules
-     */
     public function __construct(
-        private readonly iterable $rules,
+        private readonly RuleExecutionInterface $ruleExecution,
     ) {
         parent::__construct();
     }
@@ -51,21 +47,19 @@ final class RulesCommand extends Command
         $groupFilter = $input->getOption('group');
 
         $rules = [];
-        foreach ($this->rules as $rule) {
-            $name = $rule->getName();
-            $group = $rule->getCategory()->value;
+        foreach ($this->ruleExecution->allRules() as $rule) {
+            $name = $rule->name;
+            $group = $rule->category->value;
 
             if ($groupFilter !== null && $group !== $groupFilter) {
                 continue;
             }
 
-            $aliases = CliAliasReader::read($rule::class);
-
             $rules[] = [
                 'name' => $name,
                 'group' => $group,
-                'description' => $rule->getDescription(),
-                'aliases' => $aliases,
+                'description' => $rule->description,
+                'aliases' => $rule->aliases,
             ];
         }
 

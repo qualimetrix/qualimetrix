@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -15,9 +14,11 @@ use Symfony\Component\DependencyInjection\Reference;
 /**
  * Configures the Duplication evidence capability without exposing its internals.
  *
- * The detector and run-scoped result provider are registered by string service
- * ID so Infrastructure imports only the capability's inspection contract. The
- * rule is discovered from the capability root with the same lazy,
+ * The detector and result provider are registered by string service IDs so
+ * Infrastructure does not import Duplication internals. Autoconfiguration
+ * connects the detector to the consumer-owned Analysis.Run
+ * FileSetInspectionParticipantInterface. The rule is discovered from the
+ * capability root with the same lazy,
  * non-autowired prototype as other rules; RuleOptionsCompilerPass supplies its
  * Options value and the provider dependency. Algorithm helpers remain ordinary
  * module objects constructed by the detector and are not container services.
@@ -40,13 +41,12 @@ final class DuplicationConfigurator implements ContainerConfiguratorInterface
 
         $container->register(self::RESULT_PROVIDER, self::RESULT_PROVIDER);
         $container->register(self::DETECTOR, self::DETECTOR)
+            ->setAutoconfigured(true)
             ->setArguments([
-                '$configurationProvider' => new Reference(ConfigurationProviderInterface::class),
+                '$ruleConfiguration' => new Reference(RuleConfigurationInterface::class),
                 '$resultProvider' => new Reference(self::RESULT_PROVIDER),
+                '$logger' => new Reference('Qualimetrix\\Infrastructure\\Logging\\DelegatingLogger'),
             ]);
-
-        $container->setAlias(DuplicationInspectionInterface::class, self::DETECTOR)
-            ->setPublic(true);
     }
 
     private function registerRule(ContainerBuilder $container): void

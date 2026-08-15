@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Evidence\Duplication;
 
-use Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use SplFileInfo;
 
 /**
@@ -36,7 +39,7 @@ use SplFileInfo;
  * shape across the rows of a constant lookup table is the normal form of
  * that table, not code duplication needing extraction.
  */
-final class DuplicationDetector implements DuplicationInspectionInterface
+final class DuplicationDetector implements FileSetInspectionParticipantInterface
 {
     private HashIndexBuilder $hashIndexBuilder;
     private TokenNormalizer $normalizer;
@@ -46,8 +49,9 @@ final class DuplicationDetector implements DuplicationInspectionInterface
     private int $minLines;
 
     public function __construct(
-        private readonly ConfigurationProviderInterface $configurationProvider,
+        private readonly RuleConfigurationInterface $ruleConfiguration,
         private readonly DuplicationResultProvider $resultProvider,
+        private readonly LoggerInterface $logger = new NullLogger(),
     ) {
         $this->hashIndexBuilder = new HashIndexBuilder();
         $this->normalizer = new TokenNormalizer();
@@ -61,11 +65,31 @@ final class DuplicationDetector implements DuplicationInspectionInterface
      *
      * @param list<SplFileInfo> $files
      */
-    public function inspect(array $files): void
+    public function inspect(array $files, AbsolutePath $projectRoot): void
+    {
+        $this->detect($files, $projectRoot);
+        $this->logger->info('Duplication detection completed');
+    }
+
+    public static function participantId(): string
+    {
+        return 'duplication';
+    }
+
+    public static function producerRuleName(): string
+    {
+        return 'duplication.code-duplication';
+    }
+
+    public function resetForRun(): void
+    {
+        $this->resultProvider->reset();
+    }
+
+    /** @param list<SplFileInfo> $files */
+    private function detect(array $files, AbsolutePath $projectRoot): void
     {
         $this->loadOptions();
-
-        $projectRoot = $this->configurationProvider->getConfiguration()->projectRoot;
 
         $indexResult = $this->hashIndexBuilder->build($files, $projectRoot, $this->minTokens);
         if ($indexResult->isEmpty()) {
@@ -90,14 +114,9 @@ final class DuplicationDetector implements DuplicationInspectionInterface
         $this->resultProvider->replace($this->filterAndDeduplicate($rawBlocks));
     }
 
-    public function reset(): void
-    {
-        $this->resultProvider->reset();
-    }
-
     private function loadOptions(): void
     {
-        $ruleOptions = $this->configurationProvider->getRuleOptions();
+        $ruleOptions = $this->ruleConfiguration->all();
         $dupOptions = $ruleOptions['duplication.code-duplication'] ?? [];
         $this->minTokens = (int) ($dupOptions['min_tokens'] ?? $dupOptions['minTokens'] ?? 70);
         $this->minLines = (int) ($dupOptions['min_lines'] ?? $dupOptions['minLines'] ?? 5);

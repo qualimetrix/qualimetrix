@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Qualimetrix\Reporting\Formatter\Html;
 
 use Composer\InstalledVersions;
-use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
-use Qualimetrix\Core\Metric\AggregationStrategy;
-use Qualimetrix\Core\Metric\MetricName;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
+
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Core\Version;
-use Qualimetrix\Reporting\Debt\DebtCalculator;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\Report;
 
@@ -37,6 +39,7 @@ final class HtmlTreeBuilder
 
     public function __construct(
         private readonly DebtCalculator $debtCalculator,
+        private readonly ComputedMetricDefinitionCatalogInterface $definitionCatalog,
     ) {
         $this->violationPartitioner = new HtmlViolationPartitioner();
         $this->metricAggregator = new HtmlMetricAggregator();
@@ -348,7 +351,7 @@ final class HtmlTreeBuilder
     {
         $definitions = [];
 
-        foreach (ComputedMetricDefinitionHolder::getDefinitions() as $def) {
+        foreach ($this->definitionCatalog->all() as $def) {
             if (!str_starts_with($def->name, 'health.')) {
                 continue;
             }

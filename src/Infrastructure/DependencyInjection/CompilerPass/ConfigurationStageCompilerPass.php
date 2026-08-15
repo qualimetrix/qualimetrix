@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
-use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -15,14 +14,15 @@ use Symfony\Component\DependencyInjection\Reference;
 final class ConfigurationStageCompilerPass implements CompilerPassInterface
 {
     public const string TAG = 'qmx.configuration_stage';
+    private const string PIPELINE_SERVICE_ID = 'qmx.configuration.pipeline';
 
     public function process(ContainerBuilder $container): void
     {
-        if (!$container->hasDefinition(ConfigurationPipeline::class)) {
+        if (!$container->hasDefinition(self::PIPELINE_SERVICE_ID)) {
             return;
         }
 
-        $pipeline = $container->getDefinition(ConfigurationPipeline::class);
+        $pipeline = $container->findDefinition(self::PIPELINE_SERVICE_ID);
         $stages = $container->findTaggedServiceIds(self::TAG);
 
         foreach (array_keys($stages) as $serviceId) {

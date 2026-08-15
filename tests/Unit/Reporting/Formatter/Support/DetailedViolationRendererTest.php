@@ -7,28 +7,35 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Support;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\AcceptedLevel;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Reporting\Debt\DebtCalculator;
-use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
+use Qualimetrix\Reporting\Formatter\Support\DebtBreakdownRenderer;
 use Qualimetrix\Reporting\Formatter\Support\DetailedViolationRenderer;
+use Qualimetrix\Reporting\Formatter\Support\ViolationDetailRenderer;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 
 #[CoversClass(DetailedViolationRenderer::class)]
+#[CoversClass(ViolationDetailRenderer::class)]
+#[CoversClass(DebtBreakdownRenderer::class)]
 final class DetailedViolationRendererTest extends TestCase
 {
     private DetailedViolationRenderer $renderer;
+    private ViolationDetailRenderer $detailRenderer;
+    private DebtBreakdownRenderer $debtRenderer;
 
     protected function setUp(): void
     {
-        $this->renderer = new DetailedViolationRenderer(
-            new DebtCalculator(new RemediationTimeRegistry()),
-        );
+        $debtCalculator = new DebtCalculator(new RemediationTimeRegistry());
+        $this->renderer = new DetailedViolationRenderer($debtCalculator);
+        $this->detailRenderer = new ViolationDetailRenderer();
+        $this->debtRenderer = new DebtBreakdownRenderer($debtCalculator);
     }
 
     #[Test]
@@ -86,6 +93,7 @@ final class DetailedViolationRendererTest extends TestCase
         // Should group by file (default in detail mode)
         self::assertStringContainsString('src/Foo.php (1 violation)', $output);
         self::assertStringContainsString('src/Bar.php (1 violation)', $output);
+        self::assertStringContainsString('Technical debt by rule:', $output);
     }
 
     #[Test]
@@ -103,7 +111,7 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false, groupBy: GroupBy::None, isGroupByExplicit: true);
-        $output = $this->renderer->render($violations, $context);
+        $output = $this->detailRenderer->render($violations, $context);
 
         // Should NOT have file group headers (but debt breakdown may mention "violation")
         self::assertStringNotContainsString('src/Foo.php (1 violation)', $output);
@@ -134,7 +142,7 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false, groupBy: GroupBy::Rule, isGroupByExplicit: true);
-        $output = $this->renderer->render($violations, $context);
+        $output = $this->detailRenderer->render($violations, $context);
 
         self::assertStringContainsString('complexity.cyclomatic (1)', $output);
         self::assertStringContainsString('size.method-count (1)', $output);
@@ -157,7 +165,7 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->renderer->render($violations, $context);
+        $output = $this->detailRenderer->render($violations, $context);
 
         self::assertStringContainsString('too many code paths', $output);
         self::assertStringNotContainsString('exceeds threshold', $output);
@@ -179,7 +187,7 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->renderer->render($violations, $context);
+        $output = $this->detailRenderer->render($violations, $context);
 
         self::assertStringContainsString('exceeds threshold', $output);
     }
@@ -207,7 +215,7 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->renderer->render($violations, $context);
+        $output = $this->detailRenderer->render($violations, $context);
 
         self::assertStringContainsString('ERROR', $output);
         self::assertStringContainsString('WARN', $output);
@@ -228,7 +236,7 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->renderer->render($violations, $context);
+        $output = $this->detailRenderer->render($violations, $context);
 
         self::assertStringContainsString('[complexity.cyclomatic.callable]', $output);
     }
@@ -248,7 +256,7 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->renderer->render($violations, $context);
+        $output = $this->detailRenderer->render($violations, $context);
 
         self::assertStringContainsString('bar', $output);
     }
@@ -283,8 +291,7 @@ final class DetailedViolationRendererTest extends TestCase
             ),
         ];
 
-        $context = new FormatterContext(useColor: false);
-        $output = $this->renderer->render($violations, $context);
+        $output = $this->debtRenderer->render($violations);
 
         self::assertStringContainsString('Technical debt by rule:', $output);
         self::assertStringContainsString('complexity.cyclomatic', $output);
@@ -318,8 +325,7 @@ final class DetailedViolationRendererTest extends TestCase
 
         $allViolations = [...$displayed, $extra];
 
-        $context = new FormatterContext(useColor: false);
-        $output = $this->renderer->render($displayed, $context, $allViolations);
+        $output = $this->debtRenderer->render($displayed, $allViolations);
 
         // Debt breakdown must include the rule from $allViolations, not just $displayed
         self::assertStringContainsString('design.lcom', $output);
@@ -342,7 +348,7 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->renderer->render($violations, $context);
+        $output = $this->detailRenderer->render($violations, $context);
 
         self::assertStringContainsString('Complexity is 31 (accepted at 25, now 31)', $output);
     }
@@ -363,7 +369,7 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->renderer->render($violations, $context);
+        $output = $this->detailRenderer->render($violations, $context);
 
         self::assertStringNotContainsString('accepted at', $output);
     }
@@ -383,12 +389,12 @@ final class DetailedViolationRendererTest extends TestCase
         ];
 
         $context = new FormatterContext(useColor: false);
-        $output = $this->renderer->render($violations, $context);
+        $output = $this->detailRenderer->render($violations, $context);
 
         self::assertStringContainsString('[project]', $output);
     }
-    /** @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations */
-    private static function violation(\Qualimetrix\Core\Violation\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Core\Violation\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Core\Rule\RuleLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
+    /** @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations */
+    private static function violation(\Qualimetrix\Analysis\Finding\Contract\Location $location, \Qualimetrix\Core\Symbol\SymbolPath $symbolPath, string $ruleName, string $violationCode, string $message, \Qualimetrix\Analysis\Finding\Contract\Severity $severity, int|float|null $metricValue = null, ?\Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel $level = null, array $relatedLocations = [], ?string $recommendation = null, int|float|null $threshold = null, ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null, ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null, ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null, ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null, ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null): Violation
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Configuration\RuleOptionsParser;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**

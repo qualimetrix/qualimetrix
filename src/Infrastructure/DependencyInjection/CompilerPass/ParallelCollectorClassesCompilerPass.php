@@ -4,27 +4,28 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
-use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
- * Collects collector and rule class names and passes them to StrategySelector.
+ * Collects collector and rule class names and passes them to FileProcessingTaskFactory.
  *
  * This ensures that parallel workers use the same set of collectors and
  * rules as configured in the DI container, avoiding manual synchronization.
  *
  * The class names are extracted from tagged services and passed as
- * constructor arguments to StrategySelector, which then configures
- * AmphpParallelStrategy. Rule classes flow through the same channel so
+ * constructor arguments to FileProcessingTaskFactory. Rule classes flow through
+ * the same channel so
  * each worker can rebuild its own threshold-override validator map via
- * {@see \Qualimetrix\Baseline\Suppression\RuleValidatorMapFactory}.
+ * {@see \Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory}.
  */
 final class ParallelCollectorClassesCompilerPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        if (!$container->hasDefinition(StrategySelector::class)) {
+        if (!$container->hasDefinition(FileProcessingTaskFactory::class)) {
             return;
         }
 
@@ -49,8 +50,9 @@ final class ParallelCollectorClassesCompilerPass implements CompilerPassInterfac
             $ruleClasses[] = $definition->getClass() ?? $id;
         }
 
-        // Pass collector and rule classes to StrategySelector
-        $definition = $container->getDefinition(StrategySelector::class);
+        /** @var list<class-string<RuleDefinitionInterface>> $ruleClasses */
+        // Pass collector and rule classes to FileProcessingTaskFactory
+        $definition = $container->getDefinition(FileProcessingTaskFactory::class);
         $definition->setArgument('$collectorClasses', $collectorClasses);
         $definition->setArgument('$derivedCollectorClasses', $derivedCollectorClasses);
         $definition->setArgument('$ruleClasses', $ruleClasses);

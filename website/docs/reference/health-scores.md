@@ -2,6 +2,10 @@
 
 Qualimetrix computes **six health scores** for every class, namespace, and project — each ranging from 0 (worst) to 100 (best). Health scores distill dozens of raw metrics into a quick quality overview, helping you spot problems without reading individual metric values.
 
+Definitions are resolved per analysis run and evaluated after raw metric
+aggregation. Reusing a process for multiple runs replaces the prior definition
+set atomically, so configuration from an earlier run cannot leak into the next.
+
 ---
 
 ## Dimensions

@@ -236,17 +236,17 @@ Place admonitions immediately after the section they relate to, not grouped at t
 
 ### Internal documentation
 
-| Change type                            | Files to update                                                      |
-| -------------------------------------- | -------------------------------------------------------------------- |
-| Rule added/changed/removed             | `src/Rules/README.md` + `CLAUDE.md` (feature list)                   |
-| Metric collector added/changed         | `src/Metrics/README.md`                                              |
-| CLI alias added for a rule             | `src/Configuration/README.md` (CLI aliases table)                    |
-| Pipeline phase changed                 | `src/Analysis/README.md` + `docs/ARCHITECTURE.md` + `CLAUDE.md`      |
-| DI registration mechanism changed      | `CLAUDE.md` (§ Symfony DI) + `docs/ARCHITECTURE.md` (link to CLAUDE) |
-| Formatter added/changed                | `src/Reporting/README.md`                                            |
-| Configuration pipeline stage added     | `src/Configuration/README.md`                                        |
-| Baseline/suppression mechanism changed | `src/Baseline/README.md`                                             |
+| Change type                            | Files to update                                                                                                                                                             |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rule added/changed/removed             | Owning `src/Analysis/Evidence/{Capability}/README.md` + `rules/{group}.md` + `CLAUDE.md` (feature list)                                                                     |
+| Metric collector added/changed         | Owning `src/Analysis/Evidence/{Capability}/README.md` + `rules/{group}.md`                                                                                                  |
+| CLI alias added for a rule             | `src/Analysis/Configuration/README.md` (CLI aliases table)                                                                                                                  |
+| Pipeline phase changed                 | `src/Analysis/README.md` + `docs/ARCHITECTURE.md` + `CLAUDE.md`                                                                                                             |
+| DI registration mechanism changed      | `CLAUDE.md` (§ Symfony DI) + `docs/ARCHITECTURE.md` (link to CLAUDE)                                                                                                        |
+| Formatter added/changed                | `src/Reporting/README.md`                                                                                                                                                   |
+| Configuration pipeline stage added     | `src/Analysis/Configuration/README.md`                                                                                                                                      |
+| Baseline/suppression mechanism changed | [`src/Analysis/Policy/Baseline/README.md`](../src/Analysis/Policy/Baseline/README.md) and [`src/Analysis/Policy/Inline/README.md`](../src/Analysis/Policy/Inline/README.md) |
 
 **Note:** `DocumentationConsistencyTest` automatically validates rule names in `default-thresholds.md`,
-CLI aliases in `Configuration/README.md`, and YAML examples in `README.md` against source code.
+CLI aliases in `src/Analysis/Configuration/README.md`, and YAML examples in `README.md` against source code.
 If you add a rule or CLI alias, the test will catch missing documentation.

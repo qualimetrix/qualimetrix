@@ -7,22 +7,23 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Summary;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\Summary\HintRenderer;
 use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Health\HealthScore;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
-use Qualimetrix\Reporting\Health\NamespaceDrillDown;
-use Qualimetrix\Reporting\Health\WorstOffender;
 use Qualimetrix\Reporting\Report;
 
 #[CoversClass(HintRenderer::class)]
@@ -33,8 +34,8 @@ final class HintRendererTest extends TestCase
 
     protected function setUp(): void
     {
-        $namespaceDrillDown = new NamespaceDrillDown(new MetricHintProvider());
-        $offenderList = new OffenderListRenderer(new ViolationFilter(), $namespaceDrillDown);
+        $definitionCatalog = self::createStub(ComputedMetricDefinitionCatalogInterface::class);
+        $offenderList = new OffenderListRenderer(new ViolationFilter(), new WorstClassDrillDown($definitionCatalog));
         $this->renderer = new HintRenderer($offenderList);
         $this->color = new AnsiColor(false);
     }
@@ -133,8 +134,10 @@ final class HintRendererTest extends TestCase
             healthOverall: 40.0,
             label: 'Poor',
             reason: 'Many violations',
-            violationCount: 10,
-            classCount: 5,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 10,
+                classCount: 5,
+            ),
         );
 
         $report = new Report(
@@ -169,8 +172,10 @@ final class HintRendererTest extends TestCase
             healthOverall: 35.0,
             label: 'Poor',
             reason: 'Low cohesion',
-            violationCount: 4,
-            classCount: 0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 4,
+                classCount: 0,
+            ),
         );
 
         $report = new Report(
@@ -220,8 +225,10 @@ final class HintRendererTest extends TestCase
             healthOverall: 40.0,
             label: 'Poor',
             reason: 'Issues',
-            violationCount: 5,
-            classCount: 3,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 5,
+                classCount: 3,
+            ),
         );
 
         $report = new Report(

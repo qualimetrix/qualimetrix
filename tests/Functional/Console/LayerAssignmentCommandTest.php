@@ -7,12 +7,14 @@ namespace Qualimetrix\Tests\Functional\Console;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Architecture\Domain\Layer\LayerDefinition;
-use Qualimetrix\Architecture\Domain\Layer\LayerRegistry;
-use Qualimetrix\Architecture\Domain\Layer\MembershipSpec;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Console\Command\Debug\LayerAssignmentCommand;
+use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use ReflectionClass;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -33,6 +35,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * matching path inside the command.
  */
 #[CoversClass(LayerAssignmentCommand::class)]
+#[CoversClass(LayerAssignmentResolver::class)]
 final class LayerAssignmentCommandTest extends TestCase
 {
     private string $tempDir;
@@ -264,6 +267,13 @@ final class LayerAssignmentCommandTest extends TestCase
         $command = $application->get('debug:layer-assignment');
         self::assertSame('debug:layer-assignment', $command->getName());
         self::assertNotSame('', $command->getDescription());
+
+        $commandConstructor = (new ReflectionClass(LayerAssignmentCommand::class))->getConstructor();
+        $resolverConstructor = (new ReflectionClass(LayerAssignmentResolver::class))->getConstructor();
+        self::assertNotNull($commandConstructor);
+        self::assertNotNull($resolverConstructor);
+        self::assertCount(7, $commandConstructor->getParameters());
+        self::assertCount(6, $resolverConstructor->getParameters());
     }
 
     /**
@@ -272,7 +282,7 @@ final class LayerAssignmentCommandTest extends TestCase
      * Builds a {@see LayerRegistry} from the same overlapping configuration
      * the command will load, asks the registry directly what layer
      * `App\Service\Foo` resolves to ({@see LayerRegistry::resolveLayer()} —
-     * the value the runtime {@see \Qualimetrix\Architecture\Rules\LayerViolationRule}
+     * the value the runtime {@see \Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule}
      * sees on every dependency edge), runs the command against the same
      * config, and asserts both agree.
      *
@@ -327,7 +337,7 @@ final class LayerAssignmentCommandTest extends TestCase
     /**
      * Regression test for Phase 7 Round 1 Fix 1 — the command must apply
      * `paths.excludes` AND filter `@generated` files during its own Discovery
-     * phase, exactly like {@see \Qualimetrix\Analysis\Pipeline\AnalysisPipeline::analyze()}.
+     * phase, exactly like {@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline::analyze()}.
      *
      * Without these filters the command's class set drifts from `qmx check`'s,
      * which silently changes template-layer expansion: excluded/generated
@@ -415,6 +425,18 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $exit);
         self::assertStringContainsString('Assigned to: (no layer)', $tester->getDisplay());
         self::assertStringNotContainsString('mod-Generated', $tester->getDisplay());
+
+        file_put_contents(
+            $configPath,
+            file_get_contents($configPath) . "include_generated: true\n",
+        );
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Generated\\Gen',
+            '--config' => $configPath,
+        ]);
+        self::assertSame(Command::SUCCESS, $exit);
+        self::assertStringContainsString('Assigned to: mod-Generated', $tester->getDisplay());
     }
 
     /**
@@ -479,6 +501,31 @@ final class LayerAssignmentCommandTest extends TestCase
         );
     }
 
+    #[Test]
+    public function validatesDynamicComputedSelectorsFromYamlBeforeResolvingAssignment(): void
+    {
+        foreach (['computed.health', 'health.complexity', 'computed.health#health.complexity'] as $selector) {
+            $configPath = $this->writeConfigWithComputedSelector($selector);
+            $tester = $this->newTester();
+            $exit = $tester->execute([
+                'fqn' => 'App\\Service\\UserService',
+                '--config' => $configPath,
+            ]);
+
+            self::assertSame(Command::SUCCESS, $exit, $tester->getDisplay());
+            self::assertStringContainsString('Assigned to: service', $tester->getDisplay());
+        }
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Service\\UserService',
+            '--config' => $this->writeConfigWithComputedSelector('computed.stale'),
+        ]);
+
+        self::assertSame(Command::FAILURE, $exit);
+        self::assertStringContainsString('does not match any registered', $tester->getDisplay());
+    }
+
     private function newTester(): CommandTester
     {
         return new CommandTester($this->buildCommand());
@@ -525,6 +572,24 @@ final class LayerAssignmentCommandTest extends TestCase
 
         $path = $this->tempDir . '/qmx-' . uniqid() . '.yaml';
         file_put_contents($path, $yaml);
+
+        return $path;
+    }
+
+    private function writeConfigWithComputedSelector(string $selector): string
+    {
+        $path = $this->writeConfig([
+            ['service', ['App\\Service\\**']],
+        ]);
+        file_put_contents(
+            $path,
+            (string) file_get_contents($path)
+            . "computed_metrics:\n"
+            . "  computed.local:\n"
+            . "    formula: '1'\n"
+            . "    levels: [class]\n"
+            . "only_rules: ['{$selector}']\n",
+        );
 
         return $path;
     }

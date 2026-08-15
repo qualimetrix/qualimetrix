@@ -26,3 +26,9 @@ GraphProjection/
 - Only the two `Contract` types are imported by delivery adapters.
 - DOT and JSON output preserve the graph projection behaviour used by
   `graph:export`.
+
+## Locality
+
+GraphProjection owns delivery-facing graph rendering. Console imports its two
+declared contracts; exporters and options remain internal, while graph
+semantics stay with DependencyModel.

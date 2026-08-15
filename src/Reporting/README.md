@@ -42,27 +42,19 @@ Reporting/
 │   ├── DotExporterOptions.php              # Internal DOT options
 │   ├── JsonGraphExporter.php               # Internal JSON projection
 │   └── README.md
-├── Health/                                 # Health scoring module
-│   ├── HealthScoreResolver.php            # Shared health score resolution (project/namespace/class level)
-│   ├── SummaryEnricher.php                # Enriches Report with health scores, worst offenders, tech debt
-│   ├── MetricHintProvider.php             # Single source of truth for metric display metadata
-│   ├── NamespaceDrillDown.php             # Shared logic for namespace-level drill-down
-│   ├── HealthReasonBuilder.php            # Builds human-readable reasons for health score dimensions
-│   ├── HealthScore.php                    # VO: one health dimension (complexity, cohesion, etc.)
-│   ├── WorstOffender.php                  # VO: a namespace or class ranked by health
-│   └── DecompositionItem.php              # VO: one contributing metric in a health score breakdown
-├── Impact/                                # Effort-aware prioritization
-│   ├── RankedIssue.php                    # VO: violation ranked by impact score
-│   ├── ClassRankResolver.php              # Resolves classRank for any violation (method/class/namespace/file)
-│   └── ImpactCalculator.php               # Computes impact = classRank × severityWeight × debtMinutes
+├── Health/                                 # Health output assembly over capability contracts
+│   ├── HealthScoreResolver.php            # Selects project/namespace/class contract values
+│   ├── SummaryEnricher.php                # Assembles Report, debt, and impact
+│   └── HealthHintProjector.php             # Projects Health metadata for HTML
+├── FindingProjection/                      # Ordered user-visible finding projection
+│   ├── Contract/                          # Framework-free Git scope port and request/result
+│   ├── FindingProjectionOptions.php      # Immutable projection controls
+│   ├── FindingProjectionResult.php       # Reported, measured, accepted, and stale facts
+│   └── FindingProjector.php              # Authoritative suppression/filtering order
 ├── Filter/
 │   └── ViolationFilter.php                # Shared violation/offender filtering by namespace/class context
 ├── Profile/
 │   └── ProfileSummaryRenderer.php         # Profiler summary rendering for console
-├── Debt/
-│   ├── RemediationTimeRegistry.php        # Rule name -> estimated remediation minutes
-│   ├── DebtSummary.php                    # Value Object: total, per-file, per-rule debt
-│   └── DebtCalculator.php                 # Calculates DebtSummary from violations
 └── Formatter/
     ├── FormatterInterface.php              # Formatter contract
     ├── FormatterRegistryInterface.php      # Registry contract
@@ -75,7 +67,9 @@ Reporting/
     ├── Support/                            # Shared formatter utilities
     │   ├── AnsiColor.php                  # Lightweight ANSI color wrapper
     │   ├── ViolationSorter.php            # Sorting/grouping utility for violations
-    │   ├── DetailedViolationRenderer.php  # Detailed violation output (--detail mode)
+    │   ├── DetailedViolationRenderer.php  # Detailed-output compositor
+    │   ├── ViolationDetailRenderer.php    # Sorted/grouped violation details
+    │   ├── DebtBreakdownRenderer.php      # Per-rule technical-debt details
     │   ├── AcceptedLevelNarrator.php      # "accepted at 25, now 31" fragment for a measured breach
     │   └── CoverageNarrator.php           # Complete/empty/incomplete human coverage summary
     ├── Summary/
@@ -107,6 +101,19 @@ Reporting/
 ```
 
 ## Contracts
+
+### Finding projection
+
+`FindingProjector` owns the framework-free projection order: annotation
+suppression, configured path exclusion, configured namespace exclusion,
+Baseline ceiling, optional annotation rejoin, and Git scope last. Git scope is
+queried through `GitScopeQueryInterface`; its Infrastructure adapter never
+leaks into Reporting. Git changes only the reported list and cannot alter the
+measured, accepted, or stale Baseline facts.
+
+Configuration-owned `OutputFormat` carries the resolved formatter name to the
+Console presenter without adding output policy to the transitional runtime
+configuration.
 
 ### GraphProjection
 
@@ -243,32 +250,24 @@ final readonly class Report
 
 ### SummaryEnricher (Health/)
 
-Enriches a base `Report` with health scores, worst offenders, and tech debt. Called in the pipeline between `ReportBuilder::build()` and `Formatter::format()`.
+Enriches a base `Report` with immutable Health summary values, worst offenders,
+technical debt, and impact. Health score/decomposition semantics are owned by
+[`Analysis\\Evidence\\ComputedMetrics`](../Analysis/Evidence/ComputedMetrics/README.md);
+Reporting retains only report assembly.
 
 ```php
 final readonly class SummaryEnricher
 {
-    public function __construct(DebtCalculator $debtCalculator, MetricHintProvider $hintProvider, ImpactCalculator $impactCalculator);
     public function enrich(Report $report): Report;
 }
 ```
 
-### MetricHintProvider (Health/)
+### HealthHintProjector (Health/)
 
-Single source of truth for metric display metadata (27 metrics, 6 health decompositions, 5 dimension labels). Used by `SummaryEnricher` and future formatters.
-
-```php
-final class MetricHintProvider
-{
-    public function getLabel(string $metricKey): ?string;
-    public function getExplanation(string $metricKey, float $value): string;
-    public function getGoodValue(string $metricKey): ?string;
-    public function getDirection(string $metricKey): ?string;
-    public function getDecomposition(string $healthDimension): array;
-    public function getScoreLabel(float $score, float $warnThreshold, float $errThreshold): string;
-    public function getHealthDimensionLabel(string $dimension, bool $bad): string;
-}
-```
+Projects the immutable metadata returned by
+`HealthMetricMetadataProviderInterface` into the existing HTML payload. Labels,
+explanations, good values, directions, decompositions, and score-label semantics
+remain inside the Health capability.
 
 ### SummaryFormatter
 
@@ -714,3 +713,11 @@ Possible extensions:
 
 - **Markdown** — for documentation and PR comments
 - **JUnit XML** — for integration with test frameworks
+
+## Locality
+
+Reporting owns output projection and formatter composition, not feature state.
+It consumes named capability contracts and resolves its immutable output and
+finding-projection values from `ConfigurationDocument`; delivery adapters remain
+in Infrastructure. Keep formatter tests, templates, and documentation with
+their Reporting subject, and keep runtime values with their named owners.

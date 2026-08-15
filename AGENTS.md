@@ -34,7 +34,8 @@ When starting a session in the web environment, `scripts/init-environment.sh` is
 
 **After implementing a component:**
 - Update README.md in the affected `src/` directory: add new files/classes to the structure diagram, update descriptions
-- If default thresholds changed, update the defaults table in `src/Rules/README.md`
+- If default thresholds changed, update the owning capability README and its
+  `website/docs/rules/{group}.md` page
 
 **Before planning a new feature:**
 - Read [docs/internal/PRODUCT_VISION.md](docs/internal/PRODUCT_VISION.md) — target users, design principles, scope boundaries
@@ -55,33 +56,41 @@ modular monolith** accepted in
 ADR 0012's substantial/thin hybrid direction; ADR 0010 is the historical
 Architecture pilot and ADR 0016 remains the governing subject-cohesion rule.
 
-P1 has landed Duplication and P2 has landed DependencyModel plus GraphProjection;
-P3-P8 remain pending. The tree below
-describes the current physical layout. P0 governance remains live: the
-versioned internal manifest is authoritative for all 701 current declarations
-and 37 semantic owners, and it
-generates a coarse qmx projection with 37 owner layers, 12 singleton enforcement
-seams and final `external` (50 layers and 272 allow edges in this snapshot).
-That enforcement does not mean the planned P3-P8 namespace moves have landed.
+The accepted capability boundaries distribute the former Metrics and Rules role
+buckets among eight evidence capabilities. The tree below describes the current
+physical layout. P0 governance remains live: the versioned internal manifest is
+authoritative for 789 declarations in 787 files and 37 semantic owners. It
+generates a coarse qmx projection with 37 owner layers, no singleton
+enforcement seams, final `external`, and 64 permanent exact composition
+bindings that retain 13 coarse owner pairs (227 declared allow edges).
 
 ```
 src/
 ├── Core/              # Cross-cutting primitives (no dependencies)
-├── Architecture/      # Vertical slice — Architecture domain (ADR 0010 pilot)
-│   ├── Domain/             # VOs, enums, exceptions
-│   ├── Configuration/      # YAML factory + validators
-│   ├── Processing/         # Analysis-time helpers (template expansion etc.)
-│   └── Rules/              # Architecture rules (layer-violation, circular-dependency)
-├── Metrics/{Category}/     # Thin metric features (layered)
-├── Rules/{Category}/       # Thin rule features (layered)
-├── Baseline/          # Baseline support and @qmx-ignore suppression
 ├── Analysis/          # Orchestration plus taxonomy-only capability grouping
+│   ├── Configuration/       # ordered configuration document resolution
+│   ├── Finding/             # rule language, execution, violations and filtering
 │   ├── Evidence/
-│   │   ├── Duplication/ # Landed P1 leaf: detection, result, rule and one contract
-│   │   └── DependencyModel/ # Landed P2 graph model: five contracts, three internals
-│   └── {Pipeline,Collection,...}/ # Unmigrated Run orchestration until P3
-├── Reporting/         # Output formatters plus landed P2 GraphProjection capability
-├── Configuration/     # Cross-cutting config infrastructure (loader, schema, pipeline)
+│   │   ├── DependencyModel/     # graph model plus P3 extraction/traversal contract
+│   │   ├── Duplication/         # detection, result and rule; implements the Run-owned FileSet port
+│   │   ├── CircularDependency/  # P4 SCC evidence, rule and preparation contract
+│   │   ├── ComputedMetrics/      # P5 formulas, instance-owned catalog and Health semantics
+│   │   ├── CodeSmell/            # code-smell collection and rules
+│   │   ├── Cohesion/             # class cohesion evidence and rules
+│   │   ├── Complexity/           # cyclomatic, cognitive and NPath evidence and rules
+│   │   ├── Coupling/             # coupling evidence, rules and run configuration
+│   │   ├── Design/               # inheritance and design evidence and rules
+│   │   ├── Maintainability/      # Halstead and maintainability evidence and rules
+│   │   ├── Measurement/         # collection facts, repository, attribution, aggregation
+│   │   ├── Prioritization/      # impact ranking and technical-debt evidence
+│   │   ├── Security/             # security evidence and rules
+│   │   └── Size/                 # size evidence and rules
+│   ├── Policy/
+│   │   ├── Architecture/        # P4 declared-layer policy and debug contracts
+│   │   ├── Baseline/            # accepted-finding ceiling lifecycle
+│   │   └── Inline/              # source annotations and suppression controls
+│   └── Run/                 # P3 discovery, collection, phase ordering and FileSet port
+├── Reporting/         # formatters plus GraphProjection and FindingProjection
 └── Infrastructure/    # Adapters (CLI, DI, cache, git, profiler) — adapters for any feature live here
 benchmarks/            # Benchmark PHP projects for metric calibration (see benchmarks/README.md)
 scripts/               # Utility scripts (benchmark data collection, regression checks)
@@ -114,16 +123,17 @@ Two corollaries that settle recurring arguments:
 - "This feature has many adapters" is **not** an argument for a vertical slice:
   adapters live in `Infrastructure/` either way.
 
-The following ADR 0022 rules define the accepted target layout. P1 is current
-architecture; do not treat the still-pending P3-P8 namespace moves as landed:
+The following ADR 0022 rules define the accepted target layout. P1-P7 are the
+current physical architecture; P8 is not landed:
 
 - A leaf module is a subject with one owner and lifecycle. Internal folders
   follow the subject; do not create an empty role skeleton.
 - Add `Contract/` only for exact types used by named external owner-consumers.
   A private leaf has no public surface.
-- A port introduced for dependency inversion belongs to its consumer. The
-  proposed `Analysis\Run` phase ports are non-binding hypotheses until the P3
-  contract gate proves their inputs, outputs and actual dependencies.
+- A port introduced for dependency inversion belongs to its consumer. P3 proves
+  only `Analysis\Run\Contract\FileSetInspectionParticipantInterface` plus the
+  two P4 capability-specific preparation contracts; do not add a generic
+  lifecycle, graph-preparation, or metric-derivation port.
 - `Analysis`, `Analysis\Evidence`, and `Analysis\Policy` are navigation
   taxonomies only: no PHP types, state, shared contracts or qmx allow target.
 - `Core` holds only neutral primitives without a natural leaf owner. Many
@@ -135,10 +145,9 @@ architecture; do not treat the still-pending P3-P8 namespace moves as landed:
 - Every production namespace has one explicit leaf owner. Do not use an
   open-ended owner template that silently enrols a future sibling.
 
-Existing `Metrics/` and the remaining `Rules/` role buckets are migration
-inputs, not evidence that the rest of the target physical layout has landed.
-Follow the manifest-backed current ownership and the migration plan; do not
-claim or simulate later package moves before their review gates.
+The former `Metrics/` and `Rules/` role buckets have been removed. Follow the
+manifest-backed current ownership and the migration plan; do not simulate P8
+changes before its review gates.
 
 ### Adapter-exclusion principle
 
@@ -147,7 +156,7 @@ in `src/Infrastructure/` regardless of which feature they touch. They
 depend on the slice through its public service contracts. Example:
 `LayerAssignmentCommand` stays at
 `src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php` and
-injects `ArchitectureProcessorInterface` plus Collection services — pulling
+injects `LayerAssignmentInspectorInterface` plus Collection services — pulling
 the command into the Architecture slice would force the slice to depend on
 `symfony/console`, which is an infrastructure concern.
 
@@ -239,14 +248,14 @@ When documenting deviations: use `!!! info "Deviation from original spec"` block
   migration grants.
 - **Core** contains neutral primitives only and has no project dependencies
   (PHP and php-parser types are allowed).
-- **Analysis\Run phase ports** are proposed, non-binding hypotheses until the
-  P3 contract gate; they are not current implementation contracts.
+- **Analysis\Run phase ports** are limited to the P3 FileSet inspection
+  participant. Graph preparation and metric derivation remain unapproved ports.
 - **Infrastructure** may depend on capabilities for delivery/composition;
   capabilities do not depend on framework adapters.
 - The internal manifest is the current exact owner/visibility/import authority.
   Its checker runs through `composer architecture:check` before selfcheck and
   rejects unlisted exact imports even when a coarse qmx owner edge permits them.
-- Generated `qmx.yaml` contains 37 semantic-owner layers, 12 singleton
+- Generated `qmx.yaml` contains 37 semantic-owner layers, no singleton
   enforcement seams and final `external`; `coverage: error` keeps isolated and
   edge-connected project declarations fail-closed. The qmx graph is coarse and
   does not replace the manifest checker.
@@ -334,9 +343,11 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 4. CompilerPasses collect services by tags
 
 **Adding a new collector:**
-1. Create a class in `src/Metrics/{Category}/` (e.g., `src/Metrics/Complexity/`)
+1. Identify the owning capability and create the collector under its exact
+   `src/Analysis/Evidence/{Capability}/` root
 2. Implement `MetricCollectorInterface` (or `DerivedCollectorInterface`, `GlobalContextCollectorInterface`)
-3. The class will be registered **automatically** — NO need to modify `ContainerFactory`
+3. Extend only that capability's exact collector registration in its
+   Infrastructure configurator; do not add an open-ended sibling scan
 
 **Adding a new formatter:**
 1. Create a `*Formatter.php` class in `src/Reporting/Formatter/`
@@ -344,64 +355,49 @@ Standard Symfony practices are used: **autowiring** and **autoconfiguration**.
 3. The class will be registered **automatically**
 
 **Adding a new configuration stage:**
-1. Create a class in `src/Configuration/Pipeline/Stage/`
+1. Create a class in `src/Analysis/Configuration/Pipeline/Stage/`
 2. Implement `ConfigurationStageInterface`
 3. The class will be registered **automatically** and added to `ConfigurationPipeline`
 
 **Adding a new config option (YAML key):**
-1. Add a constant to `src/Configuration/ConfigSchema.php` (e.g., `public const MY_OPTION = 'my.option'`)
+1. Add a constant to `src/Analysis/Configuration/ConfigSchema.php` (e.g., `public const MY_OPTION = 'my.option'`)
 2. Add an entry to `ConfigSchema::ENTRIES` (source path, result key, root type)
-3. Add handling in the appropriate consumer (`AnalysisConfiguration`, `DefaultsStage`, `CliStage`, etc.)
+3. Add handling in the owning resolver or adapter (`DefaultsStage`, `CliStage`,
+   `RunConfigurationResolver`, or another exact consumer); do not add a
+   cross-owner runtime field to Configuration.
 4. All consumers must reference the constant, not a string literal
 
 **Adding a new rule:**
 
-Place the rule with its owning subject per ADR 0016 / ADR 0022. The remaining
-layered layout is a migration input, while an independent capability owns its
-rule directly:
+Place the rule with its owning subject per ADR 0016 / ADR 0022:
 
-- **Thin rule** (computes from pre-existing metrics, no Analysis-time
-  preparation, no companion debug command):
-  1. Create a `*Rule.php` class in `src/Rules/{Category}/` (e.g.,
-     `src/Rules/Complexity/`)
-  2. Implement `RuleInterface` (or extend `AbstractRule`)
-  3. Add a `NAME` constant with the rule slug in `group.rule-name` format
-     (e.g., `'complexity.cyclomatic'`)
-  4. Add a static `getOptionsClass()` method returning the Options class
-  5. Create an Options class in the same directory, implementing
-     `RuleOptionsInterface`
-  6. The class is registered **automatically** by `RuleConfigurator` — no
-     need to modify `ContainerFactory`
-- **Capability-owned rule** (the feature has its own lifecycle or otherwise
-  meets the subject-cohesion criteria):
-  - Place the rule with its owning capability according to that module's
-    subject-driven layout; a `Rules/` subdirectory is not mandatory
-  - Add (or extend) the capability's configurator under
-    `src/Infrastructure/DependencyInjection/Configurator/` so it registers the
-    exact implementation root without publishing module internals
-  - Current examples: `src/Architecture/Rules/` via
-    `ArchitectureConfigurator`, and
-    `src/Analysis/Evidence/Duplication/CodeDuplicationRule.php` via
-    `DuplicationConfigurator`
+1. Create the `*Rule.php` and its Options class inside the owning capability.
+2. Implement the internal executable rule contract (or extend `AbstractRule`)
+   and `RuleOptionsInterface` as appropriate.
+3. Expose only the Finding-owned `RuleDefinitionInterface` metadata contract
+   to cross-owner class-string consumers.
+4. Extend only the owning capability configurator's exact rule registration;
+   rules are lazy and deliberately not autowired.
 
 **How rule registration works:**
-1. `RuleConfigurator::registerClasses()` scans `src/Rules/**/*Rule.php` for
-   layered rules; each capability's configurator registers its exact rule root
-   (currently `ArchitectureConfigurator` and `DuplicationConfigurator`)
-2. `registerForAutoconfiguration(RuleInterface::class)` adds the `qmx.rule`
-   tag in either case
-3. `RuleOptionsCompilerPass` automatically registers Options via
-   `RuleOptionsFactory::create()`
-4. `RuleCompilerPass` collects all rules into `RuleExecutor` and `RulesCommand`
-   — the only supported source of rule *instances*. Never build a rule with
-   `new $ruleClass($options)`: a rule may declare constructor dependencies
-   beyond its options (e.g. `LayerViolationRule`)
-5. Every rule class must declare a `public const string NAME`; metadata is read
-   from it by reflection (`Core\Rule\RuleNameReader`), never by instantiation
+1. `ArchitectureConfigurator`, `CircularDependencyConfigurator`,
+   `ComputedMetricsConfigurator`, `DuplicationConfigurator`, and the exact
+   `CodeSmell`, `Cohesion`, `Complexity`, `Coupling`, `Design`,
+   `Maintainability`, `Security`, and `Size` configurators register only their
+   owned rule roots. `RuleConfigurator` retains registry composition but does
+   not scan a role bucket.
+2. Cross-owner consumers of rule class strings depend only on
+   `Analysis\Finding\Contract\Rule\RuleDefinitionInterface`, whose sole
+   metadata operation returns the options class.
+3. Rule execution, registration, and construction remain Finding and
+   Infrastructure internals; do not expose an instance or factory contract.
 
-**Important:** Rules do NOT use autowiring for the constructor (due to `RuleOptionsInterface`). The `$options` argument is injected via `RuleOptionsCompilerPass`.
+**Important:** Finding and Infrastructure own executable-rule construction;
+cross-owner code must not construct rules or depend on their instances.
 
-**Important:** Collectors must be placed in subdirectories `src/Metrics/{Category}/`; files in the root of `src/Metrics/` (except base classes) are ignored.
+**Important:** A capability configurator must enumerate its exact collector and
+rule roots. Do not use a wildcard that silently enrols a future evidence
+capability.
 
 **Exclude patterns (not registered as services):**
 - `Abstract*.php` — abstract classes
@@ -412,9 +408,7 @@ rule directly:
 **CompilerPasses collect services by tags:**
 - `CollectorCompilerPass` -> `CompositeCollector`
 - `GlobalCollectorCompilerPass` -> `GlobalCollectorRunner`
-- `RuleOptionsCompilerPass` -> registers Options for rules
-- `RuleCompilerPass` -> `RuleExecutor::$rules`, `RulesCommand::$rules`
-- `RuleRegistryCompilerPass` -> `RuleRegistry::$ruleClasses`
+- Rule compiler passes -> Finding's private execution and metadata registries
 - `FormatterCompilerPass` -> `FormatterRegistry`
 - `ConfigurationStageCompilerPass` -> `ConfigurationPipeline`
 
@@ -570,6 +564,23 @@ bin/qmx check --help
 - **Validation**: `composer check` (cs-check + tests + phpstan + exact manifest/freshness check + coarse qmx selfcheck). A direct `bin/qmx check` is product analysis only and does not run the repository's exact manifest policy. When modifying `src/Reporting/Template/`, also run `composer test:js` and `composer build:js`
 - **Documentation**: Update `README.md` in the affected `src/` directory (add new files, fix outdated info). Update website documentation (see [Website Documentation](#website-documentation) section below)
 
+### Efficient validation order
+
+For multi-package changes, fail fast before paying for the full test suite:
+
+1. Run lint/style, focused tests, and scoped static analysis for each package.
+2. Before the root aggregate, run full PHPStan, `composer architecture:check`,
+   and dogfood with machine-readable output, `--workers=0`, and
+   `--fail-on=warning`.
+3. Run `composer check` once before review and once after confirmed review
+   fixes. Repeat it earlier only when a change invalidates prior aggregate
+   evidence.
+
+Subagents own focused package gates; the root orchestrator owns full aggregate
+gates. For every long-running or redirected command, persist its output under
+`/tmp`, wait for completion, and inspect the explicit exit code. Empty or
+redirected stdout is never evidence of success.
+
 **Architecture Decision Records:** After implementing a feature with non-obvious design decisions, create an ADR in `docs/adr/` (see [docs/adr/README.md](docs/adr/README.md) for format). If a spec existed during design (`docs/internal/SPEC_*.md`), it can be archived or deleted after the ADR captures key decisions. ADRs preserve the "why" — implementation details live in code and component READMEs.
 
 **Commit granularity:** Split large changes into logical commits when it improves changelog readability. Each commit should represent one coherent change (e.g., separate "rename command" from "update documentation"). Avoid monolithic commits that bundle unrelated changes — they make changelogs harder to generate and git history harder to navigate.
@@ -580,7 +591,7 @@ Run `bin/qmx check src/` after modifying metric collection or aggregation logic 
 
 **How to interpret violations:**
 - **Invariant test failure** (e.g., parent.sum ≠ Σ children): **Bug** — fix immediately, add regression test
-- **Golden file test failure after intentional algorithm change**: Update expected values in `tests/Integration/Metrics/GoldenFileAggregationTest.php` after verifying new values are correct
+- **Golden file test failure after intentional algorithm change**: Update expected values in `tests/Analysis/Evidence/Measurement/Integration/Aggregation/GoldenFileAggregationTest.php` after verifying new values are correct
 - **Coupling violations** (high CBO, circular dependencies): **Architecture issue** — evaluate refactoring vs. threshold adjustment
 - **Complexity violations** (CCN > threshold): **Code quality signal** — normal for complex algorithms, investigate only if unexpected
 - **Health score regression** vs `composer benchmark:check`: May indicate **formula bug** if changes touched computed metrics
@@ -674,14 +685,22 @@ Key rules:
 
 ### Component Documentation (in src/)
 - [src/Core/README.md](src/Core/README.md) — contracts and primitives
-- [src/Architecture/README.md](src/Architecture/README.md) — Architecture vertical slice (layer policy + circular dependency, ADR 0010 pilot)
-- [src/Analysis/Evidence/Duplication/README.md](src/Analysis/Evidence/Duplication/README.md) — Duplication capability boundary, lifecycle, contract and tests
-- [src/Metrics/README.md](src/Metrics/README.md) — metric collectors
-- [src/Rules/README.md](src/Rules/README.md) — analysis rules
+- [src/Analysis/Policy/Architecture/README.md](src/Analysis/Policy/Architecture/README.md) — declared-layer policy capability
+- [src/Analysis/Evidence/CircularDependency/README.md](src/Analysis/Evidence/CircularDependency/README.md) — circular-dependency evidence capability
+- [src/Analysis/Evidence/Duplication/README.md](src/Analysis/Evidence/Duplication/README.md) — Duplication capability boundary, lifecycle, Run-port integration and tests
+- [src/Analysis/Evidence/CodeSmell/README.md](src/Analysis/Evidence/CodeSmell/README.md) — code-smell evidence and rules
+- [src/Analysis/Evidence/Cohesion/README.md](src/Analysis/Evidence/Cohesion/README.md) — cohesion evidence and rules
+- [src/Analysis/Evidence/Complexity/README.md](src/Analysis/Evidence/Complexity/README.md) — complexity evidence and rules
+- [src/Analysis/Evidence/Coupling/README.md](src/Analysis/Evidence/Coupling/README.md) — coupling evidence, rules, and configuration
+- [src/Analysis/Evidence/Design/README.md](src/Analysis/Evidence/Design/README.md) — design evidence and rules
+- [src/Analysis/Evidence/Maintainability/README.md](src/Analysis/Evidence/Maintainability/README.md) — maintainability evidence and rules
+- [src/Analysis/Evidence/Security/README.md](src/Analysis/Evidence/Security/README.md) — security evidence and rules
+- [src/Analysis/Evidence/Size/README.md](src/Analysis/Evidence/Size/README.md) — size evidence and rules
 - [src/Analysis/README.md](src/Analysis/README.md) — orchestration
 - [src/Reporting/README.md](src/Reporting/README.md) — formatting
-- [src/Configuration/README.md](src/Configuration/README.md) — configuration
-- [src/Baseline/README.md](src/Baseline/README.md) — baseline support and @qmx-ignore suppression
+- [src/Analysis/Configuration/README.md](src/Analysis/Configuration/README.md) — configuration
+- [src/Analysis/Policy/Baseline/README.md](src/Analysis/Policy/Baseline/README.md) — baseline persistence and acceptance policy
+- [src/Analysis/Policy/Inline/README.md](src/Analysis/Policy/Inline/README.md) — `@qmx-ignore` suppression and inline controls
 - [src/Infrastructure/README.md](src/Infrastructure/README.md) — CLI, DI, caching
 
 ### Architecture Decision Records (in docs/adr/)

@@ -7,7 +7,7 @@ namespace Qualimetrix\Tests\Unit\Core\Namespace_;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Namespace_\NamespaceTree;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 
 #[CoversClass(NamespaceTree::class)]
 final class NamespaceTreeTest extends TestCase

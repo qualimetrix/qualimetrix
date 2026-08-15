@@ -1,5 +1,9 @@
 # 0011. Architecture Rules: Errata for ADR 0005 and ADR 0007
 
+> **Historical path note.** The implementation paths below predate P4; current
+> declared-layer policy lives in `Analysis\\Policy\\Architecture` under
+> [ADR 0022](0022-capability-oriented-modular-monolith.md).
+
 **Date:** 2026-05-15
 **Status:** Accepted
 **Supersedes:** [0005](0005-architecture-rules.md) (errata for "Phase 2 deferrals" section), [0007](0007-architecture-rules-phase-2-design.md) (errata for "info vs warning" wording, D7 template-criteria phrasing, and D4 metacharacter list)

@@ -6,16 +6,24 @@ declare(strict_types=1);
 const GENERATED_ARTIFACTS = [
     'documentation-ownership.tsv',
     'manifest-enforcement-summary.tsv',
+    'production-class-string-targets.tsv',
+    'production-composition-bindings.tsv',
     'production-cross-owner-imports.tsv',
     'production-extension-families.tsv',
     'production-ownership.tsv',
     'production-phase-participants.tsv',
+    'production-module-fan-in.tsv',
+    'production-public-imports.tsv',
     'production-reporting-classification.tsv',
     'production-state-services.tsv',
     'test-fixture-directories.tsv',
     'test-ownership.tsv',
     'test-phpunit-discovery.txt',
     'test-phpunit-suites.txt',
+    'test-orphan-dispositions.tsv',
+    'test-system-support-owners.tsv',
+    'test-topology.tsv',
+    'production-to-test-imports.tsv',
 ];
 
 $arguments = $_SERVER['argv'] ?? [];

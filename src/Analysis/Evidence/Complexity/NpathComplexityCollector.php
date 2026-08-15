@@ -1,0 +1,106 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Evidence\Complexity;
+
+use Override;
+use PhpParser\Node;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Path\RelativePath;
+use SplFileInfo;
+
+/**
+ * Collects NPath Complexity metrics for methods and functions.
+ *
+ * NPath Complexity counts the number of acyclic execution paths through a method.
+ * Unlike Cyclomatic Complexity (additive), NPath is multiplicative and grows exponentially.
+ *
+ * Metric format: npath:{FQN}
+ * Example: npath:App\Service\UserService::calculate
+ */
+final class NpathComplexityCollector extends AbstractCollector implements CallableMetricsProviderInterface
+{
+    private const NAME = 'npath-complexity';
+
+    public function __construct()
+    {
+        $this->visitor = new NpathComplexityVisitor();
+    }
+
+    public function getName(): string
+    {
+        return self::NAME;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function provides(): array
+    {
+        return [MetricName::COMPLEXITY_NPATH];
+    }
+
+    /**
+     * @param Node[] $ast
+     */
+    public function collect(SplFileInfo $file, array $ast): MetricBag
+    {
+        $bag = new MetricBag();
+
+        \assert($this->visitor instanceof NpathComplexityVisitor);
+
+        foreach ($this->visitor->getNpath() as $fqn => $npath) {
+            $bag = $bag->with(MetricName::COMPLEXITY_NPATH . ':' . $fqn, $npath);
+        }
+
+        return $bag;
+    }
+
+    /**
+     * @return list<CallableWithMetrics>
+     */
+    public function getCallablesWithMetrics(RelativePath $file): array
+    {
+        \assert($this->visitor instanceof NpathComplexityVisitor);
+
+        return $this->visitor->getCallablesWithMetrics($file);
+    }
+
+    /**
+     * @return list<MetricDefinition>
+     */
+    #[Override]
+    public function getMetricDefinitions(): array
+    {
+        return [
+            new MetricDefinition(
+                name: MetricName::COMPLEXITY_NPATH,
+                collectedAt: SymbolLevel::Callable,
+                aggregations: [
+                    SymbolLevel::Class_->value => [
+                        AggregationStrategy::Max,
+                        AggregationStrategy::Average,
+                    ],
+                    SymbolLevel::Namespace_->value => [
+                        AggregationStrategy::Max,
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Percentile95,
+                    ],
+                    SymbolLevel::Project->value => [
+                        AggregationStrategy::Max,
+                        AggregationStrategy::Average,
+                        AggregationStrategy::Percentile95,
+                    ],
+                ],
+            ),
+        ];
+    }
+}

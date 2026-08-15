@@ -2,6 +2,10 @@
 
 The Maintainability Index combines several metrics into a single score that indicates how easy the code is to maintain. Higher scores are better -- the opposite of most other rules.
 
+The analysis keeps its Halstead input, MI derivation, and threshold policy in
+one maintainability pipeline, so the score and its supporting evidence stay
+aligned.
+
 ---
 
 ## Maintainability Index

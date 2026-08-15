@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Cache;
 
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfiguration;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationStoreInterface;
 
 /**
  * Factory for creating cache instance based on runtime configuration.
  *
- * This enables lazy cache creation — the cache directory is determined
- * from ConfigurationHolder at the moment of first cache access.
+ * This enables lazy cache creation — the cache directory is read from the
+ * instance-owned cache configuration store at the moment of first access.
  */
 final class CacheFactory
 {
     private ?CacheInterface $cache = null;
 
     public function __construct(
-        private readonly ConfigurationProviderInterface $configurationProvider,
+        private readonly CacheConfigurationStoreInterface $configurationStore,
     ) {}
 
     /**
@@ -29,8 +30,7 @@ final class CacheFactory
     public function create(): CacheInterface
     {
         if ($this->cache === null) {
-            $config = $this->configurationProvider->getConfiguration();
-            $this->cache = new FileCache($config->cacheDir);
+            $this->cache = new FileCache($this->configurationStore->current()->directory);
         }
 
         return $this->cache;
@@ -42,5 +42,16 @@ final class CacheFactory
     public function reset(): void
     {
         $this->cache = null;
+    }
+
+    public function replaceConfiguration(CacheConfiguration $configuration): void
+    {
+        $this->configurationStore->replace($configuration);
+    }
+
+    public function resetConfiguration(): void
+    {
+        $this->reset();
+        $this->configurationStore->reset();
     }
 }

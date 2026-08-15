@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Core\Symbol;
 
 use InvalidArgumentException;
+
+use Qualimetrix\Analysis\Evidence\Measurement\DataBag;
 use Qualimetrix\Core\Path\RelativePath;
 
 /**

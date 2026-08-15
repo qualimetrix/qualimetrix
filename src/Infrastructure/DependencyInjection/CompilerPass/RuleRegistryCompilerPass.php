@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
 use LogicException;
-use Qualimetrix\Core\Rule\RuleInterface;
-use Qualimetrix\Core\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -40,7 +40,7 @@ final class RuleRegistryCompilerPass implements CompilerPassInterface
             }
         }
 
-        /** @var list<class-string<RuleInterface>> $ruleClasses */
+        /** @var list<class-string<RuleDefinitionInterface>> $ruleClasses */
         $this->validateNoDuplicateNames($ruleClasses);
 
         $definition->setArgument('$ruleClasses', $ruleClasses);
@@ -59,7 +59,7 @@ final class RuleRegistryCompilerPass implements CompilerPassInterface
      * dependencies that only the container can resolve. A missing NAME is
      * therefore a wiring error and fails the container build.
      *
-     * @param list<class-string<RuleInterface>> $ruleClasses
+     * @param list<class-string> $ruleClasses
      */
     private function validateNoDuplicateNames(array $ruleClasses): void
     {

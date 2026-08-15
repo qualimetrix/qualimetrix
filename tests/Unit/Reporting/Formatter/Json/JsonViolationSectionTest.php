@@ -8,16 +8,16 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\AcceptedLevel;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\OccurrenceKey;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
 use Qualimetrix\Reporting\Formatter\Json\JsonViolationSection;
 use Qualimetrix\Reporting\FormatterContext;
@@ -455,24 +455,24 @@ final class JsonViolationSectionTest extends TestCase
      * subject, preserving the production contract without hiding it behind a
      * legacy fallback.
      *
-     * @param list<\Qualimetrix\Core\Violation\Location> $relatedLocations
+     * @param list<\Qualimetrix\Analysis\Finding\Contract\Location> $relatedLocations
      */
     private static function violation(
-        \Qualimetrix\Core\Violation\Location $location,
+        \Qualimetrix\Analysis\Finding\Contract\Location $location,
         \Qualimetrix\Core\Symbol\SymbolPath $symbolPath,
         string $ruleName,
         string $violationCode,
         string $message,
-        \Qualimetrix\Core\Violation\Severity $severity,
+        \Qualimetrix\Analysis\Finding\Contract\Severity $severity,
         int|float|null $metricValue = null,
-        ?\Qualimetrix\Core\Rule\RuleLevel $level = null,
+        ?\Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel $level = null,
         array $relatedLocations = [],
         ?string $recommendation = null,
         int|float|null $threshold = null,
         ?\Qualimetrix\Core\Symbol\SymbolPath $dependencyTarget = null,
         ?\Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType $dependencyType = null,
-        ?\Qualimetrix\Core\Violation\AcceptedLevel $acceptedLevel = null,
-        ?\Qualimetrix\Core\Violation\OccurrenceKey $occurrenceKey = null,
+        ?\Qualimetrix\Analysis\Finding\Contract\AcceptedLevel $acceptedLevel = null,
+        ?\Qualimetrix\Analysis\Finding\Contract\OccurrenceKey $occurrenceKey = null,
         ?\Qualimetrix\Core\Symbol\MetricSubject $subject = null,
     ): Violation {
         $subject ??= match ($symbolPath->getType()) {

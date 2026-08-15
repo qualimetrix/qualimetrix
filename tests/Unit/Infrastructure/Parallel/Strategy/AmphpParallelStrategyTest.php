@@ -5,14 +5,20 @@ declare(strict_types=1);
 namespace Qualimetrix\Tests\Unit\Infrastructure\Parallel\Strategy;
 
 use FilesystemIterator;
+use LogicException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
+use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
+use Qualimetrix\Analysis\Evidence\Size\LocCollector;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
-use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
-use Qualimetrix\Metrics\Size\LocCollector;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -25,7 +31,7 @@ final class AmphpParallelStrategyTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->strategy = new AmphpParallelStrategy();
+        $this->strategy = $this->createStrategy();
         $this->tempDir = sys_get_temp_dir() . '/qmx-test-' . uniqid();
         mkdir($this->tempDir, 0755, true);
     }
@@ -137,35 +143,26 @@ final class AmphpParallelStrategyTest extends TestCase
     }
 
     #[Test]
-    public function itSetsCollectorClasses(): void
+    public function itForwardsTheDependencyTraversalParticipantClassToEverySerializedTask(): void
     {
-        $this->strategy->setCollectorClasses([
-            'Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector',
-            'Qualimetrix\Metrics\Size\LocCollector',
-        ]);
+        if (!$this->strategy->isAvailable()) {
+            self::markTestSkipped('Parallel worker transport is unavailable.');
+        }
 
-        // We can't directly verify the private property, but method should not throw
-        self::expectNotToPerformAssertions();
-    }
+        $this->strategy->setMinFilesForParallel(1);
+        $this->strategy->setWorkerCount(2);
+        $this->strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
 
-    #[Test]
-    public function itSetsEmptyCollectorClasses(): void
-    {
-        $this->strategy->setCollectorClasses([]);
+        $results = $this->strategy->execute(
+            $this->createTestFiles(2),
+            static fn(): never => throw new LogicException('Parallel execution must not use the fallback.'),
+        );
 
-        // Should accept empty array
-        self::expectNotToPerformAssertions();
-    }
-
-    #[Test]
-    public function itSetsDerivedCollectorClasses(): void
-    {
-        $this->strategy->setDerivedCollectorClasses([
-            'Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector',
-        ]);
-
-        // We can't directly verify the private property, but method should not throw
-        self::expectNotToPerformAssertions();
+        self::assertCount(2, $results);
+        foreach ($results as $result) {
+            self::assertInstanceOf(FileProcessingResult::class, $result);
+            self::assertTrue($result->isSuccessful());
+        }
     }
 
     #[Test]
@@ -225,9 +222,6 @@ final class AmphpParallelStrategyTest extends TestCase
         $this->strategy->setMinFilesForParallel(10);
         $files = $this->createTestFiles(20);
 
-        // Set collector classes (required condition)
-        $this->strategy->setCollectorClasses([LocCollector::class]);
-
         // Don't set projectRoot - should cause fallback
 
         $callCount = 0;
@@ -246,15 +240,11 @@ final class AmphpParallelStrategyTest extends TestCase
     #[Test]
     public function itFallsBackToSequentialWhenCollectorClassesEmpty(): void
     {
-        // Set enough files to pass threshold
-        $this->strategy->setMinFilesForParallel(10);
         $files = $this->createTestFiles(20);
 
-        // Set project root (required condition)
+        $this->strategy = $this->createStrategy([]);
+        $this->strategy->setMinFilesForParallel(10);
         $this->strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
-
-        // Don't set collector classes (or set empty) - should cause fallback
-        $this->strategy->setCollectorClasses([]);
 
         $callCount = 0;
         $processor = function (SplFileInfo $file) use (&$callCount): string {
@@ -305,7 +295,7 @@ final class AmphpParallelStrategyTest extends TestCase
                 self::callback(fn(array $context): bool => isset($context['files_count'], $context['threshold'])),
             );
 
-        $strategy = new AmphpParallelStrategy($logger);
+        $strategy = $this->createStrategy(logger: $logger);
         $strategy->setMinFilesForParallel(100);
 
         $files = $this->createTestFiles(50);
@@ -324,9 +314,8 @@ final class AmphpParallelStrategyTest extends TestCase
             ->method('warning')
             ->with('AmphpParallelStrategy: project root not set, using sequential fallback');
 
-        $strategy = new AmphpParallelStrategy($logger);
+        $strategy = $this->createStrategy(logger: $logger);
         $strategy->setMinFilesForParallel(10);
-        $strategy->setCollectorClasses([LocCollector::class]);
 
         $files = $this->createTestFiles(20);
         $processor = fn(SplFileInfo $file): string => $file->getPathname();
@@ -344,7 +333,7 @@ final class AmphpParallelStrategyTest extends TestCase
             ->method('warning')
             ->with('AmphpParallelStrategy: collector classes not configured, using sequential fallback');
 
-        $strategy = new AmphpParallelStrategy($logger);
+        $strategy = $this->createStrategy([], $logger);
         $strategy->setMinFilesForParallel(10);
         $strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
         // Don't set collector classes
@@ -368,7 +357,7 @@ final class AmphpParallelStrategyTest extends TestCase
     #[Test]
     public function itDefaultsToFourWorkers(): void
     {
-        $strategy = new AmphpParallelStrategy();
+        $strategy = $this->createStrategy();
 
         self::assertSame(4, $strategy->getWorkerCount());
     }
@@ -406,10 +395,9 @@ final class AmphpParallelStrategyTest extends TestCase
         // but parallel processing is not available on the system
 
         // Setup strategy with all required configuration
+        $this->strategy = $this->createStrategy([LocCollector::class], derivedCollectorClasses: [MaintainabilityIndexCollector::class]);
         $this->strategy->setMinFilesForParallel(10);
         $this->strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
-        $this->strategy->setCollectorClasses([LocCollector::class]);
-        $this->strategy->setDerivedCollectorClasses([MaintainabilityIndexCollector::class]);
 
         // Create enough files to pass threshold
         $files = $this->createTestFiles(20);
@@ -449,10 +437,9 @@ final class AmphpParallelStrategyTest extends TestCase
             ->method('info')
             ->with('AmphpParallelStrategy: parallel not available, using sequential fallback');
 
-        $strategy = new AmphpParallelStrategy($logger);
+        $strategy = $this->createStrategy(logger: $logger);
         $strategy->setMinFilesForParallel(10);
         $strategy->setProjectRoot(AbsolutePath::fromString($this->tempDir));
-        $strategy->setCollectorClasses([LocCollector::class]);
 
         $files = $this->createTestFiles(20);
         $processor = fn(SplFileInfo $file): string => $file->getPathname();
@@ -512,6 +499,26 @@ final class AmphpParallelStrategyTest extends TestCase
         }
 
         return $files;
+    }
+
+    /**
+     * @param list<class-string<\Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface>> $collectorClasses
+     * @param list<class-string<\Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface>> $derivedCollectorClasses
+     */
+    private function createStrategy(
+        array $collectorClasses = [LocCollector::class],
+        LoggerInterface $logger = new NullLogger(),
+        array $derivedCollectorClasses = [],
+    ): AmphpParallelStrategy {
+        return new AmphpParallelStrategy(
+            new FileProcessingTaskFactory(
+                new LcomCollectionConfigurationStore(),
+                DependencyVisitor::class,
+                $collectorClasses,
+                $derivedCollectorClasses,
+            ),
+            $logger,
+        );
     }
 
     private function removeDirectory(string $dir): void

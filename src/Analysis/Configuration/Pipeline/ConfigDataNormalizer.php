@@ -1,0 +1,70 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Configuration\Pipeline;
+
+use Qualimetrix\Analysis\Configuration\ConfigSchema;
+use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
+
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
+
+/**
+ * Normalizes YAML config data to flat dot-notation keys.
+ *
+ * Shared by ConfigFileStage and PresetStage to convert nested YAML structures
+ * into the flat key format expected by ConfigurationPipeline.
+ *
+ * Key mappings are defined in ConfigSchema::ENTRIES (single source of truth).
+ */
+final class ConfigDataNormalizer
+{
+    /**
+     * Normalizes nested YAML config data to flat dot-notation keys.
+     *
+     * @param array<string, mixed> $data Raw config data (after YAML parsing and key normalization)
+     *
+     * @return array<string, mixed> Flat dot-notation config values
+     */
+    public static function normalize(array $data): array
+    {
+        $result = [];
+
+        foreach (ConfigSchema::ENTRIES as [$sourcePath, $resultKey]) {
+            $value = self::resolve($data, $sourcePath);
+
+            if ($value !== null) {
+                $result[$resultKey] = $value;
+            }
+        }
+
+        foreach (ConfigSchema::DOCUMENT_ROOTS as $root) {
+            if (\array_key_exists($root, $data)) {
+                $result[$root] = $data[$root];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Resolves a value from the data array using a source path.
+     *
+     * Source paths are camelCase (YamlConfigLoader normalizes before this runs).
+     *
+     * @param array<string, mixed> $data
+     */
+    private static function resolve(array $data, string $sourcePath): mixed
+    {
+        // Nested key: 'section.key'
+        if (str_contains($sourcePath, '.')) {
+            [$section, $key] = explode('.', $sourcePath, 2);
+
+            return isset($data[$section][$key]) ? $data[$section][$key] : null;
+        }
+
+        // Top-level key
+        return $data[$sourcePath] ?? null;
+    }
+}

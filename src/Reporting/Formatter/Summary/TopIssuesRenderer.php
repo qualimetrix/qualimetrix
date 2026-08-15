@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtSummary;
+use Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Symbol\SymbolType;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Reporting\Debt\DebtSummary;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Impact\RankedIssue;
 use Qualimetrix\Reporting\Report;
 
 /**

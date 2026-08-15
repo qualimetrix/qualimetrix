@@ -13,8 +13,11 @@ parameters:
         - tests
     excludePaths:
         - tests/Fixtures
-        - tests/Architecture/Fixtures
-        - tests/Unit/PhpStan/Rules/data
+        - tests/Analysis/Evidence/Measurement/Fixtures
+        - tests/Analysis/Policy/Architecture/Fixtures
+        - tests/Analysis/Policy/Baseline/Fixtures
+        - tests/Analysis/Policy/Inline/Fixtures
+        - tests/TestSupport/ArchitectureStaticAnalysis/Unit/Fixtures
     tmpDir: .phpstan.cache
     reportUnmatchedIgnoredErrors: true
     treatPhpDocTypesAsCertain: false

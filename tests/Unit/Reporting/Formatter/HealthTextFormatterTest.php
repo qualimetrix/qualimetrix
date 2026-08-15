@@ -7,15 +7,16 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Reporting\Formatter\Health\HealthTextFormatter;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Health\DecompositionItem;
-use Qualimetrix\Reporting\Health\HealthContributor;
-use Qualimetrix\Reporting\Health\HealthScore;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
-use Qualimetrix\Reporting\Health\NamespaceDrillDown;
 use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
 
@@ -26,8 +27,8 @@ final class HealthTextFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $hintProvider = new MetricHintProvider();
-        $drillDown = new NamespaceDrillDown($hintProvider);
+        $hintProvider = new HealthMetricCatalog();
+        $drillDown = new HealthScoreDrillDown($hintProvider, self::createStub(ComputedMetricDefinitionCatalogInterface::class));
         $resolver = new HealthScoreResolver($drillDown);
         $this->formatter = new HealthTextFormatter($resolver);
     }

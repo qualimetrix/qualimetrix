@@ -39,26 +39,37 @@ boundary is always a leaf such as
 `Analysis\Evidence\Duplication` or `Analysis\Policy\Architecture`.
 
 This decision establishes the target layout. P0 governance is live, P1 landed
-`Analysis\Evidence\Duplication`, and P2 landed
-`Analysis\Evidence\DependencyModel` plus `Reporting\GraphProjection`;
-P3-P8 remain future work. The versioned internal manifest is authoritative for
-the current declarations and semantic owners, and its generated qmx projection
-enforces their coarse topology. P1's implementation is present in the current
-snapshot while its final migration-plan review remains pending.
+`Analysis\Evidence\Duplication`, P2 landed
+`Analysis\Evidence\DependencyModel` plus `Reporting\GraphProjection`, and P3
+landed `Analysis\Run`, `Analysis\Evidence\Measurement`, and
+`Analysis\Configuration`. P4 landed `Analysis\Policy\Architecture` and
+`Analysis\Evidence\CircularDependency`; P5 landed
+`Analysis\Evidence\ComputedMetrics` and its Health subdomain. P6 subsequently
+landed `Analysis\Finding`,
+`Analysis\Policy\Inline`, `Analysis\Policy\Baseline`,
+`Analysis\Evidence\Prioritization`, and `Reporting\FindingProjection`, with
+Git retained as an Infrastructure adapter behind the Reporting port. P8 closed
+the remaining locality and composition concerns: configuration resolves to a
+concrete ordered `ConfigurationDocument`, runtime state stays with its named
+owner, and DI records private wiring exactly. The versioned internal
+manifest is authoritative for the current declarations and semantic owners,
+and its generated qmx projection enforces their coarse topology.
 
-The P1 leaf co-locates 18 declarations: detection, duplicate entities, options,
-the rule and an internal per-run result provider. Its only published type is
-`Contract\DuplicationInspectionInterface`, consumed temporarily by the exact
-Run source `MetricEnricher` and permanently by Infrastructure composition.
-`AnalysisContext` and `EnrichmentResult` no longer transport duplicate blocks;
-the detector resets and atomically replaces provider-owned results through the
-capability contract. No compatibility aliases or generic phase port were added.
+The Duplication leaf co-locates detection, duplicate entities, options, the rule,
+and an internal per-run result provider. P3 deleted its temporary
+`DuplicationInspectionInterface`; the internal detector implements Run's
+consumer-owned FileSet participant port. `AnalysisContext` and the transitional
+enrichment result do not transport duplicate blocks. No compatibility alias or
+Duplication-owned public contract remains.
 
-P2 gives DependencyModel exactly five public contracts and keeps graph,
-builder, and empty implementations internal. GraphProjection publishes only
+P2 gives DependencyModel graph/value contracts and keeps graph,
+builder, and empty implementations internal. P3 adds its
+`DependencyTraversalParticipantInterface` promise while keeping resolver,
+visitor, and handler internals private. GraphProjection publishes only
 its projection interface and immutable request; Console remains an adapter and
-cannot import DOT/JSON implementations. Resolver/visitor/handlers remain P3
-inputs, while cycle declarations remain P4 inputs.
+cannot import DOT/JSON implementations. Resolver, visitor, and handlers are now
+DependencyModel extraction internals; P4 moved cycle declarations to their own
+CircularDependency evidence leaf.
 
 ### Contracts require named consumers
 
@@ -69,12 +80,13 @@ holders, raw configuration arrays and framework types do not cross the seam. A
 private leaf has no `Contract` directory.
 
 A port introduced to invert a dependency belongs to the consumer that needs the
-capability. The target hypothesis is that `Analysis\Run` will own typed,
-phase-specific participant ports while capability modules retain their prepared
-results. These ports are non-binding design hypotheses until the P3 contract
-gate proves their inputs, outputs and actual participant dependencies. They are
-not descriptions of the current implementation. The target must not introduce
-a universal participant interface, service locator or heterogeneous result bag.
+capability. P3 proved only Run's typed
+`FileSetInspectionParticipantInterface`: Run supplies an eligible file set and
+does not acquire the capability's result. Dependency traversal is separately a
+DependencyModel promise to named consumers. Generic lifecycle,
+graph-preparation, and metric-derivation participant ports remain non-binding
+hypotheses. The target must not introduce a universal participant interface,
+service locator or heterogeneous result bag.
 
 ### State and lifecycle are owned together
 
@@ -97,30 +109,34 @@ this decision does not legitimise them by analogy.
   and support are subdivisions within the owning subject. A production move
   includes its owned tests and discovery wiring.
 - The current internal owner manifest is the authoritative governance input for
-  owner/visibility, named contract consumers and temporary grants. It generates
+owner/visibility, named contract consumers and permanent composition bindings.
+It generates
   the qmx owner block and production inventories; it does not duplicate DI
   registration.
 - Generated ownership/import inventories are deterministic review projections,
   not the manifest and not an independent source of ownership truth.
 
 Every current production declaration has one explicit semantic owner in the
-internal manifest. The post-P2 snapshot contains 701 declarations in 699 files
-and 37 owners. The generator projects that intent into a coarse qmx owner/seam
-block and review inventories. Open-ended owner templates such as a category
-wildcard are prohibited because a new sibling would be silently enrolled.
-Temporary grants name the exact edge, accountable owner and package/condition
-that removes it; the manifest checker, not qmx, enforces that exactness.
+internal manifest: 789 declarations in 787 files and 37 owners. The generator
+projects that intent into a coarse qmx owner block and review inventories.
+Open-ended owner templates such as a category wildcard are prohibited because a
+new sibling would be silently enrolled. A permanent composition binding names
+one exact DI source, internal target, and observed container operation; the
+manifest checker, not qmx, enforces that exactness.
 
 ### Fail-closed project topology
 
-The generated qmx projection has 37 semantic-owner layers, 12 singleton
-enforcement seams and final `external`: 50 layers and 272 allow edges in the
-reviewed snapshot. Its 84 exact internal grants project to 15 coarse edges.
+The manifest has 37 semantic-owner layers, zero singleton enforcement seams,
+and 64 permanent exact composition bindings collapsing to 13 required coarse
+owner pairs. The generated qmx projection has 227 declared allow edges;
+generated output is not a second source of truth.
+The published topology also records 659 governed test/support/fixture artifacts,
+102 fixture directories, 518 PHPUnit classes, and 7,036 semantic test IDs.
 `external` excludes `Qualimetrix\**`, and `coverage: error`
 includes every analysed logical class outside all declared layers even when it
 has no dependency edges, as well as unclassified dependency endpoints. The qmx
 allow graph is deliberately coarse; `composer architecture:check` validates
-exact manifest visibility, consumers and temporary grants before selfcheck.
+exact manifest visibility, consumers and composition bindings before selfcheck.
 
 The declared exact allow graph must be a DAG, independently of actual code
 cycles. This validation is already implemented: at configuration load, every
@@ -157,17 +173,17 @@ architectural allow edge must be removed or pointed in the dependency direction.
 - ADR 0012's “substantial vertical / thin layered” direction is superseded.
   ADR 0010 remains the historical Architecture pilot, while ADR 0016 remains
   the governing test for subject cohesion.
-- Capabilities may initially coexist with legacy role buckets, but every grant
-  has a closure package; no new code is auto-owned by a wildcard template.
+- No new code is auto-owned by a wildcard template. Composition-root access to
+  a private declaration is recorded as one permanent exact binding, not a
+  public contract or generic allow-list grant.
 - Consumers depend on smaller, named contracts and orchestration no longer
   needs feature payloads in universal contexts.
 - Configuration that previously relied on exact cyclic permissions must be
   migrated before analysis can start.
 - Fail-closed ownership detects both edge-connected and isolated unowned code.
 - The internal owner manifest remains the source for generated qmx ownership
-  and inventories while P3-P8 close the remaining temporary grants and seams. Generated
-  inventories remain auditable projections and can be deleted and regenerated
-  without affecting runtime behaviour.
+  and inventories. Generated inventories remain auditable projections and can
+  be deleted and regenerated without affecting runtime behaviour.
 
 ## References
 

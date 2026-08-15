@@ -1,0 +1,916 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit;
+
+use PhpParser\NodeTraverser;
+use PhpParser\ParserFactory;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityVisitor;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use SplFileInfo;
+
+#[CoversClass(CyclomaticComplexityCollector::class)]
+#[CoversClass(CyclomaticComplexityVisitor::class)]
+final class CyclomaticComplexityCollectorTest extends TestCase
+{
+    private CyclomaticComplexityCollector $collector;
+
+    protected function setUp(): void
+    {
+        $this->collector = new CyclomaticComplexityCollector();
+    }
+
+    #[Test]
+    public function itGetsName(): void
+    {
+        self::assertSame('cyclomatic-complexity', $this->collector->getName());
+    }
+
+    #[Test]
+    public function itProvides(): void
+    {
+        self::assertSame(['ccn'], $this->collector->provides());
+    }
+
+    #[Test]
+    public function itAssignsComplexityOneToSimpleMethod(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Service;
+
+class Calculator
+{
+    public function add(int $a, int $b): int
+    {
+        return $a + $b;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('ccn:App\Service\Calculator::add'));
+    }
+
+    #[Test]
+    public function itCountsSingleIfAsOneDecisionPoint(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function check(int $x): bool
+    {
+        if ($x > 0) {
+            return true;
+        }
+        return false;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 1 (if) = 2
+        self::assertSame(2, $metrics->get('ccn:App\Test::check'));
+    }
+
+    #[Test]
+    public function itCountsElseifBranchesAsSeparateDecisionPoints(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function grade(int $score): string
+    {
+        if ($score >= 90) {
+            return 'A';
+        } elseif ($score >= 80) {
+            return 'B';
+        } elseif ($score >= 70) {
+            return 'C';
+        }
+        return 'F';
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 1 (if) + 2 (elseif) = 4
+        self::assertSame(4, $metrics->get('ccn:App\Test::grade'));
+    }
+
+    #[Test]
+    public function itCountsLoopsAsDecisionPoints(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class LoopTest
+{
+    public function process(array $items): void
+    {
+        for ($i = 0; $i < 10; $i++) {
+            // for loop
+        }
+
+        foreach ($items as $item) {
+            // foreach loop
+        }
+
+        while (true) {
+            break;
+        }
+
+        do {
+            break;
+        } while (false);
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 1 (for) + 1 (foreach) + 1 (while) + 1 (do-while) = 5
+        self::assertSame(5, $metrics->get('ccn:App\LoopTest::process'));
+    }
+
+    #[Test]
+    public function itCountsSwitchCasesAsDecisionPoints(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class SwitchTest
+{
+    public function dayName(int $day): string
+    {
+        switch ($day) {
+            case 1:
+                return 'Monday';
+            case 2:
+                return 'Tuesday';
+            case 3:
+                return 'Wednesday';
+            default:
+                return 'Unknown';
+        }
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 3 (cases, default doesn't count) = 4
+        self::assertSame(4, $metrics->get('ccn:App\SwitchTest::dayName'));
+    }
+
+    #[Test]
+    public function itCountsCatchClausesAsDecisionPoints(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class ExceptionTest
+{
+    public function risky(): void
+    {
+        try {
+            // risky code
+        } catch (\InvalidArgumentException $e) {
+            // handle
+        } catch (\RuntimeException $e) {
+            // handle
+        }
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 2 (catches) = 3
+        self::assertSame(3, $metrics->get('ccn:App\ExceptionTest::risky'));
+    }
+
+    #[Test]
+    public function itCountsMatchArmsAsDecisionPoints(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MatchTest
+{
+    public function label(int $status): string
+    {
+        return match ($status) {
+            1 => 'active',
+            2 => 'inactive',
+            default => 'unknown',
+        };
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 2 (non-default match arms) = 3
+        self::assertSame(3, $metrics->get('ccn:App\MatchTest::label'));
+    }
+
+    #[Test]
+    public function itCountsBooleanOperatorsAsDecisionPoints(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class BooleanTest
+{
+    public function check(int $a, int $b, int $c): bool
+    {
+        if ($a > 0 && $b > 0) {
+            return true;
+        }
+
+        if ($a < 0 || $b < 0 || $c < 0) {
+            return false;
+        }
+
+        return $a > $b and $c > 0;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 1 (if) + 1 (&&) + 1 (if) + 2 (||) + 1 (and) = 7
+        self::assertSame(7, $metrics->get('ccn:App\BooleanTest::check'));
+    }
+
+    #[Test]
+    public function itCountsTernaryAsDecisionPoint(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class TernaryTest
+{
+    public function max(int $a, int $b): int
+    {
+        return $a > $b ? $a : $b;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 1 (ternary) = 2
+        self::assertSame(2, $metrics->get('ccn:App\TernaryTest::max'));
+    }
+
+    #[Test]
+    public function itCountsNullCoalescingAsDecisionPoint(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class NullCoalescingTest
+{
+    public function getName(?string $name): string
+    {
+        return $name ?? 'Unknown';
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 1 (??) = 2
+        self::assertSame(2, $metrics->get('ccn:App\NullCoalescingTest::getName'));
+    }
+
+    #[Test]
+    public function itCountsNullsafeOperatorAsDecisionPoint(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class NullsafeTest
+{
+    public function getLength(?object $obj): ?int
+    {
+        return $obj?->name?->length;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 2 (?->) = 3
+        self::assertSame(3, $metrics->get('ccn:App\NullsafeTest::getLength'));
+    }
+
+    #[Test]
+    public function itMeasuresGlobalFunctions(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Utils;
+
+function validate(mixed $value): bool
+{
+    if ($value === null) {
+        return false;
+    }
+    return true;
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 1 (if) = 2
+        self::assertSame(2, $metrics->get('ccn:App\Utils\validate'));
+    }
+
+    #[Test]
+    public function itMeasuresGlobalFunctionsWithoutNamespace(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+function globalHelper(): void
+{
+    if (true) {
+        // do something
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 1 (if) = 2
+        self::assertSame(2, $metrics->get('ccn:globalHelper'));
+    }
+
+    #[Test]
+    public function itMeasuresClosures(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class ClosureTest
+{
+    public function withClosure(): callable
+    {
+        return function (int $x): int {
+            if ($x > 0) {
+                return $x * 2;
+            }
+            return $x;
+        };
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Method itself: CC = 1
+        self::assertSame(1, $metrics->get('ccn:App\ClosureTest::withClosure'));
+
+        // Closure: CC = 1 (base) + 1 (if) = 2
+        self::assertSame(2, $metrics->get('ccn:App\ClosureTest::{closure#1}'));
+    }
+
+    #[Test]
+    public function itMeasuresMultipleMethods(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class MultiMethod
+{
+    public function simple(): void
+    {
+    }
+
+    public function withIf(): void
+    {
+        if (true) {}
+    }
+
+    public function withLoop(): void
+    {
+        foreach ([] as $item) {}
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(1, $metrics->get('ccn:App\MultiMethod::simple'));
+        self::assertSame(2, $metrics->get('ccn:App\MultiMethod::withIf'));
+        self::assertSame(2, $metrics->get('ccn:App\MultiMethod::withLoop'));
+    }
+
+    #[Test]
+    public function itResetsState(): void
+    {
+        $code1 = <<<'PHP'
+<?php
+
+namespace App;
+
+class First
+{
+    public function method(): void
+    {
+        if (true) {}
+    }
+}
+PHP;
+
+        $code2 = <<<'PHP'
+<?php
+
+namespace App;
+
+class Second
+{
+    public function otherMethod(): void
+    {
+    }
+}
+PHP;
+
+        // Collect first file
+        $this->collectMetrics($code1);
+
+        // Reset
+        $this->collector->reset();
+
+        // Collect second file
+        $metrics = $this->collectMetrics($code2);
+
+        // Should only contain metrics from second file
+        self::assertNull($metrics->get('ccn:App\First::method'));
+        self::assertSame(1, $metrics->get('ccn:App\Second::otherMethod'));
+    }
+
+    #[Test]
+    public function itMeasuresComplexMethod(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Service;
+
+class ComplexService
+{
+    public function process(array $items, bool $validate): array
+    {
+        $result = [];
+
+        if (empty($items)) {
+            return $result;
+        }
+
+        foreach ($items as $key => $item) {
+            if ($validate && !$this->isValid($item)) {
+                continue;
+            }
+
+            try {
+                $value = $item['value'] ?? 0;
+
+                if ($value > 100 || $value < 0) {
+                    throw new \InvalidArgumentException('Invalid value');
+                }
+
+                $result[$key] = $value > 50 ? 'high' : 'low';
+            } catch (\InvalidArgumentException $e) {
+                $result[$key] = 'error';
+            } catch (\RuntimeException $e) {
+                $result[$key] = 'runtime_error';
+            }
+        }
+
+        return $result;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 1 (if empty) + 1 (foreach) + 1 (if validate) + 1 (&&)
+        //    + 1 (??) + 1 (if value) + 1 (||) + 1 (ternary) + 2 (catches) = 11
+        self::assertSame(11, $metrics->get('ccn:App\Service\ComplexService::process'));
+    }
+
+    #[Test]
+    public function itMeasuresTraitMethods(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Traits;
+
+trait LoggableTrait
+{
+    public function log(string $message, bool $debug = false): void
+    {
+        if ($debug) {
+            echo $message;
+        }
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 1 (if) = 2
+        self::assertSame(2, $metrics->get('ccn:App\Traits\LoggableTrait::log'));
+    }
+
+    #[Test]
+    public function itCountsInterfaceMethodsWithBaseComplexity(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Contracts;
+
+interface ServiceInterface
+{
+    public function execute(): void;
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Interface methods have no body, so CC = 1
+        self::assertSame(1, $metrics->get('ccn:App\Contracts\ServiceInterface::execute'));
+    }
+
+    #[Test]
+    public function itMeasuresEnumMethods(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App\Enums;
+
+enum Status: string
+{
+    case Active = 'active';
+    case Inactive = 'inactive';
+
+    public function isActive(): bool
+    {
+        return $this === self::Active;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base)
+        self::assertSame(1, $metrics->get('ccn:App\Enums\Status::isActive'));
+    }
+
+    #[Test]
+    public function itProvidesMetricDefinitions(): void
+    {
+        $definitions = $this->collector->getMetricDefinitions();
+
+        self::assertCount(1, $definitions);
+
+        $ccnDefinition = $definitions[0];
+        self::assertSame('ccn', $ccnDefinition->name);
+        self::assertSame(SymbolLevel::Callable, $ccnDefinition->collectedAt);
+
+        // Check Class_ level aggregations
+        $classStrategies = $ccnDefinition->getStrategiesForLevel(SymbolLevel::Class_);
+        self::assertCount(3, $classStrategies);
+        self::assertContains(AggregationStrategy::Sum, $classStrategies);
+        self::assertContains(AggregationStrategy::Average, $classStrategies);
+        self::assertContains(AggregationStrategy::Max, $classStrategies);
+
+        // Check Namespace_ level aggregations
+        $namespaceStrategies = $ccnDefinition->getStrategiesForLevel(SymbolLevel::Namespace_);
+        self::assertCount(4, $namespaceStrategies);
+        self::assertContains(AggregationStrategy::Sum, $namespaceStrategies);
+        self::assertContains(AggregationStrategy::Average, $namespaceStrategies);
+        self::assertContains(AggregationStrategy::Max, $namespaceStrategies);
+        self::assertContains(AggregationStrategy::Percentile95, $namespaceStrategies);
+
+        // Check Project level aggregations
+        $projectStrategies = $ccnDefinition->getStrategiesForLevel(SymbolLevel::Project);
+        self::assertCount(4, $projectStrategies);
+        self::assertContains(AggregationStrategy::Sum, $projectStrategies);
+        self::assertContains(AggregationStrategy::Average, $projectStrategies);
+        self::assertContains(AggregationStrategy::Max, $projectStrategies);
+        self::assertContains(AggregationStrategy::Percentile95, $projectStrategies);
+    }
+
+    #[Test]
+    public function itDoesNotAttributeAnonymousClassMethodsToOuterClass(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Outer
+{
+    public function simple(): void
+    {
+    }
+
+    public function factory(): object
+    {
+        return new class {
+            public function innerComplex(): void
+            {
+                if (true) {
+                    if (false) {
+                        while (true) {
+                            break;
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+    public function afterAnonymous(): void
+    {
+        if (true) {
+            // one decision point
+        }
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // simple: CC = 1 (base)
+        self::assertSame(1, $metrics->get('ccn:App\Outer::simple'));
+
+        // factory: CC = 1 (base) — anonymous class complexity should NOT leak
+        self::assertSame(1, $metrics->get('ccn:App\Outer::factory'));
+
+        // afterAnonymous: CC = 1 (base) + 1 (if) = 2
+        self::assertSame(2, $metrics->get('ccn:App\Outer::afterAnonymous'));
+
+        // Anonymous class methods should NOT appear in metrics
+        self::assertNull($metrics->get('ccn:App\Outer::innerComplex'));
+    }
+
+    /**
+     * Fix 5: Arrow function with conditional logic should be handled by CCN.
+     */
+    #[Test]
+    public function itCountsTernaryInArrowFunctionAsDecisionPoint(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function getMapper(): callable
+    {
+        return fn($x) => $x > 0 ? $x * 2 : 0;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Method itself: CC = 1 (base, no decision points)
+        self::assertSame(1, $metrics->get('ccn:App\Test::getMapper'));
+
+        // Arrow function: CC = 1 (base) + 1 (ternary) = 2
+        self::assertSame(2, $metrics->get('ccn:App\Test::{closure#1}'));
+    }
+
+    /**
+     * Fix 5: Arrow function with no branching.
+     */
+    #[Test]
+    public function itAssignsBaseComplexityToSimpleArrowFunction(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function getDoubler(): callable
+    {
+        return fn($x) => $x * 2;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Arrow function with no decision points: CC = 1
+        self::assertSame(1, $metrics->get('ccn:App\Test::{closure#1}'));
+    }
+
+    /**
+     * Fix 5: Arrow function with boolean operator.
+     */
+    #[Test]
+    public function itCountsBooleanOperatorInArrowFunctionAsDecisionPoint(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function getValidator(): callable
+    {
+        return fn($x) => $x > 0 && $x < 100;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // Arrow function: CC = 1 (base) + 1 (&&) = 2
+        self::assertSame(2, $metrics->get('ccn:App\Test::{closure#1}'));
+    }
+
+    /**
+     * Closure inside anonymous class method should NOT appear in CCN metrics of outer class.
+     */
+    #[Test]
+    public function itExcludesClosureInsideAnonymousClassFromOuterMetrics(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Outer
+{
+    public function outerMethod(): void
+    {
+        $obj = new class {
+            public function innerMethod(): void
+            {
+                $fn = function() {
+                    if (true) { return 1; }
+                    return 0;
+                };
+            }
+        };
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // outerMethod: CC = 1 (base) — closure inside anonymous class is ignored
+        self::assertSame(1, $metrics->get('ccn:App\Outer::outerMethod'));
+    }
+
+    /**
+     * MatchArm with multiple conditions should add +N (one per condition value).
+     */
+    #[Test]
+    public function itCountsEachConditionValueInMatchArmSeparately(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function categorize(int $x): string
+    {
+        return match($x) {
+            1, 2, 3 => 'low',
+            4, 5 => 'mid',
+            default => 'high',
+        };
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 3 (arm 1: 3 conditions) + 2 (arm 2: 2 conditions) + 0 (default) = 6
+        self::assertSame(6, $metrics->get('ccn:App\Test::categorize'));
+    }
+
+    /**
+     * LogicalXor (xor) should add +1 to cyclomatic complexity (CCN2+).
+     */
+    #[Test]
+    public function itCountsLogicalXorAsDecisionPoint(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function check(bool $a, bool $b): bool
+    {
+        if ($a xor $b) {
+            return true;
+        }
+        return false;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 1 (if) + 1 (xor) = 3
+        self::assertSame(3, $metrics->get('ccn:App\Test::check'));
+    }
+
+    /**
+     * Standalone xor (without wrapping if) should still add +1 to complexity.
+     */
+    #[Test]
+    public function itCountsStandaloneXorWithoutIfAsDecisionPoint(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Foo
+{
+    public function bar(bool $a, bool $b): bool
+    {
+        return $a xor $b;
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // CC = 1 (base) + 1 (xor) = 2
+        self::assertSame(2, $metrics->get('ccn:App\Foo::bar'));
+    }
+
+    private function collectMetrics(string $code): \Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag
+    {
+        $parser = (new ParserFactory())->createForHostVersion();
+        $ast = $parser->parse($code) ?? [];
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($this->collector->getVisitor());
+        $traverser->traverse($ast);
+
+        return $this->collector->collect(new SplFileInfo(__FILE__), $ast);
+    }
+}

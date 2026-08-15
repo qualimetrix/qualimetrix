@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Rule;
 
-use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
-use Qualimetrix\Core\Rule\RuleChannelRegistryInterface;
-use Qualimetrix\Core\Violation\ViolationChannel;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 
 /**
  * Runtime producer-to-channel registry.
@@ -15,7 +16,7 @@ use Qualimetrix\Core\Violation\ViolationChannel;
  * metric channels are resolved from the configured definitions because their
  * vocabulary is open-ended and unavailable while the container is compiled.
  */
-final readonly class RuleChannelRegistry implements RuleChannelRegistryInterface
+final readonly class RuleChannelRegistry implements RuleChannelRegistryInterface, RuleChannelSnapshotFactoryInterface
 {
     /**
      * @param array<string, list<string>> $staticChannelKeysByProducer
@@ -23,7 +24,13 @@ final readonly class RuleChannelRegistry implements RuleChannelRegistryInterface
     public function __construct(
         private array $staticChannelKeysByProducer,
         private string $computedMetricRuleName,
+        private ResolvedComputedMetricDefinitions $definitions,
     ) {}
+
+    public function snapshot(ResolvedComputedMetricDefinitions $definitions): RuleChannelRegistryInterface
+    {
+        return new self($this->staticChannelKeysByProducer, $this->computedMetricRuleName, $definitions);
+    }
 
     public function channelsProducedBy(string $producerRuleName): array
     {
@@ -36,7 +43,7 @@ final readonly class RuleChannelRegistry implements RuleChannelRegistryInterface
             return $channels;
         }
 
-        foreach (ComputedMetricDefinitionHolder::getDefinitions() as $definition) {
+        foreach ($this->definitions->all() as $definition) {
             $channels[] = new ViolationChannel($producerRuleName, $definition->name);
         }
 

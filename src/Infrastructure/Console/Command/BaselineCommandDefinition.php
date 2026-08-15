@@ -33,7 +33,7 @@ use Symfony\Component\Console\Input\InputOption;
  *
  * Defining the shared input in one place means both halves are one thing to
  * check rather than five, and
- * {@see \Qualimetrix\Tests\Functional\Console\Command\BaselineCommandOptionSurfaceTest}
+ * {@see \Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCommandOptionSurfaceTest}
  * checks them by asking each command's definition rather than by reading it.
  *
  * `--config` belongs with the second group for the same reason: it names
@@ -63,8 +63,8 @@ final class BaselineCommandDefinition
      * Every name below is spelled exactly as `check` spells it, and that is
      * the requirement rather than a convenience: `paths`, `preset`,
      * `disable-rule` and `only-rule` are read by
-     * {@see \Qualimetrix\Configuration\Pipeline\Stage\CliStage} and
-     * {@see \Qualimetrix\Configuration\Pipeline\Stage\PresetStage} off the
+     * {@see \Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage} and
+     * {@see \Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage} off the
      * `InputInterface` by name, and `rule-opt` by
      * {@see \Qualimetrix\Infrastructure\Console\CliOptionsParser}. A different
      * spelling here would leave the option accepted and inert — the failure

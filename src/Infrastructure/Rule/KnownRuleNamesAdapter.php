@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Rule;
 
-use Qualimetrix\Configuration\KnownRuleNamesProviderInterface;
-use Qualimetrix\Core\Rule\RuleInterface;
-use Qualimetrix\Core\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
+
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 
 /**
  * Adapter that extracts known rule names from registered rule classes.
@@ -20,7 +23,7 @@ use Qualimetrix\Core\Rule\RuleNameReader;
 final readonly class KnownRuleNamesAdapter implements KnownRuleNamesProviderInterface
 {
     /**
-     * @param list<class-string<RuleInterface>> $ruleClasses
+     * @param list<class-string<RuleDefinitionInterface>> $ruleClasses
      */
     public function __construct(
         private array $ruleClasses,

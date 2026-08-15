@@ -7,79 +7,120 @@ namespace Qualimetrix\Tests\Integration\DependencyInjection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\CountInLoopRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\DebugCodeRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\EmptyCatchRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ErrorSuppressionRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\EvalRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\ExitRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\IdenticalSubExpressionRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\SuperglobalsRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\UnreachableCodeRule;
+use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateRule;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector;
+use Qualimetrix\Analysis\Evidence\Cohesion\LcomRule;
+use Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityCollector;
+use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityRule;
+use Qualimetrix\Analysis\Evidence\Complexity\WmcRule;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricsConfigResolver;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\HealthFormulaExclusionInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Configuration\HealthFormulaExcluder;
+use Qualimetrix\Analysis\Evidence\Coupling\CboRule;
+use Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule;
+use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
+use Qualimetrix\Analysis\Evidence\Coupling\CouplingAnalysis;
+use Qualimetrix\Analysis\Evidence\Coupling\DistanceRule;
+use Qualimetrix\Analysis\Evidence\Coupling\InstabilityRule;
+use Qualimetrix\Analysis\Evidence\Coupling\RfcCollector;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
+use Qualimetrix\Analysis\Evidence\Design\DataClassRule;
+use Qualimetrix\Analysis\Evidence\Design\GodClassRule;
+use Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector;
+use Qualimetrix\Analysis\Evidence\Design\InheritanceRule;
+use Qualimetrix\Analysis\Evidence\Design\NocRule;
+use Qualimetrix\Analysis\Evidence\Design\TypeCoverageRule;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationOptions;
 use Qualimetrix\Analysis\Evidence\Duplication\CodeDuplicationRule;
-use Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
-use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
-use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Analysis\Pipeline\MetricEnricher;
-use Qualimetrix\Architecture\Rules\CircularDependencyRule;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationHolder;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Configuration\RuleOptionsRegistry;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
-use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
+use Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
+use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\ProjectNamespaceResolverInterface;
+use Qualimetrix\Analysis\Evidence\Security\CommandInjectionRule;
+use Qualimetrix\Analysis\Evidence\Security\HardcodedCredentialsRule;
+use Qualimetrix\Analysis\Evidence\Security\SensitiveParameterRule;
+use Qualimetrix\Analysis\Evidence\Security\SqlInjectionRule;
+use Qualimetrix\Analysis\Evidence\Security\XssRule;
+use Qualimetrix\Analysis\Evidence\Size\ClassCountCollector;
+use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
+use Qualimetrix\Analysis\Evidence\Size\LocCollector;
+use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
+use Qualimetrix\Analysis\Evidence\Size\MethodCountRule;
+use Qualimetrix\Analysis\Evidence\Size\PropertyCountRule;
+use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
+use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
+use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
+use Qualimetrix\Analysis\Run\Collection\FileProcessor;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Rule\AnalysisContext;
-use Qualimetrix\Core\Violation\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Infrastructure\Cache\CacheFactory;
 use Qualimetrix\Infrastructure\Cache\CacheInterface;
+use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator;
+use Qualimetrix\Infrastructure\Console\CheckScopeResolver;
+use Qualimetrix\Infrastructure\Console\Command\BaselineRun;
 use Qualimetrix\Infrastructure\Console\Command\CheckCommand;
 use Qualimetrix\Infrastructure\Console\Command\GraphExportCommand;
 use Qualimetrix\Infrastructure\Console\Command\RulesCommand;
+use Qualimetrix\Infrastructure\Console\MeasuredViolationSet;
+use Qualimetrix\Infrastructure\Console\RuleInputValidator;
+use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
+use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
+use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
+use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationStoreInterface;
+use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
+use Qualimetrix\Infrastructure\Parallel\Strategy\AmphpParallelStrategy;
+use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
+use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
-use Qualimetrix\Metrics\Complexity\CognitiveComplexityCollector;
-use Qualimetrix\Metrics\Complexity\CyclomaticComplexityCollector;
-use Qualimetrix\Metrics\Complexity\NpathComplexityCollector;
-use Qualimetrix\Metrics\Halstead\HalsteadCollector;
-use Qualimetrix\Metrics\Maintainability\MaintainabilityIndexCollector;
-use Qualimetrix\Metrics\Size\ClassCountCollector;
-use Qualimetrix\Metrics\Size\LocCollector;
-use Qualimetrix\Metrics\Structure\InheritanceDepthCollector;
-use Qualimetrix\Metrics\Structure\LcomCollector;
-use Qualimetrix\Metrics\Structure\MethodCountCollector;
-use Qualimetrix\Metrics\Structure\RfcCollector;
-use Qualimetrix\Metrics\Structure\TccLccCollector;
+use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
+use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
+use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GraphProjection\Contract\DependencyGraphProjectionInterface;
-use Qualimetrix\Rules\AbstractRule;
-use Qualimetrix\Rules\CodeSmell\BooleanArgumentRule;
-use Qualimetrix\Rules\CodeSmell\CountInLoopRule;
-use Qualimetrix\Rules\CodeSmell\DebugCodeRule;
-use Qualimetrix\Rules\CodeSmell\EmptyCatchRule;
-use Qualimetrix\Rules\CodeSmell\ErrorSuppressionRule;
-use Qualimetrix\Rules\CodeSmell\EvalRule;
-use Qualimetrix\Rules\CodeSmell\ExitRule;
-use Qualimetrix\Rules\CodeSmell\GotoRule;
-use Qualimetrix\Rules\CodeSmell\LongParameterListRule;
-use Qualimetrix\Rules\CodeSmell\SuperglobalsRule;
-use Qualimetrix\Rules\CodeSmell\UnreachableCodeRule;
-use Qualimetrix\Rules\Complexity\CognitiveComplexityRule;
-use Qualimetrix\Rules\Complexity\ComplexityRule;
-use Qualimetrix\Rules\Complexity\NpathComplexityRule;
-use Qualimetrix\Rules\Coupling\CboRule;
-use Qualimetrix\Rules\Coupling\ClassRankRule;
-use Qualimetrix\Rules\Coupling\DistanceRule;
-use Qualimetrix\Rules\Coupling\InstabilityRule;
-use Qualimetrix\Rules\Design\TypeCoverageRule;
-use Qualimetrix\Rules\Maintainability\MaintainabilityRule;
-use Qualimetrix\Rules\Security\CommandInjectionRule;
-use Qualimetrix\Rules\Security\SensitiveParameterRule;
-use Qualimetrix\Rules\Security\SqlInjectionRule;
-use Qualimetrix\Rules\Security\XssRule;
-use Qualimetrix\Rules\Size\ClassCountRule;
-use Qualimetrix\Rules\Size\MethodCountRule;
-use Qualimetrix\Rules\Size\PropertyCountRule;
-use Qualimetrix\Rules\Structure\InheritanceRule;
-use Qualimetrix\Rules\Structure\LcomRule;
-use Qualimetrix\Rules\Structure\NocRule;
-use Qualimetrix\Rules\Structure\WmcRule;
+use ReflectionClass;
 use ReflectionProperty;
 use SplFileInfo;
 
@@ -107,6 +148,80 @@ final class ContainerFactoryTest extends TestCase
         $container = $this->factory->create();
 
         self::assertTrue($container->isCompiled());
+
+        $configurator = $container->get(ComputedMetricConfiguratorInterface::class);
+        $catalog = $container->get(ComputedMetricDefinitionCatalogInterface::class);
+        self::assertInstanceOf(ComputedMetricAnalysis::class, $configurator);
+        self::assertSame($configurator, $catalog);
+
+        $excluder = $container->get(HealthFormulaExclusionInterface::class);
+        self::assertInstanceOf(HealthFormulaExcluder::class, $excluder);
+
+        $couplingConfigurator = $container->get(CouplingConfiguratorInterface::class);
+        self::assertInstanceOf(CouplingAnalysis::class, $couplingConfigurator);
+
+        $resolverProperty = new ReflectionProperty(ComputedMetricAnalysis::class, 'configResolver');
+        $resolver = $resolverProperty->getValue($configurator);
+        self::assertInstanceOf(ComputedMetricsConfigResolver::class, $resolver);
+        $excluderProperty = new ReflectionProperty(ComputedMetricsConfigResolver::class, 'healthFormulaExcluder');
+        self::assertSame($excluder, $excluderProperty->getValue($resolver));
+
+        $pipeline = $container->get(AnalysisPipelineInterface::class);
+        $ruleConfiguration = $container->get(RuleConfigurationInterface::class);
+        $producerPreparation = (new ReflectionProperty(AnalysisPipeline::class, 'ruleProducerPreparation'))->getValue($pipeline);
+        self::assertSame(
+            $ruleConfiguration,
+            (new ReflectionProperty($producerPreparation, 'ruleConfiguration'))->getValue($producerPreparation),
+        );
+        self::assertFalse((new ReflectionClass(AnalysisPipeline::class))->hasProperty('ruleConfiguration'));
+        $collectionOrchestrator = (new ReflectionProperty(AnalysisPipeline::class, 'collectionOrchestrator'))->getValue($pipeline);
+        self::assertInstanceOf(CollectionOrchestrator::class, $collectionOrchestrator);
+        $fileProcessor = (new ReflectionProperty(CollectionOrchestrator::class, 'fileProcessor'))->getValue($collectionOrchestrator);
+        self::assertInstanceOf(FileProcessor::class, $fileProcessor);
+        $sourceControlExtractor = (new ReflectionProperty(FileProcessor::class, 'sourceControlExtractor'))->getValue($fileProcessor);
+        self::assertSame(
+            'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor',
+            $sourceControlExtractor::class,
+        );
+        $evaluator = (new ReflectionProperty(AnalysisPipeline::class, 'computedMetricEvaluation'))->getValue($pipeline);
+        self::assertInstanceOf(ComputedMetricEvaluator::class, $evaluator);
+        $evaluatorLogger = (new ReflectionProperty(ComputedMetricEvaluator::class, 'logger'))->getValue($evaluator);
+        $pipelineLogger = (new ReflectionProperty(AnalysisPipeline::class, 'logger'))->getValue($pipeline);
+        self::assertInstanceOf(DelegatingLogger::class, $evaluatorLogger);
+        self::assertSame($pipelineLogger, $evaluatorLogger);
+        $ruleOptionsFactory = $container->get(RuleOptionsFactory::class);
+        self::assertInstanceOf(RuleOptionsFactory::class, $ruleOptionsFactory);
+        self::assertSame(
+            $evaluatorLogger,
+            (new ReflectionProperty(RuleOptionsFactory::class, 'logger'))->getValue($ruleOptionsFactory),
+        );
+
+        $annotationSuppression = $container->get(AnnotationSuppressionInterface::class);
+        $gitScopeQuery = $container->get(GitScopeQueryInterface::class);
+        self::assertSame(
+            'Qualimetrix\\Analysis\\Policy\\Inline\\Suppression\\SuppressionFilter',
+            $annotationSuppression::class,
+        );
+        self::assertSame(
+            'Qualimetrix\\Infrastructure\\Git\\ReportingGitScopeQuery',
+            $gitScopeQuery::class,
+        );
+
+        $checkCommand = $container->get(CheckCommand::class);
+        $orchestrator = (new ReflectionProperty(CheckCommand::class, 'violationFilterOrchestrator'))->getValue($checkCommand);
+        $projector = (new ReflectionProperty($orchestrator, 'findingProjector'))->getValue($orchestrator);
+        self::assertSame(
+            'Qualimetrix\\Reporting\\FindingProjection\\FindingProjector',
+            $projector::class,
+        );
+        self::assertSame(
+            $annotationSuppression,
+            (new ReflectionProperty($projector, 'annotationSuppression'))->getValue($projector),
+        );
+        self::assertSame(
+            $gitScopeQuery,
+            (new ReflectionProperty($projector, 'gitScopeQuery'))->getValue($projector),
+        );
     }
 
     #[Test]
@@ -186,8 +301,12 @@ final class ContainerFactoryTest extends TestCase
     {
         $container = $this->factory->create();
 
-        self::assertTrue($container->has(DuplicationInspectionInterface::class));
-        $inspection = $container->get(DuplicationInspectionInterface::class);
+        $pipeline = $container->get(AnalysisPipelineInterface::class);
+        $producerPreparation = (new ReflectionProperty(AnalysisPipeline::class, 'ruleProducerPreparation'))->getValue($pipeline);
+        $fileSetInspection = (new ReflectionProperty($producerPreparation, 'fileSetInspection'))->getValue($producerPreparation);
+        $participants = (new ReflectionProperty($fileSetInspection, 'participants'))->getValue($fileSetInspection);
+        self::assertCount(1, $participants);
+        $inspection = $participants[0];
         self::assertInstanceOf(DuplicationDetector::class, $inspection);
 
         $providerProperty = new ReflectionProperty(DuplicationDetector::class, 'resultProvider');
@@ -195,23 +314,16 @@ final class ContainerFactoryTest extends TestCase
 
         $rulesCommand = $container->get(RulesCommand::class);
         self::assertInstanceOf(RulesCommand::class, $rulesCommand);
-        $rulesProperty = new ReflectionProperty(RulesCommand::class, 'rules');
-        $rules = $rulesProperty->getValue($rulesCommand);
-        self::assertIsIterable($rules);
-        $duplicationRules = [];
-        foreach ($rules as $rule) {
-            if ($rule instanceof CodeDuplicationRule) {
-                $duplicationRules[] = $rule;
-            }
-        }
-        self::assertCount(1, $duplicationRules);
-        $optionsProperty = new ReflectionProperty(AbstractRule::class, 'options');
-        self::assertInstanceOf(CodeDuplicationOptions::class, $optionsProperty->getValue($duplicationRules[0]));
-        $ruleProviderProperty = new ReflectionProperty(CodeDuplicationRule::class, 'resultProvider');
-        self::assertSame(
-            $providerProperty->getValue($inspection),
-            $ruleProviderProperty->getValue($duplicationRules[0]),
+        $ruleExecution = $container->get(RuleExecutionInterface::class);
+        self::assertInstanceOf(RuleExecutionInterface::class, $ruleExecution);
+        self::assertSame($ruleExecution, $container->get(RuleExecutionInterface::class));
+        $duplicationRules = array_filter(
+            $ruleExecution->allRules(),
+            static fn($rule): bool => $rule->name === CodeDuplicationRule::NAME,
         );
+        self::assertCount(1, $duplicationRules);
+        $duplicationRule = array_values($duplicationRules)[0];
+        self::assertSame(CodeDuplicationOptions::class, $duplicationRule->optionsClass);
 
         $channels = $container->get(ChannelDeclarationRegistryInterface::class);
         self::assertInstanceOf(ChannelDeclarationRegistryInterface::class, $channels);
@@ -227,32 +339,15 @@ final class ContainerFactoryTest extends TestCase
             static fn(string $ruleClass): bool => $ruleClass === CodeDuplicationRule::class,
         )));
 
-        $configurationProvider = $container->get(ConfigurationProviderInterface::class);
-        self::assertInstanceOf(ConfigurationProviderInterface::class, $configurationProvider);
-        $enabledConfiguration = new AnalysisConfiguration(
-            cacheEnabled: false,
-            onlyRules: [CodeDuplicationRule::NAME],
-            workers: AnalysisConfiguration::WORKERS_SEQUENTIAL,
-            projectRoot: AbsolutePath::fromString($this->tempDir),
-        );
-        $configurationProvider->setConfiguration($enabledConfiguration);
-        $configurationProvider->setRuleOptions([
-            CodeDuplicationRule::NAME => [
-                'min_lines' => 2,
-                'min_tokens' => 10,
-            ],
+        $ruleConfiguration = $container->get(RuleConfigurationInterface::class);
+        self::assertInstanceOf(RuleConfigurationInterface::class, $ruleConfiguration);
+        $ruleConfiguration->configureSelection(new RuleSelection(only: [CodeDuplicationRule::NAME]));
+        $ruleConfiguration->configureCli(CodeDuplicationRule::NAME, [
+            'min_lines' => 2,
+            'min_tokens' => 10,
         ]);
 
-        $resultProvider = $providerProperty->getValue($inspection);
-        $duplicationRule = $duplicationRules[0];
-        self::assertSame($resultProvider, $ruleProviderProperty->getValue($duplicationRule));
-
-        $pipeline = $container->get(AnalysisPipelineInterface::class);
         self::assertInstanceOf(AnalysisPipeline::class, $pipeline);
-        $metricEnricherProperty = new ReflectionProperty(AnalysisPipeline::class, 'metricEnricher');
-        $metricEnricher = $metricEnricherProperty->getValue($pipeline);
-        self::assertInstanceOf(MetricEnricher::class, $metricEnricher);
-
         $source = <<<'PHP'
 <?php
 
@@ -272,44 +367,149 @@ PHP;
         self::assertNotFalse(file_put_contents($firstPath, $source));
         self::assertNotFalse(file_put_contents($secondPath, $source));
 
-        $repository = self::createStub(MetricRepositoryInterface::class);
-        $repository->method('all')->willReturn([]);
-        $graph = self::createStub(DependencyGraphInterface::class);
-        $graph->method('getAllClasses')->willReturn([]);
-        $graph->method('getAllNamespaces')->willReturn([]);
-        $graph->method('getAllDependencies')->willReturn([]);
         $duplicateFiles = [new SplFileInfo($firstPath), new SplFileInfo($secondPath)];
 
-        $metricEnricher->enrich($repository, $graph, $duplicateFiles, filesAnalyzed: 0);
+        $selection = $ruleConfiguration->selection();
+        $fileSetInspection->inspect(
+            $duplicateFiles,
+            AbsolutePath::fromString($this->tempDir),
+            $selection->only,
+            $selection->disabled,
+        );
+        $resultProvider = $providerProperty->getValue($inspection);
         self::assertNotEmpty($resultProvider->all());
-        self::assertNotEmpty($duplicationRule->analyze(new AnalysisContext($repository)));
 
-        $configurationProvider->setConfiguration(new AnalysisConfiguration(
-            cacheEnabled: false,
-            disabledRules: [CodeDuplicationRule::NAME],
-            workers: AnalysisConfiguration::WORKERS_SEQUENTIAL,
-            projectRoot: AbsolutePath::fromString($this->tempDir),
-        ));
-        $metricEnricher->enrich($repository, $graph, $duplicateFiles, filesAnalyzed: 0);
-
-        self::assertSame([], $resultProvider->all());
-        self::assertSame([], $duplicationRule->analyze(new AnalysisContext($repository)));
-
-        $configurationProvider->setConfiguration($enabledConfiguration);
-        $metricEnricher->enrich($repository, $graph, $duplicateFiles, filesAnalyzed: 0);
-
-        self::assertNotEmpty($resultProvider->all());
-        self::assertNotEmpty($duplicationRule->analyze(new AnalysisContext($repository)));
-
-        $metricEnricher->enrich(
-            $repository,
-            $graph,
-            [new SplFileInfo($firstPath)],
-            filesAnalyzed: 0,
+        $ruleConfiguration->configureSelection(new RuleSelection(disabled: [CodeDuplicationRule::NAME]));
+        $selection = $ruleConfiguration->selection();
+        $fileSetInspection->inspect(
+            $duplicateFiles,
+            AbsolutePath::fromString($this->tempDir),
+            $selection->only,
+            $selection->disabled,
         );
 
         self::assertSame([], $resultProvider->all());
-        self::assertSame([], $duplicationRule->analyze(new AnalysisContext($repository)));
+
+        $ruleConfiguration->configureSelection(new RuleSelection(only: [CodeDuplicationRule::NAME]));
+        $selection = $ruleConfiguration->selection();
+        $fileSetInspection->inspect(
+            $duplicateFiles,
+            AbsolutePath::fromString($this->tempDir),
+            $selection->only,
+            $selection->disabled,
+        );
+
+        self::assertNotEmpty($resultProvider->all());
+
+        $fileSetInspection->inspect(
+            [new SplFileInfo($firstPath)],
+            AbsolutePath::fromString($this->tempDir),
+            $selection->only,
+            $selection->disabled,
+        );
+
+        self::assertSame([], $resultProvider->all());
+    }
+
+    #[Test]
+    public function itWiresFileSetInspectionAndTraversalContractsWithoutLegacyCapabilityImports(): void
+    {
+        $container = $this->factory->create();
+
+        $participant = $container->get(DependencyTraversalParticipantInterface::class);
+        self::assertInstanceOf(DependencyTraversalParticipantInterface::class, $participant);
+
+        $pipeline = $container->get(AnalysisPipelineInterface::class);
+        $orchestrator = (new ReflectionProperty(AnalysisPipeline::class, 'collectionOrchestrator'))->getValue($pipeline);
+        $selector = (new ReflectionProperty($orchestrator, 'strategySelector'))->getValue($orchestrator);
+        self::assertInstanceOf(StrategySelector::class, $selector);
+        $factory = (new ReflectionProperty(AmphpParallelStrategy::class, 'fileProcessingTaskFactory'))
+            ->getValue((new ReflectionProperty(StrategySelector::class, 'amphpStrategy'))->getValue($selector));
+        self::assertInstanceOf(FileProcessingTaskFactory::class, $factory);
+        self::assertSame(
+            'Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyVisitor',
+            (new ReflectionProperty(FileProcessingTaskFactory::class, 'dependencyTraversalParticipantClass'))->getValue($factory),
+        );
+
+        $store = (new ReflectionProperty(FileProcessingTaskFactory::class, 'lcomConfigurationStore'))->getValue($factory);
+        self::assertInstanceOf(LcomCollectionConfigurationStoreInterface::class, $store);
+        self::assertSame(
+            $store,
+            (new ReflectionProperty(FileProcessingTaskFactory::class, 'lcomConfigurationStore'))
+                ->getValue($factory),
+        );
+        self::assertSame([], $store->current()->excludedMethods);
+        $analysisRuntimeConstructor = (new ReflectionClass(AnalysisRuntimeConfigurator::class))->getConstructor();
+        $runtimeConstructor = (new ReflectionClass(RuntimeConfigurator::class))->getConstructor();
+        self::assertNotNull($analysisRuntimeConstructor);
+        self::assertNotNull($runtimeConstructor);
+        self::assertCount(7, $analysisRuntimeConstructor->getParameters());
+        self::assertCount(7, $runtimeConstructor->getParameters());
+        $checkConstructor = (new ReflectionClass(CheckCommand::class))->getConstructor();
+        $baselineRunConstructor = (new ReflectionClass(BaselineRun::class))->getConstructor();
+        $measuredViolationSetConstructor = (new ReflectionClass(MeasuredViolationSet::class))->getConstructor();
+        self::assertNotNull($checkConstructor);
+        self::assertNotNull($baselineRunConstructor);
+        self::assertNotNull($measuredViolationSetConstructor);
+        self::assertCount(12, $checkConstructor->getParameters());
+        self::assertCount(8, $baselineRunConstructor->getParameters());
+        self::assertCount(3, $measuredViolationSetConstructor->getParameters());
+        $pipelineConstructor = (new ReflectionClass(AnalysisPipeline::class))->getConstructor();
+        self::assertNotNull($pipelineConstructor);
+        self::assertCount(10, $pipelineConstructor->getParameters());
+
+        $runtimeConfigurator = $container->get(RuntimeConfigurator::class);
+        self::assertInstanceOf(RuntimeConfigurator::class, $runtimeConfigurator);
+        $analysisRuntime = (new ReflectionProperty(RuntimeConfigurator::class, 'analysisRuntimeConfigurator'))->getValue($runtimeConfigurator);
+        self::assertInstanceOf(AnalysisRuntimeConfigurator::class, $analysisRuntime);
+        self::assertInstanceOf(
+            RuleConfigurationInterface::class,
+            (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'ruleOptionsRegistry'))->getValue($analysisRuntime),
+        );
+        self::assertInstanceOf(
+            LcomCollectionConfigurationResolverInterface::class,
+            (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'lcomConfigurationResolver'))->getValue($analysisRuntime),
+        );
+        self::assertInstanceOf(
+            LcomCollectionConfigurationStoreInterface::class,
+            (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'lcomConfigurationStore'))->getValue($analysisRuntime),
+        );
+        self::assertInstanceOf(
+            ArchitecturePolicyConfiguratorInterface::class,
+            (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'architecturePolicyConfigurator'))->getValue($analysisRuntime),
+        );
+        self::assertInstanceOf(
+            ComputedMetricConfiguratorInterface::class,
+            (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'computedMetricConfigurator'))->getValue($analysisRuntime),
+        );
+        self::assertInstanceOf(
+            CouplingConfiguratorInterface::class,
+            (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'couplingConfigurator'))->getValue($analysisRuntime),
+        );
+        $analysisRuleInputValidator = (new ReflectionProperty(AnalysisRuntimeConfigurator::class, 'ruleInputValidator'))
+            ->getValue($analysisRuntime);
+        self::assertInstanceOf(RuleInputValidator::class, $analysisRuleInputValidator);
+        $checkCommand = $container->get(CheckCommand::class);
+        self::assertSame(
+            $analysisRuleInputValidator,
+            (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($checkCommand),
+        );
+        self::assertFalse((new ReflectionClass(AnalysisRuntimeConfigurator::class))->hasProperty('ruleRegistry'));
+        self::assertFalse((new ReflectionClass(AnalysisRuntimeConfigurator::class))->hasProperty('findingConfigurationResolver'));
+
+        $runtimeCollectors = (new ReflectionProperty($store, 'collectors'))->getValue($store);
+        self::assertIsIterable($runtimeCollectors);
+        $runtimeCollectors = [...$runtimeCollectors];
+        self::assertNotEmpty($runtimeCollectors);
+        foreach ($runtimeCollectors as $runtimeCollector) {
+            self::assertInstanceOf(LcomCollectionConfigurableInterface::class, $runtimeCollector);
+        }
+
+        $producerPreparation = (new ReflectionProperty(AnalysisPipeline::class, 'ruleProducerPreparation'))->getValue($pipeline);
+        $fileSetComposite = (new ReflectionProperty($producerPreparation, 'fileSetInspection'))->getValue($producerPreparation);
+        $participants = (new ReflectionProperty($fileSetComposite, 'participants'))->getValue($fileSetComposite);
+        self::assertCount(1, $participants);
+        self::assertInstanceOf(DuplicationDetector::class, $participants[0]);
     }
 
     #[Test]
@@ -318,7 +518,45 @@ PHP;
         $container = $this->factory->create();
 
         self::assertTrue($container->has(CheckCommand::class));
-        self::assertInstanceOf(CheckCommand::class, $container->get(CheckCommand::class));
+        $command = $container->get(CheckCommand::class);
+        self::assertInstanceOf(CheckCommand::class, $command);
+        self::assertInstanceOf(
+            CheckScopeResolver::class,
+            (new ReflectionProperty(CheckCommand::class, 'checkScopeResolver'))->getValue($command),
+        );
+        self::assertInstanceOf(
+            RunConfigurationResolverInterface::class,
+            (new ReflectionProperty(CheckCommand::class, 'runConfigurationResolver'))->getValue($command),
+        );
+        self::assertInstanceOf(
+            CacheConfigurationResolverInterface::class,
+            (new ReflectionProperty(CheckCommand::class, 'cacheConfigurationResolver'))->getValue($command),
+        );
+        self::assertInstanceOf(
+            ParallelConfigurationResolverInterface::class,
+            (new ReflectionProperty(CheckCommand::class, 'parallelConfigurationResolver'))->getValue($command),
+        );
+        self::assertInstanceOf(
+            ConfiguredFindingExclusionsResolverInterface::class,
+            (new ReflectionProperty(CheckCommand::class, 'findingExclusionsResolver'))->getValue($command),
+        );
+        self::assertInstanceOf(
+            OutputFormatResolverInterface::class,
+            (new ReflectionProperty(CheckCommand::class, 'outputFormatResolver'))->getValue($command),
+        );
+        $ruleInputValidator = (new ReflectionProperty(CheckCommand::class, 'ruleInputValidator'))->getValue($command);
+        self::assertInstanceOf(RuleInputValidator::class, $ruleInputValidator);
+        self::assertInstanceOf(
+            FindingConfigurationResolverInterface::class,
+            (new ReflectionProperty(RuleInputValidator::class, 'findingConfigurationResolver'))->getValue($ruleInputValidator),
+        );
+        self::assertInstanceOf(
+            RuleChannelSnapshotFactoryInterface::class,
+            (new ReflectionProperty(RuleInputValidator::class, 'ruleChannelSnapshotFactory'))->getValue($ruleInputValidator),
+        );
+        self::assertFalse((new ReflectionClass(CheckCommand::class))->hasProperty('logger'));
+        self::assertFalse((new ReflectionClass(CheckCommand::class))->hasProperty('gitScopeResolver'));
+        self::assertFalse((new ReflectionClass(CheckCommand::class))->hasProperty('scopeWarningChecker'));
     }
 
     #[Test]
@@ -342,7 +580,7 @@ PHP;
     }
 
     #[Test]
-    public function itInjectsRulesIntoRuleExecutor(): void
+    public function itInjectsRulesIntoRuleExecution(): void
     {
         $container = $this->factory->create();
         $pipeline = $container->get(AnalysisPipelineInterface::class);
@@ -363,25 +601,20 @@ PHP;
     }
 
     #[Test]
-    public function itWiresFileParserAndNamespaceDetectorCorrectly(): void
-    {
-        $container = $this->factory->create();
-
-        // Private services are wired correctly if AnalysisPipeline works
-        $pipeline = $container->get(AnalysisPipelineInterface::class);
-        self::assertInstanceOf(AnalysisPipelineInterface::class, $pipeline);
-    }
-
-    #[Test]
     public function itAllowsConfiguringRuleOptionsAtRuntime(): void
     {
         $container = $this->factory->create();
 
-        // Get RuleOptionsRegistry and configure it
-        $ruleOptionsRegistry = $container->get(RuleOptionsRegistry::class);
-        self::assertInstanceOf(RuleOptionsRegistry::class, $ruleOptionsRegistry);
+        $ruleOptionsRegistry = $container->get(RuleConfigurationInterface::class);
+        self::assertInstanceOf(RuleConfigurationInterface::class, $ruleOptionsRegistry);
+        $ruleExecution = $container->get(RuleExecutionInterface::class);
+        self::assertInstanceOf(RuleExecutionInterface::class, $ruleExecution);
+        self::assertSame(
+            $ruleOptionsRegistry,
+            (new ReflectionProperty($ruleExecution, 'ruleOptionsRegistry'))->getValue($ruleExecution),
+        );
 
-        $ruleOptionsRegistry->setCliOptions('cyclomatic-complexity', [
+        $ruleOptionsRegistry->configureCli('cyclomatic-complexity', [
             'warningThreshold' => 20,
             'errorThreshold' => 40,
         ]);
@@ -391,22 +624,19 @@ PHP;
     }
 
     #[Test]
-    public function itAllowsConfiguringConfigurationHolderAtRuntime(): void
+    public function itWiresOwnerLocalRuntimeConfiguration(): void
     {
         $container = $this->factory->create();
 
-        // Get ConfigurationHolder and configure it
-        $configProvider = $container->get(ConfigurationProviderInterface::class);
-        self::assertInstanceOf(ConfigurationHolder::class, $configProvider);
-
-        $config = new AnalysisConfiguration(
-            cacheDir: AbsolutePath::fromString($this->tempDir . '/cache'),
-            cacheEnabled: false,
+        $runtimeConfigurator = $container->get(RuntimeConfigurator::class);
+        self::assertInstanceOf(
+            CacheFactory::class,
+            (new ReflectionProperty(RuntimeConfigurator::class, 'cacheFactory'))->getValue($runtimeConfigurator),
         );
-        $configProvider->setConfiguration($config);
-
-        // Verify configuration was applied
-        self::assertSame($config, $configProvider->getConfiguration());
+        self::assertInstanceOf(
+            ParallelConfigurationStoreInterface::class,
+            (new ReflectionProperty(RuntimeConfigurator::class, 'parallelConfigurationStore'))->getValue($runtimeConfigurator),
+        );
     }
 
     #[Test]
@@ -472,9 +702,8 @@ PHP;
     {
         $container = $this->factory->create();
 
-        // Get CompositeCollector directly from container
-        $compositeCollector = $container->get(CompositeCollector::class);
-        self::assertInstanceOf(CompositeCollector::class, $compositeCollector);
+        $compositeCollector = $container->get('qmx.measurement.file_collector');
+        self::assertInstanceOf(FileMeasurementCollectorInterface::class, $compositeCollector);
 
         $collectors = $compositeCollector->getCollectors();
         $collectorClasses = array_map(static fn($c) => $c::class, $collectors);
@@ -511,9 +740,8 @@ PHP;
     {
         $container = $this->factory->create();
 
-        // Get CompositeCollector directly from container
-        $compositeCollector = $container->get(CompositeCollector::class);
-        self::assertInstanceOf(CompositeCollector::class, $compositeCollector);
+        $compositeCollector = $container->get('qmx.measurement.file_collector');
+        self::assertInstanceOf(FileMeasurementCollectorInterface::class, $compositeCollector);
 
         $derivedCollectors = $compositeCollector->getDerivedCollectors();
         $derivedClasses = array_map(static fn($c) => $c::class, $derivedCollectors);
@@ -568,7 +796,7 @@ PHP;
             CboRule::class,
             DistanceRule::class,
             CircularDependencyRule::class,
-            \Qualimetrix\Architecture\Rules\LayerViolationRule::class,
+            LayerViolationRule::class,
             LongParameterListRule::class,
             BooleanArgumentRule::class,
             CountInLoopRule::class,
@@ -581,19 +809,19 @@ PHP;
             SuperglobalsRule::class,
             UnreachableCodeRule::class,
             TypeCoverageRule::class,
-            \Qualimetrix\Rules\Security\HardcodedCredentialsRule::class,
+            HardcodedCredentialsRule::class,
             ClassRankRule::class,
             SqlInjectionRule::class,
             XssRule::class,
             CommandInjectionRule::class,
             SensitiveParameterRule::class,
-            \Qualimetrix\Rules\CodeSmell\UnusedPrivateRule::class,
-            \Qualimetrix\Rules\CodeSmell\IdenticalSubExpressionRule::class,
+            UnusedPrivateRule::class,
+            IdenticalSubExpressionRule::class,
             CodeDuplicationRule::class,
-            \Qualimetrix\Rules\ComputedMetric\ComputedMetricRule::class,
-            \Qualimetrix\Rules\CodeSmell\ConstructorOverinjectionRule::class,
-            \Qualimetrix\Rules\Design\DataClassRule::class,
-            \Qualimetrix\Rules\Design\GodClassRule::class,
+            \Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricRule::class,
+            ConstructorOverinjectionRule::class,
+            DataClassRule::class,
+            GodClassRule::class,
         ];
 
         $registeredClasses = $registry->getClasses();

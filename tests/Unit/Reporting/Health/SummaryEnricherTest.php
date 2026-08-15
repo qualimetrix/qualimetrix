@@ -7,22 +7,25 @@ namespace Qualimetrix\Tests\Unit\Reporting\Health;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Summary\HealthSummaryBuilder;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\DebtCalculator;
+use Qualimetrix\Analysis\Evidence\Prioritization\Debt\RemediationTimeRegistry;
+use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ClassRankResolver;
+use Qualimetrix\Analysis\Evidence\Prioritization\Impact\ImpactCalculator;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
-use Qualimetrix\Reporting\Debt\DebtCalculator;
-use Qualimetrix\Reporting\Debt\RemediationTimeRegistry;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
-use Qualimetrix\Reporting\Impact\ClassRankResolver;
-use Qualimetrix\Reporting\Impact\ImpactCalculator;
 use Qualimetrix\Reporting\Report;
+use Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricRepositoryTestHelper;
 
 #[CoversClass(SummaryEnricher::class)]
 final class SummaryEnricherTest extends TestCase
@@ -35,8 +38,11 @@ final class SummaryEnricherTest extends TestCase
         $registry = new RemediationTimeRegistry();
         $this->enricher = new SummaryEnricher(
             new DebtCalculator($registry),
-            new MetricHintProvider(),
             new ImpactCalculator(new ClassRankResolver(), $registry),
+            new HealthSummaryBuilder(
+                new HealthMetricCatalog(),
+                self::createStub(ComputedMetricDefinitionCatalogInterface::class),
+            ),
         );
     }
 
@@ -59,65 +65,6 @@ final class SummaryEnricherTest extends TestCase
         self::assertSame([], $result->worstNamespaces);
         self::assertSame([], $result->worstClasses);
         self::assertSame(0, $result->techDebtMinutes);
-    }
-
-    #[Test]
-    public function itEnrichesWithHealthScores(): void
-    {
-        $metrics = $this->createMetricRepository(
-            projectMetrics: MetricBag::fromArray([
-                'health.complexity' => 65.0,
-                'health.cohesion' => 45.0,
-                'health.coupling' => 80.0,
-                'health.typing' => 90.0,
-                'health.maintainability' => 58.0,
-                'health.overall' => 72.0,
-                'ccn.avg' => 8.2,
-                'cognitive.avg' => 6.1,
-                'tcc.avg' => 0.15,
-                'lcom.avg' => 4.0,
-            ]),
-        );
-
-        $report = new Report(
-            violations: [],
-            filesAnalyzed: 100,
-            filesSkipped: 0,
-            duration: 2.0,
-            errorCount: 0,
-            warningCount: 0,
-            metrics: $metrics,
-        );
-
-        $result = $this->enricher->enrich($report);
-
-        // Check health scores are populated
-        self::assertCount(6, $result->healthScores);
-        self::assertArrayHasKey('complexity', $result->healthScores);
-        self::assertArrayHasKey('cohesion', $result->healthScores);
-        self::assertArrayHasKey('overall', $result->healthScores);
-
-        // Complexity is 65 > warning 50, so "Acceptable" label; decomposition always present
-        $complexity = $result->healthScores['complexity'];
-        self::assertSame('complexity', $complexity->name);
-        self::assertSame(65.0, $complexity->score);
-        self::assertSame('Fair', $complexity->label);
-        self::assertCount(2, $complexity->decomposition);
-        self::assertSame('ccn.avg', $complexity->decomposition[0]->metricKey);
-        self::assertSame('cognitive.avg', $complexity->decomposition[1]->metricKey);
-
-        // Cohesion is 45 <= warning 50, so "Weak" and has decomposition
-        $cohesion = $result->healthScores['cohesion'];
-        self::assertSame(45.0, $cohesion->score);
-        self::assertSame('Poor', $cohesion->label);
-        self::assertCount(2, $cohesion->decomposition);
-        self::assertSame('tcc.avg', $cohesion->decomposition[0]->metricKey);
-        self::assertSame(0.15, $cohesion->decomposition[0]->value);
-        self::assertSame('lcom.avg', $cohesion->decomposition[1]->metricKey);
-
-        // Maintainability is 58 > warning 50 (stretched formula), so "Acceptable"
-        $maintainability = $result->healthScores['maintainability'];
-        self::assertSame('Fair', $maintainability->label);
     }
 
     #[Test]

@@ -14,6 +14,7 @@ declare(strict_types=1);
  */
 
 const OUTPUT_DIRECTORY = 'docs/internal/generated/modular-architecture';
+const P6_C_BASELINE_PATHS_SHA256 = '432fa29e394eb7fc070bce14e7f276c7237a6453fa91d4d134443766ad30e1f9';
 
 $arguments = $_SERVER['argv'] ?? [];
 $check = in_array('--check', $arguments, true);
@@ -64,16 +65,270 @@ const EXPLICIT_PATH_DISPOSITIONS = [
     'tests/Unit/Infrastructure/Logging/LoggerFactoryTest.php' => 'P8: consolidate overlapping LoggerFactory coverage before moving to Infrastructure/Unit.',
 ];
 
+/** @var list<string> JSON fixtures are covered by a repository-wide ignore rule until staged. */
+const P4_IGNORED_FIXTURE_PATHS = [
+    'tests/Analysis/Policy/Architecture/Fixtures/Sample/expected-violations.json',
+    'tests/Analysis/Policy/Architecture/Fixtures/Sample/phase1-compat-violations-warn.json',
+    'tests/Analysis/Policy/Architecture/Fixtures/Sample/phase1-compat-violations.json',
+];
+
+/** @var list<string> Exact Measurement artifacts materialized by P7. */
+const P7_MEASUREMENT_PATHS = [
+    'tests/Analysis/Evidence/Measurement/Fixtures/AnonymousClassContext.php',
+    'tests/Analysis/Evidence/Measurement/Fixtures/pdepend-collision.xml',
+    'tests/Analysis/Evidence/Measurement/Fixtures/pdepend-fqn.xml',
+    'tests/Analysis/Evidence/Measurement/Fixtures/phpmetrics-fqn.json',
+    'tests/Analysis/Evidence/Measurement/Fixtures/qmx-current.json',
+    'tests/Analysis/Evidence/Measurement/Fixtures/qmx-incomplete-coverage.json',
+    'tests/Analysis/Evidence/Measurement/Fixtures/qmx-malformed-coverage.json',
+    'tests/Analysis/Evidence/Measurement/Fixtures/qmx-missing-coverage.json',
+    'tests/Analysis/Evidence/Measurement/Fixtures/qmx-polluted.txt',
+    'tests/Analysis/Evidence/Measurement/Fixtures/qmx-stale-keys.json',
+    'tests/Analysis/Evidence/Measurement/Tests/test_cross_tool_comparison.py',
+    'tests/Analysis/Evidence/Measurement/Unit/AnonymousClassContextRegressionTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/CallableWithMetricsTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/DataBagTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/MetricBagTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/MetricDefinitionTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/VisitorMethodContextTest.php',
+];
+
+/** @var list<string> Exact P3 test classes; future siblings require an ownership decision. */
+const P3_TEST_PATHS = [
+    'tests/Analysis/Configuration/Integration/ConfigSchemaCoverageTest.php',
+    'tests/Analysis/Configuration/Integration/ConfigurationPipelineIntegrationTest.php',
+    'tests/Analysis/Configuration/Integration/ArchitectureConfigurationWarningIntegrationTest.php',
+    'tests/Analysis/Configuration/Integration/FullPipelineIntegrationTest.php',
+    'tests/Analysis/Configuration/Integration/Loader/YamlNormalizationCharacterizationTest.php',
+    'tests/Analysis/Configuration/Integration/PresetIntegrationTest.php',
+    'tests/Analysis/Configuration/Integration/RuleOptionKeyNormalizationTest.php',
+    'tests/Analysis/Configuration/Integration/YamlKeyReachabilityTest.php',
+    'tests/Analysis/Configuration/Unit/AnalysisConfigurationCacheDirResolutionTest.php',
+    'tests/Analysis/Configuration/Unit/AnalysisConfigurationTest.php',
+    'tests/Analysis/Configuration/Unit/ConfigSchemaTest.php',
+    'tests/Analysis/Configuration/Unit/ConfigurationHolderTest.php',
+    'tests/Analysis/Configuration/Unit/Discovery/ComposerReaderTest.php',
+    'tests/Analysis/Configuration/Unit/Loader/YamlConfigLoaderTest.php',
+    'tests/Analysis/Configuration/Unit/Pipeline/ConfigDataNormalizerTest.php',
+    'tests/Analysis/Configuration/Unit/Pipeline/ConfigurationMergerTest.php',
+    'tests/Analysis/Configuration/Unit/Pipeline/ConfigurationPipelineTest.php',
+    'tests/Analysis/Configuration/Unit/Pipeline/RuleNameValidatorTest.php',
+    'tests/Analysis/Configuration/Unit/Pipeline/Stage/CliStageTest.php',
+    'tests/Analysis/Configuration/Unit/Pipeline/Stage/ComposerDiscoveryStageTest.php',
+    'tests/Analysis/Configuration/Unit/Pipeline/Stage/ConfigFileStageTest.php',
+    'tests/Analysis/Configuration/Unit/Pipeline/Stage/DefaultsStageTest.php',
+    'tests/Analysis/Configuration/Unit/Pipeline/Stage/PresetStageTest.php',
+    'tests/Analysis/Configuration/Unit/Preset/PresetResolverTest.php',
+    'tests/Analysis/Configuration/Unit/RuleNamespaceExclusionProviderTest.php',
+    'tests/Analysis/Configuration/Unit/RuleOptionsFactoryTest.php',
+    'tests/Analysis/Configuration/Unit/RuleOptionsParserTest.php',
+    'tests/Analysis/Configuration/Unit/RulePathExclusionProviderTest.php',
+    'tests/Analysis/Configuration/Unit/RuleThresholdKeyGroupRegistryDriftTest.php',
+    'tests/Analysis/Evidence/DependencyModel/Unit/Extraction/DependencyResolverTest.php',
+    'tests/Analysis/Evidence/DependencyModel/Unit/Extraction/DependencyVisitorTest.php',
+    'tests/Analysis/Evidence/DependencyModel/Unit/Extraction/Handler/TypeDependencyHelperTest.php',
+    'tests/Analysis/Evidence/Measurement/Integration/Aggregation/GoldenFileAggregationTest.php',
+    'tests/Analysis/Evidence/Measurement/Integration/Aggregation/MetricInvariantTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Aggregation/AggregationHelperTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Aggregation/ClassToNamespaceAggregatorTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Aggregation/GlobalCollectorSorterTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Aggregation/GlobalFunctionAggregationTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Aggregation/MeasurementAggregationServiceTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Aggregation/MetricAggregatorTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Aggregation/NamespaceMetricContributionsTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Aggregation/NamespaceToProjectAggregatorTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Aggregation/TreeAwareNamespaceAggregatorTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Contract/CollectorRuntimeConfigurationTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/FileMeasurement/CompositeCollectorTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/FileMeasurement/DerivedCollectorRunnerTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/FileMeasurement/DerivedCollectorSortTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/FileMeasurement/DerivedMetricExtractorTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Namespace_/ProjectNamespaceResolverTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Repository/InMemoryMetricRepositoryTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Repository/MetricSubjectIndexTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Repository/NamespaceMetricIndexTest.php',
+    'tests/Analysis/Evidence/Measurement/Unit/Repository/RepositoryMergeTest.php',
+    'tests/Analysis/Run/Integration/Pipeline/AnalysisPipelineIntegrationTest.php',
+    'tests/Analysis/Run/Integration/Pipeline/MultiNamespaceAnalysisTest.php',
+    'tests/Analysis/Run/Unit/Collection/CollectionOrchestratorTest.php',
+    'tests/Analysis/Run/Unit/Collection/Declaration/DeclarationBindingsTest.php',
+    'tests/Analysis/Run/Unit/Collection/FileProcessingResultTest.php',
+    'tests/Analysis/Run/Unit/Collection/FileProcessorTest.php',
+    'tests/Analysis/Run/Unit/Contract/Collection/CollectionPhaseOutputTest.php',
+    'tests/Analysis/Run/Unit/Discovery/FinderFileDiscoveryAbsolutePathTest.php',
+    'tests/Analysis/Run/Unit/Discovery/FinderFileDiscoveryTest.php',
+    'tests/Analysis/Run/Unit/Discovery/AnalysisFileDiscoveryTest.php',
+    'tests/Analysis/Run/Unit/Discovery/GeneratedFileFilterTest.php',
+    'tests/Analysis/Run/Unit/FileSetInspection/FileSetInspectionCompositeTest.php',
+    'tests/Analysis/Run/Unit/Pipeline/AnalysisCoverageTest.php',
+    'tests/Analysis/Run/Unit/Pipeline/AnalysisPipelineTest.php',
+    'tests/Analysis/Run/Unit/Pipeline/AnalysisResultTest.php',
+    'tests/Analysis/Run/Unit/Pipeline/DependencyGraphAnalyzerTest.php',
+    'tests/Analysis/Run/Unit/Pipeline/MetricEnricherTest.php',
+    'tests/Analysis/Run/Unit/RuleProducerPreparationTest.php',
+    'tests/Unit/Analysis/RuleExecution/RuleExclusionStatsTest.php',
+    'tests/Unit/Analysis/RuleExecution/RuleExecutorTest.php',
+    'tests/Unit/Infrastructure/Console/CheckScopeResolverTest.php',
+    'tests/Unit/Infrastructure/Console/RuntimeLoggerConfiguratorTest.php',
+];
+
+/** @var list<string> Exact P6-A Finding test closure; future siblings require an ownership decision. */
+const P6_A_FINDING_TEST_PATHS = [
+    'tests/Analysis/Finding/Fixtures/Channels/declared.txt',
+    'tests/Analysis/Finding/Fixtures/Channels/excluded.txt',
+    'tests/Analysis/Finding/Integration/ChannelCoverageTest.php',
+    'tests/Analysis/Finding/Integration/ChannelDeclarationFixtureDriftTest.php',
+    'tests/Analysis/Finding/Integration/ChannelEmissionStaticGuardTest.php',
+    'tests/Analysis/Finding/Integration/RuleOptionKeyNormalizationTest.php',
+    'tests/Analysis/Finding/Support/StubChannelDeclarationRegistry.php',
+    'tests/Analysis/Finding/Support/ViolationFactory.php',
+    'tests/Analysis/Finding/Unit/AbstractRuleSubjectControlTest.php',
+    'tests/Analysis/Finding/Unit/AcceptedLevelTest.php',
+    'tests/Analysis/Finding/Unit/AnalysisContextTest.php',
+    'tests/Analysis/Finding/Unit/ChannelDeclarationCompilerPassTest.php',
+    'tests/Analysis/Finding/Unit/ChannelDeclarationReaderTest.php',
+    'tests/Analysis/Finding/Unit/ChannelDeclarationRegistryTest.php',
+    'tests/Analysis/Finding/Unit/ChannelDeclarationTest.php',
+    'tests/Analysis/Finding/Unit/LocationNullFileTest.php',
+    'tests/Analysis/Finding/Unit/LocationTest.php',
+    'tests/Analysis/Finding/Unit/NamespaceExclusionFilterTest.php',
+    'tests/Analysis/Finding/Unit/OccurrenceKeyTest.php',
+    'tests/Analysis/Finding/Unit/PathExclusionFilterTest.php',
+    'tests/Analysis/Finding/Unit/PredicateFilterStageTest.php',
+    'tests/Analysis/Finding/Unit/RuleExclusionCaptureHolderTest.php',
+    'tests/Analysis/Finding/Unit/RuleExecutorTest.php',
+    'tests/Analysis/Finding/Unit/RuleLevelTest.php',
+    'tests/Analysis/Finding/Unit/RuleMatcherTest.php',
+    'tests/Analysis/Finding/Unit/RuleNameReaderTest.php',
+    'tests/Analysis/Finding/Unit/RuleNamespaceExclusionProviderTest.php',
+    'tests/Analysis/Finding/Unit/RuleOptionsFactoryTest.php',
+    'tests/Analysis/Finding/Unit/RuleOptionsParserTest.php',
+    'tests/Analysis/Finding/Unit/RulePathExclusionProviderTest.php',
+    'tests/Analysis/Finding/Unit/RuleSelectorTest.php',
+    'tests/Analysis/Finding/Unit/RuleThresholdKeyGroupRegistryDriftTest.php',
+    'tests/Analysis/Finding/Unit/SeverityTest.php',
+    'tests/Analysis/Finding/Unit/ThresholdParserTest.php',
+    'tests/Analysis/Finding/Unit/ThresholdValidatorAssignmentTest.php',
+    'tests/Analysis/Finding/Unit/ViolationChannelTest.php',
+    'tests/Analysis/Finding/Unit/ViolationFilterStageTest.php',
+    'tests/Analysis/Finding/Unit/ViolationTest.php',
+];
+
+/** @var list<string> Exact P6-B additions to the Finding test closure. */
+const P6_B_FINDING_TEST_PATHS = [
+    'tests/Analysis/Finding/Unit/AnalysisContextThresholdTest.php',
+    'tests/Analysis/Finding/Unit/ThresholdOverrideTest.php',
+];
+
+/** @var list<string> Exact P6-B Inline test closure; future siblings require an ownership decision. */
+const P6_B_INLINE_TEST_PATHS = [
+    'tests/Analysis/Policy/Inline/Fixtures/IgnoreSample/Controller/PolicedController.php',
+    'tests/Analysis/Policy/Inline/Fixtures/IgnoreSample/Controller/SilencedController.php',
+    'tests/Analysis/Policy/Inline/Fixtures/IgnoreSample/Domain/Customer.php',
+    'tests/Analysis/Policy/Inline/Fixtures/IgnoreSample/Repository/CustomerRepository.php',
+    'tests/Analysis/Policy/Inline/Fixtures/IgnoreSample/Service/CustomerService.php',
+    'tests/Analysis/Policy/Inline/Integration/InlineSuppressionLayerViolationIntegrationTest.php',
+    'tests/Analysis/Policy/Inline/Integration/ThresholdAnnotationParserPathTest.php',
+    'tests/Analysis/Policy/Inline/Integration/ThresholdValidatorWiringTest.php',
+    'tests/Analysis/Policy/Inline/Unit/Extraction/DeclarationControlBindingsTest.php',
+    'tests/Analysis/Policy/Inline/Unit/IndependentAxisValidatorTest.php',
+    'tests/Analysis/Policy/Inline/Unit/InvertedOverrideValidatorTest.php',
+    'tests/Analysis/Policy/Inline/Unit/Extraction/SourceControlExtractorTest.php',
+    'tests/Analysis/Policy/Inline/Unit/StandardOverrideValidatorTest.php',
+    'tests/Analysis/Policy/Inline/Unit/SuppressionExtractorTest.php',
+    'tests/Analysis/Policy/Inline/Unit/SuppressionFilterTest.php',
+    'tests/Analysis/Policy/Inline/Unit/SuppressionTest.php',
+    'tests/Analysis/Policy/Inline/Unit/ThresholdOverrideExtractorTest.php',
+    'tests/Analysis/Policy/Inline/Unit/ThresholdOverrideIntegrationTest.php',
+    'tests/Analysis/Policy/Inline/Unit/WarningOnlyValidatorTest.php',
+];
+
+/** @var list<string> Exact P6-D subject-owned test moves. */
+const P6_D_REPORTING_TEST_PATHS = [
+    'tests/Reporting/FindingProjection/Unit/FindingProjectorTest.php',
+];
+
+/** @var list<string> Exact P6-D Prioritization subject-unit moves. */
+const P6_D_PRIORITIZATION_TEST_PATHS = [
+    'tests/Analysis/Evidence/Prioritization/Unit/Debt/DebtCalculatorTest.php',
+    'tests/Analysis/Evidence/Prioritization/Unit/Debt/DebtSummaryTest.php',
+    'tests/Analysis/Evidence/Prioritization/Unit/Debt/RemediationTimeRegistryTest.php',
+    'tests/Analysis/Evidence/Prioritization/Unit/Impact/ClassRankResolverTest.php',
+    'tests/Analysis/Evidence/Prioritization/Unit/Impact/ImpactCalculatorTest.php',
+];
+
+/** @var list<string> Exact P6-D Infrastructure Git adapter authorities. */
+const P6_D_GIT_TEST_PATHS = [
+    'tests/Integration/Infrastructure/Git/ReportingGitScopeQueryProjectSubdirTest.php',
+    'tests/Unit/Infrastructure/Git/ReportingGitScopeQueryTest.php',
+];
+
+/** @var list<string> Exact live additions relative to the accepted 509/7,245 authority. */
+const P6_LIVE_ADDED_TEST_IDS = [
+    'Qualimetrix\\Tests\\Analysis\\Finding\\Unit\\RuleExecutorTest::itPublishesRuleMetadataWithExactAliasMappingWithoutConcreteRuleInstances',
+    'Qualimetrix\\Tests\\Analysis\\Finding\\Unit\\RuleNamespaceExclusionProviderTest::itConfiguresAndQueriesNamespaceExclusionsWithoutProviderAccess',
+    'Qualimetrix\\Tests\\Analysis\\Finding\\Unit\\RuleNamespaceExclusionProviderTest::itConfiguresAndQueriesNamespaceChannelExclusionsWithoutProviderAccess',
+    'Qualimetrix\\Tests\\Analysis\\Policy\\Inline\\Unit\\Extraction\\SourceControlExtractorTest::itExtractsSourceControlsWithoutRunDeclarationBindings',
+    'Qualimetrix\\Tests\\Integration\\Infrastructure\\Git\\ReportingGitScopeQueryProjectSubdirTest::itProjectsGitScopeThroughTheReportingPortWithoutAReverseImport',
+    'Qualimetrix\\Tests\\Analysis\\Run\\Integration\\Pipeline\\AnalysisPipelineIntegrationTest::itPreservesInlineControlsAcrossARealParallelWorkerRoundTrip',
+];
+
+/** @var array<string, string> Exact zero-net method-ID replacements. */
+const P6_RENAMED_TEST_IDS = [
+    'Qualimetrix\\Tests\\Unit\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Infrastructure\\Unit\\RuleCompilerPassTest::itCollectsTaggedRulesIntoRuleExecution',
+    'Qualimetrix\\Tests\\Integration\\DependencyInjection\\ContainerFactoryTest::itInjectsRulesIntoRuleExecutor' => 'Qualimetrix\\Tests\\Integration\\DependencyInjection\\ContainerFactoryTest::itInjectsRulesIntoRuleExecution',
+    'Qualimetrix\\Tests\\Integration\\Infrastructure\\Console\\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutorInstanceBetweenThePipelineAndTheOrchestrator' => 'Qualimetrix\\Tests\\Infrastructure\\Integration\\RuleExclusionStatsWiringTest::itSharesTheSameRuleExecutionInstanceBetweenThePipelineAndTheOrchestrator',
+    'Qualimetrix\\Tests\\Infrastructure\\Console\\Functional\\Command\\CheckCommandBaselineTest::itDoesNotPromoteAnAnnotatedFindingTheBaselineNeverMeasured' => 'Qualimetrix\\Tests\\Infrastructure\\Console\\Functional\\Command\\CheckCommandBaselineTest::itCombinesConfiguredAndCliExclusionsWithoutLosingBaselineAnnotationOrGit',
+];
+
+/** @var array<string, array{string, string, string}> Exact A03 orphan-probe dispositions. */
+const P8_ORPHAN_DISPOSITIONS = [
+    'tests/Fixture/DataClassEntity.php' => ['DataClassEntity', 'delete', 'No consumer; isolated static and process probes passed.'],
+    'tests/Fixtures/Aggregation/App/Repository/OrderRepository.php' => ['Aggregation', 'delete', 'No consumer; isolated static and process probes passed.'],
+    'tests/Fixtures/Aggregation/App/Repository/UserRepository.php' => ['Aggregation', 'delete', 'No consumer; isolated static and process probes passed.'],
+    'tests/Fixtures/Aggregation/App/Service/OrderService.php' => ['Aggregation', 'delete', 'No consumer; isolated static and process probes passed.'],
+    'tests/Fixtures/Aggregation/App/Service/PaymentService.php' => ['Aggregation', 'delete', 'No consumer; isolated static and process probes passed.'],
+    'tests/Fixtures/Aggregation/App/Service/UserService.php' => ['Aggregation', 'delete', 'No consumer; isolated static and process probes passed.'],
+    'tests/Fixtures/Aggregation/README.md' => ['Aggregation', 'delete', 'No consumer; isolated static and process probes passed.'],
+    'tests/Fixtures/CircularDeps/HelperA.php' => ['CircularDeps', 'delete', 'No path consumer; equivalent FQNs are independently covered.'],
+    'tests/Fixtures/CircularDeps/HelperB.php' => ['CircularDeps', 'delete', 'No path consumer; equivalent FQNs are independently covered.'],
+    'tests/Fixtures/CircularDeps/IndependentService.php' => ['CircularDeps', 'delete', 'No path consumer; equivalent FQNs are independently covered.'],
+    'tests/Fixtures/CircularDeps/README.md' => ['CircularDeps', 'delete', 'No path consumer; equivalent FQNs are independently covered.'],
+    'tests/Fixtures/CircularDeps/ServiceA.php' => ['CircularDeps', 'delete', 'No path consumer; equivalent FQNs are independently covered.'],
+    'tests/Fixtures/CircularDeps/ServiceB.php' => ['CircularDeps', 'delete', 'No path consumer; equivalent FQNs are independently covered.'],
+    'tests/Fixtures/CircularDeps/ServiceC.php' => ['CircularDeps', 'delete', 'No path consumer; equivalent FQNs are independently covered.'],
+    'tests/Fixtures/Inheritance/BaseEntity.php' => ['Inheritance', 'delete', 'No consumer; isolated static and process probes passed.'],
+    'tests/Fixtures/Inheritance/ChildEntity.php' => ['Inheritance', 'delete', 'No consumer; isolated static and process probes passed.'],
+    'tests/Fixtures/Inheritance/ExtremelyDeepEntity.php' => ['Inheritance', 'delete', 'No consumer; isolated static and process probes passed.'],
+    'tests/Fixtures/Inheritance/GrandChildEntity.php' => ['Inheritance', 'delete', 'No consumer; isolated static and process probes passed.'],
+    'tests/Fixtures/Inheritance/GreatGrandChildEntity.php' => ['Inheritance', 'delete', 'No consumer; isolated static and process probes passed.'],
+    'tests/Fixtures/Inheritance/README.md' => ['Inheritance', 'delete', 'No consumer; isolated static and process probes passed.'],
+    'tests/Fixtures/Inheritance/VeryDeepEntity.php' => ['Inheritance', 'delete', 'No consumer; isolated static and process probes passed.'],
+    'tests/Fixtures/CouplingProject/Core/AbstractEntity.php' => ['CouplingProject', 'move', 'AnalysisPipelineIntegrationTest reads the owner-local fixture path.'],
+    'tests/Fixtures/CouplingProject/Core/EntityInterface.php' => ['CouplingProject', 'move', 'AnalysisPipelineIntegrationTest reads the owner-local fixture path.'],
+    'tests/Fixtures/CouplingProject/Domain/Order.php' => ['CouplingProject', 'move', 'AnalysisPipelineIntegrationTest reads the owner-local fixture path.'],
+    'tests/Fixtures/CouplingProject/Domain/User.php' => ['CouplingProject', 'move', 'AnalysisPipelineIntegrationTest reads the owner-local fixture path.'],
+    'tests/Fixtures/CouplingProject/Isolated/StandaloneClass.php' => ['CouplingProject', 'move', 'AnalysisPipelineIntegrationTest reads the owner-local fixture path.'],
+    'tests/Fixtures/CouplingProject/Service/OrderService.php' => ['CouplingProject', 'move', 'AnalysisPipelineIntegrationTest reads the owner-local fixture path.'],
+    'tests/Fixtures/CouplingProject/Service/UserService.php' => ['CouplingProject', 'move', 'AnalysisPipelineIntegrationTest reads the owner-local fixture path.'],
+];
+
 $projectRoot = realpath(__DIR__ . '/..');
 if ($projectRoot === false) {
     fail('Cannot resolve the project root.');
+}
+$p6CBaselinePaths = p6CBaselinePaths($projectRoot);
+if (hash('sha256', implode("\n", $p6CBaselinePaths) . "\n") !== P6_C_BASELINE_PATHS_SHA256) {
+    fail('P6-C Baseline test artifact set differs from the reviewed finite path digest.');
 }
 
 if ($classificationProbeArguments !== []) {
     $path = substr($classificationProbeArguments[0], strlen('--classification-probe='));
     [$owner, $closurePackage] = classifyOwner($path);
     $currentSuite = currentSuite($path);
-    $targetSuite = $currentSuite === 'Infrastructure' ? 'Unit' : $currentSuite;
+    $targetSuite = $currentSuite === 'Infrastructure'
+        ? (str_contains($path, '/Integration/') ? 'Integration' : 'Unit')
+        : $currentSuite;
     fwrite(STDOUT, implode("\t", [
         $owner,
         $closurePackage,
@@ -87,6 +342,7 @@ $worktreePaths = commandLines(
     ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '--', 'tests', 'scripts/tests', 'src/Reporting/Template/tests', 'src/Reporting/Template/package.json', 'src/Reporting/Template/vite.config.js'],
     $projectRoot,
 );
+$worktreePaths = array_values(array_unique([...$worktreePaths, ...P4_IGNORED_FIXTURE_PATHS]));
 $worktreePaths = array_values(array_filter(
     $worktreePaths,
     static fn(string $path): bool => is_file($projectRoot . '/' . $path),
@@ -103,6 +359,8 @@ $phpunitDiscovery = runCommand(
 );
 $parsedPhpunitDiscovery = parsePhpunitDiscovery($phpunitDiscovery);
 $canonicalPhpunitDiscovery = canonicalPhpunitDiscovery($parsedPhpunitDiscovery);
+$discoveredCaseCounts = discoveredCaseCounts($parsedPhpunitDiscovery['exact_ids']);
+validateReviewedTestAuthority($parsedPhpunitDiscovery['exact_ids'], $discoveredCaseCounts);
 if ($discoveryProbeArguments !== []) {
     $probePath = substr($discoveryProbeArguments[0], strlen('--discovery-probe='));
     $probe = file_get_contents($probePath);
@@ -120,7 +378,6 @@ if ($discoveryProbeArguments !== []) {
 // The generated suite evidence below is derived from committable worktree
 // files, excluding ignored local files and dependencies.
 runCommand(['vendor/bin/phpunit', '--list-suites', '--no-coverage'], $projectRoot);
-$discoveredCaseCounts = discoveredCaseCounts($parsedPhpunitDiscovery['exact_ids']);
 
 $rows = [];
 foreach ($worktreePaths as $path) {
@@ -142,7 +399,9 @@ foreach ($worktreePaths as $path) {
     $kind = classifyKind($path, $discoveredClasses);
     $currentSuite = currentSuite($path);
     $targetSuite = $kind === 'phpunit-test-class'
-        ? ($currentSuite === 'Infrastructure' ? 'Unit' : $currentSuite)
+        ? ($currentSuite === 'Infrastructure'
+            ? (str_contains($path, '/Integration/') ? 'Integration' : 'Unit')
+            : $currentSuite)
         : 'none';
     $disposition = dispositionFor($path, $kind);
 
@@ -166,6 +425,7 @@ foreach ($worktreePaths as $path) {
 }
 
 validateInventory($rows, $discoveredCaseCounts);
+validateP4Topology($rows);
 $fixtureDirectoryRows = fixtureDirectoryRows($rows);
 
 $outputDirectory = $outputDirectoryArguments === []
@@ -179,6 +439,9 @@ emitGenerated($outputDirectory . '/test-ownership.tsv', tsvContents($rows), $che
 emitGenerated($outputDirectory . '/test-fixture-directories.tsv', tsvContents($fixtureDirectoryRows), $check);
 emitGenerated($outputDirectory . '/test-phpunit-discovery.txt', $canonicalPhpunitDiscovery, $check);
 emitGenerated($outputDirectory . '/test-phpunit-suites.txt', worktreeSuiteOutput($rows, $phpunitDiscovery), $check);
+emitGenerated($outputDirectory . '/test-orphan-dispositions.tsv', orphanDispositionContents(), $check);
+emitGenerated($outputDirectory . '/test-system-support-owners.tsv', systemSupportContents($projectRoot), $check);
+emitGenerated($outputDirectory . '/test-topology.tsv', topologyContents($rows, $fixtureDirectoryRows, $discoveredCaseCounts), $check);
 
 $summary = inventorySummary($rows, $fixtureDirectoryRows, $discoveredCaseCounts);
 fwrite(
@@ -360,11 +623,79 @@ function nextSignificantToken(array $tokens, int $start): array|string|null
     return null;
 }
 
+/** @return list<string> */
+function p6CBaselinePaths(string $projectRoot): array
+{
+    $root = $projectRoot . '/tests/Analysis/Policy/Baseline';
+    $paths = [];
+    $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root));
+    /** @var SplFileInfo $file */
+    foreach ($iterator as $file) {
+        if ($file->isFile()) {
+            $paths[] = substr($file->getPathname(), strlen($projectRoot) + 1);
+        }
+    }
+    sort($paths, SORT_STRING);
+
+    return $paths;
+}
+
 /**
  * @return array{string, string}
  */
 function classifyOwner(string $path): array
 {
+    if (str_starts_with($path, 'tests/System/DocumentationConsistency/')) {
+        return ['System/DocumentationConsistency', 'P8'];
+    }
+    if (str_starts_with($path, 'tests/TestSupport/Logging/')) {
+        return ['TestSupport/Logging', 'P8'];
+    }
+    if (str_starts_with($path, 'tests/TestSupport/ArchitectureStaticAnalysis/')) {
+        return ['TestSupport/ArchitectureStaticAnalysis', 'P8'];
+    }
+    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path, $matches) === 1) {
+        return ['Analysis/Evidence/' . $matches[1], 'P7'];
+    }
+    if (in_array($path, P7_MEASUREMENT_PATHS, true)) {
+        return ['Analysis/Evidence/Measurement', 'P7'];
+    }
+    global $p6CBaselinePaths;
+
+    if (str_starts_with($path, 'tests/Analysis/Policy/Baseline/')) {
+        if (!in_array($path, $p6CBaselinePaths, true)) {
+            fail('Unclassified P6-C Baseline test artifact: ' . $path);
+        }
+
+        return ['Analysis/Policy/Baseline', 'P6-C'];
+    }
+    if (str_starts_with($path, 'tests/Analysis/Finding/')) {
+        return ['Analysis/Finding', 'P8'];
+    }
+    if (str_starts_with($path, 'tests/Analysis/Policy/Inline/')) {
+        return ['Analysis/Policy/Inline', 'P8'];
+    }
+    if (in_array($path, P6_D_REPORTING_TEST_PATHS, true)) {
+        return ['Reporting/FindingProjection', 'P6-D'];
+    }
+    if (in_array($path, P6_D_PRIORITIZATION_TEST_PATHS, true)) {
+        return ['Analysis/Evidence/Prioritization', 'P6-D'];
+    }
+    if (in_array($path, P6_D_GIT_TEST_PATHS, true)) {
+        return ['Infrastructure/Git', 'P6-D'];
+    }
+    if (str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/Health/')) {
+        return ['Analysis/Evidence/ComputedMetrics/Health', 'P5'];
+    }
+    if (str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/')) {
+        return ['Analysis/Evidence/ComputedMetrics', 'P5'];
+    }
+    if (str_starts_with($path, 'tests/Analysis/Policy/Architecture/')) {
+        return ['Analysis/Policy/Architecture', 'P4'];
+    }
+    if (str_starts_with($path, 'tests/Analysis/Evidence/CircularDependency/')) {
+        return ['Analysis/Evidence/CircularDependency', 'P4'];
+    }
     if (str_starts_with($path, 'scripts/tests/')) {
         return ['Analysis/Evidence/Measurement', 'P7'];
     }
@@ -395,6 +726,9 @@ function classifyOwner(string $path): array
     }
     if (str_starts_with($path, 'tests/Support/Violation/')) {
         return ['Analysis/Finding', 'P6'];
+    }
+    if (str_starts_with($path, 'tests/Analysis/Configuration/')) {
+        return ['Analysis/Configuration', 'P3'];
     }
     if (str_starts_with($path, 'tests/Fixture/')) {
         if (preg_match('/(DataClass|ReadonlyDto|SmallClass)/', $path) === 1) {
@@ -451,6 +785,21 @@ function classifyOwner(string $path): array
     if (in_array($path, $p2DependencyModelTests, true)) {
         return ['Analysis/Evidence/DependencyModel', 'P2'];
     }
+    if (str_starts_with($path, 'tests/Analysis/Evidence/DependencyModel/')) {
+        return ['Analysis/Evidence/DependencyModel', 'P3'];
+    }
+    if (preg_match('#^tests/Core/(Path|Symbol|Profiler)/#', $path, $matches) === 1) {
+        return ['Core/' . $matches[1], 'P8'];
+    }
+    if (str_starts_with($path, 'tests/Core/')) {
+        return ['Core/Neutral', 'P8'];
+    }
+    if (str_starts_with($path, 'tests/Analysis/Evidence/Measurement/')) {
+        return ['Analysis/Evidence/Measurement', 'P3'];
+    }
+    if (str_starts_with($path, 'tests/Analysis/Run/')) {
+        return ['Analysis/Run', 'P3'];
+    }
 
     $p2GraphProjectionTests = [
         'tests/Unit/Analysis/Collection/Dependency/Export/DotExporterTest.php',
@@ -468,6 +817,10 @@ function classifyOwner(string $path): array
         'tests/Infrastructure/Console/Functional/GraphExportCommandTest.php',
     ], true)) {
         return ['Infrastructure/Console', 'P2'];
+    }
+
+    if ($path === 'tests/Unit/Analysis/Collection/SourceControl/SourceControlsTest.php') {
+        return ['Analysis/Policy/Inline', 'P6'];
     }
 
     if (preg_match('#^tests/Unit/Analysis/Collection/Dependency/(CircularDependencyDetector|Cycle)#', $path) === 1) {
@@ -544,7 +897,7 @@ function classifyOwner(string $path): array
         return ['Analysis/Finding', 'P6'];
     }
     if (str_starts_with($path, 'tests/Unit/Reporting/Health/')) {
-        return ['Analysis/Evidence/ComputedMetrics/Health', 'P5'];
+        return ['Reporting', 'permanent'];
     }
     if (str_starts_with($path, 'tests/Unit/Reporting/Impact/')) {
         return ['Reporting/Impact', 'permanent'];
@@ -564,6 +917,12 @@ function classifyOwner(string $path): array
         }
 
         return ['Infrastructure', 'permanent'];
+    }
+    if (preg_match('#^tests/Infrastructure/(Ast|Cache|Console|DependencyInjection|Logging|Parallel|Profiler|Rule|Serializer)/#', $path, $matches) === 1) {
+        return ['Infrastructure/' . $matches[1], 'P8'];
+    }
+    if (str_starts_with($path, 'tests/Reporting/')) {
+        return ['Reporting', 'P8'];
     }
     if (str_contains($path, 'LayerAssignment')) {
         return ['Infrastructure/Console', 'P4'];
@@ -626,13 +985,36 @@ function classifyKind(string $path, array $discoveredClasses): string
 function currentSuite(string $path): string
 {
     return match (true) {
+        preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/Unit/#', $path) === 1 => 'Unit',
+        preg_match('#^tests/Analysis/Evidence/(CodeSmell|Complexity)/Integration/#', $path) === 1 => 'Integration',
         str_starts_with($path, 'tests/Architecture/Unit/'),
+        str_starts_with($path, 'tests/Analysis/Policy/Architecture/Unit/'),
+        str_starts_with($path, 'tests/Analysis/Policy/Baseline/Unit/'),
+        str_starts_with($path, 'tests/Analysis/Policy/Inline/Unit/'),
+        str_starts_with($path, 'tests/Analysis/Evidence/CircularDependency/Unit/'),
         str_starts_with($path, 'tests/Analysis/Evidence/Duplication/Unit/'),
         str_starts_with($path, 'tests/Analysis/Evidence/DependencyModel/Unit/'),
+        str_starts_with($path, 'tests/Analysis/Evidence/Measurement/Unit/'),
+        str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/Unit/'),
+        str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/Health/Unit/'),
+        str_starts_with($path, 'tests/Analysis/Evidence/Prioritization/Unit/'),
+        str_starts_with($path, 'tests/Analysis/Configuration/Unit/'),
+        str_starts_with($path, 'tests/Analysis/Finding/Unit/'),
+        str_starts_with($path, 'tests/Analysis/Run/Unit/'),
         str_starts_with($path, 'tests/Reporting/GraphProjection/Unit/'),
+        str_starts_with($path, 'tests/Reporting/FindingProjection/Unit/'),
         str_starts_with($path, 'tests/Unit/') => 'Unit',
-        str_starts_with($path, 'tests/Architecture/Integration/'), str_starts_with($path, 'tests/Integration/') => 'Integration',
-        str_starts_with($path, 'tests/Functional/'), str_starts_with($path, 'tests/Infrastructure/Console/Functional/') => 'Functional',
+        str_starts_with($path, 'tests/Architecture/Integration/'),
+        str_starts_with($path, 'tests/Analysis/Policy/Architecture/Integration/'),
+        str_starts_with($path, 'tests/Analysis/Policy/Baseline/Integration/'),
+        str_starts_with($path, 'tests/Analysis/Policy/Inline/Integration/'),
+        str_starts_with($path, 'tests/Analysis/Configuration/Integration/'),
+        str_starts_with($path, 'tests/Analysis/Finding/Integration/'),
+        str_starts_with($path, 'tests/Analysis/Evidence/Measurement/Integration/'),
+        str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/Integration/'),
+        str_starts_with($path, 'tests/Analysis/Run/Integration/'),
+        str_starts_with($path, 'tests/Integration/') => 'Integration',
+        str_starts_with($path, 'tests/Functional/'), str_starts_with($path, 'tests/Analysis/Policy/Baseline/Functional/'), str_starts_with($path, 'tests/Infrastructure/Console/Functional/') => 'Functional',
         str_starts_with($path, 'tests/Infrastructure/') => 'Infrastructure',
         default => 'none',
     };
@@ -640,6 +1022,20 @@ function currentSuite(string $path): string
 
 function dispositionFor(string $path, string $kind): string
 {
+    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
+        || in_array($path, P7_MEASUREMENT_PATHS, true)
+        || preg_match('#^tests/Infrastructure/(Unit|Integration)/#', $path) === 1
+        || str_starts_with($path, 'tests/Analysis/Finding/')
+        || str_starts_with($path, 'tests/Analysis/Policy/Inline/')
+        || str_starts_with($path, 'tests/Analysis/Policy/Baseline/')
+        || in_array($path, P6_D_REPORTING_TEST_PATHS, true)
+        || in_array($path, P6_D_PRIORITIZATION_TEST_PATHS, true)
+        || in_array($path, P6_D_GIT_TEST_PATHS, true)
+        || str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/')
+        || str_starts_with($path, 'tests/Unit/Reporting/Health/')
+    ) {
+        return 'Retain at the materialized subject-owned path.';
+    }
     if (isset(EXPLICIT_PATH_DISPOSITIONS[$path])) {
         return EXPLICIT_PATH_DISPOSITIONS[$path];
     }
@@ -668,6 +1064,24 @@ function orphanCandidateReason(string $path): ?string
 
 function targetPath(string $path, string $kind, string $owner, string $targetSuite): string
 {
+    if ($path === 'tests/Unit/Analysis/Collection/SourceControl/SourceControlsTest.php') {
+        return 'tests/Analysis/Policy/Inline/Unit/Extraction/SourceControlExtractorTest.php';
+    }
+    if (preg_match('#^tests/Analysis/Evidence/(CodeSmell|Cohesion|Complexity|Coupling|Design|Maintainability|Security|Size)/#', $path) === 1
+        || in_array($path, P7_MEASUREMENT_PATHS, true)
+        || preg_match('#^tests/Infrastructure/(Unit|Integration)/#', $path) === 1
+        || str_starts_with($path, 'tests/Analysis/Evidence/ComputedMetrics/')
+        || str_starts_with($path, 'tests/Unit/Reporting/Health/')
+        || in_array($path, P6_D_REPORTING_TEST_PATHS, true)
+        || in_array($path, P6_D_PRIORITIZATION_TEST_PATHS, true)
+        || in_array($path, P6_D_GIT_TEST_PATHS, true)
+        || in_array($path, [
+            'tests/Analysis/Policy/Inline/Unit/Extraction/DeclarationControlBindingsTest.php',
+            'tests/Analysis/Policy/Inline/Unit/Extraction/SourceControlExtractorTest.php',
+        ], true)
+    ) {
+        return $path;
+    }
     if ($kind === 'placeholder') {
         return 'DELETE';
     }
@@ -686,9 +1100,29 @@ function targetPath(string $path, string $kind, string $owner, string $targetSui
     return $targetRoot . '/Tests/' . basename($path);
 }
 
+/**
+ * @param list<string> $exactIds
+ * @param array<string, int> $discoveredCaseCounts
+ */
+function validateReviewedTestAuthority(array $exactIds, array $discoveredCaseCounts): void
+{
+    if ($exactIds === [] || $discoveredCaseCounts === []) {
+        fail('PHPUnit discovery must contain mapped classes and exact IDs.');
+    }
+}
+
 function fixtureTail(string $path): string
 {
-    foreach (['tests/Architecture/Fixtures/', 'tests/Fixtures/', 'tests/Fixture/', 'scripts/tests/fixtures/', '/data/'] as $marker) {
+    foreach ([
+        'tests/Analysis/Policy/Architecture/Fixtures/',
+        'tests/Analysis/Policy/Baseline/Fixtures/',
+        'tests/Analysis/Policy/Inline/Fixtures/',
+        'tests/Architecture/Fixtures/',
+        'tests/Fixtures/',
+        'tests/Fixture/',
+        'scripts/tests/fixtures/',
+        '/data/',
+    ] as $marker) {
         $position = strpos($path, $marker);
         if ($position !== false) {
             return substr($path, $position + strlen($marker));
@@ -742,10 +1176,64 @@ function validateInventory(array $rows, array $discoveredCaseCounts): void
         }
     }
 
-    $expectedOrphanCandidates = 28;
-    $orphanCandidates = array_filter($rows, static fn(array $row): bool => orphanCandidateReason($row['current_path']) !== null);
-    if (count($orphanCandidates) !== $expectedOrphanCandidates) {
-        fail(sprintf('Expected %d explicit orphan candidates, found %d.', $expectedOrphanCandidates, count($orphanCandidates)));
+}
+
+/** @param list<array<string, string>> $rows */
+function validateP4Topology(array $rows): void
+{
+    $p4Rows = array_values(array_filter(
+        $rows,
+        static fn(array $row): bool => $row['closure_package'] === 'P4',
+    ));
+    $classes = array_values(array_filter(
+        $p4Rows,
+        static fn(array $row): bool => $row['kind'] === 'phpunit-test-class',
+    ));
+    $fixtures = array_values(array_filter(
+        $p4Rows,
+        static fn(array $row): bool => $row['kind'] === 'fixture',
+    ));
+    $supports = array_values(array_filter(
+        $p4Rows,
+        static fn(array $row): bool => $row['kind'] === 'support',
+    ));
+    $testIds = array_sum(array_map(
+        static fn(array $row): int => (int) $row['discovered_test_cases'],
+        $classes,
+    ));
+    foreach ($p4Rows as $row) {
+        if (str_contains($row['current_path'], 'InlineSuppressionLayerViolationIntegrationTest')
+            || str_contains($row['current_path'], '/Fixtures/IgnoreSample/')
+        ) {
+            fail('P4 test topology must not enroll P6-owned InlineSuppression or IgnoreSample artifacts: ' . $row['current_path']);
+        }
+    }
+    $architectureClasses = array_values(array_filter(
+        $classes,
+        static fn(array $row): bool => $row['subject_owner'] === 'Analysis/Policy/Architecture',
+    ));
+    $circularClasses = array_values(array_filter(
+        $classes,
+        static fn(array $row): bool => $row['subject_owner'] === 'Analysis/Evidence/CircularDependency',
+    ));
+    $consoleClasses = array_values(array_filter(
+        $classes,
+        static fn(array $row): bool => $row['subject_owner'] === 'Infrastructure/Console',
+    ));
+    foreach ($architectureClasses as $row) {
+        if (!str_starts_with($row['target_path'], 'tests/Analysis/Policy/Architecture/')) {
+            fail('P4 Architecture test has an unexpected target path: ' . $row['target_path']);
+        }
+    }
+    foreach ($circularClasses as $row) {
+        if (!str_starts_with($row['target_path'], 'tests/Analysis/Evidence/CircularDependency/')) {
+            fail('P4 CircularDependency test has an unexpected target path: ' . $row['target_path']);
+        }
+    }
+    if (count($consoleClasses) !== 1
+        || $consoleClasses[0]['target_path'] !== 'tests/Infrastructure/Console/Functional/LayerAssignmentCommandTest.php'
+    ) {
+        fail('P4 must retain exactly LayerAssignmentCommandTest under the Infrastructure Console adapter target');
     }
 }
 
@@ -831,6 +1319,88 @@ function emitGenerated(string $path, string $contents, bool $check): void
     }
 
     writeFileAtomically($path, $contents);
+}
+
+function orphanDispositionContents(): string
+{
+    $rows = [];
+    foreach (P8_ORPHAN_DISPOSITIONS as $path => [$group, $decision, $rationale]) {
+        $rows[] = [$group, $path, $decision, 'A03 isolated probe', '0', $rationale];
+    }
+
+    return tsvContentsFromRows(
+        ['group', 'source_path', 'decision', 'probe', 'exit_status', 'rationale'],
+        $rows,
+    );
+}
+
+function systemSupportContents(string $root): string
+{
+    $rows = [
+        ['System/DocumentationConsistency', 'tests/System/DocumentationConsistency/Integration/DocumentationConsistencyTest.php', 'System scenario crossing source and documentation owners.', 'Integration'],
+        ['TestSupport/Logging', 'tests/TestSupport/Logging/Support/RecordingLogger.php', 'Shared PSR-3 recording helper for named Finding and Coupling tests.', 'support'],
+        ['TestSupport/ArchitectureStaticAnalysis', 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPropertyRuleTest.php', 'Repository PHPStan architecture guard.', 'Unit'],
+        ['TestSupport/ArchitectureStaticAnalysis', 'tests/TestSupport/ArchitectureStaticAnalysis/Unit/BannedStringPathPromotedPropertyRuleTest.php', 'Repository PHPStan architecture guard.', 'Unit'],
+    ];
+    foreach ($rows as $row) {
+        if (!is_file($root . '/' . $row[1])) {
+            fail('missing System/TestSupport artifact: ' . $row[1]);
+        }
+    }
+    foreach (['tests/System', 'tests/TestSupport'] as $taxonomy) {
+        $children = glob($root . '/' . $taxonomy . '/*');
+        if ($children === false) {
+            $children = [];
+        }
+        foreach ($children as $entry) {
+            if (is_file($entry)) {
+                fail('taxonomy root must not contain a direct file: ' . $entry);
+            }
+        }
+    }
+
+    return tsvContentsFromRows(['owner', 'path', 'justification', 'suite'], $rows);
+}
+
+/** @param list<array<string, string>> $rows
+ * @param list<array<string, string>> $fixtureDirectories
+ * @param array<string, int> $discoveredCaseCounts
+ */
+function topologyContents(array $rows, array $fixtureDirectories, array $discoveredCaseCounts): string
+{
+    return tsvContentsFromRows(
+        ['metric', 'count'],
+        [
+            ['mapped_artifacts', (string) count($rows)],
+            ['fixture_directories', (string) count($fixtureDirectories)],
+            ['phpunit_classes', (string) count($discoveredCaseCounts)],
+            ['phpunit_ids', (string) array_sum($discoveredCaseCounts)],
+            ['orphan_dispositions', (string) count(P8_ORPHAN_DISPOSITIONS)],
+        ],
+    );
+}
+
+/** @param list<string> $header
+ * @param list<list<string>> $rows
+ */
+function tsvContentsFromRows(array $header, array $rows): string
+{
+    $handle = fopen('php://temp', 'w+b');
+    if ($handle === false) {
+        fail('Cannot create TSV buffer.');
+    }
+    fputcsv($handle, $header, "\t", '"', '');
+    foreach ($rows as $row) {
+        fputcsv($handle, $row, "\t", '"', '');
+    }
+    rewind($handle);
+    $contents = stream_get_contents($handle);
+    fclose($handle);
+    if ($contents === false) {
+        fail('Cannot read TSV buffer.');
+    }
+
+    return $contents;
 }
 
 function writeFileAtomically(string $path, string $contents): void

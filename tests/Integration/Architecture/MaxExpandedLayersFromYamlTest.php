@@ -7,29 +7,26 @@ namespace Qualimetrix\Tests\Integration\Architecture;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Architecture\Configuration\ArchitectureConfigurationFactory;
-use Qualimetrix\Architecture\Domain\ArchitectureConfiguration;
-use Qualimetrix\Configuration\Discovery\ComposerReader;
-use Qualimetrix\Configuration\Loader\YamlConfigLoader;
-use Qualimetrix\Configuration\Pipeline\ConfigurationContext;
-use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
-use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
-use Qualimetrix\Configuration\Pipeline\Stage\CliStage;
-use Qualimetrix\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
-use Qualimetrix\Configuration\Pipeline\Stage\ConfigFileStage;
-use Qualimetrix\Configuration\Pipeline\Stage\DefaultsStage;
-use Qualimetrix\Configuration\Pipeline\Stage\PresetStage;
-use Qualimetrix\Configuration\Preset\PresetResolver;
-use Symfony\Component\Console\Input\ArrayInput;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputDefinition;
-use Symfony\Component\Console\Input\InputOption;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest;
+use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
+use Qualimetrix\Analysis\Configuration\Loader\YamlConfigLoader;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\CliStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ComposerDiscoveryStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\ConfigFileStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\DefaultsStage;
+use Qualimetrix\Analysis\Configuration\Pipeline\Stage\PresetStage;
+use Qualimetrix\Analysis\Configuration\Preset\PresetResolver;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfigurationFactory;
+use Qualimetrix\Core\Path\AbsolutePath;
 
 /**
  * Consumer-expectation test for the ADR 0009 §5 two-layer test discipline.
  *
  * The characterization test
- * ({@see \Qualimetrix\Tests\Integration\Configuration\Loader\YamlNormalizationCharacterizationTest})
+ * ({@see \Qualimetrix\Tests\Analysis\Configuration\Integration\Loader\YamlNormalizationCharacterizationTest})
  * proves that the loader emits {@code architecture.max_expanded_layers}
  * verbatim. This test proves the **independent** assertion that the value
  * reaches {@see ArchitectureConfiguration::$maxExpandedLayers} via the
@@ -116,7 +113,11 @@ final class MaxExpandedLayersFromYamlTest extends TestCase
 
     private function resolveArchitecture(): ArchitectureConfiguration
     {
-        return $this->resolveFullPipeline()->architecture;
+        $document = $this->resolveFullPipeline();
+
+        return (new ArchitectureConfigurationFactory())
+            ->fromContributions($document->contributions('architecture'))
+            ->configuration;
     }
 
     private function writeYaml(string $contents): void
@@ -124,7 +125,7 @@ final class MaxExpandedLayersFromYamlTest extends TestCase
         file_put_contents($this->tempDir . '/qmx.yaml', $contents);
     }
 
-    private function resolveFullPipeline(): ResolvedConfiguration
+    private function resolveFullPipeline(): ConfigurationDocument
     {
         $loader = new YamlConfigLoader();
         $resolver = new PresetResolver();
@@ -137,28 +138,6 @@ final class MaxExpandedLayersFromYamlTest extends TestCase
         $pipeline->addStage(new ConfigFileStage($loader));
         $pipeline->addStage(new CliStage());
 
-        $definition = $this->buildInputDefinition();
-        $input = new ArrayInput([], $definition);
-        $context = new ConfigurationContext($input, $this->tempDir);
-
-        return $pipeline->resolve($context);
-    }
-
-    private function buildInputDefinition(): InputDefinition
-    {
-        return new InputDefinition([
-            new InputArgument('paths', InputArgument::IS_ARRAY | InputArgument::OPTIONAL, '', []),
-            new InputOption('preset', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, '', []),
-            new InputOption('exclude', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, '', []),
-            new InputOption('format', null, InputOption::VALUE_REQUIRED),
-            new InputOption('cache-dir', null, InputOption::VALUE_REQUIRED),
-            new InputOption('no-cache', null, InputOption::VALUE_NONE),
-            new InputOption('disable-rule', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, '', []),
-            new InputOption('only-rule', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, '', []),
-            new InputOption('fail-on', null, InputOption::VALUE_REQUIRED),
-            new InputOption('exclude-health', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, '', []),
-            new InputOption('include-generated', null, InputOption::VALUE_NONE),
-            new InputOption('workers', null, InputOption::VALUE_REQUIRED),
-        ]);
+        return $pipeline->resolve(new ConfigurationResolutionRequest(AbsolutePath::fromString($this->tempDir)));
     }
 }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Pipeline\AnalysisResult;
-use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 
 /**
  * The run that produced a measured set, alongside the set itself

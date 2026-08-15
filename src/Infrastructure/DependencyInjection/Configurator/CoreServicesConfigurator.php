@@ -5,14 +5,18 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Psr\Log\LoggerInterface;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
+use Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Time\ClockInterface;
 use Qualimetrix\Core\Time\SystemClock;
-use Qualimetrix\Infrastructure\Console\Progress\DelegatingProgressReporter;
-use Qualimetrix\Infrastructure\Console\Progress\ProgressReporterHolder;
+use Qualimetrix\Infrastructure\Console\Progress\SwitchableProgressReporter;
+use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
 use Qualimetrix\Infrastructure\Logging\LoggerFactory;
 use Qualimetrix\Infrastructure\Logging\LoggerHolder;
+use Qualimetrix\Infrastructure\Profiler\Contract\ProfileReportInterface;
+use Qualimetrix\Infrastructure\Profiler\Contract\ProfileSessionControlInterface;
+use Qualimetrix\Infrastructure\Profiler\ProfileSession;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -45,8 +49,8 @@ final class CoreServicesConfigurator implements ContainerConfiguratorInterface
     /**
      * Configures global aliases for autowiring.
      *
-     * These aliases allow services to depend on LoggerInterface/ProgressReporter
-     * without knowing the concrete implementation (DelegatingLogger/DelegatingProgressReporter).
+     * These aliases let services depend on an owned contract rather than a
+     * mutable holder implementation.
      */
     private function configureDefaults(ContainerBuilder $container): void
     {
@@ -54,10 +58,9 @@ final class CoreServicesConfigurator implements ContainerConfiguratorInterface
         // This allows autowiring of LoggerInterface to resolve to DelegatingLogger
         $container->registerAliasForArgument(DelegatingLogger::class, LoggerInterface::class);
 
-        // After DelegatingProgressReporter is registered, alias ProgressReporter to it
         $container->registerAliasForArgument(
-            DelegatingProgressReporter::class,
-            \Qualimetrix\Core\Progress\ProgressReporter::class,
+            SwitchableProgressReporter::class,
+            ProgressReporterInterface::class,
         );
     }
 
@@ -76,6 +79,7 @@ final class CoreServicesConfigurator implements ContainerConfiguratorInterface
         // LoggerFactory for creating loggers
         $container->register(LoggerFactory::class)
             ->setPublic(true);
+        $container->setAlias(LoggerFactoryInterface::class, LoggerFactory::class)->setPublic(true);
 
         // LoggerHolder - mutable, holds current logger
         $container->register(LoggerHolder::class)
@@ -92,40 +96,26 @@ final class CoreServicesConfigurator implements ContainerConfiguratorInterface
     /**
      * Registers progress reporting infrastructure.
      *
-     * ProgressReporterHolder is a mutable singleton that holds the current progress reporter.
-     * It's initialized with NullProgressReporter and can be reconfigured at runtime
-     * in CheckCommand based on CLI options (--no-progress, -q, TTY detection).
-     *
-     * DelegatingProgressReporter proxies all progress calls to ProgressReporterHolder::getReporter(),
-     * allowing runtime progress reporter configuration while services are created at compile time.
+     * One stable switch owns the per-container adapter mode and resets to
+     * no-op between runs.
      */
     private function registerProgress(ContainerBuilder $container): void
     {
-        // ProgressReporterHolder - mutable, holds current progress reporter
-        $container->register(ProgressReporterHolder::class)
-            ->setSynthetic(true)
-            ->setPublic(true);
-        $container->set(ProgressReporterHolder::class, new ProgressReporterHolder());
-
-        // DelegatingProgressReporter - proxies to ProgressReporterHolder
-        // Note: ProgressReporterHolder is synthetic, so we can't use autowiring here
-        $container->register(DelegatingProgressReporter::class)
-            ->setArguments([new Reference(ProgressReporterHolder::class)]);
+        $container->register(SwitchableProgressReporter::class);
+        $container->setAlias(ProgressReporterInterface::class, SwitchableProgressReporter::class)->setPublic(true);
     }
 
     /**
      * Registers profiler infrastructure.
      *
-     * ProfilerHolder is a mutable singleton that holds the current profiler.
-     * It's initialized with NullProfiler (no-op) and can be reconfigured at runtime
-     * in CheckCommand based on CLI options (--profile).
+     * One per-container session exposes the Core instrumentation port and the
+     * Console lifecycle/report ports.
      */
     private function registerProfiler(ContainerBuilder $container): void
     {
-        // ProfilerHolder - mutable, holds current profiler
-        $container->register(ProfilerHolder::class)
-            ->setSynthetic(true)
-            ->setPublic(true);
-        $container->set(ProfilerHolder::class, new ProfilerHolder());
+        $container->register(ProfileSession::class);
+        $container->setAlias(ProfilerInterface::class, ProfileSession::class)->setPublic(true);
+        $container->setAlias(ProfileSessionControlInterface::class, ProfileSession::class)->setPublic(true);
+        $container->setAlias(ProfileReportInterface::class, ProfileSession::class)->setPublic(true);
     }
 }

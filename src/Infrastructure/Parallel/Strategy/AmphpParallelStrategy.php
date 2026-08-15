@@ -9,16 +9,14 @@ use Amp\Parallel\Worker\Execution;
 use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Collection\FileProcessingFailureKind;
-use Qualimetrix\Analysis\Collection\FileProcessingResult;
-use Qualimetrix\Analysis\Collection\Strategy\ExecutionStrategyInterface;
-use Qualimetrix\Analysis\Collection\Strategy\ParallelCapableInterface;
-use Qualimetrix\Core\Metric\DerivedCollectorInterface;
-use Qualimetrix\Core\Metric\MetricCollectorInterface;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
+use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ExecutionStrategyInterface;
+use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\ParallelCapableInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Infrastructure\Parallel\FileProcessingTask;
+use Qualimetrix\Infrastructure\Parallel\FileProcessingTaskFactory;
 use SplFileInfo;
 use Throwable;
 
@@ -63,19 +61,8 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
     private ?AbsolutePath $projectRoot = null;
     private ?AbsolutePath $cacheDir = null;
 
-    /** @var list<class-string<MetricCollectorInterface>> */
-    private array $collectorClasses = [];
-
-    /** @var list<class-string<DerivedCollectorInterface>> */
-    private array $derivedCollectorClasses = [];
-
-    /** @var list<class-string<\Qualimetrix\Core\Rule\RuleInterface>> */
-    private array $ruleClasses = [];
-
-    /** @var array<string, mixed> */
-    private array $collectorConfig = [];
-
     public function __construct(
+        private readonly FileProcessingTaskFactory $fileProcessingTaskFactory,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
@@ -132,53 +119,6 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
     }
 
     /**
-     * Sets the collector class names from DI container.
-     *
-     * These classes will be instantiated in worker processes to ensure
-     * the same set of collectors is used as in the main process.
-     *
-     * @param list<class-string<MetricCollectorInterface>> $classes Collector class names
-     */
-    public function setCollectorClasses(array $classes): void
-    {
-        $this->collectorClasses = $classes;
-    }
-
-    /**
-     * Sets the derived collector class names from DI container.
-     *
-     * @param list<class-string<DerivedCollectorInterface>> $classes Derived collector class names
-     */
-    public function setDerivedCollectorClasses(array $classes): void
-    {
-        $this->derivedCollectorClasses = $classes;
-    }
-
-    /**
-     * Sets the rule class names from DI container.
-     *
-     * These classes are forwarded to worker processes so each worker can
-     * rebuild its own threshold-override validator map via
-     * {@see \Qualimetrix\Baseline\Suppression\RuleValidatorMapFactory}.
-     *
-     * @param list<class-string<\Qualimetrix\Core\Rule\RuleInterface>> $classes
-     */
-    public function setRuleClasses(array $classes): void
-    {
-        $this->ruleClasses = $classes;
-    }
-
-    /**
-     * Sets collector-level configuration to pass to worker processes.
-     *
-     * @param array<string, mixed> $config Key-value pairs (e.g., LCOM exclude methods)
-     */
-    public function setCollectorConfig(array $config): void
-    {
-        $this->collectorConfig = $config;
-    }
-
-    /**
      * Execute processing for files.
      *
      * NOTE: In parallel mode, the $processor callable is NOT used. Instead, files are
@@ -222,7 +162,7 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
         }
 
         // Check if collector classes are configured
-        if ($this->collectorClasses === []) {
+        if (!$this->fileProcessingTaskFactory->hasCollectors()) {
             $this->logger->warning(
                 'AmphpParallelStrategy: collector classes not configured, using sequential fallback',
             );
@@ -273,8 +213,6 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
                 'workers' => $this->workerCount,
                 'batch_size' => self::BATCH_SIZE,
                 'batch_count' => $batchCount,
-                'collectors' => \count($this->collectorClasses),
-                'derived_collectors' => \count($this->derivedCollectorClasses),
             ],
         );
 
@@ -339,19 +277,14 @@ final class AmphpParallelStrategy implements ExecutionStrategyInterface, Paralle
 
         // Assertion: projectRoot is guaranteed non-null here (checked in executeParallel)
         \assert($this->projectRoot !== null);
-
         // Submit all tasks in batch
         /** @var list<array{file: SplFileInfo, execution: Execution<FileProcessingResult, mixed, mixed>}> $executions */
         $executions = [];
         foreach ($batch as $file) {
-            $task = new FileProcessingTask(
+            $task = $this->fileProcessingTaskFactory->create(
                 filePath: $this->absolutePath($file),
                 projectRoot: $this->projectRoot,
-                collectorClasses: $this->collectorClasses,
-                derivedCollectorClasses: $this->derivedCollectorClasses,
                 cacheDir: $this->cacheDir,
-                collectorConfig: $this->collectorConfig,
-                ruleClasses: $this->ruleClasses,
             );
             $executions[] = [
                 'file' => $file,

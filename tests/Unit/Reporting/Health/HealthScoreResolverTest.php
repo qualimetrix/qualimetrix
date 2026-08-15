@@ -7,16 +7,18 @@ namespace Qualimetrix\Tests\Unit\Reporting\Health;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Core\Metric\MetricBag;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Health\HealthScore;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
-use Qualimetrix\Reporting\Health\NamespaceDrillDown;
 use Qualimetrix\Reporting\Report;
+use Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\MetricRepositoryTestHelper;
 
 #[CoversClass(HealthScoreResolver::class)]
 final class HealthScoreResolverTest extends TestCase
@@ -28,7 +30,7 @@ final class HealthScoreResolverTest extends TestCase
     protected function setUp(): void
     {
         $this->resolver = new HealthScoreResolver(
-            new NamespaceDrillDown(new MetricHintProvider()),
+            new HealthScoreDrillDown(new HealthMetricCatalog(), self::createStub(ComputedMetricDefinitionCatalogInterface::class)),
         );
     }
 

@@ -1,0 +1,71 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Qualimetrix\Analysis\Policy\Architecture\Layer;
+
+use IteratorAggregate;
+use Qualimetrix\Core\Symbol\SymbolPath;
+use Traversable;
+
+/**
+ * Immutable view of the project's discovered class set, paired with the
+ * {@see ClassContextFactory} that resolves per-class context (attributes,
+ * interfaces, parent classes).
+ *
+ * Built by {@see \Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline} once
+ * collection and dependency-graph construction have completed; consumed by
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage} to walk the
+ * class set for each {@see TemplateLayerDefinition} and collect observed
+ * binding tuples.
+ *
+ * Lives in {@code Qualimetrix\Analysis\Policy\Architecture\Layer} (next to the other
+ * layer primitives, per ADR 0010's vertical-slice layout). The pipeline
+ * constructs it during Phase 2.6 (architecture-prepare) and hands it to
+ * {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::prepare()}.
+ *
+ * **No internal caching.** Repeated {@see contextFor()} calls delegate
+ * straight to the factory, which already memoises per-FQN contexts. The
+ * VO is therefore safe to construct cheaply.
+ */
+/** @implements IteratorAggregate<int, SymbolPath> */
+final readonly class ClassSet implements IteratorAggregate
+{
+    /**
+     * @param list<SymbolPath> $classes Class symbol paths discovered during
+     *                                  the collection phase. Order is the
+     *                                  call-site's responsibility; the
+     *                                  expansion stage sorts derived
+     *                                  binding tuples lexicographically.
+     */
+    public function __construct(
+        public array $classes,
+        public ClassContextFactory $contextFactory,
+    ) {}
+
+    /**
+     * Builds (or returns the memoised) {@see ClassContext} for the symbol.
+     */
+    public function contextFor(SymbolPath $class): ClassContext
+    {
+        return $this->contextFactory->build($class);
+    }
+
+    /**
+     * @return list<SymbolPath>
+     */
+    public function classes(): array
+    {
+        return $this->classes;
+    }
+
+    public function isEmpty(): bool
+    {
+        return $this->classes === [];
+    }
+
+    public function getIterator(): Traversable
+    {
+        yield from $this->classes;
+    }
+}

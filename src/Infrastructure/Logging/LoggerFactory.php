@@ -8,6 +8,7 @@ use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
+use Qualimetrix\Infrastructure\Logging\Contract\LoggerFactoryInterface;
 use Stringable;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\NullOutput;
@@ -22,7 +23,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * - Composite logger if both are needed
  * - NullLogger if no logging is configured
  */
-final class LoggerFactory
+final class LoggerFactory implements LoggerFactoryInterface
 {
     /**
      * Creates a logger based on output configuration.
@@ -68,8 +69,14 @@ final class LoggerFactory
 
         // Composite logger for multiple outputs
         return new class ($loggers) extends AbstractLogger {
-            /** @param list<\Psr\Log\LoggerInterface> $loggers */
-            public function __construct(private readonly array $loggers) {}
+            /** @var list<LoggerInterface> */
+            private readonly array $loggers;
+
+            /** @param list<LoggerInterface> $loggers */
+            public function __construct(array $loggers)
+            {
+                $this->loggers = $loggers;
+            }
 
             public function log($level, string|Stringable $message, array $context = []): void
             {

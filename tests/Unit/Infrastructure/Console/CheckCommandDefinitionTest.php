@@ -7,10 +7,10 @@ namespace Qualimetrix\Tests\Unit\Infrastructure\Console;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Architecture\Rules\CircularDependencyRule;
+use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
+use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
 use Qualimetrix\Infrastructure\Console\CheckCommandDefinition;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
-use Qualimetrix\Rules\Complexity\ComplexityRule;
 use Symfony\Component\Console\Command\Command;
 
 #[CoversClass(CheckCommandDefinition::class)]

@@ -2,6 +2,11 @@
 
 Coupling rules measure how tightly your classes depend on each other. When classes are tightly coupled, changing one class can break many others. Loosely coupled code is easier to test (you can isolate a class), easier to change (fewer side effects), and easier to reuse.
 
+The same Coupling analysis also classifies configured framework dependencies for
+the `cbo_app` and `ce_framework` metrics. A later configuration source replaces
+the earlier framework namespace list; an explicit empty list disables that
+classification for the run.
+
 Think of coupling like wires connecting boxes. The more wires between two boxes, the harder it is to move one without disturbing the other.
 
 ---

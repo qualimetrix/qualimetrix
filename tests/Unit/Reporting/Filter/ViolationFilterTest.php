@@ -7,16 +7,17 @@ namespace Qualimetrix\Tests\Unit\Reporting\Filter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
+use Qualimetrix\Analysis\Finding\Contract\Location;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
-use Qualimetrix\Core\Violation\Location;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Health\WorstOffender;
 
 #[CoversClass(ViolationFilter::class)]
 final class ViolationFilterTest extends TestCase
@@ -246,8 +247,10 @@ final class ViolationFilterTest extends TestCase
             healthOverall: 50.0,
             label: 'Warning',
             reason: 'test reason',
-            violationCount: 0,
-            classCount: 0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 0,
+                classCount: 0,
+            ),
         );
     }
 }

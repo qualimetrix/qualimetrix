@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Rule;
 
-use Qualimetrix\Core\Rule\CliAliasReader;
-use Qualimetrix\Core\Rule\RuleInterface;
-use Qualimetrix\Core\Rule\RuleNameReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
 
 /**
@@ -22,11 +22,11 @@ use Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException;
  */
 final readonly class RuleRegistry implements RuleRegistryInterface
 {
-    /** @var list<class-string<RuleInterface>> */
+    /** @var list<class-string<RuleDefinitionInterface>> */
     private array $ruleClasses;
 
     /**
-     * @param list<class-string<RuleInterface>> $ruleClasses
+     * @param list<class-string<RuleDefinitionInterface>> $ruleClasses
      */
     public function __construct(array $ruleClasses)
     {

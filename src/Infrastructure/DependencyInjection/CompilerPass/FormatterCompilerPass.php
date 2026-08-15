@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\CompilerPass;
 
-use Qualimetrix\Reporting\Formatter\FormatterRegistry;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -15,14 +14,15 @@ use Symfony\Component\DependencyInjection\Reference;
 final class FormatterCompilerPass implements CompilerPassInterface
 {
     public const string TAG = 'qmx.formatter';
+    private const string REGISTRY = 'Qualimetrix\\Reporting\\Formatter\\FormatterRegistry';
 
     public function process(ContainerBuilder $container): void
     {
-        if (!$container->hasDefinition(FormatterRegistry::class)) {
+        if (!$container->hasDefinition(self::REGISTRY)) {
             return;
         }
 
-        $definition = $container->getDefinition(FormatterRegistry::class);
+        $definition = $container->getDefinition(self::REGISTRY);
         $formatters = [];
 
         foreach ($container->findTaggedServiceIds(self::TAG) as $id => $tags) {

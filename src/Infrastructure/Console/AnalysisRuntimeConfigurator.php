@@ -4,99 +4,91 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Lifecycle\AnalysisLifecycleHookInterface;
-use Qualimetrix\Configuration\ComputedMetricsConfigResolver;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
-use Qualimetrix\Configuration\RuleOptionsParserFactory;
-use Qualimetrix\Configuration\RuleOptionsRegistry;
-use Qualimetrix\Core\ComputedMetric\ComputedMetricDefinitionHolder;
-use Qualimetrix\Core\Coupling\FrameworkNamespaces;
-use Qualimetrix\Core\Coupling\FrameworkNamespacesHolder;
-use Qualimetrix\Core\Metric\CollectorConfigHolder;
-use Qualimetrix\Core\Violation\RuleExclusionCaptureHolder;
-use Qualimetrix\Infrastructure\Cache\CacheFactory;
-use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
+use Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface;
+use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\ComputedMetricConfiguratorInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
+use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
+use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface;
 use Symfony\Component\Console\Input\InputInterface;
 
 /** Configures the analysis engine's per-run rule, collector, and feature state. */
 final readonly class AnalysisRuntimeConfigurator
 {
-    /** @param iterable<AnalysisLifecycleHookInterface> $lifecycleHooks */
     public function __construct(
-        private ConfigurationProviderInterface $configurationProvider,
-        private RuleOptionsRegistry $ruleOptionsRegistry,
-        private RuleRegistryInterface $ruleRegistry,
-        private CacheFactory $cacheFactory,
-        private ComputedMetricsConfigResolver $computedMetricsResolver,
-        private FrameworkNamespacesHolder $frameworkNamespacesHolder,
-        private iterable $lifecycleHooks,
+        private RuleConfigurationInterface $ruleOptionsRegistry,
+        private LcomCollectionConfigurationResolverInterface $lcomConfigurationResolver,
+        private LcomCollectionConfigurationStoreInterface $lcomConfigurationStore,
+        private ArchitecturePolicyConfiguratorInterface $architecturePolicyConfigurator,
+        private ComputedMetricConfiguratorInterface $computedMetricConfigurator,
+        private CouplingConfiguratorInterface $couplingConfigurator,
+        private RuleInputValidator $ruleInputValidator,
     ) {}
 
-    public function configure(ResolvedConfiguration $resolved, InputInterface $input): void
+    public function resolveArchitecturePolicy(ConfigurationDocument $document): ResolvedArchitecturePolicyInterface
     {
-        $parser = (new RuleOptionsParserFactory())->createFromClasses($this->ruleRegistry->getClasses());
-        $cliRuleOptions = (new CliOptionsParser($parser))->parseRuleOptions($input);
+        return $this->architecturePolicyConfigurator->resolve($document);
+    }
 
-        $this->ruleOptionsRegistry->setConfigFileOptions($resolved->ruleOptions);
-        foreach ($cliRuleOptions as $ruleName => $options) {
-            $this->ruleOptionsRegistry->setCliOptions($ruleName, $options);
-        }
+    public function resolveComputedMetrics(ConfigurationDocument $document): ResolvedComputedMetricDefinitions
+    {
+        return $this->computedMetricConfigurator->resolve($document);
+    }
 
-        $ruleOptions = array_replace_recursive($resolved->ruleOptions, $cliRuleOptions);
-        $this->configurationProvider->setConfiguration($resolved->analysis);
-        $this->configurationProvider->setRuleOptions($ruleOptions);
-        $this->configureCollectors($ruleOptions);
+    /** @return list<string> */
+    public function resolveCoupling(ConfigurationDocument $document): array
+    {
+        return $this->couplingConfigurator->resolve($document);
+    }
 
-        if ($resolved->analysis->frameworkNamespaces !== []) {
-            $this->frameworkNamespacesHolder->set(
-                new FrameworkNamespaces($resolved->analysis->frameworkNamespaces),
-            );
-        }
+    public function resolveLcom(FindingConfiguration $findingConfiguration): LcomCollectionConfiguration
+    {
+        return $this->lcomConfigurationResolver->resolve($findingConfiguration);
+    }
 
-        foreach ($this->lifecycleHooks as $hook) {
-            $hook->applyResolvedConfiguration($resolved);
-        }
+    public function resolveRuleChannels(
+        InputInterface $input,
+        FindingConfiguration $findingConfiguration,
+        ResolvedComputedMetricDefinitions $definitions,
+    ): RuleChannelRegistryInterface {
+        return $this->ruleInputValidator->validate($input, $findingConfiguration, $definitions);
+    }
 
-        $definitions = $this->computedMetricsResolver->resolve(
-            $resolved->computedMetrics,
-            $resolved->analysis->excludeHealth,
-        );
-        ComputedMetricDefinitionHolder::setDefinitions($definitions);
+    /**
+     * @param list<string> $frameworkNamespaces
+     */
+    public function replace(
+        FindingConfiguration $findingConfiguration,
+        LcomCollectionConfiguration $lcomConfiguration,
+        ResolvedArchitecturePolicyInterface $architecturePolicy,
+        ResolvedComputedMetricDefinitions $computedMetrics,
+        array $frameworkNamespaces,
+        RuleChannelRegistryInterface $channels,
+    ): void {
+        $this->architecturePolicyConfigurator->replace($architecturePolicy);
+        $this->computedMetricConfigurator->replace($computedMetrics);
+        $this->couplingConfigurator->replace($frameworkNamespaces);
+        $this->ruleOptionsRegistry->replace($findingConfiguration);
+        $this->lcomConfigurationStore->replace($lcomConfiguration);
+        $this->ruleInputValidator->replaceChannels($channels);
+    }
 
-        $capture = $input->hasOption('show-suppressed') && $input->getOption('show-suppressed') === true;
-        RuleExclusionCaptureHolder::set($capture);
+    public function captureExcludedViolations(): void
+    {
+        $this->ruleOptionsRegistry->captureExcludedViolations();
     }
 
     /** Clears state that must never leak into logger setup or the next run. */
     public function resetRunState(): void
     {
         $this->ruleOptionsRegistry->resetRuntimeState();
-        $this->cacheFactory->reset();
-        ComputedMetricDefinitionHolder::reset();
-        CollectorConfigHolder::reset();
-        $this->frameworkNamespacesHolder->reset();
-    }
-
-    /** @param array<string, array<string, mixed>> $ruleOptions */
-    private function configureCollectors(array $ruleOptions): void
-    {
-        $lcomConfig = $ruleOptions['design.lcom'] ?? [];
-        $excludeKey = $lcomConfig['exclude_methods'] ?? $lcomConfig['excludeMethods'] ?? null;
-
-        if ($excludeKey === null) {
-            return;
-        }
-
-        $excludeMethods = match (true) {
-            \is_string($excludeKey) && str_contains($excludeKey, ',') => array_map('trim', explode(',', $excludeKey)),
-            \is_string($excludeKey) => [$excludeKey],
-            \is_array($excludeKey) => array_values($excludeKey),
-            default => [],
-        };
-
-        if ($excludeMethods !== []) {
-            CollectorConfigHolder::set(CollectorConfigHolder::LCOM_EXCLUDE_METHODS, $excludeMethods);
-        }
+        $this->lcomConfigurationStore->reset();
+        $this->ruleInputValidator->resetChannels();
     }
 }

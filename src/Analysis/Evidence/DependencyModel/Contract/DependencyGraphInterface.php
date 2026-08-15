@@ -16,7 +16,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * - Ce (Efferent Coupling): outgoing dependencies
  * - I (Instability): Ce / (Ca + Ce)
  *
- * @qmx-threshold coupling.cbo 27 -- HEAD raw 22 rises to current 26 through DependencyGraphBuilderInterface, DependencyGraphBuilder, AnalysisPipeline, and DependencyGraphProjector; stable graph query-port fan-in is this boundary's responsibility.
+ * @qmx-threshold coupling.cbo 28 -- Raw CBO 27 is stable graph-query fan-in: DependencyGraphBuilderInterface, DependencyGraphBuilder, AnalysisPipeline, DependencyGraphProjector, and MeasurementAggregationInterface are the five net consumers; inclusive threshold 28 leaves no room for another edge.
  */
 interface DependencyGraphInterface
 {

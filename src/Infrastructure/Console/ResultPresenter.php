@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Analysis\Pipeline\AnalysisResult;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
+use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Infrastructure\Git\GitScope;
+use Qualimetrix\Reporting\Contract\OutputFormat;
 use Qualimetrix\Reporting\CoverageFailure;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
@@ -23,17 +27,19 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 final class ResultPresenter
 {
+    private readonly DiagnosticOutput $diagnosticOutput;
+
     public function __construct(
         private readonly FormatterRegistryInterface $formatterRegistry,
-        private readonly ProfilerHolder $profilerHolder,
-        private readonly ConfigurationProviderInterface $configurationProvider,
+        private readonly ProfilerInterface $profiler,
         private readonly SummaryEnricher $summaryEnricher,
         private readonly ProfilePresenter $profilePresenter,
         private readonly ExitCodeResolver $exitCodeResolver,
         private readonly ViolationFilter $violationFilter,
         private readonly FormatterContextFactory $formatterContextFactory,
-        private readonly DiagnosticOutput $diagnosticOutput = new DiagnosticOutput(),
-    ) {}
+    ) {
+        $this->diagnosticOutput = new DiagnosticOutput();
+    }
 
     /**
      * Outputs formatted results and returns exit code.
@@ -45,17 +51,15 @@ final class ResultPresenter
         AnalysisResult $analysisResult,
         InputInterface $input,
         OutputInterface $output,
-        bool $scopedReporting = false,
+        AbsolutePath $projectRoot,
+        OutputFormat $outputFormat,
+        ExitPolicy $exitPolicy,
+        ?GitScope $reportScope = null,
     ): int {
-        $profiler = $this->profilerHolder->get(); // @phpstan-ignore staticMethod.dynamicCall
+        $profiler = $this->profiler;
         $profiler->start('reporting', 'pipeline');
 
-        // Use resolved config format (already merged: defaults -> config file -> CLI)
-        // Fall back to CLI option only if config is not yet available
-        $format = $this->configurationProvider->hasConfiguration()
-            ? $this->configurationProvider->getConfiguration()->format
-            : ($input->getOption('format') ?? AnalysisConfiguration::DEFAULT_FORMAT);
-        /** @var string $format */
+        $format = $outputFormat->value;
 
         // Deprecation warning for text-verbose (stderr only, not in formatted output)
         if ($format === 'text-verbose') {
@@ -66,26 +70,19 @@ final class ResultPresenter
         }
 
         $formatter = $this->formatterRegistry->get($format);
-        $context = $this->formatterContextFactory->create($input, $output, $formatter, $scopedReporting);
+        $context = $this->formatterContextFactory->create(
+            $input,
+            $output,
+            $formatter,
+            $projectRoot,
+            $reportScope !== null,
+        );
 
         // Apply --namespace/--class drill-down filter centrally (all formatters benefit)
         $filteredViolations = $this->violationFilter->filterViolations($violations, $context);
 
         // Build and output report with filtered violations
-        $coverage = new ReportCoverage(
-            discovered: $analysisResult->coverage->discoveredFiles(),
-            analyzed: $analysisResult->coverage->analyzedFilesCount(),
-            generatedExcluded: $analysisResult->coverage->generatedExcludedFilesCount(),
-            failed: $analysisResult->coverage->failedFilesCount(),
-            failures: array_map(
-                fn($failure): CoverageFailure => new CoverageFailure(
-                    $failure->path->value(),
-                    $failure->kind->value,
-                    $this->relativizeFailureMessage($failure->message),
-                ),
-                $analysisResult->coverage->failures,
-            ),
-        );
+        $coverage = $this->reportCoverage($analysisResult->coverage, $projectRoot);
 
         $report = ReportBuilder::create()
             ->addViolations($filteredViolations)
@@ -103,18 +100,49 @@ final class ResultPresenter
 
         $profiler->stop('reporting');
 
-        return $this->exitCodeResolver->resolve($violations, $coverage);
+        return $this->exitCodeResolver->resolve($violations, $coverage, $exitPolicy);
     }
 
-    private function relativizeFailureMessage(string $message): string
+    private function reportCoverage(AnalysisCoverage $coverage, AbsolutePath $projectRoot): ReportCoverage
     {
-        if (!$this->configurationProvider->hasConfiguration()) {
+        return new ReportCoverage(
+            discovered: $coverage->discoveredFiles(),
+            analyzed: $coverage->analyzedFilesCount(),
+            generatedExcluded: $coverage->generatedExcludedFilesCount(),
+            failed: $coverage->failedFilesCount(),
+            failures: array_map(
+                fn(AnalysisFailure $failure): CoverageFailure => $this->coverageFailure($failure, $projectRoot),
+                $coverage->failures,
+            ),
+        );
+    }
+
+    private function coverageFailure(AnalysisFailure $failure, AbsolutePath $projectRoot): CoverageFailure
+    {
+        return new CoverageFailure(
+            $failure->path->value(),
+            $this->failureKind($failure->kind),
+            $this->relativizeFailureMessage($failure->message, $projectRoot),
+        );
+    }
+
+    private function failureKind(AnalysisFailureKind $kind): string
+    {
+        return $kind->value;
+    }
+
+    private function relativizeFailureMessage(string $message, AbsolutePath $projectRoot): string
+    {
+        $prefix = rtrim($projectRoot->value(), '/');
+        if ($prefix === '') {
             return $message;
         }
 
-        $root = rtrim($this->configurationProvider->getConfiguration()->projectRoot->value(), '/') . '/';
-
-        return str_replace($root, '', $message);
+        return preg_replace(
+            '#(?<![A-Za-z0-9._~/\\-])' . preg_quote($prefix, '#') . '/#',
+            '',
+            $message,
+        ) ?? $message;
     }
 
     /**
@@ -123,6 +151,11 @@ final class ResultPresenter
     public function presentProfile(InputInterface $input, OutputInterface $output): void
     {
         $this->profilePresenter->present($input, $output);
+    }
+
+    public function writeDiagnostic(OutputInterface $output, string $message): void
+    {
+        $this->diagnosticOutput->write($output, $message);
     }
 
     /**

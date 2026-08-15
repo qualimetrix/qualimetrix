@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Summary;
 
-use Qualimetrix\Core\ComputedMetric\HealthDimension;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\HealthDimension;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Health\DecompositionItem;
-use Qualimetrix\Reporting\Health\HealthScore;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\Report;
 

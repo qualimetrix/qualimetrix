@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Html;
 
-use Qualimetrix\Reporting\Debt\DebtCalculator;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
+use Qualimetrix\Reporting\Health\HealthHintProjector;
 use Qualimetrix\Reporting\Report;
 use RuntimeException;
 
@@ -20,15 +19,14 @@ use RuntimeException;
 final class HtmlFormatter implements FormatterInterface
 {
     public function __construct(
-        private readonly DebtCalculator $debtCalculator,
-        private readonly MetricHintProvider $hintProvider,
+        private readonly HtmlTreeBuilder $treeBuilder,
+        private readonly HealthHintProjector $hintProjector,
     ) {}
 
     public function format(Report $report, FormatterContext $context): string
     {
-        $builder = new HtmlTreeBuilder($this->debtCalculator);
-        $data = $builder->build($report, $context, $context->scopedReporting);
-        $data['hints'] = $this->hintProvider->exportForHtml();
+        $data = $this->treeBuilder->build($report, $context, $context->scopedReporting);
+        $data['hints'] = $this->hintProjector->project();
         $data['coverage'] = $report->coverage?->toArray();
 
         $json = json_encode(

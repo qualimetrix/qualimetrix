@@ -7,15 +7,16 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Json;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\HealthScoreDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\DecompositionItem;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthContributor;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Score\HealthScore;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthMetricCatalog;
 use Qualimetrix\Reporting\Formatter\Json\JsonHealthSection;
 use Qualimetrix\Reporting\Formatter\Json\JsonSanitizer;
 use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Health\DecompositionItem;
-use Qualimetrix\Reporting\Health\HealthContributor;
-use Qualimetrix\Reporting\Health\HealthScore;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
-use Qualimetrix\Reporting\Health\NamespaceDrillDown;
 use Qualimetrix\Reporting\Report;
 
 #[CoversClass(JsonHealthSection::class)]
@@ -25,7 +26,7 @@ final class JsonHealthSectionTest extends TestCase
 
     protected function setUp(): void
     {
-        $resolver = new HealthScoreResolver(new NamespaceDrillDown(new MetricHintProvider()));
+        $resolver = new HealthScoreResolver(new HealthScoreDrillDown(new HealthMetricCatalog(), self::createStub(ComputedMetricDefinitionCatalogInterface::class)));
         $this->section = new JsonHealthSection($resolver, new JsonSanitizer());
     }
 

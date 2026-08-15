@@ -6,8 +6,9 @@ namespace Qualimetrix\Infrastructure\Console\Command;
 
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Pipeline\DependencyGraphAnalyzerInterface;
-use Qualimetrix\Analysis\Pipeline\IncompleteAnalysisException;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalyzerInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\IncompleteAnalysisException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Infrastructure\Console\OutputHelper;
@@ -100,7 +101,7 @@ final class GraphExportCommand extends Command
             'paths' => array_map(static fn(AbsolutePath $p): string => $p->value(), $paths),
         ]);
 
-        $result = $this->analyzer->analyze($paths, $cwd);
+        $result = $this->analyzeDependencyGraph($paths, $cwd);
         $this->logger->info('Discovered files', [
             'count' => $result->coverage->discoveredFiles(),
         ]);
@@ -161,6 +162,12 @@ final class GraphExportCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /** @param list<AbsolutePath> $paths */
+    private function analyzeDependencyGraph(array $paths, AbsolutePath $projectRoot): DependencyGraphAnalysisResult
+    {
+        return $this->analyzer->analyze($paths, $projectRoot);
     }
 
     private function writeIncompleteAnalysis(OutputInterface $output, IncompleteAnalysisException $exception): void

@@ -59,11 +59,14 @@ __pycache__/
 examples/
 *.json
 !/qmx-baseline.json
+/qmx-baseline.json.lock
 !/docs/internal/benchmark-baselines.json
 !/docs/internal/modular-architecture-manifest.json
 !/docs/internal/modular-architecture-manifest.schema.json
 !/tests/Fixtures/**/*.json
-!/scripts/tests/fixtures/*.json
+!/tests/Analysis/Evidence/Measurement/Fixtures/*.json
+!/tests/Analysis/Policy/Architecture/Fixtures/Sample/*.json
+!/tests/Analysis/Policy/Baseline/Fixtures/BaselineV10/memory-ceiling.json
 # HTML report build manifest: without these the JS bundle cannot be rebuilt or
 # audited from a fresh clone, and dependency versions cannot be pinned.
 !/src/Reporting/Template/package.json

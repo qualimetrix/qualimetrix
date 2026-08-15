@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Baseline\Baseline;
-use Qualimetrix\Baseline\BaselineLoader;
-use Qualimetrix\Baseline\BaselineUpdateDisposition;
-use Qualimetrix\Baseline\BaselineUpdater;
-use Qualimetrix\Baseline\BaselineUpdateResult;
-use Qualimetrix\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateDisposition;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdateResult;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;

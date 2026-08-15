@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Git;
 
-use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 
 /**
  * Result of resolving git scope from CLI input.
  *
- * Contains all information needed for analysis: paths, file discovery strategy,
+ * Contains all information needed for runtime: paths, file discovery strategy,
  * optional git client, scope references and the explicit project root.
  *
  * The explicit {@see $projectRoot} replaces the previous indirection through

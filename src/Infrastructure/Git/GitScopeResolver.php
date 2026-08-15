@@ -7,10 +7,9 @@ namespace Qualimetrix\Infrastructure\Git;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
-use Qualimetrix\Configuration\Pipeline\ResolvedConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
+use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
-use Qualimetrix\Core\Path\PathFactory;
 use Symfony\Component\Console\Input\InputInterface;
 
 /**
@@ -21,26 +20,21 @@ use Symfony\Component\Console\Input\InputInterface;
 final class GitScopeResolver
 {
     public function __construct(
+        private readonly FileDiscoveryFactoryInterface $fileDiscoveryFactory,
         private readonly LoggerInterface $logger = new NullLogger(),
     ) {}
 
     /**
      * Resolves analysis scope, file discovery strategy and git client from CLI input.
      */
-    public function resolve(InputInterface $input, ResolvedConfiguration $resolved): GitScopeResolution
+    public function resolve(InputInterface $input, RunConfiguration $configuration): GitScopeResolution
     {
         // ADR 0015 Phase 2: convert raw CLI `paths` strings into AbsolutePath VOs
         // at the boundary, against the current working directory captured here.
         // `Application::doRun()` has already applied `--working-dir`, so this
         // matches the `getcwd()` value used by `CheckCommand::resolveConfiguration()`.
-        $cwd = AbsolutePath::fromString((string) getcwd());
-        $paths = array_map(
-            static fn(string $raw): AbsolutePath => PathFactory::fromCliArgument($raw, $cwd),
-            $resolved->paths->paths,
-        );
-
-        // ADR 0015 Phase 5: $projectRoot is already an AbsolutePath in the configuration.
-        $projectRoot = $resolved->analysis->projectRoot;
+        $paths = $configuration->paths;
+        $projectRoot = $configuration->projectRoot;
 
         $reportScope = $this->resolveReportScope($input);
 
@@ -52,7 +46,7 @@ final class GitScopeResolver
             $gitClient->validateScope($reportScope->ref);
         }
 
-        $fileDiscovery = new FinderFileDiscovery($resolved->paths->excludes);
+        $fileDiscovery = $this->fileDiscoveryFactory->create($configuration->pathExcludes);
 
         return new GitScopeResolution(
             paths: $paths,

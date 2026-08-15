@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console;
 
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Core\Violation\Severity;
-use Qualimetrix\Core\Violation\Violation;
+use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Reporting\ReportCoverage;
 
 /**
@@ -21,25 +20,19 @@ use Qualimetrix\Reporting\ReportCoverage;
  * - `fail_on: error` (default) — only Error fails; Info and Warning are exit 0.
  * - `fail_on: none` (or `false`) — never fail on violations.
  */
-final readonly class ExitCodeResolver
+final class ExitCodeResolver
 {
-    public function __construct(
-        private ConfigurationProviderInterface $configurationProvider,
-    ) {}
-
     /**
      * Determines exit code based on violation severity and failOn configuration.
      *
      * @param list<Violation> $violations
      */
-    public function resolve(array $violations, ?ReportCoverage $coverage = null): int
+    public function resolve(array $violations, ?ReportCoverage $coverage = null, ?ExitPolicy $policy = null): int
     {
         if ($coverage !== null && !$coverage->isComplete()) {
             return 4;
         }
-        $failOn = $this->configurationProvider->hasConfiguration()
-            ? $this->configurationProvider->getConfiguration()->failOn
-            : null;
+        $failOn = $policy?->failOn;
 
         // --fail-on=none: never fail on violations
         if ($failOn === false) {

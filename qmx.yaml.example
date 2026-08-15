@@ -35,7 +35,7 @@
 # exclude_paths:
 #   - src/Entity              # prefix: matches all files under src/Entity/
 #   - src/DTO                 # prefix: matches all files under src/DTO/
-#   - src/Metrics/*Visitor.php # glob: matches visitor files only
+#   - src/Analysis/Evidence/Complexity/*Visitor.php # glob: matches visitor files only
 
 
 # -----------------------------------------------------------------------------
@@ -61,11 +61,6 @@
 # parallel:
 #   workers: 0                 # 0 = auto-detect, 1 = sequential, N = N workers
 
-# Namespace detection strategy: psr4, tokenizer, chain (default: chain)
-# namespace:
-#   strategy: chain
-#   composer_json: composer.json
-
 # Include auto-generated files in analysis (default: false)
 # include_generated: true
 
@@ -84,18 +79,6 @@
 #     - Doctrine
 #     - Psr
 #     - Illuminate
-
-
-# -----------------------------------------------------------------------------
-# Aggregation
-# -----------------------------------------------------------------------------
-
-# Custom namespace prefixes for aggregation grouping
-# aggregation:
-#   prefixes:
-#     - App\Domain
-#     - App\Infrastructure
-#   auto_depth: 2
 
 
 # -----------------------------------------------------------------------------
@@ -118,7 +101,7 @@
 #     exclude_namespaces:
 #       - App\Core\ValueObject
 #     exclude_paths:
-#       - src/Metrics
+#       - src/Analysis/Evidence/Complexity
 #       - src/Infrastructure/DependencyInjection
 #
 # rules:

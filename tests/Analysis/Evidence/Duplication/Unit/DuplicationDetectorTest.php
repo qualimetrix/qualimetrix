@@ -13,8 +13,7 @@ use Qualimetrix\Analysis\Evidence\Duplication\DuplicationDetector;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
 use Qualimetrix\Analysis\Evidence\Duplication\NormalizedToken;
 use Qualimetrix\Analysis\Evidence\Duplication\TokenNormalizer;
-use Qualimetrix\Configuration\AnalysisConfiguration;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use SplFileInfo;
@@ -337,7 +336,7 @@ PHP;
     public function itDoesNotReportDuplicationEntirelyInsideConstArrays(): void
     {
         // Same shape, different literal content, two rows of the same const
-        // array in one file — mirrors the real bug: MetricHintProvider's
+        // array in one file — mirrors the real bug: HealthMetricCatalog's
         // METRICS/RANGES tables have many rows sharing this shape, so pairs
         // of rows normalize to identical token sequences and used to match
         // each other. A single-file, multi-row fixture keeps the matched
@@ -494,20 +493,17 @@ PHP;
 
     private function createDetector(int $minTokens = 70, int $minLines = 5): DuplicationDetector
     {
-        $configProvider = self::createStub(ConfigurationProviderInterface::class);
-        $configProvider->method('getRuleOptions')->willReturn([
+        $ruleConfiguration = new RuleOptionsRegistry();
+        $ruleConfiguration->setConfigFileOptions([
             'duplication.code-duplication' => [
                 'min_tokens' => $minTokens,
                 'min_lines' => $minLines,
             ],
         ]);
-        $configProvider->method('getConfiguration')->willReturn(
-            new AnalysisConfiguration(projectRoot: AbsolutePath::fromString($this->tmpDir)),
-        );
 
         $this->resultProvider = new DuplicationResultProvider();
 
-        return new DuplicationDetector($configProvider, $this->resultProvider);
+        return new DuplicationDetector($ruleConfiguration, $this->resultProvider);
     }
 
     /**
@@ -517,7 +513,7 @@ PHP;
      */
     private function inspect(DuplicationDetector $detector, array $files): array
     {
-        $detector->inspect($files);
+        $detector->inspect($files, AbsolutePath::fromString($this->tmpDir));
 
         return $this->resultProvider->all();
     }
@@ -525,7 +521,7 @@ PHP;
     /**
      * Builds a source file whose body is a `const array` with three rows
      * sharing one shape but different literal content — mirrors the real
-     * bug: MetricHintProvider's METRICS/RANGES tables have many rows of
+     * bug: HealthMetricCatalog's METRICS/RANGES tables have many rows of
      * this shape, and pairs of rows normalize to identical token sequences
      * (string/number literals become placeholders), so they used to match
      * each other as duplicates.

@@ -4,40 +4,29 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
-use Qualimetrix\Analysis\Aggregator\GlobalCollectorRunner;
-use Qualimetrix\Analysis\Collection\CollectionOrchestrator;
-use Qualimetrix\Analysis\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Collection\FileProcessor;
-use Qualimetrix\Analysis\Collection\FileProcessorInterface;
-use Qualimetrix\Analysis\Collection\Metric\CompositeCollector;
-use Qualimetrix\Analysis\Collection\Metric\DerivedMetricExtractor;
-use Qualimetrix\Analysis\Collection\Strategy\StrategySelectorInterface;
-use Qualimetrix\Analysis\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Analysis\Discovery\FinderFileDiscovery;
+use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
-use Qualimetrix\Analysis\Evidence\Duplication\Contract\DuplicationInspectionInterface;
-use Qualimetrix\Analysis\Namespace_\ProjectNamespaceResolver;
-use Qualimetrix\Analysis\Pipeline\AnalysisPipeline;
-use Qualimetrix\Analysis\Pipeline\AnalysisPipelineInterface;
-use Qualimetrix\Analysis\Pipeline\MetricEnricher;
-use Qualimetrix\Analysis\Repository\DefaultMetricRepositoryFactory;
-use Qualimetrix\Analysis\Repository\InMemoryMetricRepository;
-use Qualimetrix\Analysis\Repository\MetricRepositoryFactoryInterface;
-use Qualimetrix\Analysis\RuleExecution\RuleExecutor;
-use Qualimetrix\Analysis\RuleExecution\RuleExecutorInterface;
-use Qualimetrix\Architecture\Processing\ArchitectureProcessorInterface;
-use Qualimetrix\Baseline\Suppression\ThresholdOverrideExtractor;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
-use Qualimetrix\Configuration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
+use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
+use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
+use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
+use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
+use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
+use Qualimetrix\Analysis\Run\Contract\Collection\Strategy\StrategySelectorInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryFactoryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
+use Qualimetrix\Analysis\Run\Contract\Discovery\GeneratedFileFilterInterface;
+use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisPipelineInterface;
+use Qualimetrix\Analysis\Run\Contract\Progress\ProgressReporterInterface;
 use Qualimetrix\Core\Ast\FileParserInterface;
-use Qualimetrix\Core\Metric\MetricRepositoryInterface;
-use Qualimetrix\Core\Namespace_\ProjectNamespaceResolverInterface;
-use Qualimetrix\Core\Profiler\ProfilerHolder;
-use Qualimetrix\Core\Rule\RuleSelector;
-use Qualimetrix\Infrastructure\Console\Progress\DelegatingProgressReporter;
+use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Infrastructure\Logging\DelegatingLogger;
-use Qualimetrix\Infrastructure\Parallel\Strategy\StrategySelector;
-use Qualimetrix\Metrics\ComputedMetric\ComputedMetricEvaluator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -46,77 +35,78 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 final class AnalysisConfigurator implements ContainerConfiguratorInterface
 {
+    private const string COLLECTION_ORCHESTRATOR = 'qmx.run.collection_orchestrator';
+    private const string COLLECTION_ORCHESTRATOR_CLASS = 'Qualimetrix\\Analysis\\Run\\Collection\\CollectionOrchestrator';
+    private const string FILE_SET_INSPECTION_COMPOSITE = 'qmx.analysis.run.file_set_inspection_composite';
+    private const string FILE_SET_INSPECTION_COMPOSITE_CLASS = 'Qualimetrix\\Analysis\\Run\\FileSetInspection\\FileSetInspectionComposite';
+    private const string ANALYSIS_PIPELINE = 'qmx.run.analysis_pipeline';
+    private const string ANALYSIS_PIPELINE_CLASS = 'Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline';
+    private const string RULE_SELECTOR_PRODUCER_GATE = 'qmx.analysis.run.rule_selector_producer_gate';
+    private const string RULE_SELECTOR_PRODUCER_GATE_CLASS = 'Qualimetrix\\Analysis\\Run\\FileSetInspection\\RuleSelectorProducerGate';
+    private const string RULE_PRODUCER_PREPARATION = 'qmx.analysis.run.rule_producer_preparation';
+    private const string RULE_PRODUCER_PREPARATION_CLASS = 'Qualimetrix\\Analysis\\Run\\RuleProducerPreparation';
+    private const string FILE_DISCOVERY = 'qmx.run.file_discovery';
+    private const string FILE_DISCOVERY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\FinderFileDiscovery';
+    private const string ANALYSIS_FILE_DISCOVERY = 'qmx.analysis.run.file_discovery';
+    private const string ANALYSIS_FILE_DISCOVERY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\AnalysisFileDiscovery';
+    private const string FILE_PROCESSOR = 'qmx.run.file_processor';
+    private const string FILE_PROCESSOR_CLASS = 'Qualimetrix\\Analysis\\Run\\Collection\\FileProcessor';
+    private const string SOURCE_CONTROL_EXTRACTOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor';
+    private const string FILE_DISCOVERY_FACTORY = 'qmx.run.file_discovery_factory';
+    private const string FILE_DISCOVERY_FACTORY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\FileDiscoveryFactory';
+    private const string GENERATED_FILE_FILTER = 'qmx.run.generated_file_filter';
+    private const string GENERATED_FILE_FILTER_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\GeneratedFileFilter';
+
     public function configure(ContainerBuilder $container): void
     {
-        $container->register(FinderFileDiscovery::class);
-        $container->setAlias(FileDiscoveryInterface::class, FinderFileDiscovery::class);
-
-        // ProjectNamespaceResolver — used by DistanceRule for namespace filtering
-        $container->register(ProjectNamespaceResolver::class)
-            ->setPublic(true);
-        $container->setAlias(ProjectNamespaceResolverInterface::class, ProjectNamespaceResolver::class)
-            ->setPublic(true);
-
-        $container->register(InMemoryMetricRepository::class);
-        $container->setAlias(MetricRepositoryInterface::class, InMemoryMetricRepository::class);
-
-        $container->register(DefaultMetricRepositoryFactory::class);
-        $container->setAlias(MetricRepositoryFactoryInterface::class, DefaultMetricRepositoryFactory::class);
+        $container->register(self::FILE_DISCOVERY, self::FILE_DISCOVERY_CLASS);
+        $container->setAlias(FileDiscoveryInterface::class, self::FILE_DISCOVERY);
+        $container->register(self::FILE_DISCOVERY_FACTORY, self::FILE_DISCOVERY_FACTORY_CLASS);
+        $container->setAlias(FileDiscoveryFactoryInterface::class, self::FILE_DISCOVERY_FACTORY);
+        $container->register(self::GENERATED_FILE_FILTER, self::GENERATED_FILE_FILTER_CLASS);
+        $container->setAlias(GeneratedFileFilterInterface::class, self::GENERATED_FILE_FILTER);
+        $container->register(self::ANALYSIS_FILE_DISCOVERY, self::ANALYSIS_FILE_DISCOVERY_CLASS)
+            ->setArguments([
+                new Reference(FileDiscoveryInterface::class),
+                new Reference(GeneratedFileFilterInterface::class),
+            ]);
 
         // ThresholdOverrideExtractor - per-rule @qmx-threshold validator map injected
         // by ThresholdValidatorMapCompilerPass after RuleRegistryCompilerPass runs
         $container->register(ThresholdOverrideExtractor::class)
             ->setArguments(['$validators' => []]);
+        $container->register(SuppressionExtractor::class);
+        $privateExtractorId = self::SOURCE_CONTROL_EXTRACTOR_CLASS;
+        $container->register($privateExtractorId, $privateExtractorId)
+            ->setArguments([
+                new Reference(SuppressionExtractor::class),
+                new Reference(ThresholdOverrideExtractor::class),
+            ]);
 
         // FileProcessor - processes single files. projectRoot is set at runtime
         // by CollectionOrchestrator (sequential side) and WorkerBootstrap
         // (parallel side) so the path-VO boundary stays at the file-result edge
         // without a cross-namespace ConfigurationProvider dependency.
-        $container->register(FileProcessor::class)
+        $container->register(self::FILE_PROCESSOR, self::FILE_PROCESSOR_CLASS)
             ->setArguments([
                 '$parser' => new Reference(FileParserInterface::class),
-                '$collector' => new Reference(CompositeCollector::class),
-                '$thresholdOverrideExtractor' => new Reference(ThresholdOverrideExtractor::class),
+                '$collector' => new Reference(FileMeasurementCollectorInterface::class),
+                '$sourceControlExtractor' => new Reference($privateExtractorId),
             ]);
-        $container->setAlias(FileProcessorInterface::class, FileProcessor::class);
-
-        // StrategySelectorInterface - for lazy strategy selection
-        $container->setAlias(StrategySelectorInterface::class, StrategySelector::class);
-
-        // DerivedMetricExtractor - extracts derived callable-level metrics from file bags
-        $container->register(DerivedMetricExtractor::class)
-            ->setArguments([
-                new Reference(CompositeCollector::class),
-            ]);
+        $container->setAlias(FileProcessorInterface::class, self::FILE_PROCESSOR);
 
         // CollectionOrchestrator - coordinates collection phase
         // Uses StrategySelectorInterface for lazy strategy selection (configuration may not be available at DI time)
-        $container->register(CollectionOrchestrator::class)
+        $container->register(self::COLLECTION_ORCHESTRATOR, self::COLLECTION_ORCHESTRATOR_CLASS)
             ->setArguments([
                 new Reference(FileProcessorInterface::class),
                 new Reference(StrategySelectorInterface::class),
-                new Reference(DerivedMetricExtractor::class),
-                new Reference(DelegatingProgressReporter::class),
+                new Reference(DerivedMetricExtractorInterface::class),
+                new Reference(ProgressReporterInterface::class),
+                new Reference(ProfilerInterface::class),
                 new Reference(DelegatingLogger::class),
             ]);
-        $container->setAlias(CollectionOrchestratorInterface::class, CollectionOrchestrator::class);
-
-        // GlobalCollectorRunner - runs global collectors
-        // Global collectors will be injected by GlobalCollectorCompilerPass
-        $container->register(GlobalCollectorRunner::class)
-            ->setArguments([
-                '$collectors' => [], // Will be set by GlobalCollectorCompilerPass
-            ]);
-
-        // RuleExecutor will have rules injected by compiler pass
-        $container->register(RuleExecutor::class)
-            ->setArguments([
-                '$rules' => [], // Will be set by RuleCompilerPass
-                '$configurationProvider' => new Reference(ConfigurationProviderInterface::class),
-                '$ruleOptionsRegistry' => new Reference(RuleOptionsRegistry::class),
-                '$ruleSelector' => new Reference(RuleSelector::class),
-            ]);
-        $container->setAlias(RuleExecutorInterface::class, RuleExecutor::class);
+        $container->setAlias(CollectionOrchestratorInterface::class, self::COLLECTION_ORCHESTRATOR);
 
         // DependencyModel publishes the builder only through its contract.
         $container->register(
@@ -126,39 +116,52 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
         $container->setAlias(DependencyGraphBuilderInterface::class, 'dependency_model.graph_builder')
             ->setPublic(true);
 
-        // MetricEnricher - handles aggregation, global collectors, computed metrics, cycle/duplication detection
-        $container->register(MetricEnricher::class)
+        $container->register(self::RULE_SELECTOR_PRODUCER_GATE, self::RULE_SELECTOR_PRODUCER_GATE_CLASS)
+            ->setArgument('$ruleSelector', new Reference(RuleSelector::class));
+        $container->register(self::FILE_SET_INSPECTION_COMPOSITE, self::FILE_SET_INSPECTION_COMPOSITE_CLASS)
             ->setArguments([
-                new Reference(CompositeCollector::class),
-                new Reference(GlobalCollectorRunner::class),
-                new Reference(ConfigurationProviderInterface::class),
-                new Reference(DelegatingLogger::class),
-                new Reference(ProfilerHolder::class),
-                new Reference(DuplicationInspectionInterface::class),
-                new Reference(ComputedMetricEvaluator::class),
-                new Reference(RuleSelector::class),
+                '$participants' => [],
+                '$producerGate' => new Reference(self::RULE_SELECTOR_PRODUCER_GATE),
+                '$profiler' => new Reference(ProfilerInterface::class),
             ]);
 
-        // AnalysisPipeline - main orchestrator
-        // ArchitectureProcessor (via interface alias registered by
-        // ArchitectureConfigurator) is the per-run lifecycle coordinator for
-        // architecture rules — see ADR 0008.
-        $container->register(AnalysisPipeline::class)
+        $this->registerRuleProducerPreparation($container);
+        $this->registerAnalysisPipeline($container);
+    }
+
+    private function registerRuleProducerPreparation(ContainerBuilder $container): void
+    {
+        $container->register(self::RULE_PRODUCER_PREPARATION, self::RULE_PRODUCER_PREPARATION_CLASS)
             ->setArguments([
-                new Reference(FileDiscoveryInterface::class),
+                new Reference(LayerPolicyPreparationInterface::class),
+                new Reference(CircularDependencyPreparationInterface::class),
+                new Reference(self::FILE_SET_INSPECTION_COMPOSITE),
+                new Reference(RuleSelector::class),
+                new Reference(RuleConfigurationInterface::class),
+            ]);
+    }
+
+    private function registerAnalysisPipeline(ContainerBuilder $container): void
+    {
+        $computedMetricEvaluation = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Evaluation\\ComputedMetricEvaluator';
+
+        // AnalysisPipeline owns the complete phase order while every capability
+        // retains its own state behind a narrow public contract.
+        $container->register(self::ANALYSIS_PIPELINE, self::ANALYSIS_PIPELINE_CLASS)
+            ->setArguments([
+                new Reference(self::ANALYSIS_FILE_DISCOVERY),
                 new Reference(CollectionOrchestratorInterface::class),
-                new Reference(RuleExecutorInterface::class),
-                new Reference(ConfigurationProviderInterface::class),
-                new Reference(MetricEnricher::class),
-                new Reference(ArchitectureProcessorInterface::class),
+                new Reference(RuleExecutionInterface::class),
+                new Reference(self::RULE_PRODUCER_PREPARATION),
+                new Reference(MeasurementAggregationInterface::class),
+                new Reference($computedMetricEvaluation),
                 new Reference(DependencyGraphBuilderInterface::class),
                 new Reference(MetricRepositoryFactoryInterface::class),
+                new Reference(ProfilerInterface::class),
                 new Reference(DelegatingLogger::class),
-                new Reference(ProfilerHolder::class),
-                new Reference(RuleSelector::class),
             ])
             ->setPublic(true);
-        $container->setAlias(AnalysisPipelineInterface::class, AnalysisPipeline::class)
+        $container->setAlias(AnalysisPipelineInterface::class, self::ANALYSIS_PIPELINE)
             ->setPublic(true);
     }
 }

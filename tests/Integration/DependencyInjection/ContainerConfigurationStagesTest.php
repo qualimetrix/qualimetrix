@@ -7,7 +7,8 @@ namespace Qualimetrix\Tests\Integration\DependencyInjection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Configuration\Pipeline\ConfigurationPipeline;
+use Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface;
+use Qualimetrix\Analysis\Configuration\Pipeline\ConfigurationPipeline;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 
 /**
@@ -23,9 +24,8 @@ final class ContainerConfigurationStagesTest extends TestCase
     {
         $container = (new ContainerFactory())->create();
 
-        $pipeline = $container->get(ConfigurationPipeline::class);
+        $pipeline = $container->get(ConfigurationPipelineInterface::class);
         self::assertInstanceOf(ConfigurationPipeline::class, $pipeline);
-
         $this->pipeline = $pipeline;
     }
 

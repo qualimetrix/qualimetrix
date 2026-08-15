@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Infrastructure\Console;
 
 use InvalidArgumentException;
-use Qualimetrix\Configuration\ConfigurationProviderInterface;
+use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Reporting\Formatter\FormatterInterface;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
@@ -20,14 +20,11 @@ final class FormatterContextFactory
 {
     private const int DEFAULT_DETAIL_LIMIT = 200;
 
-    public function __construct(
-        private readonly ConfigurationProviderInterface $configurationProvider,
-    ) {}
-
     public function create(
         InputInterface $input,
         OutputInterface $output,
         FormatterInterface $formatter,
+        AbsolutePath $projectRoot,
         bool $scopedReporting = false,
     ): FormatterContext {
         // Resolve group-by: explicit CLI option or formatter default
@@ -100,7 +97,7 @@ final class FormatterContextFactory
             useColor: $output->isDecorated(),
             groupBy: $groupBy,
             options: $options,
-            basePath: $this->configurationProvider->getConfiguration()->projectRoot->value(),
+            basePath: $projectRoot->value(),
             scopedReporting: $scopedReporting,
             namespace: $namespaceFilter,
             class: $classFilter,

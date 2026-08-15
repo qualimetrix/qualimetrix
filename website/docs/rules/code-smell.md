@@ -4,6 +4,10 @@ Code smells are patterns that suggest something might be wrong with your code. T
 
 All code smell rules can be individually enabled or disabled.
 
+The analysis evidence, occurrence decoding, and rules are co-located in the
+`Analysis\Evidence\CodeSmell` capability. Rule IDs and configuration remain
+unchanged.
+
 ---
 
 ## Boolean Arguments

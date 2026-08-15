@@ -7,15 +7,16 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Summary;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ComputedMetricDefinitionCatalogInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\DrillDown\WorstClassDrillDown;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Offender\WorstOffenderEvidence;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\Formatter\Summary\OffenderListRenderer;
 use Qualimetrix\Reporting\Formatter\Support\AnsiColor;
 use Qualimetrix\Reporting\FormatterContext;
-use Qualimetrix\Reporting\Health\MetricHintProvider;
-use Qualimetrix\Reporting\Health\NamespaceDrillDown;
-use Qualimetrix\Reporting\Health\WorstOffender;
 use Qualimetrix\Reporting\Report;
 
 #[CoversClass(OffenderListRenderer::class)]
@@ -27,7 +28,7 @@ final class OffenderListRendererDensityTest extends TestCase
     {
         $this->renderer = new OffenderListRenderer(
             new ViolationFilter(),
-            new NamespaceDrillDown(new MetricHintProvider()),
+            new WorstClassDrillDown(self::createStub(ComputedMetricDefinitionCatalogInterface::class)),
         );
     }
 
@@ -40,9 +41,11 @@ final class OffenderListRendererDensityTest extends TestCase
             healthOverall: 30.0,
             label: 'Poor',
             reason: 'high complexity',
-            violationCount: 10,
-            classCount: 0,
-            violationDensity: 5.0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 10,
+                classCount: 0,
+                violationDensity: 5.0,
+            ),
         );
 
         $report = new Report(
@@ -75,9 +78,11 @@ final class OffenderListRendererDensityTest extends TestCase
             healthOverall: 80.0,
             label: 'Good',
             reason: '',
-            violationCount: 0,
-            classCount: 0,
-            violationDensity: 0.0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 0,
+                classCount: 0,
+                violationDensity: 0.0,
+            ),
         );
 
         $report = new Report(
@@ -109,9 +114,11 @@ final class OffenderListRendererDensityTest extends TestCase
             healthOverall: 40.0,
             label: 'Poor',
             reason: '',
-            violationCount: 5,
-            classCount: 0,
-            violationDensity: null,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 5,
+                classCount: 0,
+                violationDensity: null,
+            ),
         );
 
         $report = new Report(
@@ -145,9 +152,11 @@ final class OffenderListRendererDensityTest extends TestCase
             healthOverall: 40.0,
             label: 'Poor',
             reason: '',
-            violationCount: 5,
-            classCount: 0,
-            violationDensity: 5.0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 5,
+                classCount: 0,
+                violationDensity: 5.0,
+            ),
         );
 
         // Class B: 10 violations, 1000 LOC => density = 1.0 (lower density but more violations)
@@ -157,9 +166,11 @@ final class OffenderListRendererDensityTest extends TestCase
             healthOverall: 35.0,
             label: 'Poor',
             reason: '',
-            violationCount: 10,
-            classCount: 0,
-            violationDensity: 1.0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 10,
+                classCount: 0,
+                violationDensity: 1.0,
+            ),
         );
 
         $report = new Report(
@@ -196,9 +207,11 @@ final class OffenderListRendererDensityTest extends TestCase
             healthOverall: 40.0,
             label: 'Poor',
             reason: '',
-            violationCount: 5,
-            classCount: 0,
-            violationDensity: 5.0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 5,
+                classCount: 0,
+                violationDensity: 5.0,
+            ),
         );
 
         $offenderB = new WorstOffender(
@@ -207,9 +220,11 @@ final class OffenderListRendererDensityTest extends TestCase
             healthOverall: 35.0,
             label: 'Poor',
             reason: '',
-            violationCount: 10,
-            classCount: 0,
-            violationDensity: 1.0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 10,
+                classCount: 0,
+                violationDensity: 1.0,
+            ),
         );
 
         $report = new Report(
@@ -246,9 +261,11 @@ final class OffenderListRendererDensityTest extends TestCase
             healthOverall: 40.0,
             label: 'Poor',
             reason: '',
-            violationCount: 3,
-            classCount: 0,
-            violationDensity: 2.0,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 3,
+                classCount: 0,
+                violationDensity: 2.0,
+            ),
         );
 
         $offenderNullDensity = new WorstOffender(
@@ -257,9 +274,11 @@ final class OffenderListRendererDensityTest extends TestCase
             healthOverall: 30.0,
             label: 'Poor',
             reason: '',
-            violationCount: 5,
-            classCount: 0,
-            violationDensity: null,
+            evidence: new WorstOffenderEvidence(
+                violationCount: 5,
+                classCount: 0,
+                violationDensity: null,
+            ),
         );
 
         $report = new Report(

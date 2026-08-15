@@ -59,7 +59,7 @@
             "Qualimetrix\\PhpStan\\": "tools/phpstan/"
         },
         "classmap": [
-            "tests/Unit/PhpStan/Rules/data/"
+            "tests/TestSupport/ArchitectureStaticAnalysis/Unit/Fixtures/"
         ]
     },
     "bin": [
@@ -75,7 +75,7 @@
         "test:js": "cd src/Reporting/Template && npm test",
         "test:cross-tool": [
             "python3 --version",
-            "python3 -m unittest discover -s scripts/tests -p 'test_*.py'"
+            "python3 -m unittest discover -s tests/Analysis/Evidence/Measurement/Tests -p 'test_*.py'"
         ],
         "build:js": "cd src/Reporting/Template && npm run build",
         "cs-check": "php-cs-fixer fix --dry-run --diff",

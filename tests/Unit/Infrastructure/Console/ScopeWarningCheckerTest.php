@@ -8,6 +8,7 @@ use FilesystemIterator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Configuration\Discovery\ComposerReader;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Infrastructure\Console\ScopeWarningChecker;
@@ -26,7 +27,7 @@ final class ScopeWarningCheckerTest extends TestCase
         $this->tempDir = sys_get_temp_dir() . '/qmx_scope_test_' . uniqid();
         mkdir($this->tempDir, 0o755, true);
         $this->projectRoot = AbsolutePath::fromString($this->tempDir);
-        $this->checker = new ScopeWarningChecker();
+        $this->checker = new ScopeWarningChecker(new ComposerReader());
     }
 
     protected function tearDown(): void
@@ -77,7 +78,10 @@ final class ScopeWarningCheckerTest extends TestCase
         $warnings = $this->checker->check($this->projectRoot, [$this->subPath('src')]);
 
         self::assertCount(1, $warnings);
-        self::assertStringContainsString('lib', $warnings[0]);
+        self::assertSame(
+            'Analyzed paths do not cover all autoload entries (missing: lib). Coupling and instability metrics may be incomplete.',
+            $warnings[0],
+        );
     }
 
     #[Test]

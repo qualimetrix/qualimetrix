@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Infrastructure\Console\Command;
 
-use Qualimetrix\Baseline\Baseline;
-use Qualimetrix\Baseline\BaselineEntry;
-use Qualimetrix\Baseline\BaselineEntryMode;
-use Qualimetrix\Baseline\BaselineGenerator;
-use Qualimetrix\Baseline\BaselineWriter;
+use Qualimetrix\Analysis\Policy\Baseline\Baseline;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
+use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
