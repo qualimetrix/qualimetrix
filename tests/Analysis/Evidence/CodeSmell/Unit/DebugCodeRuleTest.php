@@ -18,6 +18,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
+use ReflectionClass;
 
 #[CoversClass(DebugCodeRule::class)]
 final class DebugCodeRuleTest extends TestCase
@@ -44,6 +45,14 @@ final class DebugCodeRuleTest extends TestCase
     public function optionsClassIsCorrect(): void
     {
         self::assertSame(CodeSmellOptions::class, DebugCodeRule::getOptionsClass());
+    }
+
+    #[Test]
+    public function severityIsError(): void
+    {
+        $reflection = new ReflectionClass(DebugCodeRule::class);
+
+        self::assertSame(Severity::Error, $reflection->getConstant('SEVERITY'));
     }
 
     #[Test]
@@ -103,7 +112,7 @@ final class DebugCodeRuleTest extends TestCase
         $violations = $rule->analyze($context);
 
         self::assertCount(3, $violations);
-        self::assertSame(Severity::Warning, $violations[0]->severity);
+        self::assertSame(Severity::Error, $violations[0]->severity);
         self::assertSame(5, $violations[0]->location->line);
         self::assertSame(12, $violations[1]->location->line);
         self::assertSame(30, $violations[2]->location->line);

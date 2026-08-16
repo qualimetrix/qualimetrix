@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `architecture.coverage` now includes analysed classes outside every declared layer even when they have no dependency edges, so `coverage: error` can enforce complete project ownership instead of checking only graph endpoints.
 
 ### Fixed
+- Repointed the six complexity CLI aliases (`--cyclomatic-warning`, `--cyclomatic-error`, `--cognitive-warning`, `--cognitive-error`, `--npath-warning`, `--npath-error`) to the `callable` level key, so they adjust thresholds again instead of silently no-oping after the method→callable rename.
+- Counted the `??=` assignment-coalesce operator as a path-generating decision point in NPath complexity, matching the documented `??`/`?->` extension.
+- Duplication detection now skips pathological hash buckets (hundreds of positions from generated parser tables and keyword lists) instead of exhausting memory with unbounded pair evaluation.
+- Rejected wrong-typed scalar config values (`cache.enabled`, `parallel.workers`, `memory_limit`, `include_generated`) with a configuration error (exit 3) instead of silently falling back to defaults.
+- Surfaced invalid computed-metric formulas, corrupt or unconvertible baseline files, and out-of-repo `--report=git:*` as configuration errors (exit 3) rather than an "Unexpected error" (exit 1).
+- `code-smell.debug-code` now reports at Error severity (as documented) and detects `debug_zval_dump()`.
+- `exclude_namespaces` (global `--exclude-namespace` and per-rule) now suppresses occurrence-style code-smell and security findings, resolving the declaring namespace from the finding's subject instead of the file-level symbol path, which always carried `null`.
 - AST cache invalidation now fingerprints file contents, so a same-size rewrite with a preserved timestamp cannot reuse stale analysis results.
 - Made duplicate-code candidate discovery use bounded memory before exact verification, without dropping real duplicate candidates.
 - Preserved exact discrete namespace sums so abstractness and count-gated rules do not lose a class through fractional aggregation.

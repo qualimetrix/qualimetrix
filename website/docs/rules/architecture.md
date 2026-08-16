@@ -391,6 +391,7 @@ Concrete layers from a template appear at the template's position in the declare
 - A reference is `{name}` where `name` matches `[A-Za-z_][A-Za-z0-9_]*` (PHP-identifier-like). Names are **case-sensitive**.
 - A captured value matches a **single namespace segment** by default — `[^\\]+`, no backslashes. Case is preserved exactly as it appears in the class FQN.
 - For multi-segment captures, use the explicit form `{name:**}` — matches one or more segments.
+- A cross-segment capture (`{name:**}`) may be used in *patterns* and *relations*, but **not** embedded in a layer *name*: the expanded name must match `[A-Za-z][A-Za-z0-9_-]*`, and a multi-segment value contains `\`. Use `{name}` (single-segment) when a capture variable appears in the layer name.
 - Variables in the name template MUST also appear in at least one capture-producing criterion. Reuse of the same variable across criteria binds to the same value (co-binding within a layer entry).
 - Variables in different layer entries are independent — there is no global variable namespace.
 - Layer names and patterns cannot contain literal `*`, `?`, `[`, `{`, `}` outside selector syntax — these characters are reserved.

@@ -57,6 +57,36 @@ final class CheckCommandInputValidationTest extends TestCase
     }
 
     #[Test]
+    public function itRejectsWrongTypedScalarConfigValueAsConfigError(): void
+    {
+        $config = tempnam(sys_get_temp_dir(), 'qmx-type-check-');
+        self::assertNotFalse($config);
+        file_put_contents($config, "cache:\n  enabled: \"false\"\n");
+
+        $tester = $this->tester();
+        try {
+            $tester->execute(
+                [
+                    'paths' => ['tests/Fixtures/Ast/empty_file.php'],
+                    '--format' => 'json',
+                    '--config' => $config,
+                    '--disable-rule' => ['computed.health', 'architecture.layer-violation'],
+                ],
+                ['capture_stderr_separately' => true],
+            );
+
+            self::assertSame(3, $tester->getStatusCode());
+            self::assertSame('', $tester->getDisplay());
+            self::assertStringContainsString(
+                'Invalid value for "cache.enabled": expected boolean, got string',
+                $tester->getErrorOutput(),
+            );
+        } finally {
+            unlink($config);
+        }
+    }
+
+    #[Test]
     public function itFailsClosedForUnknownRuleSelectorWithoutPollutingStdout(): void
     {
         $tester = $this->tester();

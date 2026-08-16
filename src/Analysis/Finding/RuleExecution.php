@@ -135,7 +135,12 @@ final class RuleExecution implements RuleExecutionInterface
 
     private function isNamespaceExcluded(string $ruleName, Violation $violation): bool
     {
-        $namespace = $violation->symbolPath->namespace;
+        // Occurrence-style rules attach a file symbol path (namespace null) to
+        // their violations; the declaring namespace lives on the subject, so
+        // fall back to it the same way NamespaceExclusionFilter does.
+        $namespace = $violation->symbolPath->namespace
+            ?? $violation->subject->toSymbolPath()->namespace
+            ?? null;
         if ($namespace === null || $namespace === '') {
             return false;
         }

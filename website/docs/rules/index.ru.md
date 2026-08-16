@@ -180,7 +180,7 @@ bin/qmx check src/ --rule-opt="complexity.cyclomatic:exclude_namespaces=App\Test
 Переопределение любого порога через командную строку:
 
 ```bash
-bin/qmx check src/ --rule-opt="complexity.cyclomatic:method.warning=15"
+bin/qmx check src/ --rule-opt="complexity.cyclomatic:callable.warning=15"
 bin/qmx check src/ --rule-opt="size.method-count:warning=25"
 ```
 

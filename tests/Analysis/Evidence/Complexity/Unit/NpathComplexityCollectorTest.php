@@ -589,6 +589,32 @@ PHP;
     }
 
     #[Test]
+    public function itCalculatesNpathForNullCoalesceAssignment(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+class Test
+{
+    public function check(mixed &$a, mixed $b): void
+    {
+        if ($a ??= $b) {
+            // body
+        }
+    }
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        // ??= is a path-generating decision point, identical to ??:
+        // NPath(if) = NPath(cond: $a ??= $b = 0+0+1=1) + NPath(then: 1) + NPath(skip: 1) = 3
+        self::assertSame(3, $metrics->get('npath:App\Test::check'));
+    }
+
+    #[Test]
     public function itCalculatesNpathForMatchExpression(): void
     {
         $code = <<<'PHP'

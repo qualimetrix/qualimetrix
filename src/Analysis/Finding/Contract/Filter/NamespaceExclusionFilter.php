@@ -17,6 +17,13 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  * undocumented way to disable layer-policy enforcement. Users who need to suppress
  * a specific architecture finding still have `@qmx-ignore`, baseline, or the
  * architecture configuration's own `exclude:` block.
+ *
+ * Occurrence-style rules (code-smell and security) attach a *file* symbol path to
+ * their violations, whose namespace is `null` by construction. The declaring
+ * namespace is carried by the violation's subject instead, so the filter falls back
+ * to `subject->toSymbolPath()->namespace` when the symbol path has none. That keeps
+ * the per-occurrence declaration namespace authoritative even in a file that
+ * declares multiple namespaces.
  */
 final readonly class NamespaceExclusionFilter implements ViolationFilterInterface
 {
@@ -30,6 +37,10 @@ final readonly class NamespaceExclusionFilter implements ViolationFilterInterfac
             return true;
         }
 
-        return !$this->namespaceMatcher->matches($violation->symbolPath->namespace ?? '');
+        $namespace = $violation->symbolPath->namespace
+            ?? $violation->subject->toSymbolPath()->namespace
+            ?? '';
+
+        return !$this->namespaceMatcher->matches($namespace);
     }
 }

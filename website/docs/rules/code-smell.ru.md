@@ -142,7 +142,9 @@ foreach ($items as $item) {
 <!-- llms:skip-begin -->
 ### Что измеряет
 
-Обнаруживает отладочные функции, оставленные в коде: `var_dump()`, `print_r()`, `debug_print_backtrace()`, `debug_zval_dump()` и подобные.
+Обнаруживает отладочные функции, оставленные в коде: `var_dump()`, `print_r()`, `var_export()`, `dd()`, `dump()`, `debug_print_backtrace()` и `debug_zval_dump()`.
+
+Вызовы в режиме возврата (`var_export($value, true)`) и вызовы внутри методов отладочного API (`dump()`, `dd()`, `debug()`, `dumpRawSql()`, `dumpSql()`, `debugInfo()`, `__debugInfo()`) не помечаются.
 
 <!-- llms:skip-end -->
 

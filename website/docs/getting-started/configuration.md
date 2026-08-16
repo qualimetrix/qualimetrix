@@ -364,14 +364,14 @@ Control the number of parallel workers for file analysis:
 ```yaml
 parallel:
   workers: 4     # Fixed number of workers
-  # workers: 0   # Auto-detect worker count
+  # workers: 0   # Disable parallelism (sequential)
   # workers: 1   # Disable parallelism (single-process)
 ```
 
 By default, Qualimetrix auto-detects the optimal worker count based on CPU cores. Equivalent CLI: `--workers=4`
 
 !!! tip
-    Use `workers: 1` for debugging or single-process environments. `workers: 0` means auto-detect.
+    Use `workers: 1` for debugging or single-process environments. `workers: 0` disables parallelism (sequential execution); auto-detect is the default when the option is omitted.
 
 ### Namespace Detection
 

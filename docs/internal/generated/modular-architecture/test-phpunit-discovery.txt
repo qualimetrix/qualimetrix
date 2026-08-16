@@ -117,6 +117,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsBooleanRuleConfig
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsCouplingSection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsKebabCaseLayerNamesMatchingLayerDefinitionRegex
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsNullForTypedScalarKeys
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsNullRuleConfig
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itAcceptsParallelSection
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itDoesNotSupportOtherExtensions
@@ -147,6 +148,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsUnknownCacheSubKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsUnknownParallelSubKeyWithSuggestion
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsUnknownRootKeys
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsWrongTypeCacheEnabled
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsWrongTypeIncludeGenerated
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsWrongTypeMemoryLimit
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itRejectsWrongTypeParallelWorkers
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itShowsAllowedKeysInSubKeyError
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itShowsNoSuggestionForDistantKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Loader\YamlConfigLoaderTest::itStillNormalizesCliKeysOutsideArchitecture
@@ -312,6 +317,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\LongParameterListVoPropagationTest::itReportsNoViolationForVoConstructorBelowVoThresholds
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\LongParameterListVoPropagationTest::itReportsVoWarningWhenVoThresholdIsExceeded
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\LongParameterListVoPropagationTest::itUsesRegularThresholdsForNonVoConstructorEvenWithRelaxedVoThresholds
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\NamespaceExclusionOccurrenceTest::itReportsBothEvalFindingsWithoutNamespaceExclusion
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\NamespaceExclusionOccurrenceTest::itSuppressesEvalFindingInExcludedNamespaceButKeepsSibling
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Integration\PropertyHookControlPrecedenceTest::itUsesProductionExtractionForHookPropertyAndClassThresholdPrecedence
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentOptionsTest::itDefaultsHaveExpectedPrefixes
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\BooleanArgumentOptionsTest::itDefaultsToNotFlaggingPromotedProperties
@@ -483,12 +490,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CountInLoopRuleTest::optionsClassIsCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CountInLoopRuleTest::requiresReturnsExpectedMetrics
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CountInLoopRuleTest::smellDetectedProducesViolation
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeDocumentationConsistencyTest::documentedSeverityMatchesEffectiveSeverity
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::disabledRuleReturnsNoViolations
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::nameAndDescriptionAreCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::noSmellsProducesNoViolations
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::optionsClassIsCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::requiresReturnsExpectedMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::severityIsError
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::smellDetectedProducesViolation
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeSmellsTest::itDetectsDebugZvalDump
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeSmellsTest::itRecognizesOutputCallsButNotReturnModeOrDebugApis
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EmptyCatchRuleTest::disabledRuleReturnsNoViolations
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EmptyCatchRuleTest::nameAndDescriptionAreCorrect
@@ -1152,6 +1162,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itGetName
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itGetOptionsClass
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itGetSupportedLevels
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itGetsCliAliases
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itMethodOptionsFromArray
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itMethodOptionsFromEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\ComplexityRuleTest::itMethodThresholdBoundaries"above error threshold"
@@ -1214,6 +1225,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itCalculatesNpathForMatchExpression
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itCalculatesNpathForNestedIf
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itCalculatesNpathForNullCoalesce
+ - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itCalculatesNpathForNullCoalesceAssignment
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itCalculatesNpathForSingleIf
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itCalculatesNpathForSwitch
  - Qualimetrix\Tests\Analysis\Evidence\Complexity\Unit\NpathComplexityCollectorTest::itCalculatesNpathForTernary
@@ -2372,6 +2384,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itTagsAPropertyArrayInitializerTerminatedByACloseTagAsData
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itTagsEntireConstArrayDeclarationAsData
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DataDeclarationTaggerTest::itTagsPropertyArrayInitializerAsData
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateBlockFinderTest::itSkipsABucketWithMoreThanTheMaximumPositionCount
+ - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateBlockFinderTest::itStillEvaluatesABucketWithinThePositionLimit
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateBlockIdentityTest::itKeepsContentIdentityWhenPresentationLocationsArePermuted
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicateBlockIdentityTest::itRejectsAnythingOtherThanAFullSha256ContentDigest
  - Qualimetrix\Tests\Analysis\Evidence\Duplication\Unit\DuplicationDetectorTest::itAppliesMinLinesFilter
@@ -3468,11 +3482,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\LocationTest::itToString"file with line"
  - Qualimetrix\Tests\Analysis\Finding\Unit\LocationTest::itToString"file without line"
  - Qualimetrix\Tests\Analysis\Finding\Unit\LocationTest::itToString"relative path with line"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itFiltersFileSymbolViolationWhoseSubjectNamespaceMatches
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itFiltersSuppressedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsArchitectureCoverageDiagnosticEvenIfNamePrefixMatchesByCoincidence
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsArchitectureRuleEvenWhenItIsAFileSymbolViolationInExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsCircularDependencyRuleInExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsLayerViolationRuleInExcludedNamespace
- - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesEmptyNamespace
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesFileSymbolViolationWhoseSubjectNamespaceDoesNotMatch
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesFileSymbolViolationWithoutDeclaringNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesNonMatchingNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesWhenNoPatterns
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itCanonicalizesNamedScalarEvidenceIndependentlyOfInputOrder
@@ -3513,6 +3530,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesWithOnlyRulesFilter
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesWithPrefixDisable
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itFiltersDisabledRulesDuringExecute
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itFiltersFileSymbolViolationsBySubjectNamespaceExclusion
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itFiltersViolationsByExcludePaths
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itFiltersViolationsByNamespaceExclusion
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itFiltersViolationsByViolationCodeDuringExecute
@@ -5468,10 +5486,16 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itKeepsAGroupWithAnIgnoredMemberAcceptedAcrossGenerateAndCheck
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itPromotesAMeasuredBreachToErrorAndFailsTheRun
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandBaselineTest::itWritesNoEntryForAnAnnotatedFindingAndRefusesToBeAskedTo
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itClassifiesBaselineVersionTenAsConfigError
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itClassifiesCorruptBaselineJsonAsConfigError
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itClassifiesGitReportOutsideRepositoryAsConfigError
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itClassifiesInvalidComputedMetricFormulaAsConfigError
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itClassifiesUnknownComputedMetricReferenceAsConfigError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itClassifiesMissingGitReferenceAsInputErrorBeforePayload
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itFailsClosedForUnknownRuleSelectorWithoutPollutingStdout
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itFormatsIncompleteAnalysisAndGivesItExitCodePriority
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsAChannelAsRuleOptionOwner
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itRejectsWrongTypedScalarConfigValueAsConfigError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itValidatesDynamicComputedSelectorsAgainstTheCurrentCommandConfiguration
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itWritesPartialScopeWarningOnlyToStderrBeforeStructuredPayload
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itAcceptsAbsolutePath
@@ -5536,6 +5560,20 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itRestoresStaticOnlyChannelsBeforeAnyConfigurationResolution
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itRestoresThePreviousErrorHandlerAfterApplyFailure
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itRestoresThePreviousErrorHandlerAfterResetFailure
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorBaselineReportingTest::itDoesNotCountAShrunkButPresentGroupAsResolved
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorBaselineReportingTest::itPrintsNoScopeMismatchForARunOverTheProjectRoot
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorBaselineReportingTest::itPrintsNoScopeMismatchWhenTheRunCoversTheRecordedScope
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorBaselineReportingTest::itPrintsNoneOfTheThreeBaselineMessagesWithoutABaselineOption
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorBaselineReportingTest::itReportsAScopeNarrowerThanTheBaselineWithoutFailing
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorBaselineReportingTest::itReportsAnInertEntryNamingSymbolChannelSelectorAndReasonWithoutFailing
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorTest::itDoesNotPrintExcludedViolationDetailsWithoutShowSuppressed
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorTest::itDoesNotPrintRuleExclusionCountsWithoutVerboseFlag
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorTest::itPrintsExcludedViolationDetailsWithShowSuppressed
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorTest::itPrintsNamespaceExclusionCountWhenVerbose
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorTest::itPrintsNothingAboutRuleExclusionsWhenStatsAreEmptyAndNotVerbose
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorTest::itPrintsPathExclusionCountWhenVerbose
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorTest::itPrintsResolvedEntriesOnARunThatStaysGreen
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ViolationFilterOrchestratorTest::itReportsAStaleEntryWithoutFailingTheRunOrDisablingItsNeighbour
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itFiltersByGroupAgainstTheRealRuleSet
  - Qualimetrix\Tests\Infrastructure\Integration\RulesCommandWiringTest::itListsEveryRegisteredRule
  - Qualimetrix\Tests\Infrastructure\Integration\SharedRuleOptionsContainerTest::itCreatesIndependentlyConfiguredOptionsForEverySharedOptionsProducer
@@ -5647,6 +5685,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Unit\RuleRegistryCompilerPassTest::itThrowsWhenARegisteredRuleDeclaresNoNameConstant
  - Qualimetrix\Tests\Infrastructure\Unit\RuleRegistryTest::itCollectsCliAliasesFromAllRulesUsingReflection
  - Qualimetrix\Tests\Infrastructure\Unit\RuleRegistryTest::itReadsTheNameConstantWithoutInstantiatingRules
+ - Qualimetrix\Tests\Infrastructure\Unit\RuleRegistryTest::itResolvesEveryCliAliasToARealRuleOption
  - Qualimetrix\Tests\Infrastructure\Unit\RuleRegistryTest::itReturnsEmptyResultsForAnEmptyRegistry
  - Qualimetrix\Tests\Infrastructure\Unit\RuleRegistryTest::itReturnsRegisteredRuleClassNames
  - Qualimetrix\Tests\Infrastructure\Unit\RuleRegistryTest::itThrowsWhenTwoRulesShareACliAlias
@@ -6235,20 +6274,6 @@ Available tests:
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ScopeWarningCheckerTest::itReturnsWarningForPartialCoverage
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ScopeWarningCheckerTest::itSkipsNonexistentAutoloadPaths
  - Qualimetrix\Tests\Unit\Infrastructure\Console\ScopeWarningCheckerTest::itTreatsDotPathAsFullCoverage
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorBaselineReportingTest::itDoesNotCountAShrunkButPresentGroupAsResolved
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorBaselineReportingTest::itPrintsNoScopeMismatchForARunOverTheProjectRoot
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorBaselineReportingTest::itPrintsNoScopeMismatchWhenTheRunCoversTheRecordedScope
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorBaselineReportingTest::itPrintsNoneOfTheThreeBaselineMessagesWithoutABaselineOption
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorBaselineReportingTest::itReportsAScopeNarrowerThanTheBaselineWithoutFailing
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorBaselineReportingTest::itReportsAnInertEntryNamingSymbolChannelSelectorAndReasonWithoutFailing
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorTest::itDoesNotPrintExcludedViolationDetailsWithoutShowSuppressed
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorTest::itDoesNotPrintRuleExclusionCountsWithoutVerboseFlag
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorTest::itPrintsExcludedViolationDetailsWithShowSuppressed
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorTest::itPrintsNamespaceExclusionCountWhenVerbose
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorTest::itPrintsNothingAboutRuleExclusionsWhenStatsAreEmptyAndNotVerbose
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorTest::itPrintsPathExclusionCountWhenVerbose
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorTest::itPrintsResolvedEntriesOnARunThatStaysGreen
- - Qualimetrix\Tests\Unit\Infrastructure\Console\ViolationFilterOrchestratorTest::itReportsAStaleEntryWithoutFailingTheRunOrDisablingItsNeighbour
  - Qualimetrix\Tests\Unit\Infrastructure\Git\ChangedFileTest::itHasNullOldPathByDefault
  - Qualimetrix\Tests\Unit\Infrastructure\Git\ChangedFileTest::itReturnsIsDeletedFalseForNonDeletedFiles
  - Qualimetrix\Tests\Unit\Infrastructure\Git\ChangedFileTest::itReturnsIsDeletedTrueForDeletedFiles

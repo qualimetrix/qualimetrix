@@ -94,7 +94,8 @@ final class DocumentationConsistencyTest extends TestCase
     }
 
     /**
-     * Every CLI alias from rule classes must appear in src/Analysis/Configuration/README.md.
+     * Every CLI alias from rule classes must appear in src/Analysis/Configuration/README.md,
+     * and its target option key must be documented as the table's Field cell.
      */
     #[Test]
     public function itDocumentsAllCliAliasesInConfigurationReadme(): void
@@ -103,12 +104,19 @@ final class DocumentationConsistencyTest extends TestCase
         $configReadme = $this->readFile('src/Analysis/Configuration/README.md');
 
         $missing = [];
+        $missingTargetKeys = [];
 
-        foreach (array_keys($aliases) as $alias) {
+        foreach ($aliases as $alias => $info) {
             // Aliases appear as `--alias-name` in the markdown table
             $cliOption = '--' . $alias;
             if (!str_contains($configReadme, $cliOption)) {
-                $missing[] = $cliOption . ' (rule: ' . $aliases[$alias]['rule'] . ')';
+                $missing[] = $cliOption . ' (rule: ' . $info['rule'] . ')';
+            }
+
+            // The alias target key (e.g. `callable.warning`) must also appear,
+            // so a stale Field cell that drifts from the rule's real options fails here.
+            if (!str_contains($configReadme, $info['option'])) {
+                $missingTargetKeys[] = $cliOption . ' -> ' . $info['option'];
             }
         }
 
@@ -116,6 +124,11 @@ final class DocumentationConsistencyTest extends TestCase
             [],
             $missing,
             "CLI aliases missing from src/Analysis/Configuration/README.md:\n" . implode("\n", $missing),
+        );
+        self::assertSame(
+            [],
+            $missingTargetKeys,
+            "CLI alias target keys missing from src/Analysis/Configuration/README.md:\n" . implode("\n", $missingTargetKeys),
         );
     }
 

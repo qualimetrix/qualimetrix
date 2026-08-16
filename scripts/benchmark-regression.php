@@ -47,6 +47,20 @@ $projects = $baselines['projects'];
 $failures = [];
 $results = [];
 
+// qmx auto-discovers qmx.yaml (and composer.json) from the process working
+// directory. Running from the repo root would leak the repo's own qmx.yaml —
+// its memory_limit: 1G (overriding the -d memory_limit=2G below), its
+// Qualimetrix\** architecture layers, and its coupling framework namespaces —
+// onto every benchmark project. That is conceptually wrong and, combined with
+// a pathological duplication bucket, is what makes the doctrine-dbal run OOM.
+// A fresh, empty working directory turns auto-discovery into a no-op, while the
+// absolute $qmxBin and per-project $path keep the invocation self-contained.
+$neutralDir = sys_get_temp_dir() . '/qmx-benchmark-' . getmypid();
+if (!is_dir($neutralDir) && !mkdir($neutralDir, 0o755, true) && !is_dir($neutralDir)) {
+    fprintf(STDERR, "ERROR: Cannot create neutral working directory: %s\n", $neutralDir);
+    exit(2);
+}
+
 fprintf(STDERR, "Benchmark regression check (%d projects)\n", count($projects));
 fprintf(STDERR, "%s\n", str_repeat('=', 80));
 
@@ -78,10 +92,19 @@ foreach ($projects as $id => $config) {
 
     $cmd .= ' 2>/dev/null';
 
-    $output = [];
-    $exitCode = 0;
-    exec($cmd, $output, $exitCode);
-    $json = implode("\n", $output);
+    // Run from the neutral working directory so qmx does not auto-discover the
+    // repo's qmx.yaml/composer.json (see the comment above $neutralDir).
+    $process = proc_open($cmd, [1 => ['pipe', 'w']], $pipes, $neutralDir);
+    if (!is_resource($process)) {
+        fprintf(STDERR, "FAILED (could not start analysis, %.1fs)\n", round(microtime(true) - $start, 1));
+        $failures[] = sprintf('%s: could not start analysis', $id);
+
+        continue;
+    }
+    $output = stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+    $exitCode = proc_close($process);
+    $json = $output === false ? '' : $output;
     $elapsed = round(microtime(true) - $start, 1);
 
     if ($exitCode > 2) {

@@ -29,6 +29,7 @@ Baseline/
 ├── UncapturedGroup.php          # VO: a group that produced no entry, and why
 ├── UncapturedReason.php         # Enum: undeclared channel / no finite magnitude
 ├── BaselineLoader.php           # Loads the exact typed-subject version 11 file
+├── BaselineLoadException.php    # Envelope failure (missing/unreadable/invalid JSON/version); exit 3
 ├── BaselineWriter.php           # Writes atomically under a compare-and-swap guard
 ├── RunScope.php                 # VO: a run's analysed paths in the portable form the file records, plus the coverage predicate the scope guard reads
 │

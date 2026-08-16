@@ -418,7 +418,7 @@ Control parallel processing. Default: auto-detect based on CPU count.
 # Disable parallel processing (single-threaded)
 bin/qmx check src/ --workers=1
 
-# Auto-detect worker count
+# Disable parallel processing (sequential)
 bin/qmx check src/ --workers=0
 
 # Use exactly 4 workers
@@ -426,7 +426,7 @@ bin/qmx check src/ --workers=4
 ```
 
 !!! tip
-    Use `--workers=1` for debugging or single-process environments. `--workers=0` means auto-detect, not sequential execution.
+    Use `--workers=1` for debugging or single-process environments. `--workers=0` disables parallelism (sequential execution); auto-detect is the default when the option is omitted.
 
 ### `--memory-limit`
 
@@ -557,8 +557,8 @@ producer rule, not a group or channel.
 Override rule options from the command line. Format: `rule-name:option=value`. Can be repeated:
 
 ```bash
-bin/qmx check src/ --rule-opt=complexity.cyclomatic:method.warning=15
-bin/qmx check src/ --rule-opt=complexity.cyclomatic:method.error=30
+bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.warning=15
+bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 ```
 
 `exclude_namespace_channels` is configured in YAML, not through `--rule-opt`: each selector
@@ -573,16 +573,16 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 
 | Flag                           | Rule                  | Option            |
 | ------------------------------ | --------------------- | ----------------- |
-| `--cyclomatic-warning=N`       | complexity.cyclomatic | method.warning    |
-| `--cyclomatic-error=N`         | complexity.cyclomatic | method.error      |
+| `--cyclomatic-warning=N`       | complexity.cyclomatic | callable.warning  |
+| `--cyclomatic-error=N`         | complexity.cyclomatic | callable.error    |
 | `--cyclomatic-class-warning=N` | complexity.cyclomatic | class.max_warning |
 | `--cyclomatic-class-error=N`   | complexity.cyclomatic | class.max_error   |
-| `--cognitive-warning=N`        | complexity.cognitive  | method.warning    |
-| `--cognitive-error=N`          | complexity.cognitive  | method.error      |
+| `--cognitive-warning=N`        | complexity.cognitive  | callable.warning  |
+| `--cognitive-error=N`          | complexity.cognitive  | callable.error    |
 | `--cognitive-class-warning=N`  | complexity.cognitive  | class.max_warning |
 | `--cognitive-class-error=N`    | complexity.cognitive  | class.max_error   |
-| `--npath-warning=N`            | complexity.npath      | method.warning    |
-| `--npath-error=N`              | complexity.npath      | method.error      |
+| `--npath-warning=N`            | complexity.npath      | callable.warning  |
+| `--npath-error=N`              | complexity.npath      | callable.error    |
 | `--npath-class-warning=N`      | complexity.npath      | class.max_warning |
 | `--npath-class-error=N`        | complexity.npath      | class.max_error   |
 | `--wmc-warning=N`              | complexity.wmc        | warning           |
@@ -780,13 +780,13 @@ bin/qmx rules --group=complexity
 
 Complexity
   complexity.cognitive                     Checks cognitive complexity at method and class levels
-    --cognitive-warning (--rule-opt=complexity.cognitive:method.warning=...)
-    --cognitive-error (--rule-opt=complexity.cognitive:method.error=...)
+    --cognitive-warning (--rule-opt=complexity.cognitive:callable.warning=...)
+    --cognitive-error (--rule-opt=complexity.cognitive:callable.error=...)
     --cognitive-class-warning (--rule-opt=complexity.cognitive:class.max_warning=...)
     --cognitive-class-error (--rule-opt=complexity.cognitive:class.max_error=...)
   complexity.cyclomatic                    Checks cyclomatic complexity at method and class levels
-    --cyclomatic-warning (--rule-opt=complexity.cyclomatic:method.warning=...)
-    --cyclomatic-error (--rule-opt=complexity.cyclomatic:method.error=...)
+    --cyclomatic-warning (--rule-opt=complexity.cyclomatic:callable.warning=...)
+    --cyclomatic-error (--rule-opt=complexity.cyclomatic:callable.error=...)
     --cyclomatic-class-warning (--rule-opt=complexity.cyclomatic:class.max_warning=...)
     --cyclomatic-class-error (--rule-opt=complexity.cyclomatic:class.max_error=...)
   ...

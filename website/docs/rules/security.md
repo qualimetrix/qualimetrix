@@ -50,7 +50,7 @@ class DatabaseConfig
 
     public function connect(string $password = 'root'): void
     {
-        $token = 'ghp_xxxxxxxxxxxxxxxxxxxx';
+        $apiToken = 'ghp_xxxxxxxxxxxxxxxxxxxx';
         // ...
     }
 }

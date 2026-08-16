@@ -88,7 +88,7 @@ final class ComputedMetricsInternalTopologyTest extends TestCase
     public function itAcceptsTheMaterializedInternalDag(): void
     {
         $declarations = $this->productionDeclarations();
-        self::assertCount(38, $declarations);
+        self::assertCount(39, $declarations);
 
         foreach ($declarations as $source => $path) {
             $sourceZone = $this->zone($source);

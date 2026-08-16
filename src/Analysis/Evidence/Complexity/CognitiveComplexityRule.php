@@ -29,8 +29,8 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * - Method level: checks individual method cognitive complexity
  * - Class level: checks maximum cognitive complexity among class methods
  */
-#[CliAlias('cognitive-warning', 'method.warning')]
-#[CliAlias('cognitive-error', 'method.error')]
+#[CliAlias('cognitive-warning', 'callable.warning')]
+#[CliAlias('cognitive-error', 'callable.error')]
 #[CliAlias('cognitive-class-warning', 'class.max_warning')]
 #[CliAlias('cognitive-class-error', 'class.max_error')]
 final class CognitiveComplexityRule extends AbstractRule implements HierarchicalRuleInterface

@@ -166,6 +166,7 @@ architecture:
     - name: analysis-evidence-computedmetrics
       patterns:
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricAnalysis'
+        - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricConfigurationException'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDefaults'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricDependencyGraphCalculator'
         - 'Qualimetrix\Analysis\Evidence\ComputedMetrics\ComputedMetricFormulaValidator'
@@ -555,6 +556,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineEntryValues'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity'
+        - 'Qualimetrix\Analysis\Policy\Baseline\BaselineLoadException'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineLoader'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineMigrator'
         - 'Qualimetrix\Analysis\Policy\Baseline\BaselineMigratorResult'
@@ -777,6 +779,7 @@ architecture:
       patterns:
         - 'Qualimetrix\Infrastructure\Git\ChangeStatus'
         - 'Qualimetrix\Infrastructure\Git\ChangedFile'
+        - 'Qualimetrix\Infrastructure\Git\Exception\NotAGitRepositoryException'
         - 'Qualimetrix\Infrastructure\Git\Exception\UnresolvedGitReferenceException'
         - 'Qualimetrix\Infrastructure\Git\GitClient'
         - 'Qualimetrix\Infrastructure\Git\GitRepositoryLocator'

@@ -1,6 +1,6 @@
 {
     "version": 11,
-    "generated": "2026-08-14T22:17:56+00:00",
+    "generated": "2026-08-15T18:27:01+00:00",
     "scope": [
         "src"
     ],
@@ -94,7 +94,7 @@
                 "count": 1
             }
         ],
-        "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver::createDefinition@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php:8910": [
+        "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver::createDefinition@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php:8908": [
             {
                 "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
                 "magnitudes": [
@@ -103,7 +103,7 @@
                 "count": 1
             }
         ],
-        "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver::mergeDefinition@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php:6718": [
+        "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver::mergeDefinition@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php:6716": [
             {
                 "channel": "complexity.cognitive#complexity.cognitive.callable",
                 "magnitudes": [
@@ -126,7 +126,7 @@
                 "count": 1
             }
         ],
-        "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver::resolve@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php:1752": [
+        "declaration:callable:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver::resolve@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php:1730": [
             {
                 "channel": "complexity.cognitive#complexity.cognitive.callable",
                 "magnitudes": [
@@ -895,11 +895,36 @@
                 "count": 1
             }
         ],
+        "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun::__construct@src/Infrastructure/Console/Command/BaselineRun.php:2010": [
+            {
+                "channel": "code-smell.constructor-overinjection#code-smell.constructor-overinjection",
+                "magnitudes": [
+                    8
+                ],
+                "count": 1
+            },
+            {
+                "channel": "code-smell.long-parameter-list#code-smell.long-parameter-list",
+                "magnitudes": [
+                    8
+                ],
+                "count": 1
+            }
+        ],
         "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineUpdateCommand::report@src/Infrastructure/Console/Command/BaselineUpdateCommand.php:5582": [
             {
                 "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
                 "magnitudes": [
                     11
+                ],
+                "count": 1
+            }
+        ],
+        "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand::__construct@src/Infrastructure/Console/Command/CheckCommand.php:2250": [
+            {
+                "channel": "code-smell.constructor-overinjection#code-smell.constructor-overinjection",
+                "magnitudes": [
+                    12
                 ],
                 "count": 1
             }
@@ -1236,7 +1261,7 @@
             {
                 "channel": "complexity.wmc#complexity.wmc",
                 "magnitudes": [
-                    67
+                    78
                 ],
                 "count": 1
             },
@@ -1320,7 +1345,7 @@
                 "count": 1
             }
         ],
-        "declaration:class:Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathExpressionCalculator@src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php:1111": [
+        "declaration:class:Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathExpressionCalculator@src/Analysis/Evidence/Complexity/NpathExpressionCalculator.php:1206": [
             {
                 "channel": "computed.health#health.cohesion",
                 "magnitudes": [
@@ -1329,7 +1354,16 @@
                 "count": 1
             }
         ],
-        "declaration:class:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php:694": [
+        "declaration:class:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricAnalysis@src/Analysis/Evidence/ComputedMetrics/ComputedMetricAnalysis.php:684": [
+            {
+                "channel": "design.data-class#design.data-class",
+                "magnitudes": [
+                    100
+                ],
+                "count": 1
+            }
+        ],
+        "declaration:class:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricsConfigResolver@src/Analysis/Evidence/ComputedMetrics/ComputedMetricsConfigResolver.php:672": [
             {
                 "channel": "complexity.wmc#complexity.wmc",
                 "magnitudes": [
@@ -1595,7 +1629,7 @@
                 "count": 1
             }
         ],
-        "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader@src/Analysis/Policy/Baseline/BaselineLoader.php:940": [
+        "declaration:class:Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineLoader@src/Analysis/Policy/Baseline/BaselineLoader.php:918": [
             {
                 "channel": "computed.health#health.cohesion",
                 "magnitudes": [
@@ -1708,40 +1742,6 @@
                 "count": 1
             }
         ],
-        "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineRun::__construct@src/Infrastructure/Console/Command/BaselineRun.php:2010": [
-            {
-                "channel": "code-smell.constructor-overinjection#code-smell.constructor-overinjection",
-                "magnitudes": [
-                    8
-                ],
-                "count": 1
-            },
-            {
-                "channel": "code-smell.long-parameter-list#code-smell.long-parameter-list",
-                "magnitudes": [
-                    8
-                ],
-                "count": 1
-            }
-        ],
-        "declaration:callable:Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand::__construct@src/Infrastructure/Console/Command/CheckCommand.php:2098": [
-            {
-                "channel": "code-smell.constructor-overinjection#code-smell.constructor-overinjection",
-                "magnitudes": [
-                    12
-                ],
-                "count": 1
-            }
-        ],
-        "declaration:class:Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\ComputedMetricAnalysis@src/Analysis/Evidence/ComputedMetrics/ComputedMetricAnalysis.php:684": [
-            {
-                "channel": "design.data-class#design.data-class",
-                "magnitudes": [
-                    100
-                ],
-                "count": 1
-            }
-        ],
         "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand@src/Infrastructure/Console/Command/BaselineCleanupCommand.php:1782": [
             {
                 "channel": "computed.health#health.cohesion",
@@ -1787,7 +1787,7 @@
                 "count": 1
             }
         ],
-        "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand@src/Infrastructure/Console/Command/CheckCommand.php:1825": [
+        "declaration:class:Qualimetrix\\Infrastructure\\Console\\Command\\CheckCommand@src/Infrastructure/Console/Command/CheckCommand.php:1977": [
             {
                 "channel": "computed.health#health.cohesion",
                 "magnitudes": [
@@ -1996,7 +1996,7 @@
             {
                 "channel": "coupling.distance#coupling.distance",
                 "magnitudes": [
-                    0.699275
+                    0.671498
                 ],
                 "count": 1
             }
@@ -2030,7 +2030,7 @@
             {
                 "channel": "coupling.instability#coupling.instability.namespace",
                 "magnitudes": [
-                    0.96875
+                    0.953846
                 ],
                 "count": 1
             }

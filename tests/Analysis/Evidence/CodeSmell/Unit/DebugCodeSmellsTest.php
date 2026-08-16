@@ -28,4 +28,19 @@ final class DebugCodeSmellsTest extends TestCase
         self::assertNull($smells->location($calls[1], null, 'file'));
         self::assertNull($smells->location($calls[2], 'dump', 'file'));
     }
+
+    #[Test]
+    public function itDetectsDebugZvalDump(): void
+    {
+        $calls = (new NodeFinder())->findInstanceOf(
+            (new ParserFactory())->createForHostVersion()->parse('<?php debug_zval_dump($x);') ?? [],
+            FuncCall::class,
+        );
+        $smells = new DebugCodeSmells();
+
+        $location = $smells->location($calls[0], null, 'file');
+
+        self::assertNotNull($location);
+        self::assertSame('debug_code', $location->type);
+    }
 }
