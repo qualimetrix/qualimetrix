@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
@@ -92,7 +93,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 #[CliAlias('layer-violation-empty-template-severity', 'empty_template_severity')]
 final class LayerViolationRule extends AbstractRule
 {
-    public const string NAME = 'architecture.layer-violation';
+    public const string NAME = LayerPolicyPreparationInterface::PRODUCER_RULE_NAME;
 
     public const string COVERAGE_DIAGNOSTIC_NAME = 'architecture.coverage';
 

@@ -1,6 +1,6 @@
 {
     "version": 11,
-    "generated": "2026-08-15T18:27:01+00:00",
+    "generated": "2026-08-18T09:19:23+00:00",
     "scope": [
         "src"
     ],
@@ -653,7 +653,7 @@
                 "count": 1
             }
         ],
-        "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule::collectEdgeViolations@src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php:19101": [
+        "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule::collectEdgeViolations@src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php:19209": [
             {
                 "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
                 "magnitudes": [
@@ -1575,11 +1575,11 @@
                 "count": 1
             }
         ],
-        "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule@src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php:5158": [
+        "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule@src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php:5245": [
             {
                 "channel": "coupling.cbo#coupling.cbo.class",
                 "magnitudes": [
-                    23
+                    24
                 ],
                 "count": 1
             }

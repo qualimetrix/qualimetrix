@@ -5,7 +5,7 @@ semantic_owners	37
 contract_consumer_entries	1959
 temporary_contract_consumer_entries	0
 permanent_composition_bindings	64
-exact_dependency_edges	3205
+exact_dependency_edges	3207
 cross_owner_imports	1958
 semantic_owner_layers	37
 singleton_seams	0
