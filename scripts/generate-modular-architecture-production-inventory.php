@@ -2548,6 +2548,8 @@ function documentationDisposition(string $path): array
         'docs/internal/SCANNER_VALIDATION_ROUND_1_FINDINGS.md',
         'docs/internal/SCANNER_VALIDATION_ROUND_1_PLAN.md',
         'docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md',
+        'docs/internal/plans/channel-identity-findings.md',
+        'docs/internal/plans/channel-identity-substrate.md',
         'docs/internal/plans/diff-mode-new-only.md',
         'docs/internal/plans/global-functions-graph.md',
         'docs/internal/plans/phpdoc-dependencies.md',
