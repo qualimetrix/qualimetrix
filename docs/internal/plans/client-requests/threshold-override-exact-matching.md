@@ -1,6 +1,8 @@
 # План: `@qmx-threshold` по точному имени правила (адресуемой единице override) + громкий отказ на ошибке аннотации + унификация матчеров
 
 **Статус:** предложение, перед ревью
+**Порядок:** исполняется **после** `channel-identity-substrate.md` — та фиксирует семантику матчинга,
+на которую этот план опирается.
 **Дата:** 2026-08-16
 **Область:** `src/Analysis/Run/Pipeline/AnalysisPipeline.php`, `src/Analysis/Finding/Contract/Rule/`, `src/Analysis/Policy/Inline/`, `src/Core/Util/`, доки
 
@@ -97,9 +99,11 @@ mean», а не выравнивание словарей.
 
 **Унификация — двух видов, а не «всё в один prefix»:**
 
-1. Примитив матчинга единый: `RuleMatcher` добирает glob-режим до конвенции
-   `NamespaceMatcher`/`PathMatcher`; четыре inline `str_starts_with` уходят в
-   `NamespaceMatcher::matchesSingle()`.
+1. Примитив матчинга единый — но **без glob**: подложка `channel-identity-substrate.md` сводит
+   `RuleMatcher` к равенству, а групповую адресацию выражает явной звездой, и вариант «добрать
+   glob-режим» там прямо отвергнут. Из этого плана остаётся только вынос четырёх inline
+   `str_starts_with` в `NamespaceMatcher::matchesSingle()` — это предмет селекторов неймспейсов,
+   не идентичности канала.
 2. Режим выбирает директива: `@qmx-ignore` → prefix, `@qmx-threshold` → exact.
 
 ## 3. Решение
@@ -121,9 +125,10 @@ mean», а не выравнивание словарей.
    отменяет и решение, и обоснование: подавление требует полного имени канала, а групповая адресация
    выражается явной звездой (`X.*`). Этот пункт исполняется подложкой, а не здесь; из этого плана он
    удалён, чтобы два документа не предписывали разное.
-4. **Унификация матчеров (без glob):** inline namespace-prefix в
+4. **Унификация матчеров неймспейсов:** inline namespace-prefix в
    `ViolationFilter`/`DistanceRule`/`WorstOffenderBuilder`/`HealthScoreDrillDown` заменяются
-   на `NamespaceMatcher::matchesSingle()`. `RuleMatcher` не трогается (остаётся prefix-only).
+   на `NamespaceMatcher::matchesSingle()`. `RuleMatcher` этим планом не трогается — его судьбу
+   определяет подложка, которая исполняется раньше и сводит его к равенству.
 5. **Суффиксы уровня — не адресуемые единицы.** `@qmx-threshold coupling.cbo.namespace`,
    `coupling.cbo.class`, `complexity.cyclomatic.callable` → «did you mean `coupling.cbo`?».
    Namespace-уровень к тому же инлайн недостижим (subject — агрегат namespace), настраивается
@@ -145,7 +150,7 @@ mean», а не выравнивание словарей.
   и для exact-семантики threshold).
 - Тесты: `ChannelCoverageTest` (severity `annotation.*`), `ThresholdOverrideIntegrationTest`,
   unit на exact-матч имени правила и «did you mean» (включая `design.type-coverage.param` →
-  «did you mean `design.type-coverage`»), `RuleMatcherTest` (glob-режим).
+  «did you mean `design.type-coverage`»).
 - Dogfooding/ратчет: подъём `annotation.*` до Error проходит по `composer selfcheck`
   (`--fail-on=warning`) и по `qmx-baseline.json`. Если в собственном коде qmx есть сейчас тихо
   no-op'ящие директивы (неизвестное правило/опечатка), после фикса они валят selfcheck. Перед
