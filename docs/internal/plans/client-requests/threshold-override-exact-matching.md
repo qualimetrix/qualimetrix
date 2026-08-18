@@ -58,7 +58,7 @@ class-уровень. Namespace-уровень инлайн недостижим
 `annotation.invalid-threshold` эмитятся с жёстко зашитым `Severity::Warning`
 (`AnalysisPipeline.php:353` и `:465`). При дефолтном `fail_on: error` опечатка в директиве —
 тихий no-op: директива стоит в докблоке, числится в реестре подавлений, выглядит живой и не
-делает ничего. Это ровно тот случай, ради которого заведён `qmx-suppressions.txt`
+делает ничего. Это ровно тот случай, для которого нужен явный отказ
 (директива, которая врёт о том, что жива), и он нарушает §6.8 PRODUCT_VISION
 («конфигурационная ошибка ≠ долг кода, сигналится иначе»).
 
@@ -105,7 +105,7 @@ mean», а не выравнивание словарей.
 ## 3. Решение
 
 1. **`@qmx-threshold` — exact по имени правила.** Директива именует правило целиком
-   (`coupling.cbo`, `design.type-coverage`, `size.loc`). Prefix-паттерн и `*` не считаются
+   (`coupling.cbo`, `design.type-coverage`, `size.method-count`). Prefix-паттерн и `*` не считаются
    матчем. Эффект по subject'у: аннотация на методе ослабляет callable-уровень, на классе —
    class-уровень; `design.type-coverage` ослабляет три измерения единообразно. ViolationCode —
    не единица override: `@qmx-threshold coupling.cbo.class` → ошибка «did you mean
@@ -116,11 +116,11 @@ mean», а не выравнивание словарей.
 2. **Громкий отказ.** `annotation.unsupported-threshold` и `annotation.invalid-threshold`
    эмитятся с `Severity::Error` по умолчанию. В сообщение/`recommendation` добавляется
    принятая форма — «did you mean `@qmx-threshold coupling.cbo`?».
-3. **`@qmx-ignore` остаётся на prefix** по violationCode (семья через bare-имя). Glob в общий
-   `RuleMatcher` **не добавляется**: он обслуживает и `only_rules`/`disabled_rules`/
-   `RuleSelector`/категории/исключения каналов, и `*`/`?`/`[` как glob изменили бы публичную
-   семантику всех селекторов без миграции. Prefix уже покрывает семью — glob избыточен и
-   рискован.
+3. **`@qmx-ignore` — отменено подложкой.** Прежняя редакция оставляла подавление на prefix по
+   violationCode с обоснованием, что префикс у suppression безопасен. `channel-identity-substrate.md`
+   отменяет и решение, и обоснование: подавление требует полного имени канала, а групповая адресация
+   выражается явной звездой (`X.*`). Этот пункт исполняется подложкой, а не здесь; из этого плана он
+   удалён, чтобы два документа не предписывали разное.
 4. **Унификация матчеров (без glob):** inline namespace-prefix в
    `ViolationFilter`/`DistanceRule`/`WorstOffenderBuilder`/`HealthScoreDrillDown` заменяются
    на `NamespaceMatcher::matchesSingle()`. `RuleMatcher` не трогается (остаётся prefix-only).

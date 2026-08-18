@@ -47,6 +47,12 @@ occurrence-каналы архитектуры. Это регрессионны�
 
 1. Breaking change: `fail_on: info` удаляется. По Backward Compatibility Policy это
    легально, но требует записи в `CHANGELOG.md` (`Breaking`).
+
+**Порядок исполнения: после подложки идентичности канала.** `channel-identity-substrate.md` переводит четыре
+архитектурные диагностики в `ConfigurationError` и тем делает их небазлайнимыми. Это отменяет посылку §2 ниже о
+том, что у `unreachable-layer`/`potential-shadow` остаётся второй зуб в виде baseline-breach: после подложки его
+нет, и потому подложка вводит нижнюю границу severity для конфиг-ошибок. Писать этот план надо в мире, где
+переклассификация уже произошла, иначе его обоснование окажется верным только на момент написания.
 2. Caveat снят (проверено по коду): жёстко зашитых `Info` без knob'а нет —
    `unreachable-layer`/`potential-shadow` дефолтят в `Info`, но knob'ы есть; `empty-template`
    и `coverage` не Info вовсе. Реальная дыра рядом — `annotation.unsupported-threshold` /
