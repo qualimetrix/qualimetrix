@@ -19,9 +19,9 @@ use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -60,10 +60,13 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *   (assigned, shadowed) layer pair seen in practice. Evidence-based:
  *   every class is walked and all matching layers are recorded; classes
  *   matching more than one layer contribute a (first-match, later-match)
- *   pair. Catches the quiet failure mode where an earlier pattern steals
- *   classes that a user expected a later, narrower layer to own (prefix
- *   overlap, suffix-theft, arbitrary intersection — all caught by the
- *   same mechanism).
+ *   pair. Overlap alone is NOT reported — first match wins is the declared
+ *   resolution mechanism, and "narrow before broad" (up to a final `**`
+ *   catch-all) is the idiom the documentation teaches. The pair is reported
+ *   when the winning criterion is not strictly more specific than the
+ *   shadowed one ({@see LayerShadowing}), i.e. the later layer
+ *   can never win in its own area: prefix overlap declared broad-first,
+ *   suffix-theft, arbitrary intersection.
  *
  * **Statelessness:** per CLAUDE.md "stateless rules" rule, all per-run state
  * (the unreachable-layer hit counter and the shadow-evidence map) lives as
@@ -349,11 +352,12 @@ final class LayerViolationRule extends AbstractRule
             }
 
             $classFqn = $classSymbol->symbolPath->toString();
-            for ($i = 1; $i < $matchCount; $i++) {
-                $shadowEvidence[$assigned->layerName][$matches[$i]->layerName][] = [
+            $assignedCriterion = $assigned->primaryCriterion();
+            foreach (LayerShadowing::reportableShadows($matches) as $shadowed) {
+                $shadowEvidence[$assigned->layerName][$shadowed->layerName][] = [
                     'fqn' => $classFqn,
-                    'assignedCriterion' => $assigned->primaryCriterion(),
-                    'shadowedCriterion' => $matches[$i]->primaryCriterion(),
+                    'assignedCriterion' => $assignedCriterion,
+                    'shadowedCriterion' => $shadowed->primaryCriterion(),
                 ];
             }
         }
@@ -489,43 +493,6 @@ final class LayerViolationRule extends AbstractRule
             severity: $this->options->severity,
             recommendation: $this->buildRecommendation($dependency, $fromLayer, $toLayer, $architecture),
         ))->toViolations();
-    }
-
-    /**
-     * Renders a layer's declared criteria as a human-readable summary, used in
-     * the {@code architecture.unreachable-layer} message. Empty kinds are
-     * omitted so the message only mentions criteria the user actually wrote.
-     */
-    private static function describeLayerCriteria(LayerDefinition $definition): string
-    {
-        $membership = $definition->membership();
-        $segments = [];
-
-        if ($membership->patterns !== []) {
-            $segments[] = 'patterns: ' . self::quoteCsv($membership->patterns);
-        }
-        if ($membership->suffix !== []) {
-            $segments[] = 'suffix: ' . self::quoteCsv($membership->suffix);
-        }
-        if ($membership->attributes !== []) {
-            $segments[] = 'attributes: ' . self::quoteCsv($membership->attributes);
-        }
-        if ($membership->implements !== []) {
-            $segments[] = 'implements: ' . self::quoteCsv($membership->implements);
-        }
-        if ($membership->extends !== []) {
-            $segments[] = 'extends: ' . self::quoteCsv($membership->extends);
-        }
-
-        return implode('; ', $segments);
-    }
-
-    /**
-     * @param list<string> $values
-     */
-    private static function quoteCsv(array $values): string
-    {
-        return implode(', ', array_map(static fn(string $v): string => '"' . $v . '"', $values));
     }
 
     private function buildRecommendation(
@@ -666,8 +633,8 @@ final class LayerViolationRule extends AbstractRule
      *                                      walk ({@see collectClassEvidence()}) and the
      *                                      per-edge walk ({@see collectEdgeViolations()}) —
      *                                      see the latter's docblock for why edge ends count.
-     * @param array<string, LayerDefinition> $definitionsByName Precomputed name → definition lookup
-     *                                                          for O(1) pattern access.
+     * @param array<string, \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition> $definitionsByName Precomputed name → definition lookup
+     *                                                                                                          for O(1) pattern access.
      *
      * @return list<Violation>
      */
@@ -682,7 +649,7 @@ final class LayerViolationRule extends AbstractRule
                 continue;
             }
 
-            $criteria = self::describeLayerCriteria($definitionsByName[$layerName]);
+            $criteria = $definitionsByName[$layerName]->membership()->describe();
 
             $message = \sprintf(
                 'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (%s) match no class in the analysed codebase. Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
@@ -753,8 +720,8 @@ final class LayerViolationRule extends AbstractRule
             $entries = $pair['entries'];
             $total = \count($entries);
 
-            // Evidence is only recorded when matchCount > 1, so the entry list
-            // for any emitted pair is non-empty by construction.
+            // A pair only exists once at least one reportable shadow was
+            // recorded for it, so the entry list is non-empty by construction.
             \assert($entries !== []);
 
             $sample = \array_slice($entries, 0, self::SHADOW_SAMPLE_LIMIT);

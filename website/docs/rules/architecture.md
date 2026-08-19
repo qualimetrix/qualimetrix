@@ -597,9 +597,30 @@ A template that expands to zero instances **silently disables** the policy attac
 
 ### Potential-shadow diagnostic
 
-`architecture.potential-shadow` detects the quiet failure mode of declaration-order matching: when a class matches multiple layers, only the first wins, and earlier layers can silently steal classes that a user expected a later, narrower layer to own. It is a configuration diagnostic (see the note under [Coverage modes](#coverage-modes)): it fails the run unconditionally whenever it fires, and it is not configurable, baselineable, or suppressible with `@qmx-ignore`.
+`architecture.potential-shadow` detects the quiet failure mode of declaration-order matching: a **more specific layer declared after a broader one**, which can therefore never win in its own area. It is a configuration diagnostic (see the note under [Coverage modes](#coverage-modes)): it fails the run unconditionally whenever it fires, and it is not configurable, baselineable, or suppressible with `@qmx-ignore`.
 
-Detection is **evidence-based**. The rule walks every analysed class, collects all layers whose patterns match, and records `(assigned, shadowed)` pairs that actually occur in the codebase. This catches every real shadow regardless of pattern shape — prefix overlap (`App\**\Foo` shadowing `App\Service\**`), suffix theft (`**\*Service` shadowing `App\Domain\**`), or any other intersection.
+**Overlap alone is not reported.** First match wins is the declared resolution mechanism — the same one deptrac, ArchUnit and `.gitignore` use — so two layers matching the same class is not a defect by itself. In particular, the [narrow-before-broad idiom](#configuration), up to and including a final `**` catch-all, is legal and silent:
+
+```yaml
+architecture:
+  layers:
+    - name: service
+      patterns: ['App\Service\**']   # narrow, declared first — wins here
+    - name: catchall
+      patterns: ['**']                # broad, declared last — no diagnostic
+```
+
+Detection is **evidence-based**. The rule walks every analysed class, collects all layers whose criteria match, and records `(assigned, shadowed)` pairs that actually occur in the codebase. For each such class it then compares the two criteria that actually matched — the one that won the class for the assigned layer, and the one the shadowed layer matched it with:
+
+| Winning criterion vs. shadowed criterion                 | Behaviour                       |
+| -------------------------------------------------------- | ------------------------------- |
+| Strictly more specific (`App\Http\**` won over `App\**`) | Silent — the documented idiom   |
+| Broader or equal (`App\**` won over `App\Http\**`)       | Reported                        |
+| Not comparable (see below)                               | Reported (conservative default) |
+
+"More specific" is decided only for namespace subtrees: a pattern that is a plain prefix (`App\Http`) or a prefix plus a trailing wildcard (`App\Http\**`, `App\Http\*`), plus the catch-all `**`. Everything else is **not comparable** and keeps the diagnostic — mid-pattern wildcards (`App\**\Foo`), partial-segment globs (`**\*Service`), character classes, unexpanded capture templates, and every non-pattern criterion kind (`suffix`, `attributes`, `implements`, `extends`), including a mix of two different kinds. A false alarm costs a config review; a missed shadow costs a layer that silently owns nothing.
+
+This still catches every shape of real shadow — prefix overlap declared broad-first, suffix theft (`**\*Service` shadowing `App\Domain\**`), or any other intersection. A layer that ends up owning no class at all is additionally reported by [`architecture.unreachable-layer`](#unreachable-layer-diagnostic), which is what fires when, for example, an `exclude:` block empties a layer that this diagnostic considered legitimately narrower.
 
 One diagnostic is emitted per `(assigned, shadowed)` pair, with a sample of up to 5 example class FQNs (sorted lexicographically). Output is **deterministic across runs** — the pair list is sorted before emission so CI diffs are stable.
 

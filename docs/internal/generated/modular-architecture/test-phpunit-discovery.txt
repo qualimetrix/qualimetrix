@@ -4555,6 +4555,28 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::construct_nameWithoutVariables_rejected
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::construct_singleVariable_collectsVariablesFromNameAndPatterns
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Domain\Layer\TemplateLayerDefinitionTest::containsCaptureVariable_recognisesCaptures
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"catch-all contains a subtree"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"catch-all does not contain itself"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"child subtree does not contain its parent"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"identical patterns are not strict"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"inclusive prefix contains its own strict subtree"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"parent subtree contains a child subtree"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"segment boundary is respected"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"siblings are unrelated"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"single star behaves like a strict subtree"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"strict subtree does not contain its inclusive prefix"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"subtree does not contain the catch-all"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itDecidesStrictContainmentOfNamespaceSubtrees"trailing backslash is cosmetic"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"attribute criterion"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"backslash-only pattern"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"character class"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"extends criterion"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"implements criterion"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"mid-pattern wildcard"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"partial segment wildcard"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"single-character wildcard"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"suffix criterion"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"unexpanded capture"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\ArchitectureProcessorTest::bind_afterPrepare_clearsPreparedState_subsequentClassifyThrows
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\ArchitectureProcessorTest::bind_repeated_invalidatesAndRebindsCorrectly
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\ArchitectureProcessorTest::classify_afterBindWithoutPrepare_throwsLogicException
@@ -4645,9 +4667,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itAppendsForbiddenEdgeFindingsInGraphAndCanonicalTargetOrder
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itBuildsZeroOneAndManyPolicyApprovedTargetFindings
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itDoesNotReportUnreachableForALayerMatchedOnlyAsADependencyTarget
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itFiresWhenTheBroaderLayerIsDeclaredFirst
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itFiresWhenTheWinningLayerIsBroaderThanADeeperSubtree
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itKeepsDuplicateExactSourceDeclarationsIndependentlyControlledWhenTargetIsUnowned
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itKeepsIdenticalSemanticEdgesStableAcrossUseSiteLocations
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itKeepsTargetSymbolControlsIndependentWhileUseSitePhysicalControlsApplyToEveryProjection
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itKeepsTheDiagnosticWhenTheTwoCriteriaAreNotComparable
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itPreservesTheDependencyLocationIdentityWhenProjectingAFinding
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itProjectsAStructuredDependencyLocationIntoAFindingLocation
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itProjectsEveryOwnedDuplicateTargetInCanonicalOrder
@@ -4655,6 +4680,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itRejectsADependencyLocationWithoutAnExactFileAndLine
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itReportsAnEmptyTemplateAtTheFixedConfigurationErrorSeverity
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itResolvesOwnedTargetDeclarationsInCanonicalOrder
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itStaysSilentForTheDocumentedCatchAllIdiom
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itStaysSilentWhenTheWinningLayerIsNarrowerThanTheShadowedOne
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itUsesTheExactSourceSubjectWhenTheLogicalTargetIsNotOwned
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::metadataMatchesContract
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::nullArchitectureReturnsNoViolations

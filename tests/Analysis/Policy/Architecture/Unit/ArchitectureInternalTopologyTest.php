@@ -75,11 +75,13 @@ final class ArchitectureInternalTopologyTest extends TestCase
         'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipResult',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec',
+        'Qualimetrix\Analysis\Policy\Architecture\Layer\PatternScope',
         'Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition',
     ];
 

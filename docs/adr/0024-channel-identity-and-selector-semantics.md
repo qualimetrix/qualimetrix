@@ -183,6 +183,35 @@ Narrowing the claim precisely: a configuration error cannot be accepted by the
 *ratchet*. It can still be accepted by an explicit declaration of intent in the
 configuration — today that means `coverage: ignore`, and nothing else.
 
+**Classifying `potential-shadow` as a configuration error forced its trigger to
+be narrowed.** The classification above is not revisited — a layer that can
+never win is a broken declaration, not debt — but it removed the escape hatch
+the channel had been leaning on. While it merely carried a configurable
+severity, firing on *any* layer overlap was survivable noise. As an
+unconditional gate with no severity, no baseline and no suppression, the same
+condition failed builds for the ordering this project's own documentation
+teaches: narrow layers first, broad ones after, a final `**` catch-all to
+capture the rest. That example, copied verbatim from
+`website/docs/rules/architecture.md`, ended the run with exit 2.
+
+Overlap was never the defect. First match wins is the declared resolution
+mechanism — the same one deptrac, ArchUnit and `.gitignore` use — so two layers
+matching one class is the mechanism working. The defect is the inverse: a *more
+specific* layer declared after a broader one, which therefore never wins in its
+own area. The channel now compares the two criteria that actually matched the
+class — the one that won it and the one the shadowed layer matched it with —
+and stays silent only when the winner is strictly more specific.
+
+Specificity is decided only where it is decidable: namespace subtrees, compared
+by the literal prefix before the first wildcard. Mid-pattern wildcards, capture
+templates and every non-pattern criterion kind (`suffix`, `attributes`,
+`implements`, `extends`) are *not comparable*, and an undecidable pair keeps the
+diagnostic. That asymmetry is deliberate and follows from the classification: a
+false alarm on a channel that gates the build costs a config review, while a
+missed shadow costs a layer that silently owns nothing. The case this narrowing
+gives up on — a legitimately narrower layer emptied by an `exclude:` block — is
+already covered by `architecture.unreachable-layer`, which counts actual hits.
+
 ### 7. Loud failure, in three states
 
 | State                                                                 | Answer                                                                                                              |

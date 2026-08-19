@@ -10161,6 +10161,14 @@
             "closure_package": "P4",
             "consumers": []
         },
+        "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\LayerShadowing": {
+            "path": "src/Analysis/Policy/Architecture/Layer/LayerShadowing.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Architecture",
+            "visibility": "internal",
+            "closure_package": "P4",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\MatchMode": {
             "path": "src/Analysis/Policy/Architecture/Layer/MatchMode.php",
             "kind": "enum",
@@ -10195,6 +10203,14 @@
         },
         "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\MembershipSpec": {
             "path": "src/Analysis/Policy/Architecture/Layer/MembershipSpec.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Architecture",
+            "visibility": "internal",
+            "closure_package": "P4",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\PatternScope": {
+            "path": "src/Analysis/Policy/Architecture/Layer/PatternScope.php",
             "kind": "class",
             "owner": "Analysis.Policy.Architecture",
             "visibility": "internal",

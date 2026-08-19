@@ -1114,6 +1114,138 @@ final class LayerViolationRuleTest extends TestCase
         self::assertSame($msgs1, $msgs2, 'Shadow diagnostics must be lexicographically deterministic across runs.');
     }
 
+    #[Test]
+    public function itStaysSilentWhenTheWinningLayerIsNarrowerThanTheShadowedOne(): void
+    {
+        // "narrow before broad" — the idiom the documentation teaches. `app`
+        // is not dead: it still owns everything outside App\Http.
+        $rule = $this->buildRule(new LayerViolationOptions());
+
+        $arch = $this->buildArchitecture(
+            layers: [
+                'http' => ['App\\Http\\**'],
+                'app' => ['App\\**'],
+            ],
+            allow: [],
+        );
+
+        $repo = new InMemoryMetricRepository();
+        $this->registerClass($repo, 'App\\Http', 'Kernel');
+        $this->registerClass($repo, 'App\\Domain', 'Customer');
+
+        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+
+        self::assertSame([], $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME));
+    }
+
+    #[Test]
+    public function itStaysSilentForTheDocumentedCatchAllIdiom(): void
+    {
+        // Verbatim shape of the "Ordering and the catch-all idiom" example in
+        // website/docs/rules/architecture.md: a final `**` layer overlaps every
+        // preceding one by construction.
+        $rule = $this->buildRule(new LayerViolationOptions());
+
+        $arch = $this->buildArchitecture(
+            layers: [
+                'service' => ['App\\Service\\**'],
+                'catchall' => ['**'],
+            ],
+            allow: [],
+        );
+
+        $repo = new InMemoryMetricRepository();
+        $this->registerClass($repo, 'App\\Service', 'Billing');
+        $this->registerClass($repo, 'App\\Other', 'Widget');
+
+        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
+
+        self::assertSame([], $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME));
+    }
+
+    #[Test]
+    public function itFiresWhenTheBroaderLayerIsDeclaredFirst(): void
+    {
+        // The actual defect: `http` can never win in its own area.
+        $rule = $this->buildRule(new LayerViolationOptions());
+
+        $arch = $this->buildArchitecture(
+            layers: [
+                'app' => ['App\\**'],
+                'http' => ['App\\Http\\**'],
+            ],
+            allow: [],
+        );
+
+        $repo = new InMemoryMetricRepository();
+        $this->registerClass($repo, 'App\\Http', 'Kernel');
+
+        $shadow = $this->filterByRule(
+            $rule->analyze($this->buildContext(null, $arch, $repo)),
+            LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+        );
+
+        self::assertCount(1, $shadow);
+        self::assertStringContainsString('"app"', $shadow[0]->message);
+        self::assertStringContainsString('"http"', $shadow[0]->message);
+    }
+
+    #[Test]
+    public function itFiresWhenTheWinningLayerIsBroaderThanADeeperSubtree(): void
+    {
+        // `admin` is deeper than `http` but declared after it — the same defect
+        // as the broad-first case, without a catch-all in sight.
+        $rule = $this->buildRule(new LayerViolationOptions());
+
+        $arch = $this->buildArchitecture(
+            layers: [
+                'http' => ['App\\Http\\**'],
+                'admin' => ['App\\Http\\Admin\\**'],
+            ],
+            allow: [],
+        );
+
+        $repo = new InMemoryMetricRepository();
+        $this->registerClass($repo, 'App\\Http\\Admin', 'Dashboard');
+
+        $shadow = $this->filterByRule(
+            $rule->analyze($this->buildContext(null, $arch, $repo)),
+            LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+        );
+
+        self::assertCount(1, $shadow);
+        self::assertStringContainsString('"http"', $shadow[0]->message);
+        self::assertStringContainsString('"admin"', $shadow[0]->message);
+    }
+
+    #[Test]
+    public function itKeepsTheDiagnosticWhenTheTwoCriteriaAreNotComparable(): void
+    {
+        // A suffix criterion has no namespace subtree to compare against a
+        // pattern — the pair is undecidable and must stay reported.
+        $rule = $this->buildRule(new LayerViolationOptions());
+
+        $arch = new ArchitectureConfiguration(
+            new LayerRegistry([
+                new LayerDefinition('svc', new MembershipSpec(suffix: ['UserService'])),
+                new LayerDefinition('app', new MembershipSpec(['App\\**'])),
+            ]),
+            AllowListBuilder::policyFromExactMap([]),
+            CoverageMode::Ignore,
+        );
+
+        $repo = new InMemoryMetricRepository();
+        $this->registerClass($repo, 'App\\Domain', 'UserService');
+
+        $shadow = $this->filterByRule(
+            $rule->analyze($this->buildContext(null, $arch, $repo)),
+            LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
+        );
+
+        self::assertCount(1, $shadow);
+        self::assertStringContainsString('suffix "UserService"', $shadow[0]->message);
+    }
+
     // -------------------------------------------------------------------------
     // architecture.empty-template diagnostic
     // -------------------------------------------------------------------------
