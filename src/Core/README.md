@@ -409,20 +409,29 @@ same explicit contract where a composition root already owns the complete declar
 
 ### RuleCategory (Enum)
 
-| Value             | Description                            |
-| ----------------- | -------------------------------------- |
-| `Complexity`      | CCN, NPath, Cognitive, WMC             |
-| `Size`            | MethodCount, ClassCount, PropertyCount |
-| `Design`          | LCOM, NOC, Inheritance                 |
-| `Maintainability` | Maintainability Index                  |
-| `Coupling`        | Instability, CBO, Distance             |
-| `Architecture`    | Circular Dependencies                  |
-| `CodeSmell`       | Boolean Arguments, Debug Code, etc.    |
+Located in `Analysis\Finding\Contract\Rule`, not Core. How a rule is grouped
+for **display** — `qmx rules --group` and report headings — and nothing else.
+A category is not addressable: no directive or selector matches on it, and it
+carries no methods. `qmx rules --group` is its sole consumer, reading
+`RuleMetadata::$category->value` directly.
 
-**Methods:**
-- `matches(string $ruleName): bool` — whether a rule slug (`group.rule-name`) belongs to this
-  category. Single point of truth used by both `PathExclusionFilter` and `NamespaceExclusionFilter` to
-  exempt `architecture.*` violations from global exclusion patterns.
+| Value             | Description                                    |
+| ----------------- | ---------------------------------------------- |
+| `Complexity`      | CCN, NPath, Cognitive, WMC                     |
+| `Size`            | MethodCount, ClassCount, PropertyCount         |
+| `Design`          | LCOM, NOC, Inheritance                         |
+| `Maintainability` | Maintainability Index                          |
+| `Coupling`        | Instability, CBO, Distance                     |
+| `Architecture`    | Layer Policy Violations, Circular Dependencies |
+| `CodeSmell`       | Boolean Arguments, Debug Code, etc.            |
+| `Security`        | Hardcoded Credentials, Sensitive Parameter     |
+| `Duplication`     | Code Duplication                               |
+
+The value happening to equal the first segment of a rule name (and
+`computed.health` disagreeing with `Maintainability`) is a harmless
+correlation nothing reads. Behavioural exemptions such as "always let
+architecture findings through an `exclude_paths`/`exclude_namespaces` filter"
+are declared per channel instead, see `ChannelFileScope` below.
 
 ---
 
@@ -565,7 +574,7 @@ Foundation for baseline and suppression.
 
 ### PathExclusionFilter
 
-Suppresses violations whose file path matches configured exclusion patterns (the global `exclude_paths` / `--exclude-path` mechanism). Violations without a file (e.g., namespace-level or project-wide architectural diagnostics) are never filtered. `architecture.*` rule violations are always exempt for the same reason as `NamespaceExclusionFilter` below — the exemption is name-based (`RuleCategory::Architecture->matches()`), not a hardcoded string.
+Suppresses violations whose file path matches configured exclusion patterns (the global `exclude_paths` / `--exclude-path` mechanism). Violations without a file (e.g., namespace-level or project-wide architectural diagnostics) are never filtered. Violations on a channel its owner declared **project-scoped** (e.g. `architecture.*`) are always exempt for the same reason as `NamespaceExclusionFilter` below — the exemption is declared per channel via `ChannelFileScope`, not derived from the rule name's spelling.
 
 **Constructor:** `__construct(PathMatcher $pathMatcher)`
 
