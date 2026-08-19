@@ -236,13 +236,23 @@ Cannot be combined with `--format-opt=violations=N` (numeric limit) — this pro
 
 ### `--namespace`
 
-Filter output to a specific namespace subtree. Uses boundary-aware prefix matching.
+Filter output to a specific namespace subtree. The value is a namespace *pattern*, not a literal prefix:
+
+- Without glob characters it matches on namespace boundaries — `App\Service` matches `App\Service` and everything under it, but not `App\ServiceBus`.
+- With `*`, `?` or `[` it is matched as a glob, so `App\*\Order` selects `App\Billing\Order` and `App\Sales\Order` rather than a namespace literally spelled with an asterisk.
+- A trailing `\` is cosmetic: `App\Service\` and `App\Service` are the same pattern.
+- An empty value matches nothing at all, the global namespace included.
 
 ```bash
 bin/qmx check src/ --namespace=App\\Service
+bin/qmx check src/ --namespace='App\*\Order'
 ```
 
-Filters violations and worst offenders to the specified namespace. Shows subtree health scores. Auto-enables `--detail`.
+Filters violations and worst offenders to the selected namespaces. Shows subtree health scores. Auto-enables `--detail`.
+
+Project-wide findings (`architecture.coverage` and the other diagnostics that judge the run as a whole) are never selected by a namespace pattern, not even `*`: they belong to no namespace.
+
+The same matching rule governs the health drill-down and the worst-offender lists this option turns on, and the `include_namespaces` option of `coupling.distance`.
 
 Mutually exclusive with `--class`.
 
@@ -686,12 +696,13 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 
 === "Architecture"
 
-| Flag                                  | Rule                             | Option       |
-| ------------------------------------- | -------------------------------- | ------------ |
-| `--circular-deps`                     | architecture.circular-dependency | enabled      |
-| `--max-cycle-size=N`                  | architecture.circular-dependency | maxCycleSize |
-| `--layer-violation`                   | architecture.layer-violation     | enabled      |
-| `--layer-violation-severity=SEVERITY` | architecture.layer-violation     | severity     |
+| Flag                                      | Rule                             | Option           |
+| ----------------------------------------- | -------------------------------- | ---------------- |
+| `--circular-deps`                         | architecture.circular-dependency | enabled          |
+| `--max-cycle-size=N`                      | architecture.circular-dependency | maxCycleSize     |
+| `--layer-violation`                       | architecture.layer-violation     | enabled          |
+| `--layer-violation-severity=SEVERITY`     | architecture.layer-violation     | severity         |
+| `--layer-violation-unassigned-class=MODE` | architecture.layer-violation     | unassigned_class |
 
 ---
 
@@ -707,6 +718,41 @@ Inspect stale candidates in a baseline. Without `--remove`, it only lists them a
 bin/qmx baseline:cleanup baseline.json src/
 bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 ```
+
+### debug:layer-assignment
+
+Report which architecture layer a class is assigned to, and every other layer whose criteria would also have matched it (a potential shadow source). See [Inspecting layer assignment for a single class](../rules/architecture.md#debug-layer-assignment) for the full walkthrough.
+
+```bash
+bin/qmx debug:layer-assignment 'App\Service\Foo'
+bin/qmx debug:layer-assignment 'App\Service\Foo' --config qmx.yaml
+
+# Machine-readable output — for agents and scripts, not for parsing the text report
+bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
+```
+
+| Option                | Description                                                       |
+| --------------------- | ----------------------------------------------------------------- |
+| `-c`, `--config=FILE` | Path to `qmx.yaml` (default: `qmx.yaml` in the current directory) |
+| `--format=FORMAT`     | `text` (default) or `json`                                        |
+
+`--format=json` serializes the same resolution the text report renders — it does not introduce a separate check, so it never reports a class as "not found"; any syntactically valid FQN is classified. Schema:
+
+```json
+{
+  "fqn": "App\\Service\\Foo",
+  "assigned": { "layer": "any-foo", "criteria": ["pattern \"App\\**\\Foo\""] },
+  "shadowed": [
+    { "layer": "service", "criteria": ["pattern \"App\\Service\\**\""] }
+  ],
+  "hasLayers": true
+}
+```
+
+- `assigned` is `null` when no layer matched (empty `shadowed` follows).
+- `shadowed` lists every other matching layer in declaration order — each entry would have won the assignment had it been declared before `assigned`.
+- `hasLayers` distinguishes "no layers configured" (`false`) from "layers configured but none matched this class" (`true` with `assigned: null`).
+- On error, `--format=json` prints `{"error": "...", "exit_code": N}` to stdout instead of the human `<error>` line, and an unrecognized `--format` value exits with code 2 regardless of format.
 
 ### graph:export
 

@@ -233,13 +233,23 @@ bin/qmx check src/ --all
 
 ### `--namespace`
 
-Фильтрация вывода по конкретному поддереву пространства имён. Использует сопоставление по префиксу с учётом границ.
+Фильтрация вывода по поддереву пространства имён. Значение — это *паттерн* пространства имён, а не буквальный префикс:
+
+- Без glob-символов сопоставление идёт по границам: `App\Service` совпадает с `App\Service` и всем, что под ним, но не с `App\ServiceBus`.
+- При наличии `*`, `?` или `[` значение трактуется как glob: `App\*\Order` выбирает `App\Billing\Order` и `App\Sales\Order`, а не пространство имён, буквально написанное со звёздочкой.
+- Завершающий `\` косметический: `App\Service\` и `App\Service` — один и тот же паттерн.
+- Пустое значение не совпадает ни с чем, включая глобальное пространство имён.
 
 ```bash
 bin/qmx check src/ --namespace=App\\Service
+bin/qmx check src/ --namespace='App\*\Order'
 ```
 
-Фильтрует нарушения и худших нарушителей по указанному пространству имён. Показывает оценки здоровья поддерева. Автоматически включает `--detail`.
+Фильтрует нарушения и худших нарушителей по выбранным пространствам имён. Показывает оценки здоровья поддерева. Автоматически включает `--detail`.
+
+Находки уровня проекта (`architecture.coverage` и прочие диагностики, судящие о прогоне целиком) не выбираются паттерном пространства имён никогда, включая `*`: они не принадлежат ни одному пространству имён.
+
+То же правило сопоставления действует для drill-down по здоровью и списков худших нарушителей, которые включает эта опция, и для опции `include_namespaces` правила `coupling.distance`.
 
 Взаимоисключающий с `--class`.
 
@@ -685,12 +695,13 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 
 === "Архитектура"
 
-| Флаг                                  | Правило                          | Опция        |
-| ------------------------------------- | -------------------------------- | ------------ |
-| `--circular-deps`                     | architecture.circular-dependency | enabled      |
-| `--max-cycle-size=N`                  | architecture.circular-dependency | maxCycleSize |
-| `--layer-violation`                   | architecture.layer-violation     | enabled      |
-| `--layer-violation-severity=SEVERITY` | architecture.layer-violation     | severity     |
+| Флаг                                      | Правило                          | Опция            |
+| ----------------------------------------- | -------------------------------- | ---------------- |
+| `--circular-deps`                         | architecture.circular-dependency | enabled          |
+| `--max-cycle-size=N`                      | architecture.circular-dependency | maxCycleSize     |
+| `--layer-violation`                       | architecture.layer-violation     | enabled          |
+| `--layer-violation-severity=SEVERITY`     | architecture.layer-violation     | severity         |
+| `--layer-violation-unassigned-class=MODE` | architecture.layer-violation     | unassigned_class |
 
 ---
 
@@ -706,6 +717,41 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 bin/qmx baseline:cleanup baseline.json src/
 bin/qmx baseline:cleanup baseline.json src/ --remove=<selector>
 ```
+
+### debug:layer-assignment
+
+Показать, к какому слою архитектуры отнесён класс, и перечислить все остальные слои, чьи критерии тоже совпали бы (потенциальный источник затенения). Полное описание — в разделе [Инспекция назначения слоя для одного класса](../rules/architecture.ru.md#debug-layer-assignment).
+
+```bash
+bin/qmx debug:layer-assignment 'App\Service\Foo'
+bin/qmx debug:layer-assignment 'App\Service\Foo' --config qmx.yaml
+
+# Машиночитаемый вывод — для агентов и скриптов, не для парсинга текстового отчёта
+bin/qmx debug:layer-assignment 'App\Service\Foo' --format=json
+```
+
+| Опция                 | Описание                                                          |
+| --------------------- | ----------------------------------------------------------------- |
+| `-c`, `--config=FILE` | Путь к `qmx.yaml` (по умолчанию: `qmx.yaml` в текущей директории) |
+| `--format=FORMAT`     | `text` (по умолчанию) или `json`                                  |
+
+`--format=json` сериализует тот же результат разрешения, что рендерит текстовый отчёт, — отдельной проверки не вводится, поэтому исхода «класс не найден» нет: любой синтаксически корректный FQN классифицируется. Схема:
+
+```json
+{
+  "fqn": "App\\Service\\Foo",
+  "assigned": { "layer": "any-foo", "criteria": ["pattern \"App\\**\\Foo\""] },
+  "shadowed": [
+    { "layer": "service", "criteria": ["pattern \"App\\Service\\**\""] }
+  ],
+  "hasLayers": true
+}
+```
+
+- `assigned` — `null`, если ни один слой не совпал (в этом случае `shadowed` пуст).
+- `shadowed` перечисляет все остальные совпавшие слои в порядке объявления — каждый из них получил бы класс, будь он объявлен раньше `assigned`.
+- `hasLayers` различает «слои не объявлены» (`false`) и «слои объявлены, но ни один не совпал с этим классом» (`true` при `assigned: null`).
+- При ошибке `--format=json` печатает в stdout `{"error": "...", "exit_code": N}` вместо человекочитаемой строки `<error>`; неизвестное значение `--format` завершается кодом 2 независимо от формата.
 
 ### graph:export
 

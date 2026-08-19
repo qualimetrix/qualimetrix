@@ -15,6 +15,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Infrastructure\Cache\Contract\CacheConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter;
 use Qualimetrix\Infrastructure\Console\LayerAssignmentResolver;
+use Qualimetrix\Infrastructure\Console\OutputHelper;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
 use Qualimetrix\Infrastructure\Console\RuntimeConfigurator;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
@@ -44,6 +45,14 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Exits 0 for any informational result (including "no layer matches"), 2
  * (`Command::INVALID`) for malformed input, and 1 (`Command::FAILURE`) for
  * configuration-load errors.
+ *
+ * `--format=json` renders the same {@see LayerAssignmentResolver::resolve()}
+ * result as a machine-readable document instead of the human-readable
+ * report; both projections read one resolution, so they cannot drift. On a
+ * JSON-format error (validation failure or configuration error), the error
+ * envelope replaces the report on stdout rather than the human `<error>`
+ * line — an agent parsing `--format=json` output must always find valid
+ * JSON there.
  */
 #[AsCommand(
     name: 'debug:layer-assignment',
@@ -51,6 +60,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class LayerAssignmentCommand extends Command
 {
+    private const array SUPPORTED_FORMATS = ['text', 'json'];
+
     public function __construct(
         private readonly RuntimeConfigurator $runtimeConfigurator,
         private readonly LayerAssignmentResolver $layerAssignmentResolver,
@@ -77,6 +88,13 @@ final class LayerAssignmentCommand extends Command
                 InputOption::VALUE_REQUIRED,
                 'Path to qmx.yaml (defaults to qmx.yaml in the current working directory)',
             )
+            ->addOption(
+                'format',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Output format: text or json',
+                'text',
+            )
             ->setHelp(
                 'Reports the layer the given class is assigned to under the project'
                 . "\n" . 'architecture configuration, plus every other layer whose criteria'
@@ -89,20 +107,36 @@ final class LayerAssignmentCommand extends Command
                 . "\n" . 'matches `qmx check` byte-for-byte for template-layer and'
                 . "\n" . 'graph-based configurations. Expect roughly 50–70% of `qmx check`'
                 . "\n" . 'runtime.' . "\n\n"
+                . '<info>--format=json</info> renders the same resolution as a machine-readable'
+                . "\n" . 'document instead of the text report; use it to avoid parsing'
+                . "\n" . 'human-readable formatting.' . "\n\n"
                 . 'Examples:' . "\n"
                 . '  <info>bin/qmx debug:layer-assignment \'App\\Service\\Foo\'</info>' . "\n"
-                . '  <info>bin/qmx debug:layer-assignment \'App\\Service\\Foo\' --config qmx.yaml</info>',
+                . '  <info>bin/qmx debug:layer-assignment \'App\\Service\\Foo\' --config qmx.yaml</info>' . "\n"
+                . '  <info>bin/qmx debug:layer-assignment \'App\\Service\\Foo\' --format=json</info>',
             );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        /** @var string $format */
+        $format = $input->getOption('format');
+        if (!\in_array($format, self::SUPPORTED_FORMATS, true)) {
+            $output->writeln(\sprintf(
+                '<error>Unknown format "%s". Supported formats: %s.</error>',
+                $format,
+                implode(', ', self::SUPPORTED_FORMATS),
+            ));
+
+            return self::INVALID;
+        }
+
         /** @var string $rawFqn */
         $rawFqn = $input->getArgument('fqn');
 
         $validationError = $this->validateFqn($rawFqn);
         if ($validationError !== null) {
-            $output->writeln(\sprintf('<error>%s</error>', $validationError));
+            $this->reportError($output, $format, $validationError, self::INVALID);
 
             return self::INVALID;
         }
@@ -138,25 +172,65 @@ final class LayerAssignmentCommand extends Command
                     $symbol,
                 );
         } catch (ConfigLoadException|ArchitectureConfigurationException $e) {
-            $output->writeln(\sprintf('<error>Configuration error: %s</error>', $e->getMessage()));
+            $this->reportError(
+                $output,
+                $format,
+                \sprintf('Configuration error: %s', $e->getMessage()),
+                self::FAILURE,
+            );
 
             return self::FAILURE;
         } catch (ArchitecturePreparationException $e) {
-            $output->writeln(\sprintf('<error>Failed to load configuration: %s</error>', $e->getMessage()));
+            $this->reportError(
+                $output,
+                $format,
+                \sprintf('Failed to load configuration: %s', $e->getMessage()),
+                self::FAILURE,
+            );
 
             return self::FAILURE;
         } catch (Exception $e) {
             // Catches recoverable failures while bubbling up Errors (TypeError, etc.)
             // so genuine programming bugs in the pipeline surface in CI rather than
             // being silently reported as exit code 1.
-            $output->writeln(\sprintf('<error>Failed to load configuration: %s</error>', $e->getMessage()));
+            $this->reportError(
+                $output,
+                $format,
+                \sprintf('Failed to load configuration: %s', $e->getMessage()),
+                self::FAILURE,
+            );
 
             return self::FAILURE;
         }
 
-        $this->renderReport($output, $normalized, $resolution['matches'], $resolution['hasLayers']);
+        if ($format === 'json') {
+            $this->renderJson($output, $normalized, $resolution['matches'], $resolution['hasLayers']);
+        } else {
+            $this->renderReport($output, $normalized, $resolution['matches'], $resolution['hasLayers']);
+        }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Reports an error consistently with the requested `--format`: an
+     * `<error>` line for `text` (byte-for-byte identical to the pre-JSON
+     * behaviour), or an `{error, exit_code}` envelope for `json` so a
+     * machine consumer never has to distinguish an error from a report by
+     * shape alone.
+     */
+    private function reportError(OutputInterface $output, string $format, string $message, int $exitCode): void
+    {
+        if ($format === 'json') {
+            OutputHelper::write($output, $this->encodeJson([
+                'error' => $message,
+                'exit_code' => $exitCode,
+            ]));
+
+            return;
+        }
+
+        $output->writeln(\sprintf('<error>%s</error>', $message));
     }
 
     /**
@@ -283,5 +357,47 @@ final class LayerAssignmentCommand extends Command
     private static function describeCriteria(LayerAssignmentMatch $entry): string
     {
         return implode(', ', $entry->criteria);
+    }
+
+    /**
+     * Serializes the same `resolve()` result {@see renderReport()} renders as
+     * text, so both projections read one resolution and cannot drift.
+     *
+     * `assigned` is `null` when `$matches` is empty (no layer matched) rather
+     * than an omitted key, so a consumer can branch on presence without also
+     * checking `shadowed === []`.
+     *
+     * @param list<LayerAssignmentMatch> $matches
+     */
+    private function renderJson(
+        OutputInterface $output,
+        string $fqn,
+        array $matches,
+        bool $hasLayers,
+    ): void {
+        $assigned = $matches[0] ?? null;
+        $shadowed = $matches === [] ? [] : \array_slice($matches, 1);
+
+        OutputHelper::write($output, $this->encodeJson([
+            'fqn' => $fqn,
+            'assigned' => $assigned === null ? null : self::matchToArray($assigned),
+            'shadowed' => array_map(self::matchToArray(...), $shadowed),
+            'hasLayers' => $hasLayers,
+        ]));
+    }
+
+    /** @return array{layer: string, criteria: non-empty-list<string>} */
+    private static function matchToArray(LayerAssignmentMatch $match): array
+    {
+        return [
+            'layer' => $match->layerName,
+            'criteria' => $match->criteria,
+        ];
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function encodeJson(array $payload): string
+    {
+        return json_encode($payload, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR) . "\n";
     }
 }

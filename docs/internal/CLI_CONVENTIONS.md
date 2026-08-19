@@ -74,6 +74,11 @@ on one — the mode flag hides the review step that makes the split worth having
 
 4. **Repeatable options** — use `VALUE_IS_ARRAY` (e.g., `--exclude`, `--disable-rule`).
 
+5. **Machine-readable output** — expose it as `--format={text|json|...}` defaulting to `text`,
+   never as a boolean `--json`. This holds for every command that renders a result, `debug:*`
+   included: `check`, `graph:export` and `debug:layer-assignment` all read the same way, and a
+   boolean flag cannot grow a third representation without becoming a second option.
+
 ### Rule CLI aliases
 
 Dynamic options generated from rule classes via the repeatable class-level attribute `#[CliAlias('alias', 'optionName')]`, read at runtime by `CliAliasReader`.
