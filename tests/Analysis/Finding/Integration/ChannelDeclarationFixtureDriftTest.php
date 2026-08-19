@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -161,17 +162,20 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
     /**
      * The reclassification itself, pinned as a closed list.
      *
-     * Four channels — and only four — report a configuration mistake rather
-     * than code debt. The count is load-bearing in both directions: a fifth
-     * would mean something acquired an unacceptable-as-debt status without
-     * the argument for it, and a missing one would mean a diagnostic drifted
-     * back to being ratchetable. `architecture.layer-violation` is named in
-     * the negative assertion on purpose — it is the sibling channel of the
-     * very same rule, it is real code debt, and it is the one a future edit
-     * is most likely to sweep along by analogy.
+     * Seven channels — and only seven — report a configuration mistake rather
+     * than code debt: the four layer-policy diagnostics and the three
+     * inline-directive diagnostics. The count is load-bearing in both
+     * directions: an eighth would mean something acquired an
+     * unacceptable-as-debt status without the argument for it, and a missing
+     * one would mean a diagnostic drifted back to being ratchetable.
+     *
+     * The two negative assertions name the sibling channels of the very same
+     * two rules, because those are the ones a future edit is most likely to
+     * sweep along by analogy: a forbidden dependency edge is real code debt,
+     * and a suppression that stopped firing is ordinary cleanup.
      */
     #[Test]
-    public function exactlyTheFourLayerPolicyDiagnosticsDeclareAConfigurationError(): void
+    public function exactlyTheLayerPolicyAndDirectiveDiagnosticsDeclareAConfigurationError(): void
     {
         $configurationErrors = [];
 
@@ -185,6 +189,9 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
 
         self::assertSame(
             [
+                'annotation.invalid-threshold#annotation.invalid-threshold',
+                'annotation.unresolved-directive#annotation.unresolved-directive',
+                'annotation.unsupported-threshold#annotation.unsupported-threshold',
                 'architecture.coverage#architecture.coverage',
                 'architecture.empty-template#architecture.empty-template',
                 'architecture.potential-shadow#architecture.potential-shadow',
@@ -198,6 +205,14 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
             $configurationErrors,
             'architecture.layer-violation reports a forbidden dependency edge — real code debt a project may'
             . ' ratchet down. It is not a configuration error and must stay baselineable.',
+        );
+
+        self::assertNotContains(
+            'annotation.unused-directive#annotation.unused-directive',
+            $configurationErrors,
+            'annotation.unused-directive reports a suppression that stopped firing — normal debt cleanup, not a'
+            . ' mistake. Classifying it as a configuration error would fail every project that fixed a violation'
+            . ' and left the annotation behind.',
         );
     }
 
@@ -279,6 +294,11 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         $names[] = LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME;
         $names[] = LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
         $names[] = LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
+
+        $names[] = InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME;
+        $names[] = InlineDirectivePolicyInterface::UNSUPPORTED_THRESHOLD_NAME;
+        $names[] = InlineDirectivePolicyInterface::INVALID_THRESHOLD_NAME;
+        $names[] = InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME;
 
         return $names;
     }

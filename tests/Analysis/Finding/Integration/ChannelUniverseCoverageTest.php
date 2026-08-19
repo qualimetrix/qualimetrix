@@ -58,7 +58,7 @@ final class ChannelUniverseCoverageTest extends TestCase
      * pass by agreeing with itself on a smaller set. It is obtained, not
      * remembered: `grep -vc '^#\|^$' tests/Analysis/Finding/Fixtures/Channels/declared.txt`.
      */
-    private const int DECLARED_CHANNEL_COUNT = 51;
+    private const int DECLARED_CHANNEL_COUNT = 55;
 
     /**
      * Nine subclasses of `AbstractCodeSmellRule` plus three of

@@ -31,4 +31,7 @@ enum RuleCategory: string
     case CodeSmell = 'code-smell';
     case Security = 'security';
     case Duplication = 'duplication';
+
+    /** Source annotations themselves — what a `@qmx-*` directive says about the configuration. */
+    case Annotation = 'annotation';
 }

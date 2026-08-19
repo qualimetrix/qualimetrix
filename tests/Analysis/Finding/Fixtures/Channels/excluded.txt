@@ -3,6 +3,11 @@
 # declared.txt is not drift — a channel that declares nothing is legitimately
 # "not baselineable", not an oversight.
 #
+# The file is currently empty of entries, and that is the point: the only
+# family that ever needed one was annotation.*, which had no rule class to
+# declare it on. It has one now, and "not acceptable as debt" is stated by a
+# declaration rather than by absence.
+#
 # Format (one channel per line):
 #   <ruleName>#<violationCode> -- <reason>
 #
@@ -10,5 +15,6 @@
 # a deliberate exclusion from an undeclared channel that should have been
 # covered by this package's own corpus.
 
-annotation.invalid-threshold#annotation.invalid-threshold -- emitted directly by AnalysisPipeline::buildDiagnosticViolations() (src/Analysis/Pipeline/AnalysisPipeline.php:375) when $diagnostic->code is null, not by any rule class; reports a configuration mistake (invalid @qmx-threshold syntax, e.g. unparseable value or a duplicate annotation on one symbol), not code debt. The same call site also emits annotation.invalid-threshold.<code> for every code a per-rule OverrideValidatorInterface implementation can produce (observed: negative_warning, negative_error, warning_exceeds_error, error_not_supported, error_exceeds_warning — src/Core/Rule/Override/*.php) — that vocabulary is open per-validator, so individual .<code> lines are not enumerated here; each shares this entry's rationale and the same "no rule class to declare it on" fact.
-annotation.unsupported-threshold#annotation.unsupported-threshold -- emitted directly by AnalysisPipeline::buildUnsupportedOverrideViolations() (src/Analysis/Pipeline/AnalysisPipeline.php:256), not by any rule class; reports a configuration mistake (an unsupported @qmx-threshold annotation), not code debt. ADR 0017 excludes annotation.* outright.
+# (Currently empty. The annotation.* family used to live here because it was
+# emitted straight from the pipeline with no rule class to declare it on; it
+# now has one, so its channels are declared like any other.)

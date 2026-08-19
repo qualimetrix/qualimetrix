@@ -88,6 +88,7 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfiguratorInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface;
+use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule;
 use Qualimetrix\Analysis\Run\Collection\CollectionOrchestrator;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfigurationResolverInterface;
@@ -797,6 +798,7 @@ PHP;
             DistanceRule::class,
             CircularDependencyRule::class,
             LayerViolationRule::class,
+            InlineDirectiveRule::class,
             LongParameterListRule::class,
             BooleanArgumentRule::class,
             CountInLoopRule::class,

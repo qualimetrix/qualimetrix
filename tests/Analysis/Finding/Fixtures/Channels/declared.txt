@@ -10,9 +10,12 @@
 # `config-error` marks a channel whose findings report a mistake in the
 # *configuration* rather than debt in the code: it can never be accepted by
 # a baseline on any path, and it fails the run without consulting `fail_on`.
-# Exactly four channels carry it today — the four layer-policy diagnostics.
-# The fifth channel of that same rule, architecture.layer-violation, is real
-# code debt and deliberately does not.
+# Seven channels carry it today: the four layer-policy diagnostics, and the
+# three inline-directive diagnostics that report a directive which can never
+# do what it says. The two channels that sit beside them and deliberately do
+# not are architecture.layer-violation (a forbidden dependency edge is real
+# code debt) and annotation.unused-directive (a leftover suppression is
+# ordinary cleanup, not a mistake).
 #
 # The drift guard
 # (tests/Integration/Infrastructure/Rule/ChannelDeclarationFixtureDriftTest.php)
@@ -45,6 +48,10 @@
 # Do not add a line here without reading that channel's own emission point
 # first — never by analogy with a neighbouring line.
 
+annotation.invalid-threshold#annotation.invalid-threshold occurrence config-error
+annotation.unresolved-directive#annotation.unresolved-directive occurrence config-error
+annotation.unsupported-threshold#annotation.unsupported-threshold occurrence config-error
+annotation.unused-directive#annotation.unused-directive occurrence
 architecture.circular-dependency#architecture.circular-dependency magnitude:higher
 architecture.coverage#architecture.coverage occurrence config-error
 architecture.empty-template#architecture.empty-template occurrence config-error

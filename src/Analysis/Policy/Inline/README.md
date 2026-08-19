@@ -1,15 +1,16 @@
 # Inline source policy
 
 `Analysis\\Policy\\Inline` owns source annotations: extraction, declaration
-binding, threshold validation, and annotation suppression. Run parses and
-measures a file, then calls the Inline-owned extraction contract once; it owns
-no annotation policy state.
+binding, threshold validation, annotation suppression, and the report on the
+directives themselves. Run parses and measures a file, then calls the
+Inline-owned extraction contract once; it owns no annotation policy state.
 
 ## Layout
 
 ```text
 Inline/
 ├── Contract/
+│   ├── Directive/               # the four annotation.* channel names, run state
 │   ├── Suppression/             # suppression value and type
 │   ├── Threshold/               # annotation diagnostic value
 │   ├── AnnotationSuppressionInterface.php
@@ -22,6 +23,13 @@ Inline/
 ├── Extraction/
 │   ├── DeclarationControlBindings.php
 │   └── SourceControlExtractor.php
+├── Directive/
+│   ├── DirectiveAddressability.php # is this directive able to do anything?
+│   ├── DirectiveNameHints.php      # "did you mean" by reverse query
+│   ├── DirectiveRejection.php
+│   ├── InlineDirectiveOptions.php
+│   ├── InlineDirectivePolicy.php   # per-run directives + usage accounting
+│   └── InlineDirectiveRule.php     # owns the four annotation.* channels
 ├── Suppression/
 │   └── SuppressionFilter.php   # internal annotation matching
 └── ThresholdOverrideExtractionResult.php
@@ -42,7 +50,42 @@ Inline/
 - `AnnotationSuppressionInterface` exposes one stateless projection operation
   to Reporting. Its immutable result separates kept and suppressed findings.
 - Internal `SuppressionFilter` implements annotation matching without exposing
-  its indexes or incremental operations across the owner boundary.
+  its indexes or incremental operations across the owner boundary. Its one
+  static entry point answers the per-directive question the indexed path
+  cannot: whether *this* directive silenced anything.
+- `InlineDirectivePolicyInterface` promises the four `annotation.*` channel
+  names and the two moments Run needs: `prepare()` before rule execution,
+  `auditDirectiveUsage()` after it. Only `Analysis\Run\RuleProducerPreparation`
+  calls them, under the same producer-enablement rule as every other
+  capability preparation.
+
+## The directive report
+
+Three of the four channels are declared `ConfigurationError`: a name that
+addresses nothing (`annotation.unresolved-directive`), a threshold on a rule
+that declares no override support (`annotation.unsupported-threshold`), and
+values that do not parse or validate (`annotation.invalid-threshold`). None of
+them can be accepted by a baseline, and each fails the run without consulting
+`fail_on` — they say "I cannot do what you asked", not "your code is poor".
+
+The fourth, `annotation.unused-directive`, is ordinary debt: a suppression that
+addressed something real and matched nothing this run. It defaults below
+`Warning`, and its accounting is deliberately narrow — only directives naming
+enabled rules, and only files this run analysed.
+
+**All four channels report once per authored annotation.** The extractor binds
+a class docblock to the class and to every declaration inside it, so a single
+typo on a forty-method class would otherwise print forty-one identical
+findings — and a configuration error ends the run past `fail_on`, which makes
+that exactly the report a reader learns to skip. The identity of a directive is
+its file, line, form and authored text; the finding's subject is the **file**,
+because that is where the annotation is written and because a declaration
+subject would carry a byte offset that moves on every unrelated edit above it.
+
+Validation happens **after configuration has resolved**, because a channel may
+exist only because the run defines a computed metric. Whether a rule is
+*enabled* is not part of that: enablement filters execution, it does not decide
+which names exist.
 
 `Extraction\\DeclarationControlBindings` is internal. It maps collected
 declaration facts onto AST nodes while extracting controls and never crosses

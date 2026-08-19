@@ -15,15 +15,9 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
-use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
-use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
-use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
-use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingFailureKind;
@@ -164,6 +158,15 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         // Phase 6: File-set inspection.
         $this->ruleProducerPreparation->inspectFiles($files, $configuration->projectRoot);
 
+        // Phase 6.5: hand this run's inline directives to their owning
+        // capability, so the rule that reports on them reads prepared state
+        // rather than receiving it through the shared analysis context.
+        $this->ruleProducerPreparation->prepareInlineDirectives(
+            $collectionResult->suppressions,
+            $collectionResult->thresholdOverrides,
+            $collectionResult->thresholdDiagnostics,
+        );
+
         // Phase 7: Rule execution.
         $phaseStartTime = microtime(true);
         $this->logger->debug('Starting analysis phase');
@@ -231,12 +234,15 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
             thresholdOverrides: $collectionResult->thresholdOverrides,
         );
         $violations = $this->ruleExecutor->execute($context);
-        $extraViolations = array_merge(
-            self::buildDiagnosticViolations($collectionResult->thresholdDiagnostics),
-            $this->buildUnsupportedOverrideViolations($collectionResult->thresholdOverrides),
-        );
 
-        return $extraViolations === [] ? $violations : array_merge($violations, $extraViolations);
+        // The directive-usage half of the inline-directive report can only be
+        // answered once every rule has produced its findings — a suppression
+        // is stale exactly when nothing it covers was reported. The channel
+        // identity and the wording stay with the owning capability; Run only
+        // decides when to ask.
+        $unused = $this->ruleProducerPreparation->auditInlineDirectives($violations);
+
+        return $unused === [] ? $violations : array_merge($violations, $unused);
     }
 
     /** @return list<LogicalClassPath> */
@@ -310,108 +316,6 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
     }
 
     /**
-     * Builds warnings for threshold override annotations targeting unsupported rules.
-     *
-     * Rules like design.god-class have multi-threshold Options that don't implement
-     * ThresholdAwareOptionsInterface. Annotations targeting them are silently ignored
-     * at runtime — this method emits explicit warnings so users know.
-     *
-     * @param array<string, list<ThresholdOverride>> $overridesByFile
-     *
-     * @return list<Violation>
-     */
-    private function buildUnsupportedOverrideViolations(array $overridesByFile): array
-    {
-        if ($overridesByFile === []) {
-            return [];
-        }
-
-        $supportedRules = $this->collectThresholdSupportedRuleNames();
-
-        $violations = [];
-
-        foreach ($overridesByFile as $file => $overrides) {
-            $relFile = RelativePath::fromString($file);
-
-            foreach ($overrides as $override) {
-                if ($override->rulePattern === '*') {
-                    continue;
-                }
-
-                if (!$this->overrideMatchesSupportedRule($override, $supportedRules)) {
-                    $violations[] = new Violation(
-                        location: new Location($relFile, $override->line, precise: true),
-                        subject: $override->subject,
-                        symbolPath: $override->subject->toSymbolPath(),
-                        ruleName: 'annotation.unsupported-threshold',
-                        violationCode: 'annotation.unsupported-threshold',
-                        message: \sprintf(
-                            "Rule '%s' does not support @qmx-threshold overrides; annotation ignored",
-                            $override->rulePattern,
-                        ),
-                        severity: Severity::Warning,
-                    );
-                }
-            }
-        }
-
-        return $violations;
-    }
-
-    /**
-     * Collects names of active rules that support threshold overrides.
-     *
-     * @return list<string>
-     */
-    private function collectThresholdSupportedRuleNames(): array
-    {
-        return array_values(array_map(
-            static fn($rule): string => $rule->name,
-            array_filter(
-                $this->ruleExecutor->allRules(),
-                fn($rule): bool => $this->ruleSupportsThresholdOverrides($rule->optionsClass),
-            ),
-        ));
-    }
-
-    /**
-     * @param class-string $optionsClass
-     */
-    private function ruleSupportsThresholdOverrides(string $optionsClass): bool
-    {
-        if (is_subclass_of($optionsClass, ThresholdAwareOptionsInterface::class)) {
-            return true;
-        }
-
-        if (!is_subclass_of($optionsClass, HierarchicalRuleOptionsInterface::class)) {
-            return false;
-        }
-
-        // Hierarchical rules delegate to level-specific options that may support overrides
-        $options = $optionsClass::fromArray([]);
-        \assert($options instanceof HierarchicalRuleOptionsInterface);
-
-        foreach ($options->getSupportedLevels() as $level) {
-            if ($options->forLevel($level) instanceof ThresholdAwareOptionsInterface) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * @param list<string> $supportedRules
-     */
-    private function overrideMatchesSupportedRule(ThresholdOverride $override, array $supportedRules): bool
-    {
-        return array_any(
-            $supportedRules,
-            static fn(string $ruleName): bool => $override->matches($ruleName),
-        );
-    }
-
-    /**
      * Collects the {@see SymbolPath} for every class symbol recorded in the
      * metric repository — the input set for architecture template expansion.
      *
@@ -425,48 +329,5 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
         }
 
         return $paths;
-    }
-
-    /**
-     * Converts threshold annotation diagnostics to warning-level violations.
-     *
-     * The diagnostic's stable `code` (set by per-rule validators —
-     * `warning_exceeds_error`, `error_not_supported`, etc.) becomes a
-     * specific `annotation.invalid-threshold.<code>` violationCode so
-     * machine-readable formats (SARIF, JSON, GitLab Code Quality) can
-     * cross-reference the rejection class. The diagnostic's optional
-     * `hint` flows into `recommendation` so users see actionable
-     * follow-up.
-     *
-     * @param array<string, list<ThresholdDiagnostic>> $diagnosticsByFile
-     *
-     * @return list<Violation>
-     */
-    private static function buildDiagnosticViolations(array $diagnosticsByFile): array
-    {
-        $violations = [];
-
-        foreach ($diagnosticsByFile as $file => $diagnostics) {
-            $relFile = RelativePath::fromString($file);
-
-            foreach ($diagnostics as $diagnostic) {
-                $violationCode = $diagnostic->code !== null
-                    ? 'annotation.invalid-threshold.' . $diagnostic->code
-                    : 'annotation.invalid-threshold';
-
-                $violations[] = new Violation(
-                    location: new Location($relFile, $diagnostic->line, precise: true),
-                    subject: $diagnostic->subject,
-                    symbolPath: $diagnostic->subject->toSymbolPath(),
-                    ruleName: 'annotation.invalid-threshold',
-                    violationCode: $violationCode,
-                    message: $diagnostic->message,
-                    severity: Severity::Warning,
-                    recommendation: $diagnostic->hint,
-                );
-            }
-        }
-
-        return $violations;
     }
 }

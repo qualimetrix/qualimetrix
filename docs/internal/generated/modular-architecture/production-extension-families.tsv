@@ -85,3 +85,4 @@ rule	Qualimetrix\Analysis\Evidence\Size\ClassCountRule	src/Analysis/Evidence/Siz
 rule	Qualimetrix\Analysis\Evidence\Size\MethodCountRule	src/Analysis/Evidence/Size/MethodCountRule.php	qmx.rule	"SizeConfigurator -> rule compiler passes"
 rule	Qualimetrix\Analysis\Evidence\Size\PropertyCountRule	src/Analysis/Evidence/Size/PropertyCountRule.php	qmx.rule	"SizeConfigurator -> rule compiler passes"
 rule	Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule	src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php	qmx.rule	"ArchitectureConfigurator -> rule compiler passes"
+rule	Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule	src/Analysis/Policy/Inline/Directive/InlineDirectiveRule.php	qmx.rule	"capability configurator -> rule compiler passes"

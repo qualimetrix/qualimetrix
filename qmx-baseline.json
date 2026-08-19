@@ -1,6 +1,6 @@
 {
     "version": 11,
-    "generated": "2026-08-19T06:07:37+00:00",
+    "generated": "2026-08-19T07:28:55+00:00",
     "scope": [
         "src"
     ],
@@ -763,15 +763,6 @@
                 "count": 1
             }
         ],
-        "declaration:callable:Qualimetrix\\Analysis\\Policy\\Inline\\Suppression\\SuppressionFilter::shouldInclude@src/Analysis/Policy/Inline/Suppression/SuppressionFilter.php:2552": [
-            {
-                "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
-                "magnitudes": [
-                    11
-                ],
-                "count": 1
-            }
-        ],
         "declaration:callable:Qualimetrix\\Analysis\\Run\\Discovery\\FinderFileDiscovery::discover@src/Analysis/Run/Discovery/FinderFileDiscovery.php:541": [
             {
                 "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
@@ -788,7 +779,7 @@
                 "count": 1
             }
         ],
-        "declaration:callable:Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline::__construct@src/Analysis/Run/Pipeline/AnalysisPipeline.php:3164": [
+        "declaration:callable:Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline::__construct@src/Analysis/Run/Pipeline/AnalysisPipeline.php:2750": [
             {
                 "channel": "code-smell.constructor-overinjection#code-smell.constructor-overinjection",
                 "magnitudes": [
@@ -978,15 +969,6 @@
                 "channel": "complexity.npath#complexity.npath.callable",
                 "magnitudes": [
                     576
-                ],
-                "count": 1
-            }
-        ],
-        "declaration:callable:Qualimetrix\\Infrastructure\\Console\\RuleInputValidator::validate@src/Infrastructure/Console/RuleInputValidator.php:1848": [
-            {
-                "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
-                "magnitudes": [
-                    12
                 ],
                 "count": 1
             }

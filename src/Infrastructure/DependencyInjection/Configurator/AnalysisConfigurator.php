@@ -10,10 +10,12 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInt
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryFactoryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
 use Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
@@ -52,6 +54,8 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
     private const string FILE_PROCESSOR = 'qmx.run.file_processor';
     private const string FILE_PROCESSOR_CLASS = 'Qualimetrix\\Analysis\\Run\\Collection\\FileProcessor';
     private const string SOURCE_CONTROL_EXTRACTOR_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor';
+    private const string INLINE_DIRECTIVE_POLICY_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy';
+    private const string INLINE_DIRECTIVE_RULE_CLASS = 'Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule';
     private const string FILE_DISCOVERY_FACTORY = 'qmx.run.file_discovery_factory';
     private const string FILE_DISCOVERY_FACTORY_CLASS = 'Qualimetrix\\Analysis\\Run\\Discovery\\FileDiscoveryFactory';
     private const string GENERATED_FILE_FILTER = 'qmx.run.generated_file_filter';
@@ -125,8 +129,33 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
                 '$profiler' => new Reference(ProfilerInterface::class),
             ]);
 
+        $this->registerInlineDirectivePolicy($container);
         $this->registerRuleProducerPreparation($container);
         $this->registerAnalysisPipeline($container);
+    }
+
+    /**
+     * The inline-directive capability's own run state, plus the rule that
+     * reports on it. The rule is registered here rather than by a scan
+     * because Inline owns exactly one rule and an open-ended pattern would
+     * silently enrol a future sibling.
+     */
+    private function registerInlineDirectivePolicy(ContainerBuilder $container): void
+    {
+        $container->register(self::INLINE_DIRECTIVE_POLICY_CLASS, self::INLINE_DIRECTIVE_POLICY_CLASS)
+            ->setArguments([
+                new Reference(ChannelIdentityInterface::class),
+                new Reference(RuleSelector::class),
+                new Reference(RuleConfigurationInterface::class),
+            ])
+            ->setPublic(true);
+        $container->setAlias(InlineDirectivePolicyInterface::class, self::INLINE_DIRECTIVE_POLICY_CLASS)
+            ->setPublic(true);
+
+        $container->register(self::INLINE_DIRECTIVE_RULE_CLASS, self::INLINE_DIRECTIVE_RULE_CLASS)
+            ->setAutoconfigured(true)
+            ->setAutowired(false)
+            ->setLazy(true);
     }
 
     private function registerRuleProducerPreparation(ContainerBuilder $container): void
@@ -135,6 +164,7 @@ final class AnalysisConfigurator implements ContainerConfiguratorInterface
             ->setArguments([
                 new Reference(LayerPolicyPreparationInterface::class),
                 new Reference(CircularDependencyPreparationInterface::class),
+                new Reference(InlineDirectivePolicyInterface::class),
                 new Reference(self::FILE_SET_INSPECTION_COMPOSITE),
                 new Reference(RuleSelector::class),
                 new Reference(RuleConfigurationInterface::class),

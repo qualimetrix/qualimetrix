@@ -8,6 +8,7 @@ use LogicException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
+use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
@@ -21,6 +22,8 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
+use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Discovery\AnalysisFileDiscovery;
@@ -29,6 +32,7 @@ use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Analysis\Run\RuleProducerPreparation;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Tests\Analysis\Evidence\CircularDependency\Support\AdjacencyGraphBuilder;
 
 /**
@@ -78,6 +82,8 @@ final class TestPipelineBuilder
     private ?MetricRepositoryFactoryInterface $repositoryFactory = null;
 
     private ?DependencyGraphBuilderInterface $graphBuilder = null;
+
+    private ?InlineDirectivePolicyInterface $inlineDirectivePolicy = null;
 
     private ?LoggerInterface $logger = null;
 
@@ -207,6 +213,28 @@ final class TestPipelineBuilder
         return $this;
     }
 
+    public function withInlineDirectivePolicy(InlineDirectivePolicyInterface $policy): self
+    {
+        $this->inlineDirectivePolicy = $policy;
+
+        return $this;
+    }
+
+    /**
+     * The directive policy is the one collaborator with a safe default: a
+     * pipeline that is not exercising inline directives still has to hand
+     * them somewhere, and a real policy over an empty channel universe
+     * reports nothing rather than pretending.
+     */
+    private function resolveInlineDirectivePolicy(): InlineDirectivePolicyInterface
+    {
+        return $this->inlineDirectivePolicy ?? new InlineDirectivePolicy(
+            new ChannelUniverse([], [], [], 'computed.health', new ResolvedComputedMetricDefinitions([])),
+            $this->ruleSelector ?? new RuleSelector(new InMemoryRuleChannelRegistry()),
+            $this->ruleConfiguration ?? new RuleOptionsRegistry(),
+        );
+    }
+
     public function build(): AnalysisPipeline
     {
         return new AnalysisPipeline(
@@ -228,6 +256,7 @@ final class TestPipelineBuilder
                     'TestPipelineBuilder: circularDependencyPreparation is required '
                     . '(call withCircularDependencyPreparation())',
                 ),
+                $this->resolveInlineDirectivePolicy(),
                 $this->fileSetInspection ?? throw new LogicException(
                     'TestPipelineBuilder: fileSetInspection is required (call withFileSetInspection())',
                 ),

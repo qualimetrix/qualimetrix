@@ -3393,15 +3393,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::theConstructorOverinjectionMagnitudeChannelIsDeclared
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::theCyclomaticComplexityMethodMagnitudeChannelIsDeclared
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::theGotoOccurrenceChannelIsDeclared
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::theInvalidThresholdAnnotationChannelResolvesToNullAndIsRecordedAsExcluded
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::theInlineDirectiveChannelsAreDeclared
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::theMaintainabilityIndexMagnitudeChannelIsDeclared
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::theTypeCoverageParamMagnitudeChannelIsDeclaredLowerIsWorse
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::theUnsupportedThresholdAnnotationChannelResolvesToNullAndIsRecordedAsExcluded
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelCoverageTest::theUnusedDirectiveChannelIsDeclared
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::everyDeclaredRuleNameHalfNamesARealRuleOrALayerViolationDiagnostic
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::everyDeclaredViolationCodeEqualsOrIsPrefixedByItsRuleName
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::everyFixtureLineIsStillDeclaredInCode
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::everyStaticallyDeclaredChannelIsListedInTheFixture
- - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::exactlyTheFourLayerPolicyDiagnosticsDeclareAConfigurationError
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::exactlyTheLayerPolicyAndDirectiveDiagnosticsDeclareAConfigurationError
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::noExcludedFixtureLineNamesADeclaredChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelEmissionStaticGuardTest::everyStaticallyResolvableEmittedChannelIsDeclaredOrExcluded
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyDeclaredChannelHasAProducer
@@ -5080,6 +5080,21 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\V5BaselineReaderTest::itReportsASymbolWhoseValueIsNotAListOfRecords
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\V5BaselineReaderTest::itReportsNothingUnreadableForAWellFormedFile
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\V5BaselineReaderTest::itReturnsTheMalformedRowsInsteadOfDroppingThem
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAComputedMetricChannelThatOnlyTheResolvedConfigurationKnows
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAThresholdOnARuleThatDeclaresOverrideSupport
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAnExactChannelAndAGroupThatCoversSomething
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsTheNoRuleFilterForm
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itKeepsDistinctAuthoredDirectivesApart
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itPointsAThresholdNamingAChannelAtTheProducingRule
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsADanglingReferenceToAMetricNoLongerConfigured
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAGroupFormThatCoversNoChannel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAMisspelledChannel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsARuleNameWhereASuppressionMustNameAChannel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAThresholdOnARuleThatDeclaresNoOverrideSupport
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsGroupAndWildcardThresholds
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itReportsNothingWhenTheOwningRuleIsDisabled
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itReportsOneFindingPerAuthoredDirectiveNotPerBoundDeclaration
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itReportsOneFindingPerAuthoredThresholdDirective
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineSuppressionLayerViolationIntegrationTest::qmxIgnoreOnSourceDoesNotDropTargetAttributedArchitectureLayerViolation
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdAnnotationParserPathTest::hierarchicalRuleValidationDelegatesToLevelOptions
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdAnnotationParserPathTest::independentAxisRuleAcceptsArbitraryOrdering
@@ -5096,6 +5111,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::compilerPassNoOpsWhenExtractorIsAbsent
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::compilerPassWritesValidatorMapOntoExtractorArgument
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::factoryProducesValidatorForEveryThresholdAwareRuleInRegistry
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itAccountsForTheFileForm
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itAccountsForTheNextLineForm
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itForgetsTheReportingGateOnReset
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itIgnoresDirectivesAddressingARuleThisRunDisabled
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itNeverReportsTheNoRuleFilterForm
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itOnlySeesDirectivesFromTheAnalysedFileSet
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itReportsASymbolDirectiveThatMatchedNothing
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itReportsNothingUntilTheOwningRuleEnablesIt
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itStaysSilentWhenTheSymbolDirectiveActuallySuppressedSomething
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itBindsNamedAndAnonymousCallablesToTheirDeclarationsAndLexicalOwners
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itFallsBackToTheNearestNamedClassOrFileForUnboundProperties
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itRejectsClosureAndArrowMetadataAtOneClosurePosition
@@ -5582,6 +5606,7 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRelativizesOnlyTheProjectRootPrefixInCoverageFailureMessages
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itUsesTheExplicitResolvedFormatAndProjectRoot
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itIgnoresAnAbsentWorkersOption
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRejectsAChannelExclusionKeyThatAddressesNoChannel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itValidatesEveryComputedChannelSelectorFromTheSameResolvedDefinitions
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itAppliesOwnerConfigurationsOnlyAfterEveryValueResolves
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itLeavesEveryMutableOwnerAtDefaultsWhenLateResolutionFails"Architecture"
