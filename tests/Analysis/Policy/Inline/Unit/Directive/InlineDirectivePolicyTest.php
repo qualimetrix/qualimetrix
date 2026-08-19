@@ -122,6 +122,104 @@ final class InlineDirectivePolicyTest extends TestCase
     }
 
     /**
+     * The same limit reached the other way. `disabled_rules` stops the rule
+     * from running; `rules: { X: { enabled: false } }` lets it run and makes
+     * it return nothing. The user made one decision either way, so reading
+     * only the selection reported every annotation of a rule switched off by
+     * its own options as a leftover.
+     */
+    #[Test]
+    public function itIgnoresDirectivesAddressingARuleSwitchedOffByItsOwnOptions(): void
+    {
+        $configuration = new RuleOptionsRegistry();
+        $configuration->setConfigFileOptions(['code-smell.goto' => ['enabled' => false]]);
+
+        $policy = self::policy($configuration);
+        $policy->prepare(
+            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
+            [],
+            [],
+        );
+        $policy->enableUsageReporting(Severity::Info);
+
+        self::assertSame([], $policy->auditDirectiveUsage([]));
+    }
+
+    /** The scalar spelling of the same thing. */
+    #[Test]
+    public function itIgnoresDirectivesAddressingARuleSwitchedOffByTheScalarSpelling(): void
+    {
+        $configuration = new RuleOptionsRegistry();
+        $configuration->setConfigFileOptions(['code-smell.goto' => false]);
+
+        $policy = self::policy($configuration);
+        $policy->prepare(
+            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
+            [],
+            [],
+        );
+        $policy->enableUsageReporting(Severity::Info);
+
+        self::assertSame([], $policy->auditDirectiveUsage([]));
+    }
+
+    /** A live rule is still accounted for — the guard above is not a blanket. */
+    #[Test]
+    public function itStillAccountsForARuleLeftEnabledByItsOptions(): void
+    {
+        $configuration = new RuleOptionsRegistry();
+        $configuration->setConfigFileOptions(['code-smell.goto' => ['enabled' => true]]);
+
+        $policy = self::policy($configuration);
+        $policy->prepare(
+            [self::FILE => [new Suppression('code-smell.goto', null, 1, SuppressionType::File)]],
+            [],
+            [],
+        );
+        $policy->enableUsageReporting(Severity::Info);
+
+        self::assertCount(1, $policy->auditDirectiveUsage([]));
+    }
+
+    /**
+     * The explicit `ruleName#violationCode` spelling is accounted for exactly
+     * like the one-part one — it names one channel and needs no expansion.
+     */
+    #[Test]
+    public function itAccountsForADirectiveWrittenAsAnExplicitChannelPair(): void
+    {
+        $policy = self::policy();
+        $policy->prepare(
+            [self::FILE => [new Suppression('code-smell.goto#code-smell.goto', null, 1, SuppressionType::File)]],
+            [],
+            [],
+        );
+        $policy->enableUsageReporting(Severity::Info);
+
+        self::assertCount(1, $policy->auditDirectiveUsage([]));
+        self::assertSame([], $policy->auditDirectiveUsage([self::finding(self::fileSubject(), 99)]));
+    }
+
+    /**
+     * A pair addressing no channel is already reported as a configuration
+     * error, so counting it here too would say the same directive is both
+     * broken and merely stale.
+     */
+    #[Test]
+    public function itDoesNotAlsoCallAnUnaddressablePairStale(): void
+    {
+        $policy = self::policy();
+        $policy->prepare(
+            [self::FILE => [new Suppression('complexity.cyclomatic#code-smell.goto', null, 1, SuppressionType::File)]],
+            [],
+            [],
+        );
+        $policy->enableUsageReporting(Severity::Info);
+
+        self::assertSame([], $policy->auditDirectiveUsage([]));
+    }
+
+    /**
      * The second limit needs no code and is asserted anyway: the directive map
      * is keyed by the files collection analysed, so an annotation outside the
      * analysed set is never in the map to begin with.

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 
+use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 
 /**
  * Options for {@see InlineDirectiveRule}.
@@ -35,14 +37,55 @@ final readonly class InlineDirectiveOptions implements RuleOptionsInterface
      */
     public static function fromArray(array $config): self
     {
-        $severity = $config['unused_directive_severity'] ?? $config['unusedDirectiveSeverity'] ?? null;
-
         return new self(
             enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
-            unusedDirectiveSeverity: \is_string($severity)
-                ? (Severity::tryFrom($severity) ?? Severity::Info)
-                : Severity::Info,
+            unusedDirectiveSeverity: self::resolveSeverity(
+                $config['unused_directive_severity'] ?? $config['unusedDirectiveSeverity'] ?? null,
+            ),
         );
+    }
+
+    /**
+     * Refuses a value it cannot honour instead of quietly substituting the
+     * default.
+     *
+     * `Severity::tryFrom()` is case-sensitive, so the previous
+     * `tryFrom($raw) ?? Info` turned both `Warning` and the typo `warnin`
+     * into `info` — a config file saying one thing while the tool did
+     * another, which is the same lie this rule exists to report about
+     * annotations. Case is normalised because the enum's own spelling is an
+     * implementation detail; an unknown word is a mistake and is named as
+     * one.
+     */
+    private static function resolveSeverity(mixed $raw): Severity
+    {
+        if ($raw === null) {
+            return Severity::Info;
+        }
+
+        if ($raw instanceof Severity) {
+            return $raw;
+        }
+
+        if (!\is_string($raw)) {
+            throw new InvalidArgumentException(\sprintf(
+                'Option "unused_directive_severity" for rule "%s" must be a string, got %s.',
+                InlineDirectivePolicyInterface::PRODUCER_RULE_NAME,
+                get_debug_type($raw),
+            ));
+        }
+
+        $severity = Severity::tryFrom(strtolower($raw));
+        if ($severity !== null) {
+            return $severity;
+        }
+
+        throw new InvalidArgumentException(\sprintf(
+            'Option "unused_directive_severity" for rule "%s" has unknown value "%s"; expected one of %s.',
+            InlineDirectivePolicyInterface::PRODUCER_RULE_NAME,
+            $raw,
+            implode(', ', array_map(static fn(Severity $c): string => "'{$c->value}'", Severity::cases())),
+        ));
     }
 
     public function isEnabled(): bool

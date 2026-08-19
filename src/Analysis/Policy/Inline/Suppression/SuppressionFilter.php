@@ -125,7 +125,7 @@ final class SuppressionFilter implements ViolationFilterInterface, AnnotationSup
      */
     private static function applies(string $file, Suppression $suppression, Violation $violation): bool
     {
-        if (!$suppression->matches($violation->violationCode)) {
+        if (!$suppression->matches($violation->ruleName, $violation->violationCode)) {
             return false;
         }
 

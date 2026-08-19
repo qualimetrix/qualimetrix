@@ -67,6 +67,38 @@ final readonly class DirectiveNameHints
     }
 
     /**
+     * The advice for a suppression written as an explicit
+     * `ruleName#violationCode` pair that addresses no channel.
+     *
+     * Both halves are exact, so the useful answer is *which half* is wrong.
+     * A violation code that exists under some other rule name is the common
+     * mistake — a report prints the channel code, not the pair — so it is
+     * answered with the pair the author should have written.
+     */
+    public function forChannelPair(string $ruleName, string $violationCode): string
+    {
+        $spellings = [];
+        foreach ($this->identity->channels() as $channel) {
+            if ($channel->violationCode === $violationCode) {
+                $spellings[] = $channel->toKey();
+            }
+        }
+
+        if ($spellings !== []) {
+            sort($spellings);
+
+            return \sprintf(
+                'No channel of rule "%s" carries the code "%s"; it is spelled: %s.',
+                $ruleName,
+                $violationCode,
+                implode(', ', $spellings),
+            );
+        }
+
+        return self::listOrNothing($this->nearestChannels($violationCode));
+    }
+
+    /**
      * The advice for a threshold naming no rule. A name that turns out to be
      * a *channel* is the common case — the report prints channel names — so
      * it is answered with the producing rule rather than a guess.

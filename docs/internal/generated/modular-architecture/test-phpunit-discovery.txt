@@ -5083,7 +5083,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAComputedMetricChannelThatOnlyTheResolvedConfigurationKnows
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAThresholdOnARuleThatDeclaresOverrideSupport
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAnExactChannelAndAGroupThatCoversSomething
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAnExplicitChannelPair
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsTheNoRuleFilterForm
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itExplainsTheGrammarWhenAFileFormCarriesABareReason
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itExplainsWhichFormMayOmitTheChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itKeepsDistinctAuthoredDirectivesApart
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itPointsAThresholdNamingAChannelAtTheProducingRule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsADanglingReferenceToAMetricNoLongerConfigured
@@ -5091,6 +5094,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAMisspelledChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsARuleNameWhereASuppressionMustNameAChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAThresholdOnARuleThatDeclaresNoOverrideSupport
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAnExplicitPairWhoseHalvesDoNotBelongTogether
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsGroupAndWildcardThresholds
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itReportsNothingWhenTheOwningRuleIsDisabled
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itReportsOneFindingPerAuthoredDirectiveNotPerBoundDeclaration
@@ -5111,15 +5115,26 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::compilerPassNoOpsWhenExtractorIsAbsent
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::compilerPassWritesValidatorMapOntoExtractorArgument
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\ThresholdValidatorWiringTest::factoryProducesValidatorForEveryThresholdAwareRuleInRegistry
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itAcceptsAValueWhoseCaseDiffersFromTheEnum
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itAcceptsAnAlreadyResolvedSeverity
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itAcceptsTheDocumentedSpelling
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itDefaultsToInfoWhenNoSeverityIsGiven
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itRefusesANonStringValue
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectiveOptionsTest::itRefusesAValueItCannotHonour
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itAccountsForADirectiveWrittenAsAnExplicitChannelPair
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itAccountsForTheFileForm
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itAccountsForTheNextLineForm
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itDoesNotAlsoCallAnUnaddressablePairStale
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itForgetsTheReportingGateOnReset
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itIgnoresDirectivesAddressingARuleSwitchedOffByItsOwnOptions
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itIgnoresDirectivesAddressingARuleSwitchedOffByTheScalarSpelling
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itIgnoresDirectivesAddressingARuleThisRunDisabled
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itNeverReportsTheNoRuleFilterForm
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itOnlySeesDirectivesFromTheAnalysedFileSet
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itReportsASymbolDirectiveThatMatchedNothing
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itReportsNothingUntilTheOwningRuleEnablesIt
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itStaysSilentWhenTheSymbolDirectiveActuallySuppressedSomething
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itStillAccountsForARuleLeftEnabledByItsOptions
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itBindsNamedAndAnonymousCallablesToTheirDeclarationsAndLexicalOwners
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itFallsBackToTheNearestNamedClassOrFileForUnboundProperties
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itRejectsClosureAndArrowMetadataAtOneClosurePosition
@@ -5181,6 +5196,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itIgnoreFileSectionDoesNotMatchAsFileLevelViaExtract
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itIgnoreNextLineExtraWordDoesNotMatch
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itKeepsATagVisibleAfterAnUnpairedBacktick
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itKeepsBothHalvesOfAnExplicitChannelPair
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itKeepsTheSeparatorOutOfTheReason
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itLineCommentWithReason
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itLineCommentWithoutRuleProducesNoSuppression
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itMixedDocblockAndLineComments
@@ -5189,6 +5206,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itNextLineSuppressionHasNoEndLine
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itNextLineSuppressionInMultiLineDocblockUsesEndLine
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itProjectsFileAndNextLineControlsFromThePhysicalPathInFixedOrder
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itReadsAFileFormReasonIntroducedByTheSeparatorAsNoChannelFilter
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itReasonContainingAsteriskIsNotTruncated
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itReasonTrailingDocblockClosingIsStripped
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionExtractorTest::itRejectsADeclarationControlFromTheExplicitPhysicalOnlyPath
@@ -5219,7 +5237,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itFiltersNothingWhenTheTextIsNotASelector
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itFiltersOnAGroupOfDescendants
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itFiltersOnAnExactChannel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itFiltersOnAnExplicitChannelPair
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itKeepsTheNoRuleFilterFormWorking
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itRefusesAPairWithMoreThanTwoHalves
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itRefusesAWildcardInsideTheExplicitPair
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itConstructorProperties
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itConstructorWithNullReason
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itDoesNotCaptureADottedDescendantOfAnExactName
@@ -5546,6 +5567,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itClassifiesGitReportOutsideRepositoryAsConfigError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itClassifiesInvalidComputedMetricFormulaAsConfigError
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigErrorExitCodeTest::itClassifiesUnknownComputedMetricReferenceAsConfigError
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigurationErrorGateTest::itFailsAndReportsThroughAPathExclusionCoveringTheFile
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandConfigurationErrorGateTest::itFailsAndReportsThroughAnInlineSuppressionOfTheDiagnostic
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itClassifiesMissingGitReferenceAsInputErrorBeforePayload
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itFailsClosedForUnknownRuleSelectorWithoutPollutingStdout
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandInputValidationTest::itFormatsIncompleteAnalysisAndGivesItExitCodePriority
@@ -5821,6 +5844,13 @@ Available tests:
  - Qualimetrix\Tests\Integration\Infrastructure\Git\ReportingGitScopeQueryProjectSubdirTest::itProjectsGitScopeThroughTheReportingPortWithoutAReverseImport
  - Qualimetrix\Tests\Integration\Infrastructure\Git\ReportingGitScopeQueryProjectSubdirTest::itResolvesNamespaceExtractionPathAgainstProjectRootNotGitToplevel
  - Qualimetrix\Tests\Integration\Infrastructure\Git\ReportingGitScopeQueryProjectSubdirTest::itUsesExplicitProjectRootArgumentNotGitClientProjectRoot
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfigurationErrorProjectionTest::itIsNotPartOfTheSetABaselineMeasures
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfigurationErrorProjectionTest::itSurvivesABaselineEntryClaimingToAcceptIt
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfigurationErrorProjectionTest::itSurvivesAGitScopeThatContainsNothing
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfigurationErrorProjectionTest::itSurvivesAnInlineSuppressionCoveringEveryChannelOfTheFile
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfigurationErrorProjectionTest::itSurvivesAnInlineSuppressionNamingTheChannelItself
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfigurationErrorProjectionTest::itSurvivesNamespaceExclusion
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfigurationErrorProjectionTest::itSurvivesPathExclusion
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfiguredFindingExclusionsResolverTest::itAccumulatesAndDeduplicatesConfiguredExclusions
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\DeclaredChannelFileScopeTest::itLeavesAnUndeclaredChannelFileScoped
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\DeclaredChannelFileScopeTest::itMarksEveryDeclaredChannelAsProjectScoped

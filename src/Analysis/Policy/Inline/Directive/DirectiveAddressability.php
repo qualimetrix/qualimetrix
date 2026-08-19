@@ -39,9 +39,10 @@ final readonly class DirectiveAddressability
     }
 
     /**
-     * A suppression addresses a **channel**. Three spellings are legitimate:
-     * the absence of a rule filter, an exact channel name, and `X.*` for the
-     * channels below `X`. Everything else names nothing.
+     * A suppression addresses a **channel**. Four spellings are legitimate:
+     * the absence of a rule filter, an exact channel name, the explicit
+     * `ruleName#violationCode` pair, and `X.*` for the channels below `X`.
+     * Everything else names nothing.
      */
     public function problemWithSuppression(Suppression $suppression): ?string
     {
@@ -51,12 +52,28 @@ final readonly class DirectiveAddressability
         }
 
         $raw = (string) $target;
+
+        if ($raw === Suppression::REASON_SEPARATOR) {
+            return \sprintf(
+                'Suppression "%s" names no channel. Only @qmx-ignore-file may leave the channel out; on'
+                . ' @qmx-ignore and @qmx-ignore-next-line write the channel first, then "%s" and the reason.',
+                $raw,
+                Suppression::REASON_SEPARATOR,
+            );
+        }
+
+        if ($target->looksLikeChannelPair()) {
+            return $this->problemWithChannelPair($target->exactChannel(), $raw);
+        }
+
         $selector = NameSelector::tryParse($raw);
         if ($selector === null) {
             return \sprintf(
-                'Suppression "%s" is not a channel selector. Write an exact channel name, or "X.*" for the'
-                . ' channels below X.',
+                'Suppression "%s" is not a channel selector. Write an exact channel name,'
+                . ' "ruleName#violationCode", or "X.*" for the channels below X.'
+                . ' A reason goes after "%s".',
                 $raw,
+                Suppression::REASON_SEPARATOR,
             );
         }
 
@@ -65,9 +82,39 @@ final readonly class DirectiveAddressability
         }
 
         return \sprintf(
-            'Suppression "%s" addresses no channel. %s',
+            'Suppression "%s" addresses no channel. %s Prose belongs after "%s".',
             $raw,
             $this->hints->forChannelSelector($selector),
+            Suppression::REASON_SEPARATOR,
+        );
+    }
+
+    /**
+     * The explicit pair resolves against the channel universe directly: both
+     * halves are exact, so there is nothing to expand.
+     *
+     * @param ?array{ruleName: string, violationCode: string} $pair
+     */
+    private function problemWithChannelPair(?array $pair, string $raw): ?string
+    {
+        if ($pair === null) {
+            return \sprintf(
+                'Suppression "%s" is not a channel selector. The "ruleName#violationCode" form takes exactly'
+                . ' two exact halves and no "*" in either of them.',
+                $raw,
+            );
+        }
+
+        foreach ($this->identity->channels() as $channel) {
+            if ($channel->ruleName === $pair['ruleName'] && $channel->violationCode === $pair['violationCode']) {
+                return null;
+            }
+        }
+
+        return \sprintf(
+            'Suppression "%s" addresses no channel. %s',
+            $raw,
+            $this->hints->forChannelPair($pair['ruleName'], $pair['violationCode']),
         );
     }
 

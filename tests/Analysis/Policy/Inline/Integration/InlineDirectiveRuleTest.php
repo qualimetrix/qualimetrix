@@ -103,6 +103,69 @@ final class InlineDirectiveRuleTest extends TestCase
         self::assertStringContainsString('has no channels below it', $findings[0]->message);
     }
 
+    /** The explicit pair is a legitimate spelling of a channel that exists. */
+    #[Test]
+    public function itAcceptsAnExplicitChannelPair(): void
+    {
+        self::assertSame([], self::runWithSuppression('coupling.instability#coupling.instability.class'));
+    }
+
+    /**
+     * A pair whose halves belong to different channels is refused, and the
+     * diagnostic names the spelling the author should have written — the
+     * useful answer when both halves are exact is *which half* is wrong.
+     *
+     * The alternative this rules out is the one that shipped: the argument
+     * pattern stopped at "#", so the second half was silently dropped and the
+     * directive was judged against the truncated first half.
+     */
+    #[Test]
+    public function itRejectsAnExplicitPairWhoseHalvesDoNotBelongTogether(): void
+    {
+        $findings = self::runWithSuppression('complexity.cyclomatic#coupling.instability.class');
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
+            $findings[0]->violationCode,
+        );
+        self::assertStringContainsString(
+            'complexity.cyclomatic#coupling.instability.class',
+            $findings[0]->message,
+            'The authored text must round-trip whole; reporting half of it is the defect.',
+        );
+        self::assertStringContainsString('coupling.instability#coupling.instability.class', $findings[0]->message);
+    }
+
+    /**
+     * Prose where a channel was expected: the message has to teach the
+     * grammar rather than pretend the author mistyped a channel name, because
+     * on the file form the channel is optional and the first word of a reason
+     * is indistinguishable from one.
+     */
+    #[Test]
+    public function itExplainsTheGrammarWhenAFileFormCarriesABareReason(): void
+    {
+        $findings = self::runWithSuppression('Generated');
+
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('addresses no channel', $findings[0]->message);
+        self::assertStringContainsString('--', $findings[0]->message);
+    }
+
+    /**
+     * The separator standing alone in the channel position on a form whose
+     * channel is mandatory: the message says which forms may omit it.
+     */
+    #[Test]
+    public function itExplainsWhichFormMayOmitTheChannel(): void
+    {
+        $findings = self::runWithSuppression('--');
+
+        self::assertCount(1, $findings);
+        self::assertStringContainsString('Only @qmx-ignore-file may leave the channel out', $findings[0]->message);
+    }
+
     /** The one spelling that filters on nothing keeps working and stays silent. */
     #[Test]
     public function itAcceptsTheNoRuleFilterForm(): void

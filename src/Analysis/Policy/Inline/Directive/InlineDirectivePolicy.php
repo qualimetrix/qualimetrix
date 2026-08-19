@@ -265,11 +265,17 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
      * that would otherwise turn ordinary configuration into noise.
      *
      * A directive is counted only when the rule producing the channel it
-     * addresses actually ran: without that, disabling a family of rules — as
-     * the shipped `legacy` preset does — would report every annotation
-     * belonging to it as stale. The other limit needs no code: the directive
-     * maps are keyed by the files collection actually analysed, so a run
-     * scoped to part of the tree never sees an annotation outside it.
+     * addresses actually reported: without that, disabling a family of rules
+     * — as the shipped `legacy` preset does — would report every annotation
+     * belonging to it as stale. **Both** ways of switching a rule off count,
+     * because the user made the same decision either way: `disabled_rules`
+     * and `--disable-rule` stop the rule from running, and `rules: { X:
+     * false }` / `rules: { X: { enabled: false } }` let it run and return
+     * nothing. Reading only the first is what made the second report every
+     * annotation of the switched-off rule as a leftover. The other limit
+     * needs no code: the directive maps are keyed by the files collection
+     * actually analysed, so a run scoped to part of the tree never sees an
+     * annotation outside it.
      *
      * A directive that carries no rule filter at all is never counted. It
      * says "whatever is here", so there is no channel whose producer could be
@@ -281,26 +287,65 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
      */
     private function isAccountable(Suppression $suppression, array $only, array $disabled): bool
     {
-        if ($suppression->target()->appliesToEveryChannel()) {
+        $target = $suppression->target();
+        if ($target->appliesToEveryChannel()) {
             return false;
         }
 
-        $selector = NameSelector::tryParse((string) $suppression->target());
-        if ($selector === null) {
-            return false;
-        }
-
-        foreach ($this->identity->expand($selector) as $channel) {
-            $producer = $this->identity->producerOf($channel->violationCode);
+        foreach ($this->addressedViolationCodes($suppression) as $violationCode) {
+            $producer = $this->identity->producerOf($violationCode);
             if ($producer === null) {
                 continue;
             }
 
-            if ($this->ruleSelector->isProducerEnabled($producer, $only, $disabled)) {
+            if (
+                $this->ruleSelector->isProducerEnabled($producer, $only, $disabled)
+                && !$this->ruleConfiguration->isRuleDisabledByOptions($producer)
+            ) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * The violation codes a target addresses, whichever spelling it used.
+     *
+     * The explicit `ruleName#violationCode` pair needs no expansion — it
+     * already names one channel — while the one-part form has to be resolved
+     * against the universe before its producers can be consulted.
+     *
+     * @return list<string>
+     */
+    private function addressedViolationCodes(Suppression $suppression): array
+    {
+        $target = $suppression->target();
+        $pair = $target->exactChannel();
+        if ($pair !== null) {
+            foreach ($this->identity->channels() as $channel) {
+                if ($channel->ruleName === $pair['ruleName'] && $channel->violationCode === $pair['violationCode']) {
+                    return [$channel->violationCode];
+                }
+            }
+
+            return [];
+        }
+
+        if ($target->looksLikeChannelPair()) {
+            return [];
+        }
+
+        $selector = NameSelector::tryParse((string) $target);
+        if ($selector === null) {
+            return [];
+        }
+
+        $codes = [];
+        foreach ($this->identity->expand($selector) as $channel) {
+            $codes[] = $channel->violationCode;
+        }
+
+        return $codes;
     }
 }
