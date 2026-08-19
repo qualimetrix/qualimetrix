@@ -6,7 +6,7 @@ Qualimetrix\Analysis\Configuration\Contract\Exception\ConfigLoadException	Analys
 Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface	Analysis.Configuration	2	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationPipelineInterface	Analysis.Configuration	3	2
 Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	1	1
-Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface	Analysis.Evidence.CircularDependency	3	2
+Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface	Analysis.Evidence.CircularDependency	4	3
 Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface	Analysis.Evidence.Cohesion	2	2
 Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration	Analysis.Evidence.Cohesion	3	2
 Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationResolverInterface	Analysis.Evidence.Cohesion	3	2
@@ -77,6 +77,7 @@ Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides	Analysis
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysis.Finding	5	2
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Control\ControlScope	Analysis.Finding	5	1
+Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage	Analysis.Finding	1	1
@@ -97,6 +98,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface	Analysis.Finding	5	2
 Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface	Analysis.Finding	8	5
 Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface	Analysis.Finding	16	3
+Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface	Analysis.Finding	5	3
@@ -105,7 +107,6 @@ Qualimetrix\Analysis\Finding\Contract\Rule\Override\WarningOnlyValidator	Analysi
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory	Analysis.Finding	31	12
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface	Analysis.Finding	5	3
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel	Analysis.Finding	11	3
-Qualimetrix\Analysis\Finding\Contract\Rule\RuleMatcher	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader	Analysis.Finding	7	4
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey	Analysis.Finding	45	13
 Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface	Analysis.Finding	34	14
@@ -125,7 +126,7 @@ Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePolicyConfigurator
 Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitecturePreparationException	Analysis.Policy.Architecture	3	1
 Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentInspectorInterface	Analysis.Policy.Architecture	2	2
 Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch	Analysis.Policy.Architecture	1	1
-Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface	Analysis.Policy.Architecture	3	2
+Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface	Analysis.Policy.Architecture	4	3
 Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface	Analysis.Policy.Architecture	1	1
 Qualimetrix\Analysis\Policy\Baseline\Baseline	Analysis.Policy.Baseline	3	1
 Qualimetrix\Analysis\Policy\Baseline\BaselineCapture	Analysis.Policy.Baseline	1	1

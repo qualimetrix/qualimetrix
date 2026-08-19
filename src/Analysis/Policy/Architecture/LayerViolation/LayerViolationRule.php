@@ -95,13 +95,13 @@ final class LayerViolationRule extends AbstractRule
 {
     public const string NAME = LayerPolicyPreparationInterface::PRODUCER_RULE_NAME;
 
-    public const string COVERAGE_DIAGNOSTIC_NAME = 'architecture.coverage';
+    public const string COVERAGE_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME;
 
-    public const string UNREACHABLE_LAYER_DIAGNOSTIC_NAME = 'architecture.unreachable-layer';
+    public const string UNREACHABLE_LAYER_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME;
 
-    public const string POTENTIAL_SHADOW_DIAGNOSTIC_NAME = 'architecture.potential-shadow';
+    public const string POTENTIAL_SHADOW_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
 
-    public const string EMPTY_TEMPLATE_DIAGNOSTIC_NAME = 'architecture.empty-template';
+    public const string EMPTY_TEMPLATE_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
 
     private const int COVERAGE_SAMPLE_LIMIT = 10;
 

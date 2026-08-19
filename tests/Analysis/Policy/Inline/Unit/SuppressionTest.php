@@ -34,7 +34,7 @@ final class SuppressionTest extends TestCase
     }
 
     #[Test]
-    public function itMatchesPrefixRule(): void
+    public function itDoesNotTreatABarePrefixAsAGroup(): void
     {
         $suppression = new Suppression(
             rule: 'complexity',
@@ -45,11 +45,51 @@ final class SuppressionTest extends TestCase
             controlScope: ControlScope::Callable,
         );
 
-        // Prefix matching: 'complexity' matches all complexity.* violations
+        // `complexity` addresses the channel called `complexity` — there is
+        // none — and nothing else. A group is written `complexity.*`.
         self::assertTrue($suppression->matches('complexity'));
-        self::assertTrue($suppression->matches('complexity.cyclomatic'));
-        self::assertTrue($suppression->matches('complexity.cyclomatic.callable'));
+        self::assertFalse($suppression->matches('complexity.cyclomatic'));
+        self::assertFalse($suppression->matches('complexity.cyclomatic.callable'));
         self::assertFalse($suppression->matches('coupling'));
+    }
+
+    #[Test]
+    public function itMatchesStrictDescendantsOfAGroupSelector(): void
+    {
+        $suppression = new Suppression(
+            rule: 'complexity.cyclomatic.*',
+            reason: 'Legacy code',
+            line: 10,
+            type: SuppressionType::Symbol,
+            subject: $this->subject(),
+            controlScope: ControlScope::Callable,
+        );
+
+        self::assertTrue($suppression->matches('complexity.cyclomatic.callable'));
+        self::assertTrue($suppression->matches('complexity.cyclomatic.class'));
+        // The parent is not one of its own descendants: a directive meaning
+        // both is written twice.
+        self::assertFalse($suppression->matches('complexity.cyclomatic'));
+        self::assertFalse($suppression->matches('complexity.cognitive.callable'));
+    }
+
+    #[Test]
+    public function itDoesNotCaptureADottedDescendantOfAnExactName(): void
+    {
+        // The latent defect this substrate removes: a channel named as a
+        // dotted descendant of an existing one used to fall under every
+        // selector of its parent.
+        $suppression = new Suppression(
+            rule: 'architecture.coverage',
+            reason: null,
+            line: 10,
+            type: SuppressionType::Symbol,
+            subject: $this->subject(),
+            controlScope: ControlScope::Callable,
+        );
+
+        self::assertTrue($suppression->matches('architecture.coverage'));
+        self::assertFalse($suppression->matches('architecture.coverage.source'));
     }
 
     #[Test]

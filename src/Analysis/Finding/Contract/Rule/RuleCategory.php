@@ -4,6 +4,22 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Finding\Contract\Rule;
 
+/**
+ * How a rule is grouped for **display** — `qmx rules --group` and report
+ * headings — and nothing else.
+ *
+ * A category is deliberately not addressable: no directive and no selector
+ * matches on it. It used to double as a group matcher, deriving membership
+ * from the first dot-separated segment of a rule name, which quietly made the
+ * name space's spelling a behavioural contract. Behaviour that used to be
+ * derived here is now declared where it belongs — a channel that path and
+ * namespace exclusions cannot touch says so itself, see
+ * {@see \Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope}.
+ *
+ * The residual consequence is harmless: a category value happening to equal
+ * the first segment of a rule name (and `computed.health` disagreeing with
+ * `Maintainability`) is now a correlation nothing reads.
+ */
 enum RuleCategory: string
 {
     case Complexity = 'complexity';
@@ -15,19 +31,4 @@ enum RuleCategory: string
     case CodeSmell = 'code-smell';
     case Security = 'security';
     case Duplication = 'duplication';
-
-    /**
-     * Checks whether a rule's `NAME` slug (e.g. `architecture.layer-violation`)
-     * belongs to this category, per the `group.rule-name` format every rule's
-     * `NAME` constant follows.
-     *
-     * Single point of truth for "does this rule name belong to category X" —
-     * consumers such as {@see \Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter}
-     * and {@see \Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter} both defer to
-     * this instead of re-deriving the prefix check themselves.
-     */
-    public function matches(string $ruleName): bool
-    {
-        return RuleMatcher::matches($this->value, $ruleName);
-    }
 }

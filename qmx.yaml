@@ -420,6 +420,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration'
         - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Control\ControlScope'
+        - 'Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage'
@@ -444,6 +445,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface'
@@ -453,7 +455,6 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel'
-        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleMatcher'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface'
@@ -595,6 +596,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\SourceControls'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic'
@@ -852,6 +854,7 @@ architecture:
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult'
+        - 'Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjectionResult'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjector'
@@ -1162,11 +1165,13 @@ architecture:
       - external
     reporting:
       - analysis-configuration
+      - analysis-evidence-circulardependency
       - analysis-evidence-computedmetrics
       - analysis-evidence-computedmetrics-health
       - analysis-evidence-measurement
       - analysis-evidence-prioritization
       - analysis-finding
+      - analysis-policy-architecture
       - analysis-policy-baseline
       - analysis-policy-inline
       - core-neutral

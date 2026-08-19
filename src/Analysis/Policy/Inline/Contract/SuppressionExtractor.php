@@ -9,6 +9,7 @@ use PhpParser\Comment\Doc;
 use PhpParser\Node;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Core\Symbol\MetricSubject;
 
@@ -22,9 +23,15 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  * - Block comments: /* `@qmx-ignore ...` * /
  *
  * Supported tags:
- * - `@qmx-ignore <rule> [reason]`
- * - `@qmx-ignore-next-line <rule> [reason]`
- * - `@qmx-ignore-file [rule] [reason]`
+ * - `@qmx-ignore <channel> [reason]`
+ * - `@qmx-ignore-next-line <channel> [reason]`
+ * - `@qmx-ignore-file [channel] [reason]`
+ *
+ * The argument names a **channel**, fully qualified — an exact `violationCode`
+ * or `X.*` for its strict descendants. The two "everything here" spellings
+ * survive unchanged: `*` on the symbol and next-line forms, and an omitted
+ * argument on the file form. Both mean "no rule filter", not "a wildcard
+ * selector"; see {@see SuppressionTarget}.
  *
  * Note: inline same-line comments (e.g., `$x = foo(); // @qmx-ignore rule`) are not supported.
  * Only separate-line comments are recognized.
@@ -137,7 +144,12 @@ final readonly class SuppressionExtractor
             foreach ($patternMatches as $match) {
                 $rule = $match[1] ?? '';
                 if ($type === SuppressionType::File && $rule === '') {
-                    $rule = '*';
+                    // A bare `@qmx-ignore-file` carries no rule filter. It is
+                    // desugared to the same spelling the symbol and next-line
+                    // forms use for that state, so all three converge on one
+                    // {@see SuppressionTarget} case rather than on a wildcard
+                    // selector — see that type for why the distinction matters.
+                    $rule = SuppressionTarget::NO_RULE_FILTER;
                 }
                 if ($rule === '') {
                     continue;

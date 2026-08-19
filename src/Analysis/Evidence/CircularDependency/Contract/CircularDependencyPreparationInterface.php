@@ -16,6 +16,20 @@ interface CircularDependencyPreparationInterface
 {
     public const string PRODUCER_RULE_NAME = 'architecture.circular-dependency';
 
+    /**
+     * This capability's channels that are **not** file-scoped: a cycle is a
+     * property of the dependency graph, not of the file a member of it happens
+     * to sit in, so `exclude_paths` and `exclude_namespaces` do not apply to
+     * its findings. Declared here rather than inferred from the
+     * `architecture.` spelling — see
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope}.
+     *
+     * @var list<string> {@see \Qualimetrix\Analysis\Finding\Contract\ViolationChannel::toKey()} form
+     */
+    public const array PROJECT_SCOPED_CHANNELS = [
+        self::PRODUCER_RULE_NAME . '#' . self::PRODUCER_RULE_NAME,
+    ];
+
     public function prepare(DependencyGraphInterface $graph): void;
 
     public function reset(): void;

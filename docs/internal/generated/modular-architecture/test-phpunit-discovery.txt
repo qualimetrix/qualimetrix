@@ -185,10 +185,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\ConfigurationPipelineTest::itSortsStagesByPriority
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::emptyRulesSection_noException
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::exactMatch_noException
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::forwardPrefixMatch_noException
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itRejectsAGroupKeyThatNamesNoRule
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itRejectsAKeyRefiningARuleNameWithAChannelSuffix
+ - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::itRejectsAWildcardKey
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::multipleUnknownNames_allListedInException
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::noRulesSection_noException
- - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::reversePrefixMatch_noException
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::unknownRuleName_throwsException
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::validateRuleNamesListsMultipleUnknowns
  - Qualimetrix\Tests\Analysis\Configuration\Unit\Pipeline\RuleNameValidatorTest::validateRuleNamesNoSuggestionForDistantMatch
@@ -3421,14 +3422,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextTest::itIsReadonly
  - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itBoundedOverrideWinsOverUnbounded
  - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itGetThresholdOverrideMatchesExact
- - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itGetThresholdOverrideMatchesPrefix
  - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itGetThresholdOverrideRespectsLineScope
  - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itGetThresholdOverrideReturnsNullForNonMatchingRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itGetThresholdOverrideReturnsNullForUnknownFile
  - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itGetThresholdOverrideReturnsNullWhenNoOverrides
  - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itGetThresholdOverrideReturnsSameSpanFirstMatch
  - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itGetThresholdOverrideWithNullEndLine
- - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itGetThresholdOverrideWithWildcard
+ - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itIgnoresAWildcardOverride
+ - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itIgnoresAnOverrideThatOnlyPrefixesTheRuleName
  - Qualimetrix\Tests\Analysis\Finding\Unit\AnalysisContextThresholdTest::itMethodLevelOverrideTakesPriorityOverClassLevel
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itAttributesDiagnosticChannelsToTheirProducerRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationCompilerPassTest::itCollectsDeclarationsFromEveryTaggedRuleIntoTheRegistry
@@ -3482,11 +3483,27 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\LocationTest::itToString"file with line"
  - Qualimetrix\Tests\Analysis\Finding\Unit\LocationTest::itToString"file without line"
  - Qualimetrix\Tests\Analysis\Finding\Unit\LocationTest::itToString"relative path with line"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itAnswersAnyMatchAcrossAListAndIgnoresNonSelectors
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itExposesTheNameHalfAndTheGroupFlag
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itMatchesOnlyTheExactName
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itMatchesStrictDescendantsAndNotTheParent
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itRefusesTextThatIsNotASelector"bare group suffix"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itRefusesTextThatIsNotASelector"empty inner segment"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itRefusesTextThatIsNotASelector"empty"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itRefusesTextThatIsNotASelector"inner wildcard"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itRefusesTextThatIsNotASelector"leading wildcard"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itRefusesTextThatIsNotASelector"lone wildcard"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itRefusesTextThatIsNotASelector"partial segment wildcard"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itRefusesTextThatIsNotASelector"trailing dot"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itRefusesTextThatIsNotASelector"wildcard without dot"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NameSelectorTest::itRoundTripsToItsAuthoredForm
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itFiltersAChannelNoCapabilityDeclaredProjectScoped
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itFiltersFileSymbolViolationWhoseSubjectNamespaceMatches
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itFiltersSuppressedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsArchitectureCoverageDiagnosticEvenIfNamePrefixMatchesByCoincidence
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsArchitectureRuleEvenWhenItIsAFileSymbolViolationInExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsCircularDependencyRuleInExcludedNamespace
+ - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsEveryDeclaredProjectScopedChannelInAnExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itKeepsLayerViolationRuleInExcludedNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesFileSymbolViolationWhoseSubjectNamespaceDoesNotMatch
  - Qualimetrix\Tests\Analysis\Finding\Unit\NamespaceExclusionFilterTest::itPassesFileSymbolViolationWithoutDeclaringNamespace
@@ -3495,10 +3512,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itCanonicalizesNamedScalarEvidenceIndependentlyOfInputOrder
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itDistinguishesTheSemanticKindAndEvidence
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itRejectsAnEmptyKindOrEvidenceName
+ - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itFiltersAChannelNoCapabilityDeclaredProjectScoped
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itFiltersGlobPattern
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itFiltersSuppressedPath
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itKeepsArchitectureProjectWideDiagnosticsRegardlessOfPathMatcher
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itKeepsCircularDependencyRuleInExcludedPath
+ - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itKeepsEveryDeclaredProjectScopedChannelInAnExcludedPath
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itKeepsLayerViolationRuleInExcludedPath
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itPassesEmptyFilePath
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itPassesNonMatchingPath
@@ -3515,6 +3534,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDisabledRulesTakePrecedenceOverOnlyRules
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDoesNotCaptureExcludedPathViolationsWhenCaptureHolderIsDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDoesNotCaptureExcludedViolationsWhenCaptureHolderIsDisabled
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itDoesNotTreatABarePrefixAsAGroup
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExcludePathsAreIsolatedPerRule
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExcludePathsWithEmptyFilePassesThrough
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExclusionStatsAreEmptyBeforeFirstExecute
@@ -3525,17 +3545,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesHierarchicalRuleWithEntireRuleDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesHierarchicalRuleWithSpecificViolationCodeDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesWithAllRulesEnabled
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesWithGroupDisable
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesWithIterableRules
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesWithNoRules
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesWithOnlyRulesFilter
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itExecutesWithPrefixDisable
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itFiltersDisabledRulesDuringExecute
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itFiltersFileSymbolViolationsBySubjectNamespaceExclusion
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itFiltersViolationsByExcludePaths
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itFiltersViolationsByNamespaceExclusion
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itFiltersViolationsByViolationCodeDuringExecute
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itGetActiveRulesReturnsOnlyEnabled
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itGetActiveRulesWithPrefixOnlyRules
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itGetActiveRulesWithAGroupOnlySelector
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itGetTotalRulesCountIncludesDisabled
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itKeepsComputedFindingsWhenOnlyTheProducerRuleIsSelected
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleExecutorTest::itNamespaceExclusionDoesNotAffectOtherRules
@@ -3552,31 +3572,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleLevelTest::itEnumValues
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleLevelTest::itFromString
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleLevelTest::itTryFromWithInvalidValue
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itAnyMatchesExactAndPrefix
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itAnyMatchesReturnsFalseWhenNoneMatch
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itAnyMatchesReturnsTrueWhenOneMatches
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itAnyMatchesWithEmptyPatterns
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itAnyReverseMatchesEmpty
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itAnyReverseMatchesExact
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itAnyReverseMatchesNoMatch
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itAnyReverseMatchesSubjectIsPrefixOfPattern
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"both empty"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"different rule"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"empty pattern"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"empty subject"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"exact match dotted"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"exact match simple"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"exact match triple"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"partial name no dot"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"partial name with dot"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"prefix code-smell group"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"prefix dotted"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"prefix one level"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"prefix size group"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"prefix two levels"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"reverse does not match"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"reverse triple"
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleMatcherTest::itMatches"similar prefix"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itReadsTheNameConstantWithoutInstantiation
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsAClassThatCannotBeLoaded
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsANonStringNameConstant
@@ -3587,6 +3582,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itConfiguresAndQueriesNamespaceExclusionsWithoutProviderAccess
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itDoesNotFalselyMatchPrefix
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itDoesNotStoreEmptyArray
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itDoesNotTreatABareSelectorPrefixAsAGroup
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itGetsExclusions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itHandlesMultiplePrefixes
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itHandlesTrailingBackslash
@@ -3595,7 +3591,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itMatchesExactNamespace
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itReturnsFalseForRuleWithNoExclusions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itScopesNamespaceExclusionToTheViolationCode
- - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itUsesViolationCodePrefixSemanticsForChannelExclusions
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itUsesGroupSelectorSemanticsForChannelExclusions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::cliOptionsDoNotLeakBetweenRunsAfterReset
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::cliPrefixedGraduatedKeysOverrideConfigFileThreshold
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleOptionsFactoryTest::cliThresholdOverridesConfigFilePrefixedGraduatedKeys
@@ -3884,6 +3880,26 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"size.class-count::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"size.method-count::"
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleThresholdKeyGroupRegistryDriftTest::everyThresholdParserCallSiteHasAMatchingRegistryEntry"size.property-count::"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itAcceptsOnlyExactProducerNamesAsOptionOwners
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itDisablesExactlyTheseChannels"bare prefix without a star selects nothing"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itDisablesExactlyTheseChannels"exact descendant does not swallow its own descendant"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itDisablesExactlyTheseChannels"exact producer name selects every channel of that producer"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itDisablesExactlyTheseChannels"explicit two-part form addresses both halves exactly"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itDisablesExactlyTheseChannels"explicit two-part form takes no wildcard"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itDisablesExactlyTheseChannels"group selector on the sibling does not reach this producer"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itDisablesExactlyTheseChannels"group selector selects strict descendants and not the parent"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itDisablesExactlyTheseChannels"lone wildcard is not a selector"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itDisablesExactlyTheseChannels"selector deeper than any channel selects nothing"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itEnablesTheProducerThroughItsChannelsAndNotByReversePrefix
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itSelectsExactlyTheseChannels"bare prefix without a star selects nothing"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itSelectsExactlyTheseChannels"exact descendant does not swallow its own descendant"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itSelectsExactlyTheseChannels"exact producer name selects every channel of that producer"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itSelectsExactlyTheseChannels"explicit two-part form addresses both halves exactly"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itSelectsExactlyTheseChannels"explicit two-part form takes no wildcard"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itSelectsExactlyTheseChannels"group selector on the sibling does not reach this producer"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itSelectsExactlyTheseChannels"group selector selects strict descendants and not the parent"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itSelectsExactlyTheseChannels"lone wildcard is not a selector"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\SelectorCompatibilityOracleTest::itSelectsExactlyTheseChannels"selector deeper than any channel selects nothing"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itAllCasesHaveDisplayName
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itDisplayName"error display name"
  - Qualimetrix\Tests\Analysis\Finding\Unit\SeverityTest::itDisplayName"info display name"
@@ -3899,9 +3915,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itFieldsAreAccessible
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itFloatThresholds
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itMatchesExact
- - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itMatchesPrefix
- - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itMatchesWildcard
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itNullWarningAndError
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itRejectsABarePrefix
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itRejectsAGroupSelector
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdOverrideTest::itRejectsTheWildcardToken
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::customKeysWithLegacyFallback
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::customThresholdKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\ThresholdParserTest::emptyConfigReturnsDefaults
@@ -5159,7 +5176,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itPassesThroughWhenDifferentFile
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itPassesThroughWhenNoSuppressions
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itResolvesTargetControlsIndependentlyOfThePresentationFileAndRebuildsTheIndex
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itSuppressionMatchesViolationCodeWithPrefixMatching
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itSuppressionMatchesViolationCodeWithAGroupSelector
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itSuppressionsDoNotAccumulateAcrossMultipleLoads
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itSymbolLevelDoesNotAffectViolationsBeforeSuppressionLine
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itSymbolLevelSuppressesViolationsAtOrAfterSuppressionLine
@@ -5167,10 +5184,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itSymbolSuppressionDoesNotSuppressNullLineViolation
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itSymbolSuppressionWithoutEndLineActsUntilEndOfFile
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionFilterTest::itWildcardFileSuppressesAllRules
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itFiltersNothingWhenTheTextIsNotASelector
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itFiltersOnAGroupOfDescendants
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itFiltersOnAnExactChannel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTargetTest::itKeepsTheNoRuleFilterFormWorking
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itConstructorProperties
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itConstructorWithNullReason
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itDoesNotCaptureADottedDescendantOfAnExactName
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itDoesNotTreatABarePrefixAsAGroup
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itMatchesExactRule
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itMatchesPrefixRule
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itMatchesStrictDescendantsOfAGroupSelector
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itReverseDoesNotMatch
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\SuppressionTest::itWildcardMatchesAllRules
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itAcceptsNonemptyReasonAfterAsciiSeparator
@@ -5183,6 +5206,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itDiagnosticForInvalidSyntax
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itDiagnosticForWarningGreaterThanError
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itDiagnosticForWarningGreaterThanErrorWithFloats
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itExtractsABarePrefixButAddressesNoRuleWithIt
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itExtractsExplicitSyntaxBothValues
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itExtractsExplicitSyntaxErrorOnly
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itExtractsExplicitSyntaxWarningOnly
@@ -5190,7 +5214,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itExtractsFloatThresholds
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itExtractsFromMethodDocblock
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itExtractsMultipleAnnotations
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itExtractsPrefixPattern
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itExtractsShorthandSyntax
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itExtractsWildcardPattern
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itKeepsASingleLineTagOnTheDocblockStartLine
@@ -5208,10 +5231,10 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itReturnsEmptyForNoDocComment
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itSkipsInvalidSyntax
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideExtractorTest::itSkipsWarningGreaterThanError
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itAppliesAnOverrideOnlyToTheRuleItNamesExactly
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itAppliesClassLevelOverrideToMethodsInClass
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itAppliesMethodLevelOverrideOnlyToSpecificMethod
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itAppliesOverriddenThresholdInMethodCountRule
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itAppliesPrefixOverrideToMultipleRules
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itAppliesTheExactCboSelectorBeforeSeverityProjection
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itAppliesTheExactTypeCoverageSelectorToAllClosedDimensions
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\ThresholdOverrideIntegrationTest::itIncludesOverriddenThresholdInViolationMessage
@@ -5750,6 +5773,8 @@ Available tests:
  - Qualimetrix\Tests\Integration\Infrastructure\Git\ReportingGitScopeQueryProjectSubdirTest::itResolvesNamespaceExtractionPathAgainstProjectRootNotGitToplevel
  - Qualimetrix\Tests\Integration\Infrastructure\Git\ReportingGitScopeQueryProjectSubdirTest::itUsesExplicitProjectRootArgumentNotGitClientProjectRoot
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ConfiguredFindingExclusionsResolverTest::itAccumulatesAndDeduplicatesConfiguredExclusions
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\DeclaredChannelFileScopeTest::itLeavesAnUndeclaredChannelFileScoped
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\DeclaredChannelFileScopeTest::itMarksEveryDeclaredChannelAsProjectScoped
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\FindingProjectorTest::itAcceptsAGroupItsEntryBounds
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\FindingProjectorTest::itAppendsRestoredFindingsAfterTheOnesThatWereNeverSuppressed
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\FindingProjectorTest::itCollectsInertEntriesFromTheLoadedBaseline

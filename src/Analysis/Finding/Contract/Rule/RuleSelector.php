@@ -9,9 +9,21 @@ use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 /**
  * Applies rule filters to producer rules and full violation channels.
  *
- * Bare selectors preserve the CLI's prefix shorthand and may address either
- * a producer rule, a channel rule name, or a violation code. A selector in
- * `ruleName#violationCode` form addresses both channel components explicitly.
+ * A one-part selector is a {@see NameSelector}: an exact name, or `X.*` for
+ * its strict descendants. It may address a producer rule, a channel's rule
+ * name, or a channel's violation code — selection is the one surface that
+ * deliberately reads both halves, because `--disable-rule` has always been
+ * asked to mean both "stop running this rule" and "stop reporting this
+ * channel".
+ *
+ * A selector in `ruleName#violationCode` form addresses both halves
+ * explicitly, and both halves are exact. That form exists precisely to say
+ * which half is meant, so a wildcard inside it would multiply the surface
+ * without adding anything a one-part group selector cannot say.
+ *
+ * Two behaviours are gone, and neither was ever written down as a decision:
+ * a bare prefix silently standing for a group, and the reverse match by which
+ * a *narrower* selector enabled a broader producer.
  */
 final class RuleSelector
 {
@@ -103,15 +115,17 @@ final class RuleSelector
     }
 
     /**
-     * Whether a bare rule name addresses a registered producer. This is for
-     * rule-option validation, whose keys cannot address violation channels.
+     * Whether a name addresses a registered producer **exactly**. This is for
+     * rule-option ownership — `rules:` keys and `--rule-opt RULE:...` — whose
+     * keys cannot address violation channels and cannot address a group
+     * either: options are applied by exact key, so a group key configured
+     * nothing while looking as if it did.
      *
      * @param list<string> $producerRuleNames
      */
     public function matchesKnownProducer(string $name, array $producerRuleNames): bool
     {
-        return RuleMatcher::anyMatches($producerRuleNames, $name)
-            || RuleMatcher::anyReverseMatches($producerRuleNames, $name);
+        return \in_array($name, $producerRuleNames, true);
     }
 
     /**
@@ -137,7 +151,7 @@ final class RuleSelector
     private function matchesProducerName(array $selectors, string $producerRuleName): bool
     {
         foreach ($selectors as $selector) {
-            if (!str_contains($selector, '#') && RuleMatcher::matches($selector, $producerRuleName)) {
+            if (!str_contains($selector, '#') && self::matchesName($selector, $producerRuleName)) {
                 return true;
             }
         }
@@ -150,12 +164,8 @@ final class RuleSelector
         string $producerRuleName,
         RuleChannelRegistryInterface $channels,
     ): bool {
-        if (!str_contains($selector, '#')) {
-            if (RuleMatcher::matches($selector, $producerRuleName)
-                || RuleMatcher::matches($producerRuleName, $selector)
-            ) {
-                return true;
-            }
+        if (!str_contains($selector, '#') && self::matchesName($selector, $producerRuleName)) {
+            return true;
         }
 
         foreach ($channels->channelsProducedBy($producerRuleName) as $channel) {
@@ -176,7 +186,7 @@ final class RuleSelector
         ViolationChannel $channel,
     ): bool {
         foreach ($selectors as $selector) {
-            if (!str_contains($selector, '#') && RuleMatcher::matches($selector, $producerRuleName)) {
+            if (!str_contains($selector, '#') && self::matchesName($selector, $producerRuleName)) {
                 return true;
             }
 
@@ -191,8 +201,8 @@ final class RuleSelector
     private function matchesChannel(string $selector, ViolationChannel $channel): bool
     {
         if (!str_contains($selector, '#')) {
-            return RuleMatcher::matches($selector, $channel->ruleName)
-                || RuleMatcher::matches($selector, $channel->violationCode);
+            return self::matchesName($selector, $channel->ruleName)
+                || self::matchesName($selector, $channel->violationCode);
         }
 
         $parts = explode('#', $selector);
@@ -202,9 +212,16 @@ final class RuleSelector
 
         [$ruleName, $violationCode] = $parts;
 
-        return $ruleName !== ''
-            && $violationCode !== ''
-            && RuleMatcher::matches($ruleName, $channel->ruleName)
-            && RuleMatcher::matches($violationCode, $channel->violationCode);
+        return $ruleName === $channel->ruleName
+            && $violationCode === $channel->violationCode;
+    }
+
+    /**
+     * One-part selector semantics, in one place: equality, or `X.*` for strict
+     * descendants. Text that is neither selects nothing.
+     */
+    private static function matchesName(string $selector, string $subject): bool
+    {
+        return NameSelector::tryParse($selector)?->matches($subject) === true;
     }
 }

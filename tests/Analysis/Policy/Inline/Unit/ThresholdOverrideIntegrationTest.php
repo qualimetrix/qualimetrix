@@ -727,22 +727,26 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function itAppliesPrefixOverrideToMultipleRules(): void
+    public function itAppliesAnOverrideOnlyToTheRuleItNamesExactly(): void
     {
         $options = new MethodComplexityOptions(warning: 10, error: 20);
 
         self::assertInstanceOf(ThresholdAwareOptionsInterface::class, $options); // @phpstan-ignore staticMethod.alreadyNarrowedType
 
-        // A 'complexity' prefix override should match 'complexity.cyclomatic'
         $subject = self::declarationSubject(
             SymbolPath::forClass('App\\Service', 'BigService'),
             'src/Service/BigService.php',
             100,
         );
-        $override = self::override('complexity', 20, 30, $subject, ControlScope::Class_, 1, null);
+        $override = self::override('complexity.cyclomatic', 20, 30, $subject, ControlScope::Class_, 1, null);
         self::assertTrue($override->matches('complexity.cyclomatic'));
-        self::assertTrue($override->matches('complexity.cognitive'));
+        self::assertFalse($override->matches('complexity.cognitive'));
         self::assertFalse($override->matches('coupling.cbo'));
+
+        // The former group spelling reaches nothing at all.
+        $group = self::override('complexity', 20, 30, $subject, ControlScope::Class_, 1, null);
+        self::assertFalse($group->matches('complexity.cyclomatic'));
+        self::assertFalse($group->matches('complexity.cognitive'));
     }
     private static function declarationSubject(SymbolPath $logical, string $file, int $startFilePos): MetricSubject
     {

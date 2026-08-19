@@ -18,7 +18,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceTree;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleMatcher;
 use Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
@@ -408,7 +407,7 @@ final class AnalysisPipeline implements AnalysisPipelineInterface
     {
         return array_any(
             $supportedRules,
-            static fn(string $ruleName): bool => RuleMatcher::matches($override->rulePattern, $ruleName),
+            static fn(string $ruleName): bool => $override->matches($ruleName),
         );
     }
 

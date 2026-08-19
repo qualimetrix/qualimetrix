@@ -10,6 +10,7 @@ src/Reporting/FindingProjection/Contract/ConfiguredFindingExclusionsResolverInte
 src/Reporting/FindingProjection/Contract/GitScopeQueryInterface.php	Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface	"output projection"	Reporting	P6-D
 src/Reporting/FindingProjection/Contract/GitScopeRequest.php	Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest	"output projection"	Reporting	P6-D
 src/Reporting/FindingProjection/Contract/GitScopeResult.php	Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult	"output projection"	Reporting	P6-D
+src/Reporting/FindingProjection/DeclaredChannelFileScope.php	Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope	"output projection"	Reporting	P6-D
 src/Reporting/FindingProjection/FindingProjectionOptions.php	Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions	"output projection"	Reporting	P6-D
 src/Reporting/FindingProjection/FindingProjectionResult.php	Qualimetrix\Reporting\FindingProjection\FindingProjectionResult	"output projection"	Reporting	P6-D
 src/Reporting/FindingProjection/FindingProjector.php	Qualimetrix\Reporting\FindingProjection\FindingProjector	"output projection"	Reporting	P6-D

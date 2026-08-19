@@ -34,7 +34,7 @@ final class ThresholdOverrideTest extends TestCase
     }
 
     #[Test]
-    public function itMatchesPrefix(): void
+    public function itRejectsABarePrefix(): void
     {
         $override = new ThresholdOverride(
             rulePattern: 'complexity',
@@ -45,14 +45,34 @@ final class ThresholdOverrideTest extends TestCase
             controlScope: ControlScope::Callable,
         );
 
-        self::assertTrue($override->matches('complexity.cyclomatic'));
-        self::assertTrue($override->matches('complexity.cognitive'));
+        self::assertFalse($override->matches('complexity.cyclomatic'));
+        self::assertFalse($override->matches('complexity.cognitive'));
         self::assertFalse($override->matches('coupling.cbo'));
     }
 
     #[Test]
-    public function itMatchesWildcard(): void
+    public function itRejectsAGroupSelector(): void
     {
+        // A threshold belongs to one rule's options object, so there is no
+        // group form at all — not even the explicit one selection accepts.
+        $override = new ThresholdOverride(
+            rulePattern: 'complexity.*',
+            warning: 15,
+            error: 25,
+            line: 10,
+            subject: $this->subject(),
+            controlScope: ControlScope::Callable,
+        );
+
+        self::assertFalse($override->matches('complexity.cyclomatic'));
+        self::assertFalse($override->matches('complexity.cognitive'));
+    }
+
+    #[Test]
+    public function itRejectsTheWildcardToken(): void
+    {
+        // `@qmx-threshold * 30` used to reset every rule's threshold on a
+        // symbol. That is the footgun the exact form removes.
         $override = new ThresholdOverride(
             rulePattern: '*',
             warning: 30,
@@ -62,9 +82,9 @@ final class ThresholdOverrideTest extends TestCase
             controlScope: ControlScope::Callable,
         );
 
-        self::assertTrue($override->matches('complexity.cyclomatic'));
-        self::assertTrue($override->matches('coupling.cbo'));
-        self::assertTrue($override->matches('anything'));
+        self::assertFalse($override->matches('complexity.cyclomatic'));
+        self::assertFalse($override->matches('coupling.cbo'));
+        self::assertFalse($override->matches('anything'));
     }
 
     #[Test]

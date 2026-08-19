@@ -1233,8 +1233,8 @@ Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface	Anal
 Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Control\ControlScope	Analysis.Finding	contract	P6-B
 Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor	Analysis.Policy.Inline	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract	P8
 Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Control\ControlScope	Analysis.Finding	contract	P6-B
-Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\RuleMatcher	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression	Analysis.Policy.Inline	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract	P8
+Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Control\ControlScope	Analysis.Finding	contract	P6-B
 Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor	Analysis.Policy.Inline	Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Finding	contract	P6-B
 Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor	Analysis.Policy.Inline	Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	contract	P8
@@ -1310,7 +1310,6 @@ Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Anal
 Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface	Analysis.Finding	contract	P6-A
-Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Analysis\Finding\Contract\Rule\RuleMatcher	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract	P6-A
 Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline	Analysis.Run	Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Finding	contract	P6-B
@@ -1849,6 +1848,9 @@ Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusion
 Qualimetrix\Reporting\FindingProjection\Configuration\ConfiguredFindingExclusionsResolver	Reporting	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract	P4
 Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface	Reporting	Qualimetrix\Analysis\Configuration\Contract\ConfigurationDocument	Analysis.Configuration	contract	P4
 Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest	Reporting	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract	P8
+Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope	Reporting	Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface	Analysis.Evidence.CircularDependency	contract	P4
+Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope	Reporting	Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope	Analysis.Finding	contract	P6-A
+Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope	Reporting	Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface	Analysis.Policy.Architecture	contract	P4
 Qualimetrix\Reporting\FindingProjection\FindingProjectionResult	Reporting	Qualimetrix\Analysis\Finding\Contract\Filter\ViolationFilterStage	Analysis.Finding	contract	P6-A
 Qualimetrix\Reporting\FindingProjection\FindingProjector	Reporting	Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	contract	P6-A
 Qualimetrix\Reporting\FindingProjection\FindingProjector	Reporting	Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter	Analysis.Finding	contract	P6-A

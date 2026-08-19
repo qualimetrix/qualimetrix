@@ -213,7 +213,16 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itMeasuresAnArchitectureFindingInsideAnExcludedNamespace(): void
     {
-        $architecture = $this->makeViolation('src/Foo/Service.php', 'App\\Foo', 'Service', LayerViolationRule::NAME);
+        // The real channel, not a synthesised descendant of it: immunity is a
+        // property the capability declares per channel, so an invented
+        // `architecture.layer-violation.callable` is correctly not immune.
+        $architecture = $this->makeViolation(
+            'src/Foo/Service.php',
+            'App\\Foo',
+            'Service',
+            LayerViolationRule::NAME,
+            violationCode: LayerViolationRule::NAME,
+        );
         $ordinary = $this->makeViolation('src/Foo/Other.php', 'App\\Foo', 'Other');
 
         $pipeline = $this->createPipeline(new FindingProjectionOptions(excludeNamespaces: ['App\\Foo']));
@@ -820,7 +829,16 @@ final class FindingProjectorTest extends TestCase
     #[Test]
     public function itKeepsArchitectureRuleViolationsInExcludedNamespaces(): void
     {
-        $architecture = $this->makeViolation('src/Foo/Service.php', 'App\\Foo', 'Service', LayerViolationRule::NAME);
+        // The real channel, not a synthesised descendant of it: immunity is a
+        // property the capability declares per channel, so an invented
+        // `architecture.layer-violation.callable` is correctly not immune.
+        $architecture = $this->makeViolation(
+            'src/Foo/Service.php',
+            'App\\Foo',
+            'Service',
+            LayerViolationRule::NAME,
+            violationCode: LayerViolationRule::NAME,
+        );
         $ordinary = $this->makeViolation('src/Foo/Other.php', 'App\\Foo', 'Other');
 
         $pipeline = $this->createPipeline(new FindingProjectionOptions(excludeNamespaces: ['App\\Foo']));
@@ -905,6 +923,7 @@ final class FindingProjectorTest extends TestCase
         int|float|null $metricValue = null,
         Severity $severity = Severity::Error,
         int $line = 10,
+        ?string $violationCode = null,
     ): Violation {
         $path = RelativePath::fromString($file);
         $symbol = SymbolPath::forClass($namespace, $class);
@@ -914,7 +933,7 @@ final class FindingProjectorTest extends TestCase
             subject: MetricSubject::declaration(new DeclarationPath($symbol, $path, $line)),
             symbolPath: $symbol,
             ruleName: $ruleName,
-            violationCode: $ruleName === 'code-smell.goto' ? $ruleName : $ruleName . '.callable',
+            violationCode: $violationCode ?? ($ruleName === 'code-smell.goto' ? $ruleName : $ruleName . '.callable'),
             message: 'CCN too high',
             severity: $severity,
             metricValue: $metricValue,

@@ -18,7 +18,7 @@ use Qualimetrix\Core\Symbol\MetricSubject;
 final readonly class ThresholdOverride
 {
     /**
-     * @param string $rulePattern Rule name or prefix (supports RuleMatcher)
+     * @param string $rulePattern Exact rule name — see {@see matches()}
      * @param int|float|null $warning Warning threshold override (null = keep default)
      * @param int|float|null $error Error threshold override (null = keep default)
      * @param int $line Docblock line (for diagnostics)
@@ -35,19 +35,21 @@ final readonly class ThresholdOverride
     ) {}
 
     /**
-     * Checks if this override matches the given rule name.
+     * Checks whether this override addresses the given rule name.
      *
-     * Supports:
-     * - Wildcard '*' to override all rules
-     * - Prefix matching: 'complexity' matches 'complexity.cyclomatic'
-     * - Exact matching: 'complexity.cyclomatic' matches 'complexity.cyclomatic'
+     * A threshold override addresses **one rule, by its exact name**. It takes
+     * no group form at all, neither `X.*` nor the old bare prefix and lone
+     * `*`: a threshold belongs to a single options object, so "reset the
+     * threshold of everything under here" was never a directive that could
+     * mean one thing. A per-symbol override of several rules is written as
+     * several annotations.
+     *
+     * Note the asymmetry with `@qmx-ignore`, which addresses a *channel*:
+     * `@qmx-threshold coupling.cbo` is the rule, `@qmx-ignore coupling.cbo.class`
+     * is the channel, and neither spelling has to guess which was meant.
      */
     public function matches(string $ruleName): bool
     {
-        if ($this->rulePattern === '*') {
-            return true;
-        }
-
-        return \Qualimetrix\Analysis\Finding\Contract\Rule\RuleMatcher::matches($this->rulePattern, $ruleName);
+        return $this->rulePattern === $ruleName;
     }
 }

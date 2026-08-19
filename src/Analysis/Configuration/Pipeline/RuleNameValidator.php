@@ -24,10 +24,12 @@ final class RuleNameValidator
     /**
      * Validates rule names in the "rules:" config section against registered rules.
      *
-     * Throws ConfigLoadException if any rule name does not match a registered rule.
-     * Matching follows prefix logic: exact match, forward prefix ("complexity" matches
-     * "complexity.cyclomatic"), and reverse prefix ("complexity.cyclomatic.callable" refines
-     * "complexity.cyclomatic").
+     * Throws ConfigLoadException if any key is not the **exact** name of a
+     * registered rule. A `rules:` key owns an options object, and options are
+     * applied by exact key — a group key such as `complexity` matched the old
+     * prefix logic, passed validation, and then configured nothing, which is
+     * the failure mode this exactness removes. Neither is `complexity.*`
+     * accepted: there is no such thing as a group of options.
      *
      * For each unknown name, suggests the closest known rule name via Levenshtein distance
      * (max distance 3).
@@ -54,18 +56,8 @@ final class RuleNameValidator
 
         foreach (array_keys($rulesSection) as $configuredName) {
             $name = (string) $configuredName;
-            $matched = false;
-            foreach ($knownNames as $known) {
-                if ($name === $known
-                    || str_starts_with($known, $name . '.')
-                    || str_starts_with($name, $known . '.')
-                ) {
-                    $matched = true;
-                    break;
-                }
-            }
 
-            if (!$matched) {
+            if (!\in_array($name, $knownNames, true)) {
                 $unknowns[] = $name;
             }
         }

@@ -20,7 +20,7 @@ use Qualimetrix\Core\Util\PathMatcher;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 
 /**
- * @qmx-ignore coupling.instability -- Finding projection intentionally composes the six ordered policy operations across Finding, Inline, Baseline, and Git contracts; its two callers and fifteen outgoing types are the reviewed Reporting orchestration boundary.
+ * @qmx-ignore coupling.instability.class -- Finding projection intentionally composes the six ordered policy operations across Finding, Inline, Baseline, and Git contracts; its two callers and fifteen outgoing types are the reviewed Reporting orchestration boundary.
  */
 final readonly class FindingProjector
 {
@@ -108,16 +108,20 @@ final readonly class FindingProjector
     /** @return list<PredicateFilterStage> */
     private function exclusionStages(FindingProjectionOptions $options): array
     {
+        $fileScope = DeclaredChannelFileScope::create();
         $stages = [];
         if ($options->excludePaths !== []) {
             $stages[] = new PredicateFilterStage(
                 ViolationFilterStage::PathExclusion,
-                new PathExclusionFilter(new PathMatcher(array_values($options->excludePaths))),
+                new PathExclusionFilter(new PathMatcher(array_values($options->excludePaths)), $fileScope),
             );
         }
         $matcher = new NamespaceMatcher(array_values($options->excludeNamespaces));
         if (!$matcher->isEmpty()) {
-            $stages[] = new PredicateFilterStage(ViolationFilterStage::NamespaceExclusion, new NamespaceExclusionFilter($matcher));
+            $stages[] = new PredicateFilterStage(
+                ViolationFilterStage::NamespaceExclusion,
+                new NamespaceExclusionFilter($matcher, $fileScope),
+            );
         }
         return $stages;
     }

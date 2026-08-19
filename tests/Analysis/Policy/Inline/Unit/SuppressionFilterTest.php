@@ -157,12 +157,12 @@ final class SuppressionFilterTest extends TestCase
     }
 
     #[Test]
-    public function itSuppressionMatchesViolationCodeWithPrefixMatching(): void
+    public function itSuppressionMatchesViolationCodeWithAGroupSelector(): void
     {
         $filter = new SuppressionFilter();
         // Suppress 'complexity' — should match all complexity.* violation codes
         $filter->setSuppressions('src/Foo.php', [
-            new Suppression('complexity', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
+            new Suppression('complexity.cyclomatic.*', null, 10, SuppressionType::Symbol, subject: $this->subject(), controlScope: ControlScope::Callable),
         ]);
 
         $violation1 = new Violation(
@@ -185,8 +185,8 @@ final class SuppressionFilterTest extends TestCase
             severity: Severity::Error,
         );
 
-        self::assertFalse($filter->shouldInclude($violation1), 'complexity.cyclomatic.callable should be suppressed by complexity');
-        self::assertTrue($filter->shouldInclude($violation2), 'coupling.distance should not be suppressed by complexity');
+        self::assertFalse($filter->shouldInclude($violation1), 'complexity.cyclomatic.callable should be suppressed by complexity.cyclomatic.*');
+        self::assertTrue($filter->shouldInclude($violation2), 'coupling.distance should not be suppressed by complexity.cyclomatic.*');
     }
 
     #[Test]
