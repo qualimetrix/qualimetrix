@@ -19,9 +19,13 @@ use Qualimetrix\Core\Util\PathMatcher;
  * architecture boundary violation is not a metric — silently dropping it would
  * let a noisy-metric exclusion double as an undocumented way to disable
  * layer-policy enforcement. Which channels those are is declared, not read off
- * the rule name's spelling; see {@see ChannelFileScope}. Users who need to
- * suppress a specific architecture finding still have `@qmx-ignore`, baseline,
- * or the architecture configuration's own `exclude:` block.
+ * the rule name's spelling; see {@see ChannelFileScope}. What remains available
+ * for suppressing such a finding also matches {@see NamespaceExclusionFilter}:
+ * `@qmx-ignore` and a baseline entry still apply to
+ * `architecture.layer-violation`, but not to the four layer-policy diagnostics
+ * beside it, which are declared configuration errors and answer only to the
+ * architecture configuration's `exclude:` block (and `coverage: ignore` for the
+ * coverage diagnostic).
  */
 final readonly class PathExclusionFilter implements ViolationFilterInterface
 {

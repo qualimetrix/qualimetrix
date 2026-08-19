@@ -54,7 +54,7 @@ Qualimetrix указывает номера строк для каждого н�
 1. **Начните с измерения зацепления:**
 
     ```bash
-    bin/qmx check src/ --only-rule=coupling
+    bin/qmx check src/ --only-rule=coupling.*
     ```
 
 2. **Проверьте циклические зависимости отдельно** -- это самые приоритетные проблемы зацепления:
@@ -121,7 +121,7 @@ bin/qmx check vendor/doctrine/orm/src/ \
 ### Стратегия приоритизации
 
 ```bash
-bin/qmx check src/ --only-rule=complexity --detail
+bin/qmx check src/ --only-rule=complexity.* --detail
 ```
 
 1. В первую очередь -- **ошибки когнитивной сложности** (> 30)

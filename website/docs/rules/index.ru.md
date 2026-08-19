@@ -145,6 +145,16 @@ Qualimetrix содержит набор встроенных правил для
 
 [Подробнее о правилах безопасности --&gt;](security.ru.md)
 
+### Правила аннотаций
+
+Это правило проверяет сами аннотации `@qmx-ignore` / `@qmx-threshold`, написанные в коде, а не код. Оно публикуется через четыре канала — `annotation.unresolved-directive`, `annotation.unsupported-threshold` и `annotation.invalid-threshold` являются ошибками конфигурации и валят прогон безусловно; `annotation.unused-directive` — обычный долг с настраиваемой severity.
+
+| Правило                                | ID                     | Что обнаруживает                                                                                            |
+| -------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------- |
+| [Валидация директив](annotation.ru.md) | `annotation.directive` | Некорректные, неподдерживаемые, неразбираемые или неиспользуемые директивы `@qmx-ignore` / `@qmx-threshold` |
+
+[Подробнее о правилах аннотаций --&gt;](annotation.ru.md)
+
 ## Отключение правил
 
 Можно отключить отдельные правила или целые группы:
@@ -153,8 +163,8 @@ Qualimetrix содержит набор встроенных правил для
 # Отключить одно правило
 bin/qmx check src/ --disable-rule=complexity.npath
 
-# Отключить целую группу (сопоставление по префиксу)
-bin/qmx check src/ --disable-rule=code-smell
+# Отключить целую группу (wildcard-сопоставление; захватывает только потомков, не сам "code-smell")
+bin/qmx check src/ --disable-rule=code-smell.*
 ```
 
 ## Исключение неймспейсов
@@ -211,6 +221,7 @@ rules:
 - **Duplication:** `duplication.code-duplication`
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
+- **Annotation:** `annotation.directive` (публикуется через четыре канала — см. [Правила аннотаций](annotation.ru.md))
 
-Отключение правила: `--disable-rule=complexity.npath`. Отключение группы: `--disable-rule=code-smell` (по префиксу).
+Отключение правила: `--disable-rule=complexity.npath`. Отключение группы: `--disable-rule=code-smell.*` (по wildcard; захватывает только потомков, не сам `code-smell`).
 -->

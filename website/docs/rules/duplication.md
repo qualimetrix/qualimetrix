@@ -172,8 +172,8 @@ bin/qmx check src/ --rule-opt="duplication.code-duplication:min_lines=10"
 You can also disable the rule entirely:
 
 ```bash
-bin/qmx check src/ --disable-rule=duplication
+bin/qmx check src/ --disable-rule=duplication.code-duplication
 ```
 
 !!! note "Memory usage"
-    Duplication detection uses the Rabin-Karp rolling hash algorithm, which requires storing normalized tokens for all files with matching hashes in memory simultaneously. On large codebases (500+ files), this can consume significant memory. Disabling the rule with `--disable-rule=duplication` skips the detection phase entirely and frees the memory.
+    Duplication detection uses the Rabin-Karp rolling hash algorithm, which requires storing normalized tokens for all files with matching hashes in memory simultaneously. On large codebases (500+ files), this can consume significant memory. Disabling the rule with `--disable-rule=duplication.code-duplication` skips the detection phase entirely and frees the memory.

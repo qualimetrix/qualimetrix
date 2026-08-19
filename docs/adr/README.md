@@ -64,6 +64,7 @@ What follows from this decision — trade-offs, constraints, future implications
 - [0021 — Declaration-Scoped Callable Identity and Dependency Projections](0021-declaration-scoped-callable-identity-and-dependency-projections.md) — intrinsic declaration identity, callable ownership, and separate architecture/coupling/ClassRank projections
 - [0022 — Capability-Oriented Modular Monolith](0022-capability-oriented-modular-monolith.md) — accepted capability-oriented direction, manifest-governed ownership, and final locality boundaries; supersedes ADR 0012
 - [0023 — P8 Context Locality and Composition Bindings](0023-p8-context-locality-and-composition-bindings.md) — concrete configuration-document seam, owner-local runtime state, and permanent exact DI composition bindings
+- [0024 — Channel Identity and Selector Semantics](0024-channel-identity-and-selector-semantics.md) — selector matching becomes equality with an explicit `X.*` wildcard; the addressed level comes from the directive; `RuleCategory` loses all behaviour; channels declare threshold-override support, file scope, and acceptability; configuration errors gate past `fail_on`; the `annotation.directive` rule reports directives that address nothing
 
 
 ## Index maintenance

@@ -343,6 +343,8 @@ Options for a specific level of a hierarchical rule.
 
 Interface for options that support `@qmx-threshold` overrides. Implemented by options with warning/error thresholds. Options without thresholds (boolean rules) do not implement this.
 
+Note that whether a rule *supports* an override is no longer read off this interface. Support is **declared** by the rule itself, as a `SUPPORTS_THRESHOLD_OVERRIDE` constant, so the answer is available without inspecting the options class and can drive both the "did you mean" hint and the `annotation.unsupported-threshold` diagnostic. This interface remains the mechanism by which a supported override is applied.
+
 **Methods:**
 - `withOverride(int|float|null $warning, int|float|null $error): static` — returns a copy with overridden thresholds (null keeps original)
 
@@ -688,7 +690,7 @@ that controls with different declaration scopes remain distinct.
 
 ### Suppression
 
-Value Object representing a suppression tag from a docblock (e.g., `@qmx-ignore complexity Reason`).
+Value Object representing a suppression tag from a docblock (e.g., `@qmx-ignore complexity.wmc Reason`). The authored text names a channel exactly, or `X.*` for its strict descendants; a bare prefix such as `complexity` is rejected.
 
 **Fields:**
 - `rule: string` — the authored text: a fully qualified `violationCode`, `X.*`, or `*` for "no rule filter"

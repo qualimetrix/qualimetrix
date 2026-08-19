@@ -970,6 +970,6 @@ rules:
 # Отключить конкретное правило
 bin/qmx check src/ --disable-rule=code-smell.exit
 
-# Отключить все правила запахов кода сразу (сопоставление по префиксу)
-bin/qmx check src/ --disable-rule=code-smell
+# Отключить все правила запахов кода сразу (wildcard-сопоставление; захватывает только потомков, не сам "code-smell")
+bin/qmx check src/ --disable-rule=code-smell.*
 ```

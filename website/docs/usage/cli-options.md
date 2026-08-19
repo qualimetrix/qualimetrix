@@ -508,36 +508,40 @@ Available formats: `json`, `chrome-tracing`.
 
 ### `--disable-rule`
 
-Disable a producer rule, an entire group, or a finding channel by prefix. Channel selectors
-use the same bare-name or explicit `ruleName#violationCode` forms as `--only-rule`. Disabling
-one channel keeps its producer active so that other channels can still be reported. Can be repeated:
+Disable a producer rule, an entire group, or a finding channel. A selector is either an
+**exact** name (a producer rule, a group like `complexity`, or a channel), or `X.*` for
+strictly the **descendants** of `X` — `X` itself is not included. A bare prefix without the
+star is an error, and channel selectors also accept the explicit `ruleName#violationCode`
+form, same as `--only-rule`. Disabling one channel keeps its producer active so that other
+channels can still be reported. Can be repeated:
 
 ```bash
 # Disable one rule
 bin/qmx check src/ --disable-rule=size.class-count
 
 # Disable all complexity rules
-bin/qmx check src/ --disable-rule=complexity
+bin/qmx check src/ --disable-rule=complexity.*
 
 # Disable multiple
-bin/qmx check src/ --disable-rule=complexity --disable-rule=design.lcom
+bin/qmx check src/ --disable-rule=complexity.* --disable-rule=design.lcom
 
 # Disable only one computed finding channel
 bin/qmx check src/ --disable-rule=health.complexity
 ```
 
 !!! tip "Memory optimization"
-    Disabling `duplication.code-duplication` also skips the memory-intensive duplication detection phase entirely. On large codebases (500+ files), this can significantly reduce memory usage. Use `--disable-rule=duplication` if you encounter out-of-memory errors.
+    Disabling the `duplication.code-duplication` rule also skips the memory-intensive duplication detection phase entirely. On large codebases (500+ files), this can significantly reduce memory usage. Use `--disable-rule=duplication.code-duplication` if you encounter out-of-memory errors.
 
 ### `--only-rule`
 
-Run only matching producer rules or finding channels. A bare selector matches a producer
-name, channel `ruleName`, or `violationCode` by prefix. Use
-`ruleName#violationCode` for an explicit full channel. Can be repeated:
+Run only matching producer rules or finding channels. A selector is either an **exact** name
+(a producer rule, a group like `complexity`, a channel `ruleName`, or `violationCode`), or
+`X.*` for strictly its **descendants**. Use `ruleName#violationCode` for an explicit full
+channel — both halves must be exact, no star inside it. Can be repeated:
 
 ```bash
 # Run only complexity rules
-bin/qmx check src/ --only-rule=complexity
+bin/qmx check src/ --only-rule=complexity.*
 
 # Run two specific rules
 bin/qmx check src/ --only-rule=complexity.cyclomatic --only-rule=size.method-count
@@ -547,14 +551,25 @@ bin/qmx check src/ --only-rule=health.complexity
 bin/qmx check src/ --only-rule=computed.health#health.complexity
 ```
 
-Selectors must match a registered producer, group, or emitted channel. Unknown
-selectors fail closed with exit 3 before stdout receives a report payload.
+Selectors must match a registered producer, group, or emitted channel exactly, or resolve an
+`X.*` to at least one descendant. Unknown selectors — including a bare prefix without the
+star, or an `X.*` that matches nothing — fail closed with exit 3 before stdout receives a
+report payload:
+
+```text
+Rule selector "complexity" does not match any registered producer, group, or channel.
+```
+
 Likewise, the owner before `:` in `--rule-opt=RULE:OPTION=VALUE` must be an exact
-producer rule, not a group or channel.
+producer rule, not a group or channel — a group or channel there is an error. The same rule
+governs the `rules:` YAML section keys.
 
 ### `--rule-opt`
 
-Override rule options from the command line. Format: `rule-name:option=value`. Can be repeated:
+Override rule options from the command line. Format: `rule-name:option=value`, where
+`rule-name` must be an exact producer rule — never a group, never a channel, and never a
+wildcard. This is the same constraint that governs the owner before `:` in
+`--only-rule`/`--disable-rule` and the `rules:` YAML section keys. Can be repeated:
 
 ```bash
 bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.warning=15
@@ -562,7 +577,9 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 ```
 
 `exclude_namespace_channels` is configured in YAML, not through `--rule-opt`: each selector
-requires a non-empty list of namespace patterns, while `--rule-opt` carries scalar values.
+requires a non-empty list of namespace patterns, while `--rule-opt` carries scalar values. Its
+keys are channel selectors and follow the same exact-or-`X.*` rule as `@qmx-ignore` — a bare
+prefix like `health` is now an error, not a shorthand for `health.*`.
 
 <!-- llms:skip-begin -->
 ### Rule-specific shortcut flags
@@ -669,15 +686,12 @@ Many rules have dedicated CLI flags for quick rule-option configuration:
 
 === "Architecture"
 
-| Flag                                                    | Rule                             | Option                     |
-| ------------------------------------------------------- | -------------------------------- | -------------------------- |
-| `--circular-deps`                                       | architecture.circular-dependency | enabled                    |
-| `--max-cycle-size=N`                                    | architecture.circular-dependency | maxCycleSize               |
-| `--layer-violation`                                     | architecture.layer-violation     | enabled                    |
-| `--layer-violation-severity=SEVERITY`                   | architecture.layer-violation     | severity                   |
-| `--layer-violation-unreachable-layer-severity=SEVERITY` | architecture.layer-violation     | unreachable_layer_severity |
-| `--layer-violation-potential-shadow-severity=SEVERITY`  | architecture.layer-violation     | potential_shadow_severity  |
-| `--layer-violation-empty-template-severity=SEVERITY`    | architecture.layer-violation     | empty_template_severity    |
+| Flag                                  | Rule                             | Option       |
+| ------------------------------------- | -------------------------------- | ------------ |
+| `--circular-deps`                     | architecture.circular-dependency | enabled      |
+| `--max-cycle-size=N`                  | architecture.circular-dependency | maxCycleSize |
+| `--layer-violation`                   | architecture.layer-violation     | enabled      |
+| `--layer-violation-severity=SEVERITY` | architecture.layer-violation     | severity     |
 
 ---
 

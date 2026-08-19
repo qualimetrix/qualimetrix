@@ -969,6 +969,6 @@ You can also disable individual rules via the `--disable-rule` CLI option:
 # Disable a specific rule
 bin/qmx check src/ --disable-rule=code-smell.exit
 
-# Disable all code smell rules at once (prefix matching)
-bin/qmx check src/ --disable-rule=code-smell
+# Disable all code smell rules at once (wildcard match; matches descendants only, not "code-smell" itself)
+bin/qmx check src/ --disable-rule=code-smell.*
 ```

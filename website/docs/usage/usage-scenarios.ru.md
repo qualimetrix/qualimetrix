@@ -21,9 +21,9 @@ Qualimetrix вписывается в различные рабочие проц
 fail_on: error
 
 only_rules:
-  - complexity
+  - complexity.*
   - coupling.cbo
-  - size
+  - size.*
 
 rules:
   complexity.cyclomatic:

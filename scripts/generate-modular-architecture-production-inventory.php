@@ -2505,6 +2505,7 @@ function documentationDisposition(string $path): array
     }
 
     $prefixes = [
+        'website/docs/rules/annotation' => ['Analysis.Policy.Inline', 'P6-B'],
         'website/docs/rules/code-smell' => ['Analysis.Evidence.CodeSmell', 'P7'],
         'website/docs/rules/cohesion' => ['Analysis.Evidence.Cohesion', 'P7'],
         'website/docs/rules/complexity' => ['Analysis.Evidence.Complexity', 'P7'],
@@ -2541,6 +2542,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0018-analysis-coverage-verdict-and-output-projection.md',
         'docs/adr/0019-namespace-metric-ownership-and-attribution.md',
         'docs/adr/0020-method-size-and-npath-semantics.md',
+        'docs/adr/0024-channel-identity-and-selector-semantics.md',
         'docs/internal/CLI_CONVENTIONS.md',
         'docs/internal/COMPETITOR_COMPARISON.md',
         'docs/internal/PRODUCT_ROADMAP.md',

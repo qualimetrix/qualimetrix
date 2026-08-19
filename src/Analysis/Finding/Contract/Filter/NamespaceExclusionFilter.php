@@ -16,9 +16,14 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  * metric — silently dropping it would let a noisy-metric exclusion double as an
  * undocumented way to disable layer-policy enforcement. Which channels those
  * are is declared, not read off the rule name's spelling; see
- * {@see ChannelFileScope}. Users who need to suppress a specific architecture
- * finding still have `@qmx-ignore`, baseline, or the architecture
- * configuration's own `exclude:` block.
+ * {@see ChannelFileScope}. What a user has left to suppress such a finding
+ * depends on which channel it is. `architecture.layer-violation` reports real
+ * code debt, so `@qmx-ignore` and a baseline entry both still apply to it. The
+ * four layer-policy diagnostics beside it — coverage, unreachable layer,
+ * potential shadow, empty template — are declared configuration errors: they
+ * can be accepted by neither, and the only remaining answers are the
+ * architecture configuration's own `exclude:` block and, for coverage
+ * specifically, the `coverage: ignore` mode.
  *
  * Occurrence-style rules (code-smell and security) attach a *file* symbol path to
  * their violations, whose namespace is `null` by construction. The declaring

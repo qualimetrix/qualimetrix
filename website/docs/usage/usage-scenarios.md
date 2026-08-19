@@ -21,9 +21,9 @@ The most common scenario. Qualimetrix runs on every push or pull request and blo
 fail_on: error
 
 only_rules:
-  - complexity
+  - complexity.*
   - coupling.cbo
-  - size
+  - size.*
 
 rules:
   complexity.cyclomatic:

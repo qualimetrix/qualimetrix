@@ -506,38 +506,41 @@ bin/qmx check src/ --profile=profile.json --profile-format=chrome-tracing
 
 ### `--disable-rule`
 
-Отключить правило-производитель, целую группу или отдельный канал нарушения по префиксу.
-Для каналов действуют те же формы, что у `--only-rule`: короткое имя или полный
-`ruleName#violationCode`. Отключение одного канала не останавливает производителя,
-чтобы остальные его каналы продолжали попадать в отчёт. Опцию можно указывать несколько раз:
+Отключить правило-производитель, целую группу или отдельный канал нарушения. Селектор — это
+либо **точное** имя (правило-производитель, группа вроде `complexity` или канал), либо
+`X.*` строго для **потомков** `X` — сам `X` в это не входит. Голый префикс без звёздочки —
+ошибка; для каналов также доступна явная форма `ruleName#violationCode`, как и у
+`--only-rule`. Отключение одного канала не останавливает производителя, чтобы остальные его
+каналы продолжали попадать в отчёт. Опцию можно указывать несколько раз:
 
 ```bash
 # Отключить одно правило
 bin/qmx check src/ --disable-rule=size.class-count
 
 # Отключить все правила сложности
-bin/qmx check src/ --disable-rule=complexity
+bin/qmx check src/ --disable-rule=complexity.*
 
 # Отключить несколько
-bin/qmx check src/ --disable-rule=complexity --disable-rule=design.lcom
+bin/qmx check src/ --disable-rule=complexity.* --disable-rule=design.lcom
 
 # Отключить только один канал computed finding
 bin/qmx check src/ --disable-rule=health.complexity
 ```
 
 !!! tip "Оптимизация памяти"
-    Отключение `duplication.code-duplication` также полностью пропускает ресурсоёмкую фазу обнаружения дубликатов. На больших кодовых базах (500+ файлов) это может значительно снизить потребление памяти. Используйте `--disable-rule=duplication`, если возникают ошибки нехватки памяти.
+    Отключение правила `duplication.code-duplication` также полностью пропускает ресурсоёмкую фазу обнаружения дубликатов. На больших кодовых базах (500+ файлов) это может значительно снизить потребление памяти. Используйте `--disable-rule=duplication.code-duplication`, если возникают ошибки нехватки памяти.
 
 ### `--only-rule`
 
-Запустить только подходящие правила-производители или каналы нарушений. Селектор без `#`
-по префиксу сопоставляется с именем производителя, `ruleName` канала или `violationCode`.
-Для однозначного полного канала используйте `ruleName#violationCode`. Опцию можно
-указывать несколько раз:
+Запустить только подходящие правила-производители или каналы нарушений. Селектор — это либо
+**точное** имя (правило-производитель, группа вроде `complexity`, `ruleName` канала или
+`violationCode`), либо `X.*` строго для его **потомков**. Для однозначного полного канала
+используйте `ruleName#violationCode` — обе половины должны быть точными, звёздочка внутри
+не допускается. Опцию можно указывать несколько раз:
 
 ```bash
 # Запустить только правила сложности
-bin/qmx check src/ --only-rule=complexity
+bin/qmx check src/ --only-rule=complexity.*
 
 # Запустить два конкретных правила
 bin/qmx check src/ --only-rule=complexity.cyclomatic --only-rule=size.method-count
@@ -547,13 +550,25 @@ bin/qmx check src/ --only-rule=health.complexity
 bin/qmx check src/ --only-rule=computed.health#health.complexity
 ```
 
-Селектор должен совпасть с зарегистрированным producer, группой или выводимым каналом.
-Неизвестный селектор завершается с кодом 3 до записи report-payload в stdout. Аналогично,
-владелец перед `:` в `--rule-opt=RULE:OPTION=VALUE` должен быть точным producer-rule, а не группой или каналом.
+Селектор должен точно совпасть с зарегистрированным producer, группой или выводимым каналом,
+либо `X.*` должен разрешиться хотя бы в одного потомка. Неизвестный селектор — включая голый
+префикс без звёздочки или `X.*`, не совпавший ни с чем, — завершается с кодом 3 до записи
+report-payload в stdout:
+
+```text
+Rule selector "complexity" does not match any registered producer, group, or channel.
+```
+
+Аналогично, владелец перед `:` в `--rule-opt=RULE:OPTION=VALUE` должен быть точным
+producer-rule, а не группой или каналом — группа или канал здесь являются ошибкой. То же
+правило действует и для ключей секции `rules:` в YAML.
 
 ### `--rule-opt`
 
-Переопределить опции правил из командной строки. Формат: `rule-name:option=value`. Можно указывать несколько раз:
+Переопределить опции правил из командной строки. Формат: `rule-name:option=value`, где
+`rule-name` должен быть точным producer-rule — никогда группой, никогда каналом и никогда
+wildcard. Это то же ограничение, что действует для владельца перед `:` в
+`--only-rule`/`--disable-rule` и для ключей секции `rules:` в YAML. Можно указывать несколько раз:
 
 ```bash
 bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.warning=15
@@ -562,6 +577,8 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 
 `exclude_namespace_channels` настраивается в YAML, а не через `--rule-opt`: каждому селектору
 нужен непустой список паттернов неймспейсов, тогда как `--rule-opt` передаёт скалярные значения.
+Его ключи — это селекторы каналов, подчиняющиеся тому же правилу «точное имя или `X.*`», что
+и `@qmx-ignore`: голый префикс вроде `health` теперь ошибка, а не сокращение для `health.*`.
 
 <!-- llms:skip-begin -->
 ### Быстрые флаги для правил
@@ -668,15 +685,12 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 
 === "Архитектура"
 
-| Флаг                                                    | Правило                          | Опция                      |
-| ------------------------------------------------------- | -------------------------------- | -------------------------- |
-| `--circular-deps`                                       | architecture.circular-dependency | enabled                    |
-| `--max-cycle-size=N`                                    | architecture.circular-dependency | maxCycleSize               |
-| `--layer-violation`                                     | architecture.layer-violation     | enabled                    |
-| `--layer-violation-severity=SEVERITY`                   | architecture.layer-violation     | severity                   |
-| `--layer-violation-unreachable-layer-severity=SEVERITY` | architecture.layer-violation     | unreachable_layer_severity |
-| `--layer-violation-potential-shadow-severity=SEVERITY`  | architecture.layer-violation     | potential_shadow_severity  |
-| `--layer-violation-empty-template-severity=SEVERITY`    | architecture.layer-violation     | empty_template_severity    |
+| Флаг                                  | Правило                          | Опция        |
+| ------------------------------------- | -------------------------------- | ------------ |
+| `--circular-deps`                     | architecture.circular-dependency | enabled      |
+| `--max-cycle-size=N`                  | architecture.circular-dependency | maxCycleSize |
+| `--layer-violation`                   | architecture.layer-violation     | enabled      |
+| `--layer-violation-severity=SEVERITY` | architecture.layer-violation     | severity     |
 
 ---
 
