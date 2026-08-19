@@ -74,9 +74,10 @@ Also available as a CLI option: `--exclude-path` (merged with YAML config).
 
     What is left for suppressing such a finding depends on the channel.
     `architecture.layer-violation` is real code debt, so `@qmx-ignore
-    architecture.layer-violation` and a baseline entry both still apply. The four layer-policy
+    architecture.layer-violation` and a baseline entry both still apply. The five layer-policy
     diagnostics beside it — `architecture.coverage`, `architecture.unreachable-layer`,
-    `architecture.potential-shadow` and `architecture.empty-template` — report a mistake in the
+    `architecture.potential-shadow`, `architecture.empty-template` and
+    `architecture.pending-layer-matched` — report a mistake in the
     *configuration*, so neither applies to them; see
     [Rules > Architecture](../rules/architecture.md). Their remaining answers are the `exclude:`
     block inside the architecture layer configuration itself and, for coverage specifically,
@@ -263,9 +264,9 @@ same thing. It is accepted for consistency of grammar, not because it adds reach
     The option filters findings whose subject is a **namespace**. A rule that reports per
     occurrence (`code-smell.*`, `security.*`, `architecture.layer-violation`) or only per class
     (`design.lcom`) has nothing for it to remove, and a key naming such a channel is accepted
-    and then does nothing. The four layer-policy diagnostics — `architecture.coverage`,
+    and then does nothing. The layer-policy diagnostics — `architecture.coverage`,
     `architecture.unreachable-layer`, `architecture.potential-shadow`,
-    `architecture.empty-template` — report against the project as a whole and are likewise
+    `architecture.empty-template`, `architecture.pending-layer-matched` — report against the project as a whole and are likewise
     outside its reach; use the `exclude:` block inside the architecture layer configuration
     instead.
 Only aggregate Namespace violations are removed. Class-level `health.cohesion` findings in
