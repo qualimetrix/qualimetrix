@@ -6,16 +6,16 @@ namespace Qualimetrix\Infrastructure\DependencyInjection\Configurator;
 
 use Qualimetrix\Analysis\Configuration\Contract\KnownRuleNamesProviderInterface;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
-use Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
 use Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter;
-use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
@@ -26,7 +26,7 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
     public function configure(ContainerBuilder $container): void
     {
         $this->registerRuleRegistry($container);
-        $this->registerChannelDeclarationRegistry($container);
+        $this->registerChannelUniverse($container);
         $this->registerRuleChannelSelection($container);
     }
 
@@ -48,39 +48,35 @@ final class RuleConfigurator implements ContainerConfiguratorInterface
         $container->setAlias(KnownRuleNamesProviderInterface::class, KnownRuleNamesAdapter::class);
     }
 
-    private function registerChannelDeclarationRegistry(ContainerBuilder $container): void
+    /**
+     * One instance, four views. The static half of its arguments is filled in
+     * by {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass};
+     * the computed-metric half is the live definition catalog, which the
+     * universe resolves from on every lookup.
+     */
+    private function registerChannelUniverse(ContainerBuilder $container): void
     {
         $computedMetricCatalog = 'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ComputedMetricDefinitionCatalogInterface';
 
-        // ChannelDeclarationRegistry will have the static declaration map and
-        // the computed-metric family discriminator injected by
-        // ChannelDeclarationCompilerPass.
-        $container->register(ChannelDeclarationRegistry::class)
+        $container->register(ChannelUniverse::class)
             ->setArguments([
                 '$staticDeclarations' => [],
+                '$staticChannelKeysByProducer' => [],
+                '$thresholdOverrideSupportByRule' => [],
                 '$computedMetricRuleName' => '',
                 '$definitionCatalog' => new Reference($computedMetricCatalog),
             ])
             ->setPublic(true);
 
-        $container->setAlias(ChannelDeclarationRegistryInterface::class, ChannelDeclarationRegistry::class)
-            ->setPublic(true);
+        $container->setAlias(ChannelUniverseInterface::class, ChannelUniverse::class)->setPublic(true);
+        $container->setAlias(ChannelDeclarationRegistryInterface::class, ChannelUniverse::class)->setPublic(true);
+        $container->setAlias(ChannelIdentityInterface::class, ChannelUniverse::class)->setPublic(true);
+        $container->setAlias(RuleChannelRegistryInterface::class, ChannelUniverse::class);
+        $container->setAlias(RuleChannelSnapshotFactoryInterface::class, ChannelUniverse::class);
     }
 
     private function registerRuleChannelSelection(ContainerBuilder $container): void
     {
-        $container->register(RuleChannelRegistry::class)
-            ->setArguments([
-                '$staticChannelKeysByProducer' => [],
-                '$computedMetricRuleName' => '',
-                '$definitions' => new Definition(
-                    'Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Contract\\Definition\\ResolvedComputedMetricDefinitions',
-                    [[]],
-                ),
-            ]);
-        $container->setAlias(RuleChannelRegistryInterface::class, RuleChannelRegistry::class);
-        $container->setAlias(RuleChannelSnapshotFactoryInterface::class, RuleChannelRegistry::class);
-
         $container->register(RuleSelector::class)
             ->setArguments([
                 new Reference(RuleChannelRegistryInterface::class),

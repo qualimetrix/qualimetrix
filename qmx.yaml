@@ -415,7 +415,9 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\AcceptedLevel'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelShape'
+        - 'Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides'
         - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration'
         - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface'
@@ -461,6 +463,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser'
         - 'Qualimetrix\Analysis\Finding\Contract\Severity'
         - 'Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride'
@@ -828,11 +831,10 @@ architecture:
         - 'Qualimetrix\Infrastructure\Profiler\Span'
     - name: infrastructure-rule
       patterns:
-        - 'Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry'
+        - 'Qualimetrix\Infrastructure\Rule\ChannelUniverse'
         - 'Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface'
         - 'Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException'
         - 'Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter'
-        - 'Qualimetrix\Infrastructure\Rule\RuleChannelRegistry'
         - 'Qualimetrix\Infrastructure\Rule\RuleRegistry'
         - 'Qualimetrix\Infrastructure\Rule\RuleRegistryInterface'
     - name: infrastructure-serializer

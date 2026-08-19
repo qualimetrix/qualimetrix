@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Configuration\Compute
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Definition\ResolvedComputedMetricDefinitions;
 use Qualimetrix\Analysis\Evidence\Coupling\Contract\Configuration\CouplingConfiguratorInterface;
 use Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver;
+use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
@@ -40,8 +41,8 @@ use Qualimetrix\Infrastructure\Logging\LoggerHolder;
 use Qualimetrix\Infrastructure\Parallel\Configuration\ParallelConfigurationResolver;
 use Qualimetrix\Infrastructure\Parallel\Runtime\ParallelConfigurationStore;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface;
-use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use ReflectionClass;
 use RuntimeException;
@@ -114,7 +115,9 @@ final class RuntimeConfiguratorTest extends TestCase
         $loggerFactory->method('create')->willReturn(new NullLogger());
         $ruleRegistry = self::createStub(RuleRegistryInterface::class);
         $ruleRegistry->method('getClasses')->willReturn([LcomRule::class]);
-        $staticChannels = new RuleChannelRegistry(
+        $staticChannels = new ChannelUniverse(
+            [],
+            [],
             [],
             'computed.health',
             new ResolvedComputedMetricDefinitions([]),
@@ -175,13 +178,13 @@ final class RuntimeConfiguratorTest extends TestCase
         $computedMetrics = $this->createMock(ComputedMetricConfiguratorInterface::class);
         $computedMetrics->expects(self::once())->method('resolve')->willReturn($definitions);
         $computedMetrics->expects(self::once())->method('replace')->with(self::identicalTo($definitions));
-        $snapshot = self::createStub(RuleChannelRegistryInterface::class);
+        $snapshot = self::createStub(ChannelUniverseInterface::class);
         $factory = new class ($snapshot) implements RuleChannelSnapshotFactoryInterface {
             public ?ResolvedComputedMetricDefinitions $received = null;
 
-            public function __construct(private readonly RuleChannelRegistryInterface $snapshot) {}
+            public function __construct(private readonly ChannelUniverseInterface $snapshot) {}
 
-            public function snapshot(ResolvedComputedMetricDefinitions $definitions): RuleChannelRegistryInterface
+            public function snapshot(ResolvedComputedMetricDefinitions $definitions): ChannelUniverseInterface
             {
                 $this->received = $definitions;
 

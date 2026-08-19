@@ -70,9 +70,9 @@ when no files or definitions exist.
   `Infrastructure\Console\AnalysisRuntimeConfigurator`.
 - `ComputedMetricEvaluator` — `Analysis\Run\Pipeline\AnalysisPipeline`.
 - `ResolvedComputedMetricDefinitions` — immutable definitions resolved for one
-  run. Infrastructure Rule receives it only as the input to its exact
-  `RuleChannelSnapshotFactoryInterface`; it consumes no retained definition
-  state.
+  run. Infrastructure Rule receives it as the input to its exact
+  `RuleChannelSnapshotFactoryInterface`, which builds a preflight channel
+  universe over it.
 - `ComputedMetricDefinitionCatalogInterface` — Health and Reporting's named
   projection consumers.
 - `ComputedMetricChannelFamily` — the channel declaration compiler pass.
@@ -105,11 +105,13 @@ behavior, and report schemas are unchanged by the ownership migration.
 Owned tests live under `tests/Analysis/Evidence/ComputedMetrics/`. The
 materialized P5-F2 slice contains 28 PHPUnit classes, 281 discovered IDs, one
 support class, and no fixtures when the three retained Reporting assembly tests
-are included. Topology tests classify 43 raw relations exactly: 38 classified
-relations (22 non-Health and 16 Health) plus five unchanged composed carriers.
+are included. Topology tests classify 42 raw relations exactly: 37 classified
+relations (21 non-Health and 16 Health) plus five unchanged composed carriers.
 The classified set includes `ResolvedComputedMetricDefinitions` relations to
-`AnalysisRuntimeConfigurator`, `RuleInputValidator`, `RuleChannelRegistry`, and
-`RuleChannelSnapshotFactoryInterface`. Reverse, unknown-zone, cross-owner
+`AnalysisRuntimeConfigurator`, `RuleInputValidator`, and
+`RuleChannelSnapshotFactoryInterface`. `ChannelUniverse` itself reads only
+`ComputedMetricDefinitionCatalogInterface`: the concrete resolved value reaches
+it through that factory contract and never as an import of its own. Reverse, unknown-zone, cross-owner
 internal, and unclassified Contract imports fail closed.
 
 ## Definition of Done

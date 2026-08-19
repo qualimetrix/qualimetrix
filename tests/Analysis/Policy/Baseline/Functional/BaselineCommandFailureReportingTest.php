@@ -58,7 +58,7 @@ use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Parallel\Runtime\ParallelConfigurationStore;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
-use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
@@ -356,7 +356,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $loggerFactory->method('create')->willReturn(new NullLogger());
         $architecture = self::createStub(ArchitecturePolicyConfiguratorInterface::class);
         $ruleRegistry = self::createStub(RuleRegistryInterface::class);
-        $staticChannels = new RuleChannelRegistry([], 'computed.health', new ResolvedComputedMetricDefinitions([]));
+        $staticChannels = new ChannelUniverse([], [], [], 'computed.health', new ResolvedComputedMetricDefinitions([]));
         $ruleSelector = new RuleSelector($staticChannels);
         $ruleInputValidator = new RuleInputValidator(
             $ruleRegistry,
@@ -386,7 +386,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
 
     private static function ruleInputValidator(RuleRegistryInterface $rules): RuleInputValidator
     {
-        $staticChannels = new RuleChannelRegistry([], 'computed.health', new ResolvedComputedMetricDefinitions([]));
+        $staticChannels = new ChannelUniverse([], [], [], 'computed.health', new ResolvedComputedMetricDefinitions([]));
 
         return new RuleInputValidator(
             $rules,

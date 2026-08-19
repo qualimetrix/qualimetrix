@@ -402,7 +402,7 @@ addresses both channel components, and both halves are exact. `--only-rule=compu
 that rule, while `--only-rule=health.complexity` selects only that computed channel and
 still starts its `computed.health` producer.
 
-`RuleChannelRegistryInterface::channelsProducedBy()` supplies the producer relationship.
+`RuleChannelRegistryInterface::channelsProducedBy()` — one view of the channel universe — supplies the producer relationship.
 Its Infrastructure implementation combines compiler-collected static declarations with
 the run-time computed metric definitions. `InMemoryRuleChannelRegistry` provides the
 same explicit contract where a composition root already owns the complete declaration map.

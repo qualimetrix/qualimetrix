@@ -18,7 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\RuleOptionsDocument;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\Console\RuleInputValidator;
-use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
@@ -76,7 +76,7 @@ final class RuleInputValidatorTest extends TestCase
 
     private function validator(RuleRegistryInterface $rules): RuleInputValidator
     {
-        $static = new RuleChannelRegistry([], ComputedMetricRule::NAME, new ResolvedComputedMetricDefinitions([]));
+        $static = new ChannelUniverse([], [], [], ComputedMetricRule::NAME, new ResolvedComputedMetricDefinitions([]));
 
         return new RuleInputValidator(
             $rules,
