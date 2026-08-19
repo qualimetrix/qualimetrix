@@ -258,12 +258,20 @@ class ComplexClass {
             'paths' => [$this->tempDir],
         ]);
 
-        // Now analyze with baseline - should show no new violations
+        // Now analyze with baseline - should show no new violations.
+        // The layer rule is disabled for the same reason its siblings in this
+        // file disable it: the command discovers this repository's own
+        // qmx.yaml, whose declared layers cannot match a one-file temp
+        // project. Those diagnostics report a configuration error, so they
+        // are neither baselineable nor gated by fail_on — which is correct
+        // for a real project and pure noise for a fixture that is not the
+        // project the layers describe.
         $commandTester2 = $this->createCommandTester();
         $commandTester2->execute([
             'paths' => [$this->tempDir],
             '--baseline' => $baselinePath,
             '--no-progress' => true,
+            '--disable-rule' => ['architecture.layer-violation'],
         ]);
 
         // Assert no violations (all in baseline)

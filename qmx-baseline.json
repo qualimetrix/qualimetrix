@@ -1,6 +1,6 @@
 {
     "version": 11,
-    "generated": "2026-08-19T04:47:45+00:00",
+    "generated": "2026-08-19T06:07:37+00:00",
     "scope": [
         "src"
     ],
@@ -637,7 +637,7 @@
                 "count": 1
             }
         ],
-        "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule::collectEdgeViolations@src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php:19345": [
+        "declaration:callable:Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule::collectEdgeViolations@src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php:18856": [
             {
                 "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
                 "magnitudes": [
@@ -958,22 +958,6 @@
             {
                 "channel": "code-smell.boolean-argument#code-smell.boolean-argument",
                 "occurrence": "288f9cb9a8072386d661e070998bee7afe3bd8353da0b491e4dfaeaaf464815a",
-                "count": 1
-            }
-        ],
-        "declaration:callable:Qualimetrix\\Infrastructure\\Console\\ExitCodeResolver::resolve@src/Infrastructure/Console/ExitCodeResolver.php:1044": [
-            {
-                "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
-                "magnitudes": [
-                    12
-                ],
-                "count": 1
-            },
-            {
-                "channel": "complexity.npath#complexity.npath.callable",
-                "magnitudes": [
-                    288
-                ],
                 "count": 1
             }
         ],
@@ -1559,7 +1543,7 @@
                 "count": 1
             }
         ],
-        "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule@src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php:5245": [
+        "declaration:class:Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule@src/Analysis/Policy/Architecture/LayerViolation/LayerViolationRule.php:4918": [
             {
                 "channel": "coupling.cbo#coupling.cbo.class",
                 "magnitudes": [
@@ -1821,15 +1805,6 @@
                 "channel": "computed.health#health.cohesion",
                 "magnitudes": [
                     46.5
-                ],
-                "count": 1
-            }
-        ],
-        "declaration:class:Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass@src/Infrastructure/DependencyInjection/CompilerPass/ChannelDeclarationCompilerPass.php:1901": [
-            {
-                "channel": "computed.health#health.maintainability",
-                "magnitudes": [
-                    40.4
                 ],
                 "count": 1
             }

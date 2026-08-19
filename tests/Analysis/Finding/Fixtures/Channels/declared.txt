@@ -2,9 +2,17 @@
 # emission point against the channel declaration registry.
 #
 # Format (one channel per line, sorted, blank lines and '#' comments ignored):
-#   <ruleName>#<violationCode> <shape>[:<direction>]
-#     shape     := magnitude | occurrence
-#     direction := higher | lower   (magnitude channels only)
+#   <ruleName>#<violationCode> <shape>[:<direction>] [<acceptability>]
+#     shape         := magnitude | occurrence
+#     direction     := higher | lower   (magnitude channels only)
+#     acceptability := config-error     (omitted = acceptable as debt)
+#
+# `config-error` marks a channel whose findings report a mistake in the
+# *configuration* rather than debt in the code: it can never be accepted by
+# a baseline on any path, and it fails the run without consulting `fail_on`.
+# Exactly four channels carry it today — the four layer-policy diagnostics.
+# The fifth channel of that same rule, architecture.layer-violation, is real
+# code debt and deliberately does not.
 #
 # The drift guard
 # (tests/Integration/Infrastructure/Rule/ChannelDeclarationFixtureDriftTest.php)
@@ -38,11 +46,11 @@
 # first — never by analogy with a neighbouring line.
 
 architecture.circular-dependency#architecture.circular-dependency magnitude:higher
-architecture.coverage#architecture.coverage occurrence
-architecture.empty-template#architecture.empty-template occurrence
+architecture.coverage#architecture.coverage occurrence config-error
+architecture.empty-template#architecture.empty-template occurrence config-error
 architecture.layer-violation#architecture.layer-violation occurrence
-architecture.potential-shadow#architecture.potential-shadow occurrence
-architecture.unreachable-layer#architecture.unreachable-layer occurrence
+architecture.potential-shadow#architecture.potential-shadow occurrence config-error
+architecture.unreachable-layer#architecture.unreachable-layer occurrence config-error
 code-smell.boolean-argument#code-smell.boolean-argument occurrence
 code-smell.constructor-overinjection#code-smell.constructor-overinjection magnitude:higher
 code-smell.count-in-loop#code-smell.count-in-loop occurrence

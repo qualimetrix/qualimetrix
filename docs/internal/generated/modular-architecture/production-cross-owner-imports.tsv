@@ -1482,6 +1482,7 @@ Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter	Infrastructure.Cons
 Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter	Infrastructure.Console	Qualimetrix\Analysis\Configuration\Contract\Pipeline\ConfigurationResolutionRequest	Analysis.Configuration	contract	P8
 Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter	Infrastructure.Console	Qualimetrix\Core\Path\AbsolutePath	Core.Path	contract	P8
 Qualimetrix\Infrastructure\Console\ConfigurationInputAdapter	Infrastructure.Console	Qualimetrix\Core\Path\PathFactory	Core.Path	contract	P8
+Qualimetrix\Infrastructure\Console\ExitCodeResolver	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	contract	P6-A
 Qualimetrix\Infrastructure\Console\ExitCodeResolver	Infrastructure.Console	Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	contract	P6-A
 Qualimetrix\Infrastructure\Console\ExitCodeResolver	Infrastructure.Console	Qualimetrix\Reporting\ReportCoverage	Reporting	contract	P6
 Qualimetrix\Infrastructure\Console\ExitPolicy	Infrastructure.Console	Qualimetrix\Analysis\Configuration\ConfigSchema	Analysis.Configuration	contract	P3

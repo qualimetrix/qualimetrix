@@ -74,9 +74,6 @@ final class LayerViolationRuleTest extends TestCase
         self::assertSame([
             'layer-violation' => 'enabled',
             'layer-violation-severity' => 'severity',
-            'layer-violation-unreachable-layer-severity' => 'unreachable_layer_severity',
-            'layer-violation-potential-shadow-severity' => 'potential_shadow_severity',
-            'layer-violation-empty-template-severity' => 'empty_template_severity',
         ], CliAliasReader::read(LayerViolationRule::class));
         self::assertStringContainsString('layer', strtolower($rule->getDescription()));
     }
@@ -781,7 +778,7 @@ final class LayerViolationRuleTest extends TestCase
 
         $unreachable = $this->filterByRule($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
         self::assertCount(1, $unreachable);
-        self::assertSame(Severity::Info, $unreachable[0]->severity);
+        self::assertSame(Severity::Error, $unreachable[0]->severity);
         self::assertStringContainsString('Layer "controller" was never matched', $unreachable[0]->message);
         self::assertStringContainsString('App\\Controller\\**', $unreachable[0]->message);
         self::assertStringContainsString('qmx debug:layer-assignment', $unreachable[0]->message);
@@ -884,30 +881,6 @@ final class LayerViolationRuleTest extends TestCase
     }
 
     #[Test]
-    public function itAllowsConfiguringUnreachableLayerSeverity(): void
-    {
-        // A typo in `patterns:` (e.g. `App\Controler\**`) silently disables a
-        // layer with no CLI-visible signal beyond the default Info severity.
-        // Raising unreachableLayerSeverity to Error is exactly the escape
-        // hatch this option exists for.
-        $rule = $this->buildRule(new LayerViolationOptions(unreachableLayerSeverity: Severity::Error));
-
-        $arch = $this->buildArchitecture(
-            layers: ['controller' => ['App\\Controller\\**']],
-            allow: [],
-        );
-
-        $repo = new InMemoryMetricRepository();
-        $this->registerClass($repo, 'App\\Service', 'UserService');
-
-        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
-
-        $unreachable = $this->filterByRule($violations, LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME);
-        self::assertCount(1, $unreachable);
-        self::assertSame(Severity::Error, $unreachable[0]->severity);
-    }
-
-    #[Test]
     public function unreachableLayer_doesNotFireForDtoOnlyLayer(): void
     {
         // The DTO layer's classes exist but have NO outgoing dependencies.
@@ -958,33 +931,10 @@ final class LayerViolationRuleTest extends TestCase
 
         $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
         self::assertCount(1, $shadow);
-        self::assertSame(Severity::Info, $shadow[0]->severity);
+        self::assertSame(Severity::Error, $shadow[0]->severity);
         self::assertStringContainsString('"any-foo"', $shadow[0]->message);
         self::assertStringContainsString('"service"', $shadow[0]->message);
         self::assertStringContainsString('App\\Service\\Foo', $shadow[0]->message);
-    }
-
-    #[Test]
-    public function itAllowsConfiguringPotentialShadowSeverity(): void
-    {
-        $rule = $this->buildRule(new LayerViolationOptions(potentialShadowSeverity: Severity::Error));
-
-        $arch = $this->buildArchitecture(
-            layers: [
-                'any-foo' => ['App\\**\\Foo'],
-                'service' => ['App\\Service\\**'],
-            ],
-            allow: [],
-        );
-
-        $repo = new InMemoryMetricRepository();
-        $this->registerClass($repo, 'App\\Service', 'Foo');
-
-        $violations = $rule->analyze($this->buildContext(null, $arch, $repo));
-
-        $shadow = $this->filterByRule($violations, LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME);
-        self::assertCount(1, $shadow);
-        self::assertSame(Severity::Error, $shadow[0]->severity);
     }
 
     #[Test]
@@ -1169,7 +1119,7 @@ final class LayerViolationRuleTest extends TestCase
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function itDefaultsEmptyTemplateSeverityToWarning(): void
+    public function itReportsAnEmptyTemplateAtTheFixedConfigurationErrorSeverity(): void
     {
         $rule = $this->buildRule(new LayerViolationOptions());
 
@@ -1179,22 +1129,8 @@ final class LayerViolationRuleTest extends TestCase
 
         $emptyTemplate = $this->filterByRule($violations, LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertCount(1, $emptyTemplate);
-        self::assertSame(Severity::Warning, $emptyTemplate[0]->severity);
-        self::assertStringContainsString('domain-{module}', $emptyTemplate[0]->message);
-    }
-
-    #[Test]
-    public function itAllowsConfiguringEmptyTemplateSeverity(): void
-    {
-        $rule = $this->buildRule(new LayerViolationOptions(emptyTemplateSeverity: Severity::Error));
-
-        $arch = $this->buildArchitectureWithEmptyTemplates(['domain-{module}']);
-
-        $violations = $rule->analyze($this->buildContext(null, $arch));
-
-        $emptyTemplate = $this->filterByRule($violations, LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
-        self::assertCount(1, $emptyTemplate);
         self::assertSame(Severity::Error, $emptyTemplate[0]->severity);
+        self::assertStringContainsString('domain-{module}', $emptyTemplate[0]->message);
     }
 
     // -------------------------------------------------------------------------

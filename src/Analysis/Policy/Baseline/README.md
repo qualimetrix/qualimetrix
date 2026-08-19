@@ -27,7 +27,7 @@ Baseline/
 ├── BaselineGenerator.php        # Captures a run's findings as entries (injected clock)
 ├── BaselineCapture.php          # VO/factory: baseline plus materialized rejected-group outcomes
 ├── UncapturedGroup.php          # VO: a group that produced no entry, and why
-├── UncapturedReason.php         # Enum: undeclared channel / no finite magnitude
+├── UncapturedReason.php         # Enum: undeclared / configuration-error channel / no finite magnitude
 ├── BaselineLoader.php           # Loads the exact typed-subject version 11 file
 ├── BaselineLoadException.php    # Envelope failure (missing/unreadable/invalid JSON/version); exit 3
 ├── BaselineWriter.php           # Writes atomically under a compare-and-swap guard
@@ -150,6 +150,18 @@ absent or non-finite, an entry the loader turned inert, a renamed symbol: each r
 the findings unchanged. None of them is evidence that the debt got worse, so promoting
 on one would fail a build over a stale file.
 
+**A configuration error may not be accepted at all.** A channel declaring
+`ChannelAcceptability::ConfigurationError` — today the four layer-policy diagnostics —
+reports a mistake in the configuration rather than debt in the code, so no entry bounds
+it on any of the five paths: the loader refuses the line
+(`InertEntryReason::ConfigurationErrorChannel`), `generate` does not capture it
+(`UncapturedReason::ConfigurationErrorChannel`), `update` refuses it
+(`BaselineUpdateRefusalReason::ConfigurationErrorChannel`), `cleanup` lists it for
+removal (`BaselineCleanupReason::ChannelIsConfigurationError`), and the ceiling reports
+the group while naming the entry inert. This is stronger than inapplicability: the
+others say *this* entry cannot be applied, this one says none could be. The finding
+also fails the run without consulting `fail_on`.
+
 The invariant has no `mode` exception, so applicability is settled before `mode` is
 read: `mode: suppress` waives the comparison of magnitudes and count, not the question
 of whether the entry bounds that channel at all. An entry naming an undeclared channel
@@ -240,7 +252,7 @@ byte-for-byte unchanged — never partially adjusted, since a partial write
 disguised as a refusal would be an undocumented second acceptance rule.
 `BaselineUpdateResult::$outcomes` names, per entry, one of `Updated`,
 `Refused` (with a `BaselineUpdateRefusalReason`: `UndeclaredChannel`,
-`ShapeMismatch`, `CurrentMagnitudeUnavailable`, `Worsened`,
+`ConfigurationErrorChannel`, `ShapeMismatch`, `CurrentMagnitudeUnavailable`, `Worsened`,
 `WorsenedUnderSuppression`) or `Skipped`. The last two are the same declined
 comparison: a `mode: suppress` entry is tested like any other — otherwise
 `update` would be a way to widen an acceptance — but calling its refusal
@@ -260,10 +272,14 @@ every later narrow run would cover it and the guard would never fire again.
 `BaselineCleaner::candidates(Baseline $baseline, list<Violation> $measured, ChannelDeclarationRegistryInterface $declarations): list<BaselineCleanupCandidate>`
 lists every entry `cleanup` would offer to remove — **and changes nothing**.
 A valid entry is offered for `Stale` (absent from the measured set, via
-`Baseline::staleEntries()`) or `ChannelNotDeclared`; an entry whose channel
-is no longer declared is reported under the latter even when it is also
-stale, since a channel nothing declares can never produce a measured
-finding and the more permanent cause is the more useful answer. Every
+`Baseline::staleEntries()`), `ChannelNotDeclared`, or
+`ChannelIsConfigurationError`; an entry whose channel is no longer declared
+is reported under the second even when it is also stale, since a channel
+nothing declares can never produce a measured finding and the more permanent
+cause is the more useful answer. The third holds even while the finding is
+still being measured: a channel declaring
+`ChannelAcceptability::ConfigurationError` may never be accepted by any
+entry, so the entry can only be removed. Every
 `InertBaselineEntry` is offered too, under `Inert`, carrying its own
 `InertEntryReason` — it already has a selector, and the user is entitled to
 delete an unreadable line.
@@ -407,9 +423,9 @@ numeric comparison and stable from the first write.
 
 ### Entries that cannot be applied
 
-A malformed entry, an undeclared channel, a shape mismatch in either direction, an
-unrecognized `mode`, a component carrying the identity key separator, or a duplicated
-identity makes an entry **inert**: it does not
+A malformed entry, an undeclared channel, a channel that reports a configuration
+error, a shape mismatch in either direction, an unrecognized `mode`, a component
+carrying the identity key separator, or a duplicated identity makes an entry **inert**: it does not
 suppress, and it does not fail the load — refusing to load would punish a whole run
 for one bad line. An inert entry keeps its symbol, channel, selector and reason for
 reporting, and its raw payload so a rewrite preserves the line verbatim.

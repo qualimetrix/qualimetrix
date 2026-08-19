@@ -413,6 +413,7 @@ architecture:
       patterns:
         - 'Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver'
         - 'Qualimetrix\Analysis\Finding\Contract\AcceptedLevel'
+        - 'Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface'
@@ -1192,16 +1193,13 @@ architecture:
 rules:
   # --- Architecture ---
 
-  # The three layer diagnostics default to info/warning so that adopting the
-  # rule never breaks an existing build. For our own topology the opposite is
-  # right: a layer that captures nothing, a layer shadowed by an earlier one,
-  # or a template that expands to nothing is always a typo in `patterns:` —
-  # exactly the failure the diagnostics exist to catch. Fail the build on it.
+  # The four sibling layer diagnostics (coverage, unreachable-layer,
+  # potential-shadow, empty-template) no longer take a severity here: they
+  # report a configuration error, so they fail the build unconditionally and
+  # cannot be accepted by the ratchet. Only the edge violations this rule
+  # reports as code debt still have a severity to choose.
   architecture.layer-violation:
     severity: error
-    unreachable_layer_severity: error
-    potential_shadow_severity: error
-    empty_template_severity: error
 
   # --- Coupling ---
 

@@ -39,6 +39,7 @@ use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
 use Qualimetrix\Reporting\Report;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
@@ -167,7 +168,7 @@ final class ResultPresenterTest extends TestCase
                 new HealthSummaryBuilder(new HealthMetricCatalog(), $definitions),
             ),
             new ProfilePresenter($session),
-            new ExitCodeResolver(),
+            new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),
             new ViolationFilter(),
             new FormatterContextFactory(),
         );

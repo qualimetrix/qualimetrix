@@ -65,6 +65,7 @@ use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
@@ -413,7 +414,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             $profile,
             self::withoutConstructor(SummaryEnricher::class),
             new ProfilePresenter($profile),
-            new ExitCodeResolver(),
+            new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),
             new ViolationFilter(),
             new FormatterContextFactory(),
         );

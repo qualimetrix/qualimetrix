@@ -145,6 +145,16 @@ final readonly class BaselineUpdater
             return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, BaselineUpdateRefusalReason::UndeclaredChannel)];
         }
 
+        // Applicability, before anything about the measured group: a channel
+        // that reports a configuration error is never re-recorded, so
+        // `update` cannot turn a misconfigured run into a wider acceptance.
+        if ($declaration->isConfigurationError()) {
+            return [
+                $entry,
+                BaselineEntryUpdateOutcome::refused($entry->identity, BaselineUpdateRefusalReason::ConfigurationErrorChannel),
+            ];
+        }
+
         if ($declaration->shape !== $entry->shape()) {
             return [$entry, BaselineEntryUpdateOutcome::refused($entry->identity, BaselineUpdateRefusalReason::ShapeMismatch)];
         }

@@ -12,21 +12,24 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 /**
  * Options for {@see LayerViolationRule}.
  *
- * The rule emits four diagnostic channels from one options set:
+ * The rule emits five channels from one options set, and only two of them
+ * are configured here:
  * - {@see $enabled} — short-circuits analysis when false.
  * - {@see $severity} — the severity of every reported `architecture.layer-violation`.
- * - {@see $unreachableLayerSeverity} — severity of `architecture.unreachable-layer`
- *   (default {@see Severity::Info}).
- * - {@see $potentialShadowSeverity} — severity of `architecture.potential-shadow`
- *   (default {@see Severity::Info}).
- * - {@see $emptyTemplateSeverity} — severity of `architecture.empty-template`
- *   (default {@see Severity::Warning}).
  *
- * The three sub-diagnostic severities default to their historical hardcoded
- * values so existing configs keep their current behavior. Making them
- * configurable lets a project raise a diagnostic to `error` — e.g. a typo in
- * `patterns:` that silently swallows a layer is otherwise only visible via
- * `--disable-rule`'s absence, not via any severity CI can gate on.
+ * The other four — `architecture.coverage`, `architecture.unreachable-layer`,
+ * `architecture.potential-shadow` and `architecture.empty-template` — declare
+ * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError}.
+ * They fail the run without consulting `fail_on` and cannot be accepted by
+ * the ratchet, so their severity controls nothing but the word printed beside
+ * the finding. `unreachable_layer_severity`, `potential_shadow_severity` and
+ * `empty_template_severity` are therefore removed rather than kept as knobs
+ * that look behavioural and are not; {@see fromArray()} rejects them by name
+ * instead of ignoring them, because silently accepting `info` for a channel
+ * that gates unconditionally is exactly the lie the removal exists to end.
+ * `architecture.coverage` never had such a key: it is governed by the
+ * architecture section's own `coverage: ignore|warn|error`, and `ignore`
+ * remains the supported way to decline the diagnostic outright.
  *
  * Layer definitions and the allow-list live in {@see \Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration}
  * (resolved per-run by {@see \Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy::getPreparedConfiguration()}),
@@ -45,57 +48,75 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
     private const string RULE_NAME = 'architecture.layer-violation';
 
     /**
+     * The removed per-diagnostic severity keys, snake_case => camelCase: both
+     * spellings were accepted (a `--rule-opt` override bypasses the config
+     * key normalizer), so both must be refused.
+     */
+    private const array REMOVED_SEVERITY_KEYS = [
+        'unreachable_layer_severity' => 'unreachableLayerSeverity',
+        'potential_shadow_severity' => 'potentialShadowSeverity',
+        'empty_template_severity' => 'emptyTemplateSeverity',
+    ];
+
+    /**
      * @param bool $enabled Whether the rule is enabled.
      * @param Severity $severity Severity assigned to every reported `architecture.layer-violation`.
-     * @param Severity $unreachableLayerSeverity Severity assigned to `architecture.unreachable-layer`.
-     * @param Severity $potentialShadowSeverity Severity assigned to `architecture.potential-shadow`.
-     * @param Severity $emptyTemplateSeverity Severity assigned to `architecture.empty-template`.
      */
     public function __construct(
         public bool $enabled = true,
         public Severity $severity = Severity::Warning,
-        public Severity $unreachableLayerSeverity = Severity::Info,
-        public Severity $potentialShadowSeverity = Severity::Info,
-        public Severity $emptyTemplateSeverity = Severity::Warning,
     ) {}
 
     /**
-     * Config keys accept both the canonical snake_case form (`unreachable_layer_severity`,
-     * matching every other multi-word option in `rules:`, e.g. `max_cycle_size` in
-     * {@see CircularDependencyOptions}) and a camelCase fallback (CLI overrides via
-     * `--rule-opt` bypass the config-file key normalizer).
-     *
      * @param array<string, mixed> $config
      *
-     * @throws InvalidArgumentException When a severity value does not match a known enum case.
+     * @throws InvalidArgumentException When a severity value does not match a known enum case,
+     *                                  or when the config still sets one of the three removed
+     *                                  diagnostic-severity keys.
      */
     public static function fromArray(array $config): self
     {
-        $enabled = (bool) ($config[RuleOptionKey::ENABLED] ?? true);
-        $severity = self::resolveSeverity($config['severity'] ?? null, 'severity', Severity::Warning);
-        $unreachableLayerSeverity = self::resolveSeverity(
-            $config['unreachable_layer_severity'] ?? $config['unreachableLayerSeverity'] ?? null,
-            'unreachable_layer_severity',
-            Severity::Info,
-        );
-        $potentialShadowSeverity = self::resolveSeverity(
-            $config['potential_shadow_severity'] ?? $config['potentialShadowSeverity'] ?? null,
-            'potential_shadow_severity',
-            Severity::Info,
-        );
-        $emptyTemplateSeverity = self::resolveSeverity(
-            $config['empty_template_severity'] ?? $config['emptyTemplateSeverity'] ?? null,
-            'empty_template_severity',
-            Severity::Warning,
-        );
+        self::assertNoRemovedSeverityKeys($config);
 
         return new self(
-            enabled: $enabled,
-            severity: $severity,
-            unreachableLayerSeverity: $unreachableLayerSeverity,
-            potentialShadowSeverity: $potentialShadowSeverity,
-            emptyTemplateSeverity: $emptyTemplateSeverity,
+            enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
+            severity: self::resolveSeverity($config['severity'] ?? null, 'severity', Severity::Warning),
         );
+    }
+
+    /**
+     * Refuses a config that still carries a removed per-diagnostic severity
+     * key, in either the snake_case or the camelCase spelling both used to
+     * accept.
+     *
+     * Refusing rather than ignoring is the point. The four diagnostics these
+     * keys used to tune now gate the run unconditionally, so honouring
+     * `unreachable_layer_severity: info` is impossible and quietly raising it
+     * would leave the user's file saying one thing while the tool does
+     * another — the same class of lie as a directive that matches nothing.
+     * Naming the key and what replaced it is the only answer that lets a
+     * config be fixed mechanically.
+     *
+     * @param array<string, mixed> $config
+     *
+     * @throws InvalidArgumentException
+     */
+    private static function assertNoRemovedSeverityKeys(array $config): void
+    {
+        foreach (self::REMOVED_SEVERITY_KEYS as $snakeCase => $camelCase) {
+            if (!\array_key_exists($snakeCase, $config) && !\array_key_exists($camelCase, $config)) {
+                continue;
+            }
+
+            throw new InvalidArgumentException(\sprintf(
+                'Option "%s" for rule "%s" no longer exists. The channel it configured reports a configuration'
+                . ' error, which always fails the run regardless of "fail_on" and can never be accepted by a'
+                . ' baseline, so its severity was not a behaviour setting. Remove the key; to decline the'
+                . ' coverage diagnostic itself, set "coverage: ignore" in the architecture section.',
+                $snakeCase,
+                self::RULE_NAME,
+            ));
+        }
     }
 
     public function isEnabled(): bool
@@ -124,8 +145,7 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
      *
      * $optionName anchors the error message to the specific option that
      * failed (`rules.architecture.layer-violation.<optionName>` in the
-     * user's YAML), since this method now backs four independent knobs
-     * sharing one Options class.
+     * user's YAML).
      *
      * @throws InvalidArgumentException When $raw is set but not a recognized severity string.
      */

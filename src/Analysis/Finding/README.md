@@ -32,7 +32,12 @@ Finding owns the channel name space as a contract and not as an implementation.
 `ChannelIdentityInterface` (which names exist, what they belong to, what `X.*`
 expands to) — and Infrastructure supplies the single instance behind them.
 Matching stays string comparison in `NameSelector` and never consults the
-universe; the universe validates and resolves. Finding neither resolves computed
+universe; the universe validates and resolves. `ChannelDeclaration` carries
+one further declared property besides shape and direction:
+`ChannelAcceptability`. `ConfigurationError` marks a channel whose findings
+report a mistake in the configuration rather than debt in the code — it is
+refused by every baseline path and fails the run without consulting `fail_on`.
+Today the four layer-policy diagnostics carry it. Finding neither resolves computed
 definitions nor retains Infrastructure-owned definition state.
 
 

@@ -110,6 +110,14 @@ final readonly class BaselineGenerator
             return UncapturedReason::UndeclaredChannel;
         }
 
+        // Declared, but as a configuration error: capturing it would record
+        // "the declared configuration does not describe this code" as an
+        // accepted amount of debt. The finding is reported instead, and the
+        // run stays red until the configuration is fixed.
+        if ($declaration->isConfigurationError()) {
+            return UncapturedReason::ConfigurationErrorChannel;
+        }
+
         if ($declaration->direction === null) {
             return new BaselineEntry($identity, null, \count($group));
         }

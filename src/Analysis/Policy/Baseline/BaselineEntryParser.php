@@ -172,6 +172,22 @@ final readonly class BaselineEntryParser
             );
         }
 
+        // A hand-written entry is refused here for the same reason a
+        // generated one is never written: the channel says it reports a
+        // configuration mistake, and an accepted amount of "your
+        // configuration does not describe your code" is not a state the
+        // ratchet may hold. Refused with its own reason, never as
+        // "undeclared" — the two ask the user for opposite fixes.
+        if ($declaration->isConfigurationError()) {
+            throw new BaselineEntryRejection(
+                InertEntryReason::ConfigurationErrorChannel,
+                \sprintf(
+                    'the channel "%s" reports a configuration error, which cannot be accepted as debt',
+                    $identity->channel->toKey(),
+                ),
+            );
+        }
+
         try {
             $entry = new BaselineEntry($identity, $values->magnitudes, $values->count, $values->mode);
         } catch (InvalidArgumentException $e) {

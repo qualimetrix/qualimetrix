@@ -3401,6 +3401,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::everyDeclaredViolationCodeEqualsOrIsPrefixedByItsRuleName
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::everyFixtureLineIsStillDeclaredInCode
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::everyStaticallyDeclaredChannelIsListedInTheFixture
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::exactlyTheFourLayerPolicyDiagnosticsDeclareAConfigurationError
+ - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelDeclarationFixtureDriftTest::noExcludedFixtureLineNamesADeclaredChannel
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelEmissionStaticGuardTest::everyStaticallyResolvableEmittedChannelIsDeclaredOrExcluded
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyDeclaredChannelHasAProducer
  - Qualimetrix\Tests\Analysis\Finding\Integration\ChannelUniverseCoverageTest::everyRegisteredRuleIsAddressableIncludingOnesThatDeclareNoChannel
@@ -4023,7 +4025,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerTemplateExpansionIntegrationTest::templateExpansion_ceilingBelowObservedCountFailsFast
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerTemplateExpansionIntegrationTest::templateExpansion_ceilingCountsOnlyPopulatedTemplatesAcrossMixedConfig
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerTemplateExpansionIntegrationTest::templateExpansion_disallowedEdgeUsesExpandedLayerNameInMessage
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerTemplateExpansionIntegrationTest::templateExpansion_emptyTemplateFiresWarning
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerTemplateExpansionIntegrationTest::templateExpansion_emptyTemplateFiresConfigurationError
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerTemplateExpansionIntegrationTest::templateExpansion_producesOneConcreteLayerPerObservedModule
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerViolationIntegrationTest::controllerOnlyPolicyTriggersCoverageDiagnosticInWarnMode
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Integration\LayerViolationIntegrationTest::emptyArchitecturePolicyProducesZeroLayerViolations
@@ -4629,24 +4631,19 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::fromArrayRejectsUnknownSeverity
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::getSeverityReturnsConfiguredSeverityForAnyValueWhenEnabled
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::getSeverityReturnsNullWhenDisabled
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itParsesEmptyTemplateSeverityFromASnakeCaseKey
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itParsesPotentialShadowSeverityFromASnakeCaseKey
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itParsesUnreachableLayerSeverityFromACamelCaseKey
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itParsesUnreachableLayerSeverityFromASnakeCaseKey
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsAnUnknownEmptyTemplateSeverity
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsAnUnknownPotentialShadowSeverity
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsAnUnknownUnreachableLayerSeverity
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#0
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#1
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#2
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#3
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#4
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#5
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::allowedEdgeProducesNoViolation
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::disabledRuleReturnsNoViolations
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::eachUseSiteProducesItsOwnViolation
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::emptyArchitectureReturnsNoViolations
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::forbiddenEdgeProducesViolationWithExpectedFields
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itAllowsConfiguringEmptyTemplateSeverity
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itAllowsConfiguringPotentialShadowSeverity
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itAllowsConfiguringUnreachableLayerSeverity
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itAppendsForbiddenEdgeFindingsInGraphAndCanonicalTargetOrder
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itBuildsZeroOneAndManyPolicyApprovedTargetFindings
- - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itDefaultsEmptyTemplateSeverityToWarning
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itDoesNotReportUnreachableForALayerMatchedOnlyAsADependencyTarget
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itKeepsDuplicateExactSourceDeclarationsIndependentlyControlledWhenTargetIsUnowned
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itKeepsIdenticalSemanticEdgesStableAcrossUseSiteLocations
@@ -4656,6 +4653,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itProjectsEveryOwnedDuplicateTargetInCanonicalOrder
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itProjectsOneViolationToTheOwnedTargetDeclaration
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itRejectsADependencyLocationWithoutAnExactFileAndLine
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itReportsAnEmptyTemplateAtTheFixedConfigurationErrorSeverity
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itResolvesOwnedTargetDeclarationsInCanonicalOrder
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::itUsesTheExactSourceSubjectWhenTheLogicalTargetIsNotOwned
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::metadataMatchesContract
@@ -5027,6 +5025,13 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itUsesScopeThenFiniteSpanAndKeepsTheFirstExactTieAcrossRulePatterns
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itUsesTheFirstExactMeasuredSubjectAcrossDifferentEdgeIdentities
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itUsesTheFirstExactMeasuredSubjectAcrossDifferentOccurrenceIdentities
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ConfigurationErrorChannelRejectionTest::itDoesNotCaptureAConfigurationErrorFindingIntoAGeneratedBaseline
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ConfigurationErrorChannelRejectionTest::itListsSuchAnEntryForCleanupOnItsOwnReasonEvenWhileTheFindingIsStillMeasured
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ConfigurationErrorChannelRejectionTest::itNeverAcceptsAConfigurationErrorGroupAtTheCeilingAndReportsTheEntryAsInert
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ConfigurationErrorChannelRejectionTest::itRefusesToLoadAHandWrittenEntryOnAConfigurationErrorChannel
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ConfigurationErrorChannelRejectionTest::itRefusesToLoadSuchAnEntryEvenInSuppressMode
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ConfigurationErrorChannelRejectionTest::itRefusesToUpdateAnEntryOnAConfigurationErrorChannel
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\ConfigurationErrorChannelRejectionTest::itStillAcceptsTheSiblingLayerViolationChannelAsDebt
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntrySelectorTest::itComputesTwelveLowercaseHexCharacters
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntrySelectorTest::itDiffersForDifferentKeys
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\EntrySelectorTest::itIsDeterministicForOneKey
@@ -5566,6 +5571,9 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfigurationIsolationTest::itKeepsEveryOwnerStoreAtDefaultsAfterLateArchitectureFailureInTheCompiledContainer
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfigurationIsolationTest::itReplacesDynamicComputedChannelsBetweenRunsAndCommitsNothingFromAFailedRun
  - Qualimetrix\Tests\Infrastructure\Console\Integration\RuntimeConfigurationIsolationTest::itRestoresDefaultOwnerConfigurationsAfterACustomRunInTheSameContainer
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itFailsTheRunOnAConfigurationErrorWhateverFailOnSays
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itRefusesAConfigurationErrorReportedBelowWarning
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itStillHonoursFailOnForAnOrdinaryDebtFinding
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfileSummaryRendererTest::itRendersTypedProfileStatistics
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Progress\SwitchableProgressReporterTest::itDelegatesToTheEnabledReporter
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Progress\SwitchableProgressReporterTest::itIsANoOpByDefaultAndAfterReset
@@ -5729,10 +5737,10 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Unit\RuleRegistryTest::itReturnsRegisteredRuleClassNames
  - Qualimetrix\Tests\Infrastructure\Unit\RuleRegistryTest::itThrowsWhenTwoRulesShareACliAlias
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itConfiguresTheGroupOption
- - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itDisplaysAllLayerViolationSeverityAliases
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itDisplaysCliAliases
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itDisplaysNoRulesMessageForAnUnknownGroup
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itDisplaysNoRulesMessageWhenNoRulesAreRegistered
+ - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itDisplaysTheLayerViolationSeverityAlias
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itDisplaysUsageHints
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itFiltersRulesByGroup
  - Qualimetrix\Tests\Infrastructure\Unit\RulesCommandTest::itListsRulesUnderGroupHeaders

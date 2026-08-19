@@ -17,6 +17,15 @@ enum UncapturedReason: string
     case UndeclaredChannel = 'undeclared-channel';
 
     /**
+     * The channel is declared, but as a configuration error: recording it
+     * would freeze a disagreement between the configuration and the code as
+     * an accepted steady state. Resolvable only by fixing the configuration
+     * — or, where the configuration offers one, by declining the diagnostic
+     * there (`coverage: ignore`).
+     */
+    case ConfigurationErrorChannel = 'configuration-error-channel';
+
+    /**
      * The channel stores magnitudes and some member of the group reported no
      * finite number. ADR 0017 requires exactly one per member, and inventing one
      * would fabricate the very boundary the entry exists to state.
@@ -27,6 +36,7 @@ enum UncapturedReason: string
     {
         return match ($this) {
             self::UndeclaredChannel => 'no rule declares the channel',
+            self::ConfigurationErrorChannel => 'the channel reports a configuration error, which cannot be accepted as debt',
             self::MagnitudeUnavailable => 'a finding reported no finite magnitude',
         };
     }

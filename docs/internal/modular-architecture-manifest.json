@@ -5378,6 +5378,14 @@
                 }
             ]
         },
+        "Qualimetrix\\Analysis\\Finding\\Contract\\ChannelAcceptability": {
+            "path": "src/Analysis/Finding/Contract/ChannelAcceptability.php",
+            "kind": "enum",
+            "owner": "Analysis.Finding",
+            "visibility": "internal",
+            "closure_package": "P6-A",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclaration": {
             "path": "src/Analysis/Finding/Contract/ChannelDeclaration.php",
             "kind": "class",
@@ -5582,6 +5590,11 @@
                 {
                     "owner": "Infrastructure.Console",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineCleanupCommand",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Console",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ExitCodeResolver",
                     "closes_in": null
                 },
                 {
