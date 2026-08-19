@@ -71,22 +71,4 @@ final readonly class Report
             static fn(Violation $v): bool => $v->severity === $severity,
         ));
     }
-
-    /**
-     * Returns the highest exit code based on violations.
-     * 0 if no violations, otherwise max of severity exit codes.
-     */
-    public function getExitCode(): int
-    {
-        if ($this->isEmpty()) {
-            return 0;
-        }
-
-        $exitCode = 0;
-        foreach ($this->violations as $violation) {
-            $exitCode = max($exitCode, $violation->severity->getExitCode());
-        }
-
-        return $exitCode;
-    }
 }

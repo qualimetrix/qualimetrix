@@ -90,6 +90,33 @@ final class HealthScoreDrillDownTest extends TestCase
     }
 
     #[Test]
+    public function itSubtreeHealthScoresIgnoreATrailingBackslashInTheSelector(): void
+    {
+        $classPath = SymbolPath::forClass('App\Service', 'Worker');
+        $metrics = $this->createMetricRepository(
+            projectMetrics: new MetricBag(),
+            namespaces: [
+                new SymbolInfo(SymbolPath::forNamespace('App\\Service'), RelativePath::fromString('src/Service.php'), 1),
+            ],
+            namespaceMetrics: [
+                'ns:App\\Service' => MetricBag::fromArray([
+                    'health.complexity' => 80.0,
+                    'classCount.sum' => 3,
+                ]),
+            ],
+            classes: [new SymbolInfo($classPath, RelativePath::fromString('src/Service/Worker.php'), null)],
+            classMetrics: [
+                $classPath->toCanonical() => MetricBag::fromArray(['ccn.sum' => 9]),
+            ],
+        );
+
+        $result = $this->drillDown->buildSubtreeHealthScores($metrics, 'App\\Service\\');
+
+        self::assertArrayHasKey('complexity', $result);
+        self::assertCount(1, $result['complexity']->worstContributors);
+    }
+
+    #[Test]
     public function itSubtreeHealthScoresMatchesChildNamespaces(): void
     {
         $metrics = $this->createMetricRepository(

@@ -161,7 +161,7 @@ final readonly class FormatterContext
         public array $options = [],        // from --format-opt key=value
         public string $basePath = '',      // retained for SARIF %SRCROOT% URI builder
         public bool $scopedReporting = false, // scoped reporting (e.g., --report=git:staged)
-        public ?string $namespace = null,  // --namespace filter (boundary-aware prefix)
+        public ?string $namespace = null,  // --namespace filter (prefix or glob pattern)
         public ?string $class = null,      // --class filter (exact FQCN match)
         public int $terminalWidth = 0,     // adaptive rendering width (0 = default 80)
         public ?int $detailLimit = null,   // --detail mode: null=off, 0=all, N=limit
@@ -244,7 +244,6 @@ final readonly class Report
     public function isEmpty(): bool;
     public function getTotalViolations(): int;
     public function getViolationsBySeverity(Severity $severity): array;
-    public function getExitCode(): int;
 }
 ```
 
@@ -303,7 +302,7 @@ Human-readable verbose output with:
 
 ```bash
 # Drill-down (mutually exclusive, works with summary/text/json)
-bin/qmx check src/ --namespace=App\\Service   # filter by namespace prefix (boundary-aware)
+bin/qmx check src/ --namespace=App\\Service   # filter by namespace pattern (prefix or glob)
 bin/qmx check src/ --class=App\\Service\\UserService  # filter by exact FQCN
 
 # Grouping (overrides formatter default)

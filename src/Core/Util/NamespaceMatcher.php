@@ -7,6 +7,10 @@ namespace Qualimetrix\Core\Util;
 /**
  * Matches namespaces against namespace patterns.
  *
+ * Trailing backslashes are cosmetic: `App\Entity\` and `App\Entity` are the
+ * same pattern. Normalization happens inside {@see matchesSingle()} so every
+ * caller gets it, whether it goes through an instance or the static helper.
+ *
  * Supports two matching modes, selected automatically per pattern:
  * - **Prefix mode** (no glob characters): the pattern is treated as a namespace prefix
  *   with `\` boundary awareness. `App\Entity` matches `App\Entity` itself and
@@ -26,35 +30,22 @@ namespace Qualimetrix\Core\Util;
 final readonly class NamespaceMatcher
 {
     /**
-     * @var list<string> Normalized patterns (trailing backslashes removed)
-     */
-    private array $normalizedPatterns;
-
-    /**
      * @param list<string> $patterns Namespace patterns or prefixes to match against
      */
-    public function __construct(array $patterns)
-    {
-        $this->normalizedPatterns = array_map(
-            static fn(string $pattern): string => rtrim($pattern, '\\'),
-            $patterns,
-        );
-    }
+    public function __construct(
+        private array $patterns,
+    ) {}
 
     /**
      * Returns true if the namespace matches at least one pattern.
      */
     public function matches(string $namespace): bool
     {
-        if ($namespace === '' || $this->normalizedPatterns === []) {
+        if ($namespace === '' || $this->patterns === []) {
             return false;
         }
 
-        foreach ($this->normalizedPatterns as $pattern) {
-            if ($pattern === '') {
-                continue;
-            }
-
+        foreach ($this->patterns as $pattern) {
             if (self::matchesSingle($pattern, $namespace)) {
                 return true;
             }
@@ -68,14 +59,16 @@ final readonly class NamespaceMatcher
      */
     public function isEmpty(): bool
     {
-        return $this->normalizedPatterns === [];
+        return $this->patterns === [];
     }
 
     /**
      * Tests a single pattern against a namespace.
      *
-     * The caller is responsible for any normalization (e.g. trailing-backslash
-     * stripping). Empty `$pattern` and empty `$namespace` always return false.
+     * Trailing backslashes are stripped from `$pattern` first, so callers do
+     * not have to compensate: a pattern that is nothing but backslashes ends up
+     * empty and matches nothing. Empty `$pattern` and empty `$namespace` always
+     * return false.
      *
      * - **Glob mode** (pattern contains `*`, `?`, or `[`): uses `fnmatch()` with
      *   `FNM_NOESCAPE` (backslashes are literals, not escape characters).
@@ -84,6 +77,8 @@ final readonly class NamespaceMatcher
      */
     public static function matchesSingle(string $pattern, string $namespace): bool
     {
+        $pattern = rtrim($pattern, '\\');
+
         if ($pattern === '' || $namespace === '') {
             return false;
         }

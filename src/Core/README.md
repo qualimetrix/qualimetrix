@@ -657,7 +657,7 @@ Matches file paths against patterns. Supports two modes per pattern: prefix matc
 
 ### NamespaceMatcher
 
-Matches namespaces against patterns. Same dual-mode logic as `PathMatcher` but uses `\` as boundary separator. Used for `exclude_namespaces` configuration.
+Matches namespaces against patterns. Same dual-mode logic as `PathMatcher` but uses `\` as boundary separator, and a trailing `\` in a pattern is cosmetic (`App\Entity\` ≡ `App\Entity`) — normalization lives in `matchesSingle()`, so every caller gets it. Used for `exclude_namespaces`, the `--namespace` selector, health drill-down, worst-offender lists, `coupling.distance`'s `include_namespaces` and layer-policy `patterns:`.
 
 **Constructor:** `__construct(list<string> $patterns)`
 

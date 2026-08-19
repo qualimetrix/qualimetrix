@@ -23,7 +23,7 @@ use Throwable;
  * plan stores in the file. There is deliberately no shorthand that accepts a
  * bare `violationCode` paired with the declaring rule's own name: a rule may
  * emit a channel under a `ruleName` other than its own (`LayerViolationRule`
- * does this for four of its five channels — see {@see ViolationChannel}'s
+ * does this for all but one of its channels — see {@see ViolationChannel}'s
  * docblock), and a shorthand that assumed otherwise would make exactly those
  * channels undeclarable. One form means one behaviour; the cost is that the
  * ~40 simple rules whose emitted `ruleName` always equals their own `NAME`

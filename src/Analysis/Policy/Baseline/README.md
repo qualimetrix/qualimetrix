@@ -151,7 +151,7 @@ the findings unchanged. None of them is evidence that the debt got worse, so pro
 on one would fail a build over a stale file.
 
 **A configuration error may not be accepted at all.** A channel declaring
-`ChannelAcceptability::ConfigurationError` — today the four layer-policy diagnostics —
+`ChannelAcceptability::ConfigurationError` — today the layer-policy diagnostics —
 reports a mistake in the configuration rather than debt in the code, so no entry bounds
 it on any of the five paths: the loader refuses the line
 (`InertEntryReason::ConfigurationErrorChannel`), `generate` does not capture it

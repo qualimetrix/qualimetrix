@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\Worst
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Metadata\HealthDimensionCatalog;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Symbol\SymbolInfo;
+use Qualimetrix\Core\Util\NamespaceMatcher;
 
 final class WorstOffenderBuilder
 {
@@ -77,7 +78,7 @@ final class WorstOffenderBuilder
 
         foreach ($snapshots as $snapshot) {
             $symbol = $snapshot['symbol'];
-            if (!$this->matchesNamespace($symbol, $namespace)) {
+            if (!NamespaceMatcher::matchesSingle($namespace, $symbol->symbolPath->namespace ?? '')) {
                 continue;
             }
 
@@ -114,10 +115,4 @@ final class WorstOffenderBuilder
         return $counts;
     }
 
-    private function matchesNamespace(SymbolInfo $symbol, string $prefix): bool
-    {
-        $namespace = $symbol->symbolPath->namespace ?? '';
-
-        return str_starts_with($namespace . '\\', $prefix . '\\');
-    }
 }

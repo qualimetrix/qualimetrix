@@ -23,7 +23,7 @@ final readonly class FormatterContext
      * @param array<string, string> $options Formatter-specific options from --format-opt
      * @param string $basePath Base directory for relativizing file paths in output (e.g., CWD)
      * @param bool $scopedReporting Whether reporting is scoped (e.g., --report=git:main..HEAD). Metrics and health are always complete; only violations are filtered to scope.
-     * @param string|null $namespace Namespace filter for drill-down (boundary-aware prefix match)
+     * @param string|null $namespace Namespace filter for drill-down, matched by NamespaceMatcher::matchesSingle(): boundary-aware prefix, or glob when the value contains * ? [
      * @param string|null $class Class filter for drill-down (exact FQCN match)
      * @param int $terminalWidth Terminal width for adaptive rendering (0 = use default 80)
      * @param int|null $detailLimit Violation limit for --detail mode (null = off, 0 = all, N = limit)

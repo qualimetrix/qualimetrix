@@ -24,6 +24,7 @@ use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
  * Rule that checks distance from main sequence at namespace level.
@@ -199,7 +200,7 @@ final class DistanceRule extends AbstractRule
         // If explicit includes are set, check against them
         if ($this->options->includeNamespaces !== null && $this->options->includeNamespaces !== []) {
             foreach ($this->options->includeNamespaces as $includePrefix) {
-                if ($this->namespaceMatchesPrefix($namespace, $includePrefix)) {
+                if (NamespaceMatcher::matchesSingle($includePrefix, $namespace)) {
                     return true;
                 }
             }
@@ -213,20 +214,6 @@ final class DistanceRule extends AbstractRule
 
         // Include all namespaces by default
         return true;
-    }
-
-    /**
-     * Check if namespace matches a prefix (with proper boundary check).
-     */
-    private function namespaceMatchesPrefix(string $namespace, string $prefix): bool
-    {
-        $prefix = rtrim($prefix, '\\');
-
-        if ($namespace === $prefix) {
-            return true;
-        }
-
-        return str_starts_with($namespace, $prefix . '\\');
     }
 
     /**

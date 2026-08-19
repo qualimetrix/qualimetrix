@@ -211,6 +211,47 @@ final class InlineDirectiveRuleTest extends TestCase
         self::assertCount(1, self::runWithThreshold('*'));
     }
 
+    /**
+     * The dimensions of `design.type-coverage` are channels, not addressable
+     * units: one `withOverride` retunes all three together, so there is no
+     * per-dimension threshold for `.param` to have meant.
+     */
+    #[Test]
+    public function itPointsAThresholdNamingATypeCoverageDimensionAtTheRule(): void
+    {
+        $findings = self::runWithThreshold('design.type-coverage.param');
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
+            $findings[0]->violationCode,
+        );
+        self::assertStringContainsString('is a channel of rule "design.type-coverage"', $findings[0]->message);
+    }
+
+    /** The rule this addresses uniformly, and the one the plan's counterexample turns on. */
+    #[Test]
+    public function itAcceptsAThresholdOnTypeCoverageItself(): void
+    {
+        self::assertSame([], self::runWithThreshold('design.type-coverage'));
+    }
+
+    /**
+     * A bare family name is the third spelling that used to retune every rule
+     * beneath it. It names no rule, so it is the same mistake as a typo.
+     */
+    #[Test]
+    public function itRejectsAThresholdNamingARuleFamilyRatherThanARule(): void
+    {
+        $findings = self::runWithThreshold('coupling');
+
+        self::assertCount(1, $findings);
+        self::assertSame(
+            InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
+            $findings[0]->violationCode,
+        );
+    }
+
     #[Test]
     public function itAcceptsAThresholdOnARuleThatDeclaresOverrideSupport(): void
     {

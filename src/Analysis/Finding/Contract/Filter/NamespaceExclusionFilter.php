@@ -19,8 +19,8 @@ use Qualimetrix\Core\Util\NamespaceMatcher;
  * {@see ChannelFileScope}. What a user has left to suppress such a finding
  * depends on which channel it is. `architecture.layer-violation` reports real
  * code debt, so `@qmx-ignore` and a baseline entry both still apply to it. The
- * four layer-policy diagnostics beside it — coverage, unreachable layer,
- * potential shadow, empty template — are declared configuration errors: they
+ * layer-policy diagnostics beside it — coverage, unreachable layer, potential
+ * shadow, empty template, pending layer matched — are declared configuration errors: they
  * can be accepted by neither, and the only remaining answers are the
  * architecture configuration's own `exclude:` block and, for coverage
  * specifically, the `coverage: ignore` mode.

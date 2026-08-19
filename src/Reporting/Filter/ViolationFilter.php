@@ -6,12 +6,19 @@ namespace Qualimetrix\Reporting\Filter;
 
 use Qualimetrix\Analysis\Evidence\ComputedMetrics\Health\Contract\Offender\WorstOffender;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Util\NamespaceMatcher;
 use Qualimetrix\Reporting\FormatterContext;
 
 /**
  * Filters violations and worst offenders by namespace/class context.
  *
  * Shared between SummaryFormatter and JsonFormatter to avoid duplication.
+ *
+ * Project-wide findings are excluded from every namespace selection. Their
+ * symbol path carries the internal project sentinel where a namespace would
+ * be, which a glob selector such as `*` would otherwise capture — selecting a
+ * namespace subtree must never surface a finding about the whole project.
  */
 final class ViolationFilter
 {
@@ -33,7 +40,11 @@ final class ViolationFilter
             $class = $v->symbolPath->type;
 
             if ($context->namespace !== null) {
-                return $this->matchesNamespace($ns, $context->namespace);
+                if ($v->symbolPath->getType() === SymbolType::Project) {
+                    return false;
+                }
+
+                return NamespaceMatcher::matchesSingle($context->namespace, $ns);
             }
 
             if ($context->class !== null && $class !== null) {
@@ -63,7 +74,11 @@ final class ViolationFilter
             $canonical = $offender->symbolPath->toString();
 
             if ($context->namespace !== null) {
-                return $this->matchesNamespace($canonical, $context->namespace);
+                if ($offender->symbolPath->getType() === SymbolType::Project) {
+                    return false;
+                }
+
+                return NamespaceMatcher::matchesSingle($context->namespace, $canonical);
             }
 
             if ($context->class !== null) {
@@ -72,19 +87,5 @@ final class ViolationFilter
 
             return true;
         }));
-    }
-
-    /**
-     * Boundary-aware namespace prefix match.
-     *
-     * App\Payment matches App\Payment and App\Payment\Gateway but not App\PaymentGateway.
-     */
-    private function matchesNamespace(string $subject, string $prefix): bool
-    {
-        if ($subject === $prefix) {
-            return true;
-        }
-
-        return str_starts_with($subject, $prefix . '\\');
     }
 }

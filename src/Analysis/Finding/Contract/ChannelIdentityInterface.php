@@ -24,7 +24,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
  * - a **channel** is addressed by the three inline suppression directives.
  *
  * A channel's `ruleName` half is not necessarily a rule: the layer policy
- * emits four channels under rule names no class declares as its own. That is
+ * emits channels under rule names no class declares as its own. That is
  * why {@see producerOf()} exists and why a "did you mean" suggestion must be
  * a reverse query here rather than a suffix stripped off the typed string —
  * stripping `.class` off `coupling.cbo.class` happens to work, and stripping
