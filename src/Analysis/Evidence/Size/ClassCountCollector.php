@@ -25,6 +25,7 @@ use SplFileInfo;
  * - interfaceCount:{path}
  * - traitCount:{path}
  * - enumCount:{path}
+ * - implementingEnumCount:{path}
  * - functionCount:{path}
  *
  * Anonymous classes are ignored.
@@ -55,6 +56,7 @@ final class ClassCountCollector extends AbstractCollector implements NamespaceMe
             MetricName::SIZE_INTERFACE_COUNT,
             MetricName::SIZE_TRAIT_COUNT,
             MetricName::SIZE_ENUM_COUNT,
+            MetricName::SIZE_IMPLEMENTING_ENUM_COUNT,
             MetricName::SIZE_FUNCTION_COUNT,
         ];
     }
@@ -72,6 +74,7 @@ final class ClassCountCollector extends AbstractCollector implements NamespaceMe
             ->with(MetricName::SIZE_INTERFACE_COUNT, $this->visitor->getInterfaceCount())
             ->with(MetricName::SIZE_TRAIT_COUNT, $this->visitor->getTraitCount())
             ->with(MetricName::SIZE_ENUM_COUNT, $this->visitor->getEnumCount())
+            ->with(MetricName::SIZE_IMPLEMENTING_ENUM_COUNT, $this->visitor->getImplementingEnumCount())
             ->with(MetricName::SIZE_FUNCTION_COUNT, $this->visitor->getFunctionCount());
     }
 
@@ -93,6 +96,7 @@ final class ClassCountCollector extends AbstractCollector implements NamespaceMe
                     ->with(MetricName::SIZE_INTERFACE_COUNT, $counts['interfaceCount'])
                     ->with(MetricName::SIZE_TRAIT_COUNT, $counts['traitCount'])
                     ->with(MetricName::SIZE_ENUM_COUNT, $counts['enumCount'])
+                    ->with(MetricName::SIZE_IMPLEMENTING_ENUM_COUNT, $counts['implementingEnumCount'])
                     ->with(MetricName::SIZE_FUNCTION_COUNT, $counts['functionCount']),
             );
         }
@@ -138,6 +142,11 @@ final class ClassCountCollector extends AbstractCollector implements NamespaceMe
             ),
             new MetricDefinition(
                 name: MetricName::SIZE_ENUM_COUNT,
+                collectedAt: SymbolLevel::File,
+                aggregations: $aggregations,
+            ),
+            new MetricDefinition(
+                name: MetricName::SIZE_IMPLEMENTING_ENUM_COUNT,
                 collectedAt: SymbolLevel::File,
                 aggregations: $aggregations,
             ),

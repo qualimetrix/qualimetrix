@@ -1,14 +1,14 @@
 # План: исключить енумы из знаменателя абстрактности (нейтрально)
 
-**Статус:** предложение, перед ревью
-**Дата:** 2026-08-16
-**Область:** `src/Analysis/Evidence/Coupling/AbstractnessCollector.php`, `src/Analysis/Evidence/Size/ClassCountCollector.php` и `ClassCountVisitor` (счётчик расщепляется там), `src/Core/Metric/MetricName.php` (новое имя метрики), доки метрики, бенчмарки
+**Статус:** реализовано 2026-08-19
+**Дата:** 2026-08-16 (факт кода сверен и обновлён 2026-08-19)
+**Область:** `src/Analysis/Evidence/Coupling/AbstractnessCollector.php`, `src/Analysis/Evidence/Size/ClassCountCollector.php` и `ClassCountVisitor` (счётчик расщепляется там), `src/Analysis/Evidence/Measurement/Contract/MetricName.php` (новое имя метрики), доки метрики, бенчмарки
 
 ---
 
 ## 1. Предпосылки
 
-Формула абстрактности (`AbstractnessCollector.php:76-77`):
+Формула абстрактности (до изменения — `AbstractnessCollector::calculate()`):
 
 ```
 A = (abstract-классы + интерфейсы) / (классы + енумы + трейты + интерфейсы)
@@ -62,8 +62,7 @@ PDepend дословно повторяет формулу без енумов; 
 список `implements`.
 
 **Про 0/0 — это не новый edge-case.** Неймспейс без единого класса (только функция или голый
-`echo`) уже даёт `totalTypes === 0` → `computeAbstractness()` возвращает `0.0`
-(`AbstractnessCollector.php:91-101`). И он уже нейтрализован ниже по стеку: `DistanceRule` /
+`echo`) уже даёт `totalTypes === 0` → `computeAbstractness()` возвращает `0.0`. И он уже нейтрализован ниже по стеку: `DistanceRule` /
 `InstabilityRule` / `CboRule` (namespace) гейтят по `minClassCount` (`SIZE_CLASS_COUNT`,
 дефолт 3), а енумы считаются отдельным `SIZE_ENUM_COUNT`, не `SIZE_CLASS_COUNT`. То есть
 enum-only неймспейс после исключения имеет `classCount = 0 < 3` и пропускается — ровно как
@@ -84,10 +83,22 @@ AGENTS.md:228), а не «changing the fundamental formula» (требующее
 
    Различать два вида енумов при подсчёте. Голое перечисление литералов — нейтрально,
    исключается из знаменателя. `enum X implements Y` — конкретная реализация, остаётся в
-   знаменателе. Требуется отдельный счётчик: `SIZE_ENUM_COUNT` перестаёт быть однородным и
-   расщепляется на «енумы без реализаций» и «енумы, реализующие интерфейсы»; знаменатель —
-   `classCount + traitCount + interfaceCount + implementingEnumCount`. Числитель не меняется.
-   `requires()` соответственно читает новый счётчик вместо старого.
+   знаменателе. Числитель не меняется.
+
+   **Форма расщепления (решено при реализации).** `SIZE_ENUM_COUNT` (`enumCount`) сохранён
+   без изменения смысла — это размерная метрика «сколько здесь енумов», она экспортируется
+   наружу (`--format=metrics`, JSON/HTML, `scripts/collect-benchmark-data.php`) и не обязана
+   знать про классификацию Мартина. Рядом добавлен `SIZE_IMPLEMENTING_ENUM_COUNT`
+   (`implementingEnumCount`) — подмножество: енумы с явным `implements`. Голые енумы
+   выводятся вычитанием и отдельного счётчика не получают. Отвергнута альтернатива
+   «расщепить `enumCount` на два непересекающихся счётчика»: она молча меняет смысл уже
+   экспортируемого имени метрики и ломает потребителей ради величины, которая выводится
+   арифметикой. Знаменатель — `classCount + traitCount + interfaceCount + implementingEnumCount`;
+   `requires()` читает `implementingEnumCount.sum` вместо `enumCount.sum`.
+
+   Учитываются только явные `implements`: `UnitEnum` / `BackedEnum`, которым удовлетворяет
+   любой енум, в AST в списке `implements` не появляются, и по смыслу это не авторское
+   объявление контракта.
 2. Поведение при `totalTypes === 0` (включая enum-only неймспейс) оставить: `A = 0.0`,
    downstream-правила и так пропускают его по `minClassCount`. (Альтернативу «хранить
    undefined и пропускать» — не делать, чтобы не менять уже существующее поведение no-class
@@ -100,16 +111,24 @@ AGENTS.md:228), а не «changing the fundamental formula» (требующее
 
 ## 4. Последствия
 
-- Код: `AbstractnessCollector::calculate()` (и docblock формулы на строке 19).
+- Код: `AbstractnessCollector::calculate()` и docblock формулы; `ClassCountVisitor`
+  (ветка `Enum_` получает подсчёт `implements`), `ClassCountCollector` (`provides()`,
+  `collect()`, `getNamespacesWithMetrics()`, `getMetricDefinitions()`), `MetricName`.
 - Метрическая политика: изменение формулы = release-событие; CHANGELOG, docblock, доки EN+RU,
   бенчмарки.
-- Потребители: прямой — только `DistanceRule` (`:161`); косвенные — экспорт метрики наружу
+- Потребители: прямые — `DistanceCollector` (считает `D = |A + I − 1|`) и `DistanceRule`
+  (читает готовые `distance`/`abstractness`); косвенные — экспорт метрики наружу
   (metrics/JSON/HTML-формат, Martin-диаграмма) и `health.coupling` через distance.
+  `enumCount` наружу не поменялся, добавился `implementingEnumCount`.
 - Тесты: `AbstractnessCollectorTest` (случай с енумами в неймспейсе; `requires()` без
   `SIZE_ENUM_COUNT` и его тесты), golden-агрегация при наличии, `DistanceCollectorTest`
   (D = |A+I−1| вычисляется там, `DistanceCollector.php:82-84`, а не в DistanceRule; A растёт →
   D **уменьшается** на concrete+stable стороне, **увеличивается** на abstract+unstable стороне).
-- Бенчмарк: `composer benchmark:update` переписывает baselines — отдельное ревьюируемое
-  событие; DoD требует **разбора диффа диапазонов**, а не факта запуска команды.
+- Бенчмарк (факт 2026-08-19): `composer benchmark:check` зелёный до и после изменения, все
+  15 проектов в прежних диапазонах, `benchmark:update` не потребовался. Причина — в корпусе
+  почти нет енумов (0–3 на проект, ни одного с `implements`), поэтому корпус эту клетку
+  практически не проверяет. Эффект измерен на самом qmx (одинаковая цель, два бинаря):
+  31 из 166 неймспейсов сдвинулись, max |ΔA| = 0.167; у 29 D **уменьшился**, у 2 —
+  увеличился, и это ровно те два, где A + I > 1. Направление совпадает с §1.
 - Половина «readonly-VO без поведения» в этот план **не входит**: у неё нет точного
   определения «без поведения», отдельно и позже.

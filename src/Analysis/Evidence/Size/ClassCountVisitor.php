@@ -24,13 +24,14 @@ final class ClassCountVisitor extends NodeVisitorAbstract implements ResettableV
 {
     private string $currentNamespace = '';
 
-    /** @var array<string, array{line: int, classCount: int, abstractClassCount: int, interfaceCount: int, traitCount: int, enumCount: int, functionCount: int}> */
+    /** @var array<string, array{line: int, classCount: int, abstractClassCount: int, interfaceCount: int, traitCount: int, enumCount: int, implementingEnumCount: int, functionCount: int}> */
     private array $namespaceCounts = [];
     private int $classCount = 0;
     private int $abstractClassCount = 0;
     private int $interfaceCount = 0;
     private int $traitCount = 0;
     private int $enumCount = 0;
+    private int $implementingEnumCount = 0;
     private int $functionCount = 0;
 
     public function reset(): void
@@ -42,6 +43,7 @@ final class ClassCountVisitor extends NodeVisitorAbstract implements ResettableV
         $this->interfaceCount = 0;
         $this->traitCount = 0;
         $this->enumCount = 0;
+        $this->implementingEnumCount = 0;
         $this->functionCount = 0;
     }
 
@@ -95,6 +97,11 @@ final class ClassCountVisitor extends NodeVisitorAbstract implements ResettableV
             ++$this->enumCount;
             $counts = $this->namespaceCounts[$this->currentNamespace];
             ++$counts['enumCount'];
+
+            if ($node->implements !== []) {
+                ++$this->implementingEnumCount;
+                ++$counts['implementingEnumCount'];
+            }
             $this->namespaceCounts[$this->currentNamespace] = $counts;
 
             return null;
@@ -139,7 +146,7 @@ final class ClassCountVisitor extends NodeVisitorAbstract implements ResettableV
     }
 
     /**
-     * @return array<string, array{line: int, classCount: int, abstractClassCount: int, interfaceCount: int, traitCount: int, enumCount: int, functionCount: int}>
+     * @return array<string, array{line: int, classCount: int, abstractClassCount: int, interfaceCount: int, traitCount: int, enumCount: int, implementingEnumCount: int, functionCount: int}>
      */
     public function getNamespaceCounts(): array
     {
@@ -155,6 +162,7 @@ final class ClassCountVisitor extends NodeVisitorAbstract implements ResettableV
             'interfaceCount' => 0,
             'traitCount' => 0,
             'enumCount' => 0,
+            'implementingEnumCount' => 0,
             'functionCount' => 0,
         ];
     }
@@ -182,6 +190,16 @@ final class ClassCountVisitor extends NodeVisitorAbstract implements ResettableV
     public function getEnumCount(): int
     {
         return $this->enumCount;
+    }
+
+    /**
+     * Enums declaring `implements` are a distinct class of declaration for
+     * Abstractness: they are substitutable implementations of a named
+     * contract, while a bare literal enumeration is not.
+     */
+    public function getImplementingEnumCount(): int
+    {
+        return $this->implementingEnumCount;
     }
 
     public function getFunctionCount(): int

@@ -80,6 +80,7 @@ final class MetricName
     public const string SIZE_INTERFACE_COUNT = 'interfaceCount';
     public const string SIZE_TRAIT_COUNT = 'traitCount';
     public const string SIZE_ENUM_COUNT = 'enumCount';
+    public const string SIZE_IMPLEMENTING_ENUM_COUNT = 'implementingEnumCount';
     public const string SIZE_FUNCTION_COUNT = 'functionCount';
     public const string SIZE_LOC = 'loc';
     public const string SIZE_LLOC = 'lloc';

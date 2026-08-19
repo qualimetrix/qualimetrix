@@ -38,7 +38,7 @@ final class ClassCountCollectorTest extends TestCase
     public function itProvides(): void
     {
         self::assertSame(
-            ['classCount', 'abstractClassCount', 'interfaceCount', 'traitCount', 'enumCount', 'functionCount'],
+            ['classCount', 'abstractClassCount', 'interfaceCount', 'traitCount', 'enumCount', 'implementingEnumCount', 'functionCount'],
             $this->collector->provides(),
         );
     }
@@ -80,6 +80,7 @@ PHP;
                 'interfaceCount' => 0,
                 'traitCount' => 0,
                 'enumCount' => 0,
+                'implementingEnumCount' => 0,
                 'functionCount' => 0,
             ],
             $namespaces[0]->metrics->all(),
@@ -266,6 +267,7 @@ PHP;
         self::assertSame(2, $metrics->get('interfaceCount'));
         self::assertSame(1, $metrics->get('traitCount'));
         self::assertSame(1, $metrics->get('enumCount'));
+        self::assertSame(0, $metrics->get('implementingEnumCount'));
         self::assertSame(0, $metrics->get('functionCount'));
     }
 
@@ -632,11 +634,68 @@ PHP;
     }
 
     #[Test]
+    public function itCountsAnEnumImplementingAnInterfaceSeparately(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace App;
+
+interface HasLabel {}
+
+enum Status: string implements HasLabel
+{
+    case Active = 'active';
+}
+
+enum Direction
+{
+    case North;
+}
+PHP;
+
+        $metrics = $this->collectMetrics($code);
+
+        self::assertSame(2, $metrics->get('enumCount'));
+        self::assertSame(1, $metrics->get('implementingEnumCount'));
+    }
+
+    #[Test]
+    public function itReportsImplementingEnumsPerNamespace(): void
+    {
+        $code = <<<'PHP'
+<?php
+
+namespace Contracts {
+    interface HasLabel {}
+}
+namespace Bare {
+    enum Direction { case North; }
+}
+namespace Implementing {
+    enum Status implements \Contracts\HasLabel { case Active; }
+}
+PHP;
+
+        $this->collectMetrics($code);
+        $byNamespace = [];
+
+        foreach ($this->collector->getNamespacesWithMetrics() as $namespaceMetrics) {
+            $byNamespace[$namespaceMetrics->namespace] = $namespaceMetrics->metrics;
+        }
+
+        self::assertSame(0, $byNamespace['Bare']->get('implementingEnumCount'));
+        self::assertSame(1, $byNamespace['Bare']->get('enumCount'));
+        self::assertSame(1, $byNamespace['Implementing']->get('implementingEnumCount'));
+        self::assertSame(1, $byNamespace['Implementing']->get('enumCount'));
+    }
+
+    #[Test]
     public function itGetsMetricDefinitions(): void
     {
         $definitions = $this->collector->getMetricDefinitions();
 
-        self::assertCount(6, $definitions);
+        self::assertCount(7, $definitions);
 
         $metricNames = array_map(fn($d) => $d->name, $definitions);
         self::assertContains('classCount', $metricNames);
@@ -644,6 +703,7 @@ PHP;
         self::assertContains('interfaceCount', $metricNames);
         self::assertContains('traitCount', $metricNames);
         self::assertContains('enumCount', $metricNames);
+        self::assertContains('implementingEnumCount', $metricNames);
         self::assertContains('functionCount', $metricNames);
 
         foreach ($definitions as $definition) {

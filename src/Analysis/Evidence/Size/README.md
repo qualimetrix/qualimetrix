@@ -86,17 +86,18 @@ class Calculator  // LLOC +1
 ## Class Count
 
 **Collector:** `ClassCountCollector`
-**Provides:** `classCount`, `interfaceCount`, `traitCount`, `enumCount`
+**Provides:** `classCount`, `abstractClassCount`, `interfaceCount`, `traitCount`, `enumCount`, `implementingEnumCount`, `functionCount`
 **Level:** File totals with namespace-owned structural contributions
 
 ### Metrics
 
-| Metric           | Description                   |
-| ---------------- | ----------------------------- |
-| `classCount`     | Named classes (not anonymous) |
-| `interfaceCount` | Interfaces                    |
-| `traitCount`     | Traits                        |
-| `enumCount`      | Enums (PHP 8.1+)              |
+| Metric                  | Description                                                          |
+| ----------------------- | -------------------------------------------------------------------- |
+| `classCount`            | Named classes (not anonymous)                                        |
+| `interfaceCount`        | Interfaces                                                           |
+| `traitCount`            | Traits                                                               |
+| `enumCount`             | Enums (PHP 8.1+)                                                     |
+| `implementingEnumCount` | Enums with an explicit `implements` clause (a subset of `enumCount`) |
 
 ### What Is Counted
 
@@ -107,7 +108,7 @@ class Calculator  // LLOC +1
 **What is NOT counted:**
 - Anonymous classes: `new class { }`
 
-Each namespace block contributes its own six structural counts, including zero
+Each namespace block contributes its own structural counts, including zero
 counts for empty blocks. The physical file bag retains the whole-file totals used
 at project level.
 
@@ -126,13 +127,22 @@ trait LoggerTrait { }  // traitCount +1
 
 enum Status { case Active; }  // enumCount +1
 
+enum Currency implements PaymentGateway { case Eur; }  // enumCount +1, implementingEnumCount +1
+
 $anon = new class { };  // NOT counted
 
 // classCount = 2
 // interfaceCount = 1
 // traitCount = 1
-// enumCount = 1
+// enumCount = 2
+// implementingEnumCount = 1
 ```
+
+> **Note:** `implementingEnumCount` counts only explicit `implements` clauses. The
+> `UnitEnum` / `BackedEnum` interfaces every enum satisfies implicitly are not counted,
+> since they carry no author intent. Abstractness consumes this split: a bare literal
+> enumeration is neutral, an enum implementing a declared contract is concrete. See
+> `src/Analysis/Evidence/Coupling/README.md`.
 
 ---
 

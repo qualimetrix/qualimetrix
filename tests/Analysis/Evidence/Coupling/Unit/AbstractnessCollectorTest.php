@@ -30,50 +30,110 @@ final class AbstractnessCollectorTest extends TestCase
     }
 
     #[Test]
-    public function getName_returnsAbstractness(): void
+    public function itIsNamedAbstractness(): void
     {
         self::assertSame('abstractness', $this->collector->getName());
     }
 
     #[Test]
-    public function requires_returnsRequiredMetrics(): void
+    public function itRequiresTheImplementingEnumCountRatherThanTheTotalEnumCount(): void
     {
         self::assertSame(
-            ['classCount.sum', 'enumCount.sum', 'traitCount.sum', 'abstractClassCount.sum', 'interfaceCount.sum'],
+            ['classCount.sum', 'implementingEnumCount.sum', 'traitCount.sum', 'abstractClassCount.sum', 'interfaceCount.sum'],
             $this->collector->requires(),
         );
     }
 
     #[Test]
-    public function provides_returnsAbstractness(): void
+    public function itProvidesAbstractness(): void
     {
         self::assertSame(['abstractness'], $this->collector->provides());
     }
 
     #[Test]
-    public function calculate_computesAbstractness(): void
+    public function itKeepsBareEnumsOutOfTheDenominator(): void
     {
-        // Namespace with 10 classes + 2 enums + 3 traits + 3 interfaces = 18 total types
-        // 2 abstract classes + 3 interfaces = 5 abstractions
-        // Abstractness = 5 / 18 = 0.278
-        $repository = new InMemoryMetricRepository();
-        $nsPath = SymbolPath::forNamespace('App\\Domain');
+        // 10 classes + 3 traits + 3 interfaces = 16 total types; the 2 bare enums are neutral.
+        // 2 abstract classes + 3 interfaces = 5 abstractions => 5 / 16 = 0.3125
+        $repository = $this->repositoryWithNamespaceCounts('App\\Domain', [
+            'classCount.sum' => 10,
+            'enumCount.sum' => 2,
+            'implementingEnumCount.sum' => 0,
+            'traitCount.sum' => 3,
+            'abstractClassCount.sum' => 2,
+            'interfaceCount.sum' => 3,
+        ]);
 
-        $metrics = (new MetricBag())
-            ->with('classCount.sum', 10)
-            ->with('enumCount.sum', 2)
-            ->with('traitCount.sum', 3)
-            ->with('abstractClassCount.sum', 2)
-            ->with('interfaceCount.sum', 3);
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        $repository->add($nsPath, $metrics, null, 0);
+        self::assertEqualsWithDelta(
+            0.3125,
+            $repository->get(SymbolPath::forNamespace('App\\Domain'))->get('abstractness'),
+            0.0001,
+        );
+    }
 
-        $graph = $this->createEmptyGraph();
+    #[Test]
+    public function itCountsEnumsImplementingAnInterfaceAsConcrete(): void
+    {
+        // 10 classes + 3 traits + 3 interfaces + 2 implementing enums = 18 total types
+        // 5 abstractions => 5 / 18 = 0.278
+        $repository = $this->repositoryWithNamespaceCounts('App\\Domain', [
+            'classCount.sum' => 10,
+            'enumCount.sum' => 2,
+            'implementingEnumCount.sum' => 2,
+            'traitCount.sum' => 3,
+            'abstractClassCount.sum' => 2,
+            'interfaceCount.sum' => 3,
+        ]);
 
-        $this->collector->calculate($graph, $repository);
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        $result = $repository->get($nsPath);
-        self::assertEqualsWithDelta(0.278, $result->get('abstractness'), 0.001);
+        self::assertEqualsWithDelta(
+            0.278,
+            $repository->get(SymbolPath::forNamespace('App\\Domain'))->get('abstractness'),
+            0.001,
+        );
+    }
+
+    #[Test]
+    public function itDoesNotReportOneForAnInterfaceImplementedByEnumsOnly(): void
+    {
+        // One interface plus four enums implementing it: the implementations sit right there,
+        // so the namespace must not read as fully abstract. A = 1 / 5 = 0.2
+        $repository = $this->repositoryWithNamespaceCounts('App\\Status', [
+            'classCount.sum' => 0,
+            'enumCount.sum' => 4,
+            'implementingEnumCount.sum' => 4,
+            'traitCount.sum' => 0,
+            'abstractClassCount.sum' => 0,
+            'interfaceCount.sum' => 1,
+        ]);
+
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
+
+        $abstractness = $repository->get(SymbolPath::forNamespace('App\\Status'))->get('abstractness');
+
+        self::assertLessThan(1.0, $abstractness);
+        self::assertEqualsWithDelta(0.2, $abstractness, 0.001);
+    }
+
+    #[Test]
+    public function itReturnsZeroForAnEnumOnlyNamespace(): void
+    {
+        // Bare enums leave totalTypes at 0, which keeps the pre-existing no-type behaviour.
+        $repository = $this->repositoryWithNamespaceCounts('App\\Enums', [
+            'classCount.sum' => 0,
+            'enumCount.sum' => 5,
+            'implementingEnumCount.sum' => 0,
+            'traitCount.sum' => 0,
+            'abstractClassCount.sum' => 0,
+            'interfaceCount.sum' => 0,
+        ]);
+
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
+
+        self::assertSame(0.0, $repository->get(SymbolPath::forNamespace('App\\Enums'))->get('abstractness'));
     }
 
     #[Test]
@@ -91,6 +151,7 @@ final class AbstractnessCollectorTest extends TestCase
                 'interfaceCount' => 0,
                 'traitCount' => 0,
                 'enumCount' => 0,
+                'implementingEnumCount' => 0,
             ]),
             $file,
             1,
@@ -109,6 +170,8 @@ final class AbstractnessCollectorTest extends TestCase
                 'traitCount.count' => 6,
                 'enumCount' => 0,
                 'enumCount.count' => 6,
+                'implementingEnumCount' => 0,
+                'implementingEnumCount.count' => 6,
             ]),
             $file,
             1,
@@ -125,163 +188,142 @@ final class AbstractnessCollectorTest extends TestCase
     }
 
     #[Test]
-    public function calculate_fullyConcreteNamespace(): void
+    public function itReturnsZeroForAFullyConcreteNamespace(): void
     {
-        // All concrete types: 5 classes + 2 enums + 1 trait, no abstractions
-        $repository = new InMemoryMetricRepository();
-        $nsPath = SymbolPath::forNamespace('App\\Concrete');
+        $repository = $this->repositoryWithNamespaceCounts('App\\Concrete', [
+            'classCount.sum' => 5,
+            'implementingEnumCount.sum' => 2,
+            'traitCount.sum' => 1,
+            'abstractClassCount.sum' => 0,
+            'interfaceCount.sum' => 0,
+        ]);
 
-        $metrics = (new MetricBag())
-            ->with('classCount.sum', 5)
-            ->with('enumCount.sum', 2)
-            ->with('traitCount.sum', 1)
-            ->with('abstractClassCount.sum', 0)
-            ->with('interfaceCount.sum', 0);
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        $repository->add($nsPath, $metrics, null, 0);
-
-        $graph = $this->createEmptyGraph();
-
-        $this->collector->calculate($graph, $repository);
-
-        $result = $repository->get($nsPath);
-        self::assertEqualsWithDelta(0.0, $result->get('abstractness'), 0.001);
+        self::assertEqualsWithDelta(
+            0.0,
+            $repository->get(SymbolPath::forNamespace('App\\Concrete'))->get('abstractness'),
+            0.001,
+        );
     }
 
     #[Test]
-    public function calculate_fullyAbstractNamespace(): void
+    public function itReturnsOneForANamespaceOfAbstractClassesAndInterfaces(): void
     {
-        // All types are abstract: 2 abstract classes + 3 interfaces
-        // classCount includes abstract classes, so classCount=2
-        // totalTypes = 2 + 0 + 0 + 3 = 5
-        // totalAbstractions = 2 + 3 = 5
-        // Abstractness = 5 / 5 = 1.0
-        $repository = new InMemoryMetricRepository();
-        $nsPath = SymbolPath::forNamespace('App\\Contracts');
+        // classCount includes abstract classes: totalTypes = 2 + 3 = 5, abstractions = 2 + 3 = 5
+        $repository = $this->repositoryWithNamespaceCounts('App\\Contracts', [
+            'classCount.sum' => 2,
+            'implementingEnumCount.sum' => 0,
+            'traitCount.sum' => 0,
+            'abstractClassCount.sum' => 2,
+            'interfaceCount.sum' => 3,
+        ]);
 
-        $metrics = (new MetricBag())
-            ->with('classCount.sum', 2)
-            ->with('enumCount.sum', 0)
-            ->with('traitCount.sum', 0)
-            ->with('abstractClassCount.sum', 2)
-            ->with('interfaceCount.sum', 3);
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        $repository->add($nsPath, $metrics, null, 0);
-
-        $graph = $this->createEmptyGraph();
-
-        $this->collector->calculate($graph, $repository);
-
-        $result = $repository->get($nsPath);
-        self::assertEqualsWithDelta(1.0, $result->get('abstractness'), 0.001);
+        self::assertEqualsWithDelta(
+            1.0,
+            $repository->get(SymbolPath::forNamespace('App\\Contracts'))->get('abstractness'),
+            0.001,
+        );
     }
 
     #[Test]
-    public function calculate_emptyNamespace_returnsZero(): void
+    public function itReturnsZeroForANamespaceWithoutAnyType(): void
     {
-        $repository = new InMemoryMetricRepository();
-        $nsPath = SymbolPath::forNamespace('App\\Empty');
+        $repository = $this->repositoryWithNamespaceCounts('App\\Empty', [
+            'classCount.sum' => 0,
+            'implementingEnumCount.sum' => 0,
+            'traitCount.sum' => 0,
+            'abstractClassCount.sum' => 0,
+            'interfaceCount.sum' => 0,
+        ]);
 
-        $metrics = (new MetricBag())
-            ->with('classCount.sum', 0)
-            ->with('enumCount.sum', 0)
-            ->with('traitCount.sum', 0)
-            ->with('abstractClassCount.sum', 0)
-            ->with('interfaceCount.sum', 0);
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        $repository->add($nsPath, $metrics, null, 0);
-
-        $graph = $this->createEmptyGraph();
-
-        $this->collector->calculate($graph, $repository);
-
-        $result = $repository->get($nsPath);
-        self::assertEqualsWithDelta(0.0, $result->get('abstractness'), 0.001);
+        self::assertEqualsWithDelta(
+            0.0,
+            $repository->get(SymbolPath::forNamespace('App\\Empty'))->get('abstractness'),
+            0.001,
+        );
     }
 
     #[Test]
-    public function calculate_withEnumsAndTraits_preventAbstractnessOverOne(): void
+    public function itClampsTheResultToTheUnitRange(): void
     {
-        // Edge case: namespace with 2 interfaces + 6 enums
-        // totalTypes = 0 (classes) + 6 (enums) + 0 (traits) + 2 (interfaces) = 8
-        // totalAbstractions = 0 (abstract) + 2 (interfaces) = 2
-        // A = 2/8 = 0.25
-        $repository = new InMemoryMetricRepository();
-        $nsPath = SymbolPath::forNamespace('App\\Mixed');
+        // 2 interfaces + 6 implementing enums => 2 / 8 = 0.25
+        $repository = $this->repositoryWithNamespaceCounts('App\\Mixed', [
+            'classCount.sum' => 0,
+            'implementingEnumCount.sum' => 6,
+            'traitCount.sum' => 0,
+            'abstractClassCount.sum' => 0,
+            'interfaceCount.sum' => 2,
+        ]);
 
-        $metrics = (new MetricBag())
-            ->with('classCount.sum', 0)
-            ->with('enumCount.sum', 6)
-            ->with('traitCount.sum', 0)
-            ->with('abstractClassCount.sum', 0)
-            ->with('interfaceCount.sum', 2);
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        $repository->add($nsPath, $metrics, null, 0);
+        $abstractness = $repository->get(SymbolPath::forNamespace('App\\Mixed'))->get('abstractness');
 
-        $graph = $this->createEmptyGraph();
-
-        $this->collector->calculate($graph, $repository);
-
-        $result = $repository->get($nsPath);
-        $abstractness = $result->get('abstractness');
-
-        // Must be in [0, 1] range
         self::assertGreaterThanOrEqual(0.0, $abstractness);
         self::assertLessThanOrEqual(1.0, $abstractness);
         self::assertEqualsWithDelta(0.25, $abstractness, 0.001);
     }
 
     #[Test]
-    public function calculate_onlyInterfaces_returnsOne(): void
+    public function itReturnsOneForAnInterfaceOnlyNamespace(): void
     {
-        // Namespace with only interfaces: 3 interfaces, 0 classes
-        // totalTypes = 0 + 0 + 0 + 3 = 3
-        // totalAbstractions = 0 + 3 = 3
-        // A = 3/3 = 1.0
-        $repository = new InMemoryMetricRepository();
-        $nsPath = SymbolPath::forNamespace('App\\Contracts\\Only');
+        $repository = $this->repositoryWithNamespaceCounts('App\\Contracts\\Only', [
+            'classCount.sum' => 0,
+            'implementingEnumCount.sum' => 0,
+            'traitCount.sum' => 0,
+            'abstractClassCount.sum' => 0,
+            'interfaceCount.sum' => 3,
+        ]);
 
-        $metrics = (new MetricBag())
-            ->with('classCount.sum', 0)
-            ->with('enumCount.sum', 0)
-            ->with('traitCount.sum', 0)
-            ->with('abstractClassCount.sum', 0)
-            ->with('interfaceCount.sum', 3);
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
 
-        $repository->add($nsPath, $metrics, null, 0);
-
-        $graph = $this->createEmptyGraph();
-
-        $this->collector->calculate($graph, $repository);
-
-        $result = $repository->get($nsPath);
-        self::assertEqualsWithDelta(1.0, $result->get('abstractness'), 0.001);
+        self::assertEqualsWithDelta(
+            1.0,
+            $repository->get(SymbolPath::forNamespace('App\\Contracts\\Only'))->get('abstractness'),
+            0.001,
+        );
     }
 
     #[Test]
-    public function calculate_classesAndInterfaces_interfaceCountsInDenominator(): void
+    public function itCountsInterfacesInBothNumeratorAndDenominator(): void
     {
-        // 2 concrete classes + 1 interface = 3 total types
-        // Only the interface is abstract: totalAbstractions = 1
-        // A = 1/3 = 0.333
+        $repository = $this->repositoryWithNamespaceCounts('App\\Service', [
+            'classCount.sum' => 2,
+            'implementingEnumCount.sum' => 0,
+            'traitCount.sum' => 0,
+            'abstractClassCount.sum' => 0,
+            'interfaceCount.sum' => 1,
+        ]);
+
+        $this->collector->calculate($this->createEmptyGraph(), $repository);
+
+        self::assertEqualsWithDelta(
+            0.333,
+            $repository->get(SymbolPath::forNamespace('App\\Service'))->get('abstractness'),
+            0.001,
+        );
+    }
+
+    /**
+     * @param array<string, int> $counts
+     */
+    private function repositoryWithNamespaceCounts(string $namespace, array $counts): InMemoryMetricRepository
+    {
         $repository = new InMemoryMetricRepository();
-        $nsPath = SymbolPath::forNamespace('App\\Service');
+        $metrics = new MetricBag();
 
-        $metrics = (new MetricBag())
-            ->with('classCount.sum', 2)
-            ->with('enumCount.sum', 0)
-            ->with('traitCount.sum', 0)
-            ->with('abstractClassCount.sum', 0)
-            ->with('interfaceCount.sum', 1);
+        foreach ($counts as $name => $value) {
+            $metrics = $metrics->with($name, $value);
+        }
 
-        $repository->add($nsPath, $metrics, null, 0);
+        $repository->add(SymbolPath::forNamespace($namespace), $metrics, null, 0);
 
-        $graph = $this->createEmptyGraph();
-
-        $this->collector->calculate($graph, $repository);
-
-        $result = $repository->get($nsPath);
-        self::assertEqualsWithDelta(0.333, $result->get('abstractness'), 0.001);
+        return $repository;
     }
 
     private function createEmptyGraph(): DependencyGraphInterface

@@ -98,15 +98,31 @@ namespace CBO configuration remains under `namespace:`.
 
 **Collector:** `AbstractnessCollector`
 **Type:** `GlobalContextCollectorInterface`
-**Requires:** `classCount.sum`, `abstractClassCount.sum`, `interfaceCount.sum`, `enumCount.sum`, `traitCount.sum`
+**Requires:** `classCount.sum`, `abstractClassCount.sum`, `interfaceCount.sum`, `implementingEnumCount.sum`, `traitCount.sum`
 **Provides:** `abstractness`
 **Level:** Namespace
 
 ### Formula
 
 ```
-A = (abstractClassCount + interfaceCount) / (classCount + enumCount + traitCount + interfaceCount)
+A = (abstractClassCount + interfaceCount)
+  / (classCount + traitCount + interfaceCount + implementingEnumCount)
 ```
+
+> **Note:** Enums are not a construct of Martin's 1994 model, so mapping them onto it
+> is a deliberate scope adaptation for PHP. A bare literal enumeration offers no
+> substitution point -- it cannot be extended, subtyped or implemented -- so it is
+> neutral: excluded from the denominator rather than counted as concrete. An
+> `enum X implements Y` *is* a substitution point, a concrete implementation of a
+> declared contract, and stays in the denominator via `implementingEnumCount`.
+> Without that split, a namespace holding one interface and N enums implementing it
+> would report `A = 1.0` while its implementations sit right beside it. The shape of
+> the formula is unchanged; only the classification of one construct is.
+
+A namespace whose only declarations are bare enums therefore has `totalTypes = 0` and
+keeps the pre-existing no-type result `A = 0.0`. Downstream namespace rules already
+skip it through `minClassCount`, exactly as they skip a namespace with no declarations
+at all.
 
 The count inputs are exact discrete namespace sums. They are not fractionally distributed
 over source contributors, so a namespace with one abstract class or interface and five
