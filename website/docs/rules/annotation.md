@@ -150,7 +150,7 @@ three tags reading the same way.
 | `enabled`                   | `true`  | Enable or disable directive validation as a whole.                                      |
 | `unused_directive_severity` | `info`  | Severity for `annotation.unused-directive`. Allowed values: `info`, `warning`, `error`. |
 
-The other three channels — `annotation.unresolved-directive`, `annotation.unsupported-threshold`, and `annotation.invalid-threshold` — have no severity option: they gate the run unconditionally, the same way the four architecture configuration diagnostics do (see [Architecture Rules](architecture.md#coverage-modes)).
+The other three channels — `annotation.unresolved-directive`, `annotation.unsupported-threshold`, and `annotation.invalid-threshold` — have no severity option: they gate the run unconditionally, the same way the five architecture configuration diagnostics do (see [Architecture Rules](architecture.md#coverage-modes)).
 
 ### Configuration
 

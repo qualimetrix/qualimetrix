@@ -30,7 +30,7 @@ Lifecycle-команды baseline измеряют нарушения после
 
 Baseline не заставляет несрабатывающее правило сработать. Исчезнувшее нарушение становится stale, но этим ещё не доказано, что оно исправлено.
 
-Каналы конфигурационных ошибок никогда не попадают в baseline ни на каком пути: четыре диагностики layer-policy (`architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow`, `architecture.empty-template`) и три диагностики inline-директив (`annotation.unresolved-directive`, `annotation.unsupported-threshold`, `annotation.invalid-threshold`) вместо этого безусловно завершают прогон — см. [Подавление в исходниках](#подавление-в-исходниках) ниже.
+Каналы конфигурационных ошибок никогда не попадают в baseline ни на каком пути: пять диагностик layer-policy (`architecture.coverage`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`) и три диагностики inline-директив (`annotation.unresolved-directive`, `annotation.unsupported-threshold`, `annotation.invalid-threshold`) вместо этого безусловно завершают прогон — см. [Подавление в исходниках](#подавление-в-исходниках) ниже.
 
 ## Lifecycle-команды
 
@@ -161,8 +161,8 @@ Suppression "complexity" addresses no channel. Addressable names closest to it: 
 
 Каналом может быть и вычисляемая метрика, например `@qmx-ignore health.cohesion` — это допустимо, пока `computed_metrics:` всё ещё определяет эту метрику. Удаление метрики превращает аннотацию в ошибку: висячая ссылка — та же ошибка, что и опечатка.
 
-!!! warning "Четыре канала здесь никогда нельзя подавить"
-    `architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow` и `architecture.empty-template` — это конфигурационные ошибки, а не долг: `@qmx-ignore` не может их подавить, а baseline никогда не может их принять. Используй блок `exclude:` в конфигурации архитектуры или `coverage: ignore` специально для диагностики покрытия. `architecture.layer-violation` это не касается — `@qmx-ignore architecture.layer-violation` и записи baseline для него по-прежнему работают.
+!!! warning "Пять каналов здесь никогда нельзя подавить"
+    `architecture.coverage`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow` и `architecture.empty-template` — это конфигурационные ошибки, а не долг: `@qmx-ignore` не может их подавить, а baseline никогда не может их принять. Используй блок `exclude:` в конфигурации архитектуры или `coverage: ignore` специально для диагностики покрытия. `architecture.layer-violation` это не касается — `@qmx-ignore architecture.layer-violation` и записи baseline для него по-прежнему работают.
 
 ### Когда директива неверна
 

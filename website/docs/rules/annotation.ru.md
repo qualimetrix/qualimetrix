@@ -151,7 +151,7 @@ Suppression "Generated" addresses no channel. No declared name is close to it. P
 | `enabled`                   | `true`       | Включить или выключить валидацию директив целиком.                                 |
 | `unused_directive_severity` | `info`       | Severity для `annotation.unused-directive`. Допустимо: `info`, `warning`, `error`. |
 
-У остальных трёх каналов — `annotation.unresolved-directive`, `annotation.unsupported-threshold` и `annotation.invalid-threshold` — нет опции severity: они валят прогон безусловно, так же как четыре архитектурные диагностики конфигурации (см. [Правила архитектуры](architecture.ru.md#режимы-покрытия-coverage)).
+У остальных трёх каналов — `annotation.unresolved-directive`, `annotation.unsupported-threshold` и `annotation.invalid-threshold` — нет опции severity: они валят прогон безусловно, так же как пять архитектурных диагностик конфигурации (см. [Правила архитектуры](architecture.ru.md#режимы-покрытия-coverage)).
 
 ### Конфигурация
 

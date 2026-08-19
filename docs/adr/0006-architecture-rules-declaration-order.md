@@ -1,5 +1,17 @@
 # 0006. Architecture Rules: Declaration-Order Matching
 
+> **Historical note on the severity of the two safety nets.** Decision 4 below
+> reads "Both diagnostics are `Severity::Info` (don't fail the run by default;
+> `fail_on: info` opts into strict CI)". Neither half describes the tool today:
+> `fail_on: info` was removed, and `architecture.unreachable-layer` and
+> `architecture.potential-shadow` became configuration errors with a fixed
+> severity that gate the run without consulting `fail_on` at all. The decision
+> recorded here — two evidence-based safety nets replacing
+> `architecture.layer-collision` — stands; only how loudly they speak changed.
+> Current behaviour:
+> [ADR 0024](0024-channel-identity-and-selector-semantics.md) and
+> [Rules > Architecture](../../website/docs/rules/architecture.md#coverage-modes).
+
 **Date:** 2026-05-13
 **Status:** Accepted
 **Supersedes:** [0005 — Architecture Layer Rules](0005-architecture-rules.md) on the matching-algorithm decision (Decision 3 of 0005)

@@ -30,7 +30,7 @@ Each baseline entry identifies a canonical typed subject, a channel, an optional
 
 The baseline does not make a non-firing rule fire. A finding that vanishes is stale, not proven fixed.
 
-Configuration-error channels never enter a baseline on any path: the four layer-policy diagnostics (`architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow`, `architecture.empty-template`) and the three inline-directive diagnostics (`annotation.unresolved-directive`, `annotation.unsupported-threshold`, `annotation.invalid-threshold`) end the run unconditionally instead — see [Inline suppression](#inline-suppression) below.
+Configuration-error channels never enter a baseline on any path: the five layer-policy diagnostics (`architecture.coverage`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`) and the three inline-directive diagnostics (`annotation.unresolved-directive`, `annotation.unsupported-threshold`, `annotation.invalid-threshold`) end the run unconditionally instead — see [Inline suppression](#inline-suppression) below.
 
 ## Lifecycle commands
 
@@ -162,8 +162,8 @@ Suppress one channel with its exact name, or every channel of the rule with the 
 
 A channel can also be a computed metric, e.g. `@qmx-ignore health.cohesion` — valid as long as `computed_metrics:` still defines that metric. Removing the metric turns the annotation into an error: a dangling reference is the same mistake as a typo.
 
-!!! warning "Four channels can never be suppressed here"
-    `architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow`, and `architecture.empty-template` are configuration errors, not debt: `@qmx-ignore` cannot suppress them, and a baseline can never accept them. Use the architecture configuration's `exclude:` block, or `coverage: ignore` for the coverage diagnostic specifically. `architecture.layer-violation` is unaffected — `@qmx-ignore architecture.layer-violation` and baseline entries still work for it.
+!!! warning "Five channels can never be suppressed here"
+    `architecture.coverage`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, and `architecture.empty-template` are configuration errors, not debt: `@qmx-ignore` cannot suppress them, and a baseline can never accept them. Use the architecture configuration's `exclude:` block, or `coverage: ignore` for the coverage diagnostic specifically. `architecture.layer-violation` is unaffected — `@qmx-ignore architecture.layer-violation` and baseline entries still work for it.
 
 ### When a directive is wrong
 
