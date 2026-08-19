@@ -293,7 +293,8 @@ final class OutputConfigurator implements ContainerConfiguratorInterface
 
         $container->register(FormatterContextFactory::class);
 
-        $container->register(ExitCodeResolver::class);
+        $container->register(ExitCodeResolver::class)
+            ->setArguments([new Reference(ChannelDeclarationRegistryInterface::class)]);
 
         // ViolationFilter for --namespace/--class drill-down
         $container->register(ViolationFilter::class);

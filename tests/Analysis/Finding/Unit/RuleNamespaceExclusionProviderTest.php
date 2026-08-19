@@ -174,9 +174,9 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
     }
 
     #[Test]
-    public function itUsesViolationCodePrefixSemanticsForChannelExclusions(): void
+    public function itUsesGroupSelectorSemanticsForChannelExclusions(): void
     {
-        $this->provider->setChannelExclusions('computed.health', 'health', ['App\\Metrics']);
+        $this->provider->setChannelExclusions('computed.health', 'health.*', ['App\\Metrics']);
 
         self::assertTrue($this->provider->isChannelExcluded(
             'computed.health',
@@ -186,6 +186,19 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
         self::assertFalse($this->provider->isChannelExcluded(
             'computed.health',
             'computed.risk',
+            'App\\Metrics',
+        ));
+    }
+
+    #[Test]
+    public function itDoesNotTreatABareSelectorPrefixAsAGroup(): void
+    {
+        // The option's own docblock used to advertise `health` as a group.
+        $this->provider->setChannelExclusions('computed.health', 'health', ['App\\Metrics']);
+
+        self::assertFalse($this->provider->isChannelExcluded(
+            'computed.health',
+            'health.cohesion',
             'App\\Metrics',
         ));
     }

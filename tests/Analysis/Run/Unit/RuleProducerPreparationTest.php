@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Analysis\Run\Contract\FileSetInspectionParticipantInterface;
 use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
 use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
@@ -168,6 +169,7 @@ final class RuleProducerPreparationTest extends TestCase
         return new RuleProducerPreparation(
             $architecture ?? self::createStub(LayerPolicyPreparationInterface::class),
             $circular ?? self::createStub(CircularDependencyPreparationInterface::class),
+            self::createStub(InlineDirectivePolicyInterface::class),
             new FileSetInspectionComposite(
                 $participants,
                 new RuleSelectorProducerGate($selector),

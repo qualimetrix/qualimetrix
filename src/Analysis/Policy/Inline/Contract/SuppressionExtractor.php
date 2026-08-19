@@ -9,6 +9,7 @@ use PhpParser\Comment\Doc;
 use PhpParser\Node;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Core\Symbol\MetricSubject;
 
@@ -22,18 +23,29 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  * - Block comments: /* `@qmx-ignore ...` * /
  *
  * Supported tags:
- * - `@qmx-ignore <rule> [reason]`
- * - `@qmx-ignore-next-line <rule> [reason]`
- * - `@qmx-ignore-file [rule] [reason]`
+ * - `@qmx-ignore <channel> [-- reason]`
+ * - `@qmx-ignore-next-line <channel> [-- reason]`
+ * - `@qmx-ignore-file [channel] [-- reason]`
+ *
+ * The argument names a **channel**: an exact `violationCode`, the explicit
+ * `ruleName#violationCode` pair, or `X.*` for the strict descendants of `X`.
+ * The two "everything here" spellings survive unchanged: `*` on the symbol
+ * and next-line forms, and an omitted argument on the file form. Both mean
+ * "no rule filter", not "a wildcard selector"; see {@see SuppressionTarget}.
+ *
+ * A reason may be introduced by {@see Suppression::REASON_SEPARATOR}. On the file form,
+ * where the channel is optional, that is the only way to write a reason
+ * without the first word of it being read as the channel.
  *
  * Note: inline same-line comments (e.g., `$x = foo(); // @qmx-ignore rule`) are not supported.
  * Only separate-line comments are recognized.
  */
 final readonly class SuppressionExtractor
 {
-    private const PATTERN_SYMBOL = '/@qmx-ignore(?!-next-line|-file)(?![\w-])\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
-    private const PATTERN_NEXT_LINE = '/@qmx-ignore-next-line(?![\w-])\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
-    private const PATTERN_FILE = '/@qmx-ignore-file(?![\w-])(?:\s+([\w.*-]+)(?:[^\S\n\r]+([^\n\r]+))?)?/';
+    private const PATTERN_SYMBOL = '/@qmx-ignore(?!-next-line|-file)(?![\w-])\s+([\w.*#-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
+    private const PATTERN_NEXT_LINE = '/@qmx-ignore-next-line(?![\w-])\s+([\w.*#-]+)(?:[^\S\n\r]+([^\n\r]+))?/';
+    private const PATTERN_FILE = '/@qmx-ignore-file(?![\w-])(?:\s+([\w.*#-]+)(?:[^\S\n\r]+([^\n\r]+))?)?/';
+
     private const MODE_FULL = 'full';
     private const MODE_PHYSICAL = 'physical';
     private const MODE_FILE_ONLY = 'file-only';
@@ -135,23 +147,53 @@ final readonly class SuppressionExtractor
             }
 
             foreach ($patternMatches as $match) {
-                $rule = $match[1] ?? '';
-                if ($type === SuppressionType::File && $rule === '') {
-                    $rule = '*';
-                }
-                if ($rule === '') {
-                    continue;
-                }
+                $authored = self::authoredArgument($type, $match[1] ?? '', $match[2] ?? null);
 
-                $matches[] = [
-                    'type' => $type,
-                    'rule' => $rule,
-                    'reason' => self::extractReason($match[2] ?? null),
-                ];
+                if ($authored !== null) {
+                    $matches[] = $authored;
+                }
             }
         }
 
         return $matches;
+    }
+
+    /**
+     * One directive's two authored halves, normalised.
+     *
+     * The file form is the only one whose channel is optional, and both ways
+     * of leaving it out — no argument at all, and the separator standing in
+     * the channel position — desugar to the same "no rule filter" spelling
+     * the symbol and next-line forms use. All three then converge on one
+     * {@see SuppressionTarget} case rather than on a wildcard selector; see
+     * that type for why the distinction matters.
+     *
+     * The other two forms keep whatever was written, the separator included,
+     * so a directive that named no channel is reported for what it is rather
+     * than silently widened.
+     *
+     * @return ?array{type: SuppressionType, rule: non-empty-string, reason: ?string} `null` when
+     *                                                                                nothing was authored
+     */
+    private static function authoredArgument(SuppressionType $type, string $rule, ?string $reason): ?array
+    {
+        $channelIsOptional = $type === SuppressionType::File;
+
+        if ($channelIsOptional && ($rule === '' || $rule === Suppression::REASON_SEPARATOR)) {
+            $rule = SuppressionTarget::NO_RULE_FILTER;
+        } elseif ($reason !== null) {
+            $reason = self::stripReasonSeparator($reason);
+        }
+
+        if ($rule === '') {
+            return null;
+        }
+
+        return [
+            'type' => $type,
+            'rule' => $rule,
+            'reason' => self::extractReason($reason),
+        ];
     }
 
     /**
@@ -208,6 +250,19 @@ final readonly class SuppressionExtractor
     private static function stripBacktickRegions(string $text): string
     {
         return preg_replace('/`[^`]*`/', '', $text) ?? $text;
+    }
+
+    /**
+     * Drops a leading {@see Suppression::REASON_SEPARATOR} so the separator does not end up
+     * inside the prose it introduces.
+     */
+    private static function stripReasonSeparator(string $reason): string
+    {
+        if (!str_starts_with($reason, Suppression::REASON_SEPARATOR)) {
+            return $reason;
+        }
+
+        return ltrim(substr($reason, \strlen(Suppression::REASON_SEPARATOR)));
     }
 
     private static function extractReason(?string $raw): ?string

@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider;
+use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
 use Qualimetrix\Analysis\Finding\Rule\RuleInterface;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
@@ -340,10 +341,10 @@ final class RuleExecutorTest extends TestCase
         self::assertSame([], $executor->activeRules($provider->selection()));
     }
 
-    // --- Prefix matching tests ---
+    // --- Group selector tests ---
 
     #[Test]
-    public function itExecutesWithPrefixDisable(): void
+    public function itExecutesWithGroupDisable(): void
     {
         $v1 = $this->createViolation('complexity.cyclomatic', violationCode: 'complexity.cyclomatic');
         $v2 = $this->createViolation('complexity.cognitive', violationCode: 'complexity.cognitive');
@@ -353,8 +354,8 @@ final class RuleExecutorTest extends TestCase
         $rule2 = $this->createRule('complexity.cognitive', [$v2]);
         $rule3 = $this->createRule('size.method-count', [$v3]);
 
-        // Disable entire complexity group
-        $config = new RuleSelection(disabled: ['complexity']);
+        // Disable the whole complexity group — the group form is explicit now
+        $config = new RuleSelection(disabled: ['complexity.*']);
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2, $rule3], $provider);
 
@@ -393,19 +394,31 @@ final class RuleExecutorTest extends TestCase
     }
 
     #[Test]
-    public function itGetActiveRulesWithPrefixOnlyRules(): void
+    public function itGetActiveRulesWithAGroupOnlySelector(): void
     {
         $rule1 = $this->createRule('complexity.cyclomatic', []);
         $rule2 = $this->createRule('complexity.cognitive', []);
         $rule3 = $this->createRule('size.method-count', []);
 
-        $config = new RuleSelection(only: ['complexity']);
+        $config = new RuleSelection(only: ['complexity.*']);
         $provider = $this->createConfiguredProvider($config);
         $executor = $this->createExecution([$rule1, $rule2, $rule3], $provider);
 
         $activeRules = $executor->activeRules($provider->selection());
 
         self::assertCount(2, $activeRules);
+    }
+
+    #[Test]
+    public function itDoesNotTreatABarePrefixAsAGroup(): void
+    {
+        $rule1 = $this->createRule('complexity.cyclomatic', []);
+        $rule2 = $this->createRule('complexity.cognitive', []);
+
+        $provider = $this->createConfiguredProvider(new RuleSelection(only: ['complexity']));
+        $executor = $this->createExecution([$rule1, $rule2], $provider);
+
+        self::assertSame([], $executor->activeRules($provider->selection()));
     }
 
     #[Test]
@@ -536,10 +549,22 @@ final class RuleExecutorTest extends TestCase
             ],
         );
 
-        // Only enable callable-level violations
+        // Only enable callable-level violations, addressed by their exact
+        // channel. A channel selector reaches its producer through the channel
+        // registry — never by the producer name happening to be a prefix of
+        // the selector, which is the reverse match this substrate removes.
         $config = new RuleSelection(only: ['complexity.callable']);
         $provider = $this->createConfiguredProvider($config);
-        $executor = $this->createExecution([$rule], $provider);
+        $executor = $this->createExecution(
+            [$rule],
+            $provider,
+            new RuleSelector(new InMemoryRuleChannelRegistry([
+                'complexity' => [
+                    new ViolationChannel('complexity', 'complexity.callable'),
+                    new ViolationChannel('complexity', 'complexity.class'),
+                ],
+            ])),
+        );
 
         $context = $this->createMinimalContext();
         $violations = $executor->execute($context);
@@ -748,7 +773,7 @@ final class RuleExecutorTest extends TestCase
         $rule = $this->createRule('computed.health', [$namespaceCohesion, $projectCohesion]);
 
         $exclusionProvider = new RuleNamespaceExclusionProvider();
-        $exclusionProvider->setChannelExclusions('computed.health', 'health', ['*']);
+        $exclusionProvider->setChannelExclusions('computed.health', 'health.*', ['*']);
 
         $registry = new RuleOptionsRegistry(exclusionProvider: $exclusionProvider);
         $executor = $this->createExecution(

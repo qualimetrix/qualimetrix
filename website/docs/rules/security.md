@@ -412,6 +412,6 @@ You can also disable via the CLI:
 # Disable a specific rule
 bin/qmx check src/ --disable-rule=security.hardcoded-credentials
 
-# Disable all security rules (prefix matching)
-bin/qmx check src/ --disable-rule=security
+# Disable all security rules (wildcard match; matches descendants only, not "security" itself)
+bin/qmx check src/ --disable-rule=security.*
 ```

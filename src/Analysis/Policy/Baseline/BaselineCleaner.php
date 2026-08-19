@@ -31,10 +31,11 @@ final readonly class BaselineCleaner
 
     /**
      * Every entry `cleanup` would offer to remove, with its reason and
-     * selector. A valid entry is offered for one of two reasons — stale, or
-     * its channel is no longer declared — and every inert entry is offered
-     * too, since it already has a selector and the user is entitled to
-     * delete an unreadable line (ADR 0017).
+     * selector. A valid entry is offered for one of three reasons — stale,
+     * its channel is no longer declared, or its channel reports a
+     * configuration error and may never be accepted — and every inert entry
+     * is offered too, since it already has a selector and the user is
+     * entitled to delete an unreadable line (ADR 0017).
      *
      * A valid entry whose channel is no longer declared is reported as
      * {@see BaselineCleanupReason::ChannelNotDeclared} rather than
@@ -65,11 +66,29 @@ final readonly class BaselineCleaner
         $candidates = [];
 
         foreach ($baseline->entries as $entry) {
-            if ($declarations->declarationFor($entry->identity->channel) === null) {
+            $declaration = $declarations->declarationFor($entry->identity->channel);
+
+            if ($declaration === null) {
                 $candidates[] = new BaselineCleanupCandidate(
                     $entry->selector(),
                     $entry->identity->describe(),
                     BaselineCleanupReason::ChannelNotDeclared,
+                );
+
+                continue;
+            }
+
+            // Listed on its own cause, ahead of staleness, for the same
+            // reason an undeclared channel is: the entry can never be
+            // applied, and "stale" would send the user looking for a symbol
+            // that moved rather than at a channel that may not be accepted
+            // at all. Unlike staleness, this holds even while the finding is
+            // still being measured.
+            if ($declaration->isConfigurationError()) {
+                $candidates[] = new BaselineCleanupCandidate(
+                    $entry->selector(),
+                    $entry->identity->describe(),
+                    BaselineCleanupReason::ChannelIsConfigurationError,
                 );
 
                 continue;

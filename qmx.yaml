@@ -413,13 +413,17 @@ architecture:
       patterns:
         - 'Qualimetrix\Analysis\Finding\Configuration\FindingConfigurationResolver'
         - 'Qualimetrix\Analysis\Finding\Contract\AcceptedLevel'
+        - 'Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\ChannelShape'
+        - 'Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides'
         - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration'
         - 'Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Control\ControlScope'
+        - 'Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter'
         - 'Qualimetrix\Analysis\Finding\Contract\Filter\PredicateFilterStage'
@@ -444,6 +448,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface'
@@ -453,13 +458,13 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleDefinitionInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel'
-        - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleMatcher'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ShorthandOptionKeysInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdAwareOptionsInterface'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser'
         - 'Qualimetrix\Analysis\Finding\Contract\Severity'
         - 'Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride'
@@ -532,11 +537,13 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterionKind'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipResult'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\PatternScope'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition'
     - name: analysis-policy-baseline
       patterns:
@@ -590,14 +597,22 @@ architecture:
       patterns:
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\AnnotationSuppressionResult'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\RuleValidatorMapFactory'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\SourceControlExtractorInterface'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\SourceControls'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression'
+        - 'Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\ThresholdOverrideExtractor'
         - 'Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveAddressability'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveNameHints'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\DirectiveRejection'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy'
+        - 'Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationControlBindings'
         - 'Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor'
         - 'Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter'
@@ -826,11 +841,10 @@ architecture:
         - 'Qualimetrix\Infrastructure\Profiler\Span'
     - name: infrastructure-rule
       patterns:
-        - 'Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry'
+        - 'Qualimetrix\Infrastructure\Rule\ChannelUniverse'
         - 'Qualimetrix\Infrastructure\Rule\Contract\RuleChannelSnapshotFactoryInterface'
         - 'Qualimetrix\Infrastructure\Rule\Exception\ConflictingCliAliasException'
         - 'Qualimetrix\Infrastructure\Rule\KnownRuleNamesAdapter'
-        - 'Qualimetrix\Infrastructure\Rule\RuleChannelRegistry'
         - 'Qualimetrix\Infrastructure\Rule\RuleRegistry'
         - 'Qualimetrix\Infrastructure\Rule\RuleRegistryInterface'
     - name: infrastructure-serializer
@@ -852,6 +866,7 @@ architecture:
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeRequest'
         - 'Qualimetrix\Reporting\FindingProjection\Contract\GitScopeResult'
+        - 'Qualimetrix\Reporting\FindingProjection\DeclaredChannelFileScope'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjectionOptions'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjectionResult'
         - 'Qualimetrix\Reporting\FindingProjection\FindingProjector'
@@ -1162,11 +1177,13 @@ architecture:
       - external
     reporting:
       - analysis-configuration
+      - analysis-evidence-circulardependency
       - analysis-evidence-computedmetrics
       - analysis-evidence-computedmetrics-health
       - analysis-evidence-measurement
       - analysis-evidence-prioritization
       - analysis-finding
+      - analysis-policy-architecture
       - analysis-policy-baseline
       - analysis-policy-inline
       - core-neutral
@@ -1185,16 +1202,13 @@ architecture:
 rules:
   # --- Architecture ---
 
-  # The three layer diagnostics default to info/warning so that adopting the
-  # rule never breaks an existing build. For our own topology the opposite is
-  # right: a layer that captures nothing, a layer shadowed by an earlier one,
-  # or a template that expands to nothing is always a typo in `patterns:` —
-  # exactly the failure the diagnostics exist to catch. Fail the build on it.
+  # The four sibling layer diagnostics (coverage, unreachable-layer,
+  # potential-shadow, empty-template) no longer take a severity here: they
+  # report a configuration error, so they fail the build unconditionally and
+  # cannot be accepted by the ratchet. Only the edge violations this rule
+  # reports as code debt still have a severity to choose.
   architecture.layer-violation:
     severity: error
-    unreachable_layer_severity: error
-    potential_shadow_severity: error
-    empty_template_severity: error
 
   # --- Coupling ---
 

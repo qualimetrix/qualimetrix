@@ -38,6 +38,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 final class NpathComplexityRule extends AbstractRule implements HierarchicalRuleInterface
 {
     public const string NAME = 'complexity.npath';
+
     private const int MAX_DISPLAY = 1_000_000;
 
     public function getName(): string
@@ -287,4 +288,12 @@ final class NpathComplexityRule extends AbstractRule implements HierarchicalRule
 
         return 'Chain: ' . implode(', ', $parts);
     }
+
+    /**
+     * Declared, never inferred from the options class: `@qmx-threshold` can
+     * retune this rule. See
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader},
+     * which also explains why this is a constant and why it is declared last.
+     */
+    public const bool SUPPORTS_THRESHOLD_OVERRIDE = true;
 }

@@ -7,11 +7,14 @@ namespace Qualimetrix\Tests\Analysis\Finding\Integration;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleNameReader;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
@@ -33,7 +36,7 @@ use RuntimeException;
  * any `computed_metrics:` configured, the declared set would contain
  * channels this file — a fixed line list — could never enumerate. The
  * open `computed.*`/`health.*` family is guarded separately by
- * {@see \Qualimetrix\Tests\Unit\Infrastructure\Rule\ChannelDeclarationRegistryTest}'s
+ * {@see \Qualimetrix\Tests\Infrastructure\Unit\ChannelUniverseTest}'s
  * run-time resolution cases.
  */
 #[CoversClass(ChannelDeclarationRegistryInterface::class)]
@@ -157,6 +160,124 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
     }
 
     /**
+     * The reclassification itself, pinned as a closed list.
+     *
+     * Seven channels — and only seven — report a configuration mistake rather
+     * than code debt: the four layer-policy diagnostics and the three
+     * inline-directive diagnostics. The count is load-bearing in both
+     * directions: an eighth would mean something acquired an
+     * unacceptable-as-debt status without the argument for it, and a missing
+     * one would mean a diagnostic drifted back to being ratchetable.
+     *
+     * The two negative assertions name the sibling channels of the very same
+     * two rules, because those are the ones a future edit is most likely to
+     * sweep along by analogy: a forbidden dependency edge is real code debt,
+     * and a suppression that stopped firing is ordinary cleanup.
+     */
+    #[Test]
+    public function exactlyTheLayerPolicyAndDirectiveDiagnosticsDeclareAConfigurationError(): void
+    {
+        $configurationErrors = [];
+
+        foreach (self::realStaticDeclarations() as $key => $declaration) {
+            if ($declaration->acceptability === ChannelAcceptability::ConfigurationError) {
+                $configurationErrors[] = $key;
+            }
+        }
+
+        sort($configurationErrors);
+
+        self::assertSame(
+            [
+                'annotation.invalid-threshold#annotation.invalid-threshold',
+                'annotation.unresolved-directive#annotation.unresolved-directive',
+                'annotation.unsupported-threshold#annotation.unsupported-threshold',
+                'architecture.coverage#architecture.coverage',
+                'architecture.empty-template#architecture.empty-template',
+                'architecture.potential-shadow#architecture.potential-shadow',
+                'architecture.unreachable-layer#architecture.unreachable-layer',
+            ],
+            $configurationErrors,
+        );
+
+        self::assertNotContains(
+            'architecture.layer-violation#architecture.layer-violation',
+            $configurationErrors,
+            'architecture.layer-violation reports a forbidden dependency edge — real code debt a project may'
+            . ' ratchet down. It is not a configuration error and must stay baselineable.',
+        );
+
+        self::assertNotContains(
+            'annotation.unused-directive#annotation.unused-directive',
+            $configurationErrors,
+            'annotation.unused-directive reports a suppression that stopped firing — normal debt cleanup, not a'
+            . ' mistake. Classifying it as a configuration error would fail every project that fixed a violation'
+            . ' and left the annotation behind.',
+        );
+    }
+
+    /**
+     * The other direction of the exclusion fixture.
+     *
+     * {@see ChannelEmissionStaticGuardTest} checks that an emitted channel is
+     * either declared or listed in `excluded.txt`; nothing checked that a
+     * line in `excluded.txt` still names a channel the registry does not
+     * declare. A stale exclusion is the silent failure mode of that pair: the
+     * channel gains a declaration, the guard stops caring about it, and the
+     * file goes on asserting a reason that no longer applies.
+     */
+    #[Test]
+    public function noExcludedFixtureLineNamesADeclaredChannel(): void
+    {
+        $declared = self::realStaticDeclarations();
+        $stale = [];
+
+        foreach (self::readExcludedFixtureKeys() as $key) {
+            if (isset($declared[$key])) {
+                $stale[] = $key;
+            }
+        }
+
+        self::assertSame(
+            [],
+            $stale,
+            \sprintf(
+                'excluded.txt claims these channels declare no baseline support, but the registry now declares'
+                . ' them — remove the stale exclusion line(s): %s',
+                implode(', ', $stale),
+            ),
+        );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function readExcludedFixtureKeys(): array
+    {
+        $path = \dirname(__DIR__) . '/Fixtures/Channels/excluded.txt';
+        $contents = file_get_contents($path);
+
+        if ($contents === false) {
+            throw new RuntimeException(\sprintf('Could not read fixture file %s.', $path));
+        }
+
+        $keys = [];
+
+        foreach (explode("\n", $contents) as $line) {
+            $line = trim($line);
+
+            if ($line === '' || str_starts_with($line, '#')) {
+                continue;
+            }
+
+            $parts = preg_split('/\s+--\s+/', $line, 2);
+            $keys[] = trim($parts === false ? $line : $parts[0]);
+        }
+
+        return $keys;
+    }
+
+    /**
      * @return list<string>
      */
     private static function allRuleNames(): array
@@ -173,6 +294,11 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         $names[] = LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME;
         $names[] = LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
         $names[] = LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
+
+        $names[] = InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME;
+        $names[] = InlineDirectivePolicyInterface::UNSUPPORTED_THRESHOLD_NAME;
+        $names[] = InlineDirectivePolicyInterface::INVALID_THRESHOLD_NAME;
+        $names[] = InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME;
 
         return $names;
     }
@@ -211,28 +337,36 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
 
             $parts = preg_split('/\s+/', $line);
             self::assertNotFalse($parts, \sprintf('Malformed fixture line: "%s".', $line));
-            self::assertCount(2, $parts, \sprintf('Malformed fixture line: "%s".', $line));
+            self::assertContains(\count($parts), [2, 3], \sprintf('Malformed fixture line: "%s".', $line));
 
-            [$channelKey, $shapeSpec] = $parts;
+            $channelKey = $parts[0];
+            $shapeSpec = $parts[1];
 
-            $declarations[$channelKey] = self::parseShapeSpec($shapeSpec, $channelKey);
+            $declarations[$channelKey] = self::parseShapeSpec(
+                $shapeSpec,
+                $channelKey,
+                self::parseAcceptabilitySpec($parts[2] ?? null, $channelKey),
+            );
         }
 
         return $declarations;
     }
 
-    private static function parseShapeSpec(string $shapeSpec, string $channelKey): ChannelDeclaration
-    {
+    private static function parseShapeSpec(
+        string $shapeSpec,
+        string $channelKey,
+        ChannelAcceptability $acceptability,
+    ): ChannelDeclaration {
         if ($shapeSpec === 'occurrence') {
-            return ChannelDeclaration::occurrence();
+            return new ChannelDeclaration(ChannelShape::Occurrence, null, $acceptability);
         }
 
         if (str_starts_with($shapeSpec, 'magnitude:')) {
             $direction = substr($shapeSpec, \strlen('magnitude:'));
 
             return match ($direction) {
-                'higher' => ChannelDeclaration::magnitude(WorseDirection::Higher),
-                'lower' => ChannelDeclaration::magnitude(WorseDirection::Lower),
+                'higher' => new ChannelDeclaration(ChannelShape::Magnitude, WorseDirection::Higher, $acceptability),
+                'lower' => new ChannelDeclaration(ChannelShape::Magnitude, WorseDirection::Lower, $acceptability),
                 default => throw new RuntimeException(\sprintf(
                     'Unknown direction "%s" for channel "%s" in the fixture.',
                     $direction,
@@ -242,5 +376,27 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         }
 
         throw new RuntimeException(\sprintf('Unknown shape spec "%s" for channel "%s" in the fixture.', $shapeSpec, $channelKey));
+    }
+
+    /**
+     * The optional third token. Absent means the ordinary case — a channel
+     * whose findings are acceptable as debt — so that the fixture reads as a
+     * list of exceptions rather than repeating the default 47 times.
+     */
+    private static function parseAcceptabilitySpec(?string $spec, string $channelKey): ChannelAcceptability
+    {
+        if ($spec === null) {
+            return ChannelAcceptability::AcceptableAsDebt;
+        }
+
+        if ($spec === 'config-error') {
+            return ChannelAcceptability::ConfigurationError;
+        }
+
+        throw new RuntimeException(\sprintf(
+            'Unknown acceptability spec "%s" for channel "%s" in the fixture.',
+            $spec,
+            $channelKey,
+        ));
     }
 }

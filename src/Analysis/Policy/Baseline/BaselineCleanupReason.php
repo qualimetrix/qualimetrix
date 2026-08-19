@@ -19,6 +19,14 @@ enum BaselineCleanupReason: string
     /** No rule declares the entry's channel any more. */
     case ChannelNotDeclared = 'channel-not-declared';
 
+    /**
+     * The entry's channel is declared, but as a configuration error: no run
+     * can ever apply the entry, so it is listed for removal on its own —
+     * and, unlike {@see Stale}, it stays listed even while the finding is
+     * still being produced.
+     */
+    case ChannelIsConfigurationError = 'channel-is-configuration-error';
+
     /** The entry was already inert — see {@see InertEntryReason} for why. */
     case Inert = 'inert';
 }

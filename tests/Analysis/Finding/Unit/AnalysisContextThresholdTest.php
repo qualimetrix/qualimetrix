@@ -61,7 +61,7 @@ final class AnalysisContextThresholdTest extends TestCase
     }
 
     #[Test]
-    public function itGetThresholdOverrideMatchesPrefix(): void
+    public function itIgnoresAnOverrideThatOnlyPrefixesTheRuleName(): void
     {
         $override = self::override('complexity', 15, 25, 10, 50);
         $context = new AnalysisContext(
@@ -71,9 +71,7 @@ final class AnalysisContextThresholdTest extends TestCase
             ],
         );
 
-        $result = $context->getThresholdOverride('complexity.cyclomatic', self::subject());
-
-        self::assertSame($override, $result);
+        self::assertNull($context->getThresholdOverride('complexity.cyclomatic', self::subject()));
     }
 
     #[Test]
@@ -131,7 +129,7 @@ final class AnalysisContextThresholdTest extends TestCase
     #[Test]
     public function itGetThresholdOverrideReturnsSameSpanFirstMatch(): void
     {
-        $override1 = self::override('complexity', 15, 25, 10, 50);
+        $override1 = self::override('complexity.cyclomatic', 15, 25, 10, 50);
         $override2 = self::override('complexity.cyclomatic', 20, 30, 10, 50);
         $context = new AnalysisContext(
             metrics: self::createStub(MetricRepositoryInterface::class),
@@ -194,8 +192,10 @@ final class AnalysisContextThresholdTest extends TestCase
     }
 
     #[Test]
-    public function itGetThresholdOverrideWithWildcard(): void
+    public function itIgnoresAWildcardOverride(): void
     {
+        // `@qmx-threshold * 30` reset every rule's threshold on a symbol.
+        // The token is no longer a selector, and a threshold has no group form.
         $override = self::override('*', 30, 50, 10, 100);
         $context = new AnalysisContext(
             metrics: self::createStub(MetricRepositoryInterface::class),
@@ -204,8 +204,8 @@ final class AnalysisContextThresholdTest extends TestCase
             ],
         );
 
-        self::assertSame($override, $context->getThresholdOverride('complexity.cyclomatic', self::subject()));
-        self::assertSame($override, $context->getThresholdOverride('coupling.cbo', self::subject()));
+        self::assertNull($context->getThresholdOverride('complexity.cyclomatic', self::subject()));
+        self::assertNull($context->getThresholdOverride('coupling.cbo', self::subject()));
     }
     private static function subject(): MetricSubject
     {

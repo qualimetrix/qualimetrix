@@ -84,4 +84,35 @@ final readonly class MembershipSpec
             );
         }
     }
+
+    /**
+     * Renders the declared criteria as a human-readable summary for
+     * diagnostics such as `architecture.unreachable-layer`. Kinds the user did
+     * not write are omitted, so the summary never invents a criterion.
+     */
+    public function describe(): string
+    {
+        $segments = [];
+        foreach ([
+            'patterns' => $this->patterns,
+            'suffix' => $this->suffix,
+            'attributes' => $this->attributes,
+            'implements' => $this->implements,
+            'extends' => $this->extends,
+        ] as $kind => $values) {
+            if ($values !== []) {
+                $segments[] = $kind . ': ' . self::quoteCsv($values);
+            }
+        }
+
+        return implode('; ', $segments);
+    }
+
+    /**
+     * @param list<string> $values
+     */
+    private static function quoteCsv(array $values): string
+    {
+        return implode(', ', array_map(static fn(string $v): string => '"' . $v . '"', $values));
+    }
 }

@@ -165,8 +165,35 @@ final class RuntimeConfigurationIsolationTest extends TestCase
         $this->assertDefaultOwnerState($runtimeConfigurator);
     }
 
+    /**
+     * Two properties, one about succeeding runs and one about a failing one.
+     *
+     * Between two successful runs the configured computed channels are
+     * replaced, never merged: run two must not be able to address run one's
+     * metrics.
+     *
+     * A run that fails preflight commits nothing, so what the universe answers
+     * afterwards is still the last *successful* configuration — not a
+     * half-applied mixture of the two, and not an empty set.
+     *
+     * That last clause changed with the merged channel universe, and the
+     * change is deliberate rather than incidental. The producer half used to
+     * be backed by a container instance frozen over an empty definition set
+     * for the whole process; its "nothing configured" answer after a reset was
+     * an artefact of that instance never being given definitions at all, not a
+     * guarantee anyone had made. The declaration half, meanwhile, has always
+     * read the live catalog and has always answered from the last committed
+     * configuration. One instance cannot do both, and the live reading is the
+     * one with real consumers: the baseline ceiling has no other source for a
+     * computed metric's direction.
+     *
+     * Draining the catalog on reset would restore the stricter reading, but
+     * the catalog belongs to the ComputedMetrics capability and today offers
+     * `replace()` and no reset. That is its owner's call to make, not this
+     * test's to assume.
+     */
     #[Test]
-    public function itReplacesDynamicComputedChannelsBetweenRunsAndResetsThemAfterAnEarlyFailure(): void
+    public function itReplacesDynamicComputedChannelsBetweenRunsAndCommitsNothingFromAFailedRun(): void
     {
         [$runtimeConfigurator, $command, $ruleInputValidator] = $this->runtimeServices();
         $projectRoot = \Qualimetrix\Core\Path\AbsolutePath::fromString($this->temporaryDirectory);
@@ -220,7 +247,9 @@ final class RuntimeConfigurationIsolationTest extends TestCase
                 new BufferedOutput(),
             );
         } finally {
-            self::assertSame([], $this->computedChannels($runtimeConfigurator));
+            self::assertContains('computed.health#computed.second', $this->computedChannels($runtimeConfigurator));
+            self::assertNotContains('computed.health#computed.invalid', $this->computedChannels($runtimeConfigurator));
+            self::assertNotContains('computed.health#computed.first', $this->computedChannels($runtimeConfigurator));
             $this->assertDefaultOwnerState($runtimeConfigurator);
         }
     }

@@ -21,8 +21,7 @@ use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\ChannelDeclarationCompilerPass;
 use Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleRegistryCompilerPass;
-use Qualimetrix\Infrastructure\Rule\ChannelDeclarationRegistry;
-use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 #[CoversClass(ChannelDeclarationCompilerPass::class)]
@@ -32,10 +31,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
     public function itCollectsDeclarationsFromEveryTaggedRuleIntoTheRegistry(): void
     {
         $container = new ContainerBuilder();
-        $container->register(ChannelDeclarationRegistry::class)
-            ->setArguments(['$staticDeclarations' => []]);
-        $container->register(RuleChannelRegistry::class)
-            ->setArguments(['$staticChannelKeysByProducer' => [], '$computedMetricRuleName' => '']);
+        self::registerUniverse($container);
         $container->register(GotoRule::class)
             ->setClass(GotoRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
@@ -54,7 +50,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
 
         (new ChannelDeclarationCompilerPass())->process($container);
 
-        $definition = $container->getDefinition(ChannelDeclarationRegistry::class);
+        $definition = $container->getDefinition(ChannelUniverse::class);
         /** @var array<string, ChannelDeclaration> $declarations */
         $declarations = $definition->getArgument('$staticDeclarations');
 
@@ -75,7 +71,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
                 'code-smell.goto' => ['code-smell.goto#code-smell.goto'],
                 'maintainability.index' => ['maintainability.index#maintainability.index'],
             ],
-            $container->getDefinition(RuleChannelRegistry::class)
+            $container->getDefinition(ChannelUniverse::class)
                 ->getArgument('$staticChannelKeysByProducer'),
         );
     }
@@ -84,15 +80,14 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
     public function itPairsAViolationCodeWithTheDeclaringRulesOwnName(): void
     {
         $container = new ContainerBuilder();
-        $container->register(ChannelDeclarationRegistry::class)
-            ->setArguments(['$staticDeclarations' => []]);
+        self::registerUniverse($container);
         $container->register(ComplexityRule::class)
             ->setClass(ComplexityRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
 
         (new ChannelDeclarationCompilerPass())->process($container);
 
-        $declarations = $container->getDefinition(ChannelDeclarationRegistry::class)
+        $declarations = $container->getDefinition(ChannelUniverse::class)
             ->getArgument('$staticDeclarations');
 
         self::assertArrayHasKey('complexity.cyclomatic#complexity.cyclomatic.callable', $declarations);
@@ -102,17 +97,14 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
     public function itAttributesDiagnosticChannelsToTheirProducerRule(): void
     {
         $container = new ContainerBuilder();
-        $container->register(ChannelDeclarationRegistry::class)
-            ->setArguments(['$staticDeclarations' => []]);
-        $container->register(RuleChannelRegistry::class)
-            ->setArguments(['$staticChannelKeysByProducer' => [], '$computedMetricRuleName' => '']);
+        self::registerUniverse($container);
         $container->register(LayerViolationRule::class)
             ->setClass(LayerViolationRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
 
         (new ChannelDeclarationCompilerPass())->process($container);
 
-        $channelsByProducer = $container->getDefinition(RuleChannelRegistry::class)
+        $channelsByProducer = $container->getDefinition(ChannelUniverse::class)
             ->getArgument('$staticChannelKeysByProducer');
 
         self::assertContains(
@@ -131,21 +123,20 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
 
         (new ChannelDeclarationCompilerPass())->process($container);
 
-        self::assertFalse($container->hasDefinition(ChannelDeclarationRegistry::class));
+        self::assertFalse($container->hasDefinition(ChannelUniverse::class));
     }
 
     #[Test]
     public function itSkipsServicesWithNullClass(): void
     {
         $container = new ContainerBuilder();
-        $container->register(ChannelDeclarationRegistry::class)
-            ->setArguments(['$staticDeclarations' => []]);
+        self::registerUniverse($container);
         $container->register('rule.null_class')
             ->addTag(RuleRegistryCompilerPass::TAG);
 
         (new ChannelDeclarationCompilerPass())->process($container);
 
-        $declarations = $container->getDefinition(ChannelDeclarationRegistry::class)
+        $declarations = $container->getDefinition(ChannelUniverse::class)
             ->getArgument('$staticDeclarations');
 
         self::assertSame([], $declarations);
@@ -155,8 +146,7 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
     public function itThrowsOnAChannelDeclaredByTwoDifferentRuleServices(): void
     {
         $container = new ContainerBuilder();
-        $container->register(ChannelDeclarationRegistry::class)
-            ->setArguments(['$staticDeclarations' => []]);
+        self::registerUniverse($container);
         $container->register('rule.goto_1')
             ->setClass(GotoRule::class)
             ->addTag(RuleRegistryCompilerPass::TAG);
@@ -168,6 +158,62 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
         self::expectExceptionMessage('Duplicate channel declaration for "code-smell.goto#code-smell.goto"');
 
         (new ChannelDeclarationCompilerPass())->process($container);
+    }
+
+    #[Test]
+    public function itRecordsEveryTaggedRuleNameEvenWhenItDeclaresNoChannel(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(GotoRule::class)
+            ->setClass(GotoRule::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(FixtureRuleWithNoChannelDeclarations::class)
+            ->setClass(FixtureRuleWithNoChannelDeclarations::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+
+        $support = $container->getDefinition(ChannelUniverse::class)
+            ->getArgument('$thresholdOverrideSupportByRule');
+
+        self::assertSame(
+            ['code-smell.goto' => false, 'fixture.no-channel-declarations' => false],
+            $support,
+            'A rule name exists whether or not the rule declares channels — computed.health declares none at all.',
+        );
+    }
+
+    #[Test]
+    public function itCarriesTheDeclaredThresholdOverrideSupportRatherThanInferringIt(): void
+    {
+        $container = new ContainerBuilder();
+        self::registerUniverse($container);
+        $container->register(ComplexityRule::class)
+            ->setClass(ComplexityRule::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+        $container->register(GotoRule::class)
+            ->setClass(GotoRule::class)
+            ->addTag(RuleRegistryCompilerPass::TAG);
+
+        (new ChannelDeclarationCompilerPass())->process($container);
+
+        $support = $container->getDefinition(ChannelUniverse::class)
+            ->getArgument('$thresholdOverrideSupportByRule');
+
+        self::assertTrue($support[ComplexityRule::NAME]);
+        self::assertFalse($support[GotoRule::NAME]);
+    }
+
+    private static function registerUniverse(ContainerBuilder $container): void
+    {
+        $container->register(ChannelUniverse::class)
+            ->setArguments([
+                '$staticDeclarations' => [],
+                '$staticChannelKeysByProducer' => [],
+                '$thresholdOverrideSupportByRule' => [],
+                '$computedMetricRuleName' => '',
+            ]);
     }
 }
 
@@ -188,9 +234,11 @@ final class ChannelDeclarationCompilerPassTest extends TestCase
  */
 final class FixtureRuleWithNoChannelDeclarations implements RuleInterface
 {
+    public const string NAME = 'fixture.no-channel-declarations';
+
     public function getName(): string
     {
-        return 'fixture.no-channel-declarations';
+        return self::NAME;
     }
 
     public function getDescription(): string

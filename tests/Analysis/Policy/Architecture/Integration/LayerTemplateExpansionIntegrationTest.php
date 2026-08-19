@@ -57,7 +57,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
     }
 
     #[Test]
-    public function templateExpansion_emptyTemplateFiresWarning(): void
+    public function templateExpansion_emptyTemplateFiresConfigurationError(): void
     {
         $config = self::baseTemplateConfig();
         $config['layers'][] = [
@@ -70,7 +70,7 @@ final class LayerTemplateExpansionIntegrationTest extends TestCase
 
         $emptyTemplates = $this->filterByRule($analysis->violations, LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME);
         self::assertCount(1, $emptyTemplates, 'A typo template must emit exactly one empty-template diagnostic.');
-        self::assertSame(Severity::Warning, $emptyTemplates[0]->severity);
+        self::assertSame(Severity::Error, $emptyTemplates[0]->severity);
         self::assertStringContainsString('noop-{module}', $emptyTemplates[0]->message);
     }
 

@@ -25,8 +25,19 @@ them while selecting effective rule thresholds.
 
 Infrastructure composes these internals through `FindingConfigurator`. Rule discovery and container construction remain Infrastructure concerns.
 
-For a configured run, Infrastructure passes Finding an immutable
-`RuleChannelRegistryInterface` snapshot. Finding neither resolves computed
+Finding owns the channel name space as a contract and not as an implementation.
+`ChannelUniverseInterface` composes three narrow views —
+`ChannelDeclarationRegistryInterface` (what a channel declares),
+`RuleChannelRegistryInterface` (what a producer emits) and
+`ChannelIdentityInterface` (which names exist, what they belong to, what `X.*`
+expands to) — and Infrastructure supplies the single instance behind them.
+Matching stays string comparison in `NameSelector` and never consults the
+universe; the universe validates and resolves. `ChannelDeclaration` carries
+one further declared property besides shape and direction:
+`ChannelAcceptability`. `ConfigurationError` marks a channel whose findings
+report a mistake in the configuration rather than debt in the code — it is
+refused by every baseline path and fails the run without consulting `fail_on`.
+Today the four layer-policy diagnostics carry it. Finding neither resolves computed
 definitions nor retains Infrastructure-owned definition state.
 
 

@@ -219,7 +219,7 @@ anything on a run without `--baseline`.
 | ---------------------- | ----------------------------------------------------------------------- |
 | `--cyclomatic-warning` | Cyclomatic complexity warning threshold                                 |
 | `--cyclomatic-error`   | Cyclomatic complexity error threshold                                   |
-| `--disable-rule`       | Disable a rule or group (prefix match)                                  |
+| `--disable-rule`       | Disable a rule or channel by exact name, or a group as `X.*`            |
 | `--only-rule`          | Run only the specified producer, group, violation code, or full channel |
 | `--rule-opt`           | Rule option `RULE:OPTION=VALUE`                                         |
 

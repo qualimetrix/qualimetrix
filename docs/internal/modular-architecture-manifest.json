@@ -504,6 +504,11 @@
                     "owner": "Infrastructure.DependencyInjection",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\CircularDependencyConfigurator",
                     "closes_in": null
+                },
+                {
+                    "owner": "Reporting",
+                    "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\DeclaredChannelFileScope",
+                    "closes_in": null
                 }
             ]
         },
@@ -1419,7 +1424,7 @@
                 },
                 {
                     "owner": "Infrastructure.Rule",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelDeclarationRegistry",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse",
                     "closes_in": null
                 },
                 {
@@ -1493,11 +1498,6 @@
                 {
                     "owner": "Infrastructure.Rule",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\Contract\\RuleChannelSnapshotFactoryInterface",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Infrastructure.Rule",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\RuleChannelRegistry",
                     "closes_in": null
                 }
             ]
@@ -5378,6 +5378,14 @@
                 }
             ]
         },
+        "Qualimetrix\\Analysis\\Finding\\Contract\\ChannelAcceptability": {
+            "path": "src/Analysis/Finding/Contract/ChannelAcceptability.php",
+            "kind": "enum",
+            "owner": "Analysis.Finding",
+            "visibility": "internal",
+            "closure_package": "P6-A",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Finding\\Contract\\ChannelDeclaration": {
             "path": "src/Analysis/Finding/Contract/ChannelDeclaration.php",
             "kind": "class",
@@ -5541,8 +5549,13 @@
                     "closes_in": null
                 },
                 {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule",
+                    "closes_in": null
+                },
+                {
                     "owner": "Infrastructure.Rule",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelDeclarationRegistry",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse",
                     "closes_in": null
                 }
             ]
@@ -5585,6 +5598,11 @@
                     "closes_in": null
                 },
                 {
+                    "owner": "Infrastructure.Console",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ExitCodeResolver",
+                    "closes_in": null
+                },
+                {
                     "owner": "Infrastructure.DependencyInjection",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
                     "closes_in": null
@@ -5595,13 +5613,47 @@
                     "closes_in": null
                 },
                 {
-                    "owner": "Infrastructure.Rule",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelDeclarationRegistry",
+                    "owner": "Reporting",
+                    "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector",
+                    "closes_in": null
+                }
+            ]
+        },
+        "Qualimetrix\\Analysis\\Finding\\Contract\\ChannelIdentityInterface": {
+            "path": "src/Analysis/Finding/Contract/ChannelIdentityInterface.php",
+            "kind": "interface",
+            "owner": "Analysis.Finding",
+            "visibility": "contract",
+            "closure_package": "P6-A",
+            "consumers": [
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveAddressability",
                     "closes_in": null
                 },
                 {
-                    "owner": "Reporting",
-                    "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector",
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveNameHints",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator",
                     "closes_in": null
                 }
             ]
@@ -5636,6 +5688,35 @@
                 {
                     "owner": "Reporting",
                     "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Support\\AcceptedLevelNarrator",
+                    "closes_in": null
+                }
+            ]
+        },
+        "Qualimetrix\\Analysis\\Finding\\Contract\\ChannelUniverseInterface": {
+            "path": "src/Analysis/Finding/Contract/ChannelUniverseInterface.php",
+            "kind": "interface",
+            "owner": "Analysis.Finding",
+            "visibility": "contract",
+            "closure_package": "P6-A",
+            "consumers": [
+                {
+                    "owner": "Infrastructure.Console",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleInputValidator",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Rule",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Rule",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\Contract\\RuleChannelSnapshotFactoryInterface",
                     "closes_in": null
                 }
             ]
@@ -5737,6 +5818,20 @@
                 {
                     "owner": "Analysis.Policy.Inline",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\SourceControlExtractor",
+                    "closes_in": null
+                }
+            ]
+        },
+        "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\ChannelFileScope": {
+            "path": "src/Analysis/Finding/Contract/Filter/ChannelFileScope.php",
+            "kind": "class",
+            "owner": "Analysis.Finding",
+            "visibility": "contract",
+            "closure_package": "P6-A",
+            "consumers": [
+                {
+                    "owner": "Reporting",
+                    "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\DeclaredChannelFileScope",
                     "closes_in": null
                 }
             ]
@@ -6037,8 +6132,13 @@
                     "closes_in": null
                 },
                 {
-                    "owner": "Analysis.Run",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule",
                     "closes_in": null
                 },
                 {
@@ -6107,6 +6207,11 @@
                 {
                     "owner": "Analysis.Evidence.Duplication",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Duplication\\DuplicationDetector",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy",
                     "closes_in": null
                 },
                 {
@@ -6373,6 +6478,11 @@
                     "owner": "Analysis.Policy.Architecture",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule",
                     "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule",
+                    "closes_in": null
                 }
             ]
         },
@@ -6550,6 +6660,11 @@
                 {
                     "owner": "Analysis.Policy.Architecture",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule",
                     "closes_in": null
                 },
                 {
@@ -6793,11 +6908,6 @@
                     "closes_in": null
                 },
                 {
-                    "owner": "Analysis.Run",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
-                    "closes_in": null
-                },
-                {
                     "owner": "Infrastructure.Console",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds",
                     "closes_in": null
@@ -6889,6 +6999,45 @@
                 {
                     "owner": "Infrastructure.Console",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds",
+                    "closes_in": null
+                }
+            ]
+        },
+        "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\NameSelector": {
+            "path": "src/Analysis/Finding/Contract/Rule/NameSelector.php",
+            "kind": "class",
+            "owner": "Analysis.Finding",
+            "visibility": "contract",
+            "closure_package": "P6-A",
+            "consumers": [
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Suppression\\SuppressionTarget",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveAddressability",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveNameHints",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Console",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleInputValidator",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Rule",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse",
                     "closes_in": null
                 }
             ]
@@ -7259,6 +7408,11 @@
                     "owner": "Analysis.Policy.Architecture",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule",
                     "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule",
+                    "closes_in": null
                 }
             ]
         },
@@ -7282,16 +7436,6 @@
                 {
                     "owner": "Infrastructure.DependencyInjection",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Infrastructure.Rule",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\Contract\\RuleChannelSnapshotFactoryInterface",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Infrastructure.Rule",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\RuleChannelRegistry",
                     "closes_in": null
                 }
             ]
@@ -7370,25 +7514,6 @@
                 {
                     "owner": "Infrastructure.Console",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds",
-                    "closes_in": null
-                }
-            ]
-        },
-        "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\RuleMatcher": {
-            "path": "src/Analysis/Finding/Contract/Rule/RuleMatcher.php",
-            "kind": "class",
-            "owner": "Analysis.Finding",
-            "visibility": "contract",
-            "closure_package": "P6-A",
-            "consumers": [
-                {
-                    "owner": "Analysis.Policy.Inline",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Suppression\\Suppression",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Run",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
                     "closes_in": null
                 }
             ]
@@ -7665,6 +7790,11 @@
                     "closes_in": null
                 },
                 {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveOptions",
+                    "closes_in": null
+                },
+                {
                     "owner": "Infrastructure.Console",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds",
                     "closes_in": null
@@ -7839,6 +7969,16 @@
                     "closes_in": null
                 },
                 {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveOptions",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule",
+                    "closes_in": null
+                },
+                {
                     "owner": "Infrastructure.Console",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds",
                     "closes_in": null
@@ -7857,6 +7997,11 @@
             "visibility": "contract",
             "closure_package": "P6-A",
             "consumers": [
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy",
+                    "closes_in": null
+                },
                 {
                     "owner": "Analysis.Run",
                     "source_fqcn": "Qualimetrix\\Analysis\\Run\\FileSetInspection\\RuleSelectorProducerGate",
@@ -8149,10 +8294,19 @@
                     "owner": "Analysis.Policy.Inline",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\RuleValidatorMapFactory",
                     "closes_in": null
-                },
+                }
+            ]
+        },
+        "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\ThresholdOverrideSupportReader": {
+            "path": "src/Analysis/Finding/Contract/Rule/ThresholdOverrideSupportReader.php",
+            "kind": "class",
+            "owner": "Analysis.Finding",
+            "visibility": "contract",
+            "closure_package": "P6-A",
+            "consumers": [
                 {
-                    "owner": "Analysis.Run",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
                     "closes_in": null
                 }
             ]
@@ -8744,13 +8898,23 @@
                     "closes_in": null
                 },
                 {
-                    "owner": "Analysis.Run",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\AnalysisResult",
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveOptions",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule",
                     "closes_in": null
                 },
                 {
                     "owner": "Analysis.Run",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\AnalysisResult",
                     "closes_in": null
                 },
                 {
@@ -8848,8 +9012,18 @@
                     "closes_in": null
                 },
                 {
-                    "owner": "Analysis.Run",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveAddressability",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule",
                     "closes_in": null
                 },
                 {
@@ -9053,17 +9227,22 @@
                 },
                 {
                     "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Suppression\\SuppressionFilter",
                     "closes_in": null
                 },
                 {
                     "owner": "Analysis.Run",
                     "source_fqcn": "Qualimetrix\\Analysis\\Run\\Contract\\Pipeline\\AnalysisResult",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Run",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\AnalysisPipeline",
                     "closes_in": null
                 },
                 {
@@ -9311,6 +9490,11 @@
                     "closes_in": null
                 },
                 {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveNameHints",
+                    "closes_in": null
+                },
+                {
                     "owner": "Infrastructure.Console",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\Command\\BaselineConfiguredThresholds",
                     "closes_in": null
@@ -9321,13 +9505,13 @@
                     "closes_in": null
                 },
                 {
-                    "owner": "Infrastructure.Rule",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelDeclarationRegistry",
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
                     "closes_in": null
                 },
                 {
                     "owner": "Infrastructure.Rule",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\RuleChannelRegistry",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse",
                     "closes_in": null
                 }
             ]
@@ -9795,6 +9979,11 @@
                     "owner": "Infrastructure.DependencyInjection",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\ArchitectureConfigurator",
                     "closes_in": null
+                },
+                {
+                    "owner": "Reporting",
+                    "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\DeclaredChannelFileScope",
+                    "closes_in": null
                 }
             ]
         },
@@ -9972,6 +10161,14 @@
             "closure_package": "P4",
             "consumers": []
         },
+        "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\LayerShadowing": {
+            "path": "src/Analysis/Policy/Architecture/Layer/LayerShadowing.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Architecture",
+            "visibility": "internal",
+            "closure_package": "P4",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\MatchMode": {
             "path": "src/Analysis/Policy/Architecture/Layer/MatchMode.php",
             "kind": "enum",
@@ -10006,6 +10203,14 @@
         },
         "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\MembershipSpec": {
             "path": "src/Analysis/Policy/Architecture/Layer/MembershipSpec.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Architecture",
+            "visibility": "internal",
+            "closure_package": "P4",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\PatternScope": {
+            "path": "src/Analysis/Policy/Architecture/Layer/PatternScope.php",
             "kind": "class",
             "owner": "Analysis.Policy.Architecture",
             "visibility": "internal",
@@ -10633,6 +10838,25 @@
             "closure_package": "P6-D",
             "consumers": []
         },
+        "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Directive\\InlineDirectivePolicyInterface": {
+            "path": "src/Analysis/Policy/Inline/Contract/Directive/InlineDirectivePolicyInterface.php",
+            "kind": "interface",
+            "owner": "Analysis.Policy.Inline",
+            "visibility": "contract",
+            "closure_package": "P6-B",
+            "consumers": [
+                {
+                    "owner": "Analysis.Run",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\RuleProducerPreparation",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator",
+                    "closes_in": null
+                }
+            ]
+        },
         "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\RuleValidatorMapFactory": {
             "path": "src/Analysis/Policy/Inline/Contract/RuleValidatorMapFactory.php",
             "kind": "class",
@@ -10706,6 +10930,14 @@
             "closure_package": "P6-B",
             "consumers": []
         },
+        "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Suppression\\SuppressionTarget": {
+            "path": "src/Analysis/Policy/Inline/Contract/Suppression/SuppressionTarget.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Inline",
+            "visibility": "internal",
+            "closure_package": "P6-B",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Suppression\\SuppressionType": {
             "path": "src/Analysis/Policy/Inline/Contract/Suppression/SuppressionType.php",
             "kind": "enum",
@@ -10740,6 +10972,54 @@
         },
         "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Threshold\\ThresholdDiagnostic": {
             "path": "src/Analysis/Policy/Inline/Contract/Threshold/ThresholdDiagnostic.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Inline",
+            "visibility": "internal",
+            "closure_package": "P6-B",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveAddressability": {
+            "path": "src/Analysis/Policy/Inline/Directive/DirectiveAddressability.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Inline",
+            "visibility": "internal",
+            "closure_package": "P6-B",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveNameHints": {
+            "path": "src/Analysis/Policy/Inline/Directive/DirectiveNameHints.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Inline",
+            "visibility": "internal",
+            "closure_package": "P6-B",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveRejection": {
+            "path": "src/Analysis/Policy/Inline/Directive/DirectiveRejection.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Inline",
+            "visibility": "internal",
+            "closure_package": "P6-B",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveOptions": {
+            "path": "src/Analysis/Policy/Inline/Directive/InlineDirectiveOptions.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Inline",
+            "visibility": "internal",
+            "closure_package": "P6-B",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy": {
+            "path": "src/Analysis/Policy/Inline/Directive/InlineDirectivePolicy.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Inline",
+            "visibility": "internal",
+            "closure_package": "P6-B",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule": {
+            "path": "src/Analysis/Policy/Inline/Directive/InlineDirectiveRule.php",
             "kind": "class",
             "owner": "Analysis.Policy.Inline",
             "visibility": "internal",
@@ -11654,7 +11934,7 @@
                 },
                 {
                     "owner": "Infrastructure.Rule",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelDeclarationRegistry",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse",
                     "closes_in": null
                 }
             ]
@@ -12316,6 +12596,16 @@
                 },
                 {
                     "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationControlBindings",
                     "closes_in": null
                 },
@@ -12909,6 +13199,16 @@
                 },
                 {
                     "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationControlBindings",
                     "closes_in": null
                 }
@@ -13371,6 +13671,16 @@
                 {
                     "owner": "Analysis.Policy.Architecture",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\LayerRegistry",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveRule",
                     "closes_in": null
                 },
                 {
@@ -15815,12 +16125,12 @@
             "closure_package": "P8",
             "consumers": []
         },
-        "Qualimetrix\\Infrastructure\\Rule\\ChannelDeclarationRegistry": {
-            "path": "src/Infrastructure/Rule/ChannelDeclarationRegistry.php",
+        "Qualimetrix\\Infrastructure\\Rule\\ChannelUniverse": {
+            "path": "src/Infrastructure/Rule/ChannelUniverse.php",
             "kind": "class",
             "owner": "Infrastructure.Rule",
             "visibility": "internal",
-            "closure_package": "P8",
+            "closure_package": "P6-E",
             "consumers": [
                 {
                     "owner": "Infrastructure.DependencyInjection",
@@ -15892,34 +16202,6 @@
                     "owner": "Infrastructure.DependencyInjection",
                     "relation": "composition_binding",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\RuleRegistryCompilerPass",
-                    "closes_in": null,
-                    "operations": [
-                        "definition_argument_mutation"
-                    ]
-                },
-                {
-                    "owner": "Infrastructure.DependencyInjection",
-                    "relation": "composition_binding",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\RuleConfigurator",
-                    "closes_in": null,
-                    "operations": [
-                        "service_alias",
-                        "service_registration"
-                    ]
-                }
-            ]
-        },
-        "Qualimetrix\\Infrastructure\\Rule\\RuleChannelRegistry": {
-            "path": "src/Infrastructure/Rule/RuleChannelRegistry.php",
-            "kind": "class",
-            "owner": "Infrastructure.Rule",
-            "visibility": "internal",
-            "closure_package": "P8",
-            "consumers": [
-                {
-                    "owner": "Infrastructure.DependencyInjection",
-                    "relation": "composition_binding",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\CompilerPass\\ChannelDeclarationCompilerPass",
                     "closes_in": null,
                     "operations": [
                         "definition_argument_mutation"
@@ -16236,6 +16518,14 @@
                     "closes_in": null
                 }
             ]
+        },
+        "Qualimetrix\\Reporting\\FindingProjection\\DeclaredChannelFileScope": {
+            "path": "src/Reporting/FindingProjection/DeclaredChannelFileScope.php",
+            "kind": "class",
+            "owner": "Reporting",
+            "visibility": "internal",
+            "closure_package": "P6-D",
+            "consumers": []
         },
         "Qualimetrix\\Reporting\\FindingProjection\\FindingProjectionOptions": {
             "path": "src/Reporting/FindingProjection/FindingProjectionOptions.php",

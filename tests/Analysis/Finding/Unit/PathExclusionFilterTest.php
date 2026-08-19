@@ -8,10 +8,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
+use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
+use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -25,7 +29,7 @@ final class PathExclusionFilterTest extends TestCase
     #[Test]
     public function itFiltersSuppressedPath(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']));
+        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
 
         $violation = $this->createViolation('src/Entity/User.php');
 
@@ -35,7 +39,7 @@ final class PathExclusionFilterTest extends TestCase
     #[Test]
     public function itKeepsLayerViolationRuleInExcludedPath(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']));
+        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
 
         $violation = $this->createViolation('src/Entity/User.php', LayerViolationRule::NAME);
 
@@ -45,7 +49,7 @@ final class PathExclusionFilterTest extends TestCase
     #[Test]
     public function itKeepsCircularDependencyRuleInExcludedPath(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']));
+        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
 
         $violation = $this->createViolation('src/Entity/User.php', CircularDependencyRule::NAME);
 
@@ -59,7 +63,7 @@ final class PathExclusionFilterTest extends TestCase
         // are project-level diagnostics with no file (Location::none()) — already passed
         // through by the `$file === null` branch. Verify the new architecture-exemption
         // check does not change that behavior.
-        $filter = new PathExclusionFilter(new PathMatcher(['src']));
+        $filter = new PathExclusionFilter(new PathMatcher(['src']), self::declaredFileScope());
 
         foreach (
             [
@@ -89,7 +93,7 @@ final class PathExclusionFilterTest extends TestCase
     #[Test]
     public function itPassesNonMatchingPath(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']));
+        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
 
         $violation = $this->createViolation('src/Service/UserService.php');
 
@@ -99,7 +103,7 @@ final class PathExclusionFilterTest extends TestCase
     #[Test]
     public function itPassesEmptyFilePath(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src']));
+        $filter = new PathExclusionFilter(new PathMatcher(['src']), self::declaredFileScope());
 
         $violation = new Violation(
             location: Location::none(),
@@ -117,7 +121,7 @@ final class PathExclusionFilterTest extends TestCase
     #[Test]
     public function itFiltersGlobPattern(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher(['src/Metrics/*Visitor.php']));
+        $filter = new PathExclusionFilter(new PathMatcher(['src/Metrics/*Visitor.php']), self::declaredFileScope());
 
         $violation = $this->createViolation('src/Metrics/CboVisitor.php');
 
@@ -127,7 +131,7 @@ final class PathExclusionFilterTest extends TestCase
     #[Test]
     public function itPassesWhenNoPrefixes(): void
     {
-        $filter = new PathExclusionFilter(new PathMatcher([]));
+        $filter = new PathExclusionFilter(new PathMatcher([]), self::declaredFileScope());
 
         $violation = $this->createViolation('src/Entity/User.php');
 
@@ -150,5 +154,79 @@ final class PathExclusionFilterTest extends TestCase
             severity: Severity::Warning,
             metricValue: 5,
         );
+    }
+
+    /**
+     * The six project-scoped channels, in one place, asserted through the
+     * declaration rather than through the `architecture.` spelling.
+     *
+     * This is the regression for the immunity itself: an implementation that
+     * decides file scope from the rule name's first segment fails here as soon
+     * as name selectors stop matching on prefixes, and an implementation that
+     * simply forgets to consult the declaration fails here immediately.
+     */
+    #[Test]
+    public function itKeepsEveryDeclaredProjectScopedChannelInAnExcludedPath(): void
+    {
+        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
+
+        foreach (self::declaredProjectScopedChannelKeys() as $key) {
+            $channel = ViolationChannel::fromKey($key);
+
+            self::assertTrue(
+                $filter->shouldInclude($this->createChannelViolation('src/Entity/User.php', $channel)),
+                \sprintf('%s is declared project-scoped and must survive exclude_paths', $key),
+            );
+        }
+    }
+
+    #[Test]
+    public function itFiltersAChannelNoCapabilityDeclaredProjectScoped(): void
+    {
+        $filter = new PathExclusionFilter(new PathMatcher(['src/Entity']), self::declaredFileScope());
+        $undeclared = new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation.invented');
+
+        self::assertFalse(
+            $filter->shouldInclude($this->createChannelViolation('src/Entity/User.php', $undeclared)),
+            'Immunity follows the declaration, not the spelling of the rule name',
+        );
+    }
+
+    private function createChannelViolation(string $file, ViolationChannel $channel): Violation
+    {
+        return new Violation(
+            location: new Location(RelativePath::fromString($file), 10),
+            symbolPath: SymbolPath::forClass('App\\Entity', 'User'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App\\Entity', 'User'),
+                RelativePath::fromString($file),
+                10,
+            )),
+            ruleName: $channel->ruleName,
+            violationCode: $channel->violationCode,
+            message: 'Test',
+            severity: Severity::Warning,
+        );
+    }
+    /**
+     * The production declaration, read from the owning capabilities rather
+     * than restated here: a test that hard-coded the immune set would keep
+     * passing after a capability stopped declaring its channel.
+     */
+    private static function declaredFileScope(): ChannelFileScope
+    {
+        return new ChannelFileScope([
+            ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+            ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+        ]);
+    }
+
+    /** @return list<string> */
+    private static function declaredProjectScopedChannelKeys(): array
+    {
+        return [
+            ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+            ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+        ];
     }
 }

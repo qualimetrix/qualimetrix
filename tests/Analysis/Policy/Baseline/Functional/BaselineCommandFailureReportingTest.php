@@ -58,13 +58,14 @@ use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfiguration;
 use Qualimetrix\Infrastructure\Parallel\Contract\ParallelConfigurationResolverInterface;
 use Qualimetrix\Infrastructure\Parallel\Runtime\ParallelConfigurationStore;
 use Qualimetrix\Infrastructure\Profiler\ProfileSession;
-use Qualimetrix\Infrastructure\Rule\RuleChannelRegistry;
+use Qualimetrix\Infrastructure\Rule\ChannelUniverse;
 use Qualimetrix\Infrastructure\Rule\RuleRegistryInterface;
 use Qualimetrix\Reporting\Contract\OutputFormatResolverInterface;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\FindingProjection\Contract\ConfiguredFindingExclusionsResolverInterface;
 use Qualimetrix\Reporting\Formatter\FormatterRegistryInterface;
 use Qualimetrix\Reporting\Health\SummaryEnricher;
+use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
@@ -356,7 +357,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
         $loggerFactory->method('create')->willReturn(new NullLogger());
         $architecture = self::createStub(ArchitecturePolicyConfiguratorInterface::class);
         $ruleRegistry = self::createStub(RuleRegistryInterface::class);
-        $staticChannels = new RuleChannelRegistry([], 'computed.health', new ResolvedComputedMetricDefinitions([]));
+        $staticChannels = new ChannelUniverse([], [], [], 'computed.health', new ResolvedComputedMetricDefinitions([]));
         $ruleSelector = new RuleSelector($staticChannels);
         $ruleInputValidator = new RuleInputValidator(
             $ruleRegistry,
@@ -386,7 +387,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
 
     private static function ruleInputValidator(RuleRegistryInterface $rules): RuleInputValidator
     {
-        $staticChannels = new RuleChannelRegistry([], 'computed.health', new ResolvedComputedMetricDefinitions([]));
+        $staticChannels = new ChannelUniverse([], [], [], 'computed.health', new ResolvedComputedMetricDefinitions([]));
 
         return new RuleInputValidator(
             $rules,
@@ -413,7 +414,7 @@ final class BaselineCommandFailureReportingTest extends TestCase
             $profile,
             self::withoutConstructor(SummaryEnricher::class),
             new ProfilePresenter($profile),
-            new ExitCodeResolver(),
+            new ExitCodeResolver(StubChannelDeclarationRegistry::withDefaults()),
             new ViolationFilter(),
             new FormatterContextFactory(),
         );

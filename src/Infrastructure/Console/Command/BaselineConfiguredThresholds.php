@@ -209,6 +209,13 @@ final readonly class BaselineConfiguredThresholds
      * The part of the violation code that follows the rule name — the level
      * or the axis the channel reports on, or `null` when the code is the rule
      * name itself.
+     *
+     * This is a **structural decomposition of one channel**, not a selector
+     * match: it reads the two halves of a key the channel already declares
+     * (`ChannelDeclarationFixtureDriftTest` pins the invariant that a
+     * `violationCode` is its `ruleName`, optionally with a `.suffix`). It is
+     * therefore untouched by selectors becoming exact — there is no user text
+     * here deciding which channels are addressed.
      */
     private static function axisOf(ViolationChannel $channel): ?string
     {

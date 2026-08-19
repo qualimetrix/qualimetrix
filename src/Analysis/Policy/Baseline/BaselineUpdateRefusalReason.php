@@ -21,6 +21,13 @@ enum BaselineUpdateRefusalReason: string
     /** No rule declares the channel any more, so nothing knows how to compare it. */
     case UndeclaredChannel = 'undeclared-channel';
 
+    /**
+     * The channel declares itself a configuration error: `update` refuses to
+     * re-record it, exactly as `generate` refuses to capture it, so that a
+     * misconfigured run cannot ratchet its own misconfiguration into the file.
+     */
+    case ConfigurationErrorChannel = 'configuration-error-channel';
+
     /** The entry's own shape and the channel's currently declared shape disagree. */
     case ShapeMismatch = 'shape-mismatch';
 
@@ -48,6 +55,7 @@ enum BaselineUpdateRefusalReason: string
     {
         return match ($this) {
             self::UndeclaredChannel => 'no rule declares the channel any more',
+            self::ConfigurationErrorChannel => 'the channel reports a configuration error, which cannot be accepted as debt',
             self::ShapeMismatch => 'the entry no longer matches the channel\'s declared shape',
             self::CurrentMagnitudeUnavailable => 'the measured group reports no finite magnitude',
             self::Worsened => 'the measured group is not accepted against the stored one',

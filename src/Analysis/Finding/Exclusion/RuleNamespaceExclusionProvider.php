@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Exclusion;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Finding\Contract\Rule\RuleMatcher;
+use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
@@ -61,8 +61,9 @@ final class RuleNamespaceExclusionProvider
     /**
      * Stores namespace-aggregate exclusions scoped to one violation-code selector.
      *
-     * The selector uses {@see RuleMatcher} semantics: an exact violation code
-     * or a dot-boundary prefix such as `health` may be configured.
+     * The selector is a {@see NameSelector}: an exact violation code, or `X.*`
+     * for its strict descendants. A bare prefix such as `health` no longer
+     * stands for a group — write `health.*`.
      *
      * @param list<string> $patterns Namespace patterns (prefixes or globs)
      */
@@ -182,7 +183,7 @@ final class RuleNamespaceExclusionProvider
     public function isChannelExcluded(string $ruleName, string $violationCode, string $namespace): bool
     {
         foreach ($this->channelMatchers[$ruleName] ?? [] as $selector => $matcher) {
-            if (RuleMatcher::matches($selector, $violationCode) && $matcher->matches($namespace)) {
+            if (NameSelector::tryParse($selector)?->matches($violationCode) === true && $matcher->matches($namespace)) {
                 return true;
             }
         }

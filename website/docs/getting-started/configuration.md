@@ -62,15 +62,28 @@ exclude_paths:
 
 Also available as a CLI option: `--exclude-path` (merged with YAML config).
 
-!!! warning "Does not apply to `architecture.*` rules"
+!!! warning "Does not apply to project-scoped architecture findings"
     `exclude_paths` (and `--exclude-path`) never suppress `architecture.layer-violation` or
     `architecture.circular-dependency` violations, for the same reason as `exclude_namespaces`
     below: a layer-policy violation is not a metric, so a path exclusion aimed at quieting noisy
-    metrics must not double as an undocumented way to disable architecture enforcement. To
-    suppress a specific architecture finding, use `@qmx-ignore`, a baseline entry, or the
-    `exclude:` block inside the architecture layer configuration itself. As with
-    `exclude_namespaces`, this exemption is **global-only** — the per-rule `exclude_paths`
-    described below still works for `architecture.*` rules.
+    metrics must not double as an undocumented way to disable architecture enforcement.
+
+    Which findings are exempt is a **declared property of the channel**, not something read off
+    the spelling of the rule name — a rule is not exempt because it happens to be called
+    `architecture.something`.
+
+    What is left for suppressing such a finding depends on the channel.
+    `architecture.layer-violation` is real code debt, so `@qmx-ignore
+    architecture.layer-violation` and a baseline entry both still apply. The four layer-policy
+    diagnostics beside it — `architecture.coverage`, `architecture.unreachable-layer`,
+    `architecture.potential-shadow` and `architecture.empty-template` — report a mistake in the
+    *configuration*, so neither applies to them; see
+    [Rules > Architecture](../rules/architecture.md). Their remaining answers are the `exclude:`
+    block inside the architecture layer configuration itself and, for coverage specifically,
+    `coverage: ignore`.
+
+    As with `exclude_namespaces`, this exemption is **global-only** — the per-rule
+    `exclude_paths` described below still works for architecture rules.
 
 ### Exclude Namespaces
 
@@ -86,17 +99,23 @@ This is useful when entire namespace subtrees should never produce violations. F
 
 Also available as a CLI option: `--exclude-namespace` (merged with YAML config).
 
-!!! warning "Does not apply to `architecture.*` rules"
+!!! warning "Does not apply to project-scoped architecture findings"
     `exclude_namespaces` (and `--exclude-namespace`) never suppress `architecture.layer-violation`
     or `architecture.circular-dependency` violations. A layer-policy violation is not a metric —
     silently dropping it would let a noisy-metric exclusion double as an undocumented way to
-    disable architecture enforcement. To suppress a specific architecture finding, use
-    `@qmx-ignore`, a baseline entry, or the `exclude:` block inside the architecture layer
-    configuration itself.
+    disable architecture enforcement. Which findings are exempt is a declared property of the
+    channel, not a consequence of how the rule name is spelled.
+
+    `@qmx-ignore architecture.layer-violation` and a baseline entry still apply to
+    `architecture.layer-violation`. They do **not** apply to the four layer-policy diagnostics —
+    `architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow`
+    and `architecture.empty-template` — which report a configuration mistake rather than code
+    debt; for those, use the `exclude:` block inside the architecture layer configuration
+    itself, or `coverage: ignore` for the coverage diagnostic.
 
     This exemption is **global-only**. The per-rule `exclude_namespaces` / `exclude_paths`
     described below (`rules: {architecture.layer-violation: {exclude_namespaces: [...]}}`) still
-    works for `architecture.*` rules, same as for any other rule — see
+    works for architecture rules, same as for any other rule — see
     [Exclude namespaces from a rule](#rules) below and the architecture rule's
     [Suppression section](../rules/architecture.md#suppression) for why that asymmetry is
     intentional: naming the rule explicitly is an unambiguous, auditable choice, while a
@@ -216,15 +235,16 @@ rules:
         - App\Generated\*
 ```
 
-The option is a non-empty map from `violationCode` selector to a non-empty list of namespace
-prefixes or globs. A selector matches either exactly or at a dot boundary: `health` matches
-`health.cohesion`, while `health.cohe` does not; exact `health.cohesion` also leaves sibling
-`health.coupling` untouched.
+The option is a non-empty map from channel selector to a non-empty list of namespace
+prefixes or globs. A selector is either an **exact channel name** or `X.*` for the strict
+descendants of `X` — see [Rule and channel selectors](#rule-and-channel-selectors) below. A bare
+prefix such as `health` is an error, not a group: write `health.*`. Exact `health.cohesion`
+leaves the sibling `health.coupling` untouched.
 Only aggregate Namespace violations are removed. Class-level `health.cohesion` findings in
 the same namespace and sibling channels remain. The existing `exclude_namespaces` option is
 unchanged and stays producer-wide across class and namespace findings.
 
-!!! info "Works for every rule, including `architecture.*`"
+!!! info "Works for every rule, including the architecture rules"
     `exclude_namespaces`, `exclude_namespace_channels`, and `exclude_paths` are extracted and applied at the framework level for
     **any** rule name, regardless of whether that rule's Options class declares such a field —
     this is deliberately not opt-in per rule. That includes `architecture.layer-violation` and
@@ -275,17 +295,67 @@ The class-level override also applies to method evaluations inside the class; a 
 See [Baseline > @qmx-threshold](../usage/baseline.md#per-symbol-threshold-overrides-with-qmx-threshold) for full syntax and examples.
 <!-- llms:skip-end -->
 
+### Rule and Channel Selectors
+
+Every place that names a rule or a finding channel — `disabled_rules`, `only_rules`, their CLI
+equivalents, `exclude_namespace_channels`, and the `@qmx-ignore` family in source code — reads
+the name the same way:
+
+| Form                              | Meaning                                                                                                                                                                                                |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `complexity.cyclomatic`           | **exactly** that name, and nothing else                                                                                                                                                                |
+| `complexity.*`                    | **strictly the descendants** of `complexity` — `complexity.cyclomatic`, `complexity.wmc` and so on. `complexity` itself is not included; if a name is both a rule and a channel, address it separately |
+| `coupling.cbo#coupling.cbo.class` | the rule and the channel spelled out explicitly. Both halves must be exact; no `*` inside this form                                                                                                    |
+
+A bare prefix is **not** a group. `complexity` on its own selects nothing and is rejected:
+
+```
+Rule selector "complexity" does not match any registered producer, group, or channel.
+```
+
+A `X.*` that has no descendants is rejected for the same reason. Most rules emit a single
+channel whose name equals the rule name, so `code-smell.eval.*` is an error — write
+`code-smell.eval`.
+
+An unresolvable selector in configuration or on the command line ends the run with exit code 3
+before any report is produced. Guessing at intent was the previous behaviour, and it silently
+turned typos into "nothing was selected".
+
+**Which side of the pair a name refers to is decided by the directive, not by the name.** The
+same string means different things depending on where it is written:
+
+- `@qmx-ignore code-smell.boolean-argument` always names a **channel**, because a suppression
+  belongs to the channel;
+- `@qmx-threshold code-smell.boolean-argument` always names a **rule**, because a threshold
+  belongs to the rule's one options object. `@qmx-threshold` therefore takes an exact rule name
+  and accepts **no wildcard at all** — resetting a threshold across a group was a footgun, not
+  a feature;
+- keys of the `rules:` section and the owner before `:` in `--rule-opt RULE:option=value` name a
+  **rule**, exactly. A key like `rules: { complexity: {...} }` used to be accepted and configure
+  nothing at all; it is now rejected.
+
+See [Baseline](../usage/baseline.md)
+for the full inline-directive syntax, and [Rules > Annotations](../rules/annotation.md) for what
+the tool reports when a directive addresses nothing.
+
 ### Disabled Rules
 
-Disable specific rules or entire groups:
+Disable specific rules, channels, or whole groups:
 
 ```yaml
 disabled_rules:
   - code-smell.boolean-argument
-  - duplication
+  - duplication.code-duplication
 ```
 
-Equivalent CLI: `--disable-rule=code-smell.boolean-argument --disable-rule=duplication`
+Equivalent CLI: `--disable-rule=code-smell.boolean-argument --disable-rule=duplication.code-duplication`
+
+To disable a whole group, use the wildcard:
+
+```yaml
+disabled_rules:
+  - code-smell.*
+```
 
 ### Only Rules
 
@@ -310,7 +380,17 @@ fail_on: error    # Only fail on errors (default)
 # fail_on: none     # Never fail on violations
 ```
 
-The default is `error`: warnings and Info-level diagnostics are shown in the output but do not cause a non-zero exit code. Use `fail_on: warning` if you want warnings to also fail the build, or `fail_on: info` to additionally enforce Info diagnostics (for example, `architecture.unreachable-layer` and `architecture.potential-shadow`).
+The default is `error`: warnings and Info-level diagnostics are shown in the output but do not cause a non-zero exit code. Use `fail_on: warning` if you want warnings to also fail the build, or `fail_on: info` to additionally enforce Info diagnostics (for example, `annotation.unused-directive`, which reports a suppression that no longer suppresses anything).
+
+!!! warning "`fail_on` does not govern configuration errors"
+    Some channels report a mistake in the configuration rather than debt in the code — the four
+    layer-policy diagnostics (`architecture.coverage`, `architecture.unreachable-layer`,
+    `architecture.potential-shadow`, `architecture.empty-template`) and the three inline-directive
+    diagnostics (`annotation.unresolved-directive`, `annotation.unsupported-threshold`,
+    `annotation.invalid-threshold`). These never take part in the `fail_on` comparison at all:
+    they end the run with a non-zero exit code even under `fail_on: none`, and no baseline entry
+    or `@qmx-ignore` can accept them. The tool is not judging your code there — it is saying it
+    cannot do what you asked.
 
 ### Exclude Health
 
@@ -508,7 +588,7 @@ exclude_health:
 
 disabled_rules:
   - code-smell.boolean-argument
-  - duplication
+  - duplication.code-duplication
 
 rules:
   complexity.cyclomatic:

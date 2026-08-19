@@ -13,6 +13,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionTarget;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\SuppressionExtractor;
 use Qualimetrix\Core\Path\RelativePath;
@@ -76,6 +77,93 @@ final class SuppressionExtractorTest extends TestCase
         self::assertSame('complexity', $suppressions[0]->rule);
         self::assertSame('Legacy code, refactoring planned', $suppressions[0]->reason);
         self::assertSame(SuppressionType::Symbol, $suppressions[0]->type);
+    }
+
+    /**
+     * The channel argument and the reason are both bare words, so the file
+     * form — the only one whose channel is optional — cannot tell them apart
+     * without a separator. `@qmx-ignore-file Generated code` used to be
+     * silently inert and now reports `Generated` as a channel addressing
+     * nothing, which is why the separator has to exist at all.
+     */
+    #[Test]
+    public function itReadsAFileFormReasonIntroducedByTheSeparatorAsNoChannelFilter(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @qmx-ignore-file -- Generated code, do not analyse
+             */
+            DOC,
+            10,
+            10,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame(SuppressionTarget::NO_RULE_FILTER, $suppressions[0]->rule);
+        self::assertTrue($suppressions[0]->target()->appliesToEveryChannel());
+        self::assertSame('Generated code, do not analyse', $suppressions[0]->reason);
+    }
+
+    /** The separator introduces the reason, so it is not part of it. */
+    #[Test]
+    public function itKeepsTheSeparatorOutOfTheReason(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @qmx-ignore code-smell.goto -- Legacy code, refactoring planned
+             */
+            DOC,
+            10,
+            10,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('code-smell.goto', $suppressions[0]->rule);
+        self::assertSame('Legacy code, refactoring planned', $suppressions[0]->reason);
+    }
+
+    /**
+     * The explicit `ruleName#violationCode` form is documented for every place
+     * that names a channel, this family included. The argument pattern used to
+     * stop at the separator, so the second half was dropped without a word and
+     * the directive was reported against the truncated first half.
+     */
+    #[Test]
+    public function itKeepsBothHalvesOfAnExplicitChannelPair(): void
+    {
+        $docComment = new Doc(
+            <<<'DOC'
+            /**
+             * @qmx-ignore complexity.cyclomatic#complexity.cyclomatic.callable -- explicit
+             */
+            DOC,
+            10,
+            10,
+        );
+
+        $node = new Class_('Foo');
+        $node->setDocComment($docComment);
+
+        $suppressions = $this->extract($node);
+
+        self::assertCount(1, $suppressions);
+        self::assertSame('complexity.cyclomatic#complexity.cyclomatic.callable', $suppressions[0]->rule);
+        self::assertSame(
+            ['ruleName' => 'complexity.cyclomatic', 'violationCode' => 'complexity.cyclomatic.callable'],
+            $suppressions[0]->target()->exactChannel(),
+        );
     }
 
     #[Test]

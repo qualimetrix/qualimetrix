@@ -145,6 +145,16 @@ These rules detect patterns that may introduce security vulnerabilities.
 
 [Read more about Security rules --&gt;](security.md)
 
+### Annotation Rules
+
+This rule validates the `@qmx-ignore` / `@qmx-threshold` annotations written in your code, rather than the code itself. It reports through four channels — `annotation.unresolved-directive`, `annotation.unsupported-threshold`, and `annotation.invalid-threshold` are configuration errors that fail the run unconditionally; `annotation.unused-directive` is ordinary debt with a configurable severity.
+
+| Rule                                  | ID                     | What it detects                                                                               |
+| ------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------- |
+| [Directive Validation](annotation.md) | `annotation.directive` | Invalid, unsupported, malformed, or unused inline `@qmx-ignore` / `@qmx-threshold` directives |
+
+[Read more about Annotation rules --&gt;](annotation.md)
+
 ## Disabling Rules
 
 You can disable individual rules or entire groups:
@@ -153,8 +163,8 @@ You can disable individual rules or entire groups:
 # Disable a single rule
 bin/qmx check src/ --disable-rule=complexity.npath
 
-# Disable an entire group (prefix matching)
-bin/qmx check src/ --disable-rule=code-smell
+# Disable an entire group (wildcard match; matches descendants only, not "code-smell" itself)
+bin/qmx check src/ --disable-rule=code-smell.*
 ```
 
 ## Excluding Namespaces
@@ -211,6 +221,7 @@ Compact rule catalog. For warning/error thresholds, see [Default Thresholds Refe
 - **Duplication:** `duplication.code-duplication`
 - **Code Smell:** `code-smell.boolean-argument`, `code-smell.count-in-loop`, `code-smell.debug-code`, `code-smell.empty-catch`, `code-smell.error-suppression`, `code-smell.eval`, `code-smell.exit`, `code-smell.goto`, `code-smell.superglobals`, `code-smell.long-parameter-list`, `code-smell.unreachable-code`, `code-smell.identical-subexpression`, `code-smell.constructor-overinjection`, `code-smell.unused-private`
 - **Security:** `security.hardcoded-credentials`, `security.sql-injection`, `security.xss`, `security.command-injection`, `security.sensitive-parameter`
+- **Annotation:** `annotation.directive` (reports through four channels — see [Annotation rules](annotation.md))
 
-Disable a single rule: `--disable-rule=complexity.npath`. Disable a whole group: `--disable-rule=code-smell` (prefix match).
+Disable a single rule: `--disable-rule=complexity.npath`. Disable a whole group: `--disable-rule=code-smell.*` (wildcard; matches descendants only, not `code-smell` itself).
 -->

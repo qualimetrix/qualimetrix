@@ -30,6 +30,8 @@ Each baseline entry identifies a canonical typed subject, a channel, an optional
 
 The baseline does not make a non-firing rule fire. A finding that vanishes is stale, not proven fixed.
 
+Configuration-error channels never enter a baseline on any path: the four layer-policy diagnostics (`architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow`, `architecture.empty-template`) and the three inline-directive diagnostics (`annotation.unresolved-directive`, `annotation.unsupported-threshold`, `annotation.invalid-threshold`) end the run unconditionally instead — see [Inline suppression](#inline-suppression) below.
+
 ## Lifecycle commands
 
 All analysis-bearing baseline commands accept the same configuration options needed to reproduce the measured set:
@@ -107,14 +109,76 @@ bin/qmx check src/ --baseline=baseline.json --show-resolved
 
 Use an inline suppression for an intentional exception rather than silently accepting it in a baseline. The tags work in PHPDoc, line comments, and block comments; place them on a separate line before their target.
 
-| Tag                                     | Scope                 | Example                                                  |
-| --------------------------------------- | --------------------- | -------------------------------------------------------- |
-| `@qmx-ignore <rule> [reason]`           | Symbol                | `@qmx-ignore complexity.cyclomatic Legacy state machine` |
-| `@qmx-ignore * [reason]`                | All rules on a symbol | `@qmx-ignore * Generated mapper`                         |
-| `@qmx-ignore-next-line <rule> [reason]` | Next line             | `@qmx-ignore-next-line code-smell.exit CLI entry point`  |
-| `@qmx-ignore-file`                      | Whole file            | `@qmx-ignore-file`                                       |
+| Tag                                           | Scope                 | Example                                                              |
+| --------------------------------------------- | --------------------- | -------------------------------------------------------------------- |
+| `@qmx-ignore <channel> [-- reason]`           | Symbol                | `@qmx-ignore complexity.cyclomatic.callable -- Legacy state machine` |
+| `@qmx-ignore * [-- reason]`                   | All rules on a symbol | `@qmx-ignore * -- Generated mapper`                                  |
+| `@qmx-ignore-next-line <channel> [-- reason]` | Next line             | `@qmx-ignore-next-line code-smell.exit -- CLI entry point`           |
+| `@qmx-ignore-file [channel] [-- reason]`      | Whole file            | `@qmx-ignore-file` or `@qmx-ignore-file -- Generated code`           |
 
-Rule names support prefix matching: `@qmx-ignore complexity` suppresses every `complexity.*` rule. An inline same-line comment is not supported.
+### Reason separator
+
+The channel argument and the reason are both bare words, so `--` is how you
+tell them apart. It is **mandatory** on `@qmx-ignore-file` whenever the
+channel is left out and a reason follows directly: `@qmx-ignore-file
+Generated code, do not analyse` reads `Generated` as the channel, which
+addresses nothing, and fails with `annotation.unresolved-directive`:
+
+```
+Suppression "Generated" addresses no channel. No declared name is close to it. Prose belongs after "--".
+```
+
+Write it as `@qmx-ignore-file -- Generated code, do not analyse` instead. On
+`@qmx-ignore` and `@qmx-ignore-next-line` the channel is not optional — it is
+always the first word — so `--` before the reason is optional there too; the
+project's own convention is to write it anyway so all three tags read the
+same way.
+
+### Channels, not rule names
+
+`@qmx-ignore`, `@qmx-ignore-next-line`, and `@qmx-ignore-file` address a **channel** — the exact `violationCode` a finding is reported under — not the producer rule that emits it. A channel selector is either:
+
+- an **exact** channel name (`complexity.wmc`, `code-smell.eval`), or
+- `X.*` for strictly the **descendants** of `X` — `X` itself is not included, so write two directives if you mean both.
+
+A bare prefix without the star (`@qmx-ignore complexity`) is an error, not a guess at intent, and an `X.*` that matches nothing is an error too:
+
+```text
+Suppression "complexity" addresses no channel. Addressable names closest to it: complexity.wmc.
+```
+
+For most rules the rule name and its one channel are the same string, so the distinction never surfaces. It surfaces for the rules below, which report through more than one channel — their bare rule name is **not** a valid `@qmx-ignore` argument:
+
+| Rule                    | Channels                                                                                     |
+| ----------------------- | -------------------------------------------------------------------------------------------- |
+| `complexity.cyclomatic` | `complexity.cyclomatic.callable`, `complexity.cyclomatic.class`                              |
+| `complexity.cognitive`  | `complexity.cognitive.callable`, `complexity.cognitive.class`                                |
+| `complexity.npath`      | `complexity.npath.callable`, `complexity.npath.class`                                        |
+| `coupling.cbo`          | `coupling.cbo.class`, `coupling.cbo.namespace`                                               |
+| `coupling.instability`  | `coupling.instability.class`, `coupling.instability.namespace`                               |
+| `design.type-coverage`  | `design.type-coverage.param`, `design.type-coverage.property`, `design.type-coverage.return` |
+
+Suppress one channel with its exact name, or every channel of the rule with the wildcard, e.g. `@qmx-ignore complexity.cyclomatic.*`.
+
+A channel can also be a computed metric, e.g. `@qmx-ignore health.cohesion` — valid as long as `computed_metrics:` still defines that metric. Removing the metric turns the annotation into an error: a dangling reference is the same mistake as a typo.
+
+!!! warning "Four channels can never be suppressed here"
+    `architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow`, and `architecture.empty-template` are configuration errors, not debt: `@qmx-ignore` cannot suppress them, and a baseline can never accept them. Use the architecture configuration's `exclude:` block, or `coverage: ignore` for the coverage diagnostic specifically. `architecture.layer-violation` is unaffected — `@qmx-ignore architecture.layer-violation` and baseline entries still work for it.
+
+### When a directive is wrong
+
+A directive that names something invalid, or that no longer fires, is not silently ignored — it becomes a finding of its own under the built-in `annotation.directive` rule, reported on the file that carries the directive. See [Annotation rules](../rules/annotation.md) for the full reference. Three of its four channels are configuration errors that end the run regardless of `--fail-on` and can never be baselined or suppressed:
+
+| Channel                            | Fires when                                                                                                                                               |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `annotation.unresolved-directive`  | the directive names a channel that does not exist (typo, a rule name where a channel was meant, an `X.*` matching nothing, or a removed computed metric) |
+| `annotation.unsupported-threshold` | `@qmx-threshold` targets a rule that declares no threshold override support                                                                              |
+| `annotation.invalid-threshold`     | the `@qmx-threshold` payload itself is malformed                                                                                                         |
+| `annotation.unused-directive`      | the directive is valid but nothing it addressed fired this run — ordinary cleanup debt                                                                   |
+
+Only `annotation.unused-directive` behaves like an ordinary finding: it defaults to `Info`, its severity is configurable via the `unused_directive_severity` rule option, and it can be baselined or suppressed like any other channel. `@qmx-threshold` never counts toward it.
+
+An inline same-line comment is not supported.
 
 ### View what annotations hide
 
@@ -142,5 +206,14 @@ final class ComplexStateMachine
 @qmx-threshold <rule> <number> [-- <reason>]
 @qmx-threshold <rule> warning=<number> [error=<number>] [-- <reason>]
 ```
+
+`@qmx-threshold` addresses the **rule** by its exact name — never a channel, and never a wildcard. A threshold belongs to the rule's one options object, not to an individual channel, so `@qmx-threshold complexity.cyclomatic.callable` is an error even though `complexity.cyclomatic` has two channels; use the rule name `complexity.cyclomatic` instead:
+
+```text
+@qmx-threshold "coupling.cbo.class" names no rule. "coupling.cbo.class" is a channel of
+rule "coupling.cbo" — a threshold addresses the rule.
+```
+
+This is the mirror image of `@qmx-ignore`, which always addresses the channel — the asymmetry is deliberate. `@qmx-threshold` on a disabled rule is valid and silent: enabledness is an execution filter, not a fact about whether the rule name exists.
 
 Numbers are non-negative. The explicit form accepts only `warning` and `error`; a non-empty reason follows `--` or an em dash. Class overrides apply inside the class (including methods), method overrides apply to that method, and the smallest matching source span wins. Prefer this to `@qmx-ignore` when a useful limit remains.

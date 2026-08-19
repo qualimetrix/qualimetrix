@@ -315,8 +315,10 @@ final class ThresholdOverrideExtractorTest extends TestCase
     }
 
     #[Test]
-    public function itExtractsPrefixPattern(): void
+    public function itExtractsABarePrefixButAddressesNoRuleWithIt(): void
     {
+        // Extraction is syntax; whether the name addresses a rule is a
+        // separate question, and the answer is now no.
         $node = $this->createClassNodeWithDoc(
             <<<'DOC'
             /**
@@ -331,9 +333,8 @@ final class ThresholdOverrideExtractorTest extends TestCase
 
         self::assertCount(1, $overrides);
         self::assertSame('complexity', $overrides[0]->rulePattern);
-        // Should match all complexity.* rules
-        self::assertTrue($overrides[0]->matches('complexity.cyclomatic'));
-        self::assertTrue($overrides[0]->matches('complexity.cognitive'));
+        self::assertFalse($overrides[0]->matches('complexity.cyclomatic'));
+        self::assertFalse($overrides[0]->matches('complexity.cognitive'));
     }
 
     // =====================================================================

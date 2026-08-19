@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Tests\Analysis\Finding\Integration;
 
-use ArrayIterator;
 use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -13,14 +12,12 @@ use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyDetector;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyOptions;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
 use Qualimetrix\Analysis\Evidence\CircularDependency\Cycle;
-use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgumentRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellOptions;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionOptions;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ConstructorOverinjectionRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\GotoRule;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\ComplexityRule;
-use Qualimetrix\Analysis\Evidence\ComputedMetrics\Contract\Evaluation\ComputedMetricEvaluator;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\ClassRankRule;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
@@ -32,32 +29,29 @@ use Qualimetrix\Analysis\Evidence\Duplication\DuplicateLocation;
 use Qualimetrix\Analysis\Evidence\Duplication\DuplicationResultProvider;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
-use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
-use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
 use Qualimetrix\Analysis\Evidence\Security\CommandInjectionRule;
 use Qualimetrix\Analysis\Evidence\Security\SecurityPatternOptions;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountOptions;
 use Qualimetrix\Analysis\Evidence\Size\ClassCountRule;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
+use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleLevel;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
-use Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\Rule\InMemoryRuleChannelRegistry;
+use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Directive\InlineDirectivePolicyInterface;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
+use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
-use Qualimetrix\Analysis\Run\Contract\Collection\CollectionOrchestratorInterface;
-use Qualimetrix\Analysis\Run\Contract\Collection\CollectionPhaseOutput;
-use Qualimetrix\Analysis\Run\Contract\Configuration\GeneratedFilePolicy;
-use Qualimetrix\Analysis\Run\Contract\Configuration\RunConfiguration;
-use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
-use Qualimetrix\Analysis\Run\FileSetInspection\FileSetInspectionComposite;
-use Qualimetrix\Analysis\Run\FileSetInspection\RuleSelectorProducerGate;
-use Qualimetrix\Core\Path\AbsolutePath;
+use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
+use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
+use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -66,9 +60,6 @@ use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
-use Qualimetrix\Infrastructure\Profiler\ProfileSession;
-use Qualimetrix\Tests\Analysis\Run\Support\Pipeline\TestPipelineBuilder;
-use RuntimeException;
 
 /**
  * Real-emission coverage guard: every channel exercised by this suite is
@@ -76,9 +67,9 @@ use RuntimeException;
  * and must resolve to a declaration, or be recorded in
  * `tests/Fixtures/Channels/excluded.txt` as deliberately not baselineable.
  *
- * Every case runs the REAL rule (or, for the two `annotation.*` cases, the
- * real pipeline) against a hand-built `AnalysisContext`/`CollectionPhaseOutput` —
- * never a hand-built `Violation` — so a wiring mistake (wrong channel key in
+ * Every case runs the REAL rule against a hand-built `AnalysisContext` (or,
+ * for the inline-directive cases, a real prepared policy) — never a
+ * hand-built `Violation` — so a wiring mistake (wrong channel key in
  * `channelDeclarations()`, a rule renamed without updating its declaration)
  * would show up as a real emitted channel the registry cannot resolve.
  *
@@ -88,7 +79,7 @@ use RuntimeException;
  * combination this package declares — `magnitude`/`higher`,
  * `magnitude`/`lower`, `occurrence` (both the fixed-marker and the
  * reports-a-number-but-declared-`occurrence`-anyway case, `coupling.class-rank`),
- * and the excluded `annotation.*` family. It is **not** a hand-built emission
+ * and the `annotation.*` family. It is **not** a hand-built emission
  * for all ~50 declared channels — each of those is separately verified by
  * the channel's own docblock file:line citation on its declaring rule, and
  * by {@see \Qualimetrix\Tests\Integration\Infrastructure\Rule\ChannelDeclarationFixtureDriftTest},
@@ -313,145 +304,113 @@ final class ChannelCoverageTest extends TestCase
         self::assertDeclared($violations[0]->channel());
     }
 
+    /**
+     * The four inline-directive channels, through the rule that owns them.
+     *
+     * They used to be built straight inside the pipeline with no rule class
+     * to declare them on, which is why they lived in `excluded.txt`. They now
+     * have an owner, so what this case proves is the ordinary thing every
+     * other case here proves: a real emission resolves to a real declaration.
+     */
     #[Test]
-    public function theUnsupportedThresholdAnnotationChannelResolvesToNullAndIsRecordedAsExcluded(): void
+    public function theInlineDirectiveChannelsAreDeclared(): void
     {
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $discovery->method('discover')->willReturn(new ArrayIterator([]));
+        $file = 'src/Foo.php';
+        $subject = MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString($file)));
 
-        $collectionOrchestrator = self::createStub(CollectionOrchestratorInterface::class);
-        $collectionOrchestrator->method('collect')->willReturn(
-            new CollectionPhaseOutput(
-                [],
-                [],
-                thresholdOverrides: [
-                    'src/Foo.php' => [
-                        new ThresholdOverride(
-                            rulePattern: 'code-smell.boolean-argument',
-                            warning: 50.0,
-                            error: 100.0,
-                            line: 10,
-                            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php'))),
-                            controlScope: ControlScope::Class_,
-                            endLine: 50,
-                        ),
-                    ],
+        $policy = self::directivePolicy();
+        $policy->prepare(
+            [
+                $file => [
+                    new Suppression('coupling.instabilty', 'typo', 10, SuppressionType::File),
                 ],
-            ),
+            ],
+            [
+                $file => [
+                    new ThresholdOverride(
+                        rulePattern: 'code-smell.boolean-argument',
+                        warning: 50.0,
+                        error: 100.0,
+                        line: 20,
+                        subject: $subject,
+                        controlScope: ControlScope::Class_,
+                    ),
+                ],
+            ],
+            [
+                $file => [
+                    new ThresholdDiagnostic(
+                        line: 30,
+                        subject: $subject,
+                        message: '@qmx-threshold complexity.cyclomatic: warning (20) must not exceed error (10)',
+                        code: 'warning_exceeds_error',
+                    ),
+                ],
+            ],
         );
 
-        // BooleanArgumentRule has a boolean-only Options class — it does not
-        // implement ThresholdAwareOptionsInterface, which is exactly what
-        // makes the annotation targeting it unsupported.
-        $booleanArgRule = new BooleanArgumentRule(BooleanArgumentRule::getOptionsClass()::fromArray([]));
+        $rule = new InlineDirectiveRule(new InlineDirectiveOptions(), $policy, self::channelIdentity());
+        $violations = $rule->analyze(new AnalysisContext(self::createStub(MetricRepositoryInterface::class)));
 
-        $ruleExecutor = self::createStub(RuleExecutionInterface::class);
-        $ruleExecutor->method('execute')->willReturn([]);
-        $ruleExecutor->method('allRules')->willReturn([
-            new \Qualimetrix\Analysis\Finding\Contract\RuleMetadata(
-                $booleanArgRule->getName(),
-                $booleanArgRule::getOptionsClass(),
-                $booleanArgRule->getCategory(),
-                $booleanArgRule->getDescription(),
-                [],
-                true,
-            ),
-        ]);
+        $emitted = array_map(static fn($violation): string => $violation->violationCode, $violations);
+        sort($emitted);
+        self::assertSame(
+            [
+                InlineDirectivePolicyInterface::INVALID_THRESHOLD_NAME,
+                InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME,
+                InlineDirectivePolicyInterface::UNSUPPORTED_THRESHOLD_NAME,
+            ],
+            $emitted,
+        );
 
-        $profiler = new ProfileSession();
-        $fileCollector = new CompositeCollector([]);
-        $pipeline = TestPipelineBuilder::create()
-            ->withDefaultDiscovery($discovery)
-            ->withCollectionOrchestrator($collectionOrchestrator)
-            ->withRuleExecution($ruleExecutor)
-            ->withMeasurementAggregation(new MeasurementAggregationService([], $fileCollector, $profiler))
-            ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
-            ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
-            ->withFileSetInspection(new FileSetInspectionComposite(
-                [],
-                new RuleSelectorProducerGate(new RuleSelector(new InMemoryRuleChannelRegistry())),
-                $profiler,
-            ))
-            ->withProfiler($profiler)
-            ->build();
+        foreach ($violations as $violation) {
+            self::assertDeclared($violation->channel());
+        }
 
-        $root = AbsolutePath::fromString('/path/to/src');
-        $result = $pipeline->analyze(new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include));
-
-        self::assertCount(1, $result->violations);
-        $channel = $result->violations[0]->channel();
-        self::assertSame('annotation.unsupported-threshold', $channel->ruleName);
-
-        self::assertExcluded($channel);
+        $unused = $policy->auditDirectiveUsage([]);
+        self::assertCount(0, $unused, 'An unresolvable suppression is a configuration error, never stale debt.');
     }
 
     #[Test]
-    public function theInvalidThresholdAnnotationChannelResolvesToNullAndIsRecordedAsExcluded(): void
+    public function theUnusedDirectiveChannelIsDeclared(): void
     {
-        $discovery = self::createStub(FileDiscoveryInterface::class);
-        $discovery->method('discover')->willReturn(new ArrayIterator([]));
+        $file = 'src/Foo.php';
 
-        $collectionOrchestrator = self::createStub(CollectionOrchestratorInterface::class);
-        $collectionOrchestrator->method('collect')->willReturn(
-            new CollectionPhaseOutput(
-                [],
-                [],
-                thresholdDiagnostics: [
-                    'src/Foo.php' => [
-                        new ThresholdDiagnostic(
-                            line: 10,
-                            subject: MetricSubject::aggregate(SymbolPath::forFile(RelativePath::fromString('src/Foo.php'))),
-                            message: '@qmx-threshold complexity.cyclomatic: warning (20) must not exceed error (10)',
-                            code: 'warning_exceeds_error',
-                        ),
-                    ],
-                ],
-            ),
+        $policy = self::directivePolicy();
+        $policy->prepare(
+            [$file => [new Suppression('code-smell.goto', 'no longer needed', 10, SuppressionType::File)]],
+            [],
+            [],
         );
 
-        $ruleExecutor = self::createStub(RuleExecutionInterface::class);
-        $ruleExecutor->method('execute')->willReturn([]);
-        $ruleExecutor->method('allRules')->willReturn([]);
+        $rule = new InlineDirectiveRule(new InlineDirectiveOptions(), $policy, self::channelIdentity());
+        self::assertSame([], $rule->analyze(new AnalysisContext(self::createStub(MetricRepositoryInterface::class))));
 
-        $profiler = new ProfileSession();
-        $fileCollector = new CompositeCollector([]);
-        $pipeline = TestPipelineBuilder::create()
-            ->withDefaultDiscovery($discovery)
-            ->withCollectionOrchestrator($collectionOrchestrator)
-            ->withRuleExecution($ruleExecutor)
-            ->withMeasurementAggregation(new MeasurementAggregationService([], $fileCollector, $profiler))
-            ->withComputedMetricEvaluation(self::createStub(ComputedMetricEvaluator::class))
-            ->withCircularDependencyPreparation(new CircularDependencyAnalysis(new CircularDependencyDetector()))
-            ->withFileSetInspection(new FileSetInspectionComposite(
-                [],
-                new RuleSelectorProducerGate(new RuleSelector(new InMemoryRuleChannelRegistry())),
-                $profiler,
-            ))
-            ->withProfiler($profiler)
-            ->build();
-
-        $root = AbsolutePath::fromString('/path/to/src');
-        $result = $pipeline->analyze(new RunConfiguration([$root], [], $root, GeneratedFilePolicy::Include));
-
-        self::assertCount(1, $result->violations);
-        $channel = $result->violations[0]->channel();
-        self::assertSame('annotation.invalid-threshold', $channel->ruleName);
-        self::assertSame('annotation.invalid-threshold.warning_exceeds_error', $channel->violationCode);
-
-        // The specific `.warning_exceeds_error` code is not itself a fixture
-        // line (the code vocabulary is open per-validator — see excluded.txt's
-        // note); what must hold is that the channel is undeclared and that the
-        // *family's* base entry documents why.
-        $registry = self::registry();
-        self::assertNull(
-            $registry->declarationFor($channel),
-            'annotation.invalid-threshold.* has no rule class to declare it on and must stay undeclared.',
+        $unused = $policy->auditDirectiveUsage([]);
+        self::assertCount(1, $unused);
+        self::assertSame(
+            InlineDirectivePolicyInterface::UNUSED_DIRECTIVE_NAME,
+            $unused[0]->violationCode,
         );
-        self::assertContains(
-            'annotation.invalid-threshold#annotation.invalid-threshold',
-            self::readExcludedFixtureKeys(),
-            'excluded.txt must document the annotation.invalid-threshold family.',
+
+        self::assertDeclared($unused[0]->channel());
+    }
+
+    private static function directivePolicy(): InlineDirectivePolicy
+    {
+        return new InlineDirectivePolicy(
+            self::channelIdentity(),
+            new RuleSelector(new InMemoryRuleChannelRegistry()),
+            new RuleOptionsRegistry(),
         );
+    }
+
+    private static function channelIdentity(): ChannelIdentityInterface
+    {
+        $identity = (new ContainerFactory())->create()->get(ChannelIdentityInterface::class);
+        \assert($identity instanceof ChannelIdentityInterface);
+
+        return $identity;
     }
 
     private static function callableInfo(string $member): SymbolInfo
@@ -485,53 +444,11 @@ final class ChannelCoverageTest extends TestCase
         );
     }
 
-    private static function assertExcluded(ViolationChannel $channel): void
-    {
-        self::assertNull(
-            self::registry()->declarationFor($channel),
-            \sprintf('Channel "%s" resolves to a declaration but is expected to be deliberately excluded.', $channel->toKey()),
-        );
-        self::assertContains(
-            $channel->toKey(),
-            self::readExcludedFixtureKeys(),
-            \sprintf('Channel "%s" is undeclared as expected, but excluded.txt does not record why.', $channel->toKey()),
-        );
-    }
-
     private static function registry(): ChannelDeclarationRegistryInterface
     {
         $registry = (new ContainerFactory())->create()->get(ChannelDeclarationRegistryInterface::class);
         \assert($registry instanceof ChannelDeclarationRegistryInterface);
 
         return $registry;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private static function readExcludedFixtureKeys(): array
-    {
-        $path = \dirname(__DIR__) . '/Fixtures/Channels/excluded.txt';
-        $contents = file_get_contents($path);
-
-        if ($contents === false) {
-            throw new RuntimeException(\sprintf('Could not read fixture file %s.', $path));
-        }
-
-        $keys = [];
-
-        foreach (explode("\n", $contents) as $line) {
-            $line = trim($line);
-
-            if ($line === '' || str_starts_with($line, '#')) {
-                continue;
-            }
-
-            $parts = preg_split('/\s+--\s+/', $line, 2);
-            $channelKey = $parts === false ? $line : $parts[0];
-            $keys[] = trim($channelKey);
-        }
-
-        return $keys;
     }
 }

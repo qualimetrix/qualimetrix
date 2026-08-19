@@ -459,6 +459,7 @@ final class DocumentationConsistencyTest extends TestCase
     {
         $rulesDirs = [
             self::$projectRoot . '/src/Analysis/Policy/Architecture/LayerViolation',
+            self::$projectRoot . '/src/Analysis/Policy/Inline/Directive',
             self::$projectRoot . '/src/Analysis/Evidence/CircularDependency',
             self::$projectRoot . '/src/Analysis/Evidence/Duplication',
             self::$projectRoot . '/src/Analysis/Evidence/CodeSmell',

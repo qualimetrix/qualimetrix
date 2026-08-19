@@ -343,6 +343,8 @@ Options for a specific level of a hierarchical rule.
 
 Interface for options that support `@qmx-threshold` overrides. Implemented by options with warning/error thresholds. Options without thresholds (boolean rules) do not implement this.
 
+Note that whether a rule *supports* an override is no longer read off this interface. Support is **declared** by the rule itself, as a `SUPPORTS_THRESHOLD_OVERRIDE` constant, so the answer is available without inspecting the options class and can drive both the "did you mean" hint and the `annotation.unsupported-threshold` diagnostic. This interface remains the mechanism by which a supported override is applied.
+
 **Methods:**
 - `withOverride(int|float|null $warning, int|float|null $error): static` — returns a copy with overridden thresholds (null keeps original)
 
@@ -368,19 +370,27 @@ Levels of code hierarchy at which rules can operate.
 **Methods:**
 - `displayName(): string` — human-readable display name
 
-### RuleMatcher
+### NameSelector
 
-Utility for prefix matching of rule names and violation codes.
+A user-authored selector over the rule / channel name space. Exactly two forms;
+nothing is inferred from the number of dot-separated segments.
 
-**Pattern matching rules:**
-- Exact match: `'complexity.cyclomatic'` matches `'complexity.cyclomatic'`
-- Prefix match: `'complexity'` matches `'complexity.cyclomatic'` (pattern + `.` is prefix of subject)
-- No reverse: `'complexity.cyclomatic'` does NOT match `'complexity'`
+**Forms:**
+- `X` — equality. `architecture.coverage` addresses that name and nothing else;
+  it does **not** swallow `architecture.coverage.source`
+- `X.*` — strict descendants of `X`; `X` itself is not included. A directive
+  meaning both is written twice
+
+Anything else is not a selector and `tryParse()` answers `null` for it — in
+particular a bare prefix (`coupling`) and a lone `*`. Text that is not a
+selector matches nothing.
 
 **Methods:**
-- `matches(string $pattern, string $subject): bool` — exact or prefix match
-- `anyMatches(array $patterns, string $subject): bool` — any pattern matches subject
-- `anyReverseMatches(array $patterns, string $subject): bool` — subject is prefix of any pattern
+- `tryParse(string $raw): ?self` — the two accepted forms, or `null`
+- `matches(string $subject): bool`
+- `anyMatch(array $rawSelectors, string $subject): bool`
+- `name(): string` — the `X` half
+- `selectsDescendantsOnly(): bool` — whether this is the `X.*` form
 
 ### RuleSelector
 
@@ -388,33 +398,42 @@ The single selection policy used by rule execution, expensive prerequisite phase
 selector validation. It distinguishes a registered **producer rule** from the full
 `ViolationChannel` values that producer emits; their names need not share a prefix.
 
-A bare selector can address the producer name, a channel's `ruleName`, or its
-`violationCode`. The explicit `ruleName#violationCode` form addresses both channel
-components. `--only-rule=computed.health` therefore selects every channel produced by
+A one-part selector (`X` or `X.*`) can address the producer name, a channel's
+`ruleName`, or its `violationCode`. The explicit `ruleName#violationCode` form
+addresses both channel components, and both halves are exact. `--only-rule=computed.health` therefore selects every channel produced by
 that rule, while `--only-rule=health.complexity` selects only that computed channel and
 still starts its `computed.health` producer.
 
-`RuleChannelRegistryInterface::channelsProducedBy()` supplies the producer relationship.
+`RuleChannelRegistryInterface::channelsProducedBy()` — one view of the channel universe — supplies the producer relationship.
 Its Infrastructure implementation combines compiler-collected static declarations with
 the run-time computed metric definitions. `InMemoryRuleChannelRegistry` provides the
 same explicit contract where a composition root already owns the complete declaration map.
 
 ### RuleCategory (Enum)
 
-| Value             | Description                            |
-| ----------------- | -------------------------------------- |
-| `Complexity`      | CCN, NPath, Cognitive, WMC             |
-| `Size`            | MethodCount, ClassCount, PropertyCount |
-| `Design`          | LCOM, NOC, Inheritance                 |
-| `Maintainability` | Maintainability Index                  |
-| `Coupling`        | Instability, CBO, Distance             |
-| `Architecture`    | Circular Dependencies                  |
-| `CodeSmell`       | Boolean Arguments, Debug Code, etc.    |
+Located in `Analysis\Finding\Contract\Rule`, not Core. How a rule is grouped
+for **display** — `qmx rules --group` and report headings — and nothing else.
+A category is not addressable: no directive or selector matches on it, and it
+carries no methods. `qmx rules --group` is its sole consumer, reading
+`RuleMetadata::$category->value` directly.
 
-**Methods:**
-- `matches(string $ruleName): bool` — whether a rule slug (`group.rule-name`) belongs to this
-  category. Single point of truth used by both `PathExclusionFilter` and `NamespaceExclusionFilter` to
-  exempt `architecture.*` violations from global exclusion patterns.
+| Value             | Description                                    |
+| ----------------- | ---------------------------------------------- |
+| `Complexity`      | CCN, NPath, Cognitive, WMC                     |
+| `Size`            | MethodCount, ClassCount, PropertyCount         |
+| `Design`          | LCOM, NOC, Inheritance                         |
+| `Maintainability` | Maintainability Index                          |
+| `Coupling`        | Instability, CBO, Distance                     |
+| `Architecture`    | Layer Policy Violations, Circular Dependencies |
+| `CodeSmell`       | Boolean Arguments, Debug Code, etc.            |
+| `Security`        | Hardcoded Credentials, Sensitive Parameter     |
+| `Duplication`     | Code Duplication                               |
+
+The value happening to equal the first segment of a rule name (and
+`computed.health` disagreeing with `Maintainability`) is a harmless
+correlation nothing reads. Behavioural exemptions such as "always let
+architecture findings through an `exclude_paths`/`exclude_namespaces` filter"
+are declared per channel instead, see `ChannelFileScope` below.
 
 ---
 
@@ -557,13 +576,13 @@ Foundation for baseline and suppression.
 
 ### PathExclusionFilter
 
-Suppresses violations whose file path matches configured exclusion patterns (the global `exclude_paths` / `--exclude-path` mechanism). Violations without a file (e.g., namespace-level or project-wide architectural diagnostics) are never filtered. `architecture.*` rule violations are always exempt for the same reason as `NamespaceExclusionFilter` below — the exemption is name-based (`RuleCategory::Architecture->matches()`), not a hardcoded string.
+Suppresses violations whose file path matches configured exclusion patterns (the global `exclude_paths` / `--exclude-path` mechanism). Violations without a file (e.g., namespace-level or project-wide architectural diagnostics) are never filtered. Violations on a channel its owner declared **project-scoped** (e.g. `architecture.*`) are always exempt for the same reason as `NamespaceExclusionFilter` below — the exemption is declared per channel via `ChannelFileScope`, not derived from the rule name's spelling.
 
 **Constructor:** `__construct(PathMatcher $pathMatcher)`
 
 ### NamespaceExclusionFilter
 
-Suppresses violations whose symbol namespace matches configured exclusion patterns (the global `exclude_namespaces` / `--exclude-namespace` mechanism). `architecture.*` rule violations (e.g., `architecture.layer-violation`, `architecture.circular-dependency`) are always exempt — a layer-policy violation is not a metric, so a namespace exclusion aimed at quieting noisy metrics must not double as a silent way to disable architecture enforcement. The exemption is name-based (`RuleCategory::Architecture` prefix on `Violation::$ruleName`), not a hardcoded string. Occurrence-style violations (code-smell, security) carry a file symbol path whose namespace is `null`; the filter falls back to the declaring namespace on `Violation::$subject` so those findings are still suppressible per namespace.
+Suppresses violations whose symbol namespace matches configured exclusion patterns (the global `exclude_namespaces` / `--exclude-namespace` mechanism). `architecture.*` rule violations (e.g., `architecture.layer-violation`, `architecture.circular-dependency`) are always exempt — a layer-policy violation is not a metric, so a namespace exclusion aimed at quieting noisy metrics must not double as a silent way to disable architecture enforcement. The exemption is **declared per channel**, not derived from the `architecture.` spelling: each capability publishes its project-scoped channel keys (`LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS`, `CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS`) and the filter consults `ChannelFileScope`. A channel nobody declared is file-scoped, which is the right default for the open `computed.*` vocabulary. Occurrence-style violations (code-smell, security) carry a file symbol path whose namespace is `null`; the filter falls back to the declaring namespace on `Violation::$subject` so those findings are still suppressible per namespace.
 
 **Constructor:** `__construct(NamespaceMatcher $namespaceMatcher)`
 
@@ -671,17 +690,20 @@ that controls with different declaration scopes remain distinct.
 
 ### Suppression
 
-Value Object representing a suppression tag from a docblock (e.g., `@qmx-ignore complexity Reason`).
+Value Object representing a suppression tag from a docblock (e.g., `@qmx-ignore complexity.wmc Reason`). The authored text names a channel exactly, or `X.*` for its strict descendants; a bare prefix such as `complexity` is rejected.
 
 **Fields:**
-- `rule: string` — rule pattern to suppress (`*` for all, or prefix like `complexity`)
+- `rule: string` — the authored text: a fully qualified `violationCode`, `X.*`, or `*` for "no rule filter"
 - `reason: ?string` — optional reason for suppression
 - `line: int` — line number of the suppression tag
 - `type: SuppressionType` — scope of suppression
 - `endLine: ?int` — end line for scoped suppressions
 
 **Methods:**
-- `matches(string $violationCode): bool` — checks if suppression applies to a violation code (supports wildcard `*`, prefix matching, and exact matching via `RuleMatcher`)
+- `matches(string $violationCode): bool` — checks if suppression applies to a violation code
+- `target(): SuppressionTarget` — what the directive filters on: a `NameSelector` over channel
+  codes, or the explicit "no rule filter" state that `@qmx-ignore *` and a bare
+  `@qmx-ignore-file` carry
 
 ### SuppressionType (Enum)
 
@@ -705,21 +727,21 @@ Value Object representing a `@qmx-threshold` annotation from a docblock. Allows 
 - Values are non-negative integers or decimals
 - An optional non-empty reason must follow `--` or an em dash (`—`)
 
-Exact rule names, prefix patterns, and `*` are supported. Prefix and wildcard annotations skip
-per-rule validator checks because no single rule-specific threshold contract can be selected;
-prefer exact rule names. A class annotation applies to evaluations inside the class, including
-its methods. When annotations overlap, the smallest source span wins; the first extracted
+Only the **exact rule name** is supported. A threshold belongs to one rule's options object, so
+there is no group form at all — neither a bare prefix (`complexity`) nor `complexity.*` nor `*`
+addresses anything, and an annotation written that way applies to no rule. A class annotation
+applies to evaluations inside the class, including its methods. When annotations overlap, the smallest source span wins; the first extracted
 annotation wins when spans are equal.
 
 **Fields:**
-- `rulePattern: string` — rule name or prefix (supports `RuleMatcher`)
+- `rulePattern: string` — the exact rule name
 - `warning: int|float|null` — warning threshold override (null = keep default)
 - `error: int|float|null` — error threshold override (null = keep default)
 - `line: int` — docblock line (for scope matching)
 - `endLine: ?int` — symbol end line (scope)
 
 **Methods:**
-- `matches(string $ruleName): bool` — checks if override applies to a rule (supports wildcard `*`, prefix matching, and exact matching via `RuleMatcher`)
+- `matches(string $ruleName): bool` — string equality against the rule name
 
 ---
 

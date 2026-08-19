@@ -18,7 +18,7 @@ vendor/bin/qmx check src/ --format=html -o report.html   # interactive HTML repo
 vendor/bin/qmx check src/ --format=health               # text health scores table
 vendor/bin/qmx check src/ --report=git:main..HEAD      # violations from changed files only
 vendor/bin/qmx check src/ --namespace='App\Service'    # drill down into namespace
-vendor/bin/qmx check src/ --disable-rule=complexity    # disable rule group
+vendor/bin/qmx check src/ --disable-rule=complexity.*   # disable a rule group (star required)
 vendor/bin/qmx check src/ --only-rule=coupling.cbo     # run specific rule
 vendor/bin/qmx check src/ --baseline=baseline.json     # ignore known violations
 vendor/bin/qmx baseline:generate b.json src/       # generate baseline

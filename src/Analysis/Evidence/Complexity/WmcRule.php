@@ -185,4 +185,12 @@ final class WmcRule extends AbstractRule
             (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::magnitude(WorseDirection::Higher),
         ];
     }
+
+    /**
+     * Declared, never inferred from the options class: `@qmx-threshold` can
+     * retune this rule. See
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdOverrideSupportReader},
+     * which also explains why this is a constant and why it is declared last.
+     */
+    public const bool SUPPORTS_THRESHOLD_OVERRIDE = true;
 }

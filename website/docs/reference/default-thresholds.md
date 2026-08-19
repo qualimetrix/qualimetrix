@@ -90,14 +90,25 @@ These rules are **inverted**: a violation is reported when the metric falls **be
 
 Rules that detect structural problems in the dependency graph. These rules do not use numeric thresholds — they either find a structural violation or they don't.
 
-| Rule                  | ID                                 | Severity                               | Default                                         | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| --------------------- | ---------------------------------- | -------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Circular Dependencies | `architecture.circular-dependency` | Error (direct) / Warning (transitive)  | enabled                                         | Direct cycles (size 2) reported as Error; longer cycles as Warning. See [Architecture rules](../rules/architecture.md).                                                                                                                                                                                                                                                                                                                                |
-| Layer Violations      | `architecture.layer-violation`     | Warning (configurable)                 | enabled (no-op without `architecture.layers`)   | No numeric thresholds; only an `enabled` flag and a `severity` selector. Active only when the top-level `architecture:` YAML section declares layers. See [Architecture rules](../rules/architecture.md).                                                                                                                                                                                                                                              |
-| Unreachable Layer     | `architecture.unreachable-layer`   | Info (configurable)                    | enabled (fires only with `architecture.layers`) | One diagnostic per declared layer whose patterns matched zero classes **and** zero dependency-edge ends. Catches a broader pattern earlier in the order silently swallowing a later layer; counting edge ends too keeps vendor-only layers (e.g. `ClickHouseDB\**`, matched only as a dependency target) from being reported unreachable. Severity via `unreachable_layer_severity`; info-only runs exit 0 by default, use `fail_on: info` to enforce. |
-| Potential Shadow      | `architecture.potential-shadow`    | Info (configurable)                    | enabled (fires only with `architecture.layers`) | Evidence-based detection of layers that silently steal classes from later, narrower layers. One diagnostic per (assigned, shadowed) pair. Severity via `potential_shadow_severity`; info-only runs exit 0 by default, use `fail_on: info` to enforce.                                                                                                                                                                                                  |
-| Empty Template        | `architecture.empty-template`      | Warning (configurable)                 | enabled (fires only with template layers)       | One diagnostic per template layer that expanded to zero concrete instances — silently disables the policy attached to it. Typical causes: typo in the template pattern, every candidate excluded, or single-segment `{var}` where `{var:**}` is needed. Severity via `empty_template_severity`; default `fail_on: error` does not block, raise to `fail_on: warning` to gate CI on empty templates.                                                    |
-| Architecture Coverage | `architecture.coverage`            | Warning or Error (per `coverage` mode) | disabled (`coverage: ignore`)                   | One aggregated diagnostic when `architecture.coverage` is `warn` or `error` and analysed logical classes (including isolated classes with no edges) or dependency-edge endpoints are outside every declared layer. Severity matches the configured mode.                                                                                                                                                                                               |
+| Rule                  | ID                                 | Severity                               | Default                                         | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| --------------------- | ---------------------------------- | -------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Circular Dependencies | `architecture.circular-dependency` | Error (direct) / Warning (transitive)  | enabled                                         | Direct cycles (size 2) reported as Error; longer cycles as Warning. See [Architecture rules](../rules/architecture.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Layer Violations      | `architecture.layer-violation`     | Warning (configurable)                 | enabled (no-op without `architecture.layers`)   | No numeric thresholds; only an `enabled` flag and a `severity` selector. Active only when the top-level `architecture:` YAML section declares layers. See [Architecture rules](../rules/architecture.md).                                                                                                                                                                                                                                                                                                                                                               |
+| Unreachable Layer     | `architecture.unreachable-layer`   | Error (fixed, not configurable)        | enabled (fires only with `architecture.layers`) | One diagnostic per declared layer whose patterns matched zero classes **and** zero dependency-edge ends. Catches a broader pattern earlier in the order silently swallowing a later layer; counting edge ends too keeps vendor-only layers (e.g. `ClickHouseDB\**`, matched only as a dependency target) from being reported unreachable. This is a **configuration error**: it fails the run unconditionally, independent of `--fail-on`, and cannot be baselined or suppressed. The removed `unreachable_layer_severity` option no longer exists — severity is fixed. |
+| Potential Shadow      | `architecture.potential-shadow`    | Error (fixed, not configurable)        | enabled (fires only with `architecture.layers`) | Evidence-based detection of a more specific layer declared after a broader one, which can therefore never win in its own area. Overlap on its own is not reported: the narrow-before-broad idiom, up to a final `**` catch-all, is legal and silent. One diagnostic per (assigned, shadowed) pair. This is a **configuration error**: it fails the run unconditionally, independent of `--fail-on`, and cannot be baselined or suppressed. The removed `potential_shadow_severity` option no longer exists — severity is fixed.                                         |
+| Empty Template        | `architecture.empty-template`      | Error (fixed, not configurable)        | enabled (fires only with template layers)       | One diagnostic per template layer that expanded to zero concrete instances — silently disables the policy attached to it. Typical causes: typo in the template pattern, every candidate excluded, or single-segment `{var}` where `{var:**}` is needed. This is a **configuration error**: it fails the run unconditionally, independent of `--fail-on`, and cannot be baselined or suppressed. The removed `empty_template_severity` option no longer exists — severity is fixed.                                                                                      |
+| Architecture Coverage | `architecture.coverage`            | Warning or Error (per `coverage` mode) | disabled (`coverage: ignore`)                   | One aggregated diagnostic when `architecture.coverage` is `warn` or `error` and analysed logical classes (including isolated classes with no edges) or dependency-edge endpoints are outside every declared layer. The printed word matches the configured `coverage:` mode, but this is still a **configuration error**: whenever it fires it fails the run unconditionally, independent of `--fail-on`, and it cannot be baselined or suppressed. `coverage: ignore` remains the way to decline the diagnostic entirely.                                              |
+
+## Annotation Rules
+
+The built-in `annotation.directive` rule reports inline `@qmx-*` directives that address nothing, cannot apply, or no longer do anything. It has no numeric thresholds and reports through four channels, each its own diagnostic. See [Annotation rules](../rules/annotation.md) for the full reference and [Baseline](../usage/baseline.md#when-a-directive-is-wrong) for how directives interact with suppression and baselines.
+
+| Channel                            | Severity                                            | Default | Notes                                                                                                                                                                 |
+| ---------------------------------- | --------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `annotation.unresolved-directive`  | Error (fixed, not configurable)                     | enabled | Configuration error: the directive names a channel that does not exist. Fails the run unconditionally, independent of `--fail-on`; cannot be baselined or suppressed. |
+| `annotation.unsupported-threshold` | Error (fixed, not configurable)                     | enabled | Configuration error: `@qmx-threshold` targets a rule that declares no threshold override support. Fails the run unconditionally; cannot be baselined or suppressed.   |
+| `annotation.invalid-threshold`     | Error (fixed, not configurable)                     | enabled | Configuration error: the `@qmx-threshold` payload itself is malformed. Fails the run unconditionally; cannot be baselined or suppressed.                              |
+| `annotation.unused-directive`      | Info (configurable via `unused_directive_severity`) | enabled | Ordinary finding, not a configuration error: the directive is valid but nothing it addressed fired this run. Can be baselined or suppressed like any other channel.   |
 
 ## Code Smell Rules
 
@@ -242,10 +253,11 @@ rules:
 You can disable all rules in a group via the CLI:
 
 ```bash
-vendor/bin/qmx check src/ --disable-rule=code-smell
+vendor/bin/qmx check src/ --disable-rule=code-smell.*
 ```
 
-This disables all rules whose ID starts with `code-smell.`.
+`code-smell.*` disables every descendant of the `code-smell` group; the bare `code-smell`
+prefix without the star is now an error, not a shorthand for the group.
 
 ### Using the CLI
 
@@ -257,11 +269,14 @@ vendor/bin/qmx check src/ --disable-rule=complexity.npath
 
 ### Suppressing Individual Violations
 
-Add `@qmx-ignore` in a docblock to suppress a specific violation:
+Add `@qmx-ignore` in a docblock to suppress a specific violation. `@qmx-ignore` addresses a
+channel, and `complexity.cyclomatic` has two channels (`complexity.cyclomatic.callable` and
+`complexity.cyclomatic.class`), so the bare rule name is not a valid argument — name the
+channel:
 
 ```php
 /**
- * @qmx-ignore complexity.cyclomatic
+ * @qmx-ignore complexity.cyclomatic.callable
  */
 function complexButNecessary(): void
 {
@@ -269,10 +284,12 @@ function complexButNecessary(): void
 }
 ```
 
-You can also suppress all rules in a group:
+You can also suppress every rule in a group with the same wildcard form:
 
 ```php
 /**
- * @qmx-ignore complexity
+ * @qmx-ignore complexity.*
  */
 ```
+
+See [Baseline](../usage/baseline.md#channels-not-rule-names) for the full selector syntax.

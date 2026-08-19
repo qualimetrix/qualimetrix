@@ -20,7 +20,7 @@ use Qualimetrix\Core\Util\PathMatcher;
 use Qualimetrix\Reporting\FindingProjection\Contract\GitScopeQueryInterface;
 
 /**
- * @qmx-ignore coupling.instability -- Finding projection intentionally composes the six ordered policy operations across Finding, Inline, Baseline, and Git contracts; its two callers and fifteen outgoing types are the reviewed Reporting orchestration boundary.
+ * @qmx-ignore coupling.instability.class -- Finding projection intentionally composes the six ordered policy operations across Finding, Inline, Baseline, and Git contracts; its two callers and fifteen outgoing types are the reviewed Reporting orchestration boundary.
  */
 final readonly class FindingProjector
 {
@@ -37,6 +37,9 @@ final readonly class FindingProjector
      */
     public function project(array $violations, array $suppressions, FindingProjectionOptions $options): FindingProjectionResult
     {
+        $unfilterable = $this->configurationErrors($violations);
+        $violations = $this->filterableFindings($violations);
+
         $annotation = $this->annotationSuppression->apply($violations, $suppressions);
         $violations = $annotation->retained;
         $restored = $annotation->suppressed;
@@ -96,7 +99,7 @@ final readonly class FindingProjector
         }
 
         return new FindingProjectionResult(
-            array_values($violations),
+            array_values([...$violations, ...$unfilterable]),
             array_values($measured),
             array_map(array_values(...), $removed),
             $stale,
@@ -105,19 +108,77 @@ final readonly class FindingProjector
         );
     }
 
+    /**
+     * The findings no stage of this projection is allowed to see.
+     *
+     * A channel declaring
+     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError}
+     * reports that the tool cannot do what the configuration asked. That is
+     * not a judgement about the code, so it is not something a user is
+     * entitled to filter out — and the promise is that *nothing* filters it:
+     * not `@qmx-ignore`, not `exclude_paths` or `exclude_namespaces`, not a
+     * baseline, not a report narrowed to a git range.
+     *
+     * Holding these findings out of the pipeline is the mechanism, rather
+     * than a guard inside each stage, for two reasons. A guard has to be
+     * remembered by every stage added later, and only the baseline stage ever
+     * remembered it. And a guard that merely keeps the exit code non-zero
+     * still lets the finding vanish from the report — the user then sees a
+     * red build with no stated cause. Withheld findings rejoin the reported
+     * set at the end, where {@see FindingProjectionResult::$violations} is the
+     * list `check` gates on.
+     *
+     * They are deliberately absent from the measured set: a baseline can
+     * never accept one, so recording one would only ever produce an inert
+     * entry.
+     *
+     * @param list<Violation> $violations
+     *
+     * @return list<Violation>
+     */
+    private function configurationErrors(array $violations): array
+    {
+        return array_values(array_filter($violations, $this->isConfigurationError(...)));
+    }
+
+    /**
+     * The complement of {@see configurationErrors()} — everything the stages
+     * below are allowed to act on.
+     *
+     * @param list<Violation> $violations
+     *
+     * @return list<Violation>
+     */
+    private function filterableFindings(array $violations): array
+    {
+        return array_values(array_filter(
+            $violations,
+            fn(Violation $violation): bool => !$this->isConfigurationError($violation),
+        ));
+    }
+
+    private function isConfigurationError(Violation $violation): bool
+    {
+        return $this->declarations->declarationFor($violation->channel())?->isConfigurationError() === true;
+    }
+
     /** @return list<PredicateFilterStage> */
     private function exclusionStages(FindingProjectionOptions $options): array
     {
+        $fileScope = DeclaredChannelFileScope::create();
         $stages = [];
         if ($options->excludePaths !== []) {
             $stages[] = new PredicateFilterStage(
                 ViolationFilterStage::PathExclusion,
-                new PathExclusionFilter(new PathMatcher(array_values($options->excludePaths))),
+                new PathExclusionFilter(new PathMatcher(array_values($options->excludePaths)), $fileScope),
             );
         }
         $matcher = new NamespaceMatcher(array_values($options->excludeNamespaces));
         if (!$matcher->isEmpty()) {
-            $stages[] = new PredicateFilterStage(ViolationFilterStage::NamespaceExclusion, new NamespaceExclusionFilter($matcher));
+            $stages[] = new PredicateFilterStage(
+                ViolationFilterStage::NamespaceExclusion,
+                new NamespaceExclusionFilter($matcher, $fileScope),
+            );
         }
         return $stages;
     }

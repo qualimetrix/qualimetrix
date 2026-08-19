@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions;
@@ -21,9 +22,6 @@ final class LayerViolationOptionsTest extends TestCase
 
         self::assertTrue($options->isEnabled());
         self::assertSame(Severity::Warning, $options->severity);
-        self::assertSame(Severity::Info, $options->unreachableLayerSeverity);
-        self::assertSame(Severity::Info, $options->potentialShadowSeverity);
-        self::assertSame(Severity::Warning, $options->emptyTemplateSeverity);
     }
 
     #[Test]
@@ -33,9 +31,6 @@ final class LayerViolationOptionsTest extends TestCase
 
         self::assertTrue($options->isEnabled());
         self::assertSame(Severity::Warning, $options->severity);
-        self::assertSame(Severity::Info, $options->unreachableLayerSeverity);
-        self::assertSame(Severity::Info, $options->potentialShadowSeverity);
-        self::assertSame(Severity::Warning, $options->emptyTemplateSeverity);
     }
 
     #[Test]
@@ -88,66 +83,30 @@ final class LayerViolationOptionsTest extends TestCase
         LayerViolationOptions::fromArray(['severity' => 42]);
     }
 
+    /**
+     * The three per-diagnostic severity keys are gone, and their removal is
+     * loud on purpose.
+     *
+     * The channels they used to tune report a configuration error: they fail
+     * the run without consulting `fail_on` and no baseline can accept them,
+     * so there is no severity left to choose. Ignoring the key would leave a
+     * config file saying `info` while the tool does the opposite — the exact
+     * shape of lie the removal exists to end — so `info`, the value that
+     * would have been silently overridden, is the value each case uses.
+     */
     #[Test]
-    public function itParsesUnreachableLayerSeverityFromASnakeCaseKey(): void
-    {
-        $options = LayerViolationOptions::fromArray(['unreachable_layer_severity' => 'error']);
-
-        self::assertSame(Severity::Error, $options->unreachableLayerSeverity);
-        // Sibling severities stay at their own defaults — knobs are independent.
-        self::assertSame(Severity::Info, $options->potentialShadowSeverity);
-        self::assertSame(Severity::Warning, $options->emptyTemplateSeverity);
-    }
-
-    #[Test]
-    public function itParsesUnreachableLayerSeverityFromACamelCaseKey(): void
-    {
-        $options = LayerViolationOptions::fromArray(['unreachableLayerSeverity' => 'error']);
-
-        self::assertSame(Severity::Error, $options->unreachableLayerSeverity);
-    }
-
-    #[Test]
-    public function itRejectsAnUnknownUnreachableLayerSeverity(): void
+    #[TestWith(['unreachable_layer_severity'])]
+    #[TestWith(['unreachableLayerSeverity'])]
+    #[TestWith(['potential_shadow_severity'])]
+    #[TestWith(['potentialShadowSeverity'])]
+    #[TestWith(['empty_template_severity'])]
+    #[TestWith(['emptyTemplateSeverity'])]
+    public function itRejectsARemovedPerDiagnosticSeverityKey(string $key): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('unreachable_layer_severity');
+        $this->expectExceptionMessage('no longer exists');
 
-        LayerViolationOptions::fromArray(['unreachable_layer_severity' => 'bogus']);
-    }
-
-    #[Test]
-    public function itParsesPotentialShadowSeverityFromASnakeCaseKey(): void
-    {
-        $options = LayerViolationOptions::fromArray(['potential_shadow_severity' => 'error']);
-
-        self::assertSame(Severity::Error, $options->potentialShadowSeverity);
-    }
-
-    #[Test]
-    public function itRejectsAnUnknownPotentialShadowSeverity(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('potential_shadow_severity');
-
-        LayerViolationOptions::fromArray(['potential_shadow_severity' => 'bogus']);
-    }
-
-    #[Test]
-    public function itParsesEmptyTemplateSeverityFromASnakeCaseKey(): void
-    {
-        $options = LayerViolationOptions::fromArray(['empty_template_severity' => 'info']);
-
-        self::assertSame(Severity::Info, $options->emptyTemplateSeverity);
-    }
-
-    #[Test]
-    public function itRejectsAnUnknownEmptyTemplateSeverity(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('empty_template_severity');
-
-        LayerViolationOptions::fromArray(['empty_template_severity' => 'bogus']);
+        LayerViolationOptions::fromArray([$key => 'info']);
     }
 
     #[Test]

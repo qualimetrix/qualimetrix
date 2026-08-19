@@ -34,6 +34,16 @@ enum InertEntryReason: string
     case UnrecognizedMode = 'unrecognized-mode';
 
     /**
+     * The channel is declared, but declares itself a configuration error
+     * rather than debt: no entry may accept it, however the entry got into
+     * the file. Distinct from {@see UndeclaredChannel} because the two ask
+     * for opposite fixes — an undeclared channel means the entry is stale
+     * and should be removed, while this one means the *configuration* is
+     * wrong and the finding has to be resolved rather than recorded.
+     */
+    case ConfigurationErrorChannel = 'configuration-error-channel';
+
+    /**
      * Two or more entries claim the same identity. *All* of them go inert,
      * not just the later ones: with nothing in the file to say which was
      * meant, applying either would be a guess, and the guess would suppress.
@@ -48,6 +58,7 @@ enum InertEntryReason: string
         return match ($this) {
             self::Malformed => 'malformed entry',
             self::UndeclaredChannel => 'channel is not declared by any rule',
+            self::ConfigurationErrorChannel => 'channel reports a configuration error, which cannot be accepted as debt',
             self::ShapeMismatch => 'entry does not match the channel\'s declared shape',
             self::UnrecognizedMode => 'unrecognized mode',
             self::DuplicateIdentity => 'duplicate identity',

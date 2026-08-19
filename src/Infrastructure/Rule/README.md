@@ -4,29 +4,43 @@ This subject adapts rule metadata and registries for infrastructure composition.
 Executable rule behaviour remains owned by Analysis Finding and evidence
 capabilities.
 
-## Snapshot assembly
+## The channel universe
 
-`RuleChannelRegistry` assembles static producer-to-channel keys from the
-compiler pass and implements the sole public
-`RuleChannelSnapshotFactoryInterface`. For each configuration run, its
-`snapshot(ResolvedComputedMetricDefinitions $definitions)` method returns a new
-immutable `RuleChannelRegistryInterface` view. Computed-metric channel names are
-derived only from that supplied immutable definition value.
+`ChannelUniverse` is the single instance behind every view of the channel name
+space. The compiler pass hands it three static facts per rule — the channels it
+declares, the producer of each, and its declared `supportsThresholdOverride`
+answer — and it resolves the open-ended `computed.*` / `health.*` family from
+the injected definition catalog on every lookup.
 
-The factory accepts one resolved value and returns one run snapshot.
-`RuleInputValidator` asks it for that snapshot while validating selectors;
-Finding receives the resulting registry through its own contract. No previously
-resolved definition set is retained or published for another run.
+That one resolution rule replaced two: a declaration registry that read the live
+catalog and a producer registry frozen over the definitions handed to it. The
+live reading wins because it is the one with consumers that have no other
+source — the baseline ceiling learns a computed channel's direction nowhere
+else. A directive naming a computed metric therefore resolves against the
+configuration that was actually committed for the run.
+
+Consumers depend on a narrow view, never on the composite:
+
+| View                                  | Consumers                            | Answers                                                       |
+| ------------------------------------- | ------------------------------------ | ------------------------------------------------------------- |
+| `ChannelDeclarationRegistryInterface` | baseline ceiling, finding projection | what a channel declares                                       |
+| `RuleChannelRegistryInterface`        | rule selection                       | what a producer emits                                         |
+| `ChannelIdentityInterface`            | directive validation, diagnostics    | which names exist, what they belong to, what `X.*` expands to |
+
+`RuleChannelSnapshotFactoryInterface` builds a second universe of the same class
+over an explicit immutable definition set. It exists for preflight: CLI selector
+validation must know the universe of the configuration it is validating, and it
+runs before any store has accepted a value. That is the same lifecycle applied
+to a not-yet-committed catalog, not a second lifecycle.
 
 ## Structure
 
 ```text
 Rule/
-├── ChannelDeclarationRegistry.php   # compiler-pass static channel assembly
+├── ChannelUniverse.php              # the one channel-identity instance
 ├── Contract/
 │   └── RuleChannelSnapshotFactoryInterface.php
 ├── KnownRuleNamesAdapter.php
-├── RuleChannelRegistry.php          # immutable per-run channel view
 ├── RuleRegistry.php
 └── RuleRegistryInterface.php
 ```

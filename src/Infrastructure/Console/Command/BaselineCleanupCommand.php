@@ -223,6 +223,8 @@ final class BaselineCleanupCommand extends BaselineCommand
         return match ($candidate->reason) {
             BaselineCleanupReason::Stale => 'nothing reported for this identity',
             BaselineCleanupReason::ChannelNotDeclared => 'no rule declares this channel',
+            BaselineCleanupReason::ChannelIsConfigurationError => 'this channel reports a configuration error and'
+                . ' cannot be accepted as debt',
             BaselineCleanupReason::Inert => 'cannot be applied: ' . ($candidate->inertReason?->description() ?? 'unreadable'),
         };
     }

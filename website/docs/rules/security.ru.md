@@ -352,6 +352,6 @@ rules:
 # Отключить конкретное правило
 bin/qmx check src/ --disable-rule=security.hardcoded-credentials
 
-# Отключить все правила безопасности (сопоставление по префиксу)
-bin/qmx check src/ --disable-rule=security
+# Отключить все правила безопасности (wildcard-сопоставление; захватывает только потомков, не сам "security")
+bin/qmx check src/ --disable-rule=security.*
 ```

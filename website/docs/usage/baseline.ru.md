@@ -30,6 +30,8 @@ Lifecycle-команды baseline измеряют нарушения после
 
 Baseline не заставляет несрабатывающее правило сработать. Исчезнувшее нарушение становится stale, но этим ещё не доказано, что оно исправлено.
 
+Каналы конфигурационных ошибок никогда не попадают в baseline ни на каком пути: четыре диагностики layer-policy (`architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow`, `architecture.empty-template`) и три диагностики inline-директив (`annotation.unresolved-directive`, `annotation.unsupported-threshold`, `annotation.invalid-threshold`) вместо этого безусловно завершают прогон — см. [Подавление в исходниках](#подавление-в-исходниках) ниже.
+
 ## Lifecycle-команды
 
 Все baseline-команды, запускающие анализ, принимают одинаковые конфигурационные опции, нужные для воспроизведения измеряемого набора:
@@ -106,14 +108,76 @@ bin/qmx check src/ --baseline=baseline.json --show-resolved
 
 Используй inline-подавление для намеренного исключения, а не молча принимай его в baseline. Теги работают в PHPDoc, строчных и блочных комментариях; помещай их на отдельной строке перед целью.
 
-| Тег                                     | Область             | Пример                                                   |
-| --------------------------------------- | ------------------- | -------------------------------------------------------- |
-| `@qmx-ignore <rule> [reason]`           | Символ              | `@qmx-ignore complexity.cyclomatic Legacy state machine` |
-| `@qmx-ignore * [reason]`                | Все правила символа | `@qmx-ignore * Generated mapper`                         |
-| `@qmx-ignore-next-line <rule> [reason]` | Следующая строка    | `@qmx-ignore-next-line code-smell.exit CLI entry point`  |
-| `@qmx-ignore-file`                      | Весь файл           | `@qmx-ignore-file`                                       |
+| Тег                                           | Область             | Пример                                                               |
+| --------------------------------------------- | ------------------- | -------------------------------------------------------------------- |
+| `@qmx-ignore <channel> [-- reason]`           | Символ              | `@qmx-ignore complexity.cyclomatic.callable -- Legacy state machine` |
+| `@qmx-ignore * [-- reason]`                   | Все правила символа | `@qmx-ignore * -- Generated mapper`                                  |
+| `@qmx-ignore-next-line <channel> [-- reason]` | Следующая строка    | `@qmx-ignore-next-line code-smell.exit -- CLI entry point`           |
+| `@qmx-ignore-file [channel] [-- reason]`      | Весь файл           | `@qmx-ignore-file` или `@qmx-ignore-file -- Generated code`          |
 
-Имена правил поддерживают префиксы: `@qmx-ignore complexity` подавляет все правила `complexity.*`. Inline-комментарий на той же строке не поддерживается.
+### Разделитель причины
+
+Аргумент канала и причина — оба голые слова, поэтому `--` — это способ их
+различить. Он **обязателен** для `@qmx-ignore-file`, когда канал опущен, а
+сразу за тегом идёт причина: `@qmx-ignore-file Generated code, do not
+analyse` читает `Generated` как канал, который ничему не адресуется, и
+падает с `annotation.unresolved-directive`:
+
+```
+Suppression "Generated" addresses no channel. No declared name is close to it. Prose belongs after "--".
+```
+
+Пишите так: `@qmx-ignore-file -- Generated code, do not analyse`. У
+`@qmx-ignore` и `@qmx-ignore-next-line` канал не опционален — он всегда
+первое слово, — поэтому `--` перед причиной там необязателен; собственное
+соглашение проекта — писать его всё равно, чтобы все три тега читались
+одинаково.
+
+### Каналы, а не имена правил
+
+`@qmx-ignore`, `@qmx-ignore-next-line` и `@qmx-ignore-file` адресуют **канал** — точный `violationCode`, под которым сообщается нарушение, — а не производящее правило. Селектор канала — это либо:
+
+- **точное** имя канала (`complexity.wmc`, `code-smell.eval`), либо
+- `X.*` строго для **потомков** `X` — сам `X` в это не входит, поэтому для обоих смыслов нужны две директивы.
+
+Голый префикс без звёздочки (`@qmx-ignore complexity`) — это ошибка, а не догадка о намерении; `X.*`, не совпавший ни с чем, тоже ошибка:
+
+```text
+Suppression "complexity" addresses no channel. Addressable names closest to it: complexity.wmc.
+```
+
+У большинства правил имя правила и его единственный канал совпадают, поэтому различие незаметно. Оно становится заметным для правил ниже, которые сообщают через несколько каналов — голое имя правила для них **не** является допустимым аргументом `@qmx-ignore`:
+
+| Правило                 | Каналы                                                                                       |
+| ----------------------- | -------------------------------------------------------------------------------------------- |
+| `complexity.cyclomatic` | `complexity.cyclomatic.callable`, `complexity.cyclomatic.class`                              |
+| `complexity.cognitive`  | `complexity.cognitive.callable`, `complexity.cognitive.class`                                |
+| `complexity.npath`      | `complexity.npath.callable`, `complexity.npath.class`                                        |
+| `coupling.cbo`          | `coupling.cbo.class`, `coupling.cbo.namespace`                                               |
+| `coupling.instability`  | `coupling.instability.class`, `coupling.instability.namespace`                               |
+| `design.type-coverage`  | `design.type-coverage.param`, `design.type-coverage.property`, `design.type-coverage.return` |
+
+Подавляй один канал по точному имени или все каналы правила через wildcard, например `@qmx-ignore complexity.cyclomatic.*`.
+
+Каналом может быть и вычисляемая метрика, например `@qmx-ignore health.cohesion` — это допустимо, пока `computed_metrics:` всё ещё определяет эту метрику. Удаление метрики превращает аннотацию в ошибку: висячая ссылка — та же ошибка, что и опечатка.
+
+!!! warning "Четыре канала здесь никогда нельзя подавить"
+    `architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow` и `architecture.empty-template` — это конфигурационные ошибки, а не долг: `@qmx-ignore` не может их подавить, а baseline никогда не может их принять. Используй блок `exclude:` в конфигурации архитектуры или `coverage: ignore` специально для диагностики покрытия. `architecture.layer-violation` это не касается — `@qmx-ignore architecture.layer-violation` и записи baseline для него по-прежнему работают.
+
+### Когда директива неверна
+
+Директива, называющая что-то недопустимое, или директива, которая больше ничего не подавляет, не игнорируется молча — она сама становится нарушением встроенного правила `annotation.directive`, сообщаемым на файле, где находится директива. Полный справочник — [Правила аннотаций](../rules/annotation.ru.md). Три из четырёх её каналов — конфигурационные ошибки, которые безусловно завершают прогон независимо от `--fail-on` и никогда не могут быть приняты в baseline или подавлены:
+
+| Канал                              | Когда срабатывает                                                                                                                                     |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `annotation.unresolved-directive`  | директива называет несуществующий канал (опечатка, имя правила там, где нужен канал, `X.*`, не совпавший ни с чем, или удалённая вычисляемая метрика) |
+| `annotation.unsupported-threshold` | `@qmx-threshold` нацелен на правило, не объявляющее поддержку override порога                                                                         |
+| `annotation.invalid-threshold`     | сам payload `@qmx-threshold` некорректен                                                                                                              |
+| `annotation.unused-directive`      | директива корректна, но ничего из адресованного ею не сработало за этот прогон — обычный долг по уборке                                               |
+
+Только `annotation.unused-directive` ведёт себя как обычное нарушение: по умолчанию это `Info`, серьёзность настраивается через опцию правила `unused_directive_severity`, и его можно принять в baseline или подавить как любой другой канал. `@qmx-threshold` никогда в него не засчитывается.
+
+Inline-комментарий на той же строке не поддерживается.
 
 ### Просмотр скрытого аннотациями
 
@@ -141,5 +205,14 @@ final class ComplexStateMachine
 @qmx-threshold <rule> <number> [-- <reason>]
 @qmx-threshold <rule> warning=<number> [error=<number>] [-- <reason>]
 ```
+
+`@qmx-threshold` адресует **правило** по точному имени — никогда канал и никогда wildcard. Порог принадлежит единственному объекту опций правила, а не отдельному каналу, поэтому `@qmx-threshold complexity.cyclomatic.callable` — ошибка, даже несмотря на то, что у `complexity.cyclomatic` два канала; используй имя правила `complexity.cyclomatic`:
+
+```text
+@qmx-threshold "coupling.cbo.class" names no rule. "coupling.cbo.class" is a channel of
+rule "coupling.cbo" — a threshold addresses the rule.
+```
+
+Это зеркальное отражение `@qmx-ignore`, который всегда адресует канал — асимметрия намеренная. `@qmx-threshold` на отключённом правиле допустим и работает молча: включённость — это фильтр исполнения, а не факт существования имени правила.
 
 Числа неотрицательные. Явная форма принимает только `warning` и `error`; после `--` или длинного тире пишется непустая причина. Override класса действует внутри класса, включая методы, override метода — только на этот метод, а при пересечении побеждает наименьшая исходная область. Предпочитай это `@qmx-ignore`, когда полезная граница всё ещё существует.

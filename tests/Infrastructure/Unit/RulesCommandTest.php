@@ -119,7 +119,7 @@ final class RulesCommandTest extends TestCase
     }
 
     #[Test]
-    public function itDisplaysAllLayerViolationSeverityAliases(): void
+    public function itDisplaysTheLayerViolationSeverityAlias(): void
     {
         $rule = new LayerViolationRule(
             new LayerViolationOptions(),
@@ -133,12 +133,13 @@ final class RulesCommandTest extends TestCase
 
         self::assertStringContainsString('--layer-violation-severity', $display);
         self::assertStringContainsString('architecture.layer-violation:severity', $display);
-        self::assertStringContainsString('--layer-violation-unreachable-layer-severity', $display);
-        self::assertStringContainsString('architecture.layer-violation:unreachable_layer_severity', $display);
-        self::assertStringContainsString('--layer-violation-potential-shadow-severity', $display);
-        self::assertStringContainsString('architecture.layer-violation:potential_shadow_severity', $display);
-        self::assertStringContainsString('--layer-violation-empty-template-severity', $display);
-        self::assertStringContainsString('architecture.layer-violation:empty_template_severity', $display);
+
+        // The three per-diagnostic severity aliases are gone with their
+        // options: those channels report a configuration error, so there is
+        // no severity left for a CLI flag to set.
+        self::assertStringNotContainsString('--layer-violation-unreachable-layer-severity', $display);
+        self::assertStringNotContainsString('--layer-violation-potential-shadow-severity', $display);
+        self::assertStringNotContainsString('--layer-violation-empty-template-severity', $display);
     }
 
     #[Test]

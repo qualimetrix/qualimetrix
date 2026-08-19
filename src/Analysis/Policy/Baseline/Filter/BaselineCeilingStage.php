@@ -17,6 +17,8 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryMode;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\GroupAcceptance;
+use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
+use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Core\Observation\WorseDirection;
 
 /**
@@ -51,6 +53,12 @@ use Qualimetrix\Core\Observation\WorseDirection;
  * The invariant has no `mode` exception, which is why {@see judge()} settles
  * applicability before it reads one: `suppress` waives the comparison, not
  * the question of whether the entry bounds this channel at all.
+ *
+ * One case is stronger than inapplicability and sits in the same place: a
+ * channel declaring
+ * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError}
+ * may not be bounded by any entry at all. The others say "this entry cannot
+ * be applied"; this one says "no entry could be".
  *
  * ## Both sides of the comparison are normalised
  *
@@ -123,8 +131,46 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
         return new CeilingOutcome(
             result: new ViolationFilterStageResult(ViolationFilterStage::Baseline, $kept, $removed),
             staleEntries: $this->baseline->staleEntries(array_keys($measuredIdentityKeys)),
-            inertEntries: $this->baseline->inertEntries,
+            inertEntries: [...$this->baseline->inertEntries, ...$this->configurationErrorEntries()],
         );
+    }
+
+    /**
+     * The loaded entries whose channel reports a configuration error,
+     * presented as inert.
+     *
+     * The loader already refuses such an entry on its way out of a file, so
+     * in the ordinary path this list is empty and the reason is reported
+     * from there. It is not empty for a {@see Baseline} assembled in memory
+     * — which the lifecycle commands do, bypassing the loader entirely —
+     * and that is exactly the case where silence would be worst: the entry
+     * would sit in the file, suppress nothing, and say nothing about why.
+     *
+     * @return list<InertBaselineEntry>
+     */
+    private function configurationErrorEntries(): array
+    {
+        $inert = [];
+
+        foreach ($this->baseline->entries as $entry) {
+            $declaration = $this->declarations->declarationFor($entry->identity->channel);
+
+            if ($declaration === null || !$declaration->isConfigurationError()) {
+                continue;
+            }
+
+            $inert[] = InertBaselineEntry::forIdentity(
+                $entry->identity,
+                InertEntryReason::ConfigurationErrorChannel,
+                \sprintf(
+                    'the channel "%s" reports a configuration error, which cannot be accepted as debt',
+                    $entry->identity->channel->toKey(),
+                ),
+                raw: null,
+            );
+        }
+
+        return $inert;
     }
 
     /**
@@ -176,6 +222,17 @@ final readonly class BaselineCeilingStage implements ViolationFilterStageInterfa
         $declaration = $this->declarations->declarationFor($identity->channel);
 
         if ($declaration === null) {
+            return GroupCeilingVerdict::reported();
+        }
+
+        // Applicability again, and the strongest form of it: the channel
+        // declares that its findings report a configuration mistake, so no
+        // entry may bound them — including an entry carrying
+        // `mode: suppress`, which is why this precedes every read of `mode`
+        // below. The entry itself is surfaced as inert by
+        // {@see judgeAll()}, so the user is told why it did nothing rather
+        // than left to infer it from the finding still being reported.
+        if ($declaration->isConfigurationError()) {
             return GroupCeilingVerdict::reported();
         }
 

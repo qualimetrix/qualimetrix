@@ -19,9 +19,9 @@ use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
@@ -47,9 +47,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *   is not {@see CoverageMode::Ignore}, one aggregated Violation summarising
  *   analysed logical classes outside every layer and dependency edges that
  *   touch unclassified classes.
- * - `architecture.unreachable-layer` — severity configurable via
- *   {@see LayerViolationOptions::$unreachableLayerSeverity} (default
- *   {@see \Qualimetrix\Analysis\Finding\Contract\Severity::Info}), one Violation per
+ * - `architecture.unreachable-layer` — one Violation per
  *   declared layer that matched zero classes AND zero dependency-edge ends
  *   during the run (catches the loud failure mode where a broader pattern
  *   earlier in the order silently swallowed everything). Counting edge ends
@@ -58,16 +56,17 @@ use Qualimetrix\Core\Symbol\SymbolType;
  *   never itself analysed, so it only ever shows up as a dependency TARGET;
  *   without that second count it would always read as unreachable even
  *   while `architecture.layer-violation` reports a real edge into it.
- * - `architecture.potential-shadow` — severity configurable via
- *   {@see LayerViolationOptions::$potentialShadowSeverity} (default
- *   {@see \Qualimetrix\Analysis\Finding\Contract\Severity::Info}), one Violation per
+ * - `architecture.potential-shadow` — one Violation per
  *   (assigned, shadowed) layer pair seen in practice. Evidence-based:
  *   every class is walked and all matching layers are recorded; classes
  *   matching more than one layer contribute a (first-match, later-match)
- *   pair. Catches the quiet failure mode where an earlier pattern steals
- *   classes that a user expected a later, narrower layer to own (prefix
- *   overlap, suffix-theft, arbitrary intersection — all caught by the
- *   same mechanism).
+ *   pair. Overlap alone is NOT reported — first match wins is the declared
+ *   resolution mechanism, and "narrow before broad" (up to a final `**`
+ *   catch-all) is the idiom the documentation teaches. The pair is reported
+ *   when the winning criterion is not strictly more specific than the
+ *   shadowed one ({@see LayerShadowing}), i.e. the later layer
+ *   can never win in its own area: prefix overlap declared broad-first,
+ *   suffix-theft, arbitrary intersection.
  *
  * **Statelessness:** per CLAUDE.md "stateless rules" rule, all per-run state
  * (the unreachable-layer hit counter and the shadow-evidence map) lives as
@@ -88,20 +87,17 @@ use Qualimetrix\Core\Symbol\SymbolType;
  */
 #[CliAlias('layer-violation', 'enabled')]
 #[CliAlias('layer-violation-severity', 'severity')]
-#[CliAlias('layer-violation-unreachable-layer-severity', 'unreachable_layer_severity')]
-#[CliAlias('layer-violation-potential-shadow-severity', 'potential_shadow_severity')]
-#[CliAlias('layer-violation-empty-template-severity', 'empty_template_severity')]
 final class LayerViolationRule extends AbstractRule
 {
     public const string NAME = LayerPolicyPreparationInterface::PRODUCER_RULE_NAME;
 
-    public const string COVERAGE_DIAGNOSTIC_NAME = 'architecture.coverage';
+    public const string COVERAGE_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME;
 
-    public const string UNREACHABLE_LAYER_DIAGNOSTIC_NAME = 'architecture.unreachable-layer';
+    public const string UNREACHABLE_LAYER_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME;
 
-    public const string POTENTIAL_SHADOW_DIAGNOSTIC_NAME = 'architecture.potential-shadow';
+    public const string POTENTIAL_SHADOW_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
 
-    public const string EMPTY_TEMPLATE_DIAGNOSTIC_NAME = 'architecture.empty-template';
+    public const string EMPTY_TEMPLATE_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
 
     private const int COVERAGE_SAMPLE_LIMIT = 10;
 
@@ -177,10 +173,14 @@ final class LayerViolationRule extends AbstractRule
     {
         return [
             (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(),
-            (new ViolationChannel(self::COVERAGE_DIAGNOSTIC_NAME, self::COVERAGE_DIAGNOSTIC_NAME))->toKey() => ChannelDeclaration::occurrence(),
-            (new ViolationChannel(self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME))->toKey() => ChannelDeclaration::occurrence(),
-            (new ViolationChannel(self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME, self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME))->toKey() => ChannelDeclaration::occurrence(),
-            (new ViolationChannel(self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME, self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME))->toKey() => ChannelDeclaration::occurrence(),
+            (new ViolationChannel(self::COVERAGE_DIAGNOSTIC_NAME, self::COVERAGE_DIAGNOSTIC_NAME))->toKey()
+                => ChannelDeclaration::configurationError(),
+            (new ViolationChannel(self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME))->toKey()
+                => ChannelDeclaration::configurationError(),
+            (new ViolationChannel(self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME, self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME))->toKey()
+                => ChannelDeclaration::configurationError(),
+            (new ViolationChannel(self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME, self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME))->toKey()
+                => ChannelDeclaration::configurationError(),
         ];
     }
 
@@ -251,12 +251,11 @@ final class LayerViolationRule extends AbstractRule
      * {@see ArchitecturePolicy::getPreparedConfiguration()} on
      * the configuration returned to the rule.
      *
-     * Severity defaults to {@see Severity::Warning} rather than
-     * {@see Severity::Info} because an empty template is usually a typo,
-     * missing dependency in the scanned paths, or recent refactor that
-     * removed the matching classes — all conditions a user wants to be
-     * loud about. Configurable via
-     * {@see LayerViolationOptions::$emptyTemplateSeverity}.
+     * Reported at {@see DIAGNOSTIC_SEVERITY} because an empty template is a
+     * typo, a missing dependency in the scanned paths, or a recent refactor
+     * that removed the matching classes — in every case the declared
+     * configuration no longer describes the code, which is what
+     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError} names.
      *
      * @param list<string> $emptyTemplateNames
      *
@@ -287,7 +286,7 @@ final class LayerViolationRule extends AbstractRule
                     . 'multiple namespace segments — try `{var:**}` for cross-segment captures.',
                     $template,
                 ),
-                severity: $this->options->emptyTemplateSeverity,
+                severity: self::DIAGNOSTIC_SEVERITY,
                 recommendation: 'Verify the template patterns against the project structure, or remove the '
                     . 'template if no longer relevant.',
             );
@@ -353,11 +352,12 @@ final class LayerViolationRule extends AbstractRule
             }
 
             $classFqn = $classSymbol->symbolPath->toString();
-            for ($i = 1; $i < $matchCount; $i++) {
-                $shadowEvidence[$assigned->layerName][$matches[$i]->layerName][] = [
+            $assignedCriterion = $assigned->primaryCriterion();
+            foreach (LayerShadowing::reportableShadows($matches) as $shadowed) {
+                $shadowEvidence[$assigned->layerName][$shadowed->layerName][] = [
                     'fqn' => $classFqn,
-                    'assignedCriterion' => $assigned->primaryCriterion(),
-                    'shadowedCriterion' => $matches[$i]->primaryCriterion(),
+                    'assignedCriterion' => $assignedCriterion,
+                    'shadowedCriterion' => $shadowed->primaryCriterion(),
                 ];
             }
         }
@@ -495,43 +495,6 @@ final class LayerViolationRule extends AbstractRule
         ))->toViolations();
     }
 
-    /**
-     * Renders a layer's declared criteria as a human-readable summary, used in
-     * the {@code architecture.unreachable-layer} message. Empty kinds are
-     * omitted so the message only mentions criteria the user actually wrote.
-     */
-    private static function describeLayerCriteria(LayerDefinition $definition): string
-    {
-        $membership = $definition->membership();
-        $segments = [];
-
-        if ($membership->patterns !== []) {
-            $segments[] = 'patterns: ' . self::quoteCsv($membership->patterns);
-        }
-        if ($membership->suffix !== []) {
-            $segments[] = 'suffix: ' . self::quoteCsv($membership->suffix);
-        }
-        if ($membership->attributes !== []) {
-            $segments[] = 'attributes: ' . self::quoteCsv($membership->attributes);
-        }
-        if ($membership->implements !== []) {
-            $segments[] = 'implements: ' . self::quoteCsv($membership->implements);
-        }
-        if ($membership->extends !== []) {
-            $segments[] = 'extends: ' . self::quoteCsv($membership->extends);
-        }
-
-        return implode('; ', $segments);
-    }
-
-    /**
-     * @param list<string> $values
-     */
-    private static function quoteCsv(array $values): string
-    {
-        return implode(', ', array_map(static fn(string $v): string => '"' . $v . '"', $values));
-    }
-
     private function buildRecommendation(
         Dependency $dependency,
         string $fromLayer,
@@ -661,9 +624,8 @@ final class LayerViolationRule extends AbstractRule
     }
 
     /**
-     * Emits one diagnostic (default severity {@see Severity::Info},
-     * configurable via {@see LayerViolationOptions::$unreachableLayerSeverity})
-     * per declared layer whose patterns matched zero classes AND zero
+     * Emits one diagnostic ({@see DIAGNOSTIC_SEVERITY}) per declared layer
+     * whose patterns matched zero classes AND zero
      * dependency-edge ends during analysis.
      *
      * @param array<string, int> $layerHits Local map (NOT a field) of layerName → hit count,
@@ -671,8 +633,8 @@ final class LayerViolationRule extends AbstractRule
      *                                      walk ({@see collectClassEvidence()}) and the
      *                                      per-edge walk ({@see collectEdgeViolations()}) —
      *                                      see the latter's docblock for why edge ends count.
-     * @param array<string, LayerDefinition> $definitionsByName Precomputed name → definition lookup
-     *                                                          for O(1) pattern access.
+     * @param array<string, \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition> $definitionsByName Precomputed name → definition lookup
+     *                                                                                                          for O(1) pattern access.
      *
      * @return list<Violation>
      */
@@ -687,7 +649,7 @@ final class LayerViolationRule extends AbstractRule
                 continue;
             }
 
-            $criteria = self::describeLayerCriteria($definitionsByName[$layerName]);
+            $criteria = $definitionsByName[$layerName]->membership()->describe();
 
             $message = \sprintf(
                 'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (%s) match no class in the analysed codebase. Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
@@ -702,7 +664,7 @@ final class LayerViolationRule extends AbstractRule
                 ruleName: self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
                 violationCode: self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
                 message: $message,
-                severity: $this->options->unreachableLayerSeverity,
+                severity: self::DIAGNOSTIC_SEVERITY,
                 recommendation: 'Move the layer above any broader layer that captures its classes, or remove the layer if its pattern intentionally covers no class.',
             );
         }
@@ -711,10 +673,8 @@ final class LayerViolationRule extends AbstractRule
     }
 
     /**
-     * Emits one diagnostic (default severity {@see Severity::Info},
-     * configurable via {@see LayerViolationOptions::$potentialShadowSeverity})
-     * per (assigned, shadowed) layer pair observed during the class
-     * iteration.
+     * Emits one diagnostic ({@see DIAGNOSTIC_SEVERITY}) per (assigned,
+     * shadowed) layer pair observed during the class iteration.
      *
      * Determinism: `metrics->all()` iteration order is not stable under
      * parallel collection. The per-pair sample is sorted lexicographically by
@@ -760,8 +720,8 @@ final class LayerViolationRule extends AbstractRule
             $entries = $pair['entries'];
             $total = \count($entries);
 
-            // Evidence is only recorded when matchCount > 1, so the entry list
-            // for any emitted pair is non-empty by construction.
+            // A pair only exists once at least one reportable shadow was
+            // recorded for it, so the entry list is non-empty by construction.
             \assert($entries !== []);
 
             $sample = \array_slice($entries, 0, self::SHADOW_SAMPLE_LIMIT);
@@ -793,7 +753,7 @@ final class LayerViolationRule extends AbstractRule
                 ruleName: self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
                 violationCode: self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
                 message: $message,
-                severity: $this->options->potentialShadowSeverity,
+                severity: self::DIAGNOSTIC_SEVERITY,
                 recommendation: \sprintf(
                     'If layer "%s" should own these classes, declare it BEFORE "%s" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.',
                     $shadowedLayer,
@@ -804,4 +764,22 @@ final class LayerViolationRule extends AbstractRule
 
         return $violations;
     }
+
+    /**
+     * The severity every non-coverage layer diagnostic reports.
+     *
+     * It is a constant, and the three options that used to set it per
+     * channel are gone, because those channels now declare
+     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError}: they fail the run
+     * without consulting `fail_on` and cannot be accepted by the ratchet, so
+     * a severity knob would have controlled nothing but the word printed
+     * beside the finding while looking exactly like a behaviour setting.
+     * {@see Severity::Error} is what that behaviour actually is.
+     *
+     * Declared last in the class deliberately: baseline identities carry the
+     * byte offset of the declaration they name, so a new member above the
+     * existing ones would re-key every entry recorded for this file without
+     * anything about those findings having changed.
+     */
+    private const Severity DIAGNOSTIC_SEVERITY = Severity::Error;
 }

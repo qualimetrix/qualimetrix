@@ -28,29 +28,46 @@ final class RuleNameValidatorTest extends TestCase
     }
 
     #[Test]
-    public function forwardPrefixMatch_noException(): void
+    public function itRejectsAGroupKeyThatNamesNoRule(): void
     {
+        // `rules: { complexity: ... }` used to pass validation by prefix and
+        // then configure nothing at all, because options are applied by exact
+        // key. Passing validation was the bug.
+        $this->expectException(ConfigLoadException::class);
+
         RuleNameValidator::validateRuleNames(
             ['rules' => ['complexity' => ['cyclomatic' => ['callable' => ['warning' => 10]]]]],
             'test.yaml',
             $this->createProvider(['complexity.cyclomatic', 'complexity.cognitive']),
             '/path/to/test.yaml',
         );
-
-        self::expectNotToPerformAssertions();
     }
 
     #[Test]
-    public function reversePrefixMatch_noException(): void
+    public function itRejectsAKeyRefiningARuleNameWithAChannelSuffix(): void
     {
+        // A `rules:` key owns an options object; a channel does not have one.
+        $this->expectException(ConfigLoadException::class);
+
         RuleNameValidator::validateRuleNames(
             ['rules' => ['complexity.cyclomatic.callable' => ['warning' => 10]]],
             'test.yaml',
             $this->createProvider(['complexity.cyclomatic']),
             '/path/to/test.yaml',
         );
+    }
 
-        self::expectNotToPerformAssertions();
+    #[Test]
+    public function itRejectsAWildcardKey(): void
+    {
+        $this->expectException(ConfigLoadException::class);
+
+        RuleNameValidator::validateRuleNames(
+            ['rules' => ['complexity.*' => ['warning' => 10]]],
+            'test.yaml',
+            $this->createProvider(['complexity.cyclomatic']),
+            '/path/to/test.yaml',
+        );
     }
 
     #[Test]

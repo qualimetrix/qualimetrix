@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\RuleConfiguration;
 
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
+use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
@@ -131,6 +132,27 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
     public function selection(): RuleSelection
     {
         return $this->selection;
+    }
+
+    /**
+     * Reads the same two spellings {@see RuleOptionsFactory} normalises —
+     * the scalar `false` and the explicit `enabled: false` key — off the
+     * merged config, so the answer cannot drift from what the rule's own
+     * options object will decide.
+     */
+    public function isRuleDisabledByOptions(string $ruleName): bool
+    {
+        $config = $this->all()[$ruleName] ?? null;
+
+        if ($config === false) {
+            return true;
+        }
+
+        if (!\is_array($config) || !\array_key_exists(RuleOptionKey::ENABLED, $config)) {
+            return false;
+        }
+
+        return !$config[RuleOptionKey::ENABLED];
     }
 
     public function captureExcludedViolations(): void

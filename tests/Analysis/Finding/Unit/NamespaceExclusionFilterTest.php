@@ -8,10 +8,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CircularDependency\CircularDependencyRule;
+use Qualimetrix\Analysis\Evidence\CircularDependency\Contract\CircularDependencyPreparationInterface;
+use Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope;
 use Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
+use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -25,7 +29,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itFiltersSuppressedNamespace(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']));
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
         $violation = $this->createViolation('App\\Entity', 'complexity.cyclomatic');
 
@@ -35,7 +39,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itPassesNonMatchingNamespace(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']));
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
         $violation = $this->createViolation('App\\Service', 'complexity.cyclomatic');
 
@@ -45,7 +49,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itKeepsLayerViolationRuleInExcludedNamespace(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']));
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
         $violation = $this->createViolation('App\\Entity', LayerViolationRule::NAME);
 
@@ -55,7 +59,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itKeepsCircularDependencyRuleInExcludedNamespace(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']));
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
         $violation = $this->createViolation('App\\Entity', CircularDependencyRule::NAME);
 
@@ -65,7 +69,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itKeepsArchitectureCoverageDiagnosticEvenIfNamePrefixMatchesByCoincidence(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']));
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
         // architecture.coverage and friends are project-level (empty namespace) diagnostics,
         // but the exemption is driven purely by the rule-name prefix — verify it still applies.
@@ -77,7 +81,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itKeepsArchitectureRuleEvenWhenItIsAFileSymbolViolationInExcludedNamespace(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']));
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
         // Occurrence-style violations carry a file symbol path; the architecture
         // exemption is decided before any namespace resolution, so it must hold
@@ -90,7 +94,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itPassesWhenNoPatterns(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher([]));
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher([]), self::declaredFileScope());
 
         $violation = $this->createViolation('App\\Entity', 'complexity.cyclomatic');
 
@@ -100,7 +104,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itFiltersFileSymbolViolationWhoseSubjectNamespaceMatches(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']));
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
         $violation = $this->createFileSymbolViolation('App\\Entity', 'code-smell.eval');
 
@@ -110,7 +114,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itPassesFileSymbolViolationWhoseSubjectNamespaceDoesNotMatch(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']));
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
 
         $violation = $this->createFileSymbolViolation('App\\Service', 'code-smell.eval');
 
@@ -120,7 +124,7 @@ final class NamespaceExclusionFilterTest extends TestCase
     #[Test]
     public function itPassesFileSymbolViolationWithoutDeclaringNamespace(): void
     {
-        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App']));
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App']), self::declaredFileScope());
 
         // A file-symbol violation with no declaration subject has no namespace
         // to resolve, so it cannot be matched by any namespace exclusion.
@@ -172,5 +176,79 @@ final class NamespaceExclusionFilterTest extends TestCase
             message: 'Test',
             severity: Severity::Warning,
         );
+    }
+
+    /**
+     * The six project-scoped channels, in one place, asserted through the
+     * declaration rather than through the `architecture.` spelling.
+     *
+     * This is the regression for the immunity itself: an implementation that
+     * decides file scope from the rule name's first segment fails here as soon
+     * as name selectors stop matching on prefixes, and an implementation that
+     * simply forgets to consult the declaration fails here immediately.
+     */
+    #[Test]
+    public function itKeepsEveryDeclaredProjectScopedChannelInAnExcludedNamespace(): void
+    {
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
+
+        foreach (self::declaredProjectScopedChannelKeys() as $key) {
+            $channel = ViolationChannel::fromKey($key);
+
+            self::assertTrue(
+                $filter->shouldInclude($this->createChannelViolation($channel)),
+                \sprintf('%s is declared project-scoped and must survive exclude_namespaces', $key),
+            );
+        }
+    }
+
+    #[Test]
+    public function itFiltersAChannelNoCapabilityDeclaredProjectScoped(): void
+    {
+        $filter = new NamespaceExclusionFilter(new NamespaceMatcher(['App\\Entity']), self::declaredFileScope());
+        $undeclared = new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation.invented');
+
+        self::assertFalse(
+            $filter->shouldInclude($this->createChannelViolation($undeclared)),
+            'Immunity follows the declaration, not the spelling of the rule name',
+        );
+    }
+
+    private function createChannelViolation(ViolationChannel $channel): Violation
+    {
+        return new Violation(
+            location: new Location(RelativePath::fromString('src/Entity/User.php'), 10),
+            symbolPath: SymbolPath::forClass('App\\Entity', 'User'),
+            subject: MetricSubject::declaration(new DeclarationPath(
+                SymbolPath::forClass('App\\Entity', 'User'),
+                RelativePath::fromString('src/Entity/User.php'),
+                10,
+            )),
+            ruleName: $channel->ruleName,
+            violationCode: $channel->violationCode,
+            message: 'Test',
+            severity: Severity::Warning,
+        );
+    }
+    /**
+     * The production declaration, read from the owning capabilities rather
+     * than restated here: a test that hard-coded the immune set would keep
+     * passing after a capability stopped declaring its channel.
+     */
+    private static function declaredFileScope(): ChannelFileScope
+    {
+        return new ChannelFileScope([
+            ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+            ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+        ]);
+    }
+
+    /** @return list<string> */
+    private static function declaredProjectScopedChannelKeys(): array
+    {
+        return [
+            ...LayerPolicyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+            ...CircularDependencyPreparationInterface::PROJECT_SCOPED_CHANNELS,
+        ];
     }
 }

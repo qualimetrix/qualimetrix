@@ -539,19 +539,27 @@ When multiple allow targets within one source resolve to the same target layer (
 `architecture.coverage` controls what happens when an analysed logical class
 does not belong to any declared layer, or when a dependency edge has an
 unclassified source or target. Isolated analysed classes are covered even when
-they have no dependency edges. The diagnostic is independent from
-`architecture.layer-violation` itself: it is emitted under the separate rule
-name `architecture.coverage`, so you can baseline, suppress, or filter it
-independently.
+they have no dependency edges.
 
-| Mode               | Behaviour                                                                                                                                                                                                                                         |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ignore` (default) | Out-of-layer classes and edge endpoints are silently skipped. Adopt the rule incrementally without noise.                                                                                                                                         |
-| `warn`             | One summary `architecture.coverage` violation per analysis with `Warning` severity, listing example unclassified classes. Does not fail the run under the default `fail_on: error`, but does fail it once you set `fail_on: warning` or stricter. |
-| `error`            | Same diagnostic but with `Error` severity, suitable for fail-closed CI ownership of the whole analysed codebase.                                                                                                                                  |
+!!! warning "Configuration diagnostic, not code debt"
+    `architecture.coverage` is one of four architecture diagnostics that flag a
+    mistake in the architecture *configuration* rather than debt in the
+    analysed code — the others are `architecture.unreachable-layer`,
+    `architecture.potential-shadow`, and `architecture.empty-template`. All
+    four fail the run unconditionally whenever they fire: `fail_on` is not
+    consulted, not even `fail_on: none`, and none of the four can be accepted
+    into a baseline or silenced with `@qmx-ignore`. A severity option on any of
+    them would look like a behaviour switch while changing nothing, so none
+    exposes one. What remains to decline them: `coverage: ignore` for this
+    diagnostic specifically, and the `exclude:` block inside a layer.
+    `architecture.layer-violation` itself is unaffected by any of this — it
+    reports real code debt and stays suppressible and baselineable as usual.
 
-!!! note
-    Before this release, `warn` mode emitted `Info` severity — a mismatch with the mode's own name that made the diagnostic invisible to `fail_on: warning`. `warn` now emits `Warning` severity, matching the name. If you rely on `coverage: warn` staying silent under `fail_on: warning`, switch to `coverage: ignore` or raise `fail_on` to `error`.
+| Mode               | Behaviour                                                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ignore` (default) | Out-of-layer classes and edge endpoints are silently skipped. Adopt the rule incrementally without noise.                                                     |
+| `warn`             | One summary `architecture.coverage` violation per analysis with `Warning` severity, listing example unclassified classes. Fails the run whenever it fires.    |
+| `error`            | Same diagnostic but with `Error` severity. Fails the run whenever it fires, same as `warn` — pick it to signal fail-closed CI ownership in the config itself. |
 
 <!-- llms:skip-begin -->
 The diagnostic message looks like:
@@ -567,7 +575,7 @@ To suppress the diagnostic for a known set of unclassified classes, declare a ca
 
 ### Unreachable-layer diagnostic
 
-`architecture.unreachable-layer` (default severity `Info`, configurable via the `unreachable_layer_severity` rule option — see [Options](#layer-violation-options)) fires once per declared layer — or per concrete instance produced by a template — whose patterns matched zero classes **and** zero dependency-edge ends during analysis. Three possible causes:
+`architecture.unreachable-layer` fires once per declared layer — or per concrete instance produced by a template — whose patterns matched zero classes **and** zero dependency-edge ends during analysis. It is a configuration diagnostic (see the note under [Coverage modes](#coverage-modes)): it fails the run unconditionally whenever it fires, and it is not configurable, baselineable, or suppressible with `@qmx-ignore`. Three possible causes:
 
 1. **Shadowed by a broader layer earlier in the order.** A pattern like `'**'` or `'App\**'` declared before a narrower one captures every class first.
 2. **Pattern matches no class in the analysed codebase and is never seen as a dependency-edge end either.** The layer is declared for a namespace that doesn't exist yet — or the namespace was renamed.
@@ -575,25 +583,44 @@ To suppress the diagnostic for a known set of unclassified classes, declare a ca
 
 For template-expanded layers, the per-instance variant means a specific binding tuple was created but every candidate class for that instance is shadowed by an earlier layer or removed by an `exclude:` block.
 
-Because it is `Info` severity, the diagnostic does not fail the run by default. Set `fail_on: info` to opt into stricter CI behaviour. Run [`qmx debug:layer-assignment <class>`](#debug-layer-assignment) to inspect specific classes when triaging.
+Run [`qmx debug:layer-assignment <class>`](#debug-layer-assignment) to inspect specific classes when triaging.
 
 ### Empty-template diagnostic
 
-`architecture.empty-template` (default severity `Warning`, configurable via the `empty_template_severity` rule option — see [Options](#layer-violation-options)) fires once per template layer that expanded to **zero** concrete instances — typically a typo in the template pattern, an excluded module, or a single-segment `{var}` used where the binding spans multiple namespace segments (use `{var:**}` for cross-segment captures).
+`architecture.empty-template` fires once per template layer that expanded to **zero** concrete instances — typically a typo in the template pattern, an excluded module, or a single-segment `{var}` used where the binding spans multiple namespace segments (use `{var:**}` for cross-segment captures).
 
-The severity is intentionally `Warning` rather than `Info`: a template that expands to zero instances **silently disables** the policy attached to it, and that failure mode deserves attention. Three common causes:
+A template that expands to zero instances **silently disables** the policy attached to it, which is why — like the other three configuration diagnostics — it fails the run unconditionally instead of waiting on a severity or `fail_on` setting; see the note under [Coverage modes](#coverage-modes). Three common causes:
 
 1. **Typo in the template pattern.** `App\Modul\{module}\Domain\**` instead of `App\Module\{module}\Domain\**` — no class matches and no instance is created.
 2. **Excluded modules.** Every candidate class is removed by `exclude:`, by `exclude_paths`, or by being in a non-analysed directory.
 3. **Single-segment capture spanning namespace separators.** `App\{path}\Domain\**` where `path` is meant to capture `Module\Order` (two segments). Switch to `{path:**}` to allow cross-segment captures.
 
-The default `fail_on: error` does not fail the run on warnings. Switch to `fail_on: warning` (or stricter) if you want CI to gate on empty templates.
-
 ### Potential-shadow diagnostic
 
-`architecture.potential-shadow` (default severity `Info`, configurable via the `potential_shadow_severity` rule option — see [Options](#layer-violation-options)) detects the quiet failure mode of declaration-order matching: when a class matches multiple layers, only the first wins, and earlier layers can silently steal classes that a user expected a later, narrower layer to own.
+`architecture.potential-shadow` detects the quiet failure mode of declaration-order matching: a **more specific layer declared after a broader one**, which can therefore never win in its own area. It is a configuration diagnostic (see the note under [Coverage modes](#coverage-modes)): it fails the run unconditionally whenever it fires, and it is not configurable, baselineable, or suppressible with `@qmx-ignore`.
 
-Detection is **evidence-based**. The rule walks every analysed class, collects all layers whose patterns match, and records `(assigned, shadowed)` pairs that actually occur in the codebase. This catches every real shadow regardless of pattern shape — prefix overlap (`App\**\Foo` shadowing `App\Service\**`), suffix theft (`**\*Service` shadowing `App\Domain\**`), or any other intersection.
+**Overlap alone is not reported.** First match wins is the declared resolution mechanism — the same one deptrac, ArchUnit and `.gitignore` use — so two layers matching the same class is not a defect by itself. In particular, the [narrow-before-broad idiom](#configuration), up to and including a final `**` catch-all, is legal and silent:
+
+```yaml
+architecture:
+  layers:
+    - name: service
+      patterns: ['App\Service\**']   # narrow, declared first — wins here
+    - name: catchall
+      patterns: ['**']                # broad, declared last — no diagnostic
+```
+
+Detection is **evidence-based**. The rule walks every analysed class, collects all layers whose criteria match, and records `(assigned, shadowed)` pairs that actually occur in the codebase. For each such class it then compares the two criteria that actually matched — the one that won the class for the assigned layer, and the one the shadowed layer matched it with:
+
+| Winning criterion vs. shadowed criterion                 | Behaviour                       |
+| -------------------------------------------------------- | ------------------------------- |
+| Strictly more specific (`App\Http\**` won over `App\**`) | Silent — the documented idiom   |
+| Broader or equal (`App\**` won over `App\Http\**`)       | Reported                        |
+| Not comparable (see below)                               | Reported (conservative default) |
+
+"More specific" is decided only for namespace subtrees: a pattern that is a plain prefix (`App\Http`) or a prefix plus a trailing wildcard (`App\Http\**`, `App\Http\*`), plus the catch-all `**`. Everything else is **not comparable** and keeps the diagnostic — mid-pattern wildcards (`App\**\Foo`), partial-segment globs (`**\*Service`), character classes, unexpanded capture templates, and every non-pattern criterion kind (`suffix`, `attributes`, `implements`, `extends`), including a mix of two different kinds. A false alarm costs a config review; a missed shadow costs a layer that silently owns nothing.
+
+This still catches every shape of real shadow — prefix overlap declared broad-first, suffix theft (`**\*Service` shadowing `App\Domain\**`), or any other intersection. A layer that ends up owning no class at all is additionally reported by [`architecture.unreachable-layer`](#unreachable-layer-diagnostic), which is what fires when, for example, an `exclude:` block empties a layer that this diagnostic considered legitimately narrower.
 
 One diagnostic is emitted per `(assigned, shadowed)` pair, with a sample of up to 5 example class FQNs (sorted lexicographically). Output is **deterministic across runs** — the pair list is sorted before emission so CI diffs are stable.
 
@@ -646,26 +673,23 @@ Exit codes follow the standard convention: `0` for any informational result (inc
 
 ### Options { #layer-violation-options }
 
-| Option                       | Default   | Description                                                                                                                                                                        |
-| ---------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `enabled`                    | `true`    | Enable or disable this rule. When disabled, the rule short-circuits before walking the dependency graph. The rule is also a no-op when `architecture.layers` is empty.             |
-| `severity`                   | `warning` | Severity used for every reported `architecture.layer-violation`. Allowed values: `info`, `warning`, `error`.                                                                       |
-| `unreachable_layer_severity` | `info`    | Severity used for the `architecture.unreachable-layer` diagnostic (see [Unreachable-layer diagnostic](#unreachable-layer-diagnostic)). Allowed values: `info`, `warning`, `error`. |
-| `potential_shadow_severity`  | `info`    | Severity used for the `architecture.potential-shadow` diagnostic (see [Potential-shadow diagnostic](#potential-shadow-diagnostic)). Allowed values: `info`, `warning`, `error`.    |
-| `empty_template_severity`    | `warning` | Severity used for the `architecture.empty-template` diagnostic (see [Empty-template diagnostic](#empty-template-diagnostic)). Allowed values: `info`, `warning`, `error`.          |
+| Option     | Default   | Description                                                                                                                                                            |
+| ---------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`  | `true`    | Enable or disable this rule. When disabled, the rule short-circuits before walking the dependency graph. The rule is also a no-op when `architecture.layers` is empty. |
+| `severity` | `warning` | Severity used for every reported `architecture.layer-violation`. Allowed values: `info`, `warning`, `error`.                                                           |
 
 ```yaml
 rules:
   architecture.layer-violation:
     enabled: true
     severity: error
-    # Raise a typo'd `patterns:` entry to a CI-gating error instead of the
-    # default info-severity diagnostic. Each of the three sub-diagnostic
-    # severities is independent of `severity` and of each other.
-    unreachable_layer_severity: error
 ```
 
-The three sub-diagnostic severities default to their historical values, so adding this rule's options block for the first time changes nothing until you override one. Raising `unreachable_layer_severity` (or `potential_shadow_severity`) to `error` is the intended way to make a misordered or mistyped layer declaration fail CI, without also promoting every other info-level diagnostic in the run via `fail_on: info`.
+The four architecture configuration diagnostics — `architecture.coverage`,
+`architecture.unreachable-layer`, `architecture.potential-shadow`, and
+`architecture.empty-template` — have no severity options of their own; they
+gate the run unconditionally instead of going through `fail_on`. See the note
+under [Coverage modes](#coverage-modes).
 
 The CLI alias `--layer-violation` toggles the `enabled` option, matching the convention used by other architecture rules.
 
@@ -749,7 +773,7 @@ final class LegacyAdminController
 }
 ```
 
-To suppress every layer violation in the project, use the standard prefix form: `@qmx-ignore architecture` (which also covers `architecture.circular-dependency`) or `@qmx-ignore architecture.layer-violation`.
+To suppress a layer violation, address the exact channel: `@qmx-ignore architecture.layer-violation`. There is no shorter form — prefix matching is gone, so a bare `@qmx-ignore architecture` is an error, not a stand-in for the whole family. `architecture.*` is tempting but wrong too: it would also reach the unrelated rule `architecture.circular-dependency`, and since `architecture.layer-violation` has only one channel (itself), `architecture.layer-violation.*` matches nothing and errors. "Every channel of the layer-policy rule" is therefore inexpressible by design. The rule emits five channels, but the other four carry rule names of their own (`architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow`, `architecture.empty-template`), so no single selector spans them — and since all four are configuration errors that no suppression can accept, a selector spanning them would have nothing to do anyway.
 
 The baseline file stores layer violations by source layer, target layer, dependency target class, and dependency type — not by file line — so re-formatting or moving the use-site within the same file does not invalidate the baseline. Multiple use-sites of the same forbidden edge collapse into a single baseline entry.
 
@@ -790,7 +814,7 @@ This works because the framework (`RuleOptionsFactory`) extracts `exclude_namesp
 - **Reporting granularity is per use-site.** Each forbidden dependency edge from `Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface` produces one violation. If a class violates the policy through five different method calls, you get five violations. Baseline identity collapses them to a single entry (see Suppression above).
 - **Out-of-layer ends are silently ignored** for layer-violation purposes. Their count is reported separately via the `coverage` mode.
 - **Default-enabled, but inert without layers.** The rule reports `enabled: true` by default and short-circuits when `architecture.layers` is empty, so projects without architecture configuration see zero overhead.
-- **Safety nets, not ambiguity errors.** The previous specificity-based algorithm rejected ambiguous configurations at load time. Under declaration-order matching, ambiguity does not exist — the order disambiguates — but the user can still **misorder** layers. Two diagnostics catch this, both defaulting to `info` severity but individually configurable (`unreachable_layer_severity` / `potential_shadow_severity`, see [Options](#layer-violation-options)): `architecture.unreachable-layer` (a layer that captured nothing) and `architecture.potential-shadow` (an earlier layer that silently stole classes from a later one). See the dedicated sections above.
+- **Safety nets, not ambiguity errors.** The previous specificity-based algorithm rejected ambiguous configurations at load time. Under declaration-order matching, ambiguity does not exist — the order disambiguates — but the user can still **misorder** layers. Two diagnostics catch this: `architecture.unreachable-layer` (a layer that captured nothing) and `architecture.potential-shadow` (an earlier layer that silently stole classes from a later one). Both are configuration diagnostics — they fail the run unconditionally and have no severity option (see the note under [Coverage modes](#coverage-modes)). See the dedicated sections above.
 
 <!-- llms:skip-end -->
 

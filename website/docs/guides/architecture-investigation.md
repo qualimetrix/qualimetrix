@@ -54,7 +54,7 @@ Coupling analysis reveals how tightly your classes and namespaces are interconne
 1. **Start with the coupling dimension:**
 
     ```bash
-    bin/qmx check src/ --only-rule=coupling
+    bin/qmx check src/ --only-rule=coupling.*
     ```
 
 2. **Check circular dependencies separately** -- these are the highest-priority coupling issues:
@@ -121,7 +121,7 @@ Complexity metrics help you find methods that are hard to understand, hard to te
 ### Triage Strategy
 
 ```bash
-bin/qmx check src/ --only-rule=complexity --detail
+bin/qmx check src/ --only-rule=complexity.* --detail
 ```
 
 1. Focus first on **ERROR-level cognitive complexity violations** (> 30)

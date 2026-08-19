@@ -112,8 +112,7 @@ Infrastructure/
 ├── Rule/
 │   ├── RuleRegistryInterface.php
 │   ├── RuleRegistry.php
-│   ├── ChannelDeclarationRegistry.php     # Implements Finding's channel-declaration registry contract
-│   ├── RuleChannelRegistry.php             # Implements Finding's rule-channel registry contract
+│   ├── ChannelUniverse.php                 # One channel-identity instance behind Finding's narrow views
 │   └── Exception/
 │       └── ConflictingCliAliasException.php
 └── Console/                          # -> See Console/README.md
@@ -218,10 +217,10 @@ from leaking values into the next one. There is no transitional provider and no
 generic collector-runtime store: Cohesion owns the only collector-specific
 configuration projection.
 
-Rule selector validation uses an immutable `RuleChannelRegistryInterface`
-snapshot assembled from the resolved computed-metric definitions. Infrastructure
-Rule owns the snapshot factory; Console and Finding receive only the resulting
-run snapshot through their named contracts.
+Rule selector validation runs before any store has accepted a value, so it asks
+Infrastructure Rule's snapshot factory for a channel universe built over the
+candidate computed-metric definitions rather than reading the committed one.
+Console and Finding receive that universe through their own narrow contracts.
 
 **Tags:**
 - `qmx.collector` — metric collectors
