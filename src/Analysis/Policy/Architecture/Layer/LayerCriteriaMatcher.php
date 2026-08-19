@@ -33,16 +33,11 @@ final class LayerCriteriaMatcher
      * suffix, attributes, implements, extends). Empty/missing criterion
      * kinds produce no descriptor.
      *
-     * @param list<string> $normalizedPatterns Patterns with trailing
-     *                                         backslashes stripped (used
-     *                                         for the actual
-     *                                         {@see NamespaceMatcher}
-     *                                         lookup).
-     * @param list<string> $rawPatterns Original pattern list used to label
-     *                                  the resulting
-     *                                  {@see MatchedCriterion} so
-     *                                  diagnostics reflect what the user
-     *                                  wrote.
+     * @param list<string> $patterns Patterns exactly as the user wrote them:
+     *                               {@see NamespaceMatcher::matchesSingle()}
+     *                               normalizes them itself, and the
+     *                               resulting {@see MatchedCriterion} must
+     *                               label what the user wrote.
      * @param list<string> $suffix
      * @param list<string> $attributes
      * @param list<string> $implements
@@ -52,15 +47,14 @@ final class LayerCriteriaMatcher
      */
     public static function collectMatches(
         ClassContext $context,
-        array $normalizedPatterns,
-        array $rawPatterns,
+        array $patterns,
         array $suffix,
         array $attributes,
         array $implements,
         array $extends,
     ): array {
         $matches = [
-            self::matchPatterns($context, $normalizedPatterns, $rawPatterns),
+            self::matchPatterns($context, $patterns),
             self::matchSuffix($context, $suffix),
             self::matchAttributes($context, $attributes),
             self::matchImplements($context, $implements),
@@ -113,42 +107,13 @@ final class LayerCriteriaMatcher
     }
 
     /**
-     * Strips trailing backslashes from each pattern. Required because
-     * {@see NamespaceMatcher::matchesSingle()} treats trailing slashes as
-     * raw FQN characters, while the user-facing convention is that a
-     * trailing slash is purely cosmetic ({@code App\Service\} ≡
-     * {@code App\Service}).
-     *
      * @param list<string> $patterns
-     *
-     * @return list<string>
      */
-    public static function normalizePatterns(array $patterns): array
+    private static function matchPatterns(ClassContext $context, array $patterns): ?MatchedCriterion
     {
-        $normalized = [];
         foreach ($patterns as $pattern) {
-            $normalized[] = rtrim($pattern, '\\');
-        }
-
-        return $normalized;
-    }
-
-    /**
-     * @param list<string> $normalizedPatterns
-     * @param list<string> $rawPatterns
-     */
-    private static function matchPatterns(ClassContext $context, array $normalizedPatterns, array $rawPatterns): ?MatchedCriterion
-    {
-        if ($normalizedPatterns === []) {
-            return null;
-        }
-
-        foreach ($normalizedPatterns as $index => $pattern) {
             if (NamespaceMatcher::matchesSingle($pattern, $context->fqn)) {
-                return new MatchedCriterion(
-                    MatchedCriterionKind::Pattern,
-                    $rawPatterns[$index],
-                );
+                return new MatchedCriterion(MatchedCriterionKind::Pattern, $pattern);
             }
         }
 

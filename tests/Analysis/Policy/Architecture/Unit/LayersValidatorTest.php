@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationE
 use Qualimetrix\Analysis\Policy\Architecture\Layer\CriterionListValidator;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
@@ -34,6 +35,46 @@ final class LayersValidatorTest extends TestCase
     protected function setUp(): void
     {
         $this->validator = new LayersValidator();
+    }
+
+    #[Test]
+    public function itAcceptsThePendingFlagAndCarriesItOntoTheDefinition(): void
+    {
+        $entries = $this->validator->validate([
+            ['name' => 'reporting', 'patterns' => ['App\\Reporting\\**'], 'pending' => true],
+            ['name' => 'domain', 'patterns' => ['App\\Domain\\**']],
+        ]);
+
+        self::assertInstanceOf(LayerDefinition::class, $entries[0]);
+        self::assertSame(LayerLifecycle::Pending, $entries[0]->lifecycle);
+        self::assertInstanceOf(LayerDefinition::class, $entries[1]);
+        self::assertSame(
+            LayerLifecycle::Active,
+            $entries[1]->lifecycle,
+            'A layer that does not declare the key must not inherit it.',
+        );
+    }
+
+    #[Test]
+    public function itRejectsAPendingValueThatIsNotABoolean(): void
+    {
+        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectExceptionMessageMatches('/"pending" must be a boolean, got string/');
+
+        $this->validator->validate([
+            ['name' => 'reporting', 'patterns' => ['App\\Reporting\\**'], 'pending' => 'later'],
+        ]);
+    }
+
+    #[Test]
+    public function itRejectsPendingOnATemplateLayer(): void
+    {
+        $this->expectException(ArchitectureConfigurationException::class);
+        $this->expectExceptionMessageMatches('/not applicable to a template layer/');
+
+        $this->validator->validate([
+            ['name' => 'module-{mod}', 'patterns' => ['App\\{mod}\\**'], 'pending' => true],
+        ]);
     }
 
     /**

@@ -127,7 +127,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
     /**
      * Structural invariant: the `ruleName` half of every declared key must
      * name something that actually emits under that name — either a real
-     * rule's `NAME` constant, or one of {@see LayerViolationRule}'s four
+     * rule's `NAME` constant, or one of {@see LayerViolationRule}'s five
      * `*_DIAGNOSTIC_NAME` constants (it emits those under names other than
      * its own `NAME`). A `ruleName` half that matches neither would mean
      * the declaration addresses a channel no rule class can ever produce —
@@ -162,10 +162,10 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
     /**
      * The reclassification itself, pinned as a closed list.
      *
-     * Seven channels — and only seven — report a configuration mistake rather
-     * than code debt: the four layer-policy diagnostics and the three
+     * Eight channels — and only eight — report a configuration mistake rather
+     * than code debt: the five layer-policy diagnostics and the three
      * inline-directive diagnostics. The count is load-bearing in both
-     * directions: an eighth would mean something acquired an
+     * directions: a ninth would mean something acquired an
      * unacceptable-as-debt status without the argument for it, and a missing
      * one would mean a diagnostic drifted back to being ratchetable.
      *
@@ -194,6 +194,7 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
                 'annotation.unsupported-threshold#annotation.unsupported-threshold',
                 'architecture.coverage#architecture.coverage',
                 'architecture.empty-template#architecture.empty-template',
+                'architecture.pending-layer-matched#architecture.pending-layer-matched',
                 'architecture.potential-shadow#architecture.potential-shadow',
                 'architecture.unreachable-layer#architecture.unreachable-layer',
             ],
@@ -291,9 +292,11 @@ final class ChannelDeclarationFixtureDriftTest extends TestCase
         }
 
         $names[] = LayerViolationRule::COVERAGE_DIAGNOSTIC_NAME;
+        $names[] = LayerViolationRule::UNASSIGNED_CLASS_DIAGNOSTIC_NAME;
         $names[] = LayerViolationRule::UNREACHABLE_LAYER_DIAGNOSTIC_NAME;
         $names[] = LayerViolationRule::POTENTIAL_SHADOW_DIAGNOSTIC_NAME;
         $names[] = LayerViolationRule::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
+        $names[] = LayerViolationRule::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME;
 
         $names[] = InlineDirectivePolicyInterface::UNRESOLVED_DIRECTIVE_NAME;
         $names[] = InlineDirectivePolicyInterface::UNSUPPORTED_THRESHOLD_NAME;

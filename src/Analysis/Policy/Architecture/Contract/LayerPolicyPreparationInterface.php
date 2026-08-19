@@ -11,7 +11,7 @@ interface LayerPolicyPreparationInterface
     public const string PRODUCER_RULE_NAME = 'architecture.layer-violation';
 
     /**
-     * The four diagnostics the layer-policy rule emits under rule names other
+     * The six diagnostics the layer-policy rule emits under rule names other
      * than its own. They are `ruleName`s in their own right — nothing else
      * declares them — so they live beside {@see PRODUCER_RULE_NAME} for the
      * same reason it does: one literal, readable by a cross-owner consumer
@@ -19,11 +19,15 @@ interface LayerPolicyPreparationInterface
      */
     public const string COVERAGE_DIAGNOSTIC_NAME = 'architecture.coverage';
 
+    public const string UNASSIGNED_CLASS_DIAGNOSTIC_NAME = 'architecture.unassigned-class';
+
     public const string UNREACHABLE_LAYER_DIAGNOSTIC_NAME = 'architecture.unreachable-layer';
 
     public const string POTENTIAL_SHADOW_DIAGNOSTIC_NAME = 'architecture.potential-shadow';
 
     public const string EMPTY_TEMPLATE_DIAGNOSTIC_NAME = 'architecture.empty-template';
+
+    public const string PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME = 'architecture.pending-layer-matched';
 
     /**
      * This capability's channels that are **not** file-scoped: a layer policy
@@ -37,9 +41,11 @@ interface LayerPolicyPreparationInterface
     public const array PROJECT_SCOPED_CHANNELS = [
         self::PRODUCER_RULE_NAME . '#' . self::PRODUCER_RULE_NAME,
         self::COVERAGE_DIAGNOSTIC_NAME . '#' . self::COVERAGE_DIAGNOSTIC_NAME,
+        self::UNASSIGNED_CLASS_DIAGNOSTIC_NAME . '#' . self::UNASSIGNED_CLASS_DIAGNOSTIC_NAME,
         self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME . '#' . self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
         self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME . '#' . self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
         self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME . '#' . self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
+        self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME . '#' . self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME,
     ];
 
     /** @param iterable<\Qualimetrix\Core\Symbol\SymbolPath> $classUniverse */

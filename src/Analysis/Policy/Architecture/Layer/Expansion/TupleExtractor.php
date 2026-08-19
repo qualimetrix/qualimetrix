@@ -177,7 +177,7 @@ final class TupleExtractor
     private static function passesNonCapturePatterns(array $patterns, ClassContext $context): bool
     {
         foreach ($patterns as $pattern) {
-            if (!NamespaceMatcher::matchesSingle(rtrim($pattern, '\\'), $context->fqn)) {
+            if (!NamespaceMatcher::matchesSingle($pattern, $context->fqn)) {
                 return false;
             }
         }
@@ -254,11 +254,8 @@ final class TupleExtractor
             static fn(string $pattern): string => CapturePattern::applySubstitution($pattern, $bindings),
             $exclude->patterns,
         );
-        $normalizedPatterns = LayerCriteriaMatcher::normalizePatterns($substitutedPatterns);
-
         $matched = LayerCriteriaMatcher::collectMatches(
             $context,
-            $normalizedPatterns,
             $substitutedPatterns,
             $exclude->suffix,
             $exclude->attributes,

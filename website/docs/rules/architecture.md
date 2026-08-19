@@ -493,6 +493,20 @@ A layer can carry an `exclude:` block with the same shape as the membership crit
 
 Under declaration-order matching, the same effect is often achievable by declaring a narrower layer earlier. `exclude:` is the right tool when the excluded subtree should remain **genuinely unclassified** (so it falls through to a catch-all or to coverage diagnostics) or when the positive criteria mix `patterns` with `suffix`/`implements`/`extends` and a single early layer cannot cleanly express the carve-out.
 
+### Reserving a layer for code not written yet (`pending:`) { #pending-layers }
+
+A layer that intentionally matches nothing — a module boundary declared before the module is written, or a layer temporarily emptied by a refactor in flight — would otherwise fire [`architecture.unreachable-layer`](#unreachable-layer-diagnostic) on every run. Declare the intent instead of relaxing the diagnostic:
+
+```yaml
+- name: reporting
+  patterns: ['App\Reporting\**']
+  pending: true
+```
+
+`pending: true` suppresses `architecture.unreachable-layer` **for that layer only**. Nothing else changes: allow-list edges, coverage, the unassigned-class gate and every other diagnostic behave exactly as if the key were absent. The value must be a real boolean — anything else is a configuration error rather than a truthy string — and the key is rejected on a template layer, whose instances exist only because a tuple was observed in the analysed code and therefore always match something. A template that expanded to nothing is [`architecture.empty-template`](#empty-template-diagnostic), which `pending` deliberately does not reach.
+
+The flag is not a permanent opt-out. The moment the layer's criteria match anything, [`architecture.pending-layer-matched`](#pending-layer-matched-diagnostic) says so.
+
 ### Restricting allowed dependencies by relation kind (`relations:`)
 
 Phase 1's allow-list answers "may A depend on B?" with yes/no. Phase 2's long-form allow target adds an optional `relations:` whitelist that restricts **how** the dependency may be expressed.
@@ -542,12 +556,13 @@ unclassified source or target. Isolated analysed classes are covered even when
 they have no dependency edges.
 
 !!! warning "Configuration diagnostic, not code debt"
-    `architecture.coverage` is one of four architecture diagnostics that flag a
+    `architecture.coverage` is one of five architecture diagnostics that flag a
     mistake in the architecture *configuration* rather than debt in the
     analysed code — the others are `architecture.unreachable-layer`,
-    `architecture.potential-shadow`, and `architecture.empty-template`. All
-    four fail the run unconditionally whenever they fire: `fail_on` is not
-    consulted, not even `fail_on: none`, and none of the four can be accepted
+    `architecture.pending-layer-matched`, `architecture.potential-shadow`, and
+    `architecture.empty-template`. All
+    five fail the run unconditionally whenever they fire: `fail_on` is not
+    consulted, not even `fail_on: none`, and none of the five can be accepted
     into a baseline or silenced with `@qmx-ignore`. A severity option on any of
     them would look like a behaviour switch while changing nothing, so none
     exposes one. What remains to decline them: `coverage: ignore` for this
@@ -573,6 +588,55 @@ Examples of unclassified classes: App\Legacy\Foo, App\Legacy\Bar, App\Legacy\Baz
 To suppress the diagnostic for a known set of unclassified classes, declare a catch-all layer covering them (or accept the gap by leaving `coverage: ignore`).
 <!-- llms:skip-end -->
 
+### Unassigned-class gate { #unassigned-class }
+
+`architecture.unassigned-class` answers the one question `architecture.coverage`
+cannot: *is every declaration I analysed assigned to a layer?* Coverage also
+counts the ends of dependency edges, and those include classes outside `paths:`
+— `Symfony\...`, `PHPUnit\...` — which no layer can classify, so the number it
+prints is dominated by code the project does not own. This gate counts only
+**analysed class-like declarations**: classes, interfaces, traits and enums that
+the run itself measured. A declaration for which no collector recorded any
+class-level metric is not in the set and counts as assigned.
+
+It is off by default and set on the rule, not in the `architecture:` section:
+
+```yaml
+rules:
+  architecture.layer-violation:
+    unassigned_class: warn   # ignore (default) | warn | error
+```
+
+| Mode               | Behaviour                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------------------------- |
+| `ignore` (default) | The set is not even collected. No diagnostic.                                                   |
+| `warn`             | One summary violation per run with `Warning` severity, listing example unassigned declarations. |
+| `error`            | The same diagnostic with `Error` severity.                                                      |
+
+Unlike the five architecture *configuration* diagnostics, this one reports
+ordinary debt: it goes through `fail_on` as usual and it
+**can be accepted into a baseline**. It is still out of reach of `@qmx-ignore`,
+for a different reason than they are: it is a single per-run summary reported
+against the project, not against any file or declaration, so no inline directive
+is ever placed where it could address it. A `@qmx-ignore
+architecture.unassigned-class` written in a source file leaves the diagnostic
+standing and is itself reported as `annotation.unused-directive`. To decline the
+gate, set `unassigned_class: ignore`, or cover the declarations with a layer.
+Its reported metric value is the absolute
+count of unassigned declarations, which is what makes the baseline useful — the
+percentage the message also prints would stay flat while the count grew with the
+project, so only the count can be ratcheted down. The CLI alias is
+`--layer-violation-unassigned-class`.
+
+<!-- llms:skip-begin -->
+The diagnostic message looks like:
+
+```
+3 of 240 analysed class-like declaration(s) (1.3%) are not assigned to any declared layer.
+Unassigned declarations: App\Legacy\Bar, App\Legacy\Baz, App\Legacy\Foo. ...
+```
+<!-- llms:skip-end -->
+
 ### Unreachable-layer diagnostic
 
 `architecture.unreachable-layer` fires once per declared layer — or per concrete instance produced by a template — whose patterns matched zero classes **and** zero dependency-edge ends during analysis. It is a configuration diagnostic (see the note under [Coverage modes](#coverage-modes)): it fails the run unconditionally whenever it fires, and it is not configurable, baselineable, or suppressible with `@qmx-ignore`. Three possible causes:
@@ -585,11 +649,21 @@ For template-expanded layers, the per-instance variant means a specific binding 
 
 Run [`qmx debug:layer-assignment <class>`](#debug-layer-assignment) to inspect specific classes when triaging.
 
+A layer that is empty **on purpose** — declared ahead of the module it describes — is not one of these cases: declare it [`pending: true`](#pending-layers) and this diagnostic skips it.
+
+### Pending-layer-matched diagnostic
+
+`architecture.pending-layer-matched` fires once per layer declared [`pending: true`](#pending-layers) whose criteria matched at least one class or dependency-edge end. It is a configuration diagnostic (see the note under [Coverage modes](#coverage-modes)): it fails the run unconditionally whenever it fires, and it is not configurable, baselineable, or suppressible with `@qmx-ignore`.
+
+It exists because `pending: true` switches a safety net off, and a switched-off safety net has to be temporary. Without this diagnostic the flag would keep suppressing `architecture.unreachable-layer` after the code finally arrived, and the layer would silently stop being checked for typos and shadowing for the rest of the project's life.
+
+**A match counts even when the layer did not win it.** A pending layer whose classes are all captured by a broader layer declared earlier is assigned nothing, so counting assignments would report zero — exactly in the case where the declaration lies loudest: the code exists, and the layer meant to own it is being shadowed. The diagnostic therefore counts every match, winning or not. The fix is then two edits: remove `pending: true`, and move the layer above the broader one.
+
 ### Empty-template diagnostic
 
 `architecture.empty-template` fires once per template layer that expanded to **zero** concrete instances — typically a typo in the template pattern, an excluded module, or a single-segment `{var}` used where the binding spans multiple namespace segments (use `{var:**}` for cross-segment captures).
 
-A template that expands to zero instances **silently disables** the policy attached to it, which is why — like the other three configuration diagnostics — it fails the run unconditionally instead of waiting on a severity or `fail_on` setting; see the note under [Coverage modes](#coverage-modes). Three common causes:
+A template that expands to zero instances **silently disables** the policy attached to it, which is why — like the other four configuration diagnostics — it fails the run unconditionally instead of waiting on a severity or `fail_on` setting; see the note under [Coverage modes](#coverage-modes). Three common causes:
 
 1. **Typo in the template pattern.** `App\Modul\{module}\Domain\**` instead of `App\Module\{module}\Domain\**` — no class matches and no instance is created.
 2. **Excluded modules.** Every candidate class is removed by `exclude:`, by `exclude_paths`, or by being in a non-analysed directory.
@@ -673,10 +747,11 @@ Exit codes follow the standard convention: `0` for any informational result (inc
 
 ### Options { #layer-violation-options }
 
-| Option     | Default   | Description                                                                                                                                                            |
-| ---------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `enabled`  | `true`    | Enable or disable this rule. When disabled, the rule short-circuits before walking the dependency graph. The rule is also a no-op when `architecture.layers` is empty. |
-| `severity` | `warning` | Severity used for every reported `architecture.layer-violation`. Allowed values: `info`, `warning`, `error`.                                                           |
+| Option             | Default   | Description                                                                                                                                                                                              |
+| ------------------ | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`          | `true`    | Enable or disable this rule. When disabled, the rule short-circuits before walking the dependency graph. The rule is also a no-op when `architecture.layers` is empty.                                   |
+| `severity`         | `warning` | Severity used for every reported `architecture.layer-violation`. Allowed values: `info`, `warning`, `error`.                                                                                             |
+| `unassigned_class` | `ignore`  | Gate for `architecture.unassigned-class` — the count of analysed class-like declarations outside every layer. Allowed values: `ignore`, `warn`, `error`. See [Unassigned-class gate](#unassigned-class). |
 
 ```yaml
 rules:
@@ -685,13 +760,16 @@ rules:
     severity: error
 ```
 
-The four architecture configuration diagnostics — `architecture.coverage`,
-`architecture.unreachable-layer`, `architecture.potential-shadow`, and
+The five architecture configuration diagnostics — `architecture.coverage`,
+`architecture.unreachable-layer`, `architecture.pending-layer-matched`,
+`architecture.potential-shadow`, and
 `architecture.empty-template` — have no severity options of their own; they
 gate the run unconditionally instead of going through `fail_on`. See the note
 under [Coverage modes](#coverage-modes).
 
-The CLI alias `--layer-violation` toggles the `enabled` option, matching the convention used by other architecture rules.
+The CLI aliases are `--layer-violation` for the `enabled` option and
+`--layer-violation-unassigned-class` for the gate above, matching the
+convention used by other architecture rules.
 
 <!-- llms:skip-begin -->
 ### Examples
@@ -773,7 +851,7 @@ final class LegacyAdminController
 }
 ```
 
-To suppress a layer violation, address the exact channel: `@qmx-ignore architecture.layer-violation`. There is no shorter form — prefix matching is gone, so a bare `@qmx-ignore architecture` is an error, not a stand-in for the whole family. `architecture.*` is tempting but wrong too: it would also reach the unrelated rule `architecture.circular-dependency`, and since `architecture.layer-violation` has only one channel (itself), `architecture.layer-violation.*` matches nothing and errors. "Every channel of the layer-policy rule" is therefore inexpressible by design. The rule emits five channels, but the other four carry rule names of their own (`architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow`, `architecture.empty-template`), so no single selector spans them — and since all four are configuration errors that no suppression can accept, a selector spanning them would have nothing to do anyway.
+To suppress a layer violation, address the exact channel: `@qmx-ignore architecture.layer-violation`. There is no shorter form — prefix matching is gone, so a bare `@qmx-ignore architecture` is an error, not a stand-in for the whole family. `architecture.*` is tempting but wrong too: it would also reach the unrelated rule `architecture.circular-dependency`, and since `architecture.layer-violation` has only one channel (itself), `architecture.layer-violation.*` matches nothing and errors. "Every channel of the layer-policy rule" is therefore inexpressible by design. The rule emits seven channels, but the other six carry rule names of their own (`architecture.coverage`, `architecture.unassigned-class`, `architecture.unreachable-layer`, `architecture.pending-layer-matched`, `architecture.potential-shadow`, `architecture.empty-template`), so no single selector spans them. Five of those six are configuration errors that no suppression can accept; `architecture.unassigned-class` is ordinary debt, but it is a per-run project-level summary, so no inline directive reaches it either — it is declined with `unassigned_class: ignore` or accepted in the baseline.
 
 The baseline file stores layer violations by source layer, target layer, dependency target class, and dependency type — not by file line — so re-formatting or moving the use-site within the same file does not invalidate the baseline. Multiple use-sites of the same forbidden edge collapse into a single baseline entry.
 

@@ -8,18 +8,25 @@ use InvalidArgumentException;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
+use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 
 /**
  * Options for {@see LayerViolationRule}.
  *
- * The rule emits five channels from one options set, and only two of them
- * are configured here:
+ * The rule emits every channel listed in
+ * {@see LayerViolationRule::channelDeclarations()} from this one options set,
+ * and only three things are configured here:
  * - {@see $enabled} — short-circuits analysis when false.
  * - {@see $severity} — the severity of every reported `architecture.layer-violation`.
+ * - {@see $unassignedClass} — the gate for `architecture.unassigned-class`,
+ *   off by default. A mode rather than a severity because `ignore` also
+ *   decides whether the rule collects the evidence at all.
  *
- * The other four — `architecture.coverage`, `architecture.unreachable-layer`,
- * `architecture.potential-shadow` and `architecture.empty-template` — declare
- * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError}.
+ * Every remaining channel declares
+ * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError} —
+ * which ones is read off `channelDeclarations()`, the authority, rather than
+ * spelled out here, because a list written twice is a list that disagrees
+ * with itself the first time a diagnostic is added.
  * They fail the run without consulting `fail_on` and cannot be accepted by
  * the ratchet, so their severity controls nothing but the word printed beside
  * the finding. `unreachable_layer_severity`, `potential_shadow_severity` and
@@ -61,17 +68,19 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
     /**
      * @param bool $enabled Whether the rule is enabled.
      * @param Severity $severity Severity assigned to every reported `architecture.layer-violation`.
+     * @param UnassignedClassMode $unassignedClass Gate for `architecture.unassigned-class`.
      */
     public function __construct(
         public bool $enabled = true,
         public Severity $severity = Severity::Warning,
+        public UnassignedClassMode $unassignedClass = UnassignedClassMode::Ignore,
     ) {}
 
     /**
      * @param array<string, mixed> $config
      *
-     * @throws InvalidArgumentException When a severity value does not match a known enum case,
-     *                                  or when the config still sets one of the three removed
+     * @throws InvalidArgumentException When a severity or mode value does not match a known enum
+     *                                  case, or when the config still sets one of the three removed
      *                                  diagnostic-severity keys.
      */
     public static function fromArray(array $config): self
@@ -81,7 +90,48 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
         return new self(
             enabled: (bool) ($config[RuleOptionKey::ENABLED] ?? true),
             severity: self::resolveSeverity($config['severity'] ?? null, 'severity', Severity::Warning),
+            unassignedClass: self::resolveUnassignedClass($config['unassignedClass'] ?? null),
         );
+    }
+
+    /**
+     * Parses the `unassigned_class` gate, falling back to `ignore` when unset.
+     *
+     * @throws InvalidArgumentException When $raw is set but not a recognized mode string.
+     */
+    private static function resolveUnassignedClass(mixed $raw): UnassignedClassMode
+    {
+        if ($raw === null) {
+            return UnassignedClassMode::Ignore;
+        }
+
+        if ($raw instanceof UnassignedClassMode) {
+            return $raw;
+        }
+
+        if (!\is_string($raw)) {
+            throw new InvalidArgumentException(\sprintf(
+                'Option "unassigned_class" for rule "%s" must be a string, got %s.',
+                self::RULE_NAME,
+                get_debug_type($raw),
+            ));
+        }
+
+        $normalized = strtolower($raw);
+        foreach (UnassignedClassMode::cases() as $case) {
+            if ($case->value === $normalized) {
+                return $case;
+            }
+        }
+
+        $allowed = implode(', ', array_map(static fn(UnassignedClassMode $c): string => "'{$c->value}'", UnassignedClassMode::cases()));
+
+        throw new InvalidArgumentException(\sprintf(
+            'Option "unassigned_class" for rule "%s" has unknown value "%s"; expected one of %s.',
+            self::RULE_NAME,
+            $raw,
+            $allowed,
+        ));
     }
 
     /**
@@ -89,7 +139,7 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
      * key, in either the snake_case or the camelCase spelling both used to
      * accept.
      *
-     * Refusing rather than ignoring is the point. The four diagnostics these
+     * Refusing rather than ignoring is the point. The diagnostics these
      * keys used to tune now gate the run unconditionally, so honouring
      * `unreachable_layer_severity: info` is impossible and quietly raising it
      * would leave the user's file saying one thing while the tool does
@@ -122,6 +172,21 @@ final readonly class LayerViolationOptions implements RuleOptionsInterface
     public function isEnabled(): bool
     {
         return $this->enabled;
+    }
+
+    /**
+     * Whether the per-class walk must materialise the set of declarations
+     * outside every layer.
+     *
+     * Two independent consumers, so the predicate is their disjunction rather
+     * than either mode alone: the project that turned `coverage` off because
+     * dependency-edge ends drowned it in vendor code is precisely the one that
+     * turns this gate on, and reading the coverage mode alone would leave the
+     * gate with no evidence to report.
+     */
+    public function collectsOutsideLayerEvidence(CoverageMode $coverage): bool
+    {
+        return $coverage !== CoverageMode::Ignore || $this->unassignedClass !== UnassignedClassMode::Ignore;
     }
 
     /**

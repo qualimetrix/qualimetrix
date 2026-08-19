@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Policy\Architecture\Configuration;
 
 use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationException;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 
 /**
@@ -94,6 +95,67 @@ final class LayerCriterionNormalizer
         );
     }
 
+    /**
+     * Reads the optional {@code pending:} flag — the author's declaration that
+     * the layer describes code not written yet, so
+     * {@code architecture.unreachable-layer} must not report it.
+     *
+     * Only a real boolean is accepted. YAML already turns {@code yes}/{@code on}
+     * into `true`, so anything arriving here as a string is a value the author
+     * believed in and the parser did not — reading it as truthy is how a safety
+     * net gets switched off by accident.
+     *
+     * A template entry is rejected rather than ignored: it expands per observed
+     * tuple, so its instances have matched something by construction and the
+     * flag could never do anything. A template that produced nothing is
+     * {@code architecture.empty-template}, a different channel the flag
+     * deliberately does not reach.
+     *
+     * @param array<string, mixed> $entry The whole layer entry: the key is
+     *                                    optional, and reading it here keeps
+     *                                    its absence one decision rather than
+     *                                    two.
+     */
+    public function normalizeLifecycle(int $index, string $layerName, array $entry, bool $isTemplate): LayerLifecycle
+    {
+        $value = $entry['pending'] ?? null;
+
+        if ($value === null || $value === false) {
+            return LayerLifecycle::Active;
+        }
+
+        if ($value !== true) {
+            throw $this->entryError($index, $layerName, \sprintf(
+                '"pending" must be a boolean, got %s.',
+                get_debug_type($value),
+            ));
+        }
+
+        if ($isTemplate) {
+            throw $this->entryError(
+                $index,
+                $layerName,
+                '"pending" is not applicable to a template layer — a template expands only from tuples observed '
+                . 'in the analysed code, so its instances always match something. A template that expanded to '
+                . 'nothing is reported as architecture.empty-template.',
+            );
+        }
+
+        return LayerLifecycle::Pending;
+    }
+
+    /**
+     * The `architecture.layers[i] ("name"): ...` prefix both entry-level
+     * normalizers report against, so the two cannot drift apart.
+     */
+    private function entryError(int $index, string $layerName, string $message): ArchitectureConfigurationException
+    {
+        return new ArchitectureConfigurationException(
+            self::CONFIG_PATH,
+            \sprintf('architecture.layers[%d] ("%s"): %s', $index, $layerName, $message),
+        );
+    }
+
     public function normalizeMatchMode(int $index, string $layerName, mixed $value): MatchMode
     {
         if ($value === null) {
@@ -116,16 +178,11 @@ final class LayerCriterionNormalizer
             MatchMode::cases(),
         ));
 
-        throw new ArchitectureConfigurationException(
-            self::CONFIG_PATH,
-            \sprintf(
-                'architecture.layers[%d] ("%s"): "match" must be one of %s, got %s.',
-                $index,
-                $layerName,
-                $allowed,
-                \is_string($value) ? '"' . $value . '"' : get_debug_type($value),
-            ),
-        );
+        throw $this->entryError($index, $layerName, \sprintf(
+            '"match" must be one of %s, got %s.',
+            $allowed,
+            \is_string($value) ? '"' . $value . '"' : get_debug_type($value),
+        ));
     }
 
     /**
