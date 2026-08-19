@@ -39,7 +39,7 @@ final class ExitCodeResolverConfigurationErrorTest extends TestCase
         $resolver = self::resolver();
         $violations = [self::finding(Severity::Error)];
 
-        foreach ([null, new ExitPolicy(Severity::Error), new ExitPolicy(Severity::Info), new ExitPolicy(false)] as $policy) {
+        foreach ([null, new ExitPolicy(Severity::Warning), new ExitPolicy(Severity::Error), new ExitPolicy(false)] as $policy) {
             self::assertNotSame(
                 0,
                 $resolver->resolve($violations, null, $policy),

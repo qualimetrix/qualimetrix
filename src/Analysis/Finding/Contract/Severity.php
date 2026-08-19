@@ -9,14 +9,20 @@ namespace Qualimetrix\Analysis\Finding\Contract;
  *
  * Priority (lowest to highest): Info (0) < Warning (1) < Error (2).
  *
- * - {@see Severity::Info} — purely informational diagnostic. Exit code is 0
- *   and Info-only runs never fail unless `fail_on` is explicitly set to
- *   `info`. Use this for advisory signals (e.g., coverage diagnostics)
- *   that should not block CI.
+ * - {@see Severity::Info} — report-only. It is never a `fail_on` threshold
+ *   and is never counted against one, so an Info-only run always exits 0.
+ *   Declaring a rule at `info` is therefore a statement of intent ("observe,
+ *   do not gate") rather than the older trick of keeping the rule at
+ *   `warning` behind a threshold nobody can reach.
  * - {@see Severity::Warning} — requires attention but is not a hard failure.
- *   Fails the run when `fail_on` is `warning` (or `info`).
- * - {@see Severity::Error} — critical issue. Always fails the run unless
- *   `fail_on` is explicitly set to `none`.
+ *   Fails the run when `fail_on` is `warning`.
+ * - {@see Severity::Error} — critical issue. Fails the run unless `fail_on`
+ *   is `none`.
+ *
+ * "Never gates" is a promise about `fail_on` only. A baseline breach raises
+ * the breaching finding to {@see Severity::Error} on its own, and a channel
+ * declaring {@see ChannelAcceptability::ConfigurationError} bypasses the
+ * comparison entirely — neither asks what severity the rule chose.
  */
 enum Severity: string
 {
@@ -31,6 +37,14 @@ enum Severity: string
             self::Warning => 1,
             self::Error => 2,
         };
+    }
+
+    /**
+     * Whether `fail_on` accepts this severity as a threshold.
+     */
+    public function gatesRun(): bool
+    {
+        return $this !== self::Info;
     }
 
     /**
