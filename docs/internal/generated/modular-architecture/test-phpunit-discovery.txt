@@ -3469,6 +3469,21 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itBuildsAnOccurrenceDeclarationViaTheFactory
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRejectsAMagnitudeDeclarationWithoutADirection
  - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelDeclarationTest::itRejectsAnOccurrenceDeclarationCarryingADirection
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"bare separator"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"empty dot segment"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"empty rule half"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"empty violation code half"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"empty"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"group inside the rule half"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"group inside the violation code half"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"three halves"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itAnswersNullForTextThatIsNotASelector"wildcard alone"
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itKeepsTheGroupFormOfTheOnePartSelector
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itReadsAOnePartSelectorAgainstTheViolationCodeAlone
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itReadsBothHalvesOfThePairForm
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itRefusesAChannelWhoseRuleHalfDiffers
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itReportsThePairSpellingBeforeParsingSoAFailureCanBeExplained
+ - Qualimetrix\Tests\Analysis\Finding\Unit\ChannelSelectorTest::itRoundTripsTheAuthoredText
  - Qualimetrix\Tests\Analysis\Finding\Unit\FindingConfigurationResolverTest::itFoldsRuleSourcesWithThresholdModeEvictionAndSelectorSemantics
  - Qualimetrix\Tests\Analysis\Finding\Unit\LocationNullFileTest::itLocationNoneCarriesNullFile
  - Qualimetrix\Tests\Analysis\Finding\Unit\LocationNullFileTest::itPathStringMirrorsRelativePathValueForNonNullFile
@@ -3581,6 +3596,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsAClassThatCannotBeLoaded
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsANonStringNameConstant
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNameReaderTest::itRejectsRulesWithoutANameConstant
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itAcceptsTheTwoPartChannelFormAsAnExclusionKey
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itClearsAllExclusionsOnReset
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itClearsChannelExclusionsOnReset
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itConfiguresAndQueriesNamespaceChannelExclusionsWithoutProviderAccess
@@ -3594,6 +3610,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itKeepsDifferentRulesExclusionsIndependent
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itMatchesByNamespacePrefix
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itMatchesExactNamespace
+ - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itMatchesThePairAgainstTheChannelRuleNameNotTheOptionOwner
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itReturnsFalseForRuleWithNoExclusions
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itScopesNamespaceExclusionToTheViolationCode
  - Qualimetrix\Tests\Analysis\Finding\Unit\RuleNamespaceExclusionProviderTest::itUsesGroupSelectorSemanticsForChannelExclusions
@@ -5655,7 +5672,12 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itDefaultsToErrorOnlyExitBehavior
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itRelativizesOnlyTheProjectRootPrefixInCoverageFailureMessages
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ResultPresenterTest::itUsesTheExplicitResolvedFormatAndProjectRoot
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itAcceptsAChannelExclusionKeyWrittenAsTheExplicitPair
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itIgnoresAnAbsentWorkersOption
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itNamesTheRuleHalfWhenOnlyTheRuleHalfIsWrong
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRefusesAGroupInsideTheExplicitPair
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRefusesAKeyAddressingAnotherRulesChannel
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRefusesAKeyNamingAComputedChannelNoLongerDefined
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itRejectsAChannelExclusionKeyThatAddressesNoChannel
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuleInputValidatorTest::itValidatesEveryComputedChannelSelectorFromTheSameResolvedDefinitions
  - Qualimetrix\Tests\Infrastructure\Console\Unit\RuntimeConfiguratorTest::itAppliesOwnerConfigurationsOnlyAfterEveryValueResolves
