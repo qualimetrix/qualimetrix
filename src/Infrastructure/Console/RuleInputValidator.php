@@ -11,7 +11,6 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface;
-use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleChannelRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleSelector;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory;
@@ -119,9 +118,8 @@ final readonly class RuleInputValidator
     }
 
     /**
-     * `exclude_namespace_channels` is keyed by a channel selector, and until
-     * now any spelling was accepted: a key addressing nothing silently
-     * excluded nothing, which looks exactly like an exclusion that works.
+     * Which keys get checked, and when. What makes one of them wrong is
+     * {@see ChannelExclusionKeyValidator}.
      *
      * Validated here, against the universe of the configuration being
      * validated, for the same reason the selection selectors are: a
@@ -132,6 +130,8 @@ final readonly class RuleInputValidator
         FindingConfiguration $configuration,
         ChannelUniverseInterface $channels,
     ): void {
+        $keys = new ChannelExclusionKeyValidator($channels);
+
         foreach ($configuration->ruleOptions->rules as $ruleName => $options) {
             if (!\is_array($options)) {
                 continue;
@@ -145,29 +145,10 @@ final readonly class RuleInputValidator
                 }
 
                 foreach (array_keys($map) as $selector) {
-                    self::assertAddressesAChannel($channels, (string) $ruleName, (string) $selector);
+                    $keys->assertAddressesAProducedChannel((string) $ruleName, (string) $selector);
                 }
             }
         }
-    }
-
-    private static function assertAddressesAChannel(
-        ChannelUniverseInterface $channels,
-        string $ruleName,
-        string $selector,
-    ): void {
-        $parsed = NameSelector::tryParse($selector);
-
-        if ($parsed !== null && $channels->expand($parsed) !== []) {
-            return;
-        }
-
-        throw new InvalidArgumentException(\sprintf(
-            'Option "exclude_namespace_channels" for rule "%s" is keyed by "%s", which addresses no channel.'
-            . ' Write an exact channel name, or "X.*" for the channels below it.',
-            $ruleName,
-            $selector,
-        ));
     }
 
     public function replaceChannels(RuleChannelRegistryInterface $channels): void

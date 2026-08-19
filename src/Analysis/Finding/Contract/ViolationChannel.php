@@ -30,7 +30,13 @@ use Stringable;
  */
 final readonly class ViolationChannel implements Stringable
 {
-    private const string SEPARATOR = '#';
+    /**
+     * The separator of the string form, public because it is the canonical
+     * spelling of a channel pair: {@see Rule\ChannelSelector} reads
+     * user-authored text in exactly this shape, and a second declaration of
+     * the character would be a second place to change it.
+     */
+    public const string SEPARATOR = '#';
 
     public function __construct(
         public string $ruleName,

@@ -151,7 +151,7 @@ final class RuleSelector
     private function matchesProducerName(array $selectors, string $producerRuleName): bool
     {
         foreach ($selectors as $selector) {
-            if (!str_contains($selector, '#') && self::matchesName($selector, $producerRuleName)) {
+            if (!ChannelSelector::looksLikePair($selector) && self::matchesName($selector, $producerRuleName)) {
                 return true;
             }
         }
@@ -164,7 +164,7 @@ final class RuleSelector
         string $producerRuleName,
         RuleChannelRegistryInterface $channels,
     ): bool {
-        if (!str_contains($selector, '#') && self::matchesName($selector, $producerRuleName)) {
+        if (!ChannelSelector::looksLikePair($selector) && self::matchesName($selector, $producerRuleName)) {
             return true;
         }
 
@@ -186,7 +186,7 @@ final class RuleSelector
         ViolationChannel $channel,
     ): bool {
         foreach ($selectors as $selector) {
-            if (!str_contains($selector, '#') && self::matchesName($selector, $producerRuleName)) {
+            if (!ChannelSelector::looksLikePair($selector) && self::matchesName($selector, $producerRuleName)) {
                 return true;
             }
 
@@ -200,20 +200,12 @@ final class RuleSelector
 
     private function matchesChannel(string $selector, ViolationChannel $channel): bool
     {
-        if (!str_contains($selector, '#')) {
+        if (!ChannelSelector::looksLikePair($selector)) {
             return self::matchesName($selector, $channel->ruleName)
                 || self::matchesName($selector, $channel->violationCode);
         }
 
-        $parts = explode('#', $selector);
-        if (\count($parts) !== 2) {
-            return false;
-        }
-
-        [$ruleName, $violationCode] = $parts;
-
-        return $ruleName === $channel->ruleName
-            && $violationCode === $channel->violationCode;
+        return ChannelSelector::tryParse($selector)?->exactChannel()?->equals($channel) === true;
     }
 
     /**

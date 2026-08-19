@@ -5657,6 +5657,11 @@
                     "closes_in": null
                 },
                 {
+                    "owner": "Infrastructure.Console",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyHints",
+                    "closes_in": null
+                },
+                {
                     "owner": "Infrastructure.DependencyInjection",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\AnalysisConfigurator",
                     "closes_in": null
@@ -5709,6 +5714,11 @@
             "visibility": "contract",
             "closure_package": "P6-A",
             "consumers": [
+                {
+                    "owner": "Infrastructure.Console",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyValidator",
+                    "closes_in": null
+                },
                 {
                     "owner": "Infrastructure.Console",
                     "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleInputValidator",
@@ -6832,6 +6842,30 @@
                 }
             ]
         },
+        "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\ChannelSelector": {
+            "path": "src/Analysis/Finding/Contract/Rule/ChannelSelector.php",
+            "kind": "class",
+            "owner": "Analysis.Finding",
+            "visibility": "contract",
+            "closure_package": "P6-A",
+            "consumers": [
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Suppression\\SuppressionTarget",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Console",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyHints",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Console",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyValidator",
+                    "closes_in": null
+                }
+            ]
+        },
         "Qualimetrix\\Analysis\\Finding\\Contract\\Rule\\CliAliasReader": {
             "path": "src/Analysis/Finding/Contract/Rule/CliAliasReader.php",
             "kind": "class",
@@ -7027,11 +7061,6 @@
             "consumers": [
                 {
                     "owner": "Analysis.Policy.Inline",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Suppression\\SuppressionTarget",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Policy.Inline",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveAddressability",
                     "closes_in": null
                 },
@@ -7047,7 +7076,7 @@
                 },
                 {
                     "owner": "Infrastructure.Console",
-                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\RuleInputValidator",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyValidator",
                     "closes_in": null
                 },
                 {
@@ -9516,7 +9545,27 @@
                 },
                 {
                     "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Contract\\Suppression\\SuppressionTarget",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveAddressability",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Inline",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\DirectiveNameHints",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Console",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyHints",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Console",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyValidator",
                     "closes_in": null
                 },
                 {
@@ -14611,6 +14660,22 @@
         },
         "Qualimetrix\\Infrastructure\\Console\\Application": {
             "path": "src/Infrastructure/Console/Application.php",
+            "kind": "class",
+            "owner": "Infrastructure.Console",
+            "visibility": "internal",
+            "closure_package": "P8",
+            "consumers": []
+        },
+        "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyHints": {
+            "path": "src/Infrastructure/Console/ChannelExclusionKeyHints.php",
+            "kind": "class",
+            "owner": "Infrastructure.Console",
+            "visibility": "internal",
+            "closure_package": "P8",
+            "consumers": []
+        },
+        "Qualimetrix\\Infrastructure\\Console\\ChannelExclusionKeyValidator": {
+            "path": "src/Infrastructure/Console/ChannelExclusionKeyValidator.php",
             "kind": "class",
             "owner": "Infrastructure.Console",
             "visibility": "internal",

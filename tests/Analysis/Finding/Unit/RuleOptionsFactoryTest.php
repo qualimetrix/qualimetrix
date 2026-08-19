@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Coupling\DistanceOptions;
 use Qualimetrix\Analysis\Evidence\Coupling\InstabilityOptions;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageOptions;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountOptions;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
@@ -1033,8 +1034,16 @@ final class RuleOptionsFactoryTest extends TestCase
 
         $this->factory->create('computed.health', TestRuleOptions::class);
 
-        self::assertTrue($this->registry->isNamespaceChannelExcluded('computed.health', 'health.cohesion', 'App\\Metrics'));
-        self::assertTrue($this->registry->isNamespaceChannelExcluded('computed.health', 'health.typing', 'App\\Generated'));
+        self::assertTrue($this->registry->isNamespaceChannelExcluded(
+            'computed.health',
+            new ViolationChannel('computed.health', 'health.cohesion'),
+            'App\\Metrics',
+        ));
+        self::assertTrue($this->registry->isNamespaceChannelExcluded(
+            'computed.health',
+            new ViolationChannel('computed.health', 'health.typing'),
+            'App\\Generated',
+        ));
     }
 
     #[Test]
@@ -1092,7 +1101,7 @@ final class RuleOptionsFactoryTest extends TestCase
         ]);
 
         self::expectException(InvalidArgumentException::class);
-        self::expectExceptionMessage('empty or non-string violation-code selector');
+        self::expectExceptionMessage('empty or non-string channel selector');
 
         $this->factory->create('computed.health', TestRuleOptions::class);
     }

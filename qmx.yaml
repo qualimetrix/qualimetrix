@@ -444,6 +444,7 @@ architecture:
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader'
+        - 'Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface'
         - 'Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface'
@@ -714,6 +715,8 @@ architecture:
       patterns:
         - 'Qualimetrix\Infrastructure\Console\AnalysisRuntimeConfigurator'
         - 'Qualimetrix\Infrastructure\Console\Application'
+        - 'Qualimetrix\Infrastructure\Console\ChannelExclusionKeyHints'
+        - 'Qualimetrix\Infrastructure\Console\ChannelExclusionKeyValidator'
         - 'Qualimetrix\Infrastructure\Console\CheckCommandDefinition'
         - 'Qualimetrix\Infrastructure\Console\CheckScopeResolver'
         - 'Qualimetrix\Infrastructure\Console\CliOptionsParser'

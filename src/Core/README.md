@@ -392,6 +392,32 @@ selector matches nothing.
 - `name(): string` — the `X` half
 - `selectsDescendantsOnly(): bool` — whether this is the `X.*` form
 
+### ChannelSelector
+
+`NameSelector` plus the one thing a name alone cannot say: which rule the channel
+belongs to. Every surface that reads the pair form reads this grammar — the three
+inline suppression directives, the `exclude_namespace_channels` keys, and rule
+selection (`only_rules` / `disabled_rules` / `--only-rule` / `--disable-rule`),
+whose one-part branch is its own because selection deliberately matches a producer
+name too. `@qmx-threshold` is absent on purpose: it addresses a rule, not a channel.
+
+**Forms:**
+- a one-part `NameSelector`, read against the channel's violation code
+- `ruleName#violationCode` — both halves exact, no `*` in either. It is what
+  distinguishes `a#x` from `b#x`, and the only way to address a channel whose
+  `ruleName` half is not the rule that produces it
+
+**Methods:**
+- `tryParse(string $raw): ?self` — either form, or `null`
+- `looksLikePair(string $raw): bool` — whether the text used the separator at all,
+  so a parse failure can be explained rather than merely reported
+- `matches(ViolationChannel $channel): bool`
+- `matchesNames(string $ruleName, string $violationCode): bool` — the same question for
+  callers holding the halves as strings, so the inline suppression filter does not build a
+  channel per finding
+- `exactChannel(): ?ViolationChannel` — the pair form's channel
+- `target(): NameSelector|ViolationChannel` — the two forms as one total answer
+
 ### RuleSelector
 
 The single selection policy used by rule execution, expensive prerequisite phases, and CLI
@@ -701,9 +727,8 @@ Value Object representing a suppression tag from a docblock (e.g., `@qmx-ignore 
 
 **Methods:**
 - `matches(string $violationCode): bool` — checks if suppression applies to a violation code
-- `target(): SuppressionTarget` — what the directive filters on: a `NameSelector` over channel
-  codes, or the explicit "no rule filter" state that `@qmx-ignore *` and a bare
-  `@qmx-ignore-file` carry
+- `target(): SuppressionTarget` — what the directive filters on: a `ChannelSelector`, or the
+  explicit "no rule filter" state that `@qmx-ignore *` and a bare `@qmx-ignore-file` carry
 
 ### SuppressionType (Enum)
 

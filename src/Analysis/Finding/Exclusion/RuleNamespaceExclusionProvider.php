@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Finding\Exclusion;
 
 use InvalidArgumentException;
-use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
@@ -22,7 +23,7 @@ final class RuleNamespaceExclusionProvider
     /** @var array<string, list<string>> raw patterns for getExclusions() */
     private array $exclusions = [];
 
-    /** @var array<string, array<string, NamespaceMatcher>> rule name => violation-code selector => namespace-aggregate matcher */
+    /** @var array<string, array<string, NamespaceMatcher>> rule name => channel selector => namespace-aggregate matcher */
     private array $channelMatchers = [];
 
     /** @var array<string, array<string, list<string>>> raw channel patterns for getChannelExclusions() */
@@ -59,22 +60,22 @@ final class RuleNamespaceExclusionProvider
     }
 
     /**
-     * Stores namespace-aggregate exclusions scoped to one violation-code selector.
+     * Stores namespace-aggregate exclusions scoped to one channel selector.
      *
-     * The selector is a {@see NameSelector}: an exact violation code, or `X.*`
-     * for its strict descendants. A bare prefix such as `health` no longer
-     * stands for a group — write `health.*`.
+     * The selector is a {@see ChannelSelector}: an exact violation code, `X.*`
+     * for its strict descendants, or the `ruleName#violationCode` pair. A bare
+     * prefix such as `health` no longer stands for a group — write `health.*`.
      *
      * @param list<string> $patterns Namespace patterns (prefixes or globs)
      */
-    public function setChannelExclusions(string $ruleName, string $violationCodeSelector, array $patterns): void
+    public function setChannelExclusions(string $ruleName, string $channelSelector, array $patterns): void
     {
         if ($patterns === []) {
             return;
         }
 
-        $this->channelExclusions[$ruleName][$violationCodeSelector] = $patterns;
-        $this->channelMatchers[$ruleName][$violationCodeSelector] = new NamespaceMatcher($patterns);
+        $this->channelExclusions[$ruleName][$channelSelector] = $patterns;
+        $this->channelMatchers[$ruleName][$channelSelector] = new NamespaceMatcher($patterns);
     }
 
     /**
@@ -90,7 +91,7 @@ final class RuleNamespaceExclusionProvider
 
         if (!\is_array($channelPatterns) || $channelPatterns === [] || array_is_list($channelPatterns)) {
             throw new InvalidArgumentException(\sprintf(
-                'Option "exclude_namespace_channels" for rule "%s" must be a non-empty violation-code map',
+                'Option "exclude_namespace_channels" for rule "%s" must be a non-empty channel map',
                 $ruleName,
             ));
         }
@@ -106,7 +107,7 @@ final class RuleNamespaceExclusionProvider
     {
         if (!\is_string($selector) || trim($selector) === '') {
             throw new InvalidArgumentException(\sprintf(
-                'Option "exclude_namespace_channels" for rule "%s" contains an empty or non-string violation-code selector',
+                'Option "exclude_namespace_channels" for rule "%s" contains an empty or non-string channel selector',
                 $ruleName,
             ));
         }
@@ -166,9 +167,9 @@ final class RuleNamespaceExclusionProvider
     }
 
     /**
-     * Returns violation-code-scoped namespace-aggregate patterns for a rule.
+     * Returns channel-scoped namespace-aggregate patterns for a rule.
      *
-     * @return array<string, list<string>> violation-code selector => namespace patterns
+     * @return array<string, list<string>> channel selector => namespace patterns
      */
     public function getChannelExclusions(string $ruleName): array
     {
@@ -180,10 +181,18 @@ final class RuleNamespaceExclusionProvider
         return isset($this->matchers[$ruleName]) && $this->matchers[$ruleName]->matches($namespace);
     }
 
-    public function isChannelExcluded(string $ruleName, string $violationCode, string $namespace): bool
+    /**
+     * The whole channel is taken, not just its code, because the two-part
+     * selector is meaningless without the rule name — reading only the code
+     * would make `a#x` and `b#x` the same key. The rule name it compares
+     * against is the channel's own, which is not always `$ruleName`: that one
+     * is the rule the option is configured under, and the layer policy emits
+     * four channels under rule names no class declares as its own.
+     */
+    public function isChannelExcluded(string $ruleName, ViolationChannel $channel, string $namespace): bool
     {
         foreach ($this->channelMatchers[$ruleName] ?? [] as $selector => $matcher) {
-            if (NameSelector::tryParse($selector)?->matches($violationCode) === true && $matcher->matches($namespace)) {
+            if (ChannelSelector::tryParse($selector)?->matches($channel) === true && $matcher->matches($namespace)) {
                 return true;
             }
         }

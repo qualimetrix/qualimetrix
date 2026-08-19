@@ -150,7 +150,7 @@ final class RuleExecution implements RuleExecutionInterface
         }
 
         return $violation->symbolPath->getType()->value === 'namespace'
-            && $this->ruleOptionsRegistry->isNamespaceChannelExcluded($ruleName, $violation->violationCode, $namespace);
+            && $this->ruleOptionsRegistry->isNamespaceChannelExcluded($ruleName, $violation->channel(), $namespace);
     }
 
     public function exclusionStats(): RuleExclusionStats
