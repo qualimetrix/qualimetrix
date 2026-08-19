@@ -7,6 +7,7 @@ namespace Qualimetrix\Tests\Analysis\Finding\Unit;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 
@@ -40,12 +41,12 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
 
         self::assertTrue($configuration->isNamespaceChannelExcluded(
             'computed.health',
-            'health.cohesion',
+            new ViolationChannel('computed.health', 'health.cohesion'),
             'App\\Generated\\Model',
         ));
         self::assertFalse($configuration->isNamespaceChannelExcluded(
             'computed.health',
-            'health.coupling',
+            new ViolationChannel('computed.health', 'health.coupling'),
             'App\\Generated\\Model',
         ));
     }
@@ -158,17 +159,60 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
 
         self::assertTrue($this->provider->isChannelExcluded(
             'computed.health',
-            'health.cohesion',
+            new ViolationChannel('computed.health', 'health.cohesion'),
             'App\\Metrics\\Coupling',
         ));
         self::assertFalse($this->provider->isChannelExcluded(
             'computed.health',
-            'health.coupling',
+            new ViolationChannel('computed.health', 'health.coupling'),
             'App\\Metrics\\Coupling',
         ));
         self::assertFalse($this->provider->isChannelExcluded(
             'other.producer',
-            'health.cohesion',
+            new ViolationChannel('other.producer', 'health.cohesion'),
+            'App\\Metrics\\Coupling',
+        ));
+    }
+
+    #[Test]
+    public function itAcceptsTheTwoPartChannelFormAsAnExclusionKey(): void
+    {
+        $this->provider->setChannelExclusions(
+            'computed.health',
+            'computed.health#health.cohesion',
+            ['App\\Metrics'],
+        );
+
+        self::assertTrue($this->provider->isChannelExcluded(
+            'computed.health',
+            new ViolationChannel('computed.health', 'health.cohesion'),
+            'App\\Metrics\\Coupling',
+        ));
+    }
+
+    /**
+     * The pair is matched against the channel's own rule name, not against the
+     * rule the option is configured under. Comparing the owner instead would
+     * pass every test that spells all three roles the same way, which is what
+     * every other case here does.
+     */
+    #[Test]
+    public function itMatchesThePairAgainstTheChannelRuleNameNotTheOptionOwner(): void
+    {
+        $this->provider->setChannelExclusions(
+            'architecture.layer-violation',
+            'architecture.coverage#architecture.coverage',
+            ['App\\Metrics'],
+        );
+
+        self::assertTrue($this->provider->isChannelExcluded(
+            'architecture.layer-violation',
+            new ViolationChannel('architecture.coverage', 'architecture.coverage'),
+            'App\\Metrics\\Coupling',
+        ));
+        self::assertFalse($this->provider->isChannelExcluded(
+            'architecture.layer-violation',
+            new ViolationChannel('architecture.layer-violation', 'architecture.coverage'),
             'App\\Metrics\\Coupling',
         ));
     }
@@ -180,12 +224,12 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
 
         self::assertTrue($this->provider->isChannelExcluded(
             'computed.health',
-            'health.cohesion',
+            new ViolationChannel('computed.health', 'health.cohesion'),
             'App\\Metrics',
         ));
         self::assertFalse($this->provider->isChannelExcluded(
             'computed.health',
-            'computed.risk',
+            new ViolationChannel('computed.health', 'computed.risk'),
             'App\\Metrics',
         ));
     }
@@ -198,7 +242,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
 
         self::assertFalse($this->provider->isChannelExcluded(
             'computed.health',
-            'health.cohesion',
+            new ViolationChannel('computed.health', 'health.cohesion'),
             'App\\Metrics',
         ));
     }
@@ -213,7 +257,7 @@ final class RuleNamespaceExclusionProviderTest extends TestCase
         self::assertSame([], $this->provider->getChannelExclusions('computed.health'));
         self::assertFalse($this->provider->isChannelExcluded(
             'computed.health',
-            'health.cohesion',
+            new ViolationChannel('computed.health', 'health.cohesion'),
             'App\\Metrics',
         ));
     }

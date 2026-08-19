@@ -8,6 +8,7 @@ use Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionKey;
 use Qualimetrix\Analysis\Finding\Contract\RuleConfigurationInterface;
 use Qualimetrix\Analysis\Finding\Contract\RuleSelection;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Finding\Exclusion\RuleNamespaceExclusionProvider;
 use Qualimetrix\Analysis\Finding\Exclusion\RulePathExclusionProvider;
 use Qualimetrix\Core\Path\RelativePath;
@@ -225,7 +226,7 @@ final class RuleOptionsRegistry implements RuleConfigurationInterface
         return $this->exclusionProvider->isExcluded($ruleName, $namespace);
     }
 
-    public function isNamespaceChannelExcluded(string $ruleName, string $channel, string $namespace): bool
+    public function isNamespaceChannelExcluded(string $ruleName, ViolationChannel $channel, string $namespace): bool
     {
         return $this->exclusionProvider->isChannelExcluded($ruleName, $channel, $namespace);
     }

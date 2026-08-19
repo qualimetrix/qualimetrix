@@ -161,8 +161,8 @@ final class SuppressionExtractorTest extends TestCase
         self::assertCount(1, $suppressions);
         self::assertSame('complexity.cyclomatic#complexity.cyclomatic.callable', $suppressions[0]->rule);
         self::assertSame(
-            ['ruleName' => 'complexity.cyclomatic', 'violationCode' => 'complexity.cyclomatic.callable'],
-            $suppressions[0]->target()->exactChannel(),
+            'complexity.cyclomatic#complexity.cyclomatic.callable',
+            (string) $suppressions[0]->target()->exactChannel(),
         );
     }
 

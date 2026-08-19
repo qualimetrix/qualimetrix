@@ -324,7 +324,7 @@ final class InlineDirectivePolicy implements InlineDirectivePolicyInterface
         $pair = $target->exactChannel();
         if ($pair !== null) {
             foreach ($this->identity->channels() as $channel) {
-                if ($channel->ruleName === $pair['ruleName'] && $channel->violationCode === $pair['violationCode']) {
+                if ($channel->equals($pair)) {
                     return [$channel->violationCode];
                 }
             }

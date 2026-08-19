@@ -56,7 +56,7 @@ interface RuleConfigurationInterface
 
     public function isNamespaceExcluded(string $ruleName, string $namespace): bool;
 
-    public function isNamespaceChannelExcluded(string $ruleName, string $channel, string $namespace): bool;
+    public function isNamespaceChannelExcluded(string $ruleName, ViolationChannel $channel, string $namespace): bool;
 
     public function isPathExcluded(string $ruleName, RelativePath $path): bool;
 
