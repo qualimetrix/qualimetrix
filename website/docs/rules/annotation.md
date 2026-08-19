@@ -90,12 +90,41 @@ The annotation is well-formed and once suppressed a real finding, but
 reports `annotation.unused-directive` at `Info` severity — a prompt to delete
 the now-pointless annotation, not a configuration mistake.
 
+```php
+/**
+ * @qmx-ignore-file Generated code, do not analyse
+ */
+```
+
+`@qmx-ignore-file` is the one form whose channel is optional, so a bare word
+right after the tag is genuinely ambiguous: it could be the channel, or the
+first word of the reason. It is read as the channel, `Generated` addresses
+nothing, and this reports `annotation.unresolved-directive`:
+
+```
+Suppression "Generated" addresses no channel. No declared name is close to it. Prose belongs after "--".
+```
+
+Write `--` before the prose to say "the reason starts here":
+
+```php
+/**
+ * @qmx-ignore-file -- Generated code, do not analyse
+ */
+```
+
+`--` is required only for this ambiguous case. On `@qmx-ignore` and
+`@qmx-ignore-next-line` the channel argument is mandatory and always comes
+first, so `@qmx-ignore complexity.cyclomatic.callable Legacy state machine`
+is unambiguous without a separator — though writing `--` there too keeps the
+three tags reading the same way.
+
 <!-- llms:skip-end -->
 
 <!-- llms:skip-begin -->
 ### How to fix
 
-- **`annotation.unresolved-directive`** — fix the name. Use the exact channel name for `@qmx-ignore` (or `X.*` for every descendant of `X`), and the exact rule name for `@qmx-threshold`. If a computed metric annotation started failing, either restore the metric in `computed_metrics:` or remove the now-dangling annotation.
+- **`annotation.unresolved-directive`** — fix the name. Use the exact channel name for `@qmx-ignore` (or `X.*` for every descendant of `X`), and the exact rule name for `@qmx-threshold`. If a computed metric annotation started failing, either restore the metric in `computed_metrics:` or remove the now-dangling annotation. If the message points at the first word of your reason, you wrote `@qmx-ignore-file` followed directly by prose with no channel — add `--` before the reason (see the example above).
 - **`annotation.unsupported-threshold`** — remove the `@qmx-threshold`; the targeted rule has no options a threshold can override. Check the rule's `Options` section on its own page for what it does accept.
 - **`annotation.invalid-threshold`** — fix the payload to match the rule's option shape (see that rule's `Configuration` section for the expected keys and value types).
 - **`annotation.unused-directive`** — delete the annotation. It is not doing anything, and leaving it in place misleads the next reader into thinking a finding is still being suppressed.

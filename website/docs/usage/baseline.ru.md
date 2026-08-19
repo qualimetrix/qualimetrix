@@ -108,12 +108,30 @@ bin/qmx check src/ --baseline=baseline.json --show-resolved
 
 Используй inline-подавление для намеренного исключения, а не молча принимай его в baseline. Теги работают в PHPDoc, строчных и блочных комментариях; помещай их на отдельной строке перед целью.
 
-| Тег                                        | Область             | Пример                                                                    |
-| ------------------------------------------ | ------------------- | ------------------------------------------------------------------------- |
-| `@qmx-ignore <channel> [reason]`           | Символ              | `@qmx-ignore complexity.cyclomatic.callable Legacy state machine`         |
-| `@qmx-ignore * [reason]`                   | Все правила символа | `@qmx-ignore * Generated mapper`                                          |
-| `@qmx-ignore-next-line <channel> [reason]` | Следующая строка    | `@qmx-ignore-next-line code-smell.exit CLI entry point`                   |
-| `@qmx-ignore-file [channel] [reason]`      | Весь файл           | `@qmx-ignore-file` или `@qmx-ignore-file complexity.wmc Legacy god class` |
+| Тег                                           | Область             | Пример                                                               |
+| --------------------------------------------- | ------------------- | -------------------------------------------------------------------- |
+| `@qmx-ignore <channel> [-- reason]`           | Символ              | `@qmx-ignore complexity.cyclomatic.callable -- Legacy state machine` |
+| `@qmx-ignore * [-- reason]`                   | Все правила символа | `@qmx-ignore * -- Generated mapper`                                  |
+| `@qmx-ignore-next-line <channel> [-- reason]` | Следующая строка    | `@qmx-ignore-next-line code-smell.exit -- CLI entry point`           |
+| `@qmx-ignore-file [channel] [-- reason]`      | Весь файл           | `@qmx-ignore-file` или `@qmx-ignore-file -- Generated code`          |
+
+### Разделитель причины
+
+Аргумент канала и причина — оба голые слова, поэтому `--` — это способ их
+различить. Он **обязателен** для `@qmx-ignore-file`, когда канал опущен, а
+сразу за тегом идёт причина: `@qmx-ignore-file Generated code, do not
+analyse` читает `Generated` как канал, который ничему не адресуется, и
+падает с `annotation.unresolved-directive`:
+
+```
+Suppression "Generated" addresses no channel. No declared name is close to it. Prose belongs after "--".
+```
+
+Пишите так: `@qmx-ignore-file -- Generated code, do not analyse`. У
+`@qmx-ignore` и `@qmx-ignore-next-line` канал не опционален — он всегда
+первое слово, — поэтому `--` перед причиной там необязателен; собственное
+соглашение проекта — писать его всё равно, чтобы все три тега читались
+одинаково.
 
 ### Каналы, а не имена правил
 

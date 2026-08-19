@@ -109,12 +109,30 @@ bin/qmx check src/ --baseline=baseline.json --show-resolved
 
 Use an inline suppression for an intentional exception rather than silently accepting it in a baseline. The tags work in PHPDoc, line comments, and block comments; place them on a separate line before their target.
 
-| Tag                                        | Scope                 | Example                                                                  |
-| ------------------------------------------ | --------------------- | ------------------------------------------------------------------------ |
-| `@qmx-ignore <channel> [reason]`           | Symbol                | `@qmx-ignore complexity.cyclomatic.callable Legacy state machine`        |
-| `@qmx-ignore * [reason]`                   | All rules on a symbol | `@qmx-ignore * Generated mapper`                                         |
-| `@qmx-ignore-next-line <channel> [reason]` | Next line             | `@qmx-ignore-next-line code-smell.exit CLI entry point`                  |
-| `@qmx-ignore-file [channel] [reason]`      | Whole file            | `@qmx-ignore-file` or `@qmx-ignore-file complexity.wmc Legacy god class` |
+| Tag                                           | Scope                 | Example                                                              |
+| --------------------------------------------- | --------------------- | -------------------------------------------------------------------- |
+| `@qmx-ignore <channel> [-- reason]`           | Symbol                | `@qmx-ignore complexity.cyclomatic.callable -- Legacy state machine` |
+| `@qmx-ignore * [-- reason]`                   | All rules on a symbol | `@qmx-ignore * -- Generated mapper`                                  |
+| `@qmx-ignore-next-line <channel> [-- reason]` | Next line             | `@qmx-ignore-next-line code-smell.exit -- CLI entry point`           |
+| `@qmx-ignore-file [channel] [-- reason]`      | Whole file            | `@qmx-ignore-file` or `@qmx-ignore-file -- Generated code`           |
+
+### Reason separator
+
+The channel argument and the reason are both bare words, so `--` is how you
+tell them apart. It is **mandatory** on `@qmx-ignore-file` whenever the
+channel is left out and a reason follows directly: `@qmx-ignore-file
+Generated code, do not analyse` reads `Generated` as the channel, which
+addresses nothing, and fails with `annotation.unresolved-directive`:
+
+```
+Suppression "Generated" addresses no channel. No declared name is close to it. Prose belongs after "--".
+```
+
+Write it as `@qmx-ignore-file -- Generated code, do not analyse` instead. On
+`@qmx-ignore` and `@qmx-ignore-next-line` the channel is not optional — it is
+always the first word — so `--` before the reason is optional there too; the
+project's own convention is to write it anyway so all three tags read the
+same way.
 
 ### Channels, not rule names
 
