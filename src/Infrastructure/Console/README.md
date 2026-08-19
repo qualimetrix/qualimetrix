@@ -25,6 +25,8 @@ Console/
 ├── ResolvedCheckScope.php           # Resolved Git scope plus deferred warning messages
 ├── DiagnosticOutput.php              # Human diagnostics routed to stderr
 ├── RuleInputValidator.php            # Fail-closed selector/option-owner validation
+├── ChannelExclusionKeyValidator.php  # Whether one exclude_namespace_channels key can exclude anything
+├── ChannelExclusionKeyHints.php      # What to say when it cannot
 ├── ResultPresenter.php
 ├── CheckCommandDefinition.php
 ├── FilteredInputDefinition.php      # InputDefinition that hides rule-specific options from --help
@@ -76,6 +78,14 @@ projection.
 snapshot for the resolved run. The snapshot is assembled by Infrastructure Rule
 from `ResolvedComputedMetricDefinitions`; Console consumes only that resolved
 snapshot while processing the invocation.
+
+`ChannelExclusionKeyValidator` answers the one question that needs the universe
+rather than the input: whether an `exclude_namespace_channels` key addresses a
+channel the rule it is written under actually produces. Keys read the full
+selector grammar including the `ruleName#violationCode` pair. `ChannelExclusionKeyHints`
+carries the wording, split along the same seam as
+`Inline\Directive\DirectiveAddressability` / `DirectiveNameHints`: one decides
+whether a name is wrong, the other what to say about it.
 
 `LayerAssignmentResolver` is an internal Console collaborator for
 `debug:layer-assignment`. It owns the adapter-side discovery, generated-file

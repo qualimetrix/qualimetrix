@@ -7,6 +7,7 @@ namespace Qualimetrix\Analysis\Policy\Inline\Directive;
 use Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
 
@@ -92,10 +93,8 @@ final readonly class DirectiveAddressability
     /**
      * The explicit pair resolves against the channel universe directly: both
      * halves are exact, so there is nothing to expand.
-     *
-     * @param ?array{ruleName: string, violationCode: string} $pair
      */
-    private function problemWithChannelPair(?array $pair, string $raw): ?string
+    private function problemWithChannelPair(?ViolationChannel $pair, string $raw): ?string
     {
         if ($pair === null) {
             return \sprintf(
@@ -106,7 +105,7 @@ final readonly class DirectiveAddressability
         }
 
         foreach ($this->identity->channels() as $channel) {
-            if ($channel->ruleName === $pair['ruleName'] && $channel->violationCode === $pair['violationCode']) {
+            if ($channel->equals($pair)) {
                 return null;
             }
         }
@@ -114,7 +113,7 @@ final readonly class DirectiveAddressability
         return \sprintf(
             'Suppression "%s" addresses no channel. %s',
             $raw,
-            $this->hints->forChannelPair($pair['ruleName'], $pair['violationCode']),
+            $this->hints->forChannelPair($pair->ruleName, $pair->violationCode),
         );
     }
 

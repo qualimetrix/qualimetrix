@@ -4,21 +4,19 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Analysis\Policy\Inline\Contract\Suppression;
 
-use Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector;
+use Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector;
+use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Stringable;
 
 /**
  * What an inline suppression directive filters on.
  *
- * Three states, and the last one is the point of this type:
+ * Two states, and the second one is the point of this type:
  *
- * - **a channel selector** — an exact `violationCode`, or `X.*` for its strict
- *   descendants (see {@see NameSelector});
- * - **an explicit channel** — the `ruleName#violationCode` pair, both halves
- *   exact. It is the one spelling that says which half is meant, which
- *   matters wherever a rule name and a channel name coincide; a `*` inside
- *   either half is not accepted, because a group is what the one-part form
- *   already says;
+ * - **a channel selector** — an exact `violationCode`, `X.*` for its strict
+ *   descendants, or the explicit `ruleName#violationCode` pair. All three are
+ *   {@see ChannelSelector}, which is the whole of the grammar and is shared
+ *   with configuration's channel-keyed surfaces;
  * - **no rule filter at all** — "every finding here, whatever it is". This is
  *   what `@qmx-ignore *` on a symbol or line means, and what a bare
  *   `@qmx-ignore-file` with no argument means.
@@ -30,7 +28,7 @@ use Stringable;
  * disappear from the selector vocabulary without the two documented "suppress
  * everything here" spellings disappearing with it.
  *
- * Text that is none of the three filters nothing. The directive is then inert
+ * Text that is neither filters nothing. The directive is then inert
  * rather than silently broad, and the inline-directive rule reports it as a
  * configuration error.
  */
@@ -44,17 +42,10 @@ final readonly class SuppressionTarget implements Stringable
      */
     public const string NO_RULE_FILTER = '*';
 
-    /** The separator of the explicit `ruleName#violationCode` form. */
-    private const string CHANNEL_SEPARATOR = '#';
-
-    /**
-     * @param ?array{ruleName: string, violationCode: string} $channel
-     */
     private function __construct(
         private string $raw,
-        private ?NameSelector $selector,
+        private ?ChannelSelector $selector,
         private bool $everyChannel,
-        private ?array $channel = null,
     ) {}
 
     public static function fromAnnotation(string $rule): self
@@ -63,11 +54,7 @@ final readonly class SuppressionTarget implements Stringable
             return new self($rule, null, true);
         }
 
-        if (str_contains($rule, self::CHANNEL_SEPARATOR)) {
-            return new self($rule, null, false, self::parseChannel($rule));
-        }
-
-        return new self($rule, NameSelector::tryParse($rule), false);
+        return new self($rule, ChannelSelector::tryParse($rule), false);
     }
 
     /** Whether the directive carries no rule filter at all. */
@@ -77,24 +64,22 @@ final readonly class SuppressionTarget implements Stringable
     }
 
     /**
-     * The halves of the explicit `ruleName#violationCode` form, or `null`
-     * when the directive was not written in it.
+     * The channel addressed by the explicit `ruleName#violationCode` form, or
+     * `null` when the directive was not written in it.
      *
      * Callers that have to decide whether the target addresses anything need
      * the pair, because the answer is a channel lookup rather than a name
      * expansion.
-     *
-     * @return ?array{ruleName: string, violationCode: string}
      */
-    public function exactChannel(): ?array
+    public function exactChannel(): ?ViolationChannel
     {
-        return $this->channel;
+        return $this->selector?->exactChannel();
     }
 
     /** Whether the authored text used the explicit pair separator at all. */
     public function looksLikeChannelPair(): bool
     {
-        return str_contains($this->raw, self::CHANNEL_SEPARATOR);
+        return ChannelSelector::looksLikePair($this->raw);
     }
 
     public function matches(string $ruleName, string $violationCode): bool
@@ -103,36 +88,7 @@ final readonly class SuppressionTarget implements Stringable
             return true;
         }
 
-        if ($this->channel !== null) {
-            return $this->channel['ruleName'] === $ruleName
-                && $this->channel['violationCode'] === $violationCode;
-        }
-
-        return $this->selector?->matches($violationCode) === true;
-    }
-
-    /**
-     * Both halves must be exact names, so the pair is validated through the
-     * same grammar the one-part form uses and then refused the group suffix.
-     *
-     * @return ?array{ruleName: string, violationCode: string}
-     */
-    private static function parseChannel(string $raw): ?array
-    {
-        $parts = explode(self::CHANNEL_SEPARATOR, $raw);
-        if (\count($parts) !== 2) {
-            return null;
-        }
-
-        [$ruleName, $violationCode] = $parts;
-        foreach ([$ruleName, $violationCode] as $half) {
-            $parsed = NameSelector::tryParse($half);
-            if ($parsed === null || $parsed->selectsDescendantsOnly()) {
-                return null;
-            }
-        }
-
-        return ['ruleName' => $ruleName, 'violationCode' => $violationCode];
+        return $this->selector?->matchesNames($ruleName, $violationCode) === true;
     }
 
     /** The authored text, so a directive round-trips into diagnostics unchanged. */

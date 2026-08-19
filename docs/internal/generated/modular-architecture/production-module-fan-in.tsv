@@ -72,9 +72,9 @@ Qualimetrix\Analysis\Evidence\Prioritization\Impact\RankedIssue	Analysis.Evidenc
 Qualimetrix\Analysis\Finding\Contract\AcceptedLevel	Analysis.Finding	4	1
 Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	Analysis.Finding	33	14
 Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	10	4
-Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface	Analysis.Finding	6	2
+Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface	Analysis.Finding	7	3
 Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	5	2
-Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface	Analysis.Finding	4	3
+Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface	Analysis.Finding	5	3
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfiguration	Analysis.Finding	5	2
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingConfigurationResolverInterface	Analysis.Finding	2	2
@@ -96,11 +96,12 @@ Qualimetrix\Analysis\Finding\Contract\Rule\AdditionalOptionKeysInterface	Analysi
 Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext	Analysis.Finding	33	14
 Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias	Analysis.Finding	23	9
 Qualimetrix\Analysis\Finding\Contract\Rule\ChannelDeclarationReader	Analysis.Finding	2	2
+Qualimetrix\Analysis\Finding\Contract\Rule\ChannelSelector	Analysis.Finding	3	2
 Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleInterface	Analysis.Finding	5	2
 Qualimetrix\Analysis\Finding\Contract\Rule\HierarchicalRuleOptionsInterface	Analysis.Finding	7	4
 Qualimetrix\Analysis\Finding\Contract\Rule\LevelOptionsInterface	Analysis.Finding	16	3
-Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector	Analysis.Finding	6	3
+Qualimetrix\Analysis\Finding\Contract\Rule\NameSelector	Analysis.Finding	5	3
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\IndependentAxisValidator	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\InvertedOverrideValidator	Analysis.Finding	2	2
 Qualimetrix\Analysis\Finding\Contract\Rule\Override\OverrideValidatorInterface	Analysis.Finding	5	3
@@ -120,7 +121,7 @@ Qualimetrix\Analysis\Finding\Contract\Rule\ThresholdParser	Analysis.Finding	30	8
 Qualimetrix\Analysis\Finding\Contract\Severity	Analysis.Finding	102	17
 Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride	Analysis.Finding	7	3
 Qualimetrix\Analysis\Finding\Contract\Violation	Analysis.Finding	55	17
-Qualimetrix\Analysis\Finding\Contract\ViolationChannel	Analysis.Finding	38	16
+Qualimetrix\Analysis\Finding\Contract\ViolationChannel	Analysis.Finding	42	16
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory	Analysis.Finding	4	2
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParser	Analysis.Finding	1	1
 Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsParserFactory	Analysis.Finding	1	1

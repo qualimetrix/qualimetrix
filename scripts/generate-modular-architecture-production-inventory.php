@@ -2543,6 +2543,7 @@ function documentationDisposition(string $path): array
         'docs/adr/0019-namespace-metric-ownership-and-attribution.md',
         'docs/adr/0020-method-size-and-npath-semantics.md',
         'docs/adr/0024-channel-identity-and-selector-semantics.md',
+        'docs/adr/0025-channel-selectors-in-configuration-keys.md',
         'docs/internal/CLI_CONVENTIONS.md',
         'docs/internal/COMPETITOR_COMPARISON.md',
         'docs/internal/PRODUCT_ROADMAP.md',

@@ -31,8 +31,10 @@ Finding owns the channel name space as a contract and not as an implementation.
 `RuleChannelRegistryInterface` (what a producer emits) and
 `ChannelIdentityInterface` (which names exist, what they belong to, what `X.*`
 expands to) — and Infrastructure supplies the single instance behind them.
-Matching stays string comparison in `NameSelector` and never consults the
-universe; the universe validates and resolves. `ChannelDeclaration` carries
+Matching stays string comparison in `NameSelector` — and, for the surfaces that
+address a whole channel rather than a bare code, in `ChannelSelector`, which adds
+the exact `ruleName#violationCode` pair. Neither consults the universe; the
+universe validates and resolves. `ChannelDeclaration` carries
 one further declared property besides shape and direction:
 `ChannelAcceptability`. `ConfigurationError` marks a channel whose findings
 report a mistake in the configuration rather than debt in the code — it is

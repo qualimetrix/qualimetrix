@@ -236,10 +236,37 @@ rules:
 ```
 
 The option is a non-empty map from channel selector to a non-empty list of namespace
-prefixes or globs. A selector is either an **exact channel name** or `X.*` for the strict
-descendants of `X` — see [Rule and channel selectors](#rule-and-channel-selectors) below. A bare
-prefix such as `health` is an error, not a group: write `health.*`. Exact `health.cohesion`
-leaves the sibling `health.coupling` untouched.
+prefixes or globs. The key reads the same grammar as everywhere else — an **exact channel
+name**, `X.*` for the strict descendants of `X`, or the explicit `ruleName#violationCode`
+pair; see [Rule and channel selectors](#rule-and-channel-selectors) below. A bare prefix such
+as `health` is an error, not a group: write `health.*`. Exact `health.cohesion` leaves the
+sibling `health.coupling` untouched.
+
+The key must address a channel **the rule it is written under actually emits**. A key that
+names another rule's channel, or no channel at all, ends the run with exit code 3 and a
+message listing that rule's channels — it used to be accepted and exclude nothing:
+
+```yaml
+rules:
+  computed.health:
+    exclude_namespace_channels:
+      # the same channel, spelled in full; identical in effect to `health.cohesion`
+      'computed.health#health.cohesion':
+        - App\Metrics\Coupling
+```
+
+Here the pair is redundant: the key already sits under a rule name, so both spellings say the
+same thing. It is accepted for consistency of grammar, not because it adds reach.
+
+!!! warning "Only namespace-aggregate findings are removed"
+    The option filters findings whose subject is a **namespace**. A rule that reports per
+    occurrence (`code-smell.*`, `security.*`, `architecture.layer-violation`) or only per class
+    (`design.lcom`) has nothing for it to remove, and a key naming such a channel is accepted
+    and then does nothing. The four layer-policy diagnostics — `architecture.coverage`,
+    `architecture.unreachable-layer`, `architecture.potential-shadow`,
+    `architecture.empty-template` — report against the project as a whole and are likewise
+    outside its reach; use the `exclude:` block inside the architecture layer configuration
+    instead.
 Only aggregate Namespace violations are removed. Class-level `health.cohesion` findings in
 the same namespace and sibling channels remain. The existing `exclude_namespaces` option is
 unchanged and stays producer-wide across class and namespace findings.
