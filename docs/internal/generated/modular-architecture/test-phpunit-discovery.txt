@@ -1460,6 +1460,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itBuildClassHealthScoresReturnsEmptyWhenClassNotFound
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itBuildClassHealthScoresSkipsMissingDimensions
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itSubtreeHealthScoresDoesNotMatchSimilarPrefix
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itSubtreeHealthScoresIgnoreATrailingBackslashInTheSelector
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itSubtreeHealthScoresMatchesChildNamespaces
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itSubtreeHealthScoresMatchesExactNamespace
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\HealthScoreDrillDownTest::itSubtreeHealthScoresReturnsEmptyForNoMatchingNamespaces
@@ -1506,6 +1507,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstClassDrillDownTest::itBuildWorstClassesSkipsClassesWithoutHealthOverall
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstClassDrillDownTest::itBuildWorstClassesSkipsNamespaceLevelViolations
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstClassDrillDownTest::itBuildWorstClassesSortedByHealthAscending
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderBuilderTest::itIgnoresATrailingBackslashInTheSelector
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderBuilderTest::itMatchesGlobSelectors
+ - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderBuilderTest::itSelectsClassesByNamespaceBoundary
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderEvidenceTest::itConstructsWithMetricsAndHealthScores
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Health\Unit\WorstOffenderTest::itConstructsWithDefaults
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Integration\BenchmarkConsumersCoverageTest::itDoesNotPartiallyRatchetWhenAConfiguredProjectIsSkipped
@@ -1656,17 +1660,20 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itThrowsExplicitlyForCustomNonWeightedOverallFormula
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itThrowsForUnknownDimension
  - Qualimetrix\Tests\Analysis\Evidence\ComputedMetrics\Unit\HealthFormulaExcluderTest::itWrapsRebuiltFormulaInClamp
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::calculate_classesAndInterfaces_interfaceCountsInDenominator
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::calculate_computesAbstractness
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::calculate_emptyNamespace_returnsZero
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::calculate_fullyAbstractNamespace
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::calculate_fullyConcreteNamespace
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::calculate_onlyInterfaces_returnsOne
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::calculate_withEnumsAndTraits_preventAbstractnessOverOne
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::getName_returnsAbstractness
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itCalculatesOneSixthFromExplicitNamespaceCountTotals
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::provides_returnsAbstractness
- - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::requires_returnsRequiredMetrics
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itClampsTheResultToTheUnitRange
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itCountsEnumsImplementingAnInterfaceAsConcrete
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itCountsInterfacesInBothNumeratorAndDenominator
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itDoesNotReportOneForAnInterfaceImplementedByEnumsOnly
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itIsNamedAbstractness
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itKeepsBareEnumsOutOfTheDenominator
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itProvidesAbstractness
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itRequiresTheImplementingEnumCountRatherThanTheTotalEnumCount
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itReturnsOneForANamespaceOfAbstractClassesAndInterfaces
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itReturnsOneForAnInterfaceOnlyNamespace
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itReturnsZeroForAFullyConcreteNamespace
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itReturnsZeroForANamespaceWithoutAnyType
+ - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\AbstractnessCollectorTest::itReturnsZeroForAnEnumOnlyNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::fromArrayEnabledFalseDisablesAllLevels
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::fromArrayWithoutEnabledFalseUsesSubDefaults
  - Qualimetrix\Tests\Analysis\Evidence\Coupling\Unit\CboOptionsTest::itAdvertisesTheThresholdShorthandKey
@@ -3233,6 +3240,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\XssRuleTest::itReturnsNoViolationsWhenDisabled
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\XssRuleTest::itReturnsNoViolationsWhenNoFindings
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itCountsAbstractClass
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itCountsAnEnumImplementingAnInterfaceSeparately
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itCountsBackedEnum
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itCountsEnum
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itCountsFinalClass
@@ -3261,6 +3269,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itProvides
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itProvidesCountsForEveryNamespaceBlockIncludingEmptyOnes
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itProvidesZeroStructuralMetricsForAStatementOnlyGlobalFile
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itReportsImplementingEnumsPerNamespace
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountCollectorTest::itResetsState
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itDisablesOptionsWhenLoadedFromEmptyArray
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itGeneratesError
@@ -4238,6 +4247,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::fqnCriterionRejectsShortNameEntry"extends"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::fqnCriterionRejectsShortNameEntry"implements"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::invalidLayerNameIsRejected
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itAcceptsThePendingFlagAndCarriesItOntoTheDefinition
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsAPendingValueThatIsNotABoolean
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::itRejectsPendingOnATemplateLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::layerEntryAsListIsRejected
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::layerEntryAsScalarIsRejected
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Configuration\Validation\LayersValidatorTest::layerEntryNameAsNonStringIsRejected
@@ -4577,6 +4589,15 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"single-character wildcard"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"suffix criterion"
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PatternScopeTest::itRefusesToScopeCriteriaThatAreNotNamespaceSubtrees"unexpanded capture"
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PendingLayerDiagnosticsTest::itCountsEachMatchedSymbolOnceAcrossEveryEdgeItTouches
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PendingLayerDiagnosticsTest::itDeclaresTheChannelAsAConfigurationError
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PendingLayerDiagnosticsTest::itDoesNotReportAPendingLayerAsUnreachable
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PendingLayerDiagnosticsTest::itLeavesTheEmptyTemplateDiagnosticAlone
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PendingLayerDiagnosticsTest::itReportsAPendingLayerMatchedOnlyAsADependencyEdgeEnd
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PendingLayerDiagnosticsTest::itReportsAPendingLayerThatMatchedAClass
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PendingLayerDiagnosticsTest::itReportsAPendingLayerWhoseEdgeEndMatchWasStolenByABroaderLayer
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PendingLayerDiagnosticsTest::itReportsAPendingLayerWhoseEveryMatchWasStolenByABroaderLayer
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\PendingLayerDiagnosticsTest::itStillReportsTheSameEmptyLayerAsUnreachableWithoutTheFlag
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\ArchitectureProcessorTest::bind_afterPrepare_clearsPreparedState_subsequentClassifyThrows
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\ArchitectureProcessorTest::bind_repeated_invalidatesAndRebindsCorrectly
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\ArchitectureProcessorTest::classify_afterBindWithoutPrepare_throwsLogicException
@@ -4632,6 +4653,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::collect_noClassMatches_returnsEmptyList
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::collect_singleVariableTemplate_dedupesAndLexSorts
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::collect_staticExcludePatternWithoutCaptures_filtersTupleObservation
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Processing\TupleExtractorTest::itIgnoresATrailingBackslashInANonCaptureFilter
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\CoverageDiagnosticsTest::diagnosticAccompaniesRealViolationsWhenForbiddenEdgesAreMixedIn
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\CoverageDiagnosticsTest::diagnosticRecommendationListsUpToTenSampleClassesAlphabetically
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\CoverageDiagnosticsTest::errorModeEmitsDiagnosticWithErrorSeverity
@@ -4653,12 +4675,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::fromArrayRejectsUnknownSeverity
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::getSeverityReturnsConfiguredSeverityForAnyValueWhenEnabled
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::getSeverityReturnsNullWhenDisabled
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itLeavesTheUnassignedClassGateOffByDefault
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itParsesTheUnassignedClassGate#0
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itParsesTheUnassignedClassGate#1
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itParsesTheUnassignedClassGate#2
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#0
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#1
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#2
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#3
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#4
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsARemovedPerDiagnosticSeverityKey#5
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationOptionsTest::itRejectsAnUnknownUnassignedClassGateValue
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::allowedEdgeProducesNoViolation
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::disabledRuleReturnsNoViolations
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::eachUseSiteProducesItsOwnViolation
@@ -4701,6 +4728,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::unreachableLayer_doesNotFireForDtoOnlyLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::unreachableLayer_firesForShadowedLayer
  - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\Rules\LayerViolationRuleTest::unreachableLayer_firesWhenPatternMatchesNoClass
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itCollectsEvidenceWhenCoverageIsIgnoredAndOnlyTheGateIsOn
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itDeclaresTheChannelAsAMagnitudeAcceptableAsDebt
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itEmitsNothingWhenEveryAnalysedDeclarationIsAssigned
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itEmitsNothingWhenNoDeclarationWasAnalysedAtAll
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itEmitsNothingWhenTheGateIsLeftAtItsDefault
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itIgnoresDependencyEdgeEndsOutsideTheAnalysedSet
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itMirrorsTheModeNameInTheReportedSeverity
+ - Qualimetrix\Tests\Analysis\Policy\Architecture\Unit\UnassignedClassDiagnosticsTest::itReportsTheAbsoluteCountAndKeepsTheShareInTheMessageOnly
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itAllowsARunWiderThanTheRecordedScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itDoesNotOfferAnEntryTheRunStillReports
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Functional\BaselineCleanupCommandTest::itRefusesARunThatDoesNotCoverTheRecordedScope
@@ -5109,6 +5144,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\V5BaselineReaderTest::itReturnsTheMalformedRowsInsteadOfDroppingThem
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAComputedMetricChannelThatOnlyTheResolvedConfigurationKnows
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAThresholdOnARuleThatDeclaresOverrideSupport
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAThresholdOnTypeCoverageItself
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAnExactChannelAndAGroupThatCoversSomething
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsAnExplicitChannelPair
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itAcceptsTheNoRuleFilterForm
@@ -5116,10 +5152,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itExplainsWhichFormMayOmitTheChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itKeepsDistinctAuthoredDirectivesApart
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itPointsAThresholdNamingAChannelAtTheProducingRule
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itPointsAThresholdNamingATypeCoverageDimensionAtTheRule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsADanglingReferenceToAMetricNoLongerConfigured
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAGroupFormThatCoversNoChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAMisspelledChannel
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsARuleNameWhereASuppressionMustNameAChannel
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAThresholdNamingARuleFamilyRatherThanARule
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAThresholdOnARuleThatDeclaresNoOverrideSupport
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsAnExplicitPairWhoseHalvesDoNotBelongTogether
  - Qualimetrix\Tests\Analysis\Policy\Inline\Integration\InlineDirectiveRuleTest::itRejectsGroupAndWildcardThresholds
@@ -5468,10 +5506,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itMergesSuppressionsForOverlappingFiles
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itMergesThresholdOverridesForOverlappingFiles
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itMergesViolations
- - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itReturnsExitCode0WhenNoViolations
- - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itReturnsExitCode1WhenOnlyWarnings
- - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itReturnsExitCode2WhenErrorsPresent
- - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itReturnsExitCode2WhenOnlyErrors
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itSortsViolationsByFileAndLine
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\AnalysisResultTest::itSortsViolationsWithNullLines
  - Qualimetrix\Tests\Analysis\Run\Unit\Pipeline\DependencyGraphAnalyzerTest::itBuildsTheCanonicalUniverseForEveryNamedClassLikeAndExternalTarget
@@ -5513,6 +5547,14 @@ Available tests:
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::fqnWithEmbeddedSpace_exitsInvalid
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::fqnWithInvalidIdentifierCharacter_exitsInvalid
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::globalNamespaceClass_isHandled
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itCoversEveryFactTheTextReportPrintsInTheJsonPayload
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itExitsInvalidWithoutRunningResolutionForAnUnknownFormat
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itMatchesExplicitTextFormatWhenTheFormatOptionIsOmitted
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReportsHasLayersFalseWhenNoLayersAreDeclared
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReturnsAnErrorEnvelopeForAnInvalidFqnInJsonFormat
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReturnsAnErrorEnvelopeWithTheFailureExitCodeForAConfigErrorInJsonFormat
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReturnsNullAssignedAndEmptyShadowedWhenNothingMatches
+ - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::itReturnsTheFixedJsonSchemaWithShadowedEntriesWhenLayersOverlap
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::leadingBackslash_isNormalised
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::noLayersDeclared_reportsAbsenceWithoutCatchAllSuggestion
  - Qualimetrix\Tests\Functional\Console\LayerAssignmentCommandTest::nonExistentConfigPath_exitsFailure
@@ -5609,6 +5651,8 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itAcceptsRelativePath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itAcceptsSymlinkedPath
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandPathInputTest::itRejectsNonExistentPath
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProjectScopedGateTest::itFailsAndReportsThroughAReportNarrowedToAnEmptyGitScope
+ - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandProjectScopedGateTest::itStillDropsAFileScopedFindingFromTheSameRun
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandTest::itAnalyzesSimplePhpFile
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandTest::itAppliesSymbolHealthSuppressionWithoutHidingSiblingDimensions
  - Qualimetrix\Tests\Infrastructure\Console\Functional\Command\CheckCommandTest::itDetectsComplexityViolations
@@ -5648,6 +5692,18 @@ Available tests:
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itFailsTheRunOnAConfigurationErrorWhateverFailOnSays
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itRefusesAConfigurationErrorReportedBelowWarning
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverConfigurationErrorTest::itStillHonoursFailOnForAnOrdinaryDebtFinding
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverReportOnlyTest::itExitsCleanOnAnInfoOnlyRunUnderEveryFailOnSetting
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverReportOnlyTest::itIgnoresInfoWhenAGatingFindingIsPresent
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitCodeResolverReportOnlyTest::itStillFailsOnAWarningUnderTheWarningThreshold
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"error"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"false"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"none"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"unset"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itAcceptsTheRemainingThresholds"warning"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itNamesTheAllowedValuesWhenRejectingAnUnknownWord
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itRefusesToBeConstructedWithInfoAtAll
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itRejectsInfoAsAFailOnThreshold"enum case"
+ - Qualimetrix\Tests\Infrastructure\Console\Unit\ExitPolicyTest::itRejectsInfoAsAFailOnThreshold"string"
  - Qualimetrix\Tests\Infrastructure\Console\Unit\ProfileSummaryRendererTest::itRendersTypedProfileStatistics
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Progress\SwitchableProgressReporterTest::itDelegatesToTheEnabledReporter
  - Qualimetrix\Tests\Infrastructure\Console\Unit\Progress\SwitchableProgressReporterTest::itIsANoOpByDefaultAndAfterReset
@@ -5846,6 +5902,12 @@ Available tests:
  - Qualimetrix\Tests\Integration\DependencyInjection\ContainerFactoryTest::itWiresGlobalContextCollectors
  - Qualimetrix\Tests\Integration\DependencyInjection\ContainerFactoryTest::itWiresOwnerLocalRuntimeConfiguration
  - Qualimetrix\Tests\Integration\DependencyInjection\ContainerFactoryTest::itWiresTheDuplicationCapabilityThroughItsContractAndRegistries
+ - Qualimetrix\Tests\Integration\Documentation\ChannelPublicationConsistencyTest::itPublishesChannelCountsAndListsThatMatchTheDeclarations
+ - Qualimetrix\Tests\Integration\Documentation\ChannelPublicationConsistencyTest::itRegistersEveryChannelCountStatement
+ - Qualimetrix\Tests\Integration\Documentation\ChannelPublicationConsistencyTest::itRejectsDeclarationOnlyChannelDrift
+ - Qualimetrix\Tests\Integration\Documentation\ChannelPublicationConsistencyTest::itRejectsDocumentationOnlyChannelDrift
+ - Qualimetrix\Tests\Integration\Documentation\ChannelPublicationConsistencyTest::itRejectsMissingAndDuplicateChannelStatements
+ - Qualimetrix\Tests\Integration\Documentation\ChannelPublicationConsistencyTest::itRejectsUnregisteredChannelCountStatements
  - Qualimetrix\Tests\Integration\Documentation\DocumentationConsistencyTest::itDocumentsAllCliAliasesInConfigurationReadme
  - Qualimetrix\Tests\Integration\Documentation\DocumentationConsistencyTest::itDocumentsAllRuleNamesInDefaultThresholds
  - Qualimetrix\Tests\Integration\Documentation\DocumentationConsistencyTest::itDocumentsLayerViolationCliAliasesInWebsiteCliReferences
@@ -5917,6 +5979,9 @@ Available tests:
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\FindingProjectorTest::itSkipsTheBaselineStageWhenThePathIsEmpty
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\FindingProjectorTest::itStillExcludesRestoredFindingsByPathAndNamespace
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\FindingProjectorTest::itStillNarrowsRestoredFindingsToTheGitScope
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest::itSurvivesAReportNarrowedToAGitScopeContainingNothing
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest::itSurvivesNamespaceExclusionCoveringTheNamespace
+ - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest::itSurvivesPathExclusionCoveringTheFile
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsEveryRequestFieldToDotProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsNamespaceFiltersToJsonProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"dot"
@@ -6234,6 +6299,7 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"question mark"
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"single star"
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itIsGlobReturnsTrueForGlobCharacters"star in middle"
+ - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itLeavesPatternNormalizationToThePrimitiveOnEverySurface
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsFalse"different namespace"
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsFalse"empty prefix is skipped"
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsFalse"glob: no match"
@@ -6248,7 +6314,6 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsTrue"prefix matches child namespace"
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsTrue"prefix matches deeply nested namespace"
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesReturnsTrue"trailing backslash normalization"
- - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesSingleDoesNotNormalizeTrailingBackslash
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesSingleGlobCharClass
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesSingleGlobNoMatch
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesSingleGlobQuestionMark
@@ -6262,6 +6327,10 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesSingleReturnsFalseForEmptyNamespace
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesSingleReturnsFalseForEmptyPattern
  - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itMatchesSingleReturnsFalseWhenBothEmpty
+ - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itNormalizesTrailingBackslashForInstancePatternsToo
+ - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itNormalizesTrailingBackslashInGlobMode
+ - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itNormalizesTrailingBackslashInPrefixMode
+ - Qualimetrix\Tests\Unit\Core\Util\NamespaceMatcherTest::itTreatsAnAllBackslashPatternAsEmpty
  - Qualimetrix\Tests\Unit\Core\Util\PathMatcherTest::itIsEmptyReturnsFalseWhenPatternsExist
  - Qualimetrix\Tests\Unit\Core\Util\PathMatcherTest::itIsEmptyReturnsTrueForEmptyPatterns
  - Qualimetrix\Tests\Unit\Core\Util\PathMatcherTest::itMatchesReturnsFalse"glob: filename pattern mismatch"
@@ -6647,6 +6716,7 @@ Available tests:
  - Qualimetrix\Tests\Unit\PhpStan\Rules\BannedStringPathPropertyRuleTest::itReportsBannedStringPathPropertiesInScopedNamespace
  - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itDoesNotMatchViolationsBySimilarNamespacePrefix
  - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itExcludesViolationByClassWhenNoType
+ - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itFiltersViolationsByAGlobNamespaceSelector
  - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itFiltersViolationsByClassExactMatch
  - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itFiltersViolationsByClassWithGlobalNamespace
  - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itFiltersViolationsByNamespaceExactMatch
@@ -6654,9 +6724,13 @@ Available tests:
  - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itFiltersWorstOffendersByClass
  - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itFiltersWorstOffendersByNamespace
  - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itFiltersWorstOffendersByNamespaceMatchingChildren
+ - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itIgnoresATrailingBackslashInTheNamespaceSelector
+ - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itIgnoresATrailingBackslashWhenFilteringWorstOffenders
+ - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itNeverSelectsProjectWideFindingsByNamespace
  - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itReturnsAllViolationsWhenNoFilter
  - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itReturnsAllWorstOffendersWhenNoFilter
  - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itReturnsEmptyWhenWorstOffendersByClassNoMatch
+ - Qualimetrix\Tests\Unit\Reporting\Filter\ViolationFilterTest::itSelectsNothingForAnEmptyNamespaceSelector
  - Qualimetrix\Tests\Unit\Reporting\FormatterContextTest::itDisablesDetailWhenLimitIsNull
  - Qualimetrix\Tests\Unit\Reporting\FormatterContextTest::itEnablesDetailWhenLimitIsPositive
  - Qualimetrix\Tests\Unit\Reporting\FormatterContextTest::itEnablesDetailWhenLimitIsZero
@@ -7190,6 +7264,3 @@ Available tests:
  - Qualimetrix\Tests\Unit\Reporting\ReportTest::itFiltersViolationsBySeverity
  - Qualimetrix\Tests\Unit\Reporting\ReportTest::itIsEmptyWhenNoViolations
  - Qualimetrix\Tests\Unit\Reporting\ReportTest::itIsNotEmptyWhenHasViolations
- - Qualimetrix\Tests\Unit\Reporting\ReportTest::itReturnsOneExitCodeForWarningsOnly
- - Qualimetrix\Tests\Unit\Reporting\ReportTest::itReturnsTwoExitCodeForErrors
- - Qualimetrix\Tests\Unit\Reporting\ReportTest::itReturnsZeroExitCodeForEmptyReport

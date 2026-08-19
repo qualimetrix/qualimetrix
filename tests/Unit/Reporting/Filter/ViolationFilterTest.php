@@ -16,6 +16,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Core\Symbol\SymbolType;
 use Qualimetrix\Reporting\Filter\ViolationFilter;
 use Qualimetrix\Reporting\FormatterContext;
 
@@ -90,6 +91,40 @@ final class ViolationFilterTest extends TestCase
         $result = $this->filter->filterViolations($violations, $context);
 
         self::assertSame([], $result);
+    }
+
+    /**
+     * The selector is the shared namespace-pattern primitive, so a glob is a
+     * pattern here too rather than a prefix that happens to contain a star.
+     */
+    #[Test]
+    public function itFiltersViolationsByAGlobNamespaceSelector(): void
+    {
+        $violations = [
+            $this->createViolation('App\\Domain\\Order', 'Handler'),
+            $this->createViolation('App\\Infra\\Order', 'Handler'),
+            $this->createViolation('Lib\\Domain\\Order', 'Handler'),
+        ];
+
+        $context = new FormatterContext(namespace: 'App\\*\\Order');
+
+        $result = $this->filter->filterViolations($violations, $context);
+
+        self::assertCount(2, $result);
+    }
+
+    /** An empty selector names no namespace, so it selects nothing rather than the global one. */
+    #[Test]
+    public function itSelectsNothingForAnEmptyNamespaceSelector(): void
+    {
+        $violations = [
+            $this->createViolation('', 'Handler'),
+            $this->createViolation('App', 'Handler'),
+        ];
+
+        $context = new FormatterContext(namespace: '');
+
+        self::assertSame([], $this->filter->filterViolations($violations, $context));
     }
 
     #[Test]
@@ -220,6 +255,66 @@ final class ViolationFilterTest extends TestCase
         $result = $this->filter->filterWorstOffenders($offenders, $context);
 
         self::assertSame([], $result);
+    }
+
+    #[Test]
+    public function itIgnoresATrailingBackslashInTheNamespaceSelector(): void
+    {
+        $violations = [
+            $this->createViolation('App\\Service', 'Foo'),
+            $this->createViolation('App\\Other', 'Bar'),
+        ];
+
+        $result = $this->filter->filterViolations($violations, new FormatterContext(namespace: 'App\\Service\\'));
+
+        self::assertCount(1, $result);
+    }
+
+    #[Test]
+    public function itIgnoresATrailingBackslashWhenFilteringWorstOffenders(): void
+    {
+        $offenders = [
+            $this->createOffender('App\\Service', 'UserService'),
+            $this->createOffender('App\\Other', 'OrderService'),
+        ];
+
+        $result = $this->filter->filterWorstOffenders($offenders, new FormatterContext(namespace: 'App\\Service\\'));
+
+        self::assertCount(1, $result);
+    }
+
+    #[Test]
+    public function itNeverSelectsProjectWideFindingsByNamespace(): void
+    {
+        $violations = [
+            $this->createViolation('App\\Service', 'Foo'),
+            $this->createProjectViolation(),
+        ];
+
+        foreach (['*', 'App\\*', 'App\\Service'] as $selector) {
+            $result = $this->filter->filterViolations($violations, new FormatterContext(namespace: $selector));
+
+            foreach ($result as $violation) {
+                self::assertNotSame(
+                    SymbolType::Project,
+                    $violation->symbolPath->getType(),
+                    \sprintf('Selector "%s" must not reach the project sentinel.', $selector),
+                );
+            }
+        }
+    }
+
+    private function createProjectViolation(): Violation
+    {
+        return new Violation(
+            location: Location::none(),
+            subject: MetricSubject::aggregate(SymbolPath::forProject()),
+            symbolPath: SymbolPath::forProject(),
+            ruleName: 'architecture.coverage',
+            violationCode: 'architecture.coverage',
+            message: 'project-wide finding',
+            severity: Severity::Error,
+        );
     }
 
     private function createViolation(string $namespace, string $class): Violation
