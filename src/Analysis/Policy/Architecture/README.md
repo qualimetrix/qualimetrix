@@ -15,7 +15,9 @@ External owners use only the contracts in `Contract/`:
   warnings after the Console logger is available.
 - `LayerPolicyPreparationInterface` is the Run-owned sequential preparation
   boundary. Disabling the rule clears state and does no class-universe or
-  template-expansion work.
+  template-expansion work. It also carries the literal names of the diagnostic
+  channels the rule emits under rule names other than its own, and the
+  project-scoped subset of them.
 - `LayerAssignmentInspectorInterface`, `LayerAssignment`, and
   `LayerAssignmentMatch` form the Console debug projection.
 - `ArchitectureConfigurationException` and `ArchitecturePreparationException`
@@ -34,7 +36,7 @@ Architecture/
 │   └── Allow/                  # allow selectors and binding values
 ├── Layer/                      # membership and registry primitives
 │   └── Expansion/              # observed-template expansion
-├── LayerViolation/             # rule, options and finding construction
+├── LayerViolation/             # rule, options, finding construction and diagnostics
 └── ArchitecturePolicy.php      # instance-owned configuration/preparation
 ```
 
@@ -52,6 +54,20 @@ Architecture-specific branch or deferred-warning transport.
 
 Run prepares the policy after graph construction. `LayerViolationRule` reads
 the prepared policy; it does not traverse the AST or construct lifecycle state.
+It emits seven channels. Six report no magnitude; `architecture.unassigned-class`
+is a magnitude channel gated by the rule's own `unassigned_class` option and is
+the only one of the six diagnostics a baseline may accept. `OutsideLayerSummary`
+owns both per-run summaries of what fell outside the declared layers —
+`architecture.coverage` and `architecture.unassigned-class`.
+`DeclaredLayerReachability` owns the four verdicts on the declaration itself —
+`architecture.unreachable-layer`, `architecture.pending-layer-matched`,
+`architecture.potential-shadow` and `architecture.empty-template`. The rule
+keeps only the per-edge policy decision and the evidence both collaborators
+read: one per-layer tally of what was ASSIGNED to a layer and one of what it
+MATCHED at all. A layer declared `pending: true` — reserved for code not
+written yet — is exempt from `architecture.unreachable-layer` and is reported
+by `architecture.pending-layer-matched` once its criteria match, which the
+matched tally sees even when a broader layer wins every assignment.
 The Console debug command invokes the inspector contract over the same collected
 graph and class universe.
 

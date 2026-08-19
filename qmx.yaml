@@ -518,10 +518,14 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerAssignmentMatch'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface'
         - 'Qualimetrix\Analysis\Policy\Architecture\Contract\ResolvedArchitecturePolicyInterface'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\DeclaredLayerReachability'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerRoutingGuidance'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationFinding'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationOptions'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OutsideLayerSummary'
         - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\OwnedLayerTargets'
+        - 'Qualimetrix\Analysis\Policy\Architecture\LayerViolation\UnassignedClassMode'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\CapturePattern'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory'
@@ -535,6 +539,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerCriteriaMatcher'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition'
+        - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerPolicy'
         - 'Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry'
@@ -971,6 +976,7 @@ architecture:
     analysis-evidence-computedmetrics-health:
       - analysis-evidence-computedmetrics
       - analysis-evidence-measurement
+      - core-neutral
       - core-path
       - core-symbol
       - external

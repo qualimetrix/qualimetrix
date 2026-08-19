@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\FindingProjection;
 
+use Closure;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Filter\NamespaceExclusionFilter;
 use Qualimetrix\Analysis\Finding\Contract\Filter\PathExclusionFilter;
@@ -81,14 +82,29 @@ final readonly class FindingProjector
             $git = $this->gitScopeQuery->resolve($options->gitScope);
             $pathSet = array_fill_keys($git->paths, true);
             $namespaceSet = array_fill_keys($git->namespaces, true);
-            $filter = new class ($pathSet, $namespaceSet) implements ViolationFilterInterface {
+            // The same scope the exclusion stages read — see exclusionStages().
+            $fileScope = DeclaredChannelFileScope::create();
+            $filter = new class (
+                $pathSet,
+                $namespaceSet,
+                static fn(Violation $violation): bool => !$fileScope->isFileScoped($violation->channel()),
+            ) implements ViolationFilterInterface {
                 /**
                  * @param array<string, true> $paths
                  * @param array<string, true> $namespaces
+                 * @param Closure(Violation): bool $isProjectScoped
                  */
-                public function __construct(private array $paths, private array $namespaces) {}
+                public function __construct(
+                    private array $paths,
+                    private array $namespaces,
+                    private Closure $isProjectScoped,
+                ) {}
                 public function shouldInclude(Violation $violation): bool
                 {
+                    if (($this->isProjectScoped)($violation)) {
+                        return true;
+                    }
+
                     return isset($this->paths[$violation->location->pathString()])
                         || ($violation->symbolPath->namespace !== null && isset($this->namespaces[$violation->symbolPath->namespace]));
                 }
@@ -162,7 +178,33 @@ final readonly class FindingProjector
         return $this->declarations->declarationFor($violation->channel())?->isConfigurationError() === true;
     }
 
-    /** @return list<PredicateFilterStage> */
+    /**
+     * The exclusion stages, and with them the answer every narrowing stage of
+     * this projection shares: **a stage that selects findings by the file
+     * they sit in must not touch a finding that is not about a file.**
+     *
+     * Which channels those are is declared by the capabilities themselves and
+     * assembled by {@see DeclaredChannelFileScope}, so the guarantee extends
+     * to the next project-scoped channel without anyone editing this class.
+     * That one scope is what all three narrowing stages read — `exclude_paths`
+     * and `exclude_namespaces` here, and the git-range narrowing in
+     * {@see project()}. Letting each stage decide for itself is what produced
+     * two answers to one question: `architecture.unassigned-class` was exempt
+     * from the first two and silently dropped by the third, so
+     * `--report=git:staged` turned a gate the user had switched on into a
+     * green build.
+     *
+     * Deliberately not a guard on "the violation carries no location": that
+     * is an observation about one emission site, and reading scope out of it
+     * would reintroduce exactly the derived-from-a-convention rule
+     * {@see \Qualimetrix\Analysis\Finding\Contract\Filter\ChannelFileScope}
+     * exists to replace. A project-scoped channel that does print an example
+     * location — `architecture.layer-violation` names the offending edge's
+     * use site — is still a statement about the project, and is narrowed by
+     * none of the three.
+     *
+     * @return list<PredicateFilterStage>
+     */
     private function exclusionStages(FindingProjectionOptions $options): array
     {
         $fileScope = DeclaredChannelFileScope::create();

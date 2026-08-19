@@ -1972,6 +1972,11 @@
                     "owner": "Analysis.Policy.Architecture",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule",
                     "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerRoutingGuidance",
+                    "closes_in": null
                 }
             ]
         },
@@ -5394,6 +5399,11 @@
             "closure_package": "P6-A",
             "consumers": [
                 {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\OutsideLayerSummary",
+                    "closes_in": null
+                },
+                {
                     "owner": "Analysis.Evidence.CircularDependency",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyRule",
                     "closes_in": null
@@ -5977,6 +5987,11 @@
             "closure_package": "P6-A",
             "consumers": [
                 {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\OutsideLayerSummary",
+                    "closes_in": null
+                },
+                {
                     "owner": "Analysis.Evidence.CircularDependency",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyRule",
                     "closes_in": null
@@ -6137,11 +6152,6 @@
                     "closes_in": null
                 },
                 {
-                    "owner": "Analysis.Policy.Architecture",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule",
-                    "closes_in": null
-                },
-                {
                     "owner": "Analysis.Policy.Inline",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectivePolicy",
                     "closes_in": null
@@ -6154,6 +6164,11 @@
                 {
                     "owner": "Reporting",
                     "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Sarif\\SarifFormatter",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\DeclaredLayerReachability",
                     "closes_in": null
                 }
             ]
@@ -8507,6 +8522,11 @@
             "closure_package": "P6-A",
             "consumers": [
                 {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\OutsideLayerSummary",
+                    "closes_in": null
+                },
+                {
                     "owner": "Analysis.Evidence.CircularDependency",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyOptions",
                     "closes_in": null
@@ -8922,11 +8942,6 @@
                     "closes_in": null
                 },
                 {
-                    "owner": "Analysis.Policy.Architecture",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule",
-                    "closes_in": null
-                },
-                {
                     "owner": "Analysis.Policy.Inline",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Directive\\InlineDirectiveOptions",
                     "closes_in": null
@@ -9015,6 +9030,11 @@
                     "owner": "Reporting",
                     "source_fqcn": "Qualimetrix\\Reporting\\ReportBuilder",
                     "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\DeclaredLayerReachability",
+                    "closes_in": null
                 }
             ]
         },
@@ -9069,6 +9089,11 @@
             "visibility": "contract",
             "closure_package": "P6-A",
             "consumers": [
+                {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\OutsideLayerSummary",
+                    "closes_in": null
+                },
                 {
                     "owner": "Analysis.Evidence.CircularDependency",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyRule",
@@ -9240,11 +9265,6 @@
                     "closes_in": null
                 },
                 {
-                    "owner": "Analysis.Policy.Architecture",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule",
-                    "closes_in": null
-                },
-                {
                     "owner": "Analysis.Policy.Baseline",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BaselineIdentity",
                     "closes_in": null
@@ -9342,6 +9362,11 @@
                 {
                     "owner": "Reporting",
                     "source_fqcn": "Qualimetrix\\Reporting\\ReportBuilder",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\DeclaredLayerReachability",
                     "closes_in": null
                 }
             ]
@@ -10050,6 +10075,22 @@
                 }
             ]
         },
+        "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\DeclaredLayerReachability": {
+            "path": "src/Analysis/Policy/Architecture/LayerViolation/DeclaredLayerReachability.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Architecture",
+            "visibility": "internal",
+            "closure_package": "P4",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerRoutingGuidance": {
+            "path": "src/Analysis/Policy/Architecture/LayerViolation/LayerRoutingGuidance.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Architecture",
+            "visibility": "internal",
+            "closure_package": "P4",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationFinding": {
             "path": "src/Analysis/Policy/Architecture/LayerViolation/LayerViolationFinding.php",
             "kind": "class",
@@ -10074,9 +10115,25 @@
             "closure_package": "P4",
             "consumers": []
         },
+        "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\OutsideLayerSummary": {
+            "path": "src/Analysis/Policy/Architecture/LayerViolation/OutsideLayerSummary.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Architecture",
+            "visibility": "internal",
+            "closure_package": "P4",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\OwnedLayerTargets": {
             "path": "src/Analysis/Policy/Architecture/LayerViolation/OwnedLayerTargets.php",
             "kind": "class",
+            "owner": "Analysis.Policy.Architecture",
+            "visibility": "internal",
+            "closure_package": "P4",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\UnassignedClassMode": {
+            "path": "src/Analysis/Policy/Architecture/LayerViolation/UnassignedClassMode.php",
+            "kind": "enum",
             "owner": "Analysis.Policy.Architecture",
             "visibility": "internal",
             "closure_package": "P4",
@@ -10181,6 +10238,14 @@
         "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\LayerDefinition": {
             "path": "src/Analysis/Policy/Architecture/Layer/LayerDefinition.php",
             "kind": "class",
+            "owner": "Analysis.Policy.Architecture",
+            "visibility": "internal",
+            "closure_package": "P4",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Policy\\Architecture\\Layer\\LayerLifecycle": {
+            "path": "src/Analysis/Policy/Architecture/Layer/LayerLifecycle.php",
+            "kind": "enum",
             "owner": "Analysis.Policy.Architecture",
             "visibility": "internal",
             "closure_package": "P4",
@@ -11972,6 +12037,11 @@
                     "closes_in": null
                 },
                 {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\OutsideLayerSummary",
+                    "closes_in": null
+                },
+                {
                     "owner": "Analysis.Policy.Baseline",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\Filter\\BaselineCeilingStage",
                     "closes_in": null
@@ -13067,6 +13137,11 @@
             "closure_package": "P8",
             "consumers": [
                 {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\OutsideLayerSummary",
+                    "closes_in": null
+                },
+                {
                     "owner": "Analysis.Evidence.CircularDependency",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyRule",
                     "closes_in": null
@@ -13217,11 +13292,6 @@
                     "closes_in": null
                 },
                 {
-                    "owner": "Analysis.Policy.Architecture",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule",
-                    "closes_in": null
-                },
-                {
                     "owner": "Analysis.Policy.Baseline",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Baseline\\BoundaryExplanationService",
                     "closes_in": null
@@ -13259,6 +13329,11 @@
                 {
                     "owner": "Analysis.Policy.Inline",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Inline\\Extraction\\DeclarationControlBindings",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\DeclaredLayerReachability",
                     "closes_in": null
                 }
             ]
@@ -13374,11 +13449,6 @@
                     "closes_in": null
                 },
                 {
-                    "owner": "Analysis.Evidence.ComputedMetrics.Health",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder",
-                    "closes_in": null
-                },
-                {
                     "owner": "Analysis.Evidence.Coupling",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\CboRule",
                     "closes_in": null
@@ -13487,6 +13557,11 @@
             "visibility": "contract",
             "closure_package": "P8",
             "consumers": [
+                {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\OutsideLayerSummary",
+                    "closes_in": null
+                },
                 {
                     "owner": "Analysis.Evidence.CircularDependency",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyDetector",
@@ -13699,11 +13774,6 @@
                 },
                 {
                     "owner": "Analysis.Policy.Architecture",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\LayerViolationRule",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Policy.Architecture",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\OwnedLayerTargets",
                     "closes_in": null
                 },
@@ -13790,6 +13860,11 @@
                 {
                     "owner": "Reporting.GraphProjection",
                     "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\JsonGraphExporter",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\DeclaredLayerReachability",
                     "closes_in": null
                 }
             ]
@@ -14053,6 +14128,11 @@
                 },
                 {
                     "owner": "Reporting",
+                    "source_fqcn": "Qualimetrix\\Reporting\\Filter\\ViolationFilter",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Reporting",
                     "source_fqcn": "Qualimetrix\\Reporting\\Formatter\\Html\\HtmlTreeBuilder",
                     "closes_in": null
                 },
@@ -14134,6 +14214,21 @@
             "closure_package": "P8",
             "consumers": [
                 {
+                    "owner": "Analysis.Evidence.ComputedMetrics.Health",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Contract\\DrillDown\\HealthScoreDrillDown",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.ComputedMetrics.Health",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\ComputedMetrics\\Health\\Offender\\WorstOffenderBuilder",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Coupling",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\DistanceRule",
+                    "closes_in": null
+                },
+                {
                     "owner": "Analysis.Finding",
                     "source_fqcn": "Qualimetrix\\Analysis\\Finding\\Contract\\Filter\\NamespaceExclusionFilter",
                     "closes_in": null
@@ -14156,6 +14251,11 @@
                 {
                     "owner": "Reporting",
                     "source_fqcn": "Qualimetrix\\Reporting\\FindingProjection\\FindingProjector",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Reporting",
+                    "source_fqcn": "Qualimetrix\\Reporting\\Filter\\ViolationFilter",
                     "closes_in": null
                 }
             ]

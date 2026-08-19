@@ -129,7 +129,7 @@ final class CheckCommandDefinition
                 'namespace',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Filter results by namespace (boundary-aware prefix match)',
+                'Filter results by namespace pattern: boundary-aware prefix, or glob when it contains * ? [',
             )
             ->addOption(
                 'class',

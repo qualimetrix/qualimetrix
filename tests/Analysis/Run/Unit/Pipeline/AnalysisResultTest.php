@@ -89,46 +89,6 @@ final class AnalysisResultTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsExitCode0WhenNoViolations(): void
-    {
-        $result = $this->createResult([]);
-
-        self::assertSame(0, $result->getExitCode());
-    }
-
-    #[Test]
-    public function itReturnsExitCode1WhenOnlyWarnings(): void
-    {
-        $result = $this->createResult([
-            $this->createViolation(Severity::Warning),
-            $this->createViolation(Severity::Warning),
-        ]);
-
-        self::assertSame(1, $result->getExitCode());
-    }
-
-    #[Test]
-    public function itReturnsExitCode2WhenErrorsPresent(): void
-    {
-        $result = $this->createResult([
-            $this->createViolation(Severity::Warning),
-            $this->createViolation(Severity::Error),
-        ]);
-
-        self::assertSame(2, $result->getExitCode());
-    }
-
-    #[Test]
-    public function itReturnsExitCode2WhenOnlyErrors(): void
-    {
-        $result = $this->createResult([
-            $this->createViolation(Severity::Error),
-        ]);
-
-        self::assertSame(2, $result->getExitCode());
-    }
-
-    #[Test]
     public function itMergesViolations(): void
     {
         $result1 = $this->createResult([

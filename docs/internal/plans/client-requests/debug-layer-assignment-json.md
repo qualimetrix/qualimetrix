@@ -1,58 +1,106 @@
 # План: `debug:layer-assignment --format=json`
 
-**Статус:** предложение, перед ревью
-**Дата:** 2026-08-16
-**Область:** `src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php`, `src/Infrastructure/Console/LayerAssignmentResolver.php`
+**Статус:** реализовано (2026-08-19)
+**Область:** `src/Infrastructure/Console/Command/Debug/LayerAssignmentCommand.php`,
+`src/Infrastructure/Console/LayerAssignmentResolver.php` (изменений не потребовалось —
+контракт `resolve()`/`resolveIncludingGenerated()` уже нёс всё нужное),
+`tests/Functional/Console/LayerAssignmentCommandTest.php`,
+`website/docs/usage/cli-options.{md,ru.md}`
 
 ---
 
 ## 1. Предпосылки
 
 `debug:layer-assignment` — инструмент разбора затенения слоёв (shadowing). Его основной
-потребитель в продуктовой модели — AI-агент (машинный потребитель фидбека), который сейчас
-должен парсить человеческий текст, чтобы понять «в какой слой попал класс и какие слои его
-затеняют».
+потребитель в продуктовой модели — AI-агент (машинный потребитель фидбека), который до
+этого изменения должен был парсить человекочитаемый текст, чтобы понять «в какой слой
+попал класс и какие слои его затеняют».
 
-Проверено по коду: `LayerAssignmentCommand::renderReport()` (`LayerAssignmentCommand.php:215-275`)
-выводит только человекочитаемый текст (`Assigned to:`, `Would also match:`,
-`Diagnostic hint:`); структурированный результат `resolve()`/`resolveIncludingGenerated()`
-живёт в `LayerAssignmentResolver` и на выход не сериализуется.
+`LayerAssignmentCommand::renderReport()` выводил только текст (`Assigned to:`, `Would also
+match:`, `Diagnostic hint:`); структурированный результат `resolve()` (список
+`LayerAssignmentMatch{layerName, criteria}` + `hasLayers`) жил в `LayerAssignmentResolver` и
+на выход не сериализовался.
 
-## 2. Аргументы
+## 2. Решение (как реализовано)
 
-**Зачем.** Принцип «one analysis model, many projections» и критерий «machine contract fits
-the context an agent actually has»: агент не должен реконструировать факт из форматирования.
-JSON-вывод даёт стабильный машинный контракт и убирает regexp-парсинг текста.
+1. Добавлена опция `--format` (`VALUE_REQUIRED`, дефолт `text`) без короткого алиаса —
+   `-c` уже занято под `--config`, а частота использования `--format` на debug-команде не
+   оправдывает второй short flag по правилу CLI_CONVENTIONS «≤6 коротких флагов на всё
+   приложение».
+2. `execute()` сначала проверяет `--format` на принадлежность `{text, json}` — неизвестное
+   значение завершает команду с `Command::INVALID` (2) ДО разбора FQN и запуска
+   Discovery/Collection, ничего не считая впустую.
+3. `renderReport()` (текст) и новый `renderJson()` — два проектора над одним и тем же
+   результатом `resolve()`/`resolveIncludingGenerated()`; логика разрешения не
+   продублирована. Текстовый вывод не изменился ни на байт (регрессия покрыта тестом
+   `defaultFormat_isText_omittingFormatOptionMatchesExplicitText` и тем, что все
+   предсуществовавшие текстовые тесты остались зелёными без правок).
+4. Ошибочные исходы вынесены в общий `reportError(format, message, exitCode)`:
+   - `text` — прежняя строка `<error>...</error>` (побайтово идентична дореализационной).
+   - `json` — конверт `{"error": "...", "exit_code": N}` **в stdout**; отдельного канала
+     диагностики не потребовалось, так как команда больше ничего в json-режиме не печатает.
+   - Используется для двух категорий ошибок: невалидный FQN (`Command::INVALID`, 2) и
+     ошибка конфигурации/подготовки (`Command::FAILURE`, 1, все три существующих catch-ветки).
+5. Проверка существования класса **не введена** — как и предполагалось, это отдельное
+   решение вне скоупа; `assigned` просто `null` при пустых matches.
 
-**Цена.** Единственная реальная работа — схема JSON и поддержание parity с текстом
-(текст и JSON обязаны быть проекциями одного и того же результата разрешения).
+## 3. Зафиксированная JSON-схема
 
-## 3. Решение
+```json
+{
+  "fqn": "App\\Service\\Foo",
+  "assigned": { "layer": "any-foo", "criteria": ["pattern \"App\\**\\Foo\""] },
+  "shadowed": [
+    { "layer": "service", "criteria": ["pattern \"App\\Service\\**\""] }
+  ],
+  "hasLayers": true
+}
+```
 
-1. Добавить `--format=json` (значение по умолчанию — `text`, вывод не меняется).
-2. JSON-вывод сериализует **только то, что уже есть в контракте** `ArchitecturePolicy::inspect`
-   → `LayerAssignment(matches, hasLayers)`: список матчей (слой + критерии, в порядке
-   объявления) и `hasLayers`. Исхода «класс не найден» **нет**: любой синтаксически корректный
-   FQN классифицируется, существование не проверяется (`ArchitecturePolicy.php:84`). Реальные
-   исходы: назначенный слой + затеняющие слои; «(no layer)» при пустых matches; «слои не
-   объявлены» при `hasLayers=false`; config-ошибка.
-3. `renderReport()` разводится на два проектора (text / json) над **одним** результатом
-   `resolve()`; логика разрешения не дублируется. Parity проверяется структурно (см. §4), а не
-   парсингом текста.
-4. **Схема и ошибочные исходы фиксируются до реализации:** поля (`fqn`, `assigned{layer,
-   criteria}`, `shadowed[]`, `hasLayers`), типы, nullability (`assigned=null` при пустых
-   matches), error-envelope `{error, exit_code}` для config-ошибки; JSON — в stdout, диагностика
-   — в stderr; неизвестный `--format` → exit 2 (INVALID). Проверка существования класса в схему
-   не вводится (сменила бы семантику команды — отдельное решение, вне скоупа).
-5. Свериться с `docs/internal/CLI_CONVENTIONS.md` на форму `--format` для debug-команд (у
-   `check` конвенция есть; для debug-семейства подтвердить/зафиксировать).
+- `fqn: string` — нормализованный FQN (без ведущего `\`), тот же, что в заголовке `Class:`
+  текстового отчёта.
+- `assigned: {layer: string, criteria: non-empty-list<string>} | null` — первый элемент
+  `matches`; `null`, если `matches === []`.
+- `shadowed: list<{layer: string, criteria: non-empty-list<string>}>` — остаток `matches`
+  (`array_slice($matches, 1)`) в порядке объявления слоёв; `[]`, если совпадение
+  единственное или отсутствует.
+- `hasLayers: bool` — как в контракте `LayerAssignment`; различает «слои не объявлены»
+  (`false`) и «слои объявлены, но класс ничему не сопоставился» (`true` + `assigned: null`).
 
-## 4. Последствия
+Ошибочный конверт:
 
-- Код: `LayerAssignmentCommand` (опция + ветвление рендера + JSON-представление ошибок),
-  возможно тонкая сериализация `LayerAssignmentMatch` в JSON.
-- Тесты: functional — `--format=json` возвращает ожидаемую схему; тест фиксирует конкретный
-  список полей JSON и что он покрывает всё, что печатает text (оба проектора из одного
-  `resolve()`) — без парсинга текстового вывода. Отдельно: ошибочные исходы в JSON.
-- Доки: `website/docs/usage/cli-options.{md,ru.md}` (новая опция), при необходимости строка
-  в справке команды.
+```json
+{ "error": "Configuration error: ...", "exit_code": 1 }
+```
+
+`exit_code` дублирует реальный код возврата процесса (2 для `Command::INVALID`, 1 для
+`Command::FAILURE`) — не привязывался к отдельной внутренней таксономии ошибок, чтобы не
+плодить вторую классификацию рядом с уже существующей.
+
+## 4. Тесты
+
+`tests/Functional/Console/LayerAssignmentCommandTest.php`, 8 новых кейсов (проверено, что
+все 8 падают на дореализационном коде — `git stash` командного файла + прогон):
+
+- `jsonFormat_overlappingLayers_returnsFixedSchemaWithShadowedEntries` — точная фиксация
+  схемы (`assertSame` на весь декодированный массив).
+- `jsonFormat_coversEveryFactTheTextReportPrints` — структурный parity: один и тот же
+  конфиг гоняется через text и json, и оба сверяются с независимо известными фактами
+  конфигурации (имена слоёв/паттерны), а не друг с другом через парсинг текста.
+- `jsonFormat_noMatch_assignedIsNullAndShadowedIsEmpty`
+- `jsonFormat_noLayersDeclared_reportsHasLayersFalse`
+- `defaultFormat_isText_omittingFormatOptionMatchesExplicitText` — дефолт-формат
+  побайтово равен явному `--format=text`.
+- `unknownFormat_exitsInvalidWithoutRunningResolution`
+- `jsonFormat_invalidFqn_returnsErrorEnvelope`
+- `jsonFormat_configError_returnsErrorEnvelopeWithFailureExitCode`
+
+## 5. Расхождения с исходным планом
+
+План был написан 2026-08-16, реализация — 2026-08-19, после того как в main влилась
+«подложка идентичности канала» (PR #14). Проверка по коду не обнаружила расхождений,
+убивающих посылку: `ArchitecturePolicy::inspect` → `LayerAssignment(matches, hasLayers)` и
+`LayerAssignmentMatch(layerName, criteria)` не менялись этим PR, `LayerAssignmentResolver`
+и `LayerAssignmentCommand` тоже вне его области. Единственная правка по факту —
+формулировка exit-кода в докблоке класса (`Command::INVALID` = 2, подтверждено по
+`vendor/symfony/console/Command/Command.php`), которая и так совпадала с планом.

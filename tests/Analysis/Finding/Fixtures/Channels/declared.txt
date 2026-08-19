@@ -10,7 +10,7 @@
 # `config-error` marks a channel whose findings report a mistake in the
 # *configuration* rather than debt in the code: it can never be accepted by
 # a baseline on any path, and it fails the run without consulting `fail_on`.
-# Seven channels carry it today: the four layer-policy diagnostics, and the
+# Eight channels carry it today: the five layer-policy diagnostics, and the
 # three inline-directive diagnostics that report a directive which can never
 # do what it says. The two channels that sit beside them and deliberately do
 # not are architecture.layer-violation (a forbidden dependency edge is real
@@ -56,7 +56,9 @@ architecture.circular-dependency#architecture.circular-dependency magnitude:high
 architecture.coverage#architecture.coverage occurrence config-error
 architecture.empty-template#architecture.empty-template occurrence config-error
 architecture.layer-violation#architecture.layer-violation occurrence
+architecture.pending-layer-matched#architecture.pending-layer-matched occurrence config-error
 architecture.potential-shadow#architecture.potential-shadow occurrence config-error
+architecture.unassigned-class#architecture.unassigned-class magnitude:higher
 architecture.unreachable-layer#architecture.unreachable-layer occurrence config-error
 code-smell.boolean-argument#code-smell.boolean-argument occurrence
 code-smell.constructor-overinjection#code-smell.constructor-overinjection magnitude:higher

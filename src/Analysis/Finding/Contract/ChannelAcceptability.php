@@ -12,7 +12,7 @@ namespace Qualimetrix\Analysis\Finding\Contract;
  * was not baselineable, and everything else was. That conflated two
  * different facts — *how* a channel compares (its shape and direction) and
  * *whether* accepting it is a legitimate answer at all — and it had a
- * concrete consequence: the four layer-policy diagnostics declared a shape,
+ * concrete consequence: the layer-policy diagnostics declared a shape,
  * so a run could record "we accept that the declared layers do not cover
  * the code" as if it were ordinary code debt.
  *

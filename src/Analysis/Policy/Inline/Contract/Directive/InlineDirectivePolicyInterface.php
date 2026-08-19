@@ -20,7 +20,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Threshold\ThresholdDiagnostic;
  *
  * **Why the names live on a contract.** Every channel below is emitted under
  * a `ruleName` of its own, none of which is any rule class's `NAME` — the
- * same arrangement the layer policy uses for its four diagnostics. A
+ * same arrangement the layer policy uses for its diagnostics. A
  * cross-owner consumer (the composition root, a fixture, a report) must be
  * able to name one without importing the rule, so the literals live here and
  * the rule refers to them.

@@ -61,6 +61,25 @@ final class TupleExtractorTest extends TestCase
     }
 
     #[Test]
+    public function itIgnoresATrailingBackslashInANonCaptureFilter(): void
+    {
+        $template = new TemplateLayerDefinition(
+            'domain-{module}',
+            new MembershipSpec(patterns: [
+                'App\\Domain\\',
+                'App\\Domain\\{module}\\Entity\\**',
+            ]),
+        );
+
+        $classes = self::classSet([
+            'App\\Domain\\Order\\Entity\\Customer',
+            'App\\DomainBus\\Order\\Entity\\Ignored',
+        ]);
+
+        self::assertSame([['module' => 'Order']], $this->extractor->collect($template, $classes));
+    }
+
+    #[Test]
     public function collect_multiVariable_observedTuplesNotCartesian(): void
     {
         $template = new TemplateLayerDefinition(

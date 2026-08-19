@@ -74,6 +74,7 @@ final class LayerViolationRuleTest extends TestCase
         self::assertSame([
             'layer-violation' => 'enabled',
             'layer-violation-severity' => 'severity',
+            'layer-violation-unassigned-class' => 'unassigned_class',
         ], CliAliasReader::read(LayerViolationRule::class));
         self::assertStringContainsString('layer', strtolower($rule->getDescription()));
     }

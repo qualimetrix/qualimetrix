@@ -16,11 +16,14 @@ use Qualimetrix\Reporting\ReportCoverage;
  * Severity priority (low → high): Info (0) → Warning (1) → Error (2).
  *
  * Default (null): only errors cause non-zero exit code (same as `fail_on: error`).
- * - `fail_on: info` — any violation (Info, Warning, Error) fails the run.
- *   Info-only runs return exit code 1 (since Info's own exit code is 0).
  * - `fail_on: warning` — Warning and Error fail; Info-only is exit 0.
  * - `fail_on: error` (default) — only Error fails; Info and Warning are exit 0.
  * - `fail_on: none` (or `false`) — never fail on violations.
+ *
+ * {@see Severity::Info} is not a possible threshold ({@see ExitPolicy}
+ * rejects it) and no threshold reaches down to it, so Info findings never
+ * decide the exit code here. That is what makes `severity: info` on a rule a
+ * report-only declaration rather than a threshold set out of reach.
  *
  * Two things bypass that comparison entirely, and both do so because they
  * are not judgements about code quality that a user is entitled to filter
@@ -67,35 +70,30 @@ final class ExitCodeResolver
             return 0;
         }
 
-        $highestMatchingRank = self::highestRankAtOrAbove($violations, self::severityRank($failOn ?? Severity::Error));
-
-        if ($highestMatchingRank < 0) {
-            return 0;
-        }
-
-        // The exit code of the highest matching severity, except that Info's
-        // own exit code is 0 — a run failing on `--fail-on=info` must still
-        // signal failure.
-        return $highestMatchingRank === self::severityRank(Severity::Error)
-            ? Severity::Error->getExitCode()
-            : Severity::Warning->getExitCode();
+        // The lowest threshold is `warning`, so whatever meets it has a
+        // non-zero exit code of its own and can be returned directly.
+        return self::highestAtOrAbove($violations, $failOn ?? Severity::Error)?->getExitCode() ?? 0;
     }
 
     /**
-     * The highest severity rank present that is at least `$thresholdRank`,
-     * or `-1` when nothing reaches it.
+     * The highest severity present that is at least `$threshold`, or `null`
+     * when nothing reaches it.
      *
      * @param list<Violation> $violations
      */
-    private static function highestRankAtOrAbove(array $violations, int $thresholdRank): int
+    private static function highestAtOrAbove(array $violations, Severity $threshold): ?Severity
     {
-        $highest = -1;
+        $highest = null;
 
         foreach ($violations as $violation) {
             $rank = self::severityRank($violation->severity);
 
-            if ($rank >= $thresholdRank && $rank > $highest) {
-                $highest = $rank;
+            if ($rank < self::severityRank($threshold)) {
+                continue;
+            }
+
+            if ($highest === null || $rank > self::severityRank($highest)) {
+                $highest = $violation->severity;
             }
         }
 

@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Policy\Architecture\Contract\ArchitectureConfigurationE
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ExcludeSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\InvalidLayerDefinitionException;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition;
+use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerLifecycle;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MatchMode;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\MembershipSpec;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\TemplateLayerDefinition;
@@ -55,6 +56,7 @@ final class LayersValidator
         'extends',
         'match',
         'exclude',
+        'pending',
     ];
 
     private readonly LayerCriterionNormalizer $normalizer;
@@ -136,12 +138,13 @@ final class LayersValidator
         $mode = $this->normalizer->normalizeMatchMode($index, $name, $entry['match'] ?? null);
         $isTemplate = TemplateLayerDefinition::containsCaptureVariable($name);
         $exclude = ExcludeBlockValidator::parse($index, $name, $entry['exclude'] ?? null, $isTemplate, $this->normalizer);
+        $lifecycle = $this->normalizer->normalizeLifecycle($index, $name, $entry, $isTemplate);
 
         if ($isTemplate) {
             return self::buildTemplateDefinition($index, $name, $criteria, $mode, $exclude);
         }
 
-        return self::buildMembershipDefinition($index, $name, $criteria, $mode, $exclude);
+        return self::buildMembershipDefinition($index, $name, $criteria, $mode, $exclude, $lifecycle);
     }
 
     /**
@@ -201,7 +204,7 @@ final class LayersValidator
     /**
      * @param array{patterns: list<string>, suffix: list<string>, attributes: list<string>, implements: list<string>, extends: list<string>} $criteria
      */
-    private static function buildMembershipDefinition(int $index, string $name, array $criteria, MatchMode $mode, ?ExcludeSpec $exclude): LayerDefinition
+    private static function buildMembershipDefinition(int $index, string $name, array $criteria, MatchMode $mode, ?ExcludeSpec $exclude, LayerLifecycle $lifecycle): LayerDefinition
     {
         self::rejectAllEmptyCriteria($index, $name, $criteria);
 
@@ -217,6 +220,7 @@ final class LayersValidator
                     mode: $mode,
                     exclude: $exclude,
                 ),
+                lifecycle: $lifecycle,
             );
         } catch (InvalidLayerDefinitionException | InvalidArgumentException $e) {
             throw new ArchitectureConfigurationException(

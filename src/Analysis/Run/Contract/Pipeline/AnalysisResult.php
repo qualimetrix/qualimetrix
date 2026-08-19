@@ -83,25 +83,6 @@ final readonly class AnalysisResult
     }
 
     /**
-     * Returns exit code based on violations.
-     * 0 - no violations
-     * 1 - only warnings
-     * 2 - errors present
-     */
-    public function getExitCode(): int
-    {
-        if ($this->hasErrors()) {
-            return 2;
-        }
-
-        if ($this->hasWarnings()) {
-            return 1;
-        }
-
-        return 0;
-    }
-
-    /**
      * Merges results for parallel processing.
      */
     public function merge(self $other): self

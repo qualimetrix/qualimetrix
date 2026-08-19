@@ -26,7 +26,7 @@ use Qualimetrix\Core\Observation\WorseDirection;
  * from anything else here. "Not baselineable" used to be expressible only by
  * declaring nothing at all, which meant a channel had to choose between
  * declaring how it compares and declaring that accepting it is illegitimate.
- * The four layer-policy diagnostics needed both and got the wrong one — see
+ * The layer-policy diagnostics needed both and got the wrong one — see
  * {@see ChannelAcceptability}.
  */
 final readonly class ChannelDeclaration

@@ -99,47 +99,6 @@ final class ReportTest extends TestCase
     }
 
     #[Test]
-    public function itReturnsZeroExitCodeForEmptyReport(): void
-    {
-        $report = new Report([], 10, 0, 0.5, 0, 0);
-
-        self::assertSame(0, $report->getExitCode());
-    }
-
-    #[Test]
-    public function itReturnsOneExitCodeForWarningsOnly(): void
-    {
-        $report = new Report(
-            violations: [$this->createViolation(Severity::Warning)],
-            filesAnalyzed: 10,
-            filesSkipped: 0,
-            duration: 0.5,
-            errorCount: 0,
-            warningCount: 1,
-        );
-
-        self::assertSame(1, $report->getExitCode());
-    }
-
-    #[Test]
-    public function itReturnsTwoExitCodeForErrors(): void
-    {
-        $report = new Report(
-            violations: [
-                $this->createViolation(Severity::Warning),
-                $this->createViolation(Severity::Error),
-            ],
-            filesAnalyzed: 10,
-            filesSkipped: 0,
-            duration: 0.5,
-            errorCount: 1,
-            warningCount: 1,
-        );
-
-        self::assertSame(2, $report->getExitCode());
-    }
-
-    #[Test]
     public function itExposesReportProperties(): void
     {
         $violations = [$this->createViolation(Severity::Error)];

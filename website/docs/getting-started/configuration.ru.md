@@ -74,9 +74,10 @@ exclude_paths:
 
     Что остаётся для подавления такой находки, зависит от канала.
     `architecture.layer-violation` — настоящий долг кода, поэтому к нему по-прежнему применимы
-    и `@qmx-ignore architecture.layer-violation`, и запись в baseline. Четыре диагностики
+    и `@qmx-ignore architecture.layer-violation`, и запись в baseline. Пять диагностик
     рядом с ним — `architecture.coverage`, `architecture.unreachable-layer`,
-    `architecture.potential-shadow` и `architecture.empty-template` — сообщают об ошибке в
+    `architecture.pending-layer-matched`, `architecture.potential-shadow` и
+    `architecture.empty-template` — сообщают об ошибке в
     *конфигурации*, поэтому к ним неприменимо ни то, ни другое; см.
     [«Правила > Архитектура»](../rules/architecture.ru.md). Для них остаются блок `exclude:`
     внутри самой конфигурации архитектурных слоёв и, отдельно для покрытия, `coverage: ignore`.
@@ -260,9 +261,9 @@ rules:
     Опция фильтрует нарушения, чей субъект — **неймспейс**. У правила, которое сообщает
     поштучно (`code-smell.*`, `security.*`, `architecture.layer-violation`) или только на
     уровне класса (`design.lcom`), удалять ей нечего: ключ с таким каналом принимается и
-    ничего не делает. Четыре диагностики политики слоёв — `architecture.coverage`,
+    ничего не делает. Диагностики политики слоёв — `architecture.coverage`,
     `architecture.unreachable-layer`, `architecture.potential-shadow`,
-    `architecture.empty-template` — сообщают о проекте целиком и тоже вне её досягаемости;
+    `architecture.empty-template`, `architecture.pending-layer-matched` — сообщают о проекте целиком и тоже вне её досягаемости;
     для них используйте блок `exclude:` внутри конфигурации архитектурных слоёв.
 
 Удаляются только агрегатные нарушения уровня
@@ -403,17 +404,31 @@ only_rules:
 ```yaml
 fail_on: error    # Завершение с ошибкой только при error (по умолчанию)
 # fail_on: warning  # Завершение с ошибкой и при warning
-# fail_on: info     # Завершение с ошибкой при любом нарушении, включая Info
 # fail_on: none     # Никогда не завершаться с ошибкой из-за нарушений
 ```
 
 !!! note "Примечание"
-    По умолчанию `fail_on` установлен в `error`. Предупреждения и Info-диагностики по-прежнему отображаются в выводе, но не приводят к ненулевому коду завершения. Используйте `fail_on: warning`, чтобы блокировать сборку и предупреждениями, или `fail_on: info`, чтобы дополнительно учитывать Info-диагностики (например, `annotation.unused-directive` — подавление, которое больше ничего не подавляет).
+    По умолчанию `fail_on` установлен в `error`. Предупреждения и Info-диагностики по-прежнему отображаются в выводе, но не приводят к ненулевому коду завершения. Используйте `fail_on: warning`, чтобы блокировать сборку и предупреждениями.
+
+!!! info "`info` — только для отчёта и не является значением `fail_on`"
+    `fail_on` принимает лишь `warning` и `error` — значение `fail_on: info` отклоняется с
+    ошибкой, перечисляющей допустимые значения. Severity `info` означает «наблюдать, но не
+    гейтить»: прогон, где нашлись только Info-диагностики, всегда завершается кодом 0,
+    независимо от `fail_on`. Чтобы гейтить диагностику, поставляемую как `info`, поднимите
+    серьёзность самого правила. Например, `annotation.unused-directive` (подавление, которое
+    больше ничего не подавляет) по умолчанию `info` и поднимается опцией правила:
+
+    ```yaml
+    rules:
+      annotation.directive:
+        unused_directive_severity: warning
+    ```
 
 !!! warning "`fail_on` не управляет ошибками конфигурации"
     Часть каналов сообщает об ошибке в
-    конфигурации, а не о долге в коде: четыре диагностики политики слоёв
-    (`architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow`,
+    конфигурации, а не о долге в коде: пять диагностик политики слоёв
+    (`architecture.coverage`, `architecture.unreachable-layer`,
+    `architecture.pending-layer-matched`, `architecture.potential-shadow`,
     `architecture.empty-template`) и три диагностики инлайн-директив
     (`annotation.unresolved-directive`, `annotation.unsupported-threshold`,
     `annotation.invalid-threshold`). Они вообще не участвуют в сравнении с `fail_on`: прогон

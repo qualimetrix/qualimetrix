@@ -22,7 +22,7 @@ use Qualimetrix\Core\Util\PathMatcher;
  * the rule name's spelling; see {@see ChannelFileScope}. What remains available
  * for suppressing such a finding also matches {@see NamespaceExclusionFilter}:
  * `@qmx-ignore` and a baseline entry still apply to
- * `architecture.layer-violation`, but not to the four layer-policy diagnostics
+ * `architecture.layer-violation`, but not to the layer-policy diagnostics
  * beside it, which are declared configuration errors and answer only to the
  * architecture configuration's `exclude:` block (and `coverage: ignore` for the
  * coverage diagnostic).

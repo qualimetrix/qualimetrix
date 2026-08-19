@@ -74,9 +74,10 @@ Also available as a CLI option: `--exclude-path` (merged with YAML config).
 
     What is left for suppressing such a finding depends on the channel.
     `architecture.layer-violation` is real code debt, so `@qmx-ignore
-    architecture.layer-violation` and a baseline entry both still apply. The four layer-policy
+    architecture.layer-violation` and a baseline entry both still apply. The five layer-policy
     diagnostics beside it — `architecture.coverage`, `architecture.unreachable-layer`,
-    `architecture.potential-shadow` and `architecture.empty-template` — report a mistake in the
+    `architecture.potential-shadow`, `architecture.empty-template` and
+    `architecture.pending-layer-matched` — report a mistake in the
     *configuration*, so neither applies to them; see
     [Rules > Architecture](../rules/architecture.md). Their remaining answers are the `exclude:`
     block inside the architecture layer configuration itself and, for coverage specifically,
@@ -107,8 +108,9 @@ Also available as a CLI option: `--exclude-namespace` (merged with YAML config).
     channel, not a consequence of how the rule name is spelled.
 
     `@qmx-ignore architecture.layer-violation` and a baseline entry still apply to
-    `architecture.layer-violation`. They do **not** apply to the four layer-policy diagnostics —
-    `architecture.coverage`, `architecture.unreachable-layer`, `architecture.potential-shadow`
+    `architecture.layer-violation`. They do **not** apply to the five layer-policy diagnostics —
+    `architecture.coverage`, `architecture.unreachable-layer`,
+    `architecture.pending-layer-matched`, `architecture.potential-shadow`
     and `architecture.empty-template` — which report a configuration mistake rather than code
     debt; for those, use the `exclude:` block inside the architecture layer configuration
     itself, or `coverage: ignore` for the coverage diagnostic.
@@ -262,9 +264,9 @@ same thing. It is accepted for consistency of grammar, not because it adds reach
     The option filters findings whose subject is a **namespace**. A rule that reports per
     occurrence (`code-smell.*`, `security.*`, `architecture.layer-violation`) or only per class
     (`design.lcom`) has nothing for it to remove, and a key naming such a channel is accepted
-    and then does nothing. The four layer-policy diagnostics — `architecture.coverage`,
+    and then does nothing. The layer-policy diagnostics — `architecture.coverage`,
     `architecture.unreachable-layer`, `architecture.potential-shadow`,
-    `architecture.empty-template` — report against the project as a whole and are likewise
+    `architecture.empty-template`, `architecture.pending-layer-matched` — report against the project as a whole and are likewise
     outside its reach; use the `exclude:` block inside the architecture layer configuration
     instead.
 Only aggregate Namespace violations are removed. Class-level `health.cohesion` findings in
@@ -403,16 +405,30 @@ Control which severity levels cause a non-zero exit code:
 ```yaml
 fail_on: error    # Only fail on errors (default)
 # fail_on: warning  # Fail on warnings too
-# fail_on: info     # Fail on any violation, including informational ones
 # fail_on: none     # Never fail on violations
 ```
 
-The default is `error`: warnings and Info-level diagnostics are shown in the output but do not cause a non-zero exit code. Use `fail_on: warning` if you want warnings to also fail the build, or `fail_on: info` to additionally enforce Info diagnostics (for example, `annotation.unused-directive`, which reports a suppression that no longer suppresses anything).
+The default is `error`: warnings and Info-level diagnostics are shown in the output but do not cause a non-zero exit code. Use `fail_on: warning` if you want warnings to also fail the build.
+
+!!! info "`info` is report-only and is not a `fail_on` value"
+    `warning` and `error` are the only severities `fail_on` accepts — `fail_on: info` is
+    rejected with an error naming the accepted values. Severity `info` means "observe, do not
+    gate": an Info-only run always exits 0, whatever `fail_on` says. To gate on a diagnostic
+    that ships at `info`, raise that rule's own severity instead. For example,
+    `annotation.unused-directive` (a suppression that no longer suppresses anything) defaults
+    to `info` and is raised through its rule option:
+
+    ```yaml
+    rules:
+      annotation.directive:
+        unused_directive_severity: warning
+    ```
 
 !!! warning "`fail_on` does not govern configuration errors"
-    Some channels report a mistake in the configuration rather than debt in the code — the four
+    Some channels report a mistake in the configuration rather than debt in the code — the five
     layer-policy diagnostics (`architecture.coverage`, `architecture.unreachable-layer`,
-    `architecture.potential-shadow`, `architecture.empty-template`) and the three inline-directive
+    `architecture.pending-layer-matched`, `architecture.potential-shadow`,
+    `architecture.empty-template`) and the three inline-directive
     diagnostics (`annotation.unresolved-directive`, `annotation.unsupported-threshold`,
     `annotation.invalid-threshold`). These never take part in the `fail_on` comparison at all:
     they end the run with a non-zero exit code even under `fail_on: none`, and no baseline entry

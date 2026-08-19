@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Core\Symbol\SymbolInfo;
 use Qualimetrix\Core\Symbol\SymbolType;
+use Qualimetrix\Core\Util\NamespaceMatcher;
 
 /**
  * Shared logic for namespace-level drill-down: health scores and worst classes.
@@ -35,8 +36,9 @@ final readonly class HealthScoreDrillDown
     }
 
     /**
-     * Builds subtree health scores by weighted-averaging health from all
-     * sub-namespaces matching the given prefix.
+     * Builds subtree health scores by weighted-averaging health from every
+     * namespace the selector matches — a boundary-aware prefix, or a glob when
+     * the selector contains `*`, `?` or `[`.
      *
      * @return array<string, HealthScore> Empty array if no matching namespaces found.
      */
@@ -95,7 +97,7 @@ final readonly class HealthScoreDrillDown
 
         foreach ($metrics->all(SymbolType::Namespace_) as $namespaceInfo) {
             $name = $namespaceInfo->symbolPath->namespace ?? $namespaceInfo->symbolPath->toCanonical();
-            if (!$this->matchesNamespace($name, $namespace)) {
+            if (!NamespaceMatcher::matchesSingle($namespace, $name)) {
                 continue;
             }
 
@@ -189,7 +191,7 @@ final readonly class HealthScoreDrillDown
         foreach ($metrics->all(SymbolType::Class_) as $symbolInfo) {
             $classNs = $symbolInfo->symbolPath->namespace ?? '';
 
-            if ($this->matchesNamespace($classNs, $namespace)) {
+            if (NamespaceMatcher::matchesSingle($namespace, $classNs)) {
                 yield $symbolInfo;
             }
         }
@@ -225,15 +227,6 @@ final readonly class HealthScoreDrillDown
                 'contributorMetrics' => $selection['contributorMetrics'],
             ];
         }
-    }
-
-    private function matchesNamespace(string $subject, string $prefix): bool
-    {
-        if ($subject === $prefix) {
-            return true;
-        }
-
-        return str_starts_with($subject, $prefix . '\\');
     }
 
     /** @return array{float, float} */

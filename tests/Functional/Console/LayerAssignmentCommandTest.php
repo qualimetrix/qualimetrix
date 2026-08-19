@@ -526,6 +526,204 @@ final class LayerAssignmentCommandTest extends TestCase
         self::assertStringContainsString('does not match any registered', $tester->getDisplay());
     }
 
+    /**
+     * Pins the JSON schema: exact field set, nullability of `assigned` on a
+     * shadowed (non-empty) match, and that `shadowed` preserves declaration
+     * order. Any field addition/removal/rename must update this literal
+     * expected array, keeping the schema change visible in review.
+     */
+    #[Test]
+    public function itReturnsTheFixedJsonSchemaWithShadowedEntriesWhenLayersOverlap(): void
+    {
+        // Same overlap as classMatchingMultipleLayers_reportsAssignmentAndShadowedLayers:
+        // any-foo declared first shadows service for App\Service\Foo.
+        $configPath = $this->writeConfig([
+            ['any-foo', ['App\\**\\Foo']],
+            ['service', ['App\\Service\\**']],
+        ]);
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Service\\Foo',
+            '--config' => $configPath,
+            '--format' => 'json',
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+
+        self::assertSame([
+            'fqn' => 'App\\Service\\Foo',
+            'assigned' => [
+                'layer' => 'any-foo',
+                'criteria' => ['pattern "App\\**\\Foo"'],
+            ],
+            'shadowed' => [
+                [
+                    'layer' => 'service',
+                    'criteria' => ['pattern "App\\Service\\**"'],
+                ],
+            ],
+            'hasLayers' => true,
+        ], $decoded);
+    }
+
+    /**
+     * Structural parity check (DoD #5): drives the *same* configuration
+     * through both projectors and asserts the JSON payload names every fact
+     * the text report names — assigned layer, its matched criterion, the
+     * shadowed layer, and its criterion — without parsing the text output
+     * into structured data. Both assertions are made against the config's
+     * own known layer names/patterns, so agreement between them proves the
+     * two projections read one `resolve()` result rather than diverging
+     * logic.
+     */
+    #[Test]
+    public function itCoversEveryFactTheTextReportPrintsInTheJsonPayload(): void
+    {
+        $configPath = $this->writeConfig([
+            ['any-foo', ['App\\**\\Foo']],
+            ['service', ['App\\Service\\**']],
+        ]);
+        $fqn = 'App\\Service\\Foo';
+
+        $textTester = $this->newTester();
+        $textTester->execute(['fqn' => $fqn, '--config' => $configPath]);
+        $textOutput = $textTester->getDisplay();
+
+        $jsonTester = $this->newTester();
+        $jsonTester->execute(['fqn' => $fqn, '--config' => $configPath, '--format' => 'json']);
+        $decoded = json_decode($jsonTester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+
+        // Facts the text report prints (pinned by
+        // classMatchingMultipleLayers_reportsAssignmentAndShadowedLayers).
+        self::assertStringContainsString('Assigned to: any-foo', $textOutput);
+        self::assertStringContainsString('pattern "App\\**\\Foo"', $textOutput);
+        self::assertStringContainsString('service', $textOutput);
+        self::assertStringContainsString('pattern "App\\Service\\**"', $textOutput);
+
+        // Same facts, read from the JSON payload.
+        self::assertSame('any-foo', $decoded['assigned']['layer']);
+        self::assertSame(['pattern "App\\**\\Foo"'], $decoded['assigned']['criteria']);
+        self::assertSame('service', $decoded['shadowed'][0]['layer']);
+        self::assertSame(['pattern "App\\Service\\**"'], $decoded['shadowed'][0]['criteria']);
+    }
+
+    #[Test]
+    public function itReturnsNullAssignedAndEmptyShadowedWhenNothingMatches(): void
+    {
+        $configPath = $this->writeConfig([
+            ['controller', ['App\\Controller\\**']],
+        ]);
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'Other\\Place\\Thing',
+            '--config' => $configPath,
+            '--format' => 'json',
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+
+        self::assertSame([
+            'fqn' => 'Other\\Place\\Thing',
+            'assigned' => null,
+            'shadowed' => [],
+            'hasLayers' => true,
+        ], $decoded);
+    }
+
+    #[Test]
+    public function itReportsHasLayersFalseWhenNoLayersAreDeclared(): void
+    {
+        $emptyPath = $this->tempDir . '/empty-source';
+        if (!is_dir($emptyPath)) {
+            mkdir($emptyPath, 0o755, true);
+        }
+        $configPath = $this->tempDir . '/qmx-empty-json.yaml';
+        file_put_contents($configPath, "paths: ['{$emptyPath}']\n");
+
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'Anything\\At\\All',
+            '--config' => $configPath,
+            '--format' => 'json',
+        ]);
+
+        self::assertSame(Command::SUCCESS, $exit);
+        $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertFalse($decoded['hasLayers']);
+        self::assertNull($decoded['assigned']);
+        self::assertSame([], $decoded['shadowed']);
+    }
+
+    #[Test]
+    public function itMatchesExplicitTextFormatWhenTheFormatOptionIsOmitted(): void
+    {
+        $configPath = $this->writeConfig([
+            ['service', ['App\\Service\\**']],
+        ]);
+
+        $default = $this->newTester();
+        $default->execute(['fqn' => 'App\\Service\\Foo', '--config' => $configPath]);
+
+        $explicit = $this->newTester();
+        $explicit->execute(['fqn' => 'App\\Service\\Foo', '--config' => $configPath, '--format' => 'text']);
+
+        self::assertSame($default->getDisplay(), $explicit->getDisplay());
+        self::assertStringNotContainsString('{', $default->getDisplay());
+    }
+
+    #[Test]
+    public function itExitsInvalidWithoutRunningResolutionForAnUnknownFormat(): void
+    {
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Service\\Foo',
+            '--format' => 'yaml',
+        ]);
+
+        self::assertSame(Command::INVALID, $exit);
+        self::assertStringContainsString('Unknown format "yaml"', $tester->getDisplay());
+        self::assertStringContainsString('text, json', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function itReturnsAnErrorEnvelopeForAnInvalidFqnInJsonFormat(): void
+    {
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => '',
+            '--format' => 'json',
+        ]);
+
+        self::assertSame(Command::INVALID, $exit);
+        $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertArrayHasKey('error', $decoded);
+        self::assertStringContainsString('must not be empty', $decoded['error']);
+        self::assertSame(Command::INVALID, $decoded['exit_code']);
+    }
+
+    #[Test]
+    public function itReturnsAnErrorEnvelopeWithTheFailureExitCodeForAConfigErrorInJsonFormat(): void
+    {
+        $missing = $this->tempDir . '/does-not-exist.yaml';
+        $tester = $this->newTester();
+        $exit = $tester->execute([
+            'fqn' => 'App\\Service\\Foo',
+            '--config' => $missing,
+            '--format' => 'json',
+        ]);
+
+        self::assertSame(Command::FAILURE, $exit);
+        $decoded = json_decode($tester->getDisplay(), true, flags: \JSON_THROW_ON_ERROR);
+        self::assertArrayHasKey('error', $decoded);
+        self::assertStringContainsString('Configuration error', $decoded['error']);
+        self::assertStringContainsString($missing, $decoded['error']);
+        self::assertSame(Command::FAILURE, $decoded['exit_code']);
+    }
+
     private function newTester(): CommandTester
     {
         return new CommandTester($this->buildCommand());

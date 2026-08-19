@@ -6,24 +6,19 @@ namespace Qualimetrix\Analysis\Policy\Architecture\LayerViolation;
 
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration;
-use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AbstractRule;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
 use Qualimetrix\Analysis\Finding\Contract\Rule\Attribute\CliAlias;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleOptionsInterface;
-use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Architecture\ArchitecturePolicy;
 use Qualimetrix\Analysis\Policy\Architecture\Configuration\ArchitectureConfiguration;
-use Qualimetrix\Analysis\Policy\Architecture\Configuration\CoverageMode;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerMatch;
-use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerRegistry;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\LayerShadowing;
 use Qualimetrix\Core\Symbol\MetricSubject;
-use Qualimetrix\Core\Symbol\SymbolPath;
 use Qualimetrix\Core\Symbol\SymbolType;
 
 /**
@@ -37,61 +32,55 @@ use Qualimetrix\Core\Symbol\SymbolType;
  * allow-list produces one {@see Violation}.
  *
  * Under declaration-order matching (ADR 0006), a class is assigned to the
- * FIRST layer whose patterns match its FQN. The rule emits three diagnostic
+ * FIRST layer whose patterns match its FQN. The rule emits seven diagnostic
  * channels (each under its own rule name so they can be baselined/suppressed/
- * filtered independently):
+ * filtered independently), but builds only one of them itself:
  *
  * - `architecture.layer-violation` — per use-site, one violation per
- *   forbidden dependency edge.
- * - `architecture.coverage` — when {@see ArchitectureConfiguration::coverage()}
- *   is not {@see CoverageMode::Ignore}, one aggregated Violation summarising
- *   analysed logical classes outside every layer and dependency edges that
- *   touch unclassified classes.
- * - `architecture.unreachable-layer` — one Violation per
- *   declared layer that matched zero classes AND zero dependency-edge ends
- *   during the run (catches the loud failure mode where a broader pattern
- *   earlier in the order silently swallowed everything). Counting edge ends
- *   as well as classes matters for layers that exist only to classify
- *   out-of-tree code — e.g. a vendor namespace like `ClickHouseDB\**` is
- *   never itself analysed, so it only ever shows up as a dependency TARGET;
- *   without that second count it would always read as unreachable even
- *   while `architecture.layer-violation` reports a real edge into it.
- * - `architecture.potential-shadow` — one Violation per
- *   (assigned, shadowed) layer pair seen in practice. Evidence-based:
- *   every class is walked and all matching layers are recorded; classes
- *   matching more than one layer contribute a (first-match, later-match)
- *   pair. Overlap alone is NOT reported — first match wins is the declared
- *   resolution mechanism, and "narrow before broad" (up to a final `**`
- *   catch-all) is the idiom the documentation teaches. The pair is reported
- *   when the winning criterion is not strictly more specific than the
- *   shadowed one ({@see LayerShadowing}), i.e. the later layer
- *   can never win in its own area: prefix overlap declared broad-first,
- *   suffix-theft, arbitrary intersection.
+ *   forbidden dependency edge. The rule's own channel.
+ * - `architecture.coverage` and `architecture.unassigned-class` — the two
+ *   per-run summaries of what fell outside every declared layer, gated by
+ *   {@see ArchitectureConfiguration::coverage()} and by
+ *   {@see LayerViolationOptions::$unassignedClass} respectively. Both are
+ *   built by {@see OutsideLayerSummary}, whose docblock explains why counting
+ *   dependency-edge ends makes the first unusable as a gate on one's own code.
+ * - `architecture.unreachable-layer`, `architecture.pending-layer-matched`,
+ *   `architecture.potential-shadow` and `architecture.empty-template` — the
+ *   four verdicts on the declaration itself, built by
+ *   {@see DeclaredLayerReachability} from the evidence this rule collects.
+ *
+ * What the rule contributes to those four is the evidence, and its shape is
+ * the part worth knowing here: per layer, a count of the classes and
+ * dependency-edge ends ASSIGNED to it, and a set of the distinct symbols it
+ * MATCHED at all. Assignment answers "did this layer capture anything";
+ * matching answers "does the code this layer describes exist", which is a
+ * different question the moment a broader layer declared earlier wins every
+ * one of the matches. Considering edge ends as well as classes matters for
+ * layers that exist only to classify out-of-tree code — a vendor namespace
+ * like `ClickHouseDB\**` is never itself analysed and only ever shows up as
+ * a dependency TARGET. The matched side is a set rather than a counter
+ * because one symbol is seen once per edge it touches; see
+ * {@see tallyMatchedEnd()}.
  *
  * **Statelessness:** per CLAUDE.md "stateless rules" rule, all per-run state
- * (the unreachable-layer hit counter and the shadow-evidence map) lives as
- * LOCAL variables inside {@see analyze()} (or its private helpers). Storing
- * them as fields would leak counts across `analyze()` calls because the rule
- * executor reuses rule instances.
- *
- * @qmx-threshold complexity.wmc warning=70 error=80 — One rule coordinates cohesive layer-policy diagnostics.
- *                The rule orchestrates four cohesive diagnostic channels
- *                (layer-violation, coverage, unreachable-layer, potential-shadow)
- *                that all share the same registry walk and per-class evidence
- *                pass. Splitting them across classes would multiply file count
- *                without simplifying the data flow; the methods themselves are
- *                individually small.
+ * (both hit maps and the shadow-evidence map) lives as LOCAL variables inside
+ * {@see analyze()} (or its private helpers). Storing them as fields would leak
+ * counts across `analyze()` calls because the rule executor reuses rule
+ * instances.
  *
  * @qmx-ignore design.god-class
- *             reason="The rule is the natural cohesion boundary for the architecture-rule surface (one rule, four cohesive diagnostic channels sharing the same registry walk). LCOM is inflated by parallel diagnostic builders — splitting would not improve structure."
+ *             reason="What remains after extracting OutsideLayerSummary, DeclaredLayerReachability and LayerRoutingGuidance is the per-edge verdict plus the evidence walks that feed them, which is the smallest this rule gets. LCOM counts the RuleInterface accessors as their own components and TCC is 0 for any rule that keeps per-run state in locals, as CLAUDE.md requires."
  */
 #[CliAlias('layer-violation', 'enabled')]
 #[CliAlias('layer-violation-severity', 'severity')]
+#[CliAlias('layer-violation-unassigned-class', 'unassigned_class')]
 final class LayerViolationRule extends AbstractRule
 {
     public const string NAME = LayerPolicyPreparationInterface::PRODUCER_RULE_NAME;
 
     public const string COVERAGE_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::COVERAGE_DIAGNOSTIC_NAME;
+
+    public const string UNASSIGNED_CLASS_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::UNASSIGNED_CLASS_DIAGNOSTIC_NAME;
 
     public const string UNREACHABLE_LAYER_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::UNREACHABLE_LAYER_DIAGNOSTIC_NAME;
 
@@ -99,9 +88,7 @@ final class LayerViolationRule extends AbstractRule
 
     public const string EMPTY_TEMPLATE_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::EMPTY_TEMPLATE_DIAGNOSTIC_NAME;
 
-    private const int COVERAGE_SAMPLE_LIMIT = 10;
-
-    private const int SHADOW_SAMPLE_LIMIT = 5;
+    public const string PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME = LayerPolicyPreparationInterface::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME;
 
     /**
      * The processor is injected by {@see \Qualimetrix\Infrastructure\DependencyInjection\CompilerPass\RuleOptionsCompilerPass::resolveExtraDependencies()}
@@ -149,22 +136,19 @@ final class LayerViolationRule extends AbstractRule
     }
 
     /**
-     * All five diagnostics this rule builds — including its own primary
-     * `architecture.layer-violation` channel — carry `metricValue: null`
-     * (see every `new Violation(...)` call site above: none passes
-     * `metricValue:`). ADR 0017 is explicit that this is
-     * true of all five, not just the four emitted under the
-     * `*_DIAGNOSTIC_NAME` constants: they report no magnitude at all, so
-     * `occurrence` is the only shape any of them can take. There is no
-     * "decision" here the way there is for `architecture.circular-dependency`
-     * — an `occurrence` declaration is the direct consequence of ADR 0017's
-     * channel-shape decision,
-     * not a judgement call.
+     * Six of the seven channels report no magnitude: their emission sites pass
+     * no `metricValue:` at all, so `occurrence` is the only shape left to
+     * declare for them — the shape follows the emission, and reading it off
+     * the call sites is the whole check.
+     *
+     * `architecture.unassigned-class` is the exception, and its shape is a
+     * judgement call rather than a consequence; the argument for it lives with
+     * the code that emits it, in {@see OutsideLayerSummary::unassignedClassChannel()}.
      *
      * `architecture.layer-violation` carries a dependency edge
      * (`dependencyTarget`/`dependencyType` on the `Violation` — see
-     * {@see buildViolation()}), so per ADR 0017 its identity is per-edge; that is
-     * an identity-layer concern the channel declaration itself does not
+     * {@see buildViolations()}), so per ADR 0017 its identity is per-edge; that
+     * is an identity-layer concern the channel declaration itself does not
      * encode.
      *
      * @return array<string, ChannelDeclaration>
@@ -173,6 +157,8 @@ final class LayerViolationRule extends AbstractRule
     {
         return [
             (new ViolationChannel(self::NAME, self::NAME))->toKey() => ChannelDeclaration::occurrence(),
+            (new ViolationChannel(self::UNASSIGNED_CLASS_DIAGNOSTIC_NAME, self::UNASSIGNED_CLASS_DIAGNOSTIC_NAME))->toKey()
+                => OutsideLayerSummary::unassignedClassChannel(),
             (new ViolationChannel(self::COVERAGE_DIAGNOSTIC_NAME, self::COVERAGE_DIAGNOSTIC_NAME))->toKey()
                 => ChannelDeclaration::configurationError(),
             (new ViolationChannel(self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME, self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME))->toKey()
@@ -180,6 +166,8 @@ final class LayerViolationRule extends AbstractRule
             (new ViolationChannel(self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME, self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME))->toKey()
                 => ChannelDeclaration::configurationError(),
             (new ViolationChannel(self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME, self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME))->toKey()
+                => ChannelDeclaration::configurationError(),
+            (new ViolationChannel(self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME, self::PENDING_LAYER_MATCHED_DIAGNOSTIC_NAME))->toKey()
                 => ChannelDeclaration::configurationError(),
         ];
     }
@@ -206,101 +194,75 @@ final class LayerViolationRule extends AbstractRule
         $registry = $architecture->registry();
 
         // Per-class evidence (local — never fields; statelessness regression in tests).
-        [$layerHits, $shadowEvidence, $uncoveredClasses] = $this->collectClassEvidence(
-            $registry,
+        // The source-side walk materialises its out-of-layer set for either
+        // consumer independently: `coverage: ignore` with
+        // `unassigned_class: warn` is the ordinary configuration for a project
+        // that turned coverage off because of vendor edge ends, and gating the
+        // walk on coverage alone would leave the new channel with no data.
+        [$assignedHits, $matchedSymbols, $shadowEvidence, $uncoveredClasses, $analysedDeclarations] = $this->collectClassEvidence(
+            $architecture,
             $context,
-            $architecture->coverage(),
         );
 
         // Per-edge violations + coverage state (also local).
         $ownedTargets = OwnedLayerTargets::fromDeclarations($context->metrics->allDeclarations());
-        [$edgeViolations, $coverageState, $edgeLayerHits] = $this->collectEdgeViolations($architecture, $context, $ownedTargets);
+        [$edgeViolations, $coverageState, $edgeAssignedHits, $edgeMatchedSymbols] = $this->collectEdgeViolations($architecture, $context, $ownedTargets);
         $coverageState['classes'] += $uncoveredClasses;
 
         // A layer matched only as one end of a dependency edge (e.g. a vendor
         // namespace outside `paths:`, never a class in the analysed set) is
-        // still "reached" — merge edge-side hits into the class-side hit map
+        // still "reached" — merge edge-side hits into the class-side hit maps
         // so `architecture.unreachable-layer` doesn't contradict
         // `architecture.layer-violation` about the very same layer.
-        foreach ($edgeLayerHits as $layerName => $count) {
-            $layerHits[$layerName] = ($layerHits[$layerName] ?? 0) + $count;
-        }
+        $assignedHits = $this->mergeHits($assignedHits, $edgeAssignedHits);
+        $matchedSymbols = $this->mergeMatchedSymbols($matchedSymbols, $edgeMatchedSymbols);
 
-        // O(1) name → definition lookup for diagnostic builders that need pattern lists.
-        $definitionsByName = [];
-        foreach ($registry->definitions() as $definition) {
-            $definitionsByName[$definition->name()] = $definition;
-        }
+        $definitions = $registry->definitions();
 
         return [
             ...$edgeViolations,
-            ...$this->buildCoverageDiagnosticAsList($architecture->coverage(), $coverageState),
-            ...$this->buildUnreachableLayerDiagnostics($registry, $layerHits, $definitionsByName),
-            ...$this->buildPotentialShadowDiagnostics($shadowEvidence),
-            ...$this->buildEmptyTemplateDiagnostics($architecture->emptyTemplateNames()),
+            ...OutsideLayerSummary::coverage($architecture->coverage(), $coverageState),
+            ...OutsideLayerSummary::unassignedClasses(
+                $this->options->unassignedClass,
+                $uncoveredClasses,
+                $analysedDeclarations,
+            ),
+            ...DeclaredLayerReachability::unreachableLayers($definitions, $assignedHits),
+            ...DeclaredLayerReachability::pendingLayersMatched(
+                $definitions,
+                array_map(\count(...), $matchedSymbols),
+            ),
+            ...DeclaredLayerReachability::potentialShadows($shadowEvidence),
+            ...DeclaredLayerReachability::emptyTemplates($architecture->emptyTemplateNames()),
         ];
     }
 
     /**
-     * Emits one diagnostic per template name that produced zero concrete
-     * layers during expansion (Phase 2 direction 2).
+     * @param array<string, int> $into
+     * @param array<string, int> $from
      *
-     * The list is populated by
-     * {@see \Qualimetrix\Analysis\Policy\Architecture\Layer\Expansion\LayerExpansionStage} and
-     * surfaced through
-     * {@see ArchitecturePolicy::getPreparedConfiguration()} on
-     * the configuration returned to the rule.
-     *
-     * Reported at {@see DIAGNOSTIC_SEVERITY} because an empty template is a
-     * typo, a missing dependency in the scanned paths, or a recent refactor
-     * that removed the matching classes — in every case the declared
-     * configuration no longer describes the code, which is what
-     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError} names.
-     *
-     * @param list<string> $emptyTemplateNames
-     *
-     * @return list<Violation>
+     * @return array<string, int>
      */
-    private function buildEmptyTemplateDiagnostics(array $emptyTemplateNames): array
+    private function mergeHits(array $into, array $from): array
     {
-        if ($emptyTemplateNames === []) {
-            return [];
+        foreach ($from as $layerName => $count) {
+            $into[$layerName] = ($into[$layerName] ?? 0) + $count;
         }
 
-        \assert($this->options instanceof LayerViolationOptions);
-
-        $diagnostics = [];
-        foreach ($emptyTemplateNames as $template) {
-            $diagnostics[] = new Violation(
-                location: Location::none(),
-                subject: MetricSubject::aggregate(SymbolPath::forProject()),
-                symbolPath: SymbolPath::forProject(),
-                ruleName: self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
-                violationCode: self::EMPTY_TEMPLATE_DIAGNOSTIC_NAME,
-                message: \sprintf(
-                    'Template layer "%s" expanded to zero concrete layers — no class in the analysed codebase '
-                    . 'matched the template\'s criteria. Common causes: (1) a typo in the template name or '
-                    . 'pattern, (2) matching classes were filtered out by file discovery (`exclude_paths` / '
-                    . '`exclude_namespaces` at top level or in rule options), (3) the module disappeared in a '
-                    . 'recent refactor, or (4) a single-segment capture `{var}` is used where the binding spans '
-                    . 'multiple namespace segments — try `{var:**}` for cross-segment captures.',
-                    $template,
-                ),
-                severity: self::DIAGNOSTIC_SEVERITY,
-                recommendation: 'Verify the template patterns against the project structure, or remove the '
-                    . 'template if no longer relevant.',
-            );
-        }
-
-        return $diagnostics;
+        return $into;
     }
 
     /**
      * Walks `metrics->all(SymbolType::Class_)` once and collects two local
      * structures used downstream:
      *
-     * 1. `layerHits` — per-layer count of classes that ended up in that layer
-     *    (feeds `architecture.unreachable-layer`).
+     * 1. `assignedHits` — per-layer count of classes that ended up in that
+     *    layer (feeds `architecture.unreachable-layer`), and `matchedSymbols`
+     *    — per-layer set of the distinct classes whose criteria the layer
+     *    matched at all, winning or not (feeds
+     *    `architecture.pending-layer-matched`, which is silent exactly where
+     *    a layer matched nothing — see
+     *    {@see DeclaredLayerReachability::pendingLayersMatched()}).
      * 2. `shadowEvidence` — per (assigned, shadowed) pair, list of evidence
      *    entries carrying the class FQN plus the specific criterion descriptors
      *    that matched on each side (feeds `architecture.potential-shadow`
@@ -311,32 +273,52 @@ final class LayerViolationRule extends AbstractRule
      *    every analysed class outside all declared layers. Canonical keys make
      *    the later merge with dependency-edge coverage deterministic and
      *    deduplicate a class observed through both repository and graph views.
+     *    Materialised only when {@see LayerViolationOptions::collectsOutsideLayerEvidence()}
+     *    says a consumer exists, because the map is the size of the
+     *    unclassified codebase.
+     * 4. `analysedDeclarations` — how many class-like declarations the walk
+     *    saw, the denominator `architecture.unassigned-class` reports its
+     *    percentage against.
      *
-     * Both are LOCAL variables here. Per CLAUDE.md "stateless rules", the rule
-     * instance is reused across `analyze()` invocations — any field-based
+     * `metrics->all(SymbolType::Class_)` enumerates what the collectors
+     * recorded, and class scope opens on every `ClassLike` — interfaces,
+     * traits and enums included. The blind spot is therefore a declaration no
+     * collector recorded any class-level metric for: it is absent here and
+     * counts as assigned.
+     *
+     * All of them are LOCAL variables here. Per CLAUDE.md "stateless rules", the
+     * rule instance is reused across `analyze()` invocations — any field-based
      * accumulator would leak counts. The dedicated statelessness regression
      * test pins this contract.
      *
-     * @return array{0: array<string, int>, 1: array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>>, 2: array<string, string>}
+     * @return array{0: array<string, int>, 1: array<string, array<string, true>>, 2: array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>>, 3: array<string, string>, 4: int}
      */
     private function collectClassEvidence(
-        LayerRegistry $registry,
+        ArchitectureConfiguration $architecture,
         AnalysisContext $context,
-        CoverageMode $coverageMode,
     ): array {
-        $layerHits = [];
+        \assert($this->options instanceof LayerViolationOptions);
+
+        $registry = $architecture->registry();
+        $materializeUncovered = $this->options->collectsOutsideLayerEvidence($architecture->coverage());
+
+        $assignedHits = [];
+        $matchedSymbols = [];
         foreach ($registry->layerNames() as $layerName) {
-            $layerHits[$layerName] = 0;
+            $assignedHits[$layerName] = 0;
+            $matchedSymbols[$layerName] = [];
         }
 
         /** @var array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>> $shadowEvidence */
         $shadowEvidence = [];
         $uncoveredClasses = [];
+        $analysedDeclarations = 0;
 
         foreach ($context->metrics->all(SymbolType::Class_) as $classSymbol) {
+            $analysedDeclarations++;
             $matches = $registry->resolveAll($classSymbol->symbolPath);
             if ($matches === []) {
-                if ($coverageMode !== CoverageMode::Ignore) {
+                if ($materializeUncovered) {
                     $uncoveredClasses[$classSymbol->symbolPath->toCanonical()] = $classSymbol->symbolPath->toString();
                 }
 
@@ -344,7 +326,8 @@ final class LayerViolationRule extends AbstractRule
             }
 
             $assigned = $matches[0];
-            $layerHits[$assigned->layerName] = ($layerHits[$assigned->layerName] ?? 0) + 1;
+            $assignedHits[$assigned->layerName] = ($assignedHits[$assigned->layerName] ?? 0) + 1;
+            $matchedSymbols = $this->tallyMatchedEnd($matchedSymbols, $matches, $classSymbol->symbolPath->toCanonical());
 
             $matchCount = \count($matches);
             if ($matchCount === 1) {
@@ -362,15 +345,15 @@ final class LayerViolationRule extends AbstractRule
             }
         }
 
-        return [$layerHits, $shadowEvidence, $uncoveredClasses];
+        return [$assignedHits, $matchedSymbols, $shadowEvidence, $uncoveredClasses, $analysedDeclarations];
     }
 
     /**
      * Walks the dependency graph and produces per-edge layer violations.
      * Returns the violation list, the coverage-state struct used by
      * `architecture.coverage` (counts of unmatched ends + the set of
-     * unclassified class FQNs), and a layer-hit map keyed by every layer
-     * matched at either end of an edge.
+     * unclassified class FQNs), a per-layer assignment count, and a per-layer
+     * set of the distinct symbols matched at either end of an edge.
      *
      * The hit map exists because {@see collectClassEvidence()} only walks
      * `metrics->all(SymbolType::Class_)` — classes in the analysed path set.
@@ -383,7 +366,7 @@ final class LayerViolationRule extends AbstractRule
      * fixes that without weakening unreachable-layer's typo-detection case:
      * a layer matching neither a class nor an edge end still gets zero hits.
      *
-     * @return array{0: list<Violation>, 1: array{sourceEdges: int, targetEdges: int, classes: array<string, string>}, 2: array<string, int>}
+     * @return array{0: list<Violation>, 1: array{sourceEdges: int, targetEdges: int, classes: array<string, string>}, 2: array<string, int>, 3: array<string, array<string, true>>}
      */
     private function collectEdgeViolations(ArchitectureConfiguration $architecture, AnalysisContext $context, OwnedLayerTargets $ownedTargets): array
     {
@@ -391,11 +374,12 @@ final class LayerViolationRule extends AbstractRule
         $sourceEdges = 0;
         $targetEdges = 0;
         $classes = [];
-        $edgeLayerHits = [];
+        $assignedHits = [];
+        $matchedSymbols = [];
 
         $graph = $context->dependencyGraph;
         if ($graph === null) {
-            return [$violations, ['sourceEdges' => 0, 'targetEdges' => 0, 'classes' => []], $edgeLayerHits];
+            return [$violations, ['sourceEdges' => 0, 'targetEdges' => 0, 'classes' => []], $assignedHits, $matchedSymbols];
         }
 
         $registry = $architecture->registry();
@@ -406,18 +390,21 @@ final class LayerViolationRule extends AbstractRule
             $fromMatch = $fromMatches[0] ?? null;
             $toMatch = $toMatches[0] ?? null;
 
+            $matchedSymbols = $this->tallyMatchedEnd($matchedSymbols, $fromMatches, $dependency->sourceLogical()->toCanonical());
+            $matchedSymbols = $this->tallyMatchedEnd($matchedSymbols, $toMatches, $dependency->targetLogical()->toCanonical());
+
             if ($fromMatch === null) {
                 $sourceEdges++;
                 $classes[$dependency->sourceLogical()->toCanonical()] = $dependency->sourceLogical()->toString();
             } else {
-                $edgeLayerHits[$fromMatch->layerName] = ($edgeLayerHits[$fromMatch->layerName] ?? 0) + 1;
+                $assignedHits[$fromMatch->layerName] = ($assignedHits[$fromMatch->layerName] ?? 0) + 1;
             }
 
             if ($toMatch === null) {
                 $targetEdges++;
                 $classes[$dependency->targetLogical()->toCanonical()] = $dependency->targetLogical()->toString();
             } else {
-                $edgeLayerHits[$toMatch->layerName] = ($edgeLayerHits[$toMatch->layerName] ?? 0) + 1;
+                $assignedHits[$toMatch->layerName] = ($assignedHits[$toMatch->layerName] ?? 0) + 1;
             }
 
             $edgeViolations = $this->buildViolations(
@@ -435,28 +422,51 @@ final class LayerViolationRule extends AbstractRule
         return [
             $violations,
             ['sourceEdges' => $sourceEdges, 'targetEdges' => $targetEdges, 'classes' => $classes],
-            $edgeLayerHits,
+            $assignedHits,
+            $matchedSymbols,
         ];
     }
 
     /**
-     * Trivial wrapper around {@see buildCoverageDiagnostic()} so the spread
-     * in {@see analyze()} stays homogeneous.
+     * Records the symbol under every layer that matched it, not just the one
+     * that won it — the predicate `architecture.pending-layer-matched` needs
+     * and `architecture.unreachable-layer` deliberately does not.
      *
-     * @param array{sourceEdges: int, targetEdges: int, classes: array<string, string>} $state
+     * A set keyed by the symbol's canonical form rather than a counter,
+     * because the same symbol is seen many times: once by the class walk and
+     * once per dependency edge it sits at either end of. A counter therefore
+     * reported edge multiplicity — two classes joined by four edges read as
+     * eight — and `architecture.pending-layer-matched` printed a number that
+     * answered no question anyone asks.
      *
-     * @return list<Violation>
+     * @param array<string, array<string, true>> $matchedSymbols layer name => set of canonical symbols
+     * @param list<LayerMatch> $matches
+     * @param string $symbolKey The matched symbol in {@see \Qualimetrix\Core\Symbol\SymbolPath::toCanonical()} form.
+     *
+     * @return array<string, array<string, true>>
      */
-    private function buildCoverageDiagnosticAsList(CoverageMode $mode, array $state): array
+    private function tallyMatchedEnd(array $matchedSymbols, array $matches, string $symbolKey): array
     {
-        $diagnostic = $this->buildCoverageDiagnostic(
-            $mode,
-            $state['sourceEdges'],
-            $state['targetEdges'],
-            array_values($state['classes']),
-        );
+        foreach ($matches as $match) {
+            $matchedSymbols[$match->layerName][$symbolKey] = true;
+        }
 
-        return $diagnostic === null ? [] : [$diagnostic];
+        return $matchedSymbols;
+    }
+
+    /**
+     * @param array<string, array<string, true>> $into
+     * @param array<string, array<string, true>> $from
+     *
+     * @return array<string, array<string, true>>
+     */
+    private function mergeMatchedSymbols(array $into, array $from): array
+    {
+        foreach ($from as $layerName => $symbols) {
+            $into[$layerName] = ($into[$layerName] ?? []) + $symbols;
+        }
+
+        return $into;
     }
 
     /**
@@ -491,295 +501,8 @@ final class LayerViolationRule extends AbstractRule
             ownedTargets: $ownedTargets,
             ruleName: self::NAME,
             severity: $this->options->severity,
-            recommendation: $this->buildRecommendation($dependency, $fromLayer, $toLayer, $architecture),
+            recommendation: LayerRoutingGuidance::forForbiddenEdge($dependency, $fromLayer, $toLayer, $architecture),
         ))->toViolations();
     }
 
-    private function buildRecommendation(
-        Dependency $dependency,
-        string $fromLayer,
-        string $toLayer,
-        ArchitectureConfiguration $architecture,
-    ): string {
-        $guidance = self::buildRoutingGuidance($fromLayer, $architecture->policy()->allowedTargets($fromLayer));
-        $payload = self::encodeDependencyPayload($dependency, $fromLayer, $toLayer);
-
-        return $guidance . "\n" . 'Dep data: ' . $payload;
-    }
-
-    /**
-     * Produces the routing-guidance prefix for the recommendation. When no
-     * outgoing edges are declared for the source layer, the guidance is the
-     * "no allowed targets" sentinel; otherwise it lists the declared targets.
-     *
-     * @param list<string> $allowedTargets
-     */
-    private static function buildRoutingGuidance(string $fromLayer, array $allowedTargets): string
-    {
-        if ($allowedTargets === []) {
-            return \sprintf(
-                'Layer "%s" is not allowed to depend on any other declared layer.',
-                $fromLayer,
-            );
-        }
-
-        return \sprintf(
-            'Allowed targets for layer "%s": %s. Consider routing through one of them.',
-            $fromLayer,
-            implode(', ', $allowedTargets),
-        );
-    }
-
-    /**
-     * Serialises the structured dependency context the recommendation appends
-     * for AI-agent consumers. Kept beside {@see buildRecommendation()} so the
-     * JSON shape and the textual prefix evolve together.
-     */
-    private static function encodeDependencyPayload(Dependency $dependency, string $fromLayer, string $toLayer): string
-    {
-        return json_encode(
-            [
-                'fromLayer' => $fromLayer,
-                'toLayer' => $toLayer,
-                'source' => $dependency->sourceLogical()->toString(),
-                'target' => $dependency->targetLogical()->toString(),
-                'type' => $dependency->type->value,
-            ],
-            \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR,
-        );
-    }
-
-    /**
-     * Builds the coverage diagnostic Violation when {@see CoverageMode} is not
-     * {@see CoverageMode::Ignore} and at least one out-of-layer end was seen.
-     *
-     * Severity mirrors the mode name exactly (`warn` → {@see Severity::Warning},
-     * `error` → {@see Severity::Error}) — an exhaustive `match` over the two
-     * cases remaining after the {@see CoverageMode::Ignore} guard above,
-     * rather than a ternary, so a future {@see CoverageMode} case that isn't
-     * also added here fails PHPStan's exhaustiveness check instead of
-     * silently falling back to a stale default (fixed: `warn` used to report
-     * `Severity::Info`, so `fail_on: warning` never caught it — the exact
-     * silent-severity-mismatch class of bug this rule now guards against for
-     * its own sibling diagnostics too).
-     *
-     * @param list<string> $unmatchedClasses Deduplicated class display-name FQNs seen at out-of-layer ends.
-     */
-    private function buildCoverageDiagnostic(
-        CoverageMode $mode,
-        int $unmatchedSourceEdges,
-        int $unmatchedTargetEdges,
-        array $unmatchedClasses,
-    ): ?Violation {
-        if ($mode === CoverageMode::Ignore) {
-            return null;
-        }
-
-        $unmatchedEnds = $unmatchedSourceEdges + $unmatchedTargetEdges;
-        if ($unmatchedEnds === 0 && $unmatchedClasses === []) {
-            return null;
-        }
-
-        // Exhaustive over the two remaining cases (Ignore already returned
-        // above) rather than a ternary, so a future CoverageMode case that
-        // is not also added here fails PHPStan's match.unhandled check
-        // instead of silently falling back to a stale default — the exact
-        // silent-severity-mismatch bug class this method used to have
-        // (`warn` previously mapped to `Severity::Info`).
-        $severity = match ($mode) {
-            CoverageMode::Warn => Severity::Warning,
-            CoverageMode::Error => Severity::Error,
-        };
-
-        sort($unmatchedClasses);
-        $sample = \array_slice($unmatchedClasses, 0, self::COVERAGE_SAMPLE_LIMIT);
-        $remaining = \count($unmatchedClasses) - \count($sample);
-
-        $sampleList = implode(', ', $sample);
-        if ($remaining > 0) {
-            $sampleList .= \sprintf(' ...and %d more', $remaining);
-        }
-
-        $message = \sprintf(
-            'Architecture coverage: %d edge(s) with unmatched source layer, %d edge(s) with unmatched target layer, %d class(es) outside all declared layers.',
-            $unmatchedSourceEdges,
-            $unmatchedTargetEdges,
-            \count($unmatchedClasses),
-        );
-
-        $recommendation = $sample === []
-            ? 'Declare layers covering the remaining classes or accept the gap by leaving coverage on "ignore".'
-            : 'Examples of unclassified classes: ' . $sampleList . '. Declare layers covering these classes or accept the gap by leaving coverage on "ignore".';
-
-        return new Violation(
-            location: Location::none(),
-            subject: MetricSubject::aggregate(SymbolPath::forProject()),
-            symbolPath: SymbolPath::forProject(),
-            ruleName: self::COVERAGE_DIAGNOSTIC_NAME,
-            violationCode: self::COVERAGE_DIAGNOSTIC_NAME,
-            message: $message,
-            severity: $severity,
-            recommendation: $recommendation,
-        );
-    }
-
-    /**
-     * Emits one diagnostic ({@see DIAGNOSTIC_SEVERITY}) per declared layer
-     * whose patterns matched zero classes AND zero
-     * dependency-edge ends during analysis.
-     *
-     * @param array<string, int> $layerHits Local map (NOT a field) of layerName → hit count,
-     *                                      merged in {@see analyze()} from both the per-class
-     *                                      walk ({@see collectClassEvidence()}) and the
-     *                                      per-edge walk ({@see collectEdgeViolations()}) —
-     *                                      see the latter's docblock for why edge ends count.
-     * @param array<string, \Qualimetrix\Analysis\Policy\Architecture\Layer\LayerDefinition> $definitionsByName Precomputed name → definition lookup
-     *                                                                                                          for O(1) pattern access.
-     *
-     * @return list<Violation>
-     */
-    private function buildUnreachableLayerDiagnostics(LayerRegistry $registry, array $layerHits, array $definitionsByName): array
-    {
-        \assert($this->options instanceof LayerViolationOptions);
-
-        $violations = [];
-
-        foreach ($registry->layerNames() as $layerName) {
-            if (($layerHits[$layerName] ?? 0) > 0) {
-                continue;
-            }
-
-            $criteria = $definitionsByName[$layerName]->membership()->describe();
-
-            $message = \sprintf(
-                'Layer "%s" was never matched during analysis. Possible causes: (1) it is shadowed by a broader layer earlier in the declaration order, (2) the declared criteria (%s) match no class in the analysed codebase. Run "qmx debug:layer-assignment <class>" to inspect specific classes.',
-                $layerName,
-                $criteria,
-            );
-
-            $violations[] = new Violation(
-                location: Location::none(),
-                subject: MetricSubject::aggregate(SymbolPath::forProject()),
-                symbolPath: SymbolPath::forProject(),
-                ruleName: self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-                violationCode: self::UNREACHABLE_LAYER_DIAGNOSTIC_NAME,
-                message: $message,
-                severity: self::DIAGNOSTIC_SEVERITY,
-                recommendation: 'Move the layer above any broader layer that captures its classes, or remove the layer if its pattern intentionally covers no class.',
-            );
-        }
-
-        return $violations;
-    }
-
-    /**
-     * Emits one diagnostic ({@see DIAGNOSTIC_SEVERITY}) per (assigned,
-     * shadowed) layer pair observed during the class iteration.
-     *
-     * Determinism: `metrics->all()` iteration order is not stable under
-     * parallel collection. The per-pair sample is sorted lexicographically by
-     * FQN and the pair list is sorted by (assigned, shadowed) before emission
-     * so CI diffs are stable across runs.
-     *
-     * Each evidence entry already carries the primary criterion that matched
-     * on each side (recorded during `collectClassEvidence()`), so no second
-     * walk over the layer list is necessary at emission time.
-     *
-     * @param array<string, array<string, list<array{fqn: string, assignedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion, shadowedCriterion: \Qualimetrix\Analysis\Policy\Architecture\Layer\MatchedCriterion}>>> $shadowEvidence
-     *
-     * @return list<Violation>
-     */
-    private function buildPotentialShadowDiagnostics(array $shadowEvidence): array
-    {
-        \assert($this->options instanceof LayerViolationOptions);
-
-        $pairs = [];
-        foreach ($shadowEvidence as $assigned => $shadowedMap) {
-            foreach ($shadowedMap as $shadowed => $entries) {
-                usort($entries, static fn(array $a, array $b): int => strcmp($a['fqn'], $b['fqn']));
-                $pairs[] = [
-                    'assigned' => $assigned,
-                    'shadowed' => $shadowed,
-                    'entries' => $entries,
-                ];
-            }
-        }
-
-        usort($pairs, static function (array $a, array $b): int {
-            $cmp = strcmp($a['assigned'], $b['assigned']);
-            if ($cmp !== 0) {
-                return $cmp;
-            }
-            return strcmp($a['shadowed'], $b['shadowed']);
-        });
-
-        $violations = [];
-        foreach ($pairs as $pair) {
-            $assignedLayer = $pair['assigned'];
-            $shadowedLayer = $pair['shadowed'];
-            $entries = $pair['entries'];
-            $total = \count($entries);
-
-            // A pair only exists once at least one reportable shadow was
-            // recorded for it, so the entry list is non-empty by construction.
-            \assert($entries !== []);
-
-            $sample = \array_slice($entries, 0, self::SHADOW_SAMPLE_LIMIT);
-            $remaining = $total - \count($sample);
-
-            $assignedCriterion = $sample[0]['assignedCriterion'];
-            $shadowedCriterion = $sample[0]['shadowedCriterion'];
-
-            $sampleFqns = array_map(static fn(array $entry): string => $entry['fqn'], $sample);
-            $sampleList = implode(', ', $sampleFqns);
-            if ($remaining > 0) {
-                $sampleList .= \sprintf(' ...and %d more', $remaining);
-            }
-
-            $message = \sprintf(
-                'Layer "%s" (%s) shadows layer "%s" (%s) for %d class(es) including %s. Run "qmx debug:layer-assignment <class>" to inspect specific cases.',
-                $assignedLayer,
-                $assignedCriterion->describe(),
-                $shadowedLayer,
-                $shadowedCriterion->describe(),
-                $total,
-                $sampleList,
-            );
-
-            $violations[] = new Violation(
-                location: Location::none(),
-                subject: MetricSubject::aggregate(SymbolPath::forProject()),
-                symbolPath: SymbolPath::forProject(),
-                ruleName: self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
-                violationCode: self::POTENTIAL_SHADOW_DIAGNOSTIC_NAME,
-                message: $message,
-                severity: self::DIAGNOSTIC_SEVERITY,
-                recommendation: \sprintf(
-                    'If layer "%s" should own these classes, declare it BEFORE "%s" (declaration order, first match wins). Otherwise tighten the patterns so the layers no longer overlap.',
-                    $shadowedLayer,
-                    $assignedLayer,
-                ),
-            );
-        }
-
-        return $violations;
-    }
-
-    /**
-     * The severity every non-coverage layer diagnostic reports.
-     *
-     * It is a constant, and the three options that used to set it per
-     * channel are gone, because those channels now declare
-     * {@see \Qualimetrix\Analysis\Finding\Contract\ChannelAcceptability::ConfigurationError}: they fail the run
-     * without consulting `fail_on` and cannot be accepted by the ratchet, so
-     * a severity knob would have controlled nothing but the word printed
-     * beside the finding while looking exactly like a behaviour setting.
-     * {@see Severity::Error} is what that behaviour actually is.
-     *
-     * Declared last in the class deliberately: baseline identities carry the
-     * byte offset of the declaration they name, so a new member above the
-     * existing ones would re-key every entry recorded for this file without
-     * anything about those findings having changed.
-     */
-    private const Severity DIAGNOSTIC_SEVERITY = Severity::Error;
 }

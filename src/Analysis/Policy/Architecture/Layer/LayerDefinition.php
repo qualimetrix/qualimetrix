@@ -55,22 +55,6 @@ final readonly class LayerDefinition
     private const string EXPANDED_NAME_REGEX = '/^[A-Za-z][A-Za-z0-9_-]*$/';
 
     /**
-     * Positive patterns with trailing backslashes stripped, used for matching.
-     *
-     * @var list<string>
-     */
-    private array $normalizedPatterns;
-
-    /**
-     * Exclude patterns with trailing backslashes stripped, used for matching.
-     * Empty list when no exclude clause is declared or the exclude clause
-     * has no pattern criteria.
-     *
-     * @var list<string>
-     */
-    private array $normalizedExcludePatterns;
-
-    /**
      * @param string $name Layer identifier — must match `[a-z][a-z0-9_-]*`
      *                     for user-declared layers. For layers produced by
      *                     template expansion use the {@see expanded()} factory,
@@ -78,6 +62,8 @@ final readonly class LayerDefinition
      *                     instead.
      * @param MembershipSpec $membership Criteria carrying at least one
      *                                   non-empty list.
+     * @param LayerLifecycle $lifecycle Whether the layer describes code that
+     *                                  exists yet — see {@see LayerLifecycle}.
      * @param bool $expanded Internal flag toggling the regex variant used
      *                       for name validation. Not exposed as a property —
      *                       no downstream code reads it after construction.
@@ -87,14 +73,10 @@ final readonly class LayerDefinition
     public function __construct(
         public string $name,
         public MembershipSpec $membership,
+        public LayerLifecycle $lifecycle = LayerLifecycle::Active,
         bool $expanded = false,
     ) {
         $this->validateName($name, $expanded);
-
-        $this->normalizedPatterns = LayerCriteriaMatcher::normalizePatterns($membership->patterns);
-        $this->normalizedExcludePatterns = $membership->exclude !== null
-            ? LayerCriteriaMatcher::normalizePatterns($membership->exclude->patterns)
-            : [];
     }
 
     /**
@@ -102,6 +84,10 @@ final readonly class LayerDefinition
      * when instantiating layers produced by template expansion. Applies the
      * relaxed {@see EXPANDED_NAME_REGEX} so PascalCase binding values do not
      * have to be lowercased.
+     *
+     * Expanded layers are always {@see LayerLifecycle::Active}: a concrete
+     * instance exists only because a tuple was observed in the analysed code,
+     * so it has matched something by construction.
      *
      * @throws InvalidLayerDefinitionException If the produced name still
      *                                         violates the relaxed regex
@@ -111,7 +97,7 @@ final readonly class LayerDefinition
      */
     public static function expanded(string $name, MembershipSpec $membership): self
     {
-        return new self($name, $membership, true);
+        return new self($name, $membership, expanded: true);
     }
 
     /**
@@ -170,7 +156,6 @@ final readonly class LayerDefinition
 
         $matched = LayerCriteriaMatcher::collectMatches(
             $context,
-            $this->normalizedPatterns,
             $this->membership->patterns,
             $this->membership->suffix,
             $this->membership->attributes,
@@ -215,7 +200,6 @@ final readonly class LayerDefinition
 
         $matched = LayerCriteriaMatcher::collectMatches(
             $context,
-            $this->normalizedExcludePatterns,
             $exclude->patterns,
             $exclude->suffix,
             $exclude->attributes,

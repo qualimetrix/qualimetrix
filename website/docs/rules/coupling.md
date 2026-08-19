@@ -387,7 +387,7 @@ D = |A + I - 1|
 
 Where:
 
-- **A (Abstractness)** = ratio of abstract classes and interfaces to total classes in the namespace (0.0 = all concrete, 1.0 = all abstract)
+- **A (Abstractness)** = `(abstract classes + interfaces) / (classes + traits + interfaces + enums implementing an interface)` in the namespace (0.0 = all concrete, 1.0 = all abstract)
 - **I (Instability)** = the instability metric described above
 
 The result is a number between 0.0 and 1.0:
@@ -407,6 +407,23 @@ There are two bad zones:
 | 0.0--0.1 | On the main sequence -- well balanced      |
 | 0.1--0.3 | Acceptable balance                         |
 | 0.3+     | Off balance -- zone of pain or uselessness |
+
+!!! info "Deviation from original spec"
+    Robert C. Martin (1994) defined Abstractness over abstract classes and concrete
+    classes only, so every PHP construct invented later has to be mapped onto that
+    model. Qualimetrix treats a **bare enum as neutral** and leaves it out of the
+    denominator entirely, rather than counting it as concrete: an enumeration of
+    literals offers no substitution point, since it cannot be extended, subtyped or
+    implemented. An **`enum X implements Y` counts as concrete** and stays in the
+    denominator -- it is a concrete implementation of a declared contract, and
+    without this exception a namespace holding one interface and N enums
+    implementing it would report `A = 1.0` while its implementations sit right
+    beside it. Only explicit `implements` clauses count; the `UnitEnum` /
+    `BackedEnum` interfaces that every enum satisfies implicitly do not. The shape
+    of the formula is unchanged -- this is a scope adaptation for PHP, not a
+    different metric. A namespace whose only declarations are bare enums has an
+    empty denominator and keeps the existing no-type result `A = 0.0`; such
+    namespaces are already skipped by `minClassCount`.
 
 <!-- llms:skip-end -->
 
