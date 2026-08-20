@@ -378,6 +378,39 @@ final class BaselineLoaderTest extends TestCase
         self::assertSame(InertEntryReason::DuplicateIdentity, $baseline->inertEntries[0]->reason);
     }
 
+    /**
+     * A line the parser rejected still claims its identity, so the line beside
+     * it stops applying — otherwise which of the two survives is decided by
+     * which one happened to parse.
+     */
+    #[Test]
+    public function itDemotesAnApplicableEntryWhoseIdentityAnInertLineAlsoClaims(): void
+    {
+        $baseline = $this->loadJson(<<<'JSON'
+            {
+                "version": 11,
+                "generated": "2026-08-05T12:00:00+03:00",
+                "scope": ["src"],
+                "entries": {
+                    "callable:App\\Foo::bar": [
+                        { "channel": "code-smell.goto#code-smell.goto", "count": 1 },
+                        { "channel": "code-smell.goto#code-smell.goto", "magnitudes": [5], "count": 1 }
+                    ]
+                }
+            }
+            JSON);
+
+        self::assertSame(0, $baseline->count());
+        self::assertCount(2, $baseline->inertEntries);
+        self::assertSame(
+            [InertEntryReason::ShapeMismatch, InertEntryReason::DuplicateIdentity],
+            array_map(
+                static fn($entry): InertEntryReason => $entry->reason,
+                $baseline->inertEntries,
+            ),
+        );
+    }
+
     #[Test]
     public function itKeepsTwoEntriesUnderOneSymbolThatDifferOnlyByEdge(): void
     {

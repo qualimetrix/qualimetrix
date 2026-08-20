@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - An `exclude_namespace_channels` key must now address a channel the rule it is written under actually produces; a key naming another rule's channel ends the run with exit code 3 instead of being accepted and excluding nothing. The message lists the owning rule's channels.
 
 ### Fixed
+- A baseline entry whose identity is also claimed by an unreadable line beside it no longer suppresses. The documented rule — a duplicated identity makes an entry inert — counted only the lines the parser accepted, so a hand-edited pair was resolved by which of the two happened to parse.
 - Repointed the six complexity CLI aliases (`--cyclomatic-warning`, `--cyclomatic-error`, `--cognitive-warning`, `--cognitive-error`, `--npath-warning`, `--npath-error`) to the `callable` level key, so they adjust thresholds again instead of silently no-oping after the method→callable rename.
 - Counted the `??=` assignment-coalesce operator as a path-generating decision point in NPath complexity, matching the documented `??`/`?->` extension.
 - Duplication detection now skips pathological hash buckets (hundreds of positions from generated parser tables and keyword lists) instead of exhausting memory with unbounded pair evaluation.

@@ -291,6 +291,15 @@ final readonly class BaselineLoader
      * calls duplicate identities invalid; this is what invalid has to mean
      * for the fail-safe direction to hold.
      *
+     * An entry that is already inert still *claims* its identity, so it
+     * counts. Counting only the applicable ones would let a hand-edited pair
+     * — one line the parser accepted, one it rejected on shape, mode or
+     * channel — resolve itself by which line happened to parse, which is the
+     * guess this method exists to refuse, arrived at from the other side. An
+     * inert entry keeps its own more specific reason rather than being
+     * relabelled a duplicate: shape, mode and channel are permanent causes,
+     * and the duplicate is the reason its *neighbour* stopped applying.
+     *
      * @param list<BaselineEntry> $entries
      * @param list<InertBaselineEntry> $inert
      *
@@ -301,6 +310,15 @@ final readonly class BaselineLoader
         $occurrences = [];
         foreach ($entries as $entry) {
             $key = $entry->identity->key();
+            $occurrences[$key] = ($occurrences[$key] ?? 0) + 1;
+        }
+
+        foreach ($inert as $claimed) {
+            if ($claimed->identity === null) {
+                continue;
+            }
+
+            $key = $claimed->identity->key();
             $occurrences[$key] = ($occurrences[$key] ?? 0) + 1;
         }
 
