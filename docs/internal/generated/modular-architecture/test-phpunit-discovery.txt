@@ -2556,7 +2556,16 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesProjectSymbolCountEqualsLeafNsTotal
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesSymbolClassCountMatchesActual
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesSymbolMethodCountMatchesActual
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itAnalysesIrregularNamespaceFormsWithoutFailing
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itCoversEveryCallSiteOfTheSharedHelper
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateCollector"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Coupling\RfcCollector"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\TypeCoverageCollector"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Size\LocCollector"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Size\MethodCountCollector"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itAnalysesIrregularNamespaceFormsUnderEveryRule
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itAssignsTheSameNonZeroOrdinalInAWorker
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itDiscriminatesTwoDeclarationsOfOneLogicalIdentityByOrdinal
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itKeepsARealAcceptedFindingAcceptedWhenTextAboveItChanges
@@ -3309,7 +3318,6 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itRespectsBoundaryThresholds"below warning"
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itReturnsEmptyWhenBelowThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itReturnsEmptyWhenDisabled
- - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\DuplicateClassDeclarationTest::itNumbersTheSecondDeclarationOfOneClassIdentity
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itCountsComplexFile
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itCountsDocBlock
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itCountsHashComment

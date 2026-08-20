@@ -27,6 +27,10 @@ final class DeclarationIdentityTest extends TestCase
               enabled: false
         YAML;
 
+    private const string EVERY_RULE = <<<'YAML'
+        rules: {}
+        YAML;
+
     private string $root = '';
 
     protected function setUp(): void
@@ -133,8 +137,16 @@ final class DeclarationIdentityTest extends TestCase
         self::assertSame($sequential, $this->subjects(2));
     }
 
+    /**
+     * Runs the whole rule set, not the single rule the other cases pin.
+     *
+     * A file with two braced namespaces used to kill the run with
+     * `Required metric "classCount.sum" not found in MetricBag`; the namespace
+     * bags it left empty are filled by rules no single-rule run reaches, so
+     * pinning one rule here would have kept that crash green.
+     */
     #[Test]
-    public function itAnalysesIrregularNamespaceFormsWithoutFailing(): void
+    public function itAnalysesIrregularNamespaceFormsUnderEveryRule(): void
     {
         $this->write('Braced.php', <<<'PHP'
             <?php
@@ -153,6 +165,41 @@ final class DeclarationIdentityTest extends TestCase
                 }
             }
             PHP);
+        $this->write('BracedClasses.php', <<<'PHP'
+            <?php
+
+            namespace Fixture\BracedFirst {
+                class First
+                {
+                    public function first(int $a): int
+                    {
+                        return $a > 1 ? 1 : 2;
+                    }
+                }
+            }
+
+            namespace Fixture\BracedSecond {
+                interface Second
+                {
+                }
+            }
+            PHP);
+        $this->write('BracedGlobal.php', <<<'PHP'
+            <?php
+
+            namespace {
+                class GlobalClass
+                {
+                    public function act(int $a): int
+                    {
+                        return $a > 1 ? 1 : 2;
+                    }
+                }
+            }
+
+            namespace Fixture\Empty_ {
+            }
+            PHP);
         $this->write('Global.php', <<<'PHP'
             <?php
 
@@ -162,10 +209,10 @@ final class DeclarationIdentityTest extends TestCase
             }
             PHP);
 
-        $report = $this->report();
+        $report = $this->report(config: self::EVERY_RULE);
 
         self::assertSame(0, $report['coverage']['failed'], (string) json_encode($report['coverage']));
-        self::assertSame(2, $report['coverage']['analyzed']);
+        self::assertSame(4, $report['coverage']['analyzed']);
     }
 
     #[Test]
@@ -215,8 +262,9 @@ final class DeclarationIdentityTest extends TestCase
     }
 
     /** @return array<string, mixed> */
-    private function report(int $workers = 0): array
+    private function report(int $workers = 0, string $config = self::CONFIG): array
     {
+        file_put_contents($this->root . '/qmx.yaml', $config);
         $command = \sprintf(
             'cd %s && %s %s check src --config=qmx.yaml --format=json --no-progress --workers=%d 2>/dev/null',
             escapeshellarg($this->root),
