@@ -581,6 +581,7 @@ architecture:
         - 'Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanation'
         - 'Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService'
         - 'Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationStatus'
+        - 'Qualimetrix\Analysis\Policy\Baseline\CanonicalBaselineReader'
         - 'Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundary'
         - 'Qualimetrix\Analysis\Policy\Baseline\EffectiveBoundaryBaselineSource'
         - 'Qualimetrix\Analysis\Policy\Baseline\EntrySelector'
