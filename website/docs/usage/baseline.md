@@ -101,6 +101,12 @@ byte-identical.
 
 With `--baseline`, `check` reports stale entries, inert entries, and a scope mismatch without failing the run or disabling other entries. Use `--show-resolved` to count entries whose complete identity no longer appears in the measured set. A group that shrinks but still fires is not resolved.
 
+An entry over a closure, over a member of an anonymous class, or over one of two
+declarations sharing a name in one file is keyed by a rank. Adding, removing, or
+moving the declarations that rank counts renumbers it, and the vacated number is
+reused — so the entry is not reported stale, its acceptance moves to whatever
+holds the number now. Regenerate after such an edit.
+
 ```bash
 bin/qmx check src/ --baseline=baseline.json --show-resolved
 ```

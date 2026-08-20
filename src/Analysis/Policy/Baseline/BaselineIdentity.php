@@ -19,8 +19,9 @@ use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
  * change for reasons that are not debt getting worse.
  *
  * The subject key is an opaque canonical `MetricSubject` string. In
- * particular, declaration subjects retain their file/start-position identity:
- * two declarations of the same FQN are deliberately separate groups.
+ * particular, a declaration subject keeps its file and its assigned ordinal
+ * (ADR 0026): two declarations of the same FQN in one file are deliberately
+ * separate groups.
  */
 final readonly class BaselineIdentity
 {

@@ -108,7 +108,9 @@ final readonly class ViolationFilterOrchestrator
      * exist" was true while staleness was keyed on the symbol; under the
      * identity of ADR 0017 the symbol is usually still right there and one of its
      * channels simply stopped firing, which the list printed underneath makes
-     * plain.
+     * plain. A moved declaration is named as the third cause because it is the
+     * one a reader cannot infer from the entry: the other two are about the
+     * finding, this one is about the key (ADR 0026).
      *
      * There is deliberately no `baseline:cleanup` suggestion. That command
      * selects on a different predicate — whether the `file:` a key names is
@@ -139,8 +141,12 @@ final readonly class ViolationFilterOrchestrator
         }
 
         $output->writeln(
-            '<comment>An entry stops appearing when its finding was repaired, or when configuration '
-            . 'stopped producing it. Nothing is removed automatically; the remaining entries still apply.</comment>',
+            '<comment>An entry stops appearing when its finding was repaired, when configuration '
+            . 'stopped producing it, or when the declaration it names is no longer that declaration: '
+            . 'renamed, moved to another file, or renumbered because a sibling it is counted against was '
+            . 'added, removed or moved — another declaration of the same logical identity, or, for a closure '
+            . 'or a member of an anonymous class, another unnamed declaration of its kind in that file. '
+            . 'Nothing is removed automatically; the remaining entries still apply.</comment>',
         );
 
         if ($input->getOption('show-resolved') === true) {

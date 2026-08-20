@@ -105,6 +105,12 @@ report it otherwise, and "Baseline with 0 entries written" would read as success
 - **Version 13**: A declaration key carries an assigned ordinal instead of a
   byte offset, so editing text above a declaration no longer moves its key
 
+An ordinal is a rank, so the three identities that carry a non-trivial one — a
+closure, the members of an anonymous class, and a declaration sharing its logical
+identity with another in the same file (ADR 0026) — move when the siblings they
+are counted against change. Such an entry does not become stale: the vacated rank
+is reused, so its acceptance silently rebinds to whatever holds that number now.
+
 Only version 13 is loadable. Versions 5, 10, 11 and 12 are rejected with guidance
 to run a fresh analysis, deliberately map or split accepted entries, review the
 mapping, and write a version 13 baseline. Versions 5, 10 and 11 cannot supply
@@ -354,8 +360,8 @@ The set of violations in a run sharing one identity is that entry's **group**.
 - Message text (rewording should not invalidate baseline)
 - Severity (may change when thresholds are reconfigured)
 
-Declaration subjects retain declaration file and start-position identity, so two
-declarations of one FQN are separate groups. Logical class and aggregate subjects
+Declaration subjects retain the declaration file and the assigned ordinal, so two
+declarations of one FQN in one file are separate groups. Logical class and aggregate subjects
 remain their own typed identities. Optional semantic occurrence and dependency edge
 (target plus reference kind) participate in the same complete identity.
 
