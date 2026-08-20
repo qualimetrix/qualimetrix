@@ -8,7 +8,6 @@ use InvalidArgumentException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use RuntimeException;
-use stdClass;
 
 /**
  * Writes a baseline file atomically, under a real compare-and-swap guard
@@ -47,6 +46,17 @@ final readonly class BaselineWriter
     private const int LOCK_RETRY_INTERVAL_MICROSECONDS = 20_000;
 
     /**
+     * Indentation of the canonical layout. Two spaces rather than the four
+     * `JSON_PRETTY_PRINT` emits: the file is nested three levels deep at the
+     * entry line, so the width is paid on every line of the largest block.
+     */
+    private const string INDENT = '  ';
+
+    private const string SUBJECT_INDENT = self::INDENT . self::INDENT;
+
+    private const string ENTRY_INDENT = self::INDENT . self::INDENT . self::INDENT;
+
+    /**
      * @param float $lockTimeoutSeconds how long to wait for another writer to finish before
      *                                  reporting the contention; tests shorten it, nothing
      *                                  else needs to
@@ -70,7 +80,7 @@ final readonly class BaselineWriter
             throw new RuntimeException("Failed to create directory: {$directory}");
         }
 
-        $json = $this->encode($this->serializeBaseline($baseline, $projectRoot));
+        $json = $this->renderPinned($this->serializeBaseline($baseline, $projectRoot));
 
         $lock = $this->acquireLock($path);
 
@@ -110,9 +120,14 @@ final readonly class BaselineWriter
      * precisely what was there, instead of guessing a default for a setting
      * that was never successfully read.
      *
-     * @param array<string, mixed> $data
+     * @param array{
+     *     version: int,
+     *     generated: string,
+     *     scope: list<string>,
+     *     entries: array<string, list<mixed>>
+     * } $data
      */
-    private function encode(array $data): string
+    private function renderPinned(array $data): string
     {
         $previous = ini_set('serialize_precision', '-1');
 
@@ -124,10 +139,74 @@ final readonly class BaselineWriter
         }
 
         try {
-            return json_encode($data, \JSON_THROW_ON_ERROR | \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
+            return $this->render($data);
         } finally {
             ini_set('serialize_precision', $previous);
         }
+    }
+
+    /**
+     * Renders the canonical layout: one entry per line, inside a single valid
+     * JSON document.
+     *
+     * The document is assembled from per-value `json_encode` calls rather than
+     * one whole-document call, because `JSON_PRETTY_PRINT` has no line policy
+     * to configure — it explodes every array and object, which is what put a
+     * three-field entry on nine lines. Splitting the call is what buys both
+     * the size and the reviewable diff: an entry is a unit of acceptance, so
+     * it is a line, and a subject key labels the block above the lines it owns.
+     *
+     * This stays inside the `serialize_precision` pin for the same reason the
+     * single call needed it: the pin governs how PHP renders doubles, and
+     * per-value encoding makes exactly the same number of float decisions.
+     *
+     * The envelope is written key by key in the order
+     * {@see serializeBaseline()} produced, so this method never has to know
+     * which fields an envelope has — only that `entries` is the one that
+     * expands.
+     *
+     * @param array{
+     *     version: int,
+     *     generated: string,
+     *     scope: list<string>,
+     *     entries: array<string, list<mixed>>
+     * } $data
+     */
+    private function render(array $data): string
+    {
+        $entries = $data['entries'];
+        unset($data['entries']);
+
+        $document = "{\n";
+
+        foreach ($data as $key => $value) {
+            $document .= self::INDENT . self::encode($key) . ': ' . self::encode($value) . ",\n";
+        }
+
+        $blocks = [];
+
+        foreach ($entries as $subjectKey => $payloads) {
+            $lines = [];
+
+            foreach ($payloads as $payload) {
+                $lines[] = self::ENTRY_INDENT . self::encode($payload);
+            }
+
+            $blocks[] = self::SUBJECT_INDENT . self::encode((string) $subjectKey) . ": [\n"
+                . implode(",\n", $lines) . "\n" . self::SUBJECT_INDENT . ']';
+        }
+
+        if ($blocks === []) {
+            return $document . self::INDENT . '"entries": {}' . "\n}\n";
+        }
+
+        return $document . self::INDENT . '"entries": {' . "\n"
+            . implode(",\n", $blocks) . "\n" . self::INDENT . "}\n}\n";
+    }
+
+    private static function encode(mixed $value): string
+    {
+        return json_encode($value, \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES);
     }
 
     /**
@@ -247,17 +326,24 @@ final readonly class BaselineWriter
     }
 
     /**
-     * @return array<string, mixed>
+     * An empty entry set stays an empty array here and becomes `{}` in
+     * {@see render()}: ADR 0017 spells `entries` as an object, and the layout
+     * is the one place that decides how a value is spelled.
+     *
+     * @return array{
+     *     version: int,
+     *     generated: string,
+     *     scope: list<string>,
+     *     entries: array<string, list<mixed>>
+     * }
      */
     private function serializeBaseline(Baseline $baseline, AbsolutePath $projectRoot): array
     {
-        $entries = $this->serializeEntries($baseline, $projectRoot);
-
         return [
             'version' => Baseline::VERSION,
             'generated' => $baseline->generated->format('c'),
             'scope' => $baseline->scope,
-            'entries' => $entries === [] ? new stdClass() : $entries,
+            'entries' => $this->serializeEntries($baseline, $projectRoot),
         ];
     }
 

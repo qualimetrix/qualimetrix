@@ -4924,6 +4924,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itListsAnInertEntryWithItsOwnReason
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itNeverRemovesAnythingWhenOnlyListingCandidates
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itPrefersChannelNotDeclaredOverStaleWhenBothApply
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesAnInertEntryAddressedByItsSelector
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesExactlyTheNamedEntryAndLeavesItsNeighbours
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itRemovesOneOfTwoEntriesDifferingOnlyByEdge
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineCleanerTest::itReportsASelectorThatNamesNothing
@@ -5004,11 +5005,34 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itAcceptsEveryIso8601SpellingTheContractNames#1
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itAcceptsEveryIso8601SpellingTheContractNames#2
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itAcceptsTheComponentsARuleActuallyEmits
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesARepeatedEnvelopeField
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesARepeatedSubjectKeyTheWholeDocumentPathWouldCollapse
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesASubjectBlockClosedByAnythingElse
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesASubjectBlockClosedWithoutACommaBeforeTheNext
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesATrailingCommaAfterTheLastSubjectBlock
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesBytesAfterTheClosingBrace
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesEveryShapeItDoesNotRecognise"document not opened on its own line"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesEveryShapeItDoesNotRecognise"document opened with a bracket"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesEveryShapeItDoesNotRecognise"entries object never closed"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesEveryShapeItDoesNotRecognise"entry indented four spaces"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesEveryShapeItDoesNotRecognise"entry indented with tabs"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesEveryShapeItDoesNotRecognise"entry line that is not JSON"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesEveryShapeItDoesNotRecognise"envelope field indented four spaces"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesEveryShapeItDoesNotRecognise"envelope field without its comma"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesEveryShapeItDoesNotRecognise"envelope value that is not JSON"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesEveryShapeItDoesNotRecognise"last line without its newline"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesEveryShapeItDoesNotRecognise"subject key indented two spaces"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDeclinesEveryShapeItDoesNotRecognise"subject key that is not a JSON string"
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDemotesAnApplicableEntryWhoseIdentityAnInertLineAlsoClaims
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itDemotesEveryEntryOfARepeatedIdentityNotOnlyTheRepeats
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itHashesTheFileTheSameWayOnEitherRoute
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itKeepsLoadingWhenOneEntryIsUnusable
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itKeepsTwoEntriesUnderOneSymbolThatDifferOnlyByEdge
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itLoadsTheContractOfTheCurrentVersion
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itNormalizesAScopeTheFileSpelledLoosely
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itReadsACanonicalFileAndAReflowedCopyOfItIdentically
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itReadsACanonicalFileWithNoEntries
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRecognisesTheCanonicalLayoutAndDeclinesAnyOther
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRecordsTheContentHashOfTheFileItRead
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAGeneratedTimestampThatIsNotIso8601#0
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAGeneratedTimestampThatIsNotIso8601#1
@@ -5019,10 +5043,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAMissingFile
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAMissingScope
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAnInvalidGeneratedTimestamp
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAnUnsupportedVersionWrittenInTheCanonicalLayout
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAnyOtherVersion
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsInvalidJson
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionFiveAsHistoricalAndRequiresManualV11Review
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionTenBeforeReadingEntriesAndGivesManualV11Guidance
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itSpendsTheSameNestingBudgetOnAnEntryAsTheWholeDocumentPath
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAMalformedSymbolBucketInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAnEntryWhoseComponentsCarryTheKeySeparatorInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineMigratorTest::itCarriesTheUncapturedGroupCountFromTheFreshCapture
@@ -5035,16 +5061,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineMigratorTest::itWritesExactlyTheFreshCaptureAndMergesNothingFromV5
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineRoundTripVOTest::itKeepsSeveralChannelsUnderOneSymbolApart
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineRoundTripVOTest::itPreservesOutOfTreeAbsoluteFileKeys
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineRoundTripVOTest::itRewritesACanonicalFileByteForByte
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineRoundTripVOTest::itRoundTripsAbsoluteFileKeysAfterRelativization
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineRoundTripVOTest::itRoundTripsRelativeFileKeys
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineTest::itAddressesExactlyOneOfTwoEntriesDifferingOnlyByEdge
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineTest::itCountsApplicableEntriesOnly
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineTest::itDistinguishesExpectedAbsenceFromUncheckedProvenance
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineTest::itDoesNotFindAnIdentityItDoesNotHold
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineTest::itDropsItsCompareAndSwapTokenWhenDetached
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineTest::itFindsAnEntryByItsIdentity
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineTest::itFindsAnInertEntryByItsSelectorToo
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineTest::itFindsNothingForAStringThatIsNotASelector
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineTest::itLeavesSiblingEntriesUnderOneSymbolAloneWhenOneGoesStale
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineTest::itListsTheSymbolKeysOfValidAndInertEntriesAlike
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineTest::itRejectsMutuallyExclusiveSourceProvenance
@@ -5071,6 +5095,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itCleansUpTheTemporaryFileWhenTheRenameFails
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itGroupsEntriesUnderTheirSymbolKeys
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itHoldsAndReleasesASiblingLockFile
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itIndentsTheCanonicalLayoutTwoSpacesPerLevel
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itLeavesNoTemporaryFileBehindOnSuccess
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itOrdersEntriesByChannelWhetherOrNotTheyAreApplicable
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itPreservesInertEntriesVerbatim
@@ -5082,12 +5107,14 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itRefusesWhenAFileAppearedSinceItWasExpectedAbsent
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itRefusesWhenTheFileVanishedSinceItWasRead
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itRelativizesAbsoluteFileKeysAgainstTheProjectRoot
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itRewritesAFileItJustReadWithoutMovingAByte
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itRoundTripsEdgesAndMultiElementMagnitudes
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itRoundTripsMagnitudesExactlyAtEverySerializePrecision
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itWritesAFreshBaselineOverAnyExistingFile
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itWritesAnEmptyBaselineAsAnObjectNotAnArray
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itWritesAsManyEntriesUnderASymbolAsItRead
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itWritesNoAbsoluteMachinePathForARunOverTheProjectRoot
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itWritesOneLinePerEntryInsideOneValidJsonDocument
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itWritesTheEnvelopeOfTheContract
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineWriterTest::itWritesWhenTheTargetIsStillExpectedToBeAbsent
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BoundaryExplanationServiceTest::itClassifiesCurrentBaselineOnlyAndUnknownSymbolsExplicitly

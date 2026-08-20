@@ -23,6 +23,14 @@ use JsonException;
  * {@see Baseline}. That is the compare-and-swap token
  * {@see BaselineWriter} needs to make a read-modify-write safe (ADR 0017); it is
  * not, and must never become, a field of the file.
+ *
+ * **Two reading paths, one meaning.** A file in the canonical layout the
+ * writer emits is read by {@see CanonicalBaselineReader} a line at a time; any
+ * other layout, including a canonical file a human reformatted, falls back to
+ * decoding the whole document here. The two differ only in how bytes become
+ * entries — the same entry parser, the same envelope checks and the same
+ * duplicate demotion run over the result either way, so which path ran is not
+ * observable in what the caller gets.
  */
 final readonly class BaselineLoader
 {
@@ -48,6 +56,15 @@ final readonly class BaselineLoader
 
         if (!is_readable($path)) {
             throw new BaselineLoadException("Baseline file is not readable: {$path}");
+        }
+
+        // Constructed here rather than injected: the recogniser is an
+        // implementation detail of this loader with no other consumer and no
+        // dependency of its own, so a constructor seam would only be a seam
+        // for its own sake.
+        $canonical = (new CanonicalBaselineReader($this->entryParser))->read($path);
+        if ($canonical !== null) {
+            return $this->assembleCanonical($canonical);
         }
 
         $content = file_get_contents($path);
@@ -83,6 +100,38 @@ final readonly class BaselineLoader
             entries: $entries,
             inertEntries: $inertEntries,
             sourceContentHash: $contentHash,
+        );
+    }
+
+    /**
+     * The envelope checks the whole-document path runs, applied to an envelope
+     * that arrived a line at a time.
+     *
+     * They run in the same order and throw the same sentences, which is the
+     * whole requirement: which path read the bytes must never be visible in
+     * what the caller gets back, whether that is an answer or a refusal.
+     *
+     * @param array{
+     *     envelope: array<string, mixed>,
+     *     entries: list<BaselineEntry>,
+     *     inert: list<InertBaselineEntry>,
+     *     contentHash: string
+     * } $canonical
+     */
+    private function assembleCanonical(array $canonical): Baseline
+    {
+        $envelope = $canonical['envelope'];
+
+        $this->assertVersion($envelope['version'] ?? null);
+
+        [$entries, $inertEntries] = $this->separateDuplicates($canonical['entries'], $canonical['inert']);
+
+        return new Baseline(
+            generated: $this->parseGenerated($envelope['generated'] ?? null),
+            scope: $this->parseScope($envelope['scope'] ?? null),
+            entries: $entries,
+            inertEntries: $inertEntries,
+            sourceContentHash: $canonical['contentHash'],
         );
     }
 
@@ -242,6 +291,15 @@ final readonly class BaselineLoader
      * calls duplicate identities invalid; this is what invalid has to mean
      * for the fail-safe direction to hold.
      *
+     * An entry that is already inert still *claims* its identity, so it
+     * counts. Counting only the applicable ones would let a hand-edited pair
+     * — one line the parser accepted, one it rejected on shape, mode or
+     * channel — resolve itself by which line happened to parse, which is the
+     * guess this method exists to refuse, arrived at from the other side. An
+     * inert entry keeps its own more specific reason rather than being
+     * relabelled a duplicate: shape, mode and channel are permanent causes,
+     * and the duplicate is the reason its *neighbour* stopped applying.
+     *
      * @param list<BaselineEntry> $entries
      * @param list<InertBaselineEntry> $inert
      *
@@ -252,6 +310,15 @@ final readonly class BaselineLoader
         $occurrences = [];
         foreach ($entries as $entry) {
             $key = $entry->identity->key();
+            $occurrences[$key] = ($occurrences[$key] ?? 0) + 1;
+        }
+
+        foreach ($inert as $claimed) {
+            if ($claimed->identity === null) {
+                continue;
+            }
+
+            $key = $claimed->identity->key();
             $occurrences[$key] = ($occurrences[$key] ?? 0) + 1;
         }
 

@@ -29,6 +29,7 @@ Baseline/
 ├── UncapturedGroup.php          # VO: a group that produced no entry, and why
 ├── UncapturedReason.php         # Enum: undeclared / configuration-error channel / no finite magnitude
 ├── BaselineLoader.php           # Loads the exact typed-subject version 11 file
+├── CanonicalBaselineReader.php  # Reads the canonical one-entry-per-line layout without decoding the whole document, or declines so the loader decodes it
 ├── BaselineLoadException.php    # Envelope failure (missing/unreadable/invalid JSON/version); exit 3
 ├── BaselineWriter.php           # Writes atomically under a compare-and-swap guard
 ├── RunScope.php                 # VO: a run's analysed paths in the portable form the file records, plus the coverage predicate the scope guard reads
@@ -289,12 +290,13 @@ is the only method that writes anything, and only for the selectors it is
 given — **there is no bulk "remove everything listed" form**. ADR 0017's
 cleanup decision rejects the withdrawn `--all-listed` shape: the candidate list is recomputed
 inside the same call that would consume it, so a bulk flag would be
-inference-by-absence wearing a flag). Each selector resolves through
-`Baseline::findBySelector()` into exactly one of three outcomes — `removed`,
-`notFound`, or `ambiguous` (more than one entry shares the selector; neither
-is removed, since the digest is not a proof of uniqueness). A selector
-addresses the *complete* identity including the dependency edge, so it can
-remove one of two entries differing only by edge without touching the other.
+inference-by-absence wearing a flag). Each selector resolves through the
+selector index the cleaner builds for the call into exactly one of three
+outcomes — `removed`, `notFound`, or `ambiguous` (more than one entry shares
+the selector; neither is removed, since the digest is not a proof of
+uniqueness). A selector addresses the *complete* identity including the
+dependency edge, so it can remove one of two entries differing only by edge
+without touching the other.
 
 ### Historical migration report types
 
@@ -359,6 +361,10 @@ one channel agree on everything else.
 
 ## File Contract (version 11)
 
+The file is one JSON document, written in a canonical layout: **one entry per
+line**, two-space indentation, a subject key on the line above the entries it
+owns.
+
 ```json
 {
   "version": 11,
@@ -366,22 +372,24 @@ one channel agree on everything else.
   "scope": ["src"],
   "entries": {
     "declaration:callable:App\\OrderService::calculate@src/OrderService.php:0": [
-      { "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
-        "occurrence": "body",
-        "magnitudes": [25], "count": 1 }
+      {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","occurrence":"body","magnitudes":[25],"count":1}
     ],
     "file:src/Legacy/dup.php": [
-      { "channel": "duplication.code-duplication#duplication.code-duplication",
-        "magnitudes": [40, 100], "count": 2 }
+      {"channel":"duplication.code-duplication#duplication.code-duplication","magnitudes":[40,100],"count":2}
     ],
     "class:App\\Web\\Controller": [
-      { "channel": "architecture.layer-violation#architecture.layer-violation",
-        "edge": { "target": "class:App\\Db\\Connection", "type": "new" },
-        "count": 1 }
+      {"channel":"architecture.layer-violation#architecture.layer-violation","edge":{"target":"class:App\\Db\\Connection","type":"new"},"count":1}
     ]
   }
 }
 ```
+
+The layout is the schema's presentation, not part of it: the file is ordinary
+JSON, and a reformatted copy still loads. What the layout buys is that an entry
+is the unit of acceptance *and* the unit of diff — tightening one ceiling is a
+one-line change with the subject key visible above it — and that the file is
+two thirds the size `JSON_PRETTY_PRINT` produced for the same entries (60 401 B
+against 90 365 B on this repository's own baseline, at 264 entries).
 
 | Field       | Contract                                                      |
 | ----------- | ------------------------------------------------------------- |
@@ -429,6 +437,34 @@ carrying the identity key separator, or a duplicated identity makes an entry **i
 suppress, and it does not fail the load — refusing to load would punish a whole run
 for one bad line. An inert entry keeps its symbol, channel, selector and reason for
 reporting, and its raw payload so a rewrite preserves the line verbatim.
+
+### Reads
+
+Two paths, one meaning. A file in the canonical layout is read by
+`CanonicalBaselineReader` a line at a time, so no entry is held in decoded form
+beyond the line it came from; the content hash is accumulated over the raw bytes
+as they go past. Any other layout — including a canonical file someone
+reformatted — is decoded whole by `BaselineLoader` instead.
+
+The line reader is a **recogniser, not a second parser**. Every shape it does not
+recognise it declines, and the whole-document path answers instead; it never
+interprets, never repairs, and never throws on layout. That asymmetry is what
+makes it safe to rely on: a shape wrongly declined costs one full decode, while a
+shape wrongly accepted would mean reading a file as something it is not. A
+repeated subject key is declined for that reason — `json_decode` keeps the last
+of two identical object keys, and a streaming reader that kept both would apply
+ceilings the other path discards.
+
+Beyond that split the two paths share everything: the same entry parser, the same
+envelope checks in the same order, the same duplicate demotion. Which path read
+the bytes is not observable in what the caller gets, whether that is a baseline or
+a refusal.
+
+What this does **not** buy is a `Baseline` that holds less: it still materializes
+every entry, because the ceiling stage asks it for stale entries, which are only
+computable against the whole set. Reading a 23 MB, 100 000-entry file peaks at
+2 MB in the scan itself against 131 MB for the decoded document — the saving is in
+how the file is turned into entries, not in what is kept afterwards.
 
 ### Writes
 

@@ -10736,6 +10736,14 @@
                 }
             ]
         },
+        "Qualimetrix\\Analysis\\Policy\\Baseline\\CanonicalBaselineReader": {
+            "path": "src/Analysis/Policy/Baseline/CanonicalBaselineReader.php",
+            "kind": "class",
+            "owner": "Analysis.Policy.Baseline",
+            "visibility": "internal",
+            "closure_package": "P6-C",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Policy\\Baseline\\EffectiveBoundary": {
             "path": "src/Analysis/Policy/Baseline/EffectiveBoundary.php",
             "kind": "class",

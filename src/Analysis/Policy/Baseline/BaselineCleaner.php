@@ -128,6 +128,8 @@ final readonly class BaselineCleaner
      */
     public function remove(Baseline $baseline, array $selectors): BaselineCleanupRemoval
     {
+        $bySelector = $this->indexBySelector($baseline);
+
         $toRemoveEntries = [];
         $toRemoveInert = [];
         $removed = [];
@@ -142,7 +144,7 @@ final readonly class BaselineCleaner
             }
 
             $seenSelectors[$selector->value] = true;
-            $matches = $baseline->findBySelector($selector);
+            $matches = $bySelector[$selector->value] ?? [];
 
             if ($matches === []) {
                 $notFound[] = $selector;
@@ -186,5 +188,34 @@ final readonly class BaselineCleaner
         );
 
         return new BaselineCleanupRemoval($updated, $removed, $notFound, $ambiguous);
+    }
+
+    /**
+     * Every entry — valid or inert — keyed by its selector, built on demand
+     * for this call only. `Baseline` itself no longer carries this index: on
+     * the `check` path nothing reads it, yet building it still hashes every
+     * entry's identity, so it lived as pure per-run cost for callers that
+     * never removed anything.
+     *
+     * Returns lists, not single entries, because the digest, however unlikely
+     * to collide, is not a proof of uniqueness (see {@see EntrySelector}) —
+     * {@see remove()} reports a selector matching more than one entry as
+     * ambiguous instead of picking one.
+     *
+     * @return array<string, list<BaselineEntry|InertBaselineEntry>>
+     */
+    private function indexBySelector(Baseline $baseline): array
+    {
+        $bySelector = [];
+
+        foreach ($baseline->entries as $entry) {
+            $bySelector[$entry->selector()->value][] = $entry;
+        }
+
+        foreach ($baseline->inertEntries as $inert) {
+            $bySelector[$inert->selector->value][] = $inert;
+        }
+
+        return $bySelector;
     }
 }

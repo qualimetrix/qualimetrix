@@ -27,3 +27,7 @@
 /.serena/               export-ignore
 /benchmarks/            export-ignore
 /website/               export-ignore
+
+# Generated ratchet snapshot: collapse its diff by default in both forges
+qmx-baseline.json linguist-generated
+qmx-baseline.json gitlab-generated

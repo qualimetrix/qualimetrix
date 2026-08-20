@@ -172,6 +172,22 @@ final class BaselineCleanerTest extends TestCase
     }
 
     #[Test]
+    public function itRemovesAnInertEntryAddressedByItsSelector(): void
+    {
+        $kept = self::inertEntry('file:kept.php', InertEntryReason::Malformed);
+        $removed = self::inertEntry('file:gone.php', InertEntryReason::Malformed);
+
+        $baseline = new Baseline(generated: new DateTimeImmutable(), scope: ['src'], entries: [], inertEntries: [$kept, $removed]);
+
+        $result = $this->cleaner()->remove($baseline, [$removed->selector]);
+
+        self::assertSame([$removed->selector], $result->removed);
+        self::assertSame([], $result->notFound);
+        self::assertSame([], $result->ambiguous);
+        self::assertSame([$kept], $result->baseline->inertEntries);
+    }
+
+    #[Test]
     public function itReportsASelectorThatNamesNothing(): void
     {
         $entry = new BaselineEntry(new BaselineIdentity('callable:App\Foo::bar', self::gotoChannel()), null, 1);

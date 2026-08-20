@@ -9,10 +9,8 @@ use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Baseline\Baseline;
-use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\EntrySelector;
@@ -55,65 +53,6 @@ final class BaselineTest extends TestCase
             'callable:App\Foo::other',
             new ViolationChannel('code-smell.goto', 'code-smell.goto'),
         )));
-    }
-
-    /**
-     * The case `<symbol>#<channel>` cannot address: two forbidden edges out
-     * of one class on one channel agree on every component but the edge.
-     */
-    #[Test]
-    public function itAddressesExactlyOneOfTwoEntriesDifferingOnlyByEdge(): void
-    {
-        $channel = new ViolationChannel('architecture.layer-violation', 'architecture.layer-violation');
-        $toConnection = new BaselineEntry(
-            new BaselineIdentity(
-                'class:App\Web\Controller',
-                $channel,
-                null,
-                new BaselineEdge('class:App\Db\Connection', DependencyType::New_),
-            ),
-            null,
-            1,
-        );
-        $toStatement = new BaselineEntry(
-            new BaselineIdentity(
-                'class:App\Web\Controller',
-                $channel,
-                null,
-                new BaselineEdge('class:App\Db\Statement', DependencyType::New_),
-            ),
-            null,
-            1,
-        );
-
-        $baseline = self::baselineOf($toConnection, $toStatement);
-
-        $found = $baseline->findBySelector($toStatement->selector());
-
-        self::assertCount(1, $found);
-        self::assertSame($toStatement, $found[0]);
-    }
-
-    #[Test]
-    public function itFindsAnInertEntryByItsSelectorToo(): void
-    {
-        $inert = self::inert('callable:App\Foo::qux');
-        $baseline = new Baseline(
-            generated: new DateTimeImmutable(),
-            scope: [],
-            entries: [],
-            inertEntries: [$inert],
-        );
-
-        self::assertSame([$inert], $baseline->findBySelector($inert->selector->value));
-    }
-
-    #[Test]
-    public function itFindsNothingForAStringThatIsNotASelector(): void
-    {
-        $baseline = self::baselineOf(self::entry('callable:App\Foo::bar'));
-
-        self::assertSame([], $baseline->findBySelector('not-a-selector'));
     }
 
     #[Test]
