@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Baseline files are written one entry per line inside the same JSON document: a tightened ceiling is a one-line diff, and the file is two thirds its former size (60 401 B against 90 365 B for this project's own 264 entries). The schema and version 11 are unchanged, and a reformatted file still loads.
+- Baseline files are written one entry per line inside the same JSON document: a tightened ceiling is a one-line diff, and the file is two thirds its former size (60 401 B against 90 365 B for this project's own 264 entries). The layout is presentation only — the schema is unchanged at the time of this line-per-entry change, and a reformatted file still loads. (The schema itself changes separately; see the version 12 entry below.)
 - Corrected computed-metric reference examples to use the registered `metrics` output format.
 - Added universal per-rule `exclude_namespace_channels` configuration for suppressing selected namespace-aggregate violation channels without hiding class findings or sibling channels.
 - `architecture.coverage` now includes analysed classes outside every declared layer even when they have no dependency edges, so `coverage: error` can enforce complete project ownership instead of checking only graph endpoints.
