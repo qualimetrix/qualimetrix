@@ -3541,6 +3541,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itCanonicalizesNamedScalarEvidenceIndependentlyOfInputOrder
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itDistinguishesTheSemanticKindAndEvidence
  - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itRejectsAnEmptyKindOrEvidenceName
+ - Qualimetrix\Tests\Analysis\Finding\Unit\OccurrenceKeyTest::itTruncatesTheSameSha256ItWouldHaveReturnedInFull
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itFiltersAChannelNoCapabilityDeclaredProjectScoped
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itFiltersGlobPattern
  - Qualimetrix\Tests\Analysis\Finding\Unit\PathExclusionFilterTest::itFiltersSuppressedPath
@@ -4941,12 +4942,12 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itRejectsWrongOptionalAndRequiredJsonShapesWithoutLosingRawInput
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAJsonListAtTheEntryBoundaryInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAMagnitudeChannelWithoutMagnitudesInert
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAMagnitudeListThatDisagreesWithTheCountInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsANonFiniteMagnitudeInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsANonPositiveCountInert#0
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsANonPositiveCountInert#1
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnEntryThatIsNotAnObjectInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnEntryWithAnUnparseableChannelInert
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnEntryWithCountAlongsideMagnitudesInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnEntryWithoutAChannelInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnEntryWithoutACountInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnOccurrenceChannelWithMagnitudesInert
@@ -4955,6 +4956,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryParserTest::itTurnsAnUnrecognizedModeInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryTest::itCollapsesNegativeZeroToPositiveZero
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryTest::itLeavesValuesAlreadyRoundedByTheirOwnRuleUntouched
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryTest::itOmitsCountWhenMagnitudesArePresent
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryTest::itOmitsEdgeMagnitudesAndModeWhenThereAreNone
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryTest::itReadsItsShapeOffItsOwnContents
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryTest::itRejectsAMagnitudeListThatDisagreesWithTheCount
@@ -4966,9 +4968,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryTest::itStoresMagnitudesAscending
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryTest::itWritesAWholeMagnitudeWithoutAZeroFractionAndReloadsItAsAnInt
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itDecodesCountMagnitudesAndMode
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itDerivesCountFromMagnitudesLengthWhenMagnitudesArePresent
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itLeavesFiniteValidationToTheBaselineEntryInvariant
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itRejectsAMapAndANonNumericMagnitudeMemberWithExactDetails
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itRejectsAbsentNullAndNonIntegerCountsWithTheExactMalformedDetail
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itRejectsCountAlongsideMagnitudes
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itRejectsUnknownAndNonStringModesAsUnrecognized
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itTreatsAbsentAndNullOptionalValuesAsAbsent
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itCapturesTheMagnitudeOfASingleFinding
@@ -5046,8 +5050,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAnUnsupportedVersionWrittenInTheCanonicalLayout
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAnyOtherVersion
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsInvalidJson
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionFiveAsHistoricalAndRequiresManualV11Review
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionTenBeforeReadingEntriesAndGivesManualV11Guidance
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionElevenAndRequiresARegeneratedV12Baseline
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionFiveAsHistoricalAndRequiresManualV12Review
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionTenBeforeReadingEntriesAndGivesManualV12Guidance
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itSpendsTheSameNestingBudgetOnAnEntryAsTheWholeDocumentPath
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAMalformedSymbolBucketInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAnEntryWhoseComponentsCarryTheKeySeparatorInert
