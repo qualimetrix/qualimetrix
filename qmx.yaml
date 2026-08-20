@@ -243,6 +243,7 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\CatchInstanceofHandler'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\DependencyContext'
+        - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\DependencyHandlerTable'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\FunctionLikeHandler'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\InstantiationHandler'
         - 'Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\NodeDependencyHandlerInterface'

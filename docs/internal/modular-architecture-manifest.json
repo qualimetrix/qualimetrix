@@ -2332,6 +2332,14 @@
             "closure_package": "P3",
             "consumers": []
         },
+        "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\Handler\\DependencyHandlerTable": {
+            "path": "src/Analysis/Evidence/DependencyModel/Extraction/Handler/DependencyHandlerTable.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.DependencyModel",
+            "visibility": "internal",
+            "closure_package": "P3",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\Handler\\FunctionLikeHandler": {
             "path": "src/Analysis/Evidence/DependencyModel/Extraction/Handler/FunctionLikeHandler.php",
             "kind": "class",

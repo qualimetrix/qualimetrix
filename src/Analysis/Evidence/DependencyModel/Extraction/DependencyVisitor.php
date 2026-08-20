@@ -14,15 +14,8 @@ use PhpParser\Node\Stmt\Use_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\CatchInstanceofHandler;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\DependencyContext;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\FunctionLikeHandler;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\InstantiationHandler;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\NodeDependencyHandlerInterface;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\PropertyHandler;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\StaticAccessHandler;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TraitUseHandler;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\DependencyHandlerTable;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\DeclarationKey;
 use Qualimetrix\Core\Symbol\DeclarationPath;
@@ -46,8 +39,6 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * at file top level, backing a "global function") have no owning symbol —
  * their dependencies are not tracked, matching how top-level `function`
  * declarations are handled. See `FunctionLikeHandler` for signature extraction.
- *
- * @qmx-threshold coupling.cbo 23 -- Fourteen dependency kinds behind six handlers, plus the two declaration-numbering types an edge source needs; raw CBO 22 gets one-edge headroom.
  */
 final class DependencyVisitor extends NodeVisitorAbstract implements DependencyTraversalParticipantInterface
 {
@@ -59,17 +50,14 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
     /** @var list<Dependency> */
     private array $dependencies = [];
 
-    private ClassLikeHandler $classLikeHandler;
-
-    /** @var array<class-string<Node>, NodeDependencyHandlerInterface> */
-    private array $dispatchTable;
+    private readonly DependencyHandlerTable $handlers;
 
     public function __construct(
         ?DependencyResolver $resolver = null,
+        ?DependencyHandlerTable $handlers = null,
     ) {
         $this->resolver = $resolver ?? new DependencyResolver();
-        $this->classLikeHandler = new ClassLikeHandler();
-        $this->dispatchTable = $this->buildDispatchTable();
+        $this->handlers = $handlers ?? new DependencyHandlerTable();
     }
 
     /**
@@ -191,7 +179,7 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
                 $this->declarationIndex->ordinalOf(DeclarationKey::forLogical($logical), $node->getStartFilePos()),
             ),
         );
-        $this->classLikeHandler->handle($node, $this->currentContext);
+        $this->handlers->handleClassLike($node, $this->currentContext);
 
         return true;
     }
@@ -202,7 +190,7 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
             return false;
         }
 
-        $this->classLikeHandler->handle($node, $this->currentContext);
+        $this->handlers->handleClassLike($node, $this->currentContext);
 
         return true;
     }
@@ -213,30 +201,6 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
             return;
         }
 
-        ($this->dispatchTable[$node::class] ?? null)?->handle($node, $this->currentContext);
-    }
-
-    /**
-     * @return array<class-string<Node>, NodeDependencyHandlerInterface>
-     */
-    private function buildDispatchTable(): array
-    {
-        $handlers = [
-            new TraitUseHandler(),
-            new InstantiationHandler(),
-            new StaticAccessHandler(),
-            new CatchInstanceofHandler(),
-            new PropertyHandler(),
-            new FunctionLikeHandler(),
-        ];
-
-        $table = [];
-        foreach ($handlers as $handler) {
-            foreach ($handler::supportedNodeClasses() as $nodeClass) {
-                $table[$nodeClass] = $handler;
-            }
-        }
-
-        return $table;
+        $this->handlers->dispatch($node, $this->currentContext);
     }
 }
