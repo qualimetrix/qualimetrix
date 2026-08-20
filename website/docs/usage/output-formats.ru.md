@@ -181,7 +181,7 @@ src/Repository/OrderRepository.php:15: error[coupling.cbo.class]: CBO is 18, max
         {
             "file": "src/Service/UserService.php",
             "line": 42,
-            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php:1234",
+            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php",
             "symbol": "App\\Service\\UserService::calculate",
             "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
             "occurrence": null,

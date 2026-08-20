@@ -1,6 +1,6 @@
 # Baseline
 
-A baseline records accepted debt so an existing project can adopt Qualimetrix without treating every current finding as new work. Version 12 is a **reported-magnitude ceiling**, not a list of hashes to ignore: an existing group stays accepted only while it does not grow or become worse.
+A baseline records accepted debt so an existing project can adopt Qualimetrix without treating every current finding as new work. Version 13 is a **reported-magnitude ceiling**, not a list of hashes to ignore: an existing group stays accepted only while it does not grow or become worse.
 
 ## Create and use a baseline
 
@@ -57,10 +57,10 @@ bin/qmx baseline:generate baseline.json src/ --mode=suppress --force
 ### Replace an older baseline
 
 ```bash
-bin/qmx baseline:generate baseline-v12.json src/
+bin/qmx baseline:generate baseline-v13.json src/
 ```
 
-Only version 12 is loadable. Neither a version 5 hash nor a version 10 logical symbol key can infer the exact declaration subject, semantic occurrence, or dependency edge now required, and a version 11 file cannot supply the shortened occurrence key or the derived `count` either — there is no converter from any prior version. Run a fresh analysis, map or split every previously accepted group deliberately, review the result, and write a new v12 file. `baseline:generate --force` may replace bytes only after that review; it is not an automatic converter and does not infer old identity. The removed migration command has no alias or compatibility shim.
+Only version 13 is loadable. Neither a version 5 hash nor a version 10 logical symbol key can infer the exact declaration subject, semantic occurrence, or dependency edge now required; a version 11 file cannot supply the shortened occurrence key or the derived `count`; and a version 12 declaration key stores a byte offset from which the declaration it meant cannot be recovered — there is no converter from any prior version. Run a fresh analysis, map or split every previously accepted group deliberately, review the result, and write a new v13 file. `baseline:generate --force` may replace bytes only after that review; it is not an automatic converter and does not infer old identity. The removed migration command has no alias or compatibility shim.
 
 ### Tighten after repairs
 

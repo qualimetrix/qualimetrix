@@ -181,7 +181,7 @@ Machine-readable JSON output. Summary-oriented format with health scores, worst 
         {
             "file": "src/Service/UserService.php",
             "line": 42,
-            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php:1234",
+            "subject": "declaration:callable:App\\Service\\UserService::calculate@src/Service/UserService.php",
             "symbol": "App\\Service\\UserService::calculate",
             "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
             "occurrence": null,
