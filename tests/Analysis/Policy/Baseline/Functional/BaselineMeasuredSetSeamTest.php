@@ -170,7 +170,7 @@ final class BaselineMeasuredSetSeamTest extends TestCase
         self::assertSame(0, $update->getStatusCode(), $update->getDisplay());
         self::assertMatchesRegularExpression(
             '/skipped  ' . preg_quote($subject . ' ' . self::EVAL_CHANNEL, '/')
-            . ' \[[a-f0-9]{64}\] \(not reported by this run\)/',
+            . ' \[[a-f0-9]{16}\] \(not reported by this run\)/',
             $update->getDisplay(),
         );
         self::assertStringContainsString('0 updated, 0 refused, 1 skipped', $update->getDisplay());

@@ -232,7 +232,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $stillFiring = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
         $baselinePath = $this->writeBaseline([
             $stillFiring->subject->toCanonical() => [
-                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25]],
                 ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
             ],
         ]);
@@ -268,7 +268,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $stillFiring = self::violation('src/Service/UserService.php', 'App\\Service', 'UserService');
         $baselinePath = $this->writeBaseline([
             $stillFiring->subject->toCanonical() => [
-                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25]],
                 ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
             ],
         ]);
@@ -311,7 +311,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $this->tempFiles[] = $path;
 
         file_put_contents($path, json_encode([
-            'version' => 11,
+            'version' => 12,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => ['src'],
             'entries' => $entries,

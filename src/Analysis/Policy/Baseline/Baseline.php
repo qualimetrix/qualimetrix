@@ -11,7 +11,7 @@ use InvalidArgumentException;
  * A loaded or freshly captured baseline file (ADR 0017): when it was written, over which paths, and the entries it holds.
  *
  * The version is a constant rather than a field. This type *is* the version
- * 10 shape; a file carrying any other version never becomes an instance of
+ * 12 shape; a file carrying any other version never becomes an instance of
  * it, because {@see BaselineLoader} refuses to build one. Keeping a
  * `version` field would invite code that reads it and branches, which is the
  * shim the project's compatibility policy rules out.
@@ -23,7 +23,7 @@ use InvalidArgumentException;
 final readonly class Baseline
 {
     /** The only file version this type represents (ADR 0017). */
-    public const int VERSION = 11;
+    public const int VERSION = 12;
 
     /** @var array<string, BaselineEntry> identity key => entry */
     private array $byIdentityKey;

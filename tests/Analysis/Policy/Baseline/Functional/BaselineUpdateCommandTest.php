@@ -288,7 +288,15 @@ final class BaselineUpdateCommandTest extends TestCase
 
     private function storedCountOf(string $channelKey): int
     {
-        return (int) self::entryData($this->baselinePath, $channelKey)['count'];
+        $entry = self::entryData($this->baselinePath, $channelKey);
+
+        // A magnitude-shaped entry no longer writes "count" (P1.1) — derive it
+        // from the magnitude list it does carry, exactly as the format does.
+        if (isset($entry['magnitudes']) && \is_array($entry['magnitudes'])) {
+            return \count($entry['magnitudes']);
+        }
+
+        return (int) $entry['count'];
     }
 
     /**

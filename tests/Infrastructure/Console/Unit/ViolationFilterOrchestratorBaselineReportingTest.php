@@ -272,7 +272,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         $this->tempFiles[] = $path;
 
         file_put_contents($path, json_encode([
-            'version' => 11,
+            'version' => 12,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => $scope,
             'entries' => $entries,

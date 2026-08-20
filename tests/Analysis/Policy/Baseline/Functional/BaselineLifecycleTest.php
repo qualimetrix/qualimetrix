@@ -155,11 +155,11 @@ final class BaselineLifecycleTest extends TestCase
     }
 
     /**
-     * @return list<array{count: int, channel: string, magnitudes?: list<int|float>}>
+     * @return list<array{count?: int, channel: string, magnitudes?: list<int|float>}>
      */
     private static function entries(string $baselinePath): array
     {
-        /** @var array{entries: array<string, list<array{count: int, channel: string, magnitudes?: list<int|float>}>>} $baseline */
+        /** @var array{entries: array<string, list<array{count?: int, channel: string, magnitudes?: list<int|float>}>>} $baseline */
         $baseline = json_decode((string) file_get_contents($baselinePath), true, flags: \JSON_THROW_ON_ERROR);
 
         return array_merge(...array_values($baseline['entries']));
@@ -203,7 +203,9 @@ final class BaselineLifecycleTest extends TestCase
 
         foreach (self::entries($baselinePath) as $entry) {
             if ($entry['channel'] === $channel && isset($entry['magnitudes'])) {
-                $count += $entry['count'];
+                // A magnitude-shaped entry no longer writes "count" (P1.1) — its
+                // count is the length of the list it already carries.
+                $count += \count($entry['magnitudes']);
                 $magnitudes = [...$magnitudes, ...$entry['magnitudes']];
             }
         }
