@@ -83,6 +83,39 @@ final class BaselineEntryValuesTest extends TestCase
         self::assertNull($null->mode);
     }
 
+    /**
+     * A null `count` is absent by the same convention `readOptionalList()`
+     * and `readMode()` already apply to `magnitudes` and `mode` above — it
+     * does not trip the "count next to magnitudes" rejection the way a
+     * written non-null `count` does (see itRejectsCountAlongsideMagnitudes).
+     */
+    #[Test]
+    public function itTreatsAnExplicitNullCountAlongsideMagnitudesAsAbsent(): void
+    {
+        $values = BaselineEntryValues::decode(['count' => null, 'magnitudes' => [1, 2.5]]);
+
+        self::assertSame(2, $values->count);
+        self::assertSame([1, 2.5], $values->magnitudes);
+    }
+
+    /**
+     * An empty `magnitudes` list is rejected in terms of `magnitudes`
+     * itself, before it ever reaches {@see BaselineEntry}'s constructor as a
+     * derived count of zero — which would otherwise complain about a
+     * "count" field a v12 file no longer writes.
+     */
+    #[Test]
+    public function itRejectsAnEmptyMagnitudesList(): void
+    {
+        try {
+            BaselineEntryValues::decode(['magnitudes' => []]);
+            self::fail('An empty "magnitudes" list must be rejected.');
+        } catch (BaselineEntryRejection $rejection) {
+            self::assertSame(InertEntryReason::Malformed, $rejection->reason);
+            self::assertSame('"magnitudes" must be a non-empty JSON array when present', $rejection->getMessage());
+        }
+    }
+
     #[Test]
     public function itRejectsAbsentNullAndNonIntegerCountsWithTheExactMalformedDetail(): void
     {
@@ -97,12 +130,24 @@ final class BaselineEntryValuesTest extends TestCase
         }
     }
 
+    /**
+     * Regression: these fixtures used to carry a redundant `count` alongside
+     * `magnitudes`. `decode()` validates `magnitudes` before it checks for
+     * that redundancy, so the two cases passed regardless of which check ran
+     * first — proving nothing about the message each asserts on. Verified
+     * 2026-08-20 by swapping the two checks in `decode()` (magnitudes check
+     * after the `count`-presence check) with `count` still present: both
+     * cases failed with the "count next to magnitudes" message instead of
+     * theirs. Removing `count` here makes the fixtures fail on this order
+     * change no matter which check runs first, so PHPUnit fails loudly if a
+     * future edit reintroduces the coupling.
+     */
     #[Test]
     public function itRejectsAMapAndANonNumericMagnitudeMemberWithExactDetails(): void
     {
         $cases = [
-            [['count' => 1, 'magnitudes' => ['value' => 1]], '"magnitudes" must be a JSON array'],
-            [['count' => 1, 'magnitudes' => ['one']], '"magnitudes" must hold numbers, found "one"'],
+            [['magnitudes' => ['value' => 1]], '"magnitudes" must be a JSON array'],
+            [['magnitudes' => ['one']], '"magnitudes" must hold numbers, found "one"'],
         ];
 
         foreach ($cases as [$raw, $detail]) {

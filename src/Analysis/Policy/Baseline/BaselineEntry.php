@@ -17,10 +17,12 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
  *
  * **`count` is not stored when `magnitudes` is present.** The two are never
  * independent — the constructor already requires `count === count(magnitudes)`
- * — so a magnitude-shaped entry serializes only `magnitudes` and {@see toArray()}
- * derives `count` from its length on the way back in
- * ({@see BaselineEntryValues::decode()}). An occurrence-shaped entry, which has
- * no magnitudes to count, still writes `count` as before.
+ * — so {@see toArray()} omits `count` for a magnitude-shaped entry and
+ * serializes only `magnitudes`. {@see BaselineEntryValues::decode()} is the
+ * inverse on the way back in: it derives `count` from the magnitude list's
+ * length instead of reading a field the file no longer carries. An
+ * occurrence-shaped entry, which has no magnitudes to count, still writes
+ * `count` as before.
  *
  * The comparison that decides whether a later run's group is still accepted
  * lives with the filter, not here (ADR 0017); this

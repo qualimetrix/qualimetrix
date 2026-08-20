@@ -271,8 +271,8 @@ final class BaselineEntryParserTest extends TestCase
             ['channel' => 12, 'count' => 1],
             ['channel' => 'code-smell.goto#code-smell.goto', 'occurrence' => [], 'count' => 1],
             ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 1.0],
-            ['channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable', 'magnitudes' => ['value' => 1], 'count' => 1],
-            ['channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable', 'magnitudes' => ['one'], 'count' => 1],
+            ['channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable', 'magnitudes' => ['value' => 1]],
+            ['channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable', 'magnitudes' => ['one']],
             ['channel' => 'architecture.layer-violation#architecture.layer-violation', 'edge' => ['target' => ''], 'count' => 1],
             ['channel' => 'architecture.layer-violation#architecture.layer-violation', 'edge' => ['target' => 'class:App\\Target', 'type' => 1], 'count' => 1],
         ];

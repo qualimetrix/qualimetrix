@@ -154,7 +154,7 @@ over `Analysis/Evidence/*`.
 
 ### 6. Baseline Ceiling
 
-The version 11 baseline retains the post-rule, reported-magnitude ceiling. It compares
+The version 12 baseline retains the post-rule, reported-magnitude ceiling. It compares
 only groups of findings that currently fire, after source/configuration
 suppression and exclusions but before git report scoping. A measured breach is
 promoted to Error; a malformed, stale, or otherwise inapplicable entry is

@@ -4972,9 +4972,11 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itLeavesFiniteValidationToTheBaselineEntryInvariant
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itRejectsAMapAndANonNumericMagnitudeMemberWithExactDetails
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itRejectsAbsentNullAndNonIntegerCountsWithTheExactMalformedDetail
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itRejectsAnEmptyMagnitudesList
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itRejectsCountAlongsideMagnitudes
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itRejectsUnknownAndNonStringModesAsUnrecognized
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itTreatsAbsentAndNullOptionalValuesAsAbsent
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineEntryValuesTest::itTreatsAnExplicitNullCountAlongsideMagnitudesAsAbsent
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itCapturesTheMagnitudeOfASingleFinding
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itCollectsEveryMemberOfAGroupIntoOneEntry
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineGeneratorTest::itCountsAnOccurrenceGroupWithoutStoringItsReportedNumber

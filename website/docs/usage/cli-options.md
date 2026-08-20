@@ -345,12 +345,8 @@ or writing a baseline. `--force` overrides file/scope guards only; it cannot mak
 a partial measured set acceptable. Existing destinations remain byte-identical,
 and `baseline:generate` does not create a missing destination.
 
-Only baseline version 11 is loadable. Versions 5 and 10 cannot infer exact
-declaration subjects, semantic occurrences, or dependency edges. Run a fresh
-analysis, deliberately map or split previously accepted groups, review the
-result, and write a new v11 file. The removed migration command has no alias or
-compatibility shim; `baseline:generate --force` replaces bytes but does not
-infer or convert old identity.
+Loadable baseline versions and the migration procedure for an older file are
+documented under [Replace an older baseline](baseline.md#replace-an-older-baseline).
 
 The removed `--generate-baseline` and `--baseline-ignore-stale` options have no aliases. Use `baseline:generate` and explicit `baseline:cleanup --remove` instead.
 

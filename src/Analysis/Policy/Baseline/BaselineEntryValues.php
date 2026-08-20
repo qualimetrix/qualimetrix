@@ -29,8 +29,18 @@ final readonly class BaselineEntryValues
      * `count` once `magnitudes` is present, and this decoder derives it back
      * rather than reading a field that could disagree with the list. Allowing
      * both fields to appear side by side would resurrect exactly the
-     * redundancy being removed, so a file that still writes `count` next to
-     * `magnitudes` is rejected as malformed rather than silently accepted.
+     * redundancy being removed, so a file that still writes a non-null
+     * `count` next to `magnitudes` is rejected as malformed rather than
+     * silently accepted.
+     *
+     * The presence check reads `$raw['count'] ?? null`, not
+     * `array_key_exists`, matching {@see readOptionalList()} and
+     * {@see readMode()} below: an explicit `count: null` is absent by the
+     * same convention every other optional field in this class already
+     * uses, not a second, stricter meaning of "present" that only this
+     * field would carry. No real writer emits `count: null` either way, so
+     * this only decides how a hand-edited file is read, and consistency
+     * with the rest of the class wins that tie.
      *
      * @param array<mixed, mixed> $raw
      *
@@ -41,7 +51,7 @@ final readonly class BaselineEntryValues
         $magnitudes = self::readMagnitudes($raw);
 
         if ($magnitudes !== null) {
-            if (\array_key_exists('count', $raw)) {
+            if (($raw['count'] ?? null) !== null) {
                 throw new BaselineEntryRejection(
                     InertEntryReason::Malformed,
                     '"count" must not be present alongside "magnitudes"; it is derived from the magnitude list',
@@ -95,6 +105,13 @@ final readonly class BaselineEntryValues
     }
 
     /**
+     * An empty `magnitudes` list is rejected here, in terms of `magnitudes`,
+     * rather than left to reach {@see BaselineEntry}'s constructor as a
+     * derived `count` of zero. That path exists for callers who already hold
+     * a valid list; the message it gives ("count... got 0") names a field
+     * `magnitudes` no longer writes, which would misdirect a user reading a
+     * v12 file where `count` is not present to begin with.
+     *
      * @param array<mixed, mixed> $raw
      *
      * @throws BaselineEntryRejection
@@ -106,6 +123,13 @@ final readonly class BaselineEntryValues
         $values = self::readOptionalList($raw, 'magnitudes', '"magnitudes" must be a JSON array');
         if ($values === null) {
             return null;
+        }
+
+        if ($values === []) {
+            throw new BaselineEntryRejection(
+                InertEntryReason::Malformed,
+                '"magnitudes" must be a non-empty JSON array when present',
+            );
         }
 
         $invalidKey = array_find_key($values, static fn(mixed $value): bool => !\is_int($value) && !\is_float($value));
