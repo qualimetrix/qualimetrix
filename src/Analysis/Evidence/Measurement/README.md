@@ -53,6 +53,13 @@ registrar and no error. Two traversal owners exist — `CompositeCollector` for
 the whole `check` analysis, and `DependencyGraphAnalyzer` for `graph:export` —
 and each owns an index per file.
 
+Three collaborators carry that between them, composed by `VisitorMethodContext`:
+`VisitorLexicalScope` knows where the traversal stands, `DeclarationNumbering`
+turns that position into the key a declaration is grouped under, and
+`FileEntrySubjectRegistry` holds the wire subjects minted along the way. Which
+subject is *current* follows from the traversal and lives with the scope; what a
+subject is made of moves with the wire grammar and lives with the registry.
+
 The position itself does not disappear; it stops being an identity.
 `CallableWithMetrics` and `ClassWithMetrics` carry it as `startFilePos`, the
 in-run key that joins what several producers said about one declaration, and

@@ -358,9 +358,11 @@ architecture:
         - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\MetricSubjectIndex'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\NamespaceMetricIndex'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Repository\RepositoryMerge'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Visitor\DeclarationNumbering'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Visitor\DeclarationRegistrarVisitor'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Visitor\FileEntrySubjectRegistry'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorCallableMetadata'
-        - 'Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorFileEntryScope'
+        - 'Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorLexicalScope'
         - 'Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorMethodContext'
     - name: analysis-evidence-prioritization
       patterns:

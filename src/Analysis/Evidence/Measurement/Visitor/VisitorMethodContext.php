@@ -14,42 +14,58 @@ use Qualimetrix\Core\Symbol\CallableKind;
 use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 
-/** Composes lexical traversal scope and immutable callable projection. */
+/**
+ * Composes the four things a traversal needs to speak about declarations:
+ * where it stands, how declarations are numbered, which wire subjects have been
+ * minted, and how a finished callable is projected.
+ *
+ * Fan-out is what a composition root is for, and it is the price of the parts
+ * below it staying separable.
+ *
+ * @qmx-threshold coupling.cbo 22 -- Composition root of traversal identity: four collaborators plus the node types it routes; raw CBO 21 gets one-edge headroom.
+ * @qmx-threshold coupling.instability warning=0.95 error=0.95 -- A composition root depends outward on everything it assembles and is depended on by one trait; instability near one is its shape, not its defect.
+ */
 final class VisitorMethodContext
 {
-    private readonly VisitorFileEntryScope $fileEntryScope;
+    private readonly FileEntrySubjectRegistry $subjects;
+
+    private readonly DeclarationNumbering $numbering;
+
+    private readonly VisitorLexicalScope $lexicalScope;
 
     private readonly VisitorCallableMetadata $callableMetadata;
 
     public function __construct()
     {
-        $this->fileEntryScope = new VisitorFileEntryScope();
+        $this->subjects = new FileEntrySubjectRegistry();
+        $this->numbering = new DeclarationNumbering();
+        $this->lexicalScope = new VisitorLexicalScope($this->subjects, $this->numbering);
         $this->callableMetadata = new VisitorCallableMetadata();
     }
 
     public function reset(): void
     {
-        $this->fileEntryScope->reset();
+        $this->lexicalScope->reset();
     }
 
     public function useDeclarationIndex(FileDeclarationIndex $index): void
     {
-        $this->fileEntryScope->useDeclarationIndex($index);
+        $this->numbering->useIndex($index);
     }
 
     public function enter(Node $node): ?VisitorCallableScope
     {
         match (true) {
-            $node instanceof Node\Stmt\Namespace_ => $this->fileEntryScope->enterNamespace($node->name?->toString()),
-            $node instanceof Node\Stmt\ClassLike => $this->fileEntryScope->enterClass($node->name?->toString(), $node->getStartFilePos()),
-            $node instanceof Node\Stmt\Property => $this->fileEntryScope->enterProperty(\count($node->props) === 1 ? $node->props[0]->name->toString() : null),
+            $node instanceof Node\Stmt\Namespace_ => $this->lexicalScope->enterNamespace($node->name?->toString()),
+            $node instanceof Node\Stmt\ClassLike => $this->lexicalScope->enterClass($node->name?->toString(), $node->getStartFilePos()),
+            $node instanceof Node\Stmt\Property => $this->lexicalScope->enterProperty(\count($node->props) === 1 ? $node->props[0]->name->toString() : null),
             default => null,
         };
 
         return $this->enterCallable(
             $node,
-            $this->fileEntryScope->currentClass(),
-            $this->fileEntryScope->namespace(),
+            $this->lexicalScope->currentClass(),
+            $this->lexicalScope->namespace(),
         );
     }
 
@@ -57,7 +73,7 @@ final class VisitorMethodContext
     private function enterCallable(Node $node, ?array $class, ?string $namespace): ?VisitorCallableScope
     {
         return match (true) {
-            $node instanceof Node\Stmt\Function_ => $this->fileEntryScope->enterCallable(
+            $node instanceof Node\Stmt\Function_ => $this->lexicalScope->enterCallable(
                 $namespace,
                 null,
                 $node->name->toString(),
@@ -78,7 +94,7 @@ final class VisitorMethodContext
     /** @param ?array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string} $class */
     private function enterAnonymousCallable(Node $node, ?array $class, ?string $namespace, string $syntax): VisitorCallableScope
     {
-        return $this->fileEntryScope->enterCallable(
+        return $this->lexicalScope->enterCallable(
             $namespace,
             $class['class'] ?? null,
             null,
@@ -97,13 +113,13 @@ final class VisitorMethodContext
             || $node instanceof Node\Expr\Closure
             || $node instanceof Node\Expr\ArrowFunction
             || $node instanceof Node\PropertyHook
-                ? $this->fileEntryScope->leaveCallable()
+                ? $this->lexicalScope->leaveCallable()
                 : null;
 
         match (true) {
-            $node instanceof Node\Stmt\Property => $this->fileEntryScope->leaveProperty(),
-            $node instanceof Node\Stmt\ClassLike => $this->fileEntryScope->leaveClass(),
-            $node instanceof Node\Stmt\Namespace_ => $this->fileEntryScope->leaveNamespace(),
+            $node instanceof Node\Stmt\Property => $this->lexicalScope->leaveProperty(),
+            $node instanceof Node\Stmt\ClassLike => $this->lexicalScope->leaveClass(),
+            $node instanceof Node\Stmt\Namespace_ => $this->lexicalScope->leaveNamespace(),
             default => null,
         };
 
@@ -112,13 +128,13 @@ final class VisitorMethodContext
 
     public function currentFileEntrySubjectId(): string
     {
-        return $this->fileEntryScope->currentSubjectId();
+        return $this->lexicalScope->currentSubjectId();
     }
 
     /** @return array<string, int|string> */
     public function fileEntrySubjectComponents(string $subjectId): array
     {
-        return $this->fileEntryScope->subjectComponents($subjectId);
+        return $this->subjects->componentsFor($subjectId);
     }
 
     public function createCallableWithMetrics(VisitorCallableScope $scope, RelativePath $file, MetricBag $metrics): CallableWithMetrics
@@ -140,8 +156,8 @@ final class VisitorMethodContext
     /** @param ?array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string} $class */
     private function enterMember(string $member, Node $node, CallableKind $kind, ?array $class): VisitorCallableScope
     {
-        return $this->fileEntryScope->enterCallable(
-            $class['namespace'] ?? $this->fileEntryScope->namespace(),
+        return $this->lexicalScope->enterCallable(
+            $class['namespace'] ?? $this->lexicalScope->namespace(),
             $class['class'] ?? null,
             $member,
             $node->getStartFilePos(),
@@ -155,7 +171,7 @@ final class VisitorMethodContext
     /** @param ?array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string} $class */
     private function enterPropertyHook(Node\PropertyHook $node, ?array $class): VisitorCallableScope
     {
-        $property = $this->fileEntryScope->currentProperty();
+        $property = $this->lexicalScope->currentProperty();
         $member = $property === null ? '' : $property . '::' . $node->name->toString();
 
         return $this->enterMember($member, $node, CallableKind::PropertyHook, $class);

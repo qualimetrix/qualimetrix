@@ -14,8 +14,10 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope;
+use Qualimetrix\Analysis\Evidence\Measurement\Visitor\DeclarationNumbering;
+use Qualimetrix\Analysis\Evidence\Measurement\Visitor\FileEntrySubjectRegistry;
 use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorCallableMetadata;
-use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorFileEntryScope;
+use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorLexicalScope;
 use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorMethodContext;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
@@ -25,7 +27,9 @@ use ReflectionClass;
 use ReflectionMethod;
 
 #[CoversClass(VisitorCallableScope::class)]
-#[CoversClass(VisitorFileEntryScope::class)]
+#[CoversClass(VisitorLexicalScope::class)]
+#[CoversClass(FileEntrySubjectRegistry::class)]
+#[CoversClass(DeclarationNumbering::class)]
 #[CoversClass(VisitorCallableMetadata::class)]
 #[CoversClass(VisitorMethodContext::class)]
 final class VisitorMethodContextTest extends TestCase
@@ -87,7 +91,7 @@ final class VisitorMethodContextTest extends TestCase
             ],
             array_map(
                 static fn($parameter): string => $parameter->getName(),
-                (new ReflectionClass(VisitorFileEntryScope::class))->getMethod('enterCallable')->getParameters(),
+                (new ReflectionClass(VisitorLexicalScope::class))->getMethod('enterCallable')->getParameters(),
             ),
         );
     }
@@ -218,7 +222,7 @@ final class VisitorMethodContextTest extends TestCase
     #[Test]
     public function itRejectsMembersThatContradictTheCallableKind(): void
     {
-        $scope = new VisitorFileEntryScope();
+        $scope = new VisitorLexicalScope(new FileEntrySubjectRegistry(), new DeclarationNumbering());
 
         try {
             $scope->enterCallable(null, null, 'named', 1, 1, CallableKind::AnonymousCallable, 'closure', null);

@@ -74,7 +74,7 @@ an uncovered project class fail even when it has no dependency edges.
 The published topology records 692 governed test/support/fixture artifacts,
 102 fixture directories, 551 PHPUnit classes, and 7,348 semantic test IDs. The
 self-analysis input contains 787 analyzed files; its active v13 baseline has
-267 groups across 201 subjects, and the current dogfood result is zero findings.
+264 groups across 199 subjects, and the current dogfood result is zero findings.
 
 The manifest checker is the exact owner/visibility/import authority. It runs as
 `composer architecture:check` before selfcheck and rejects unlisted imports even

@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-08-20T18:15:06+00:00",
+  "generated": "2026-08-20T18:37:42+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -448,13 +448,6 @@
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Measurement\\DataBag@src/Analysis/Evidence/Measurement/DataBag.php": [
       {"channel":"coupling.class-rank#coupling.class-rank","count":1}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorFileEntryScope@src/Analysis/Evidence/Measurement/Visitor/VisitorFileEntryScope.php": [
-      {"channel":"complexity.wmc#complexity.wmc","magnitudes":[57]},
-      {"channel":"size.method-count#size.method-count","magnitudes":[21]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorMethodContext@src/Analysis/Evidence/Measurement/Visitor/VisitorMethodContext.php": [
-      {"channel":"coupling.instability#coupling.instability.class","magnitudes":[0.894737]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Security\\SuperglobalAnalyzer@src/Analysis/Evidence/Security/SuperglobalAnalyzer.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[40]}

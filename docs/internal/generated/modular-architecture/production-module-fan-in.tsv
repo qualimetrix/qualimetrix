@@ -196,14 +196,14 @@ Qualimetrix\Core\Path\AbsolutePath	Core.Path	51	12
 Qualimetrix\Core\Path\PathFactory	Core.Path	17	7
 Qualimetrix\Core\Path\RelativePath	Core.Path	82	23
 Qualimetrix\Core\Profiler\Contract\ProfilerInterface	Core.Profiler	22	8
-Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	8	2
+Qualimetrix\Core\Symbol\CallableKind	Core.Symbol	9	2
 Qualimetrix\Core\Symbol\DeclarationKey	Core.Symbol	3	2
-Qualimetrix\Core\Symbol\DeclarationOrdinal	Core.Symbol	2	1
+Qualimetrix\Core\Symbol\DeclarationOrdinal	Core.Symbol	4	1
 Qualimetrix\Core\Symbol\DeclarationPath	Core.Symbol	7	2
 Qualimetrix\Core\Symbol\FileDeclarationIndex	Core.Symbol	11	2
 Qualimetrix\Core\Symbol\LogicalClassPath	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\MetricSubject	Core.Symbol	40	15
-Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	6	3
+Qualimetrix\Core\Symbol\MetricSubjectCodec	Core.Symbol	7	3
 Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry	Core.Symbol	3	2
 Qualimetrix\Core\Symbol\SymbolInfo	Core.Symbol	28	9
 Qualimetrix\Core\Symbol\SymbolPath	Core.Symbol	64	20

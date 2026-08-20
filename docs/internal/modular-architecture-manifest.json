@@ -5029,8 +5029,24 @@
             "closure_package": "P3",
             "consumers": []
         },
+        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationNumbering": {
+            "path": "src/Analysis/Evidence/Measurement/Visitor/DeclarationNumbering.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Measurement",
+            "visibility": "internal",
+            "closure_package": "P3",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationRegistrarVisitor": {
             "path": "src/Analysis/Evidence/Measurement/Visitor/DeclarationRegistrarVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Measurement",
+            "visibility": "internal",
+            "closure_package": "P3",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\FileEntrySubjectRegistry": {
+            "path": "src/Analysis/Evidence/Measurement/Visitor/FileEntrySubjectRegistry.php",
             "kind": "class",
             "owner": "Analysis.Evidence.Measurement",
             "visibility": "internal",
@@ -5045,8 +5061,8 @@
             "closure_package": "P3",
             "consumers": []
         },
-        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorFileEntryScope": {
-            "path": "src/Analysis/Evidence/Measurement/Visitor/VisitorFileEntryScope.php",
+        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorLexicalScope": {
+            "path": "src/Analysis/Evidence/Measurement/Visitor/VisitorLexicalScope.php",
             "kind": "class",
             "owner": "Analysis.Evidence.Measurement",
             "visibility": "internal",
@@ -13173,12 +13189,17 @@
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationNumbering",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorCallableMetadata",
                     "closes_in": null
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorFileEntryScope",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorLexicalScope",
                     "closes_in": null
                 },
                 {
@@ -13215,7 +13236,7 @@
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorFileEntryScope",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationNumbering",
                     "closes_in": null
                 }
             ]
@@ -13234,7 +13255,17 @@
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorFileEntryScope",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationNumbering",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\FileEntrySubjectRegistry",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorLexicalScope",
                     "closes_in": null
                 }
             ]
@@ -13332,12 +13363,12 @@
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationRegistrarVisitor",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationNumbering",
                     "closes_in": null
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorFileEntryScope",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationRegistrarVisitor",
                     "closes_in": null
                 },
                 {
@@ -13619,7 +13650,12 @@
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorFileEntryScope",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\FileEntrySubjectRegistry",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorLexicalScope",
                     "closes_in": null
                 },
                 {
@@ -13996,12 +14032,12 @@
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorCallableMetadata",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationNumbering",
                     "closes_in": null
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorFileEntryScope",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorCallableMetadata",
                     "closes_in": null
                 },
                 {
