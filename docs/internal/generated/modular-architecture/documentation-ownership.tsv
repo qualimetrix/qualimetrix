@@ -42,6 +42,7 @@ docs/internal/SCANNER_VALIDATION_ROUND_2_PLAN.md	Architecture.Governance	shared	
 docs/internal/plans/baseline-compaction/PLAN-IDENTITY.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/baseline-compaction/PLAN.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/baseline-compaction/enumeration-artifact.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
+docs/internal/plans/baseline-compaction/enumeration-identity-r4.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/baseline-compaction/enumeration-identity.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/baseline-compaction/identity-map.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."
 docs/internal/plans/baseline-compaction/measurements/README.md	Architecture.Governance	shared	"Shared repository documentation; retain in place and update only when its governed surface changes."

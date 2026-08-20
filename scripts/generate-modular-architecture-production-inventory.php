@@ -2555,6 +2555,7 @@ function documentationDisposition(string $path): array
         'docs/internal/plans/baseline-compaction/PLAN.md',
         'docs/internal/plans/baseline-compaction/enumeration-artifact.md',
         'docs/internal/plans/baseline-compaction/enumeration-identity.md',
+        'docs/internal/plans/baseline-compaction/enumeration-identity-r4.md',
         'docs/internal/plans/baseline-compaction/identity-map.md',
         'docs/internal/plans/baseline-compaction/measurements/README.md',
         'docs/internal/plans/channel-identity-substrate.md',
