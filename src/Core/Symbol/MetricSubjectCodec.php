@@ -22,7 +22,6 @@ final class MetricSubjectCodec
         'namespace' => true,
         'class' => true,
         'member' => true,
-        'startFilePos' => true,
         'collisionOrdinal' => true,
     ];
 
@@ -33,30 +32,23 @@ final class MetricSubjectCodec
     }
 
     /** @return array<string, int|string> */
-    public static function encodeClass(string $namespace, string $class, int $startFilePos, ?int $collisionOrdinal = null): array
+    public static function encodeClass(string $namespace, string $class): array
+    {
+        return self::declaration(['logicalKind' => 'class', 'namespace' => $namespace, 'class' => $class]);
+    }
+
+    /** @return array<string, int|string> */
+    public static function encodeMethod(string $namespace, string $class, string $member): array
     {
         return self::declaration(
-            ['logicalKind' => 'class', 'namespace' => $namespace, 'class' => $class, 'startFilePos' => $startFilePos],
-            $collisionOrdinal,
+            ['logicalKind' => 'method', 'namespace' => $namespace, 'class' => $class, 'member' => $member],
         );
     }
 
     /** @return array<string, int|string> */
-    public static function encodeMethod(string $namespace, string $class, string $member, int $startFilePos, ?int $collisionOrdinal = null): array
+    public static function encodeFunction(string $namespace, string $member): array
     {
-        return self::declaration(
-            ['logicalKind' => 'method', 'namespace' => $namespace, 'class' => $class, 'member' => $member, 'startFilePos' => $startFilePos],
-            $collisionOrdinal,
-        );
-    }
-
-    /** @return array<string, int|string> */
-    public static function encodeFunction(string $namespace, string $member, int $startFilePos, ?int $collisionOrdinal = null): array
-    {
-        return self::declaration(
-            ['logicalKind' => 'function', 'namespace' => $namespace, 'member' => $member, 'startFilePos' => $startFilePos],
-            $collisionOrdinal,
-        );
+        return self::declaration(['logicalKind' => 'function', 'namespace' => $namespace, 'member' => $member]);
     }
 
     /** @param array<string, scalar> $entry */
@@ -94,16 +86,16 @@ final class MetricSubjectCodec
         $logicalKind = self::requireString($components, 'logicalKind');
         [$required, $allowed] = match ($logicalKind) {
             'class' => [
-                ['subjectKind', 'logicalKind', 'namespace', 'class', 'startFilePos'],
-                ['subjectKind', 'logicalKind', 'namespace', 'class', 'startFilePos', 'collisionOrdinal'],
+                ['subjectKind', 'logicalKind', 'namespace', 'class'],
+                ['subjectKind', 'logicalKind', 'namespace', 'class', 'collisionOrdinal'],
             ],
             'method' => [
-                ['subjectKind', 'logicalKind', 'namespace', 'class', 'member', 'startFilePos'],
-                ['subjectKind', 'logicalKind', 'namespace', 'class', 'member', 'startFilePos', 'collisionOrdinal'],
+                ['subjectKind', 'logicalKind', 'namespace', 'class', 'member'],
+                ['subjectKind', 'logicalKind', 'namespace', 'class', 'member', 'collisionOrdinal'],
             ],
             'function' => [
-                ['subjectKind', 'logicalKind', 'namespace', 'member', 'startFilePos'],
-                ['subjectKind', 'logicalKind', 'namespace', 'member', 'startFilePos', 'collisionOrdinal'],
+                ['subjectKind', 'logicalKind', 'namespace', 'member'],
+                ['subjectKind', 'logicalKind', 'namespace', 'member', 'collisionOrdinal'],
             ],
             default => throw new InvalidArgumentException('Metric subject component logicalKind must be class, method, or function'),
         };
@@ -115,10 +107,11 @@ final class MetricSubjectCodec
         }
 
         $namespace = self::requireString($components, 'namespace');
-        $startFilePos = self::requireNonNegativeInt($components, 'startFilePos');
-        $ordinal = \array_key_exists('collisionOrdinal', $components)
-            ? self::requireNonNegativeInt($components, 'collisionOrdinal')
-            : null;
+        $ordinal = DeclarationOrdinal::fromWire(
+            \array_key_exists('collisionOrdinal', $components)
+                ? self::requireNonNegativeInt($components, 'collisionOrdinal')
+                : 0,
+        );
 
         $logical = match ($logicalKind) {
             'class' => SymbolPath::forClass($namespace, self::requireNonEmptyString($components, 'class')),
@@ -130,7 +123,7 @@ final class MetricSubjectCodec
             'function' => SymbolPath::forGlobalFunction($namespace, self::requireNonEmptyString($components, 'member')),
         };
 
-        return MetricSubject::declaration(new DeclarationPath($logical, $containerFile, $startFilePos, $ordinal));
+        return MetricSubject::declaration(DeclarationPath::of($logical, $containerFile, $ordinal));
     }
 
     /**
@@ -138,18 +131,9 @@ final class MetricSubjectCodec
      *
      * @return array<string, int|string>
      */
-    private static function declaration(array $fields, ?int $collisionOrdinal): array
+    private static function declaration(array $fields): array
     {
-        if ($collisionOrdinal !== null && $collisionOrdinal < 0) {
-            throw new InvalidArgumentException('Metric subject collision ordinal must not be negative');
-        }
-
-        $components = ['subjectKind' => 'declaration', ...$fields];
-        if ($collisionOrdinal !== null) {
-            $components['collisionOrdinal'] = $collisionOrdinal;
-        }
-
-        return $components;
+        return ['subjectKind' => 'declaration', ...$fields];
     }
 
     /** @param array<string, mixed> $components */

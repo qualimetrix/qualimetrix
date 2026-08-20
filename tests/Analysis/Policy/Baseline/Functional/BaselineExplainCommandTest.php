@@ -34,6 +34,7 @@ use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -263,7 +264,7 @@ final class BaselineExplainCommandTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'OrderService', 'calculate');
 
         $metrics = new InMemoryMetricRepository();
-        $metrics->addCallable(new CallableWithMetrics(new DeclarationPath($symbol, RelativePath::fromString(self::SYMBOL_FILE), 12), CallableKind::Method, null, null, new LogicalClassPath(SymbolPath::forClass('App', 'OrderService')), new MetricBag(), 12));
+        $metrics->addCallable(new CallableWithMetrics(DeclarationPath::of($symbol, RelativePath::fromString(self::SYMBOL_FILE), DeclarationOrdinal::fromRank(0)), 12, CallableKind::Method, null, null, new LogicalClassPath(SymbolPath::forClass('App', 'OrderService')), new MetricBag(), 12));
 
         $tester = $this->execute(
             measured: [],
@@ -423,7 +424,7 @@ final class BaselineExplainCommandTest extends TestCase
     private static function subject(SymbolPath $symbol): MetricSubject
     {
         return MetricSubject::declaration(
-            new DeclarationPath($symbol, RelativePath::fromString(self::SYMBOL_FILE), 12),
+            DeclarationPath::of($symbol, RelativePath::fromString(self::SYMBOL_FILE), DeclarationOrdinal::fromRank(0)),
         );
     }
 }

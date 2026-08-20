@@ -24,6 +24,7 @@ use Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -92,9 +93,10 @@ final class FileProcessingResultWireFormatTest extends TestCase
     public function itRoundTripsFileProcessingResultSuccessViaPhpSerialize(): void
     {
         $path = RelativePath::fromString('src/X.php');
-        $subject = MetricSubject::declaration(new DeclarationPath(SymbolPath::forClass('One', 'Thing'), $path, 11));
+        $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('One', 'Thing'), $path, DeclarationOrdinal::fromRank(0)));
         $callable = new CallableWithMetrics(
-            new DeclarationPath(SymbolPath::forMethod('One', 'Thing', 'run'), $path, 17),
+            DeclarationPath::of(SymbolPath::forMethod('One', 'Thing', 'run'), $path, DeclarationOrdinal::fromRank(0)),
+            17,
             CallableKind::Method,
             null,
             null,
@@ -103,7 +105,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
             17,
         );
         $dependency = new Dependency(
-            new DeclarationPath(SymbolPath::forClass('One', 'Thing'), $path, 11),
+            DeclarationPath::of(SymbolPath::forClass('One', 'Thing'), $path, DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath(SymbolPath::forClass('Two', 'Port')),
             DependencyType::Implements,
             new Location($path, 11),
@@ -126,7 +128,7 @@ final class FileProcessingResultWireFormatTest extends TestCase
                     ->with('loc', 7)
                     ->withEntry('codeSmell.eval', ['subjectKind' => 'file', 'line' => 7]),
                 callableMetrics: [$callable],
-                classMetrics: ['class' => ['subject' => $subject, 'metrics' => MetricBag::fromArray(['wmc' => 4]), 'line' => 11]],
+                classMetrics: ['class' => ['subject' => $subject, 'metrics' => MetricBag::fromArray(['wmc' => 4]), 'line' => 11, 'start' => 24]],
                 namespaceMetrics: [
                     'namespace:One' => [
                         'symbolPath' => SymbolPath::forNamespace('One'),

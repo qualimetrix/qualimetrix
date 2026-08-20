@@ -8,21 +8,41 @@ use PhpParser\Node;
 
 use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorMethodContext;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 
 /** Routes shared lexical and callable identity through one resettable context. */
 trait VisitorMethodTrackingTrait
 {
     private ?VisitorMethodContext $visitorMethodContext = null;
 
+    private ?FileDeclarationIndex $declarationIndex = null;
+
+    /**
+     * The index arrives once per file from the traversal owner and outlives the
+     * per-file reset of the tracking context, so a context rebuilt after
+     * delivery still numbers against the same index.
+     */
+    public function useDeclarationIndex(FileDeclarationIndex $index): void
+    {
+        $this->declarationIndex = $index;
+        $this->visitorMethodContext()->useDeclarationIndex($index);
+    }
+
     private function resetVisitorMethodContext(): void
     {
-        $this->visitorMethodContext = new VisitorMethodContext();
-        $this->visitorMethodContext->reset();
+        $this->visitorMethodContext = null;
     }
 
     private function visitorMethodContext(): VisitorMethodContext
     {
-        return $this->visitorMethodContext ??= new VisitorMethodContext();
+        if ($this->visitorMethodContext === null) {
+            $this->visitorMethodContext = new VisitorMethodContext();
+            if ($this->declarationIndex !== null) {
+                $this->visitorMethodContext->useDeclarationIndex($this->declarationIndex);
+            }
+        }
+
+        return $this->visitorMethodContext;
     }
 
     private function enterVisitorMethodContext(Node $node): ?VisitorCallableScope
@@ -35,19 +55,9 @@ trait VisitorMethodTrackingTrait
         return $this->visitorMethodContext()->leave($node);
     }
 
-    private function createCallableWithMetrics(VisitorCallableScope $scope, RelativePath $file, MetricBag $metrics, ?int $ordinal = null): CallableWithMetrics
+    private function createCallableWithMetrics(VisitorCallableScope $scope, RelativePath $file, MetricBag $metrics): CallableWithMetrics
     {
-        return $this->visitorMethodContext()->createCallableWithMetrics($scope, $file, $metrics, $ordinal);
-    }
-
-    /**
-     * @param array<string, VisitorCallableScope> $scopes
-     *
-     * @return array<string, int|null>
-     */
-    private function callableCollisionOrdinals(array $scopes): array
-    {
-        return $this->visitorMethodContext()->callableCollisionOrdinals($scopes);
+        return $this->visitorMethodContext()->createCallableWithMetrics($scope, $file, $metrics);
     }
 
     /**

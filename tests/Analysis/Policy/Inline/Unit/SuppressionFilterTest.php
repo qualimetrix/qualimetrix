@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -351,16 +352,8 @@ final class SuppressionFilterTest extends TestCase
     public function itResolvesTargetControlsIndependentlyOfThePresentationFileAndRebuildsTheIndex(): void
     {
         $filter = new SuppressionFilter();
-        $targetDeclaration = new DeclarationPath(
-            SymbolPath::forMethod('App', 'Target', 'run'),
-            RelativePath::fromString('src/Target.php'),
-            100,
-        );
-        $sourceDeclaration = new DeclarationPath(
-            SymbolPath::forMethod('App', 'Source', 'call'),
-            RelativePath::fromString('src/Source.php'),
-            50,
-        );
+        $targetDeclaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Target', 'run'), RelativePath::fromString('src/Target.php'), DeclarationOrdinal::fromRank(0));
+        $sourceDeclaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Source', 'call'), RelativePath::fromString('src/Source.php'), DeclarationOrdinal::fromRank(0));
         $targetSubject = MetricSubject::declaration($targetDeclaration);
         $sourceSubject = MetricSubject::declaration($sourceDeclaration);
         $targetViolation = new Violation(

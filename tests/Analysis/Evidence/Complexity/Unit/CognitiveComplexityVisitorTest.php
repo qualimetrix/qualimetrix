@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\CognitiveComplexityVisitor;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Core\Path\RelativePath;
 
 #[CoversClass(CognitiveComplexityVisitor::class)]
@@ -28,6 +29,9 @@ final class CognitiveComplexityVisitorTest extends TestCase
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -689,6 +693,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -723,6 +730,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -757,6 +767,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -791,6 +804,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -826,6 +842,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -876,6 +895,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -913,6 +935,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -943,6 +968,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -965,6 +993,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -990,6 +1021,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1012,6 +1046,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1053,6 +1090,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1091,6 +1131,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1124,6 +1167,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1158,6 +1204,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1197,6 +1246,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1232,6 +1284,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1262,6 +1317,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1292,6 +1350,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1326,6 +1387,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1360,6 +1424,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1387,6 +1454,9 @@ PHP;
 
         $ast1 = $parser->parse($code1) ?? [];
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast1);
 
@@ -1404,6 +1474,9 @@ PHP;
 
         $ast2 = $parser->parse($code2) ?? [];
         $traverser2 = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser2->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser2->addVisitor($visitor);
         $traverser2->traverse($ast2);
 
@@ -1443,6 +1516,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1497,6 +1573,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 

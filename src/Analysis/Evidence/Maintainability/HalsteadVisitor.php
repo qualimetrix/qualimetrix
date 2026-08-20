@@ -9,6 +9,7 @@ use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
@@ -66,7 +67,7 @@ use Qualimetrix\Core\Path\RelativePath;
  * @see HalsteadCollector
  * @see https://en.wikipedia.org/wiki/Halstead_complexity_measures
  */
-final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
+final class HalsteadVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
     use VisitorMethodTrackingTrait;
 
@@ -108,7 +109,6 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
     {
         $result = [];
 
-        $ordinals = $this->callableCollisionOrdinals($this->scopes);
         foreach ($this->scopes as $fqn => $scope) {
             $halstead = $this->metrics[$fqn] ?? HalsteadMetrics::empty();
 
@@ -119,7 +119,7 @@ final class HalsteadVisitor extends NodeVisitorAbstract implements ResettableVis
                 ->with(MetricName::HALSTEAD_BUGS, $halstead->bugs())
                 ->with(MetricName::HALSTEAD_TIME, $halstead->time());
 
-            $result[] = $this->createCallableWithMetrics($scope, $file, $bag, $ordinals[$fqn]);
+            $result[] = $this->createCallableWithMetrics($scope, $file, $bag);
         }
 
         return $result;

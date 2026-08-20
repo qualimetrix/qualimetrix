@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Analysis\Evidence\Size\LocVisitor;
+use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use SplFileInfo;
 
 #[CoversClass(LocCollector::class)]
@@ -586,6 +587,8 @@ PHP;
         // Parse to get AST (even though LOC doesn't use it)
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $code !== '' ? ($parser->parse($code) ?? []) : [];
+
+        $this->collector->useDeclarationIndex(new FileDeclarationIndex());
 
         $traverser = new NodeTraverser();
         $traverser->addVisitor($this->collector->getVisitor());

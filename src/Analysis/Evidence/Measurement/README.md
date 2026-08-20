@@ -35,6 +35,37 @@ include `MetricRepositoryInterface`, `MetricRepositoryFactoryInterface`,
 Consumers must not import repository indexes, visitor state, aggregation helpers,
 or collector implementations.
 
+## Declaration numbering
+
+A declaration's durable identity carries an ordinal — its rank among the
+declarations of the same logical identity earlier in the same file — instead of
+its byte position, so text edited above a declaration leaves its key alone. The
+positions that rank is computed from are collected by one registrar per
+traversal, `DeclarationRegistrarInterface`, created through
+`DeclarationRegistrarFactory` and added to the traverser **before** every other
+visitor. Producers never count: they receive the file's `FileDeclarationIndex`
+through `DeclarationIndexAwareInterface` and ask it.
+
+The factory is a required constructor dependency of `CompositeCollector`
+precisely because the parallel worker assembles that constructor positionally: a
+dependency that could be omitted would give workers that number files with no
+registrar and no error. Two traversal owners exist — `CompositeCollector` for
+the whole `check` analysis, and `DependencyGraphAnalyzer` for `graph:export` —
+and each owns an index per file.
+
+Three collaborators carry that between them, composed by `VisitorMethodContext`:
+`VisitorLexicalScope` knows where the traversal stands, `DeclarationNumbering`
+turns that position into the key a declaration is grouped under, and
+`FileEntrySubjectRegistry` holds the wire subjects minted along the way. Which
+subject is *current* follows from the traversal and lives with the scope; what a
+subject is made of moves with the wire grammar and lives with the registry.
+
+The position itself does not disappear; it stops being an identity.
+`CallableWithMetrics` and `ClassWithMetrics` carry it as `startFilePos`, the
+in-run key that joins what several producers said about one declaration, and
+`FileProcessor` checks it: two records under one canonical key whose positions
+differ are two declarations sharing a number, and that is a `LogicException`.
+
 `MetricRepositoryInterface` retains exact declaration subjects and separately
 projects logical classes and namespaces. A duplicate FQN declaration is an
 exact fact; a logical-class projection is deliberately deduplicated before
@@ -67,7 +98,7 @@ log between the first two spans.
 
 High fan-in of the public Measurement surface is governed by point thresholds,
 not a namespace-wide exclusion. Current CBO thresholds give one-edge headroom:
-`AbstractCollector` 27, `AggregationStrategy` 38, `MetricBag` 67,
+`AbstractCollector` 27, `AggregationStrategy` 38, `MetricBag` 68,
 `MetricDefinition` 33, `MetricName` 63, `MetricRepositoryInterface` 46,
 `ResettableVisitorInterface` 23, and `SymbolLevel` 34. `MetricBag` and
 `MetricRepositoryInterface` also carry rounded point ClassRank warning/error

@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -37,7 +38,7 @@ final class NocCollectorTest extends TestCase
     private function createExtends(string $childClass, string $parentClass, string $file = 'test.php', int $line = 1): Dependency
     {
         return new Dependency(
-            source: new DeclarationPath(SymbolPath::fromClassFqn($childClass), RelativePath::fromString($file), 0),
+            source: DeclarationPath::of(SymbolPath::fromClassFqn($childClass), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)),
             target: new LogicalClassPath(SymbolPath::fromClassFqn($parentClass)),
             type: DependencyType::Extends,
             location: new Location(RelativePath::fromString($file), $line),

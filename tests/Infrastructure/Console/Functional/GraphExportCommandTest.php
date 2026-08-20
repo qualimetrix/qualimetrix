@@ -12,6 +12,7 @@ use Psr\Log\NullLogger;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
 use Qualimetrix\Analysis\Run\Pipeline\DependencyGraphAnalyzer;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
@@ -360,6 +361,7 @@ final class GraphExportCommandTest extends TestCase
             new PhpFileParser(),
             new DependencyVisitor(new DependencyResolver()),
             new DependencyGraphBuilder(),
+            new DeclarationRegistrarFactory(),
         );
     }
 

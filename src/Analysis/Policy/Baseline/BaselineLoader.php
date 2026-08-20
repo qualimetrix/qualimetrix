@@ -8,7 +8,7 @@ use DateTimeImmutable;
 use JsonException;
 
 /**
- * Reads a version 12 baseline file.
+ * Reads a version 13 baseline file.
  *
  * Two failure classes, deliberately handled differently:
  *
@@ -60,6 +60,10 @@ final readonly class BaselineLoader
         11 => 'Baseline version 11 cannot be converted automatically: version %v% drops the redundant "count" field '
             . 'and shortens the occurrence key, and there is no converter for either change. Run a fresh analysis '
             . 'and write a new version %v% baseline (or regenerate and review the accepted state).',
+        12 => 'Baseline version 12 cannot be converted automatically: version %v% replaces the file position in a '
+            . 'declaration key with an assigned ordinal, and no converter can recover which declaration a stored '
+            . 'position meant. Run a fresh analysis and write a new version %v% baseline (or regenerate and review '
+            . 'the accepted state).',
     ];
 
     public function __construct(

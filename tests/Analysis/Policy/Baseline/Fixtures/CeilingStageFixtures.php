@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -109,7 +110,7 @@ trait CeilingStageFixtures
         return match ($symbolPath->getType()) {
             SymbolType::File, SymbolType::Namespace_, SymbolType::Project => MetricSubject::aggregate($symbolPath),
             SymbolType::Class_, SymbolType::Method, SymbolType::Function_ => MetricSubject::declaration(
-                new DeclarationPath($symbolPath, RelativePath::fromString('src/Foo.php'), 0),
+                DeclarationPath::of($symbolPath, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0)),
             ),
         };
     }

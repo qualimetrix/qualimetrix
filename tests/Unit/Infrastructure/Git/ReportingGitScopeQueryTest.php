@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -63,11 +64,7 @@ final class ReportingGitScopeQueryTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass('App\\Service', 'UserService'),
-                RelativePath::fromString('src/Service.php'),
-                10,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'UserService'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -91,11 +88,7 @@ final class ReportingGitScopeQueryTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Controller.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Controller', 'HomeController'),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass('App\\Controller', 'HomeController'),
-                RelativePath::fromString('src/Controller.php'),
-                10,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Controller', 'HomeController'), RelativePath::fromString('src/Controller.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -175,11 +168,7 @@ final class ReportingGitScopeQueryTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass('App\\Service', 'UserService'),
-                RelativePath::fromString('src/Service.php'),
-                10,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'UserService'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -269,11 +258,7 @@ final class ReportingGitScopeQueryTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/legacy.php'), 10),
             symbolPath: SymbolPath::forClass('', 'LegacyClass'),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass('', 'LegacyClass'),
-                RelativePath::fromString('src/legacy.php'),
-                10,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('', 'LegacyClass'), RelativePath::fromString('src/legacy.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -309,11 +294,7 @@ final class ReportingGitScopeQueryTest extends TestCase
             new Violation(
                 location: new Location(RelativePath::fromString('src/Service.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'Service'),
-                subject: MetricSubject::declaration(new DeclarationPath(
-                    SymbolPath::forClass('App', 'Service'),
-                    RelativePath::fromString('src/Service.php'),
-                    10,
-                )),
+                subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Service'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
                 ruleName: 'complexity',
                 violationCode: 'complexity',
                 message: 'Too complex',
@@ -322,11 +303,7 @@ final class ReportingGitScopeQueryTest extends TestCase
             new Violation(
                 location: new Location(RelativePath::fromString('src/Controller.php'), 20),
                 symbolPath: SymbolPath::forClass('App', 'Controller'),
-                subject: MetricSubject::declaration(new DeclarationPath(
-                    SymbolPath::forClass('App', 'Controller'),
-                    RelativePath::fromString('src/Controller.php'),
-                    20,
-                )),
+                subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Controller'), RelativePath::fromString('src/Controller.php'), DeclarationOrdinal::fromRank(0))),
                 ruleName: 'size',
                 violationCode: 'size',
                 message: 'Too large',
@@ -335,11 +312,7 @@ final class ReportingGitScopeQueryTest extends TestCase
             new Violation(
                 location: new Location(RelativePath::fromString('src/Repository.php'), 30),
                 symbolPath: SymbolPath::forClass('App', 'Repository'),
-                subject: MetricSubject::declaration(new DeclarationPath(
-                    SymbolPath::forClass('App', 'Repository'),
-                    RelativePath::fromString('src/Repository.php'),
-                    30,
-                )),
+                subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Repository'), RelativePath::fromString('src/Repository.php'), DeclarationOrdinal::fromRank(0))),
                 ruleName: 'coupling',
                 violationCode: 'coupling',
                 message: 'Too coupled',
@@ -377,11 +350,7 @@ final class ReportingGitScopeQueryTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Service', 'UserService'),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass('App\\Service', 'UserService'),
-                RelativePath::fromString('src/Service.php'),
-                10,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Service', 'UserService'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -396,11 +365,7 @@ final class ReportingGitScopeQueryTest extends TestCase
         $baseViolation = new Violation(
             location: new Location(RelativePath::fromString('src/Base.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Base'),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass('App', 'Base'),
-                RelativePath::fromString('src/Base.php'),
-                10,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Base'), RelativePath::fromString('src/Base.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',
@@ -431,11 +396,7 @@ final class ReportingGitScopeQueryTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Deleted.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Deleted'),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass('App', 'Deleted'),
-                RelativePath::fromString('src/Deleted.php'),
-                10,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Deleted'), RelativePath::fromString('src/Deleted.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'complexity',
             violationCode: 'complexity',
             message: 'Too complex',

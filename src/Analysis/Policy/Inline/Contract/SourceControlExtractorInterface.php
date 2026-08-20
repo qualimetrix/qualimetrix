@@ -15,7 +15,7 @@ interface SourceControlExtractorInterface
     /**
      * @param array<Node> $ast
      * @param list<CallableWithMetrics> $callableMetrics
-     * @param array<string, array{subject: MetricSubject, metrics: MetricBag, line: int}> $classMetrics
+     * @param array<string, array{subject: MetricSubject, metrics: MetricBag, line: int, start: int}> $classMetrics
      */
     public function extract(array $ast, RelativePath $file, array $callableMetrics, array $classMetrics): SourceControls;
 }

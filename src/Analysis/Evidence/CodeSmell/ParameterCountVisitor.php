@@ -8,6 +8,7 @@ use PhpParser\Node;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
@@ -22,7 +23,7 @@ use Qualimetrix\Core\Path\RelativePath;
  * Closures are intentionally skipped as they don't have meaningful
  * SymbolPath for callable-level metrics.
  */
-final class ParameterCountVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
+final class ParameterCountVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
     use VisitorMethodTrackingTrait;
 
@@ -91,7 +92,6 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
     {
         $result = [];
 
-        $ordinals = $this->callableCollisionOrdinals($this->scopes);
         foreach ($this->scopes as $fqn => $scope) {
             $metrics = (new MetricBag())->with(MetricName::CODE_SMELL_PARAMETER_COUNT, $this->parameterCounts[$fqn] ?? 0);
 
@@ -99,7 +99,7 @@ final class ParameterCountVisitor extends NodeVisitorAbstract implements Resetta
                 $metrics = $metrics->with(MetricName::CODE_SMELL_IS_VO_CONSTRUCTOR, 1);
             }
 
-            $result[] = $this->createCallableWithMetrics($scope, $file, $metrics, $ordinals[$fqn]);
+            $result[] = $this->createCallableWithMetrics($scope, $file, $metrics);
         }
 
         return $result;

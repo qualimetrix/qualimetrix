@@ -23,6 +23,7 @@ use Qualimetrix\Analysis\Evidence\Size\LocCollector;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -536,7 +537,8 @@ final class ClassToNamespaceAggregatorTest extends TestCase
             ? new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? ''))
             : null;
         $repository->addCallable(new CallableWithMetrics(
-            new DeclarationPath($symbol, $file, $startFilePos),
+            DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0)),
+            $startFilePos,
             $symbol->getType() === \Qualimetrix\Core\Symbol\SymbolType::Method ? CallableKind::Method : CallableKind::Function,
             null,
             null,

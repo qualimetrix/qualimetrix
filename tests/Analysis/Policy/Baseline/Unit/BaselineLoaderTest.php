@@ -51,7 +51,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 12,
+                "version": 13,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src", "tests"],
                 "entries": {
@@ -78,7 +78,7 @@ final class BaselineLoaderTest extends TestCase
     public function itRecordsTheContentHashOfTheFileItRead(): void
     {
         $json = <<<'JSON'
-            {"version": 12, "generated": "2026-08-05T12:00:00+03:00", "scope": [], "entries": {}}
+            {"version": 13, "generated": "2026-08-05T12:00:00+03:00", "scope": [], "entries": {}}
             JSON;
 
         $baseline = $this->loadJson($json);
@@ -87,13 +87,13 @@ final class BaselineLoaderTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsVersionTenBeforeReadingEntriesAndGivesManualV12Guidance(): void
+    public function itRejectsVersionTenBeforeReadingEntriesAndGivesManualV13Guidance(): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
             'Baseline version 10 cannot be converted automatically because declaration identity cannot be inferred '
             . 'from a logical symbol key. Run a fresh analysis, deliberately map or split accepted entries, then '
-            . 'write a new version 12 baseline (or regenerate and review the accepted state).',
+            . 'write a new version 13 baseline (or regenerate and review the accepted state).',
         );
 
         $this->loadJson('{"version": 10, "entries": "never parsed"}');
@@ -107,26 +107,26 @@ final class BaselineLoaderTest extends TestCase
      * compatibility is not maintained.
      */
     #[Test]
-    public function itRejectsVersionElevenAndRequiresARegeneratedV12Baseline(): void
+    public function itRejectsVersionElevenAndRequiresARegeneratedV13Baseline(): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
-            'Baseline version 11 cannot be converted automatically: version 12 drops the redundant "count" field '
+            'Baseline version 11 cannot be converted automatically: version 13 drops the redundant "count" field '
             . 'and shortens the occurrence key, and there is no converter for either change. Run a fresh analysis '
-            . 'and write a new version 12 baseline (or regenerate and review the accepted state).',
+            . 'and write a new version 13 baseline (or regenerate and review the accepted state).',
         );
 
         $this->loadJson('{"version": 11, "entries": "never parsed"}');
     }
 
     #[Test]
-    public function itRejectsVersionFiveAsHistoricalAndRequiresManualV12Review(): void
+    public function itRejectsVersionFiveAsHistoricalAndRequiresManualV13Review(): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
-            'This baseline is version 5, a historical format that cannot be loaded or converted to version 12 '
+            'This baseline is version 5, a historical format that cannot be loaded or converted to version 13 '
             . 'because declaration identity cannot be inferred from a logical symbol key. Run a fresh analysis, '
-            . 'deliberately map or split accepted entries, review every mapping, then write a new version 12 '
+            . 'deliberately map or split accepted entries, review every mapping, then write a new version 13 '
             . 'baseline (or regenerate and review the accepted state).',
         );
 
@@ -153,7 +153,7 @@ final class BaselineLoaderTest extends TestCase
         $this->expectExceptionMessageMatches('/scope/');
 
         $this->loadJson(<<<'JSON'
-            {"version": 12, "generated": "2026-01-01T00:00:00+00:00", "entries": {}}
+            {"version": 13, "generated": "2026-01-01T00:00:00+00:00", "entries": {}}
             JSON);
     }
 
@@ -163,7 +163,7 @@ final class BaselineLoaderTest extends TestCase
         $this->expectException(RuntimeException::class);
 
         $this->loadJson(<<<'JSON'
-            {"version": 12, "generated": "not-a-date", "scope": [], "entries": {}}
+            {"version": 13, "generated": "not-a-date", "scope": [], "entries": {}}
             JSON);
     }
 
@@ -187,7 +187,7 @@ final class BaselineLoaderTest extends TestCase
         $this->expectExceptionMessageMatches('/ISO 8601/');
 
         $this->loadJson(\sprintf(
-            '{"version": 12, "generated": %s, "scope": [], "entries": {}}',
+            '{"version": 13, "generated": %s, "scope": [], "entries": {}}',
             json_encode($generated, \JSON_THROW_ON_ERROR),
         ));
     }
@@ -203,7 +203,7 @@ final class BaselineLoaderTest extends TestCase
     public function itAcceptsEveryIso8601SpellingTheContractNames(string $generated, string $expectedUtc): void
     {
         $baseline = $this->loadJson(\sprintf(
-            '{"version": 12, "generated": %s, "scope": [], "entries": {}}',
+            '{"version": 13, "generated": %s, "scope": [], "entries": {}}',
             json_encode($generated, \JSON_THROW_ON_ERROR),
         ));
 
@@ -222,7 +222,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 12,
+                "version": 13,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["tests/", "src", "src/", "src"],
                 "entries": {}
@@ -242,7 +242,7 @@ final class BaselineLoaderTest extends TestCase
     public function itTurnsAnEntryWhoseComponentsCarryTheKeySeparatorInert(): void
     {
         $baseline = $this->loadJson((string) json_encode([
-            'version' => 12,
+            'version' => 13,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => [],
             'entries' => [
@@ -282,7 +282,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 12,
+                "version": 13,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": [],
                 "entries": {
@@ -327,7 +327,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 12,
+                "version": 13,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
                 "entries": {
@@ -358,7 +358,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 12,
+                "version": 13,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
                 "entries": { "callable:App\\Foo::bar": { "channel": "code-smell.goto#code-smell.goto" } }
@@ -379,7 +379,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 12,
+                "version": 13,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
                 "entries": {
@@ -406,7 +406,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 12,
+                "version": 13,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
                 "entries": {
@@ -434,7 +434,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 12,
+                "version": 13,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
                 "entries": {
@@ -529,7 +529,7 @@ final class BaselineLoaderTest extends TestCase
     public function itReadsACanonicalFileWithNoEntries(): void
     {
         $baseline = $this->loadJson(
-            "{\n  \"version\": 12,\n  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
+            "{\n  \"version\": 13,\n  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
             . "  \"scope\": [\"src\"],\n  \"entries\": {}\n}\n",
             'empty.json',
         );
@@ -622,7 +622,7 @@ final class BaselineLoaderTest extends TestCase
         $entry = '{"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[%d]}';
 
         $repeated = "{\n"
-            . "  \"version\": 12,\n"
+            . "  \"version\": 13,\n"
             . "  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
             . "  \"scope\": [\"src\"],\n"
             . "  \"entries\": {\n"
@@ -701,10 +701,10 @@ final class BaselineLoaderTest extends TestCase
     {
         $canonical = self::canonicalDocument();
 
-        yield 'document not opened on its own line' => ['{"version": 12}'];
+        yield 'document not opened on its own line' => ['{"version": 13}'];
         yield 'document opened with a bracket' => ["[\n" . substr($canonical, 2)];
         yield 'envelope field indented four spaces' => [str_replace("  \"version\"", "    \"version\"", $canonical)];
-        yield 'envelope field without its comma' => [str_replace("  \"version\": 12,\n", "  \"version\": 12\n", $canonical)];
+        yield 'envelope field without its comma' => [str_replace("  \"version\": 13,\n", "  \"version\": 12\n", $canonical)];
         yield 'envelope value that is not JSON' => [str_replace('"scope": ["src","tests"]', '"scope": [src]', $canonical)];
         yield 'subject key indented two spaces' => [str_replace("    \"class:", "  \"class:", $canonical)];
         yield 'subject key that is not a JSON string' => [str_replace("    \"class:App\\\\Legacy\\\\Report\":", '    class:App\Legacy\Report:', $canonical)];
@@ -743,7 +743,7 @@ final class BaselineLoaderTest extends TestCase
         }
 
         return "{\n"
-            . "  \"version\": 12,\n"
+            . "  \"version\": 13,\n"
             . "  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
             . "  \"scope\": [\"src\"],\n"
             . "  \"entries\": {\n"
@@ -768,7 +768,7 @@ final class BaselineLoaderTest extends TestCase
     private static function canonicalDocument(): string
     {
         return "{\n"
-            . "  \"version\": 12,\n"
+            . "  \"version\": 13,\n"
             . "  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
             . "  \"scope\": [\"src\",\"tests\"],\n"
             . "  \"entries\": {\n"

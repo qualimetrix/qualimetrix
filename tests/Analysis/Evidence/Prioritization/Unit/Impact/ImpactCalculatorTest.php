@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -298,11 +299,7 @@ final class ImpactCalculatorTest extends TestCase
     ): Violation {
         return new Violation(
             location: new Location(RelativePath::fromString($file), $line),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                $symbolPath,
-                RelativePath::fromString($file),
-                0,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of($symbolPath, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbolPath,
             ruleName: $rule,
             violationCode: $rule,

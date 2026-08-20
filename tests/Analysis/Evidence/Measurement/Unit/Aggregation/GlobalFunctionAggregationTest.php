@@ -24,6 +24,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -249,12 +250,14 @@ final class GlobalFunctionAggregationTest extends TestCase
         $class = SymbolPath::forClass('App\\Service', 'Duplicate');
 
         $first = new ClassWithMetrics(
-            new DeclarationPath($class, RelativePath::fromString('src/Service/First.php'), 10),
+            DeclarationPath::of($class, RelativePath::fromString('src/Service/First.php'), DeclarationOrdinal::fromRank(0)),
+            10,
             3,
             MetricBag::fromArray(['firstProviderMetric' => 7]),
         );
         $second = new ClassWithMetrics(
-            new DeclarationPath($class, RelativePath::fromString('src/Service/Second.php'), 20),
+            DeclarationPath::of($class, RelativePath::fromString('src/Service/Second.php'), DeclarationOrdinal::fromRank(0)),
+            20,
             5,
             MetricBag::fromArray(['secondProviderMetric' => 11]),
         );
@@ -290,6 +293,6 @@ final class GlobalFunctionAggregationTest extends TestCase
     private function addCallable(InMemoryMetricRepository $repository, SymbolPath $symbol, MetricBag $metrics, RelativePath $file, int $startFilePos): void
     {
         $owner = $symbol->getType() === SymbolType::Method ? new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')) : null;
-        $repository->addCallable(new CallableWithMetrics(new DeclarationPath($symbol, $file, $startFilePos), $symbol->getType() === SymbolType::Method ? CallableKind::Method : CallableKind::Function, null, null, $owner, $metrics));
+        $repository->addCallable(new CallableWithMetrics(DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0)), $startFilePos, $symbol->getType() === SymbolType::Method ? CallableKind::Method : CallableKind::Function, null, null, $owner, $metrics));
     }
 }

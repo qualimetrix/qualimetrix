@@ -66,7 +66,7 @@ final readonly class SourceControlExtractor implements SourceControlExtractorInt
     /**
      * @param array<Node> $ast
      * @param list<CallableWithMetrics> $callableMetrics
-     * @param array<string, array{subject: MetricSubject, metrics: MetricBag, line: int}> $classMetrics
+     * @param array<string, array{subject: MetricSubject, metrics: MetricBag, line: int, start: int}> $classMetrics
      */
     public function extract(
         array $ast,

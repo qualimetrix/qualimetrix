@@ -37,6 +37,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -436,16 +437,8 @@ final class LayerViolationRuleTest extends TestCase
         ], ['controller' => []]);
         $sourceLogical = SymbolPath::forClass('App\\Controller', 'Controller');
         $target = new LogicalClassPath(SymbolPath::forClass('Vendor', 'External'));
-        $firstSource = new DeclarationPath(
-            $sourceLogical,
-            RelativePath::fromString('src/ControllerFirst.php'),
-            10,
-        );
-        $secondSource = new DeclarationPath(
-            $sourceLogical,
-            RelativePath::fromString('src/ControllerSecond.php'),
-            20,
-        );
+        $firstSource = DeclarationPath::of($sourceLogical, RelativePath::fromString('src/ControllerFirst.php'), DeclarationOrdinal::fromRank(0));
+        $secondSource = DeclarationPath::of($sourceLogical, RelativePath::fromString('src/ControllerSecond.php'), DeclarationOrdinal::fromRank(0));
         $firstSubject = MetricSubject::declaration($firstSource);
         $secondSubject = MetricSubject::declaration($secondSource);
         $dependencies = [
@@ -577,16 +570,8 @@ final class LayerViolationRuleTest extends TestCase
             DependencyType::New_,
             new Location(RelativePath::fromString('src/Controller.php'), 12),
         );
-        $first = MetricSubject::declaration(new DeclarationPath(
-            $target,
-            RelativePath::fromString('src/RepositoryFirst.php'),
-            10,
-        ));
-        $second = MetricSubject::declaration(new DeclarationPath(
-            $target,
-            RelativePath::fromString('src/RepositorySecond.php'),
-            20,
-        ));
+        $first = MetricSubject::declaration(DeclarationPath::of($target, RelativePath::fromString('src/RepositoryFirst.php'), DeclarationOrdinal::fromRank(0)));
+        $second = MetricSubject::declaration(DeclarationPath::of($target, RelativePath::fromString('src/RepositorySecond.php'), DeclarationOrdinal::fromRank(0)));
 
         $fallback = new LayerViolationFinding(
             dependency: $dependency,
@@ -1387,7 +1372,7 @@ final class LayerViolationRuleTest extends TestCase
         };
         $finding = new LayerViolationFinding(
             dependency: new Dependency(
-                new DeclarationPath($source, RelativePath::fromString('src/Controller.php'), 0),
+                DeclarationPath::of($source, RelativePath::fromString('src/Controller.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath($target),
                 DependencyType::New_,
                 $location,
@@ -1430,7 +1415,7 @@ final class LayerViolationRuleTest extends TestCase
         };
         $finding = new LayerViolationFinding(
             dependency: new Dependency(
-                new DeclarationPath($source, RelativePath::fromString('src/Controller.php'), 0),
+                DeclarationPath::of($source, RelativePath::fromString('src/Controller.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath($target),
                 DependencyType::New_,
                 $location,
@@ -1467,7 +1452,7 @@ final class LayerViolationRuleTest extends TestCase
         DependencyType $type = DependencyType::New_,
     ): Dependency {
         return new Dependency(
-            source: new DeclarationPath(SymbolPath::forClass($sourceNamespace, $sourceClass), RelativePath::fromString('src/dummy.php'), 0),
+            source: DeclarationPath::of(SymbolPath::forClass($sourceNamespace, $sourceClass), RelativePath::fromString('src/dummy.php'), DeclarationOrdinal::fromRank(0)),
             target: new LogicalClassPath(SymbolPath::forClass($targetNamespace, $targetClass)),
             type: $type,
             location: new Location(RelativePath::fromString('src/dummy.php'), 1),
@@ -1477,7 +1462,7 @@ final class LayerViolationRuleTest extends TestCase
     private function dependency(SymbolPath $source, SymbolPath $target, DependencyType $type, Location $location): Dependency
     {
         return new Dependency(
-            new DeclarationPath($source, $location->file ?? RelativePath::fromString('src/dummy.php'), 0),
+            DeclarationPath::of($source, $location->file ?? RelativePath::fromString('src/dummy.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath($target),
             $type,
             $location,
@@ -1529,11 +1514,7 @@ final class LayerViolationRuleTest extends TestCase
         int $startFilePos = 0,
     ): MetricSubject {
         $logical = SymbolPath::forClass($namespace, $class);
-        $subject = MetricSubject::declaration(new DeclarationPath(
-            $logical,
-            RelativePath::fromString($file ?? \sprintf('src/%s.php', str_replace('\\', '/', $class))),
-            $startFilePos,
-        ));
+        $subject = MetricSubject::declaration(DeclarationPath::of($logical, RelativePath::fromString($file ?? \sprintf('src/%s.php', str_replace('\\', '/', $class))), DeclarationOrdinal::fromRank(0)));
         $repo->addSubject(
             $subject,
             new MetricBag(),

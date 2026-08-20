@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEdge;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -33,7 +34,7 @@ final class BaselineIdentityTest extends TestCase
             ViolationFactory::magnitude(SymbolPath::forMethod('App', 'Foo', 'bar'), 15),
         );
 
-        self::assertSame('declaration:callable:App\Foo::bar@src/Foo.php:42', $identity->subjectKey);
+        self::assertSame('declaration:callable:App\Foo::bar@src/Foo.php', $identity->subjectKey);
         self::assertSame('complexity.cyclomatic#complexity.cyclomatic.callable', $identity->channel->toKey());
         self::assertNull($identity->edge);
     }
@@ -115,11 +116,7 @@ final class BaselineIdentityTest extends TestCase
     {
         return new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 11),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                $source,
-                RelativePath::fromString('src/Foo.php'),
-                11,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of($source, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: $source,
             ruleName: 'architecture.layer-violation',
             violationCode: 'architecture.layer-violation',
@@ -133,7 +130,7 @@ final class BaselineIdentityTest extends TestCase
     public function itSeparatesSemanticOccurrencesAtTheSameSubject(): void
     {
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
-        $subject = MetricSubject::declaration(new DeclarationPath($symbol, RelativePath::fromString('src/Foo.php'), 10));
+        $subject = MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0)));
 
         $first = new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 20),
@@ -180,11 +177,7 @@ final class BaselineIdentityTest extends TestCase
 
         $fromFirstFile = new Violation(
             location: new Location(RelativePath::fromString('src/a/Duplicated.php'), 10),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                $symbol,
-                RelativePath::fromString('src/a/Duplicated.php'),
-                100,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/a/Duplicated.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
@@ -194,11 +187,7 @@ final class BaselineIdentityTest extends TestCase
         );
         $fromSecondFile = new Violation(
             location: new Location(RelativePath::fromString('src/b/Duplicated.php'), 10),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                $symbol,
-                RelativePath::fromString('src/b/Duplicated.php'),
-                100,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/b/Duplicated.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
@@ -258,7 +247,7 @@ final class BaselineIdentityTest extends TestCase
         ));
 
         self::assertSame(
-            'declaration:class:App\Web\Controller@src/Foo.php:11 architecture.layer-violation#architecture.layer-violation'
+            'declaration:class:App\Web\Controller@src/Foo.php architecture.layer-violation#architecture.layer-violation'
             . ' -> class:App\Db\Connection (new)',
             $identity->describe(),
         );

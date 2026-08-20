@@ -24,6 +24,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -113,7 +114,8 @@ final class AnalysisResultTest extends TestCase
         $repo1 = new InMemoryMetricRepository();
         $metrics1 = (new MetricBag())->with('ccn', 5);
         $repo1->addCallable(new CallableWithMetrics(
-            new DeclarationPath(SymbolPath::forMethod('App', 'ServiceA', 'method1'), RelativePath::fromString('ServiceA.php'), 100),
+            DeclarationPath::of(SymbolPath::forMethod('App', 'ServiceA', 'method1'), RelativePath::fromString('ServiceA.php'), DeclarationOrdinal::fromRank(0)),
+            100,
             CallableKind::Method,
             null,
             null,
@@ -124,7 +126,8 @@ final class AnalysisResultTest extends TestCase
         $repo2 = new InMemoryMetricRepository();
         $metrics2 = (new MetricBag())->with('ccn', 10);
         $repo2->addCallable(new CallableWithMetrics(
-            new DeclarationPath(SymbolPath::forMethod('App', 'ServiceB', 'method2'), RelativePath::fromString('ServiceB.php'), 200),
+            DeclarationPath::of(SymbolPath::forMethod('App', 'ServiceB', 'method2'), RelativePath::fromString('ServiceB.php'), DeclarationOrdinal::fromRank(0)),
+            200,
             CallableKind::Method,
             null,
             null,
@@ -224,11 +227,7 @@ final class AnalysisResultTest extends TestCase
     #[Test]
     public function itMergesSuppressionsForOverlappingFiles(): void
     {
-        $sharedSubject = MetricSubject::declaration(new DeclarationPath(
-            SymbolPath::forMethod('App', 'Service', 'calculate'),
-            RelativePath::fromString('shared.php'),
-            10,
-        ));
+        $sharedSubject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'calculate'), RelativePath::fromString('shared.php'), DeclarationOrdinal::fromRank(0)));
         $suppression1 = new Suppression(
             'complexity',
             null,
@@ -243,11 +242,7 @@ final class AnalysisResultTest extends TestCase
             null,
             30,
             SuppressionType::Symbol,
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forMethod('App', 'Service', 'measure'),
-                RelativePath::fromString('shared.php'),
-                30,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'measure'), RelativePath::fromString('shared.php'), DeclarationOrdinal::fromRank(0))),
             controlScope: ControlScope::Callable,
         );
 
@@ -282,11 +277,7 @@ final class AnalysisResultTest extends TestCase
     #[Test]
     public function itMergesThresholdOverridesForOverlappingFiles(): void
     {
-        $subject = MetricSubject::declaration(new DeclarationPath(
-            SymbolPath::forMethod('App', 'Service', 'calculate'),
-            RelativePath::fromString('shared.php'),
-            10,
-        ));
+        $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'calculate'), RelativePath::fromString('shared.php'), DeclarationOrdinal::fromRank(0)));
         $override1 = new ThresholdOverride('complexity.cyclomatic', 15, 25, 10, $subject, ControlScope::Callable);
         $override2 = new ThresholdOverride('coupling.cbo', 10, 20, 20, $subject, ControlScope::Callable);
         $override3 = new ThresholdOverride('size.method-count', 5, 10, 30, $subject, ControlScope::Callable);

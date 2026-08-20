@@ -15,11 +15,20 @@ use Qualimetrix\Core\Symbol\LogicalClassPath;
  * The exact declaration identity is deliberately kept separate from the
  * optional class aggregation owner: closures retain their lexical class
  * context without becoming class-owned callable metrics.
+ *
+ * `startFilePos` is the in-run join key, not part of the identity: producers
+ * of the same declaration are matched by it, and it never reaches a stored
+ * key.
  */
 final readonly class CallableWithMetrics
 {
+    /**
+     * @qmx-threshold code-smell.constructor-overinjection warning=9 error=9 -- Exact callable measurement record carries eight independent facts about one declaration; bundling them would recreate the prohibited array record.
+     * @qmx-threshold code-smell.long-parameter-list warning=9 error=9 -- Exact callable measurement record carries eight independent facts about one declaration; bundling them would recreate the prohibited array record.
+     */
     public function __construct(
         public DeclarationPath $declarationPath,
+        public int $startFilePos,
         public CallableKind $kind,
         public ?string $anonymousSyntax,
         public ?DeclarationPath $lexicalClassContext,

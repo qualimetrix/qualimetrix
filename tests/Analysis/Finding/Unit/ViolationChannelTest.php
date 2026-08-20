@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -49,11 +50,7 @@ final class ViolationChannelTest extends TestCase
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/App.php'), 1),
             symbolPath: SymbolPath::forClass('App', 'App'),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass('App', 'App'),
-                RelativePath::fromString('src/App.php'),
-                1,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'App'), RelativePath::fromString('src/App.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'architecture.unreachable-layer',
             violationCode: 'architecture.unreachable-layer',
             message: 'Layer never matched',

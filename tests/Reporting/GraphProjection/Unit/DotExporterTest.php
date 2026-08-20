@@ -11,6 +11,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -24,13 +25,13 @@ final class DotExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\ServiceB'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\ServiceB'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceC')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 20),
@@ -51,7 +52,7 @@ final class DotExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\Service\\UserService'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\UserService'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Repository\\UserRepository')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
@@ -72,7 +73,7 @@ final class DotExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\Very\\Long\\Namespace\\UserService'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\Very\\Long\\Namespace\\UserService'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Very\\Long\\Namespace\\UserRepository')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
@@ -92,7 +93,7 @@ final class DotExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\UserService'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\UserService'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\UserRepository')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
@@ -115,7 +116,7 @@ final class DotExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\Service\\UserService'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\UserService'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Repository\\UserRepository')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
@@ -139,7 +140,7 @@ final class DotExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\Service\\UserService'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\UserService'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Repository\\UserRepository')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
@@ -163,7 +164,7 @@ final class DotExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\Class"With"Quotes'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\Class"With"Quotes'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Another')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
@@ -185,13 +186,13 @@ final class DotExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Bar')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\Tests\\FooTest'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\Tests\\FooTest'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Foo')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 20),
@@ -214,13 +215,13 @@ final class DotExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Bar')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
             ),
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\Tests\\FooTest'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\Tests\\FooTest'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Service\\Foo')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 20),
@@ -243,7 +244,7 @@ final class DotExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\Stable'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\Stable'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Unstable')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
@@ -263,7 +264,7 @@ final class DotExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
@@ -282,7 +283,7 @@ final class DotExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\ServiceA'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\ServiceB')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),
@@ -312,7 +313,7 @@ final class DotExporterTest extends TestCase
     {
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\\Service\\Foo'), RelativePath::fromString("test.php"), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\\Tests\\FooTest')),
                 DependencyType::TypeHint,
                 new Location(RelativePath::fromString('test/file.php'), 10),

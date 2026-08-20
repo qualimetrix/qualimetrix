@@ -8,11 +8,14 @@ use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CollectionOutput;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use SplFileInfo;
 use Traversable;
 
@@ -27,14 +30,17 @@ final class CompositeCollector implements FileMeasurementCollectorInterface
     private readonly DerivedCollectorRunner $derivedCollectorRunner;
 
     /**
-     * Optional dependency visitor to collect dependencies in the same traversal.
-     */
-    /**
+     * The registrar factory is required, not optional: this constructor is also
+     * reached positionally by the parallel worker bootstrap, where a dependency
+     * that may be omitted would produce workers that silently number files
+     * without a registrar.
+     *
      * @param iterable<MetricCollectorInterface> $collectors
      * @param iterable<DerivedCollectorInterface> $derivedCollectors
      */
     public function __construct(
         iterable $collectors,
+        private readonly DeclarationRegistrarFactory $declarationRegistrarFactory,
         iterable $derivedCollectors = [],
         private readonly ?DependencyTraversalParticipantInterface $dependencyTraversalParticipant = null,
     ) {
@@ -100,15 +106,33 @@ final class CompositeCollector implements FileMeasurementCollectorInterface
         return $this->derivedCollectors;
     }
 
+    /**
+     * The registrar goes in first so that every producer asking about the node
+     * it is entering finds that node already registered.
+     */
     private function configureTraverser(NodeTraverser $traverser, RelativePath $filePath): void
     {
+        $registrar = $this->declarationRegistrarFactory->createForFile();
+        $traverser->addVisitor($registrar);
+        $index = $registrar->index();
+
         foreach ($this->collectors as $collector) {
-            $traverser->addVisitor($collector->getVisitor());
+            $visitor = $collector->getVisitor();
+            self::deliverDeclarationIndex($collector, $index);
+            self::deliverDeclarationIndex($visitor, $index);
+            $traverser->addVisitor($visitor);
         }
 
         if ($this->dependencyTraversalParticipant !== null) {
-            $this->dependencyTraversalParticipant->beginFile($filePath);
+            $this->dependencyTraversalParticipant->beginFile($filePath, $index);
             $traverser->addVisitor($this->dependencyTraversalParticipant);
+        }
+    }
+
+    private static function deliverDeclarationIndex(object $participant, FileDeclarationIndex $index): void
+    {
+        if ($participant instanceof DeclarationIndexAwareInterface) {
+            $participant->useDeclarationIndex($index);
         }
     }
 

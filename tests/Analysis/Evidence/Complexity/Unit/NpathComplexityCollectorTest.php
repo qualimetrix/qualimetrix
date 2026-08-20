@@ -13,6 +13,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityCollector;
 use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
 use SplFileInfo;
@@ -1205,6 +1207,11 @@ PHP;
 
         $collector = new NpathComplexityCollector();
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $indexAwareVisitor = $collector->getVisitor();
+        self::assertInstanceOf(DeclarationIndexAwareInterface::class, $indexAwareVisitor);
+        $indexAwareVisitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($collector->getVisitor());
         $traverser->traverse($ast ?? []);
 
@@ -1245,6 +1252,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1294,6 +1304,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1312,6 +1325,11 @@ PHP;
         $ast = $parser->parse($code);
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $indexAwareVisitor2 = $this->collector->getVisitor();
+        self::assertInstanceOf(DeclarationIndexAwareInterface::class, $indexAwareVisitor2);
+        $indexAwareVisitor2->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($this->collector->getVisitor());
         $traverser->traverse($ast ?? []);
 

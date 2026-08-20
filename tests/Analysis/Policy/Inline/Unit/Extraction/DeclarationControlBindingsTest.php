@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\Control\ControlScope;
 use Qualimetrix\Analysis\Policy\Inline\Extraction\DeclarationControlBindings;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -71,7 +72,7 @@ final class DeclarationControlBindingsTest extends TestCase
         self::assertCount(2, $hooks);
 
         $file = RelativePath::fromString('src/Example.php');
-        $class = new DeclarationPath(SymbolPath::forClass('App', 'Named'), $file, $namedClass->getStartFilePos());
+        $class = DeclarationPath::of(SymbolPath::forClass('App', 'Named'), $file, DeclarationOrdinal::fromRank(0));
         $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Named'));
         $metrics = [
             $this->callable($method, SymbolPath::forMethod('App', 'Named', 'method'), CallableKind::Method, null, $class, $owner),
@@ -82,9 +83,14 @@ final class DeclarationControlBindingsTest extends TestCase
             $this->callable($hooks[1], SymbolPath::forMethod('App', 'Named', 'value::set'), CallableKind::PropertyHook, null, $class, $owner),
         ];
 
-        $classMetrics = new ClassWithMetrics($class, $namedClass->getStartLine(), new MetricBag());
+        $classMetrics = new ClassWithMetrics($class, $namedClass->getStartFilePos(), $namedClass->getStartLine(), new MetricBag());
         $bindings = DeclarationControlBindings::from($ast, $file, $metrics, [
-            $classMetrics->subject->toCanonical() => ['subject' => $classMetrics->subject, 'metrics' => $classMetrics->metrics, 'line' => $classMetrics->line],
+            $classMetrics->subject->toCanonical() => [
+                'subject' => $classMetrics->subject,
+                'metrics' => $classMetrics->metrics,
+                'line' => $classMetrics->line,
+                'start' => $classMetrics->startFilePos,
+            ],
         ]);
 
         self::assertSame($class->toCanonical(), $bindings->bindingsFor($namedClass)[0]['subject']->toCanonical());
@@ -108,18 +114,32 @@ final class DeclarationControlBindingsTest extends TestCase
         self::assertInstanceOf(Node\Stmt\Property::class, $property);
 
         $file = RelativePath::fromString('src/Example.php');
-        $declaration = new DeclarationPath(SymbolPath::forClass('App', 'Named'), $file, $class->getStartFilePos());
-        $classMetrics = new ClassWithMetrics($declaration, 1, new MetricBag());
+        $declaration = DeclarationPath::of(SymbolPath::forClass('App', 'Named'), $file, DeclarationOrdinal::fromRank(1));
+        $classMetrics = new ClassWithMetrics($declaration, $class->getStartFilePos(), 1, new MetricBag());
         $bindings = DeclarationControlBindings::from($ast, $file, [], [
-            $classMetrics->subject->toCanonical() => ['subject' => $classMetrics->subject, 'metrics' => $classMetrics->metrics, 'line' => $classMetrics->line],
+            $classMetrics->subject->toCanonical() => [
+                'subject' => $classMetrics->subject,
+                'metrics' => $classMetrics->metrics,
+                'line' => $classMetrics->line,
+                'start' => $classMetrics->startFilePos,
+            ],
         ]);
 
         self::assertSame($declaration->toCanonical(), $bindings->fallbackBindingsForProperty($property)[0]['subject']->toCanonical());
         self::assertSame(ControlScope::Class_, $bindings->fallbackBindingsForProperty($property)[0]['scope']);
     }
 
+    /**
+     * Under P1's `DeclarationPath`, two producers could disagree about which
+     * ordinal a declaration carried and still be treated as one identity: the
+     * old comparison used the bare logical symbol, ordinal excluded. P2 makes
+     * the ordinal part of identity, so this exact disagreement — same file
+     * position, same symbol, different ordinal — is now what the guard exists
+     * to catch, and it must reject rather than merge the two into a binding
+     * list.
+     */
     #[Test]
-    public function itRetainsEveryCallableCollisionForDirectAndParameterBindings(): void
+    public function itRejectsCallableMetadataThatOnlyDisagreesByOrdinalAtOneMethodPosition(): void
     {
         $ast = $this->parse('<?php class Named { public function run(int $value): void {} }');
         $nodes = new NodeFinder();
@@ -129,58 +149,47 @@ final class DeclarationControlBindingsTest extends TestCase
         self::assertInstanceOf(Node\Stmt\ClassMethod::class, $method);
 
         $file = RelativePath::fromString('src/Example.php');
-        $classDeclaration = new DeclarationPath(SymbolPath::forClass('App', 'Named'), $file, $class->getStartFilePos());
+        $classDeclaration = DeclarationPath::of(SymbolPath::forClass('App', 'Named'), $file, DeclarationOrdinal::fromRank(0));
         $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Named'));
-        $first = new DeclarationPath(SymbolPath::forMethod('App', 'Named', 'run'), $file, $method->getStartFilePos(), 0);
-        $second = new DeclarationPath(SymbolPath::forMethod('App', 'Named', 'run'), $file, $method->getStartFilePos(), 1);
-        $bindings = DeclarationControlBindings::from($ast, $file, [
-            new CallableWithMetrics($first, CallableKind::Method, null, $classDeclaration, $owner, new MetricBag()),
-            new CallableWithMetrics($second, CallableKind::Method, null, $classDeclaration, $owner, new MetricBag()),
-        ], $this->classMetrics($classDeclaration));
+        $first = DeclarationPath::of(SymbolPath::forMethod('App', 'Named', 'run'), $file, DeclarationOrdinal::fromRank(0));
+        $second = DeclarationPath::of(SymbolPath::forMethod('App', 'Named', 'run'), $file, DeclarationOrdinal::fromRank(1));
 
-        self::assertSame([$first->toCanonical(), $second->toCanonical()], $this->subjects($bindings->bindingsFor($method)));
-        self::assertSame([$first->toCanonical(), $second->toCanonical()], $this->subjects($bindings->bindingsFor($method->params[0])));
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Incompatible declaration metadata at file position');
+        DeclarationControlBindings::from($ast, $file, [
+            new CallableWithMetrics($first, $method->getStartFilePos(), CallableKind::Method, null, $classDeclaration, $owner, new MetricBag()),
+            new CallableWithMetrics($second, $method->getStartFilePos(), CallableKind::Method, null, $classDeclaration, $owner, new MetricBag()),
+        ], $this->classMetricsAt($class->getStartFilePos(), $classDeclaration));
     }
 
+    /**
+     * The class-level counterpart of the method case above: a property hook
+     * and its owning class disagreeing only by ordinal at one physical
+     * position must be rejected the same way.
+     */
     #[Test]
-    public function itRetainsPropertyHookAndClassCollisions(): void
+    public function itRejectsPropertyHookAndClassMetadataThatOnlyDisagreeByOrdinalAtOnePosition(): void
     {
         $ast = $this->parse('<?php class Named { public int $value { get => 1; } public function run(): void {} }');
         $nodes = new NodeFinder();
         $class = $nodes->findFirstInstanceOf($ast, Node\Stmt\Class_::class);
-        $property = $nodes->findFirstInstanceOf($ast, Node\Stmt\Property::class);
         $hook = $nodes->findFirstInstanceOf($ast, Node\PropertyHook::class);
-        $method = $nodes->findFirstInstanceOf($ast, Node\Stmt\ClassMethod::class);
         self::assertInstanceOf(Node\Stmt\Class_::class, $class);
-        self::assertInstanceOf(Node\Stmt\Property::class, $property);
         self::assertInstanceOf(Node\PropertyHook::class, $hook);
-        self::assertInstanceOf(Node\Stmt\ClassMethod::class, $method);
 
         $file = RelativePath::fromString('src/Example.php');
-        $classFirst = new DeclarationPath(SymbolPath::forClass('App', 'Named'), $file, $class->getStartFilePos(), 0);
-        $classSecond = new DeclarationPath(SymbolPath::forClass('App', 'Named'), $file, $class->getStartFilePos(), 1);
+        $classFirst = DeclarationPath::of(SymbolPath::forClass('App', 'Named'), $file, DeclarationOrdinal::fromRank(0));
+        $classSecond = DeclarationPath::of(SymbolPath::forClass('App', 'Named'), $file, DeclarationOrdinal::fromRank(1));
         $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Named'));
-        $hookFirst = new DeclarationPath(SymbolPath::forMethod('App', 'Named', 'value::get'), $file, $hook->getStartFilePos(), 0);
-        $hookSecond = new DeclarationPath(SymbolPath::forMethod('App', 'Named', 'value::get'), $file, $hook->getStartFilePos(), 1);
-        $methodFirst = new DeclarationPath(SymbolPath::forMethod('App', 'Named', 'run'), $file, $method->getStartFilePos(), 0);
-        $methodSecond = new DeclarationPath(SymbolPath::forMethod('App', 'Named', 'run'), $file, $method->getStartFilePos(), 1);
-        $bindings = DeclarationControlBindings::from($ast, $file, [
-            new CallableWithMetrics($hookFirst, CallableKind::PropertyHook, null, $classFirst, $owner, new MetricBag()),
-            new CallableWithMetrics($hookSecond, CallableKind::PropertyHook, null, $classSecond, $owner, new MetricBag()),
-            new CallableWithMetrics($methodFirst, CallableKind::Method, null, $classFirst, $owner, new MetricBag()),
-            new CallableWithMetrics($methodSecond, CallableKind::Method, null, $classSecond, $owner, new MetricBag()),
-        ], $this->classMetrics($classFirst, $classSecond));
+        $hookFirst = DeclarationPath::of(SymbolPath::forMethod('App', 'Named', 'value::get'), $file, DeclarationOrdinal::fromRank(0));
+        $hookSecond = DeclarationPath::of(SymbolPath::forMethod('App', 'Named', 'value::get'), $file, DeclarationOrdinal::fromRank(1));
 
-        self::assertSame([$hookFirst->toCanonical(), $hookSecond->toCanonical()], $this->subjects($bindings->bindingsFor($hook)));
-        self::assertSame([$hookFirst->toCanonical(), $hookSecond->toCanonical()], $this->subjects($bindings->bindingsFor($property)));
-        self::assertSame([
-            $classFirst->toCanonical(),
-            $hookFirst->toCanonical(),
-            $methodFirst->toCanonical(),
-            $classSecond->toCanonical(),
-            $hookSecond->toCanonical(),
-            $methodSecond->toCanonical(),
-        ], $this->subjects($bindings->bindingsFor($class)));
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Incompatible declaration metadata at file position');
+        DeclarationControlBindings::from($ast, $file, [
+            new CallableWithMetrics($hookFirst, $hook->getStartFilePos(), CallableKind::PropertyHook, null, $classFirst, $owner, new MetricBag()),
+            new CallableWithMetrics($hookSecond, $hook->getStartFilePos(), CallableKind::PropertyHook, null, $classSecond, $owner, new MetricBag()),
+        ], $this->classMetricsAt($class->getStartFilePos(), $classFirst, $classSecond));
     }
 
     #[Test]
@@ -192,13 +201,14 @@ final class DeclarationControlBindingsTest extends TestCase
         self::assertInstanceOf(Node\Stmt\ClassMethod::class, $method);
 
         $file = RelativePath::fromString('src/Example.php');
-        $methodDeclaration = new DeclarationPath(SymbolPath::forMethod('App', 'Named', 'run'), $file, $method->getStartFilePos(), 0);
-        $functionDeclaration = new DeclarationPath(SymbolPath::forGlobalFunction('App', 'run'), $file, $method->getStartFilePos(), 1);
+        $methodDeclaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Named', 'run'), $file, DeclarationOrdinal::fromRank(0));
+        $functionDeclaration = DeclarationPath::of(SymbolPath::forGlobalFunction('App', 'run'), $file, DeclarationOrdinal::fromRank(1));
 
         $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Incompatible declaration metadata at file position');
         DeclarationControlBindings::from($ast, $file, [
-            new CallableWithMetrics($methodDeclaration, CallableKind::Method, null, null, null, new MetricBag()),
-            new CallableWithMetrics($functionDeclaration, CallableKind::Function, null, null, null, new MetricBag()),
+            new CallableWithMetrics($methodDeclaration, $method->getStartFilePos(), CallableKind::Method, null, null, null, new MetricBag()),
+            new CallableWithMetrics($functionDeclaration, $method->getStartFilePos(), CallableKind::Function, null, null, null, new MetricBag()),
         ], []);
     }
 
@@ -211,13 +221,14 @@ final class DeclarationControlBindingsTest extends TestCase
         self::assertInstanceOf(Node\PropertyHook::class, $hook);
 
         $file = RelativePath::fromString('src/Example.php');
-        $hookDeclaration = new DeclarationPath(SymbolPath::forMethod('App', 'Named', 'value::get'), $file, $hook->getStartFilePos(), 0);
-        $methodDeclaration = new DeclarationPath(SymbolPath::forMethod('App', 'Named', 'run'), $file, $hook->getStartFilePos(), 1);
+        $hookDeclaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Named', 'value::get'), $file, DeclarationOrdinal::fromRank(0));
+        $methodDeclaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Named', 'run'), $file, DeclarationOrdinal::fromRank(1));
 
         $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Incompatible declaration metadata at file position');
         DeclarationControlBindings::from($ast, $file, [
-            new CallableWithMetrics($hookDeclaration, CallableKind::PropertyHook, null, null, null, new MetricBag()),
-            new CallableWithMetrics($methodDeclaration, CallableKind::Method, null, null, null, new MetricBag()),
+            new CallableWithMetrics($hookDeclaration, $hook->getStartFilePos(), CallableKind::PropertyHook, null, null, null, new MetricBag()),
+            new CallableWithMetrics($methodDeclaration, $hook->getStartFilePos(), CallableKind::Method, null, null, null, new MetricBag()),
         ], []);
     }
 
@@ -230,13 +241,14 @@ final class DeclarationControlBindingsTest extends TestCase
         self::assertInstanceOf(Node\Expr\Closure::class, $closure);
 
         $file = RelativePath::fromString('src/Example.php');
-        $first = new DeclarationPath(SymbolPath::forGlobalFunction('App', '{closure}'), $file, $closure->getStartFilePos(), 0);
-        $second = new DeclarationPath(SymbolPath::forGlobalFunction('App', '{closure}'), $file, $closure->getStartFilePos(), 1);
+        $first = DeclarationPath::of(SymbolPath::forGlobalFunction('App', '{closure}'), $file, DeclarationOrdinal::fromRank(0));
+        $second = DeclarationPath::of(SymbolPath::forGlobalFunction('App', '{closure}'), $file, DeclarationOrdinal::fromRank(1));
 
         $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Incompatible declaration metadata at file position');
         DeclarationControlBindings::from($ast, $file, [
-            new CallableWithMetrics($first, CallableKind::AnonymousCallable, 'closure', null, null, new MetricBag()),
-            new CallableWithMetrics($second, CallableKind::AnonymousCallable, 'arrow', null, null, new MetricBag()),
+            new CallableWithMetrics($first, $closure->getStartFilePos(), CallableKind::AnonymousCallable, 'closure', null, null, new MetricBag()),
+            new CallableWithMetrics($second, $closure->getStartFilePos(), CallableKind::AnonymousCallable, 'arrow', null, null, new MetricBag()),
         ], []);
     }
 
@@ -249,11 +261,12 @@ final class DeclarationControlBindingsTest extends TestCase
         self::assertInstanceOf(Node\Stmt\Class_::class, $class);
 
         $file = RelativePath::fromString('src/Example.php');
-        $first = new DeclarationPath(SymbolPath::forClass('App', 'Named'), $file, $class->getStartFilePos(), 0);
-        $second = new DeclarationPath(SymbolPath::forClass('App', 'Other'), $file, $class->getStartFilePos(), 1);
+        $first = DeclarationPath::of(SymbolPath::forClass('App', 'Named'), $file, DeclarationOrdinal::fromRank(0));
+        $second = DeclarationPath::of(SymbolPath::forClass('App', 'Other'), $file, DeclarationOrdinal::fromRank(1));
 
         $this->expectException(LogicException::class);
-        DeclarationControlBindings::from($ast, $file, [], $this->classMetrics($first, $second));
+        $this->expectExceptionMessage('Incompatible declaration metadata at file position');
+        DeclarationControlBindings::from($ast, $file, [], $this->classMetricsAt($class->getStartFilePos(), $first, $second));
     }
 
     /** @return list<Node> */
@@ -274,7 +287,8 @@ final class DeclarationControlBindingsTest extends TestCase
         ?LogicalClassPath $owner = null,
     ): CallableWithMetrics {
         return new CallableWithMetrics(
-            new DeclarationPath($symbol, RelativePath::fromString('src/Example.php'), $node->getStartFilePos()),
+            DeclarationPath::of($symbol, RelativePath::fromString('src/Example.php'), DeclarationOrdinal::fromRank(0)),
+            $node->getStartFilePos(),
             $kind,
             $anonymousSyntax,
             $lexicalClassContext,
@@ -285,30 +299,21 @@ final class DeclarationControlBindingsTest extends TestCase
     }
 
     /**
-     * @return array<string, array{subject: \Qualimetrix\Core\Symbol\MetricSubject, metrics: MetricBag, line: int}>
+     * @return array<string, array{subject: \Qualimetrix\Core\Symbol\MetricSubject, metrics: MetricBag, line: int, start: int}>
      */
-    private function classMetrics(DeclarationPath ...$declarations): array
+    private function classMetricsAt(int $start, DeclarationPath ...$declarations): array
     {
         $metrics = [];
         foreach ($declarations as $declaration) {
-            $classMetrics = new ClassWithMetrics($declaration, 1, new MetricBag());
+            $classMetrics = new ClassWithMetrics($declaration, $start, 1, new MetricBag());
             $metrics[$classMetrics->subject->toCanonical()] = [
                 'subject' => $classMetrics->subject,
                 'metrics' => $classMetrics->metrics,
                 'line' => $classMetrics->line,
+                'start' => $classMetrics->startFilePos,
             ];
         }
 
         return $metrics;
-    }
-
-    /**
-     * @param list<array{subject: \Qualimetrix\Core\Symbol\MetricSubject, scope: ControlScope}> $bindings
-     *
-     * @return list<string>
-     */
-    private function subjects(array $bindings): array
-    {
-        return array_map(static fn(array $binding): string => $binding['subject']->toCanonical(), $bindings);
     }
 }

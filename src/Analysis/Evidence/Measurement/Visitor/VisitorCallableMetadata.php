@@ -17,14 +17,14 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 /** Projects immutable callable metadata from typed traversal scopes. */
 final class VisitorCallableMetadata
 {
-    public function create(VisitorCallableScope $scope, RelativePath $file, MetricBag $metrics, ?int $ordinal = null): CallableWithMetrics
+    public function create(VisitorCallableScope $scope, RelativePath $file, MetricBag $metrics): CallableWithMetrics
     {
         $namespace = $scope->namespace ?? '';
         $logical = \in_array($scope->kind, [CallableKind::Method, CallableKind::PropertyHook], true) && $scope->class !== null
             ? SymbolPath::forMethod($namespace, $scope->class, $scope->member)
             : SymbolPath::forGlobalFunction($namespace, $scope->member);
-        $lexical = $scope->class !== null && $scope->classStartFilePos !== null
-            ? new DeclarationPath(SymbolPath::forClass($namespace, $scope->class), $file, $scope->classStartFilePos)
+        $lexical = $scope->class !== null && $scope->classOrdinal !== null
+            ? DeclarationPath::of(SymbolPath::forClass($namespace, $scope->class), $file, $scope->classOrdinal)
             : null;
         $owner = $lexical !== null
             && !$scope->anonymousClassContext
@@ -33,7 +33,8 @@ final class VisitorCallableMetadata
                 : null;
 
         return new CallableWithMetrics(
-            new DeclarationPath($logical, $file, $scope->startFilePos, $ordinal),
+            DeclarationPath::of($logical, $file, $scope->ordinal),
+            $scope->startFilePos,
             $scope->kind,
             $scope->anonymousSyntax,
             $lexical,
@@ -41,29 +42,6 @@ final class VisitorCallableMetadata
             $metrics,
             $scope->sourceLine,
         );
-    }
-
-    /**
-     * @param array<string, VisitorCallableScope> $scopes
-     *
-     * @return array<string, int|null>
-     */
-    public function collisionOrdinals(array $scopes): array
-    {
-        $groups = [];
-        foreach ($scopes as $key => $scope) {
-            $groups[implode("\0", [$scope->namespace ?? '', $scope->class ?? '', $scope->member, (string) $scope->startFilePos, $scope->kind->value])][] = $key;
-        }
-        $ordinals = array_fill_keys(array_keys($scopes), null);
-        foreach ($groups as $keys) {
-            if (\count($keys) > 1) {
-                foreach ($keys as $ordinal => $key) {
-                    $ordinals[$key] = $ordinal;
-                }
-            }
-        }
-
-        return $ordinals;
     }
 
     /**

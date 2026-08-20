@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Analysis\Finding\Rule\Override\StandardOverrideValidator;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -27,11 +28,7 @@ final class AbstractRuleSubjectControlTest extends TestCase
     #[Test]
     public function itPassesTheMetricSubjectToTheThresholdResolutionSeam(): void
     {
-        $subject = MetricSubject::declaration(new DeclarationPath(
-            SymbolPath::forMethod('App', 'Foo', 'run'),
-            RelativePath::fromString('src/Foo.php'),
-            100,
-        ));
+        $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'run'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0)));
         $override = new ThresholdOverride('test.subject-control', 50, 60, 10, $subject, ControlScope::Callable, 20);
         $context = new AnalysisContext(
             self::createStub(MetricRepositoryInterface::class),

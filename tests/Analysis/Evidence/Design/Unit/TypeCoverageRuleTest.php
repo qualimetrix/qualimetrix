@@ -515,8 +515,8 @@ final class TypeCoverageRuleTest extends TestCase
         $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
         sort($subjects);
         self::assertSame([
-            'declaration:class:App\\Service\\Twin@src/A.php:100',
-            'declaration:class:App\\Service\\Twin@src/B.php:200',
+            'declaration:class:App\\Service\\Twin@src/A.php',
+            'declaration:class:App\\Service\\Twin@src/B.php',
         ], $subjects);
     }
 
@@ -531,7 +531,7 @@ final class TypeCoverageRuleTest extends TestCase
         $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
 
         return new \Qualimetrix\Core\Symbol\SymbolInfo(
-            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             $file,
             $line,
             $kind,

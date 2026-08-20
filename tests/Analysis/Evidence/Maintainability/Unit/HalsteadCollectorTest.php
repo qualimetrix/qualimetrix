@@ -13,6 +13,8 @@ use Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector;
 use Qualimetrix\Analysis\Evidence\Maintainability\HalsteadMetrics;
 use Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
@@ -586,7 +588,7 @@ PHP;
         self::assertCount(2, $methodsWithMetrics);
 
         $method1 = $methodsWithMetrics[0];
-        self::assertSame('declaration:callable:App\\Test::method1@src/Test.php:40', $method1->declarationPath->toCanonical());
+        self::assertSame('declaration:callable:App\\Test::method1@src/Test.php', $method1->declarationPath->toCanonical());
         self::assertNotNull($method1->metrics->get('halstead.volume'));
         self::assertFalse($method1->metrics->has('methodLoc'));
         self::assertFalse($method1->metrics->has('methodStatementCount'));
@@ -1081,6 +1083,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
         $visitor = new HalsteadVisitor();
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -1102,6 +1107,11 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $indexAwareVisitor = $this->collector->getVisitor();
+        self::assertInstanceOf(DeclarationIndexAwareInterface::class, $indexAwareVisitor);
+        $indexAwareVisitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($this->collector->getVisitor());
         $traverser->traverse($ast);
 
@@ -1118,6 +1128,9 @@ PHP;
 
         $visitor = new HalsteadVisitor();
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 

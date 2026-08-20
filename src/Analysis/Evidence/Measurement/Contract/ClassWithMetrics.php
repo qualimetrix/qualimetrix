@@ -12,11 +12,16 @@ use Qualimetrix\Core\Symbol\MetricSubject;
  *
  * Used by collectors to provide class-level metrics for registration in repository.
  * This DTO bridges Symbol and Metric domains.
+ *
+ * The two integers are not interchangeable: `startFilePos` is the AST position
+ * this declaration was collected at, matched against real node positions
+ * downstream, while `line` is presentation only.
  */
 final readonly class ClassWithMetrics
 {
     public function __construct(
         public DeclarationPath $declarationPath,
+        public int $startFilePos,
         public int $line,
         public MetricBag $metrics,
     ) {

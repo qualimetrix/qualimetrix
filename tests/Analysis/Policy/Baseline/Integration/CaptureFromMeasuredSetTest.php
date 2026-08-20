@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -262,11 +263,7 @@ final class CaptureFromMeasuredSetTest extends TestCase
         string $violationCode = 'complexity.cyclomatic.callable',
     ): Violation {
         return new Violation(
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass($namespace, $class),
-                RelativePath::fromString($file),
-                0,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($namespace, $class), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0))),
             location: new Location(RelativePath::fromString($file), 10),
             symbolPath: SymbolPath::forClass($namespace, $class),
             ruleName: $ruleName,

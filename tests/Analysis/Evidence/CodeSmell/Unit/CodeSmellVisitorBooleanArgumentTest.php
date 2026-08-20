@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellLocation;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellVisitor;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 
 #[CoversClass(CodeSmellVisitor::class)]
 #[CoversClass(CodeSmellLocation::class)]
@@ -26,6 +27,9 @@ final class CodeSmellVisitorBooleanArgumentTest extends TestCase
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -307,6 +311,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 

@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailureKind;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\DependencyGraphAnalysisResult;
 use Qualimetrix\Analysis\Run\Discovery\FinderFileDiscovery;
@@ -67,7 +68,7 @@ final class DependencyGraphAnalyzerTest extends TestCase
             $result->coverage->analyzedFiles,
         ));
         self::assertCount(1, $result->graph->getAllDependencies());
-        self::assertSame('declaration:class:App\\Service@Service.php:39', $result->graph->getAllDependencies()[0]->source->toCanonical());
+        self::assertSame('declaration:class:App\\Service@Service.php', $result->graph->getAllDependencies()[0]->source->toCanonical());
         self::assertSame('class:Domain\\Model', $result->graph->getAllDependencies()[0]->targetLogical()->toCanonical());
     }
 
@@ -176,6 +177,7 @@ PHP);
             $parser,
             new DependencyVisitor(new DependencyResolver()),
             AdjacencyGraphBuilder::builder(),
+            new DeclarationRegistrarFactory(),
         );
     }
 

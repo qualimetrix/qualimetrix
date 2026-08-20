@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Cohesion\TccLccVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
+use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use SplFileInfo;
 
 #[CoversClass(TccLccCollector::class)]
@@ -632,6 +633,7 @@ PHP;
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
 
+        $this->collector->useDeclarationIndex(new FileDeclarationIndex());
         $traverser = new NodeTraverser();
         $traverser->addVisitor($this->collector->getVisitor());
         $traverser->traverse($ast);

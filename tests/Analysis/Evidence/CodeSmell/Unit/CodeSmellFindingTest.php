@@ -114,8 +114,8 @@ final class CodeSmellFindingTest extends TestCase
             false,
         ];
         yield 'class declaration' => [
-            ['subjectKind' => 'declaration', 'logicalKind' => 'class', 'namespace' => 'App', 'class' => 'Example', 'startFilePos' => 10, 'line' => 11],
-            'declaration:class:App\\Example@src/Example.php:10',
+            ['subjectKind' => 'declaration', 'logicalKind' => 'class', 'namespace' => 'App', 'class' => 'Example', 'line' => 11],
+            'declaration:class:App\\Example@src/Example.php',
             11,
             '',
             false,
@@ -129,12 +129,11 @@ final class CodeSmellFindingTest extends TestCase
                 'namespace' => 'App',
                 'class' => 'Example',
                 'member' => 'run',
-                'startFilePos' => 20,
                 'collisionOrdinal' => 1,
                 'line' => 21,
                 'extra' => 'flag',
             ],
-            'declaration:callable:App\\Example::run@src/Example.php:20#1',
+            'declaration:callable:App\\Example::run@src/Example.php#1',
             21,
             'flag',
             true,
@@ -147,11 +146,10 @@ final class CodeSmellFindingTest extends TestCase
                 'logicalKind' => 'function',
                 'namespace' => 'App',
                 'member' => 'run',
-                'startFilePos' => 30,
                 'line' => 31,
                 'promoted' => false,
             ],
-            'declaration:func:App::run@src/Example.php:30',
+            'declaration:func:App::run@src/Example.php',
             31,
             '',
             false,
@@ -231,21 +229,20 @@ final class CodeSmellFindingTest extends TestCase
                 'logicalKind' => 'method',
                 'namespace' => 'App',
                 'class' => 'Example',
-                'startFilePos' => 1,
                 'line' => 1,
             ],
             'Missing metric subject component "member"',
         ];
-        yield 'string source position' => [
+        yield 'string collision ordinal' => [
             [
                 'subjectKind' => 'declaration',
                 'logicalKind' => 'class',
                 'namespace' => 'App',
                 'class' => 'Example',
-                'startFilePos' => '1',
+                'collisionOrdinal' => '1',
                 'line' => 1,
             ],
-            'Metric subject component "startFilePos" must be a non-negative integer',
+            'Metric subject component "collisionOrdinal" must be a non-negative integer',
         ];
         yield 'negative collision ordinal' => [
             [
@@ -253,7 +250,6 @@ final class CodeSmellFindingTest extends TestCase
                 'logicalKind' => 'class',
                 'namespace' => 'App',
                 'class' => 'Example',
-                'startFilePos' => 1,
                 'collisionOrdinal' => -1,
                 'line' => 1,
             ],

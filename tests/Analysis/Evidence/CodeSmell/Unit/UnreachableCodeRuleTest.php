@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\CliAliasReader;
 use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -186,11 +187,7 @@ final class UnreachableCodeRuleTest extends TestCase
         $rule = new UnreachableCodeRule(new UnreachableCodeOptions());
         $file = RelativePath::fromString('src/Service/UserService.php');
         $methodInfo = new SymbolInfo(
-            MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forMethod('App\\Service', 'UserService', 'create'),
-                $file,
-                10,
-            )),
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App\\Service', 'UserService', 'create'), $file, DeclarationOrdinal::fromRank(0))),
             $file,
             null,
         );
@@ -260,7 +257,7 @@ final class UnreachableCodeRuleTest extends TestCase
         $relativePath = RelativePath::fromString($file);
 
         return new SymbolInfo(
-            MetricSubject::declaration(new DeclarationPath($symbolPath, $relativePath, $line)),
+            MetricSubject::declaration(DeclarationPath::of($symbolPath, $relativePath, DeclarationOrdinal::fromRank(0))),
             $relativePath,
             $line,
         );

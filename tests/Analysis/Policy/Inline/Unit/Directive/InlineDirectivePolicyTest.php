@@ -23,6 +23,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\Suppression;
 use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -298,11 +299,7 @@ final class InlineDirectivePolicyTest extends TestCase
 
     private static function declarationSubject(): MetricSubject
     {
-        return MetricSubject::declaration(new DeclarationPath(
-            SymbolPath::forClass('App', 'Foo'),
-            RelativePath::fromString(self::FILE),
-            100,
-        ));
+        return MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Foo'), RelativePath::fromString(self::FILE), DeclarationOrdinal::fromRank(0)));
     }
 
     private static function fileSubject(): MetricSubject

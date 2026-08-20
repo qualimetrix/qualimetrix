@@ -10,6 +10,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterf
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -49,7 +50,7 @@ final readonly class AdjacencyGraphBuilder
                 $classMap[$targetKey] = $targetPath;
 
                 $dependency = new Dependency(
-                    source: new DeclarationPath($sourcePath, RelativePath::fromString('test.php'), 0),
+                    source: DeclarationPath::of($sourcePath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
                     target: new LogicalClassPath($targetPath),
                     type: DependencyType::TypeHint,
                     location: new Location(RelativePath::fromString('test.php'), 1),

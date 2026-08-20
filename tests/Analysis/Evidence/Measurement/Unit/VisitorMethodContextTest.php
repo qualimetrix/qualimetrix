@@ -14,16 +14,22 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope;
+use Qualimetrix\Analysis\Evidence\Measurement\Visitor\DeclarationNumbering;
+use Qualimetrix\Analysis\Evidence\Measurement\Visitor\FileEntrySubjectRegistry;
 use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorCallableMetadata;
-use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorFileEntryScope;
+use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorLexicalScope;
 use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorMethodContext;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use ReflectionClass;
 use ReflectionMethod;
 
 #[CoversClass(VisitorCallableScope::class)]
-#[CoversClass(VisitorFileEntryScope::class)]
+#[CoversClass(VisitorLexicalScope::class)]
+#[CoversClass(FileEntrySubjectRegistry::class)]
+#[CoversClass(DeclarationNumbering::class)]
 #[CoversClass(VisitorCallableMetadata::class)]
 #[CoversClass(VisitorMethodContext::class)]
 final class VisitorMethodContextTest extends TestCase
@@ -48,6 +54,8 @@ final class VisitorMethodContextTest extends TestCase
                 'kind',
                 'anonymousSyntax',
                 'classStartFilePos',
+                'ordinal',
+                'classOrdinal',
             ],
             array_map(static fn($property): string => $property->getName(), $reflection->getProperties()),
         );
@@ -59,12 +67,12 @@ final class VisitorMethodContextTest extends TestCase
         self::assertSame(
             [
                 'reset',
+                'useDeclarationIndex',
                 'enter',
                 'leave',
                 'currentFileEntrySubjectId',
                 'fileEntrySubjectComponents',
                 'createCallableWithMetrics',
-                'callableCollisionOrdinals',
                 'projectLogicalMetricMap',
             ],
             array_map(static fn($method): string => $method->getName(), $contextMethods),
@@ -83,7 +91,7 @@ final class VisitorMethodContextTest extends TestCase
             ],
             array_map(
                 static fn($parameter): string => $parameter->getName(),
-                (new ReflectionClass(VisitorFileEntryScope::class))->getMethod('enterCallable')->getParameters(),
+                (new ReflectionClass(VisitorLexicalScope::class))->getMethod('enterCallable')->getParameters(),
             ),
         );
     }
@@ -92,6 +100,7 @@ final class VisitorMethodContextTest extends TestCase
     public function itTracksCallableIdentityCollisionsAndResetsPerFile(): void
     {
         $context = new VisitorMethodContext();
+        $context->useDeclarationIndex(new FileDeclarationIndex());
         $namespace = new Stmt\Namespace_(new Name('App'));
         $function = new Stmt\Function_('run', ['stmts' => []], ['startFilePos' => 40, 'startLine' => 7]);
 
@@ -102,7 +111,7 @@ final class VisitorMethodContextTest extends TestCase
         self::assertSame('App\run@40#0', $first->traversalKey);
         self::assertSame(7, $first->sourceLine);
         self::assertSame(
-            ['subjectKind' => 'declaration', 'logicalKind' => 'function', 'namespace' => 'App', 'member' => 'run', 'startFilePos' => 40],
+            ['subjectKind' => 'declaration', 'logicalKind' => 'function', 'namespace' => 'App', 'member' => 'run'],
             $context->fileEntrySubjectComponents($context->currentFileEntrySubjectId()),
         );
         self::assertSame($first, $context->leave($function));
@@ -122,6 +131,7 @@ final class VisitorMethodContextTest extends TestCase
     public function itKeepsAnonymousClassCallablesAtFileScope(): void
     {
         $context = new VisitorMethodContext();
+        $context->useDeclarationIndex(new FileDeclarationIndex());
         $namespace = new Stmt\Namespace_(new Name('App'));
         $anonymousClass = new Stmt\Class_(null, [], ['startFilePos' => 10]);
         $closure = new Node\Expr\Closure(['stmts' => []], ['startFilePos' => 20, 'startLine' => 3]);
@@ -132,7 +142,7 @@ final class VisitorMethodContextTest extends TestCase
 
         self::assertNotNull($scope);
         self::assertTrue($scope->anonymousClassContext);
-        self::assertSame('{anonymous@10}', $scope->class);
+        self::assertSame('{anonymous#0}', $scope->class);
         self::assertSame('{closure#1}', $scope->member);
         self::assertSame(CallableKind::AnonymousCallable, $scope->kind);
         self::assertSame('closure', $scope->anonymousSyntax);
@@ -143,6 +153,7 @@ final class VisitorMethodContextTest extends TestCase
     public function itPreservesAnonymousLineageAndNumbersSiblingAnonymousCallablesOnce(): void
     {
         $context = new VisitorMethodContext();
+        $context->useDeclarationIndex(new FileDeclarationIndex());
         $context->enter(new Stmt\Namespace_(new Name('App')));
         $context->enter(new Stmt\Class_('Outer', [], ['startFilePos' => 5]));
 
@@ -174,6 +185,7 @@ final class VisitorMethodContextTest extends TestCase
     public function itBuildsPropertyHookIdentityFromTheEnteredProperty(): void
     {
         $context = new VisitorMethodContext();
+        $context->useDeclarationIndex(new FileDeclarationIndex());
         $context->enter(new Stmt\Namespace_(new Name('App')));
         $context->enter(new Stmt\Class_('Thing', [], ['startFilePos' => 2]));
         $property = new Stmt\Property(0, [new PropertyItem('value')]);
@@ -194,22 +206,23 @@ final class VisitorMethodContextTest extends TestCase
     public function itProjectsTypedScopesIntoCallableMetricsAndLogicalMaps(): void
     {
         $context = new VisitorMethodContext();
-        $scope = new VisitorCallableScope('App', 'Thing', false, 'run', 'App\Thing::run', 'App\Thing::run@12#0', 12, 8, CallableKind::Method, null, 3);
-        $duplicate = new VisitorCallableScope('App', 'Thing', false, 'run', 'App\Thing::run', 'App\Thing::run@12#1', 12, 9, CallableKind::Method, null, 3);
+        $scope = new VisitorCallableScope('App', 'Thing', false, 'run', 'App\Thing::run', 'App\Thing::run@12#0', 12, 8, CallableKind::Method, null, 3, DeclarationOrdinal::fromRank(0), DeclarationOrdinal::fromRank(0));
+        $duplicate = new VisitorCallableScope('App', 'Thing', false, 'run', 'App\Thing::run', 'App\Thing::run@12#1', 12, 9, CallableKind::Method, null, 3, DeclarationOrdinal::fromRank(1), DeclarationOrdinal::fromRank(0));
 
-        self::assertSame(['first' => 0, 'second' => 1], $context->callableCollisionOrdinals(['first' => $scope, 'second' => $duplicate]));
+        self::assertSame(0, $scope->ordinal->value);
+        self::assertSame(1, $duplicate->ordinal->value);
         self::assertSame(['App\Thing::run' => 2], $context->projectLogicalMetricMap(['first' => 1, 'second' => 2], ['first' => $scope, 'second' => $duplicate]));
 
-        $callable = $context->createCallableWithMetrics($scope, RelativePath::fromString('src/Thing.php'), MetricBag::fromArray(['ccn' => 2]), 1);
-        self::assertSame('declaration:callable:App\Thing::run@src/Thing.php:12#1', $callable->declarationPath->toCanonical());
-        self::assertSame('declaration:class:App\Thing@src/Thing.php:3', $callable->lexicalClassContext?->toCanonical());
+        $callable = $context->createCallableWithMetrics($scope, RelativePath::fromString('src/Thing.php'), MetricBag::fromArray(['ccn' => 2]));
+        self::assertSame('declaration:callable:App\Thing::run@src/Thing.php', $callable->declarationPath->toCanonical());
+        self::assertSame('declaration:class:App\Thing@src/Thing.php', $callable->lexicalClassContext?->toCanonical());
         self::assertSame(2, $callable->metrics->get('ccn'));
     }
 
     #[Test]
     public function itRejectsMembersThatContradictTheCallableKind(): void
     {
-        $scope = new VisitorFileEntryScope();
+        $scope = new VisitorLexicalScope(new FileEntrySubjectRegistry(), new DeclarationNumbering());
 
         try {
             $scope->enterCallable(null, null, 'named', 1, 1, CallableKind::AnonymousCallable, 'closure', null);

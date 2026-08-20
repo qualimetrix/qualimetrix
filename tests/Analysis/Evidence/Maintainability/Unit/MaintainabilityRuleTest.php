@@ -15,6 +15,8 @@ use Qualimetrix\Analysis\Evidence\Maintainability\HalsteadCollector;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityIndexCollector;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityOptions;
 use Qualimetrix\Analysis\Evidence\Maintainability\MaintainabilityRule;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Evidence\Size\MethodStatementCountCollector;
@@ -618,8 +620,8 @@ PHP;
         $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
         sort($subjects);
         self::assertSame([
-            'declaration:callable:App\\Service\\Twin::run@src/A.php:100',
-            'declaration:callable:App\\Service\\Twin::run@src/B.php:200',
+            'declaration:callable:App\\Service\\Twin::run@src/A.php',
+            'declaration:callable:App\\Service\\Twin::run@src/B.php',
         ], $subjects);
     }
 
@@ -631,6 +633,14 @@ PHP;
         $halstead = new HalsteadCollector();
         $statements = new MethodStatementCountCollector();
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $indexAwareVisitor = $halstead->getVisitor();
+        self::assertInstanceOf(DeclarationIndexAwareInterface::class, $indexAwareVisitor);
+        $indexAwareVisitor->useDeclarationIndex($registrar->index());
+        $indexAwareVisitor2 = $statements->getVisitor();
+        self::assertInstanceOf(DeclarationIndexAwareInterface::class, $indexAwareVisitor2);
+        $indexAwareVisitor2->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($halstead->getVisitor());
         $traverser->addVisitor($statements->getVisitor());
         $traverser->traverse($ast);
@@ -654,7 +664,7 @@ PHP;
         $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
 
         return new \Qualimetrix\Core\Symbol\SymbolInfo(
-            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             $file,
             $line,
             $kind,

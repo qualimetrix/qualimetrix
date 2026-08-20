@@ -9,6 +9,7 @@ use PhpParser\Node\Expr;
 use PhpParser\Node\Stmt;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope;
@@ -25,7 +26,7 @@ use Qualimetrix\Core\Path\RelativePath;
  * Does NOT recursively check inside if/else/try blocks.
  * Closures are intentionally skipped.
  */
-final class UnreachableCodeVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
+final class UnreachableCodeVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
     use VisitorMethodTrackingTrait;
 
@@ -77,7 +78,6 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
     {
         $result = [];
 
-        $ordinals = $this->callableCollisionOrdinals($this->scopes);
         foreach ($this->scopes as $fqn => $scope) {
             $bag = (new MetricBag())->with('unreachableCode', $this->unreachableCounts[$fqn] ?? 0);
 
@@ -85,7 +85,7 @@ final class UnreachableCodeVisitor extends NodeVisitorAbstract implements Resett
                 $bag = $bag->with('unreachableCode.firstLine', $this->firstUnreachableLines[$fqn]);
             }
 
-            $result[] = $this->createCallableWithMetrics($scope, $file, $bag, $ordinals[$fqn]);
+            $result[] = $this->createCallableWithMetrics($scope, $file, $bag);
         }
 
         return $result;

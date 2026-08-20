@@ -60,9 +60,12 @@ internals.
 
 `DependencyTraversalParticipantInterface` is a DependencyModel-owned promise
 to its named consumers and extends php-parser's `NodeVisitor`. The caller invokes
-`beginFile(RelativePath)` before traversal, feeds AST events through the visitor
-lifecycle, and reads the exact `list<Dependency>` from `dependencies()` after
-traversal. `DependencyResolver`,
+`beginFile(RelativePath, FileDeclarationIndex)` before traversal, feeds AST
+events through the visitor lifecycle, and reads the exact `list<Dependency>`
+from `dependencies()` after traversal. The index is handed over per file
+because the same participant instance serves both traversal paths, and the
+number it puts in an edge's source declaration must belong to the path it is
+currently taking part in. `DependencyResolver`,
 `DependencyVisitor`, and their handlers remain private to the extraction
 family. Parallel worker bootstrapping reconstructs the participant from the
 same internal configuration used sequentially; it does not serialize a visitor

@@ -16,6 +16,8 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\LongParameterListRule;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCountCollector;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCountVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
 use Qualimetrix\Analysis\Finding\Contract\Rule\AnalysisContext;
@@ -173,6 +175,11 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $indexAwareVisitor = $collector->getVisitor();
+        self::assertInstanceOf(DeclarationIndexAwareInterface::class, $indexAwareVisitor);
+        $indexAwareVisitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($collector->getVisitor());
         $traverser->traverse($ast);
 
@@ -193,7 +200,7 @@ PHP;
         $symbolInfo = new SymbolInfo(
             MetricSubject::declaration($construct->declarationPath),
             RelativePath::fromString('src/example.php'),
-            $construct->declarationPath->startFilePos,
+            $construct->startFilePos,
         );
 
         $repository = self::createStub(MetricRepositoryInterface::class);

@@ -31,6 +31,7 @@ use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -42,7 +43,7 @@ use ReflectionMethod;
 #[CoversClass(BoundaryExplanationService::class)]
 final class BoundaryExplanationServiceTest extends TestCase
 {
-    private const string SYMBOL_KEY = 'declaration:callable:App\\Foo::bar@src/Foo.php:0';
+    private const string SYMBOL_KEY = 'declaration:callable:App\\Foo::bar@src/Foo.php';
 
     private BoundaryExplanationService $service;
 
@@ -404,11 +405,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     public function itUsesScopeThenFiniteSpanAndKeepsTheFirstExactTieAcrossRulePatterns(): void
     {
         $channel = new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable');
-        $subject = MetricSubject::declaration(new DeclarationPath(
-            SymbolPath::forMethod('App', 'Foo', 'bar'),
-            RelativePath::fromString('src/Foo.php'),
-            0,
-        ));
+        $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0)));
         $override = static fn(string $pattern, int $warning, ControlScope $scope, int $line, ?int $endLine): ThresholdOverride => new ThresholdOverride(
             $pattern,
             $warning,
@@ -441,21 +438,9 @@ final class BoundaryExplanationServiceTest extends TestCase
     public function itIndexesEveryTypedRepositorySourceOnceWithoutCollapsingExactDeclarations(): void
     {
         $class = SymbolPath::forClass('App', 'Duplicated');
-        $first = MetricSubject::declaration(new DeclarationPath(
-            $class,
-            RelativePath::fromString('src/First.php'),
-            10,
-        ));
-        $second = MetricSubject::declaration(new DeclarationPath(
-            $class,
-            RelativePath::fromString('src/Second.php'),
-            20,
-        ));
-        $callable = MetricSubject::declaration(new DeclarationPath(
-            SymbolPath::forMethod('App', 'Duplicated', 'run'),
-            RelativePath::fromString('src/First.php'),
-            30,
-        ));
+        $first = MetricSubject::declaration(DeclarationPath::of($class, RelativePath::fromString('src/First.php'), DeclarationOrdinal::fromRank(0)));
+        $second = MetricSubject::declaration(DeclarationPath::of($class, RelativePath::fromString('src/Second.php'), DeclarationOrdinal::fromRank(0)));
+        $callable = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Duplicated', 'run'), RelativePath::fromString('src/First.php'), DeclarationOrdinal::fromRank(0)));
         $logical = MetricSubject::logicalClass(new LogicalClassPath($class));
         $namespace = SymbolPath::forNamespace('App');
         $repository = new CountingBoundaryRepository(
@@ -517,7 +502,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     private function repositoryWithCallableSubject(SymbolPath $symbol, string $file, int $line): MetricRepositoryInterface
     {
         $repository = new InMemoryMetricRepository();
-        $repository->addCallable(new CallableWithMetrics(new DeclarationPath($symbol, RelativePath::fromString($file), 0), CallableKind::Method, null, null, new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')), new MetricBag(), $line));
+        $repository->addCallable(new CallableWithMetrics(DeclarationPath::of($symbol, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)), 0, CallableKind::Method, null, null, new LogicalClassPath(SymbolPath::forClass($symbol->namespace ?? '', $symbol->type ?? '')), new MetricBag(), $line));
 
         return $repository;
     }
@@ -539,11 +524,7 @@ final class BoundaryExplanationServiceTest extends TestCase
     private function violation(ViolationChannel $channel, int|float $metricValue): Violation
     {
         return new Violation(
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forMethod('App', 'Foo', 'bar'),
-                RelativePath::fromString('src/Foo.php'),
-                0,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             location: new Location(RelativePath::fromString('src/Foo.php'), 10),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: $channel->ruleName,
@@ -562,11 +543,7 @@ final class BoundaryExplanationServiceTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'Foo', 'bar');
 
         return new Violation(
-            subject: MetricSubject::declaration(new DeclarationPath(
-                $symbol,
-                RelativePath::fromString('src/Foo.php'),
-                0,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             location: new Location(RelativePath::fromString('src/Foo.php'), 10),
             symbolPath: $symbol,
             ruleName: $channel->ruleName,
@@ -587,11 +564,7 @@ final class BoundaryExplanationServiceTest extends TestCase
             15,
             40,
             $line,
-            MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forMethod('App', 'Foo', 'bar'),
-                RelativePath::fromString('src/Foo.php'),
-                0,
-            )),
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             ControlScope::Class_,
             50,
         );

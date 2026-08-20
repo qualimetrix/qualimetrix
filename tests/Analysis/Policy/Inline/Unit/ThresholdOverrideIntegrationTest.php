@@ -40,6 +40,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -751,7 +752,7 @@ final class ThresholdOverrideIntegrationTest extends TestCase
     private static function declarationSubject(SymbolPath $logical, string $file, int $startFilePos): MetricSubject
     {
         return MetricSubject::declaration(
-            new DeclarationPath($logical, RelativePath::fromString($file), $startFilePos),
+            DeclarationPath::of($logical, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)),
         );
     }
 

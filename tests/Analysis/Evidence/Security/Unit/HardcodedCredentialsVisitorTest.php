@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Security\Credential\HardcodedCredentialsVisitor;
 use Qualimetrix\Analysis\Evidence\Security\SensitiveNameMatcher;
 
@@ -29,6 +30,9 @@ final class HardcodedCredentialsVisitorTest extends TestCase
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
@@ -248,6 +252,9 @@ final class HardcodedCredentialsVisitorTest extends TestCase
         $ast = $parser->parse('<?php $password = "secret123";') ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 

@@ -13,6 +13,7 @@ use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
@@ -120,7 +121,7 @@ final class MeasurementAggregationServiceTest extends TestCase
 
         $namespaceTree = (new MeasurementAggregationService(
             [$collector2, $collector1],
-            new CompositeCollector([]),
+            new CompositeCollector([], new DeclarationRegistrarFactory()),
             self::createStub(ProfilerInterface::class),
         ))
             ->aggregate(new InMemoryMetricRepository(), self::createStub(DependencyGraphInterface::class));
@@ -140,7 +141,7 @@ final class MeasurementAggregationServiceTest extends TestCase
         $profiler->method('stop')->willReturnCallback(static function (string $name) use (&$events): void {
             $events[] = 'stop:' . $name;
         });
-        $namespaceTree = (new MeasurementAggregationService([], new CompositeCollector([]), $profiler))
+        $namespaceTree = (new MeasurementAggregationService([], new CompositeCollector([], new DeclarationRegistrarFactory()), $profiler))
             ->aggregate(new InMemoryMetricRepository(), self::createStub(DependencyGraphInterface::class));
 
         self::assertSame([], $namespaceTree->getAllNamespaces());
@@ -167,7 +168,7 @@ final class MeasurementAggregationServiceTest extends TestCase
 
         (new MeasurementAggregationService(
             [$collector1, $collector2],
-            new CompositeCollector([]),
+            new CompositeCollector([], new DeclarationRegistrarFactory()),
             self::createStub(ProfilerInterface::class),
         ))
             ->aggregate(new InMemoryMetricRepository(), self::createStub(DependencyGraphInterface::class));
@@ -194,7 +195,7 @@ final class MeasurementAggregationServiceTest extends TestCase
 
         (new MeasurementAggregationService(
             [$collector1, $collector2],
-            new CompositeCollector([]),
+            new CompositeCollector([], new DeclarationRegistrarFactory()),
             self::createStub(ProfilerInterface::class),
         ))
             ->aggregate(new InMemoryMetricRepository(), self::createStub(DependencyGraphInterface::class));

@@ -27,6 +27,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsFactory;
 use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -1216,15 +1217,15 @@ final class CboRuleTest extends TestCase
         $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
         sort($subjects);
         self::assertSame([
-            'declaration:class:App\\Service\\Twin@src/A.php:100',
-            'declaration:class:App\\Service\\Twin@src/B.php:200',
+            'declaration:class:App\\Service\\Twin@src/A.php',
+            'declaration:class:App\\Service\\Twin@src/B.php',
         ], $subjects);
     }
 
     private function dependency(SymbolPath $source, SymbolPath $target, DependencyType $type, Location $location): Dependency
     {
         return new Dependency(
-            new DeclarationPath($source, $location->file ?? RelativePath::fromString('test.php'), 0),
+            DeclarationPath::of($source, $location->file ?? RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath($target),
             $type,
             $location,
@@ -1241,7 +1242,7 @@ final class CboRuleTest extends TestCase
         $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
 
         return new \Qualimetrix\Core\Symbol\SymbolInfo(
-            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             $file,
             $line,
             $kind,

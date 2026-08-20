@@ -14,17 +14,12 @@ use PhpParser\Node\Stmt\Use_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\CatchInstanceofHandler;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\ClassLikeHandler;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\DependencyContext;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\FunctionLikeHandler;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\InstantiationHandler;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\NodeDependencyHandlerInterface;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\PropertyHandler;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\StaticAccessHandler;
-use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TraitUseHandler;
+use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\DependencyHandlerTable;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationKey;
 use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -48,31 +43,30 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class DependencyVisitor extends NodeVisitorAbstract implements DependencyTraversalParticipantInterface
 {
     private ?RelativePath $file = null;
+    private ?FileDeclarationIndex $declarationIndex = null;
     private ?string $currentClass = null;
     private ?DependencyContext $currentContext = null;
 
     /** @var list<Dependency> */
     private array $dependencies = [];
 
-    private ClassLikeHandler $classLikeHandler;
-
-    /** @var array<class-string<Node>, NodeDependencyHandlerInterface> */
-    private array $dispatchTable;
+    private readonly DependencyHandlerTable $handlers;
 
     public function __construct(
         ?DependencyResolver $resolver = null,
+        ?DependencyHandlerTable $handlers = null,
     ) {
         $this->resolver = $resolver ?? new DependencyResolver();
-        $this->classLikeHandler = new ClassLikeHandler();
-        $this->dispatchTable = $this->buildDispatchTable();
+        $this->handlers = $handlers ?? new DependencyHandlerTable();
     }
 
     /**
-     * Initializes the visitor for a new file (null clears the current file).
+     * Initializes the visitor for a new file.
      */
-    public function beginFile(RelativePath $file): void
+    public function beginFile(RelativePath $file, FileDeclarationIndex $index): void
     {
         $this->file = $file;
+        $this->declarationIndex = $index;
         $this->reset();
     }
 
@@ -171,20 +165,21 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
             ? $this->resolver->getNamespace() . '\\' . $className
             : $className;
 
-        if ($this->file === null) {
-            throw new LogicException('DependencyVisitor requires a relative file path before traversing declarations');
+        if ($this->file === null || $this->declarationIndex === null) {
+            throw new LogicException('DependencyVisitor requires a relative file path and declaration index before traversing declarations');
         }
 
+        $logical = SymbolPath::fromClassFqn($this->currentClass);
         $this->currentContext = new DependencyContext(
             $this->resolver,
             $this->file,
-            new DeclarationPath(
-                SymbolPath::fromClassFqn($this->currentClass),
+            DeclarationPath::of(
+                $logical,
                 $this->file,
-                $node->getStartFilePos(),
+                $this->declarationIndex->ordinalOf(DeclarationKey::forLogical($logical), $node->getStartFilePos()),
             ),
         );
-        $this->classLikeHandler->handle($node, $this->currentContext);
+        $this->handlers->handleClassLike($node, $this->currentContext);
 
         return true;
     }
@@ -195,7 +190,7 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
             return false;
         }
 
-        $this->classLikeHandler->handle($node, $this->currentContext);
+        $this->handlers->handleClassLike($node, $this->currentContext);
 
         return true;
     }
@@ -206,30 +201,6 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
             return;
         }
 
-        ($this->dispatchTable[$node::class] ?? null)?->handle($node, $this->currentContext);
-    }
-
-    /**
-     * @return array<class-string<Node>, NodeDependencyHandlerInterface>
-     */
-    private function buildDispatchTable(): array
-    {
-        $handlers = [
-            new TraitUseHandler(),
-            new InstantiationHandler(),
-            new StaticAccessHandler(),
-            new CatchInstanceofHandler(),
-            new PropertyHandler(),
-            new FunctionLikeHandler(),
-        ];
-
-        $table = [];
-        foreach ($handlers as $handler) {
-            foreach ($handler::supportedNodeClasses() as $nodeClass) {
-                $table[$nodeClass] = $handler;
-            }
-        }
-
-        return $table;
+        $this->handlers->dispatch($node, $this->currentContext);
     }
 }

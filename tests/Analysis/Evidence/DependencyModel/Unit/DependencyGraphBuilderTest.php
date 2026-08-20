@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraphBuilder;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -160,7 +161,7 @@ final class DependencyGraphBuilderTest extends TestCase
         $file = RelativePath::fromString('src/Fixture.php');
 
         return new Dependency(
-            new DeclarationPath(SymbolPath::fromClassFqn($source), $file, 0),
+            DeclarationPath::of(SymbolPath::fromClassFqn($source), $file, DeclarationOrdinal::fromRank(0)),
             self::logical($target),
             $type,
             new Location($file, 1),

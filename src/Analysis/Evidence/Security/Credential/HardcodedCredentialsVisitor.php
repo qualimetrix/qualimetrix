@@ -6,6 +6,7 @@ namespace Qualimetrix\Analysis\Evidence\Security\Credential;
 
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait;
 use Qualimetrix\Analysis\Evidence\Security\SensitiveNameMatcher;
@@ -15,7 +16,7 @@ use Qualimetrix\Analysis\Evidence\Security\SensitiveNameMatcher;
  *
  * @qmx-ignore design.data-class -- Traversal adapter intentionally delegates credential policy and retains only lifecycle state.
  */
-final class HardcodedCredentialsVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
+final class HardcodedCredentialsVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
     use VisitorMethodTrackingTrait;
 

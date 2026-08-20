@@ -10,12 +10,13 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareTrait;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\PhpBuiltinClassRegistry;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use ReflectionClass;
@@ -37,8 +38,10 @@ use SplFileInfo;
  *
  * @qmx-ignore health.cohesion -- Visitor-backed collector methods are intentionally independent protocol operations.
  */
-final class InheritanceDepthCollector extends AbstractCollector implements ClassMetricsProviderInterface
+final class InheritanceDepthCollector extends AbstractCollector implements DeclarationIndexAwareInterface, ClassMetricsProviderInterface
 {
+    use DeclarationIndexAwareTrait;
+
     private const NAME = 'inheritance-depth';
 
     public function __construct()
@@ -99,11 +102,7 @@ final class InheritanceDepthCollector extends AbstractCollector implements Class
             // Note: Parent information is stored in dependency graph as DependencyType::Extends
             // NocCollector will use that information for NOC calculation
 
-            $result[] = new ClassWithMetrics(
-                declarationPath: new DeclarationPath(SymbolPath::forClass($info->namespace ?? '', $info->className), $file, $info->startFilePos),
-                line: $info->line,
-                metrics: $bag,
-            );
+            $result[] = $this->classWithMetrics(SymbolPath::forClass($info->namespace ?? '', $info->className), $file, $info->startFilePos, $info->line, $bag);
         }
 
         return $result;

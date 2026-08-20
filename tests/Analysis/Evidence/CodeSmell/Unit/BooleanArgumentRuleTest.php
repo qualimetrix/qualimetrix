@@ -133,8 +133,8 @@ final class BooleanArgumentRuleTest extends TestCase
             'file:src/Subjects.php',
         ];
         yield 'class' => [
-            ['subjectKind' => 'declaration', 'logicalKind' => 'class', 'namespace' => 'App', 'class' => 'Subject', 'startFilePos' => 10, 'line' => 5],
-            'declaration:class:App\\Subject@src/Subjects.php:10',
+            ['subjectKind' => 'declaration', 'logicalKind' => 'class', 'namespace' => 'App', 'class' => 'Subject', 'line' => 5],
+            'declaration:class:App\\Subject@src/Subjects.php',
         ];
         yield 'method' => [
             [
@@ -143,14 +143,13 @@ final class BooleanArgumentRuleTest extends TestCase
                 'namespace' => 'App',
                 'class' => 'Subject',
                 'member' => 'run',
-                'startFilePos' => 20,
                 'line' => 5,
             ],
-            'declaration:callable:App\\Subject::run@src/Subjects.php:20',
+            'declaration:callable:App\\Subject::run@src/Subjects.php',
         ];
         yield 'function' => [
-            ['subjectKind' => 'declaration', 'logicalKind' => 'function', 'namespace' => 'App', 'member' => 'run', 'startFilePos' => 30, 'line' => 5],
-            'declaration:func:App::run@src/Subjects.php:30',
+            ['subjectKind' => 'declaration', 'logicalKind' => 'function', 'namespace' => 'App', 'member' => 'run', 'line' => 5],
+            'declaration:func:App::run@src/Subjects.php',
         ];
     }
 

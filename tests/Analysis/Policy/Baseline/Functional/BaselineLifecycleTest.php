@@ -148,7 +148,7 @@ final class BaselineLifecycleTest extends TestCase
 
             $remaining = self::entriesBySubject($project->baselinePath);
             self::assertCount(1, $remaining);
-            self::assertStringContainsString('/Kept.php:', (string) array_key_first($remaining));
+            self::assertStringContainsString('/Kept.php', (string) array_key_first($remaining));
         } finally {
             $project->remove();
         }

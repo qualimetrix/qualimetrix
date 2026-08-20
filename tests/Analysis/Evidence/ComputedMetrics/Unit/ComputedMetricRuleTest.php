@@ -22,6 +22,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -310,7 +311,7 @@ final class ComputedMetricRuleTest extends TestCase
         );
         $repository = new InMemoryMetricRepository();
         $class = SymbolPath::forClass('App', 'Foo');
-        $declaration = new DeclarationPath($class, RelativePath::fromString('src/Foo.php'), 100);
+        $declaration = DeclarationPath::of($class, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0));
         $repository->addSubject(
             MetricSubject::declaration($declaration),
             MetricBag::fromArray(['health.cls' => 10.0]),
@@ -347,8 +348,8 @@ final class ComputedMetricRuleTest extends TestCase
             $subjects = array_map(static fn($violation): string => $violation->subject->toCanonical(), $violations);
             sort($subjects);
             self::assertSame([
-                'declaration:class:App\\Foo@src/A.php:100',
-                'declaration:class:App\\Foo@src/B.php:200',
+                'declaration:class:App\\Foo@src/A.php',
+                'declaration:class:App\\Foo@src/B.php',
             ], $subjects);
         }
     }
@@ -369,7 +370,8 @@ final class ComputedMetricRuleTest extends TestCase
         $owner = new LogicalClassPath($class);
         $method = SymbolPath::forMethod('App', 'Foo', 'run');
         $callable = new CallableWithMetrics(
-            new DeclarationPath($method, RelativePath::fromString('src/Foo.php'), 100),
+            DeclarationPath::of($method, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0)),
+            100,
             CallableKind::Method,
             null,
             null,
@@ -428,7 +430,7 @@ final class ComputedMetricRuleTest extends TestCase
         int $line,
     ): InMemoryMetricRepository {
         $repository = new InMemoryMetricRepository();
-        $declaration = new DeclarationPath($class, RelativePath::fromString($file), $startFilePos);
+        $declaration = DeclarationPath::of($class, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0));
         $repository->addSubject(
             MetricSubject::declaration($declaration),
             MetricBag::fromArray(['health.cls' => 10.0]),
@@ -449,7 +451,7 @@ final class ComputedMetricRuleTest extends TestCase
         $kind = $type === \Qualimetrix\Core\Symbol\SymbolType::Class_ ? null : ($type === \Qualimetrix\Core\Symbol\SymbolType::Function_ ? \Qualimetrix\Core\Symbol\CallableKind::Function : \Qualimetrix\Core\Symbol\CallableKind::Method);
 
         return new \Qualimetrix\Core\Symbol\SymbolInfo(
-            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $file, $line ?? 0)),
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $file, \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
             $file,
             $line,
             $kind,

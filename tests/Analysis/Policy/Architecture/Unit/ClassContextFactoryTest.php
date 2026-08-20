@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContext;
 use Qualimetrix\Analysis\Policy\Architecture\Layer\ClassContextFactory;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -223,7 +224,7 @@ final class ClassContextFactoryTest extends TestCase
         $deps = [];
         foreach ($edges as [$source, $target, $type]) {
             $deps[] = new Dependency(
-                new DeclarationPath($source, RelativePath::fromString('test.php'), 0),
+                DeclarationPath::of($source, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath($target),
                 $type,
                 Location::none(),

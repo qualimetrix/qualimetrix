@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -86,11 +87,7 @@ final class JsonViolationSectionTest extends TestCase
     public function itProjectsCanonicalIdentityWithoutParsingTheSubject(): void
     {
         $logical = SymbolPath::forMethod('App\\Service', 'ExampleService', 'run');
-        $subject = MetricSubject::declaration(new DeclarationPath(
-            $logical,
-            RelativePath::fromString('src/Service/ExampleService.php'),
-            99,
-        ));
+        $subject = MetricSubject::declaration(DeclarationPath::of($logical, RelativePath::fromString('src/Service/ExampleService.php'), DeclarationOrdinal::fromRank(0)));
         $target = SymbolPath::forClass('App\\Dependency', 'Target');
 
         $result = $this->section->format([self::violation(
@@ -479,11 +476,7 @@ final class JsonViolationSectionTest extends TestCase
             \Qualimetrix\Core\Symbol\SymbolType::File,
             \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
             \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
-            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath(
-                $symbolPath,
-                $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'),
-                $location->line ?? 0,
-            )),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
 
         return new Violation(

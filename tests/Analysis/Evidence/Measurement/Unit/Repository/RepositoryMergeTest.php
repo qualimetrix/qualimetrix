@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\RepositoryMerge;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -39,11 +40,7 @@ final class RepositoryMergeTest extends TestCase
     #[Test]
     public function itPromotesPlainSubjectMetadataInBothOrders(): void
     {
-        $declaration = new DeclarationPath(
-            SymbolPath::forMethod('App', 'Service', 'run'),
-            RelativePath::fromString('src/Service.php'),
-            100,
-        );
+        $declaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0));
         $subject = MetricSubject::declaration($declaration);
         $plain = new SymbolInfo($subject, $declaration->file, null);
         $typed = new SymbolInfo(
@@ -63,11 +60,7 @@ final class RepositoryMergeTest extends TestCase
     #[Test]
     public function itFailsFastForConflictingTypedMetadata(): void
     {
-        $declaration = new DeclarationPath(
-            SymbolPath::forMethod('App', 'Service', 'run'),
-            RelativePath::fromString('src/Service.php'),
-            100,
-        );
+        $declaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0));
         $subject = MetricSubject::declaration($declaration);
         $left = new SymbolInfo($subject, $declaration->file, 10, CallableKind::Method);
         $right = new SymbolInfo($subject, $declaration->file, 20, CallableKind::Method);

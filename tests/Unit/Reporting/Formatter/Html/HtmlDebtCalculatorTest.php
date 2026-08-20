@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -48,11 +49,7 @@ final class HtmlDebtCalculatorTest extends TestCase
 
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass('App', 'Service'),
-                RelativePath::fromString('src/Service.php'),
-                0,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Service'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',
@@ -77,11 +74,7 @@ final class HtmlDebtCalculatorTest extends TestCase
 
         $violation = new Violation(
             location: new Location(RelativePath::fromString('src/Other.php'), 10),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass('App', 'Other'),
-                RelativePath::fromString('src/Other.php'),
-                0,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App', 'Other'), RelativePath::fromString('src/Other.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forClass('App', 'Other'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic',

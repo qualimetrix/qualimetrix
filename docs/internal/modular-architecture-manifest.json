@@ -2332,6 +2332,14 @@
             "closure_package": "P3",
             "consumers": []
         },
+        "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\Handler\\DependencyHandlerTable": {
+            "path": "src/Analysis/Evidence/DependencyModel/Extraction/Handler/DependencyHandlerTable.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.DependencyModel",
+            "visibility": "internal",
+            "closure_package": "P3",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\Handler\\FunctionLikeHandler": {
             "path": "src/Analysis/Evidence/DependencyModel/Extraction/Handler/FunctionLikeHandler.php",
             "kind": "class",
@@ -3257,6 +3265,143 @@
             "closure_package": "P3",
             "consumers": [
                 {
+                    "owner": "Analysis.Run",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Collection\\CollectionOrchestrator",
+                    "closes_in": null
+                }
+            ]
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\CollectionOutput": {
+            "path": "src/Analysis/Evidence/Measurement/Contract/CollectionOutput.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Measurement",
+            "visibility": "contract",
+            "closure_package": "P3",
+            "consumers": [
+                {
+                    "owner": "Analysis.Run",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Collection\\FileProcessor",
+                    "closes_in": null
+                }
+            ]
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DeclarationIndexAwareInterface": {
+            "path": "src/Analysis/Evidence/Measurement/Contract/DeclarationIndexAwareInterface.php",
+            "kind": "interface",
+            "owner": "Analysis.Evidence.Measurement",
+            "visibility": "contract",
+            "closure_package": "P3",
+            "consumers": [
+                {
+                    "owner": "Analysis.Evidence.CodeSmell",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\CodeSmellVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.CodeSmell",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\ParameterCountVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.CodeSmell",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\RepeatedExpression\\IdenticalSubExpressionVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.CodeSmell",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnreachableCodeVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.CodeSmell",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Cohesion",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomCollector",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Cohesion",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\TccLccCollector",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Complexity",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CognitiveComplexityVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Complexity",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\CyclomaticComplexityVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Complexity",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Complexity\\NpathComplexityVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Coupling",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Design",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Design",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Maintainability",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Maintainability\\HalsteadVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Security",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\Credential\\HardcodedCredentialsVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Security",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\SecurityPatternVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Security",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Security\\SensitiveParameterVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Size",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\LocCollector",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Size",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountCollector",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Size",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodStatementCountVisitor",
+                    "closes_in": null
+                }
+            ]
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DeclarationIndexAwareTrait": {
+            "path": "src/Analysis/Evidence/Measurement/Contract/DeclarationIndexAwareTrait.php",
+            "kind": "trait",
+            "owner": "Analysis.Evidence.Measurement",
+            "visibility": "contract",
+            "closure_package": "P3",
+            "consumers": [
+                {
                     "owner": "Analysis.Evidence.CodeSmell",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector",
                     "closes_in": null
@@ -3295,16 +3440,11 @@
                     "owner": "Analysis.Evidence.Size",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountCollector",
                     "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Run",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Collection\\CollectionOrchestrator",
-                    "closes_in": null
                 }
             ]
         },
-        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\CollectionOutput": {
-            "path": "src/Analysis/Evidence/Measurement/Contract/CollectionOutput.php",
+        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DeclarationRegistrarFactory": {
+            "path": "src/Analysis/Evidence/Measurement/Contract/DeclarationRegistrarFactory.php",
             "kind": "class",
             "owner": "Analysis.Evidence.Measurement",
             "visibility": "contract",
@@ -3312,7 +3452,36 @@
             "consumers": [
                 {
                     "owner": "Analysis.Run",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Collection\\FileProcessor",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\DependencyGraphAnalyzer",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\MeasurementConfigurator",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.DependencyInjection",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\DependencyInjection\\Configurator\\OutputConfigurator",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Infrastructure.Parallel",
+                    "source_fqcn": "Qualimetrix\\Infrastructure\\Parallel\\WorkerBootstrap",
+                    "closes_in": null
+                }
+            ]
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DeclarationRegistrarInterface": {
+            "path": "src/Analysis/Evidence/Measurement/Contract/DeclarationRegistrarInterface.php",
+            "kind": "interface",
+            "owner": "Analysis.Evidence.Measurement",
+            "visibility": "contract",
+            "closure_package": "P3",
+            "consumers": [
+                {
+                    "owner": "Analysis.Run",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\DependencyGraphAnalyzer",
                     "closes_in": null
                 }
             ]
@@ -4860,6 +5029,30 @@
             "closure_package": "P3",
             "consumers": []
         },
+        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationNumbering": {
+            "path": "src/Analysis/Evidence/Measurement/Visitor/DeclarationNumbering.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Measurement",
+            "visibility": "internal",
+            "closure_package": "P3",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationRegistrarVisitor": {
+            "path": "src/Analysis/Evidence/Measurement/Visitor/DeclarationRegistrarVisitor.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Measurement",
+            "visibility": "internal",
+            "closure_package": "P3",
+            "consumers": []
+        },
+        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\FileEntrySubjectRegistry": {
+            "path": "src/Analysis/Evidence/Measurement/Visitor/FileEntrySubjectRegistry.php",
+            "kind": "class",
+            "owner": "Analysis.Evidence.Measurement",
+            "visibility": "internal",
+            "closure_package": "P3",
+            "consumers": []
+        },
         "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorCallableMetadata": {
             "path": "src/Analysis/Evidence/Measurement/Visitor/VisitorCallableMetadata.php",
             "kind": "class",
@@ -4868,8 +5061,8 @@
             "closure_package": "P3",
             "consumers": []
         },
-        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorFileEntryScope": {
-            "path": "src/Analysis/Evidence/Measurement/Visitor/VisitorFileEntryScope.php",
+        "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorLexicalScope": {
+            "path": "src/Analysis/Evidence/Measurement/Visitor/VisitorLexicalScope.php",
             "kind": "class",
             "owner": "Analysis.Evidence.Measurement",
             "visibility": "internal",
@@ -12593,6 +12786,11 @@
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DeclarationIndexAwareTrait",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DerivedMetricExtractorInterface",
                     "closes_in": null
                 },
@@ -12991,12 +13189,17 @@
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationNumbering",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorCallableMetadata",
                     "closes_in": null
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorFileEntryScope",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorLexicalScope",
                     "closes_in": null
                 },
                 {
@@ -13014,6 +13217,59 @@
             "closure_package": "P8",
             "consumers": []
         },
+        "Qualimetrix\\Core\\Symbol\\DeclarationKey": {
+            "path": "src/Core/Symbol/DeclarationKey.php",
+            "kind": "class",
+            "owner": "Core.Symbol",
+            "visibility": "contract",
+            "closure_package": "P8",
+            "consumers": [
+                {
+                    "owner": "Analysis.Evidence.DependencyModel",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DeclarationIndexAwareTrait",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationNumbering",
+                    "closes_in": null
+                }
+            ]
+        },
+        "Qualimetrix\\Core\\Symbol\\DeclarationOrdinal": {
+            "path": "src/Core/Symbol/DeclarationOrdinal.php",
+            "kind": "class",
+            "owner": "Core.Symbol",
+            "visibility": "contract",
+            "closure_package": "P8",
+            "consumers": [
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\VisitorCallableScope",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationNumbering",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\FileEntrySubjectRegistry",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorLexicalScope",
+                    "closes_in": null
+                }
+            ]
+        },
         "Qualimetrix\\Core\\Symbol\\DeclarationPath": {
             "path": "src/Core/Symbol/DeclarationPath.php",
             "kind": "class",
@@ -13021,26 +13277,6 @@
             "visibility": "contract",
             "closure_package": "P8",
             "consumers": [
-                {
-                    "owner": "Analysis.Evidence.CodeSmell",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Evidence.Cohesion",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomCollector",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Evidence.Cohesion",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\TccLccCollector",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Evidence.Coupling",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector",
-                    "closes_in": null
-                },
                 {
                     "owner": "Analysis.Evidence.DependencyModel",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\Dependency",
@@ -13057,16 +13293,6 @@
                     "closes_in": null
                 },
                 {
-                    "owner": "Analysis.Evidence.Design",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Evidence.Design",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageVisitor",
-                    "closes_in": null
-                },
-                {
                     "owner": "Analysis.Evidence.Measurement",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\CallableWithMetrics",
                     "closes_in": null
@@ -13078,17 +13304,76 @@
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DeclarationIndexAwareTrait",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorCallableMetadata",
                     "closes_in": null
-                },
+                }
+            ]
+        },
+        "Qualimetrix\\Core\\Symbol\\FileDeclarationIndex": {
+            "path": "src/Core/Symbol/FileDeclarationIndex.php",
+            "kind": "class",
+            "owner": "Core.Symbol",
+            "visibility": "contract",
+            "closure_package": "P8",
+            "consumers": [
                 {
-                    "owner": "Analysis.Evidence.Size",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\LocCollector",
+                    "owner": "Analysis.Evidence.DependencyModel",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Contract\\DependencyTraversalParticipantInterface",
                     "closes_in": null
                 },
                 {
-                    "owner": "Analysis.Evidence.Size",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountCollector",
+                    "owner": "Analysis.Evidence.DependencyModel",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DeclarationIndexAwareInterface",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DeclarationIndexAwareTrait",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DeclarationRegistrarFactory",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DeclarationRegistrarInterface",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\VisitorMethodTrackingTrait",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\FileMeasurement\\CompositeCollector",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationNumbering",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationRegistrarVisitor",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorMethodContext",
                     "closes_in": null
                 }
             ]
@@ -13365,7 +13650,12 @@
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorFileEntryScope",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\FileEntrySubjectRegistry",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\VisitorLexicalScope",
                     "closes_in": null
                 },
                 {
@@ -13566,11 +13856,6 @@
             "closure_package": "P8",
             "consumers": [
                 {
-                    "owner": "Analysis.Policy.Architecture",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\OutsideLayerSummary",
-                    "closes_in": null
-                },
-                {
                     "owner": "Analysis.Evidence.CircularDependency",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CircularDependency\\CircularDependencyDetector",
                     "closes_in": null
@@ -13722,6 +14007,11 @@
                 },
                 {
                     "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DeclarationIndexAwareTrait",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\MetricRepositoryInterface",
                     "closes_in": null
                 },
@@ -13738,6 +14028,11 @@
                 {
                     "owner": "Analysis.Evidence.Measurement",
                     "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Repository\\MetricSubjectIndex",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Evidence.Measurement",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Measurement\\Visitor\\DeclarationNumbering",
                     "closes_in": null
                 },
                 {
@@ -13778,6 +14073,16 @@
                 {
                     "owner": "Analysis.Policy.Architecture",
                     "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\Contract\\LayerAssignmentInspectorInterface",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\DeclaredLayerReachability",
+                    "closes_in": null
+                },
+                {
+                    "owner": "Analysis.Policy.Architecture",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\OutsideLayerSummary",
                     "closes_in": null
                 },
                 {
@@ -13868,11 +14173,6 @@
                 {
                     "owner": "Reporting.GraphProjection",
                     "source_fqcn": "Qualimetrix\\Reporting\\GraphProjection\\JsonGraphExporter",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Policy.Architecture",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Policy\\Architecture\\LayerViolation\\DeclaredLayerReachability",
                     "closes_in": null
                 }
             ]

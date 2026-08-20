@@ -211,7 +211,7 @@ final class CollectionOrchestrator implements CollectionOrchestratorInterface
                     throw new LogicException('Class metrics must use an exact declaration subject');
                 }
 
-                return new ClassWithMetrics($declarationPath, $classData['line'], $classData['metrics']);
+                return new ClassWithMetrics($declarationPath, $classData['start'], $classData['line'], $classData['metrics']);
             },
             array_values($result->classMetrics()),
         );

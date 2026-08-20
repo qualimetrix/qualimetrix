@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\ClassToNamespaceAggreg
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
@@ -22,6 +23,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -39,7 +41,7 @@ final class DerivedMetricExtractorTest extends TestCase
             new MetricDefinition('mi', SymbolLevel::Callable),
         ]);
 
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
         $extractor = new DerivedMetricExtractor($compositeCollector);
 
         $repository = new InMemoryMetricRepository();
@@ -68,13 +70,14 @@ final class DerivedMetricExtractorTest extends TestCase
         $derivedCollector->method('getMetricDefinitions')->willReturn([
             new MetricDefinition('mi', SymbolLevel::Callable),
         ]);
-        $extractor = new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector]));
+        $extractor = new DerivedMetricExtractor(new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]));
 
         $repository = new InMemoryMetricRepository();
         $symbol = SymbolPath::forMethod('App', 'Service', 'run');
         $file = RelativePath::fromString('src/Service.php');
         $callable = new CallableWithMetrics(
-            new DeclarationPath($symbol, $file, 701),
+            DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0)),
+            701,
             CallableKind::Method,
             null,
             null,
@@ -95,7 +98,7 @@ final class DerivedMetricExtractorTest extends TestCase
         $declarations = iterator_to_array($repository->allDeclarations(), false);
         self::assertCount(1, $declarations);
         self::assertSame(23, $declarations[0]->line);
-        self::assertNotSame($callable->declarationPath->startFilePos, $declarations[0]->line);
+        self::assertNotSame($callable->startFilePos, $declarations[0]->line);
         self::assertSame(80.0, $repository->getSubject($subject)->get('mi'));
     }
 
@@ -108,12 +111,13 @@ final class DerivedMetricExtractorTest extends TestCase
             new MetricDefinition('mi', SymbolLevel::Callable),
             new MetricDefinition('typeCoverage.pct', SymbolLevel::Class_),
         ]);
-        $extractor = new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector]));
+        $extractor = new DerivedMetricExtractor(new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]));
 
         $repository = new InMemoryMetricRepository();
         $file = RelativePath::fromString('src/Service.php');
         $callable = new CallableWithMetrics(
-            new DeclarationPath(SymbolPath::forMethod('App', 'Service', 'run'), $file, 701),
+            DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), $file, DeclarationOrdinal::fromRank(0)),
+            701,
             CallableKind::Method,
             null,
             null,
@@ -121,7 +125,8 @@ final class DerivedMetricExtractorTest extends TestCase
             MetricBag::fromArray(['ccn' => 3]),
         );
         $class = new ClassWithMetrics(
-            new DeclarationPath(SymbolPath::forClass('App', 'Service'), $file, 500),
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $file, DeclarationOrdinal::fromRank(0)),
+            500,
             12,
             MetricBag::fromArray(['typeCoverage.paramTotal' => 2]),
         );
@@ -159,11 +164,7 @@ final class DerivedMetricExtractorTest extends TestCase
         $callable = $this->callable($symbol, MetricBag::fromArray(['ccn' => 3]));
         $repository->addCallable($callable);
         $subject = MetricSubject::declaration($callable->declarationPath);
-        $otherSubject = MetricSubject::declaration(new DeclarationPath(
-            $symbol,
-            $callable->declarationPath->file,
-            $callable->declarationPath->startFilePos + 1,
-        ));
+        $otherSubject = MetricSubject::declaration(DeclarationPath::of($symbol, $callable->declarationPath->file, DeclarationOrdinal::fromRank(0)));
 
         $fileBag = MetricBag::fromArray([
             'mi:' . $subject->toCanonical() => 85.5,
@@ -171,7 +172,7 @@ final class DerivedMetricExtractorTest extends TestCase
             'mi:method:' . $otherSubject->toCanonical() => 75.0,
         ]);
 
-        (new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector])))->extract(
+        (new DerivedMetricExtractor(new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector])))->extract(
             $repository,
             $fileBag,
             [$callable],
@@ -190,7 +191,7 @@ final class DerivedMetricExtractorTest extends TestCase
             new MetricDefinition('mi', SymbolLevel::Callable),
         ]);
 
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
         $extractor = new DerivedMetricExtractor($compositeCollector);
 
         $repository = new InMemoryMetricRepository();
@@ -215,7 +216,7 @@ final class DerivedMetricExtractorTest extends TestCase
     #[Test]
     public function itIsNoopWhenNoDerivedCollectors(): void
     {
-        $compositeCollector = new CompositeCollector([]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory());
         $extractor = new DerivedMetricExtractor($compositeCollector);
 
         $repository = new InMemoryMetricRepository();
@@ -246,7 +247,8 @@ final class DerivedMetricExtractorTest extends TestCase
         $repository = new InMemoryMetricRepository();
         $file = RelativePath::fromString('tmp/test.php');
         $class = new ClassWithMetrics(
-            new DeclarationPath(SymbolPath::forClass('App', 'Service'), $file, 4),
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), $file, DeclarationOrdinal::fromRank(1)),
+            4,
             1,
             MetricBag::fromArray(['tcc' => 0.5]),
         );
@@ -255,7 +257,7 @@ final class DerivedMetricExtractorTest extends TestCase
 
         $fileBag = MetricBag::fromArray([$this->derivedKey('mi', $callable) => 85.5]);
 
-        (new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector])))->extract(
+        (new DerivedMetricExtractor(new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector])))->extract(
             $repository,
             $fileBag,
             [$callable],
@@ -275,7 +277,7 @@ final class DerivedMetricExtractorTest extends TestCase
             new MetricDefinition('mi', SymbolLevel::Callable),
         ]);
 
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
         $extractor = new DerivedMetricExtractor($compositeCollector);
 
         $repository = new InMemoryMetricRepository();
@@ -308,7 +310,7 @@ final class DerivedMetricExtractorTest extends TestCase
 
         $fileBag = MetricBag::fromArray(['mi' => 85.5]);
 
-        (new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector])))->extract(
+        (new DerivedMetricExtractor(new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector])))->extract(
             $repository,
             $fileBag,
             [$callable],
@@ -328,7 +330,7 @@ final class DerivedMetricExtractorTest extends TestCase
             new MetricDefinition('mi', SymbolLevel::Callable),
         ]);
 
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
         $extractor = new DerivedMetricExtractor($compositeCollector);
 
         $repository = new InMemoryMetricRepository();
@@ -360,7 +362,7 @@ final class DerivedMetricExtractorTest extends TestCase
             new MetricDefinition('mi', SymbolLevel::Callable),
         ]);
 
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
         $extractor = new DerivedMetricExtractor($compositeCollector);
 
         $repository = new InMemoryMetricRepository();
@@ -390,13 +392,14 @@ final class DerivedMetricExtractorTest extends TestCase
         $derivedCollector->method('getMetricDefinitions')->willReturn([
             new MetricDefinition('mi', SymbolLevel::Callable),
         ]);
-        $extractor = new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector]));
+        $extractor = new DerivedMetricExtractor(new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]));
 
         $repository = new InMemoryMetricRepository();
         $symbol = SymbolPath::forMethod('App', 'Service', 'run');
         $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Service'));
         $first = new CallableWithMetrics(
-            new DeclarationPath($symbol, RelativePath::fromString('src/First.php'), 410),
+            DeclarationPath::of($symbol, RelativePath::fromString('src/First.php'), DeclarationOrdinal::fromRank(0)),
+            410,
             CallableKind::Method,
             null,
             null,
@@ -405,7 +408,8 @@ final class DerivedMetricExtractorTest extends TestCase
             17,
         );
         $second = new CallableWithMetrics(
-            new DeclarationPath($symbol, RelativePath::fromString('src/Second.php'), 920),
+            DeclarationPath::of($symbol, RelativePath::fromString('src/Second.php'), DeclarationOrdinal::fromRank(0)),
+            920,
             CallableKind::Method,
             null,
             null,
@@ -457,7 +461,8 @@ final class DerivedMetricExtractorTest extends TestCase
 
         if ($symbol->getType()->value === 'function') {
             return new CallableWithMetrics(
-                new DeclarationPath($symbol, $file, 0),
+                DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(1)),
+                0,
                 CallableKind::Function,
                 null,
                 null,
@@ -467,7 +472,8 @@ final class DerivedMetricExtractorTest extends TestCase
         }
 
         return new CallableWithMetrics(
-            new DeclarationPath($symbol, $file, 0),
+            DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(1)),
+            0,
             CallableKind::Method,
             null,
             null,

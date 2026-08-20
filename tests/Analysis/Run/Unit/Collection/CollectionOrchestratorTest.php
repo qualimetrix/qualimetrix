@@ -12,6 +12,7 @@ use Psr\Log\LoggerInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
@@ -37,6 +38,7 @@ use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -62,7 +64,7 @@ final class CollectionOrchestratorTest extends TestCase
         $this->strategySelector->method('select')->willReturn($this->strategy);
         $this->progress = self::createStub(ProgressReporterInterface::class);
         $this->logger = self::createStub(LoggerInterface::class);
-        $this->derivedMetricExtractor = new DerivedMetricExtractor(new CompositeCollector([]));
+        $this->derivedMetricExtractor = new DerivedMetricExtractor(new CompositeCollector([], new DeclarationRegistrarFactory()));
     }
 
     #[Test]
@@ -211,12 +213,13 @@ final class CollectionOrchestratorTest extends TestCase
                 payload: new SuccessfulFileProcessing(
                     fileBag: new MetricBag(),
                     classMetrics: [
-                        'declaration:class:App\\Service@tmp/test.php:16' => [
+                        'declaration:class:App\\Service@tmp/test.php' => [
                             'subject' => \Qualimetrix\Core\Symbol\MetricSubject::declaration(
-                                new DeclarationPath($symbolPath, RelativePath::fromString('tmp/test.php'), 16),
+                                DeclarationPath::of($symbolPath, RelativePath::fromString('tmp/test.php'), DeclarationOrdinal::fromRank(0)),
                             ),
                             'metrics' => $classBag,
                             'line' => 5,
+                            'start' => 16,
                         ],
                     ],
                 ),
@@ -241,10 +244,10 @@ final class CollectionOrchestratorTest extends TestCase
         $file = RelativePath::fromString('tmp/test.php');
         $symbolPath = SymbolPath::forClass('App', 'Service');
         $firstSubject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(
-            new DeclarationPath($symbolPath, $file, 16),
+            DeclarationPath::of($symbolPath, $file, DeclarationOrdinal::fromRank(0)),
         );
         $secondSubject = \Qualimetrix\Core\Symbol\MetricSubject::declaration(
-            new DeclarationPath($symbolPath, $file, 96),
+            DeclarationPath::of($symbolPath, $file, DeclarationOrdinal::fromRank(1)),
         );
 
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
@@ -252,7 +255,7 @@ final class CollectionOrchestratorTest extends TestCase
         $derivedCollector->method('getMetricDefinitions')->willReturn([
             new MetricDefinition('typeCoverage.pct', SymbolLevel::Class_),
         ]);
-        $extractor = new DerivedMetricExtractor(new CompositeCollector([], [$derivedCollector]));
+        $extractor = new DerivedMetricExtractor(new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]));
 
         $processingResults = [
             FileProcessingResult::success(
@@ -267,11 +270,13 @@ final class CollectionOrchestratorTest extends TestCase
                             'subject' => $firstSubject,
                             'metrics' => MetricBag::fromArray(['typeCoverage.paramTotal' => 2]),
                             'line' => 5,
+                            'start' => 5,
                         ],
                         $secondSubject->toCanonical() => [
                             'subject' => $secondSubject,
                             'metrics' => MetricBag::fromArray(['typeCoverage.paramTotal' => 2]),
                             'line' => 20,
+                            'start' => 20,
                         ],
                     ],
                 ),
@@ -701,7 +706,7 @@ final class CollectionOrchestratorTest extends TestCase
             new MetricDefinition('mi', SymbolLevel::Callable),
         ]);
 
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
 
         $files = [new SplFileInfo('/tmp/test.php')];
         $methodSymbol = SymbolPath::forMethod('App', 'Service', 'calculate');
@@ -753,7 +758,7 @@ final class CollectionOrchestratorTest extends TestCase
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
 
         $files = [new SplFileInfo('/tmp/test.php')];
 
@@ -799,7 +804,7 @@ final class CollectionOrchestratorTest extends TestCase
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
 
         $files = [new SplFileInfo('/tmp/test.php')];
 
@@ -849,7 +854,7 @@ final class CollectionOrchestratorTest extends TestCase
             new MetricDefinition('mi', SymbolLevel::Callable),
         ]);
 
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
 
         $files = [new SplFileInfo('/tmp/test.php')];
         $methodSymbol = SymbolPath::forMethod('', 'SimpleClass', 'method');
@@ -902,7 +907,7 @@ final class CollectionOrchestratorTest extends TestCase
             new MetricDefinition('mi', SymbolLevel::Callable),
         ]);
 
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
 
         $files = [new SplFileInfo('/tmp/test.php')];
 
@@ -956,7 +961,7 @@ final class CollectionOrchestratorTest extends TestCase
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('provides')->willReturn(['mi']);
 
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
 
         $files = [new SplFileInfo('/tmp/test.php')];
 
@@ -1003,7 +1008,7 @@ final class CollectionOrchestratorTest extends TestCase
     public function itHandlesNoDerivedCollectors(): void
     {
         // CompositeCollector with no derived collectors
-        $compositeCollector = new CompositeCollector([]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory());
 
         $files = [new SplFileInfo('/tmp/test.php')];
         $methodSymbol = SymbolPath::forMethod('App', 'Service', 'method');
@@ -1053,7 +1058,7 @@ final class CollectionOrchestratorTest extends TestCase
             new MetricDefinition('mi', SymbolLevel::Callable),
         ]);
 
-        $compositeCollector = new CompositeCollector([], [$derivedCollector]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [$derivedCollector]);
 
         $files = [new SplFileInfo('/tmp/test.php')];
         // PHP allows Unicode in identifiers (0x7f-0xff range)
@@ -1156,7 +1161,8 @@ final class CollectionOrchestratorTest extends TestCase
     private function callable(SymbolPath $symbol, MetricBag $metrics, int $line, string $file): CallableWithMetrics
     {
         return new CallableWithMetrics(
-            new DeclarationPath($symbol, RelativePath::fromString($file), 0),
+            DeclarationPath::of($symbol, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)),
+            0,
             CallableKind::Method,
             null,
             null,
@@ -1175,7 +1181,7 @@ final class CollectionOrchestratorTest extends TestCase
         $path = RelativePath::fromString($file);
 
         return new Dependency(
-            new DeclarationPath(SymbolPath::fromClassFqn($source), $path, 0),
+            DeclarationPath::of(SymbolPath::fromClassFqn($source), $path, DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath(SymbolPath::fromClassFqn($target)),
             $type,
             new Location($path, $line),

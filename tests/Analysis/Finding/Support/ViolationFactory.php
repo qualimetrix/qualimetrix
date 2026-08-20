@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -91,7 +92,7 @@ final class ViolationFactory
         return match ($symbolPath->getType()) {
             SymbolType::File, SymbolType::Namespace_, SymbolType::Project => MetricSubject::aggregate($symbolPath),
             SymbolType::Class_, SymbolType::Method, SymbolType::Function_ => MetricSubject::declaration(
-                new DeclarationPath($symbolPath, RelativePath::fromString('src/Foo.php'), $startFilePos),
+                DeclarationPath::of($symbolPath, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0)),
             ),
         };
     }

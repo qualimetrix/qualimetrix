@@ -22,6 +22,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineGenerator;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineIdentity;
 use Qualimetrix\Analysis\Policy\Baseline\UncapturedReason;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -209,11 +210,7 @@ final class BaselineGeneratorTest extends TestCase
     {
         $source = SymbolPath::forClass('App', 'Source');
         $target = SymbolPath::forClass('Vendor', 'Target');
-        $subject = MetricSubject::declaration(new DeclarationPath(
-            $source,
-            RelativePath::fromString('src/Foo.php'),
-            11,
-        ));
+        $subject = MetricSubject::declaration(DeclarationPath::of($source, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0)));
         $typed = ViolationFactory::edge($source, $target, DependencyType::New_, $subject);
         $untyped = $this->edgeWithType($source, $target, $subject, null);
 
@@ -340,11 +337,7 @@ final class BaselineGeneratorTest extends TestCase
     {
         return new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forMethod('App', 'Foo', 'bar'),
-                RelativePath::fromString('src/Foo.php'),
-                1,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
@@ -357,11 +350,7 @@ final class BaselineGeneratorTest extends TestCase
     {
         return new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forMethod('App', 'Foo', 'bar'),
-                RelativePath::fromString('src/Foo.php'),
-                1,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
@@ -411,8 +400,8 @@ final class BaselineGeneratorTest extends TestCase
         $symbol = SymbolPath::forMethod('App', 'Duplicated', 'run');
 
         $baseline = $this->capture([
-            ViolationFactory::magnitude($symbol, 12, subject: MetricSubject::declaration(new DeclarationPath($symbol, RelativePath::fromString('src/a/Duplicated.php'), 10))),
-            ViolationFactory::magnitude($symbol, 30, subject: MetricSubject::declaration(new DeclarationPath($symbol, RelativePath::fromString('src/b/Duplicated.php'), 10))),
+            ViolationFactory::magnitude($symbol, 12, subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/a/Duplicated.php'), DeclarationOrdinal::fromRank(0)))),
+            ViolationFactory::magnitude($symbol, 30, subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/b/Duplicated.php'), DeclarationOrdinal::fromRank(0)))),
         ], ['src']);
 
         self::assertSame(2, $baseline->count());

@@ -27,6 +27,7 @@ use Qualimetrix\Analysis\Finding\RuleConfiguration\RuleOptionsRegistry;
 use Qualimetrix\Analysis\Finding\RuleExecution;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -724,11 +725,7 @@ final class RuleExecutorTest extends TestCase
         $classCohesion = new Violation(
             location: new Location(RelativePath::fromString('src/Metrics/Collector.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Metrics', 'Collector'),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass('App\\Metrics', 'Collector'),
-                RelativePath::fromString('src/Metrics/Collector.php'),
-                10,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Metrics', 'Collector'), RelativePath::fromString('src/Metrics/Collector.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: 'computed.health',
             violationCode: 'health.cohesion',
             message: 'Class cohesion health is low',
@@ -1001,11 +998,7 @@ final class RuleExecutorTest extends TestCase
                 line: 1,
             ),
             symbolPath: SymbolPath::forFile($file),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass($namespace, 'Helper'),
-                $file,
-                1,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($namespace, 'Helper'), $file, DeclarationOrdinal::fromRank(0))),
             ruleName: $ruleName,
             violationCode: $ruleName,
             message: "Violation from $ruleName in $namespace",

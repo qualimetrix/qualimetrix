@@ -27,6 +27,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MeasurementAggregationService;
 use Qualimetrix\Analysis\Evidence\Measurement\Aggregation\MetricAggregator;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\GlobalContextCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
@@ -63,6 +64,7 @@ use Qualimetrix\Analysis\Run\Pipeline\AnalysisPipeline;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\PathFactory;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -129,7 +131,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // Arrange: create dependencies between two classes
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\Service\OrderService'), RelativePath::fromString('tmp/OrderService.php'), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\Service\OrderService'), RelativePath::fromString('tmp/OrderService.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\OrderRepository')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/OrderService.php'), 10),
@@ -182,13 +184,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // Arrange: A circular dependency A -> B -> A
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA'), RelativePath::fromString('tmp/ServiceA.php'), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA'), RelativePath::fromString('tmp/ServiceA.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/ServiceA.php'), 10),
             ),
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB'), RelativePath::fromString('tmp/ServiceB.php'), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceB'), RelativePath::fromString('tmp/ServiceB.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('Fixtures\CircularDeps\ServiceA')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/ServiceB.php'), 10),
@@ -377,13 +379,13 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         // Arrange: two classes in the same namespace with cross-namespace dependencies
         $dependencies = [
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\Service\OrderService'), RelativePath::fromString('tmp/OrderService.php'), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\Service\OrderService'), RelativePath::fromString('tmp/OrderService.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\OrderRepository')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/OrderService.php'), 10),
             ),
             new Dependency(
-                new DeclarationPath(SymbolPath::fromClassFqn('App\Service\PaymentService'), RelativePath::fromString('tmp/PaymentService.php'), 0),
+                DeclarationPath::of(SymbolPath::fromClassFqn('App\Service\PaymentService'), RelativePath::fromString('tmp/PaymentService.php'), DeclarationOrdinal::fromRank(0)),
                 new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\PaymentRepository')),
                 DependencyType::New_,
                 new Location(RelativePath::fromString('tmp/PaymentService.php'), 10),
@@ -416,7 +418,7 @@ final class AnalysisPipelineIntegrationTest extends TestCase
         $couplingCollector = new CouplingCollector(new CouplingAnalysis());
 
         // CompositeCollector has no per-file collectors for this test.
-        $compositeCollector = new CompositeCollector([]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory());
         $globalCollectorRunner = new MeasurementAggregationService([$couplingCollector], $compositeCollector, $this->profiler);
 
         $ruleExecutor = self::createStub(\Qualimetrix\Analysis\Finding\Contract\RuleExecutionInterface::class);
@@ -665,7 +667,7 @@ PHP);
             },
         );
 
-        $fileCollector = new CompositeCollector([]);
+        $fileCollector = new CompositeCollector([], new DeclarationRegistrarFactory());
 
         return TestPipelineBuilder::create()
             ->withDefaultDiscovery($discovery)
@@ -890,6 +892,7 @@ PHP);
 
         $compositeCollector = new CompositeCollector(
             [new LocCollector()],
+            new DeclarationRegistrarFactory(),
             [],
             new DependencyVisitor(new DependencyResolver()),
         );

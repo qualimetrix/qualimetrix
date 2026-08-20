@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -20,11 +21,7 @@ final class MetricSubjectTest extends TestCase
     #[Test]
     public function itKeepsTheThreeIdentityVariantsSeparate(): void
     {
-        $declaration = new DeclarationPath(
-            SymbolPath::forMethod('App', 'Service', 'handle'),
-            RelativePath::fromString('src/Service.php'),
-            42,
-        );
+        $declaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'handle'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0));
         $logicalClass = new LogicalClassPath(SymbolPath::forClass('App', 'Service'));
         $aggregate = SymbolPath::forNamespace('App');
 

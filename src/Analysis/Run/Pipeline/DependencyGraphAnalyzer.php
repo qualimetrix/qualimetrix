@@ -11,6 +11,8 @@ use PhpParser\NodeTraverser;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
@@ -38,6 +40,7 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
         private FileParserInterface $fileParser,
         private DependencyTraversalParticipantInterface $dependencyVisitor,
         private DependencyGraphBuilderInterface $graphBuilder,
+        private DeclarationRegistrarFactory $declarationRegistrarFactory,
     ) {}
 
     public function analyze(array $paths, AbsolutePath $projectRoot): DependencyGraphAnalysisResult
@@ -51,15 +54,15 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
         /** @var array<string, LogicalClassPath> $logicalClassUniverse */
         $logicalClassUniverse = [];
 
-        $traverser = new NodeTraverser();
-        $traverser->addVisitor($this->dependencyVisitor);
-
         foreach ($files as $file) {
             $path = PathFactory::bestEffortRelative($file->getPathname(), $projectRoot);
 
             try {
                 $ast = $this->fileParser->parse($file);
-                $this->dependencyVisitor->beginFile($path);
+                $traverser = new NodeTraverser();
+                $registrar = $this->beginNumbering($traverser);
+                $traverser->addVisitor($this->dependencyVisitor);
+                $this->dependencyVisitor->beginFile($path, $registrar->index());
                 $traverser->traverse($ast);
                 array_push($dependencies, ...$this->dependencyVisitor->dependencies());
                 foreach (self::declaredLogicalClasses($ast) as $class) {
@@ -77,6 +80,20 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
             $this->graphBuilder->build($dependencies, array_values($logicalClassUniverse)),
             new AnalysisCoverage($analyzedFiles, [], $failures),
         );
+    }
+
+    /**
+     * Numbering belongs to one traversal of one file: the registrar and its
+     * index are rebuilt per file, and the visitor shared with the check path
+     * is rebound to this path's index. The registrar goes in first so a
+     * producer asking about the node it is entering finds it registered.
+     */
+    private function beginNumbering(NodeTraverser $traverser): DeclarationRegistrarInterface
+    {
+        $registrar = $this->declarationRegistrarFactory->createForFile();
+        $traverser->addVisitor($registrar);
+
+        return $registrar;
     }
 
     /**

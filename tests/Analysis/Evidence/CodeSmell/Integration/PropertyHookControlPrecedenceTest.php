@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderIn
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -26,6 +27,7 @@ use Qualimetrix\Core\Ast\FileParserInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -59,11 +61,12 @@ final class PropertyHookControlPrecedenceTest extends TestCase
         self::assertInstanceOf(Node\Stmt\Class_::class, $class);
         self::assertInstanceOf(Node\PropertyHook::class, $hook);
 
-        $classDeclaration = new DeclarationPath(SymbolPath::forClass('App', 'Record'), RelativePath::fromString('test.php'), $class->getStartFilePos());
-        $hookDeclaration = new DeclarationPath(SymbolPath::forMethod('App', 'Record', 'value::get'), RelativePath::fromString('test.php'), $hook->getStartFilePos());
-        $classMetric = new ClassWithMetrics($classDeclaration, $class->getStartLine(), new MetricBag());
+        $classDeclaration = DeclarationPath::of(SymbolPath::forClass('App', 'Record'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
+        $hookDeclaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Record', 'value::get'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
+        $classMetric = new ClassWithMetrics($classDeclaration, $class->getStartFilePos(), $class->getStartLine(), new MetricBag());
         $hookMetric = new CallableWithMetrics(
             $hookDeclaration,
+            $hook->getStartFilePos(),
             CallableKind::PropertyHook,
             null,
             $classDeclaration,
@@ -130,7 +133,7 @@ final class PropertyHookControlPrecedenceTest extends TestCase
                         return [$this->hookMetric];
                     }
                 },
-            ]),
+            ], new DeclarationRegistrarFactory()),
             new SourceControlExtractor(),
         );
         $processor->setProjectRoot(AbsolutePath::fromString('/tmp'));

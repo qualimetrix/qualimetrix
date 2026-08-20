@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -24,20 +25,13 @@ final class CallableWithMetricsTest extends TestCase
     {
         $metrics = (new MetricBag())->with('ccn', 5);
 
-        $declaration = new DeclarationPath(
-            SymbolPath::forMethod('App\\Service', 'UserService', 'calculate'),
-            RelativePath::fromString('src/UserService.php'),
-            420,
-        );
+        $declaration = DeclarationPath::of(SymbolPath::forMethod('App\\Service', 'UserService', 'calculate'), RelativePath::fromString('src/UserService.php'), DeclarationOrdinal::fromRank(0));
         $method = new CallableWithMetrics(
             declarationPath: $declaration,
+            startFilePos: 0,
             kind: CallableKind::Method,
             anonymousSyntax: null,
-            lexicalClassContext: new DeclarationPath(
-                SymbolPath::forClass('App\\Service', 'UserService'),
-                RelativePath::fromString('src/UserService.php'),
-                10,
-            ),
+            lexicalClassContext: DeclarationPath::of(SymbolPath::forClass('App\\Service', 'UserService'), RelativePath::fromString('src/UserService.php'), DeclarationOrdinal::fromRank(0)),
             classAggregationOwner: new LogicalClassPath(SymbolPath::forClass('App\\Service', 'UserService')),
             metrics: $metrics,
         );
@@ -53,11 +47,8 @@ final class CallableWithMetricsTest extends TestCase
         $metrics = (new MetricBag())->with('ccn', 2);
 
         $method = new CallableWithMetrics(
-            declarationPath: new DeclarationPath(
-                SymbolPath::forGlobalFunction('App\\Utils', 'helper'),
-                RelativePath::fromString('src/Functions.php'),
-                10,
-            ),
+            declarationPath: DeclarationPath::of(SymbolPath::forGlobalFunction('App\\Utils', 'helper'), RelativePath::fromString('src/Functions.php'), DeclarationOrdinal::fromRank(0)),
+            startFilePos: 10,
             kind: CallableKind::Function,
             anonymousSyntax: null,
             lexicalClassContext: null,
@@ -74,11 +65,8 @@ final class CallableWithMetricsTest extends TestCase
         $metrics = (new MetricBag())->with('ccn', 1);
 
         $method = new CallableWithMetrics(
-            declarationPath: new DeclarationPath(
-                SymbolPath::forGlobalFunction('', '{closure#1}'),
-                RelativePath::fromString('src/Functions.php'),
-                5,
-            ),
+            declarationPath: DeclarationPath::of(SymbolPath::forGlobalFunction('', '{closure#1}'), RelativePath::fromString('src/Functions.php'), DeclarationOrdinal::fromRank(0)),
+            startFilePos: 5,
             kind: CallableKind::AnonymousCallable,
             anonymousSyntax: 'arrow',
             lexicalClassContext: null,
@@ -97,11 +85,8 @@ final class CallableWithMetricsTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         new CallableWithMetrics(
-            declarationPath: new DeclarationPath(
-                SymbolPath::forGlobalFunction('', '{closure#1}'),
-                RelativePath::fromString('src/Functions.php'),
-                100,
-            ),
+            declarationPath: DeclarationPath::of(SymbolPath::forGlobalFunction('', '{closure#1}'), RelativePath::fromString('src/Functions.php'), DeclarationOrdinal::fromRank(1)),
+            startFilePos: 100,
             kind: CallableKind::AnonymousCallable,
             anonymousSyntax: null,
             lexicalClassContext: null,

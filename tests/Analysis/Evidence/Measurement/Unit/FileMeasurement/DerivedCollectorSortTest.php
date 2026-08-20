@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
@@ -20,6 +21,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -59,7 +61,7 @@ final class DerivedCollectorSortTest extends TestCase
         );
 
         // B runs before A, and A receives B's accumulated output.
-        $composite = new CompositeCollector([$baseCollector], [$collectorB, $collectorA]);
+        $composite = new CompositeCollector([$baseCollector], new DeclarationRegistrarFactory(), [$collectorB, $collectorA]);
         $result = $composite->collect(new SplFileInfo(__FILE__), [], RelativePath::fromString('DerivedCollectorSortTest.php'));
 
         self::assertSame(10, $result->metrics->get('raw:App\Service::method'));
@@ -92,7 +94,7 @@ final class DerivedCollectorSortTest extends TestCase
         );
 
         // Registration order is intentionally reverse dependency order.
-        $composite = new CompositeCollector([$baseCollector], [$collectorA, $collectorB]);
+        $composite = new CompositeCollector([$baseCollector], new DeclarationRegistrarFactory(), [$collectorA, $collectorB]);
         $result = $composite->collect(new SplFileInfo(__FILE__), [], RelativePath::fromString('DerivedCollectorSortTest.php'));
 
         self::assertSame(10, $result->metrics->get('raw:App\Service::method'));
@@ -134,7 +136,7 @@ final class DerivedCollectorSortTest extends TestCase
         );
 
         // Reverse order: C, B, A. The dependency graph determines execution.
-        $composite = new CompositeCollector([$baseCollector], [$collectorC, $collectorB, $collectorA]);
+        $composite = new CompositeCollector([$baseCollector], new DeclarationRegistrarFactory(), [$collectorC, $collectorB, $collectorA]);
         $result = $composite->collect(new SplFileInfo(__FILE__), [], RelativePath::fromString('DerivedCollectorSortTest.php'));
 
         self::assertSame(50, $result->metrics->get($this->key('step_a_result')));
@@ -163,7 +165,7 @@ final class DerivedCollectorSortTest extends TestCase
             calculate: static fn(MetricBag $bag): MetricBag => new MetricBag(),
         );
 
-        $composite = new CompositeCollector([$baseCollector], [$collectorA, $collectorB]);
+        $composite = new CompositeCollector([$baseCollector], new DeclarationRegistrarFactory(), [$collectorA, $collectorB]);
 
         self::expectException(LogicException::class);
         self::expectExceptionMessageMatches('/Cyclic dependency.*collector-a.*collector-b|Cyclic dependency.*collector-b.*collector-a/');
@@ -233,7 +235,7 @@ final class DerivedCollectorSortTest extends TestCase
         $callableMetrics = new MetricBag();
         foreach ($metrics->all() as $name => $value) {
             $callableMetrics = $callableMetrics->with(explode(':', $name, 2)[0], $value);
-        } return new CallableWithMetrics(new DeclarationPath(SymbolPath::forMethod('App', 'Service', 'method'), RelativePath::fromString('DerivedCollectorSortTest.php'), 100), CallableKind::Method, null, null, new LogicalClassPath(SymbolPath::forClass('App', 'Service')), $callableMetrics);
+        } return new CallableWithMetrics(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'method'), RelativePath::fromString('DerivedCollectorSortTest.php'), DeclarationOrdinal::fromRank(0)), 100, CallableKind::Method, null, null, new LogicalClassPath(SymbolPath::forClass('App', 'Service')), $callableMetrics);
     }
     private function key(string $metric): string
     {

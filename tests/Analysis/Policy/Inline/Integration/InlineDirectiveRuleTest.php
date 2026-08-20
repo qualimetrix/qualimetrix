@@ -28,6 +28,7 @@ use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -458,18 +459,10 @@ final class InlineDirectiveRuleTest extends TestCase
     private static function boundSubjects(): array
     {
         $file = RelativePath::fromString(self::FILE);
-        $subjects = [MetricSubject::declaration(new DeclarationPath(
-            SymbolPath::forClass('Demo', 'Big'),
-            $file,
-            226,
-        ))];
+        $subjects = [MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('Demo', 'Big'), $file, DeclarationOrdinal::fromRank(0)))];
 
         foreach (['a', 'b', 'c', 'd', 'e'] as $index => $member) {
-            $subjects[] = MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forMethod('Demo', 'Big', $member),
-                $file,
-                248 + ($index * 43),
-            ));
+            $subjects[] = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('Demo', 'Big', $member), $file, DeclarationOrdinal::fromRank(0)));
         }
 
         return $subjects;

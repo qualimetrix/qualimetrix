@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderIn
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderInterface;
@@ -35,6 +36,7 @@ use Qualimetrix\Core\Exception\ParseException;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -65,7 +67,7 @@ final class FileProcessorTest extends TestCase
         // and let process() fall through to a TypeError. Explicit throw now
         // guarantees a clean LogicException whether assertions are enabled
         // or not.
-        $processor = new FileProcessor($this->parser, new CompositeCollector([]), new SourceControlExtractor());
+        $processor = new FileProcessor($this->parser, new CompositeCollector([], new DeclarationRegistrarFactory()), new SourceControlExtractor());
 
         $this->expectException(LogicException::class);
         $this->expectExceptionMessage('projectRoot must be set');
@@ -88,7 +90,7 @@ final class FileProcessorTest extends TestCase
         $collector->method('collect')->willReturn($fileBag);
         $collector->expects(self::once())->method('reset');
 
-        $compositeCollector = new CompositeCollector([$collector]);
+        $compositeCollector = new CompositeCollector([$collector], new DeclarationRegistrarFactory());
 
         $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
@@ -107,7 +109,7 @@ final class FileProcessorTest extends TestCase
             new ParseException(AbsolutePath::fromString('/tmp/invalid.php'), 'Syntax error'),
         );
 
-        $compositeCollector = new CompositeCollector([]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory());
 
         $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
@@ -131,7 +133,8 @@ final class FileProcessorTest extends TestCase
         $methodBag = MetricBag::fromArray(['ccn' => 5]);
 
         $methodWithMetrics = new CallableWithMetrics(
-            new DeclarationPath($symbolPath, RelativePath::fromString('test.php'), $method->getStartFilePos()),
+            DeclarationPath::of($symbolPath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
+            $method->getStartFilePos(),
             CallableKind::Method,
             null,
             null,
@@ -142,7 +145,7 @@ final class FileProcessorTest extends TestCase
         // Create a mock that implements both interfaces
         $collector = $this->createMockCollectorWithMethodMetrics([$methodWithMetrics]);
 
-        $compositeCollector = new CompositeCollector([$collector]);
+        $compositeCollector = new CompositeCollector([$collector], new DeclarationRegistrarFactory());
 
         $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
@@ -165,14 +168,15 @@ final class FileProcessorTest extends TestCase
         $classBag = MetricBag::fromArray(['wmc' => 25]);
 
         $classWithMetrics = new ClassWithMetrics(
-            declarationPath: new DeclarationPath($symbolPath, RelativePath::fromString('test.php'), $class->getStartFilePos()),
+            declarationPath: DeclarationPath::of($symbolPath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(1)),
+            startFilePos: $class->getStartFilePos(),
             line: $class->getStartLine(),
             metrics: $classBag,
         );
 
         $collector = $this->createMockCollectorWithClassMetrics([$classWithMetrics]);
 
-        $compositeCollector = new CompositeCollector([$collector]);
+        $compositeCollector = new CompositeCollector([$collector], new DeclarationRegistrarFactory());
 
         $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
@@ -191,7 +195,7 @@ final class FileProcessorTest extends TestCase
         $namespace = new NamespaceWithMetrics('App', 3, MetricBag::fromArray(['loc' => 8]));
         $collector = $this->createMockCollectorWithNamespaceMetrics([$namespace]);
 
-        $result = $this->makeProcessor(new CompositeCollector([$collector]))->process($file);
+        $result = $this->makeProcessor(new CompositeCollector([$collector], new DeclarationRegistrarFactory()))->process($file);
 
         self::assertTrue($result->isSuccessful());
         self::assertSame(8, $result->namespaceMetrics()['ns:App']['metrics']->get('loc'));
@@ -210,7 +214,7 @@ final class FileProcessorTest extends TestCase
         $dependencyResolver = new DependencyResolver();
         $dependencyVisitor = new DependencyVisitor($dependencyResolver);
 
-        $compositeCollector = new CompositeCollector([], [], $dependencyVisitor);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory(), [], $dependencyVisitor);
 
         $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
@@ -231,7 +235,8 @@ final class FileProcessorTest extends TestCase
 
         $closurePath = SymbolPath::forGlobalFunction('', '{closure:0}');
         $methodWithMetrics = new CallableWithMetrics(
-            new DeclarationPath($closurePath, RelativePath::fromString('test.php'), $closure->getStartFilePos()),
+            DeclarationPath::of($closurePath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
+            $closure->getStartFilePos(),
             CallableKind::AnonymousCallable,
             'closure',
             null,
@@ -241,7 +246,7 @@ final class FileProcessorTest extends TestCase
 
         $collector = $this->createMockCollectorWithMethodMetrics([$methodWithMetrics]);
 
-        $compositeCollector = new CompositeCollector([$collector]);
+        $compositeCollector = new CompositeCollector([$collector], new DeclarationRegistrarFactory());
 
         $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
@@ -259,10 +264,11 @@ final class FileProcessorTest extends TestCase
         $this->parser->method('parse')->willReturn($ast);
 
         $symbol = SymbolPath::forMethod('App', 'Service', 'run');
-        $declaration = new DeclarationPath($symbol, RelativePath::fromString('test.php'), $method->getStartFilePos());
+        $declaration = DeclarationPath::of($symbol, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
         $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Service'));
         $first = new CallableWithMetrics(
             $declaration,
+            $method->getStartFilePos(),
             CallableKind::Method,
             null,
             null,
@@ -272,6 +278,7 @@ final class FileProcessorTest extends TestCase
         );
         $second = new CallableWithMetrics(
             $declaration,
+            $method->getStartFilePos(),
             CallableKind::Method,
             null,
             null,
@@ -283,13 +290,13 @@ final class FileProcessorTest extends TestCase
         $result = $this->makeProcessor(new CompositeCollector([
             $this->createMockCollectorWithMethodMetrics([$first]),
             $this->createMockCollectorWithMethodMetrics([$second]),
-        ]))->process($file);
+        ], new DeclarationRegistrarFactory()))->process($file);
 
         self::assertTrue($result->isSuccessful());
         self::assertCount(1, $result->callableMetrics());
         $callable = $result->callableMetrics()[0];
         self::assertSame($method->getStartLine(), $callable->sourceLine);
-        self::assertNotSame($callable->declarationPath->startFilePos, $callable->sourceLine);
+        self::assertNotSame($callable->startFilePos, $callable->sourceLine);
         self::assertSame(3, $callable->metrics->get('ccn'));
         self::assertSame(5, $callable->metrics->get('npath'));
     }
@@ -317,7 +324,7 @@ final class FileProcessorTest extends TestCase
 
         $this->parser->method('parse')->willReturn([$namespace]);
 
-        $compositeCollector = new CompositeCollector([]);
+        $compositeCollector = new CompositeCollector([], new DeclarationRegistrarFactory());
 
         $processor = $this->makeProcessor($compositeCollector);
         $result = $processor->process($file);
@@ -363,14 +370,16 @@ final class FileProcessorTest extends TestCase
 
         $this->parser->method('parse')->willReturn([$class]);
 
-        $classPath = new DeclarationPath(SymbolPath::forClass('', 'MyClass'), RelativePath::fromString('test.php'), 10);
+        $classPath = DeclarationPath::of(SymbolPath::forClass('', 'MyClass'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
         $class = new ClassWithMetrics(
             $classPath,
+            10,
             5,
             new MetricBag(),
         );
         $methodMetric = new CallableWithMetrics(
-            new DeclarationPath(SymbolPath::forMethod('', 'MyClass', 'run'), RelativePath::fromString('test.php'), 100),
+            DeclarationPath::of(SymbolPath::forMethod('', 'MyClass', 'run'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
+            100,
             CallableKind::Method,
             null,
             $classPath,
@@ -382,7 +391,7 @@ final class FileProcessorTest extends TestCase
         $processor = $this->makeProcessor(new CompositeCollector([
             $this->createMockCollectorWithClassMetrics([$class]),
             $this->createMockCollectorWithMethodMetrics([$methodMetric]),
-        ]));
+        ], new DeclarationRegistrarFactory()));
         $result = $processor->process($file);
 
         self::assertTrue($result->isSuccessful());
@@ -427,13 +436,9 @@ final class FileProcessorTest extends TestCase
             }
             PHP);
         $class = $this->singleNode($ast, Node\Stmt\Class_::class);
-        $classDeclaration = new DeclarationPath(
-            SymbolPath::forClass('App', 'Record'),
-            RelativePath::fromString('test.php'),
-            $class->getStartFilePos(),
-        );
+        $classDeclaration = DeclarationPath::of(SymbolPath::forClass('App', 'Record'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
 
-        $result = $this->processLiteralAst($ast, [new ClassWithMetrics($classDeclaration, $class->getStartLine(), new MetricBag())]);
+        $result = $this->processLiteralAst($ast, [new ClassWithMetrics($classDeclaration, $class->getStartFilePos(), $class->getStartLine(), new MetricBag())]);
 
         self::assertTrue($result->isSuccessful());
         self::assertSame([], $result->thresholdOverrides());
@@ -479,10 +484,11 @@ final class FileProcessorTest extends TestCase
             PHP);
         $class = $this->singleNode($ast, Node\Stmt\Class_::class);
         $constructor = $this->singleNode($ast, Node\Stmt\ClassMethod::class);
-        $classDeclaration = new DeclarationPath(SymbolPath::forClass('App', 'Record'), RelativePath::fromString('test.php'), $class->getStartFilePos());
-        $constructorDeclaration = new DeclarationPath(SymbolPath::forMethod('App', 'Record', '__construct'), RelativePath::fromString('test.php'), $constructor->getStartFilePos());
+        $classDeclaration = DeclarationPath::of(SymbolPath::forClass('App', 'Record'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
+        $constructorDeclaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Record', '__construct'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
         $constructorMetric = new CallableWithMetrics(
             $constructorDeclaration,
+            $constructor->getStartFilePos(),
             CallableKind::Method,
             null,
             $classDeclaration,
@@ -493,7 +499,7 @@ final class FileProcessorTest extends TestCase
 
         $result = $this->processLiteralAst(
             $ast,
-            [new ClassWithMetrics($classDeclaration, $class->getStartLine(), new MetricBag())],
+            [new ClassWithMetrics($classDeclaration, $class->getStartFilePos(), $class->getStartLine(), new MetricBag())],
             [$constructorMetric],
         );
 
@@ -539,17 +545,17 @@ final class FileProcessorTest extends TestCase
         // explicitly so this fixture exercises FileProcessor's innermost binding.
         $closure->setDocComment(new Doc('/** @qmx-ignore complexity.cyclomatic closure control */', 9, 9));
         $arrow->setDocComment(new Doc('/** @qmx-ignore complexity.cyclomatic arrow control */', 11, 11));
-        $classDeclaration = new DeclarationPath(SymbolPath::forClass('App', 'Record'), RelativePath::fromString('test.php'), $class->getStartFilePos());
-        $methodDeclaration = new DeclarationPath(SymbolPath::forMethod('App', 'Record', 'run'), RelativePath::fromString('test.php'), $method->getStartFilePos());
-        $closureDeclaration = new DeclarationPath(SymbolPath::forGlobalFunction('App', '{closure#1}'), RelativePath::fromString('test.php'), $closure->getStartFilePos());
-        $arrowDeclaration = new DeclarationPath(SymbolPath::forGlobalFunction('App', '{closure#2}'), RelativePath::fromString('test.php'), $arrow->getStartFilePos());
+        $classDeclaration = DeclarationPath::of(SymbolPath::forClass('App', 'Record'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
+        $methodDeclaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Record', 'run'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
+        $closureDeclaration = DeclarationPath::of(SymbolPath::forGlobalFunction('App', '{closure#1}'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
+        $arrowDeclaration = DeclarationPath::of(SymbolPath::forGlobalFunction('App', '{closure#2}'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
         $metrics = [
-            new CallableWithMetrics($methodDeclaration, CallableKind::Method, null, $classDeclaration, new LogicalClassPath(SymbolPath::forClass('App', 'Record')), new MetricBag(), $method->getStartLine()),
-            new CallableWithMetrics($closureDeclaration, CallableKind::AnonymousCallable, 'closure', $classDeclaration, null, new MetricBag(), $closure->getStartLine()),
-            new CallableWithMetrics($arrowDeclaration, CallableKind::AnonymousCallable, 'arrow', $classDeclaration, null, new MetricBag(), $arrow->getStartLine()),
+            new CallableWithMetrics($methodDeclaration, $method->getStartFilePos(), CallableKind::Method, null, $classDeclaration, new LogicalClassPath(SymbolPath::forClass('App', 'Record')), new MetricBag(), $method->getStartLine()),
+            new CallableWithMetrics($closureDeclaration, $closure->getStartFilePos(), CallableKind::AnonymousCallable, 'closure', $classDeclaration, null, new MetricBag(), $closure->getStartLine()),
+            new CallableWithMetrics($arrowDeclaration, $arrow->getStartFilePos(), CallableKind::AnonymousCallable, 'arrow', $classDeclaration, null, new MetricBag(), $arrow->getStartLine()),
         ];
 
-        $result = $this->processLiteralAst($ast, [new ClassWithMetrics($classDeclaration, $class->getStartLine(), new MetricBag())], $metrics);
+        $result = $this->processLiteralAst($ast, [new ClassWithMetrics($classDeclaration, $class->getStartFilePos(), $class->getStartLine(), new MetricBag())], $metrics);
 
         self::assertTrue($result->isSuccessful());
         $controls = array_values(array_filter(
@@ -593,18 +599,18 @@ final class FileProcessorTest extends TestCase
         $closure = $this->singleNode($ast, Node\Expr\Closure::class);
         $classMethods = (new NodeFinder())->findInstanceOf($ast, Node\Stmt\ClassMethod::class);
         $nestedMethod = $classMethods[1] ?? throw new LogicException('Missing nested method');
-        $outerDeclaration = new DeclarationPath(SymbolPath::forClass('App', 'Outer'), RelativePath::fromString('test.php'), $outer->getStartFilePos());
-        $anonymousDeclaration = new DeclarationPath(SymbolPath::forClass('App', '{anonymous@' . $anonymous->getStartFilePos() . '}'), RelativePath::fromString('test.php'), $anonymous->getStartFilePos());
-        $methodDeclaration = new DeclarationPath(SymbolPath::forMethod('App', 'Outer', 'run'), RelativePath::fromString('test.php'), $method->getStartFilePos());
-        $closureDeclaration = new DeclarationPath(SymbolPath::forGlobalFunction('App', '{closure#1}'), RelativePath::fromString('test.php'), $closure->getStartFilePos());
-        $nestedDeclaration = new DeclarationPath(SymbolPath::forMethod('App', '{anonymous@' . $anonymous->getStartFilePos() . '}', 'nested'), RelativePath::fromString('test.php'), $nestedMethod->getStartFilePos());
+        $outerDeclaration = DeclarationPath::of(SymbolPath::forClass('App', 'Outer'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
+        $anonymousDeclaration = DeclarationPath::of(SymbolPath::forClass('App', '{anonymous#0}'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
+        $methodDeclaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Outer', 'run'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
+        $closureDeclaration = DeclarationPath::of(SymbolPath::forGlobalFunction('App', '{closure#1}'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
+        $nestedDeclaration = DeclarationPath::of(SymbolPath::forMethod('App', '{anonymous#0}', 'nested'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
         $result = $this->processLiteralAst(
             $ast,
-            [new ClassWithMetrics($outerDeclaration, $outer->getStartLine(), new MetricBag())],
+            [new ClassWithMetrics($outerDeclaration, $outer->getStartFilePos(), $outer->getStartLine(), new MetricBag())],
             [
-                new CallableWithMetrics($methodDeclaration, CallableKind::Method, null, $outerDeclaration, new LogicalClassPath(SymbolPath::forClass('App', 'Outer')), new MetricBag(), $method->getStartLine()),
-                new CallableWithMetrics($closureDeclaration, CallableKind::AnonymousCallable, 'closure', $outerDeclaration, null, new MetricBag(), $closure->getStartLine()),
-                new CallableWithMetrics($nestedDeclaration, CallableKind::Method, null, $anonymousDeclaration, null, new MetricBag(), $nestedMethod->getStartLine()),
+                new CallableWithMetrics($methodDeclaration, $method->getStartFilePos(), CallableKind::Method, null, $outerDeclaration, new LogicalClassPath(SymbolPath::forClass('App', 'Outer')), new MetricBag(), $method->getStartLine()),
+                new CallableWithMetrics($closureDeclaration, $closure->getStartFilePos(), CallableKind::AnonymousCallable, 'closure', $outerDeclaration, null, new MetricBag(), $closure->getStartLine()),
+                new CallableWithMetrics($nestedDeclaration, $nestedMethod->getStartFilePos(), CallableKind::Method, null, $anonymousDeclaration, null, new MetricBag(), $nestedMethod->getStartLine()),
             ],
         );
 
@@ -640,13 +646,13 @@ final class FileProcessorTest extends TestCase
         $classes = (new NodeFinder())->findInstanceOf($ast, Node\Stmt\Class_::class);
         $outer = $classes[0] ?? throw new LogicException('Missing outer class');
         $inner = $classes[1] ?? throw new LogicException('Missing inner class');
-        $outerDeclaration = new DeclarationPath(SymbolPath::forClass('App', 'Outer'), RelativePath::fromString('test.php'), $outer->getStartFilePos());
-        $innerDeclaration = new DeclarationPath(SymbolPath::forClass('App', 'Inner'), RelativePath::fromString('test.php'), $inner->getStartFilePos());
+        $outerDeclaration = DeclarationPath::of(SymbolPath::forClass('App', 'Outer'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
+        $innerDeclaration = DeclarationPath::of(SymbolPath::forClass('App', 'Inner'), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0));
         $result = $this->processLiteralAst(
             $ast,
             [
-                new ClassWithMetrics($outerDeclaration, $outer->getStartLine(), new MetricBag()),
-                new ClassWithMetrics($innerDeclaration, $inner->getStartLine(), new MetricBag()),
+                new ClassWithMetrics($outerDeclaration, $outer->getStartFilePos(), $outer->getStartLine(), new MetricBag()),
+                new ClassWithMetrics($innerDeclaration, $inner->getStartFilePos(), $inner->getStartLine(), new MetricBag()),
             ],
         );
 
@@ -698,7 +704,7 @@ final class FileProcessorTest extends TestCase
             $collectors[] = $this->createMockCollectorWithMethodMetrics($callables);
         }
 
-        return $this->makeProcessor(new CompositeCollector($collectors))->process(new SplFileInfo('/tmp/test.php'));
+        return $this->makeProcessor(new CompositeCollector($collectors, new DeclarationRegistrarFactory()))->process(new SplFileInfo('/tmp/test.php'));
     }
 
     /**

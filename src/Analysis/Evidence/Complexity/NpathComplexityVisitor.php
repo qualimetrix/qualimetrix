@@ -24,6 +24,7 @@ use PhpParser\Node\Stmt\TryCatch;
 use PhpParser\Node\Stmt\While_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope;
@@ -56,7 +57,7 @@ use Qualimetrix\Core\Path\RelativePath;
  * Statement NPath uses max(1, exprNpath) to ensure simple statements
  * contribute at least 1 path in multiplicative sequences.
  */
-final class NpathComplexityVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
+final class NpathComplexityVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
     use VisitorMethodTrackingTrait;
 
@@ -125,7 +126,6 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
     {
         $result = [];
 
-        $ordinals = $this->callableCollisionOrdinals($this->scopes);
         foreach ($this->scopes as $fqn => $scope) {
             $metrics = (new MetricBag())->with('npath', $this->npath[$fqn] ?? 1);
 
@@ -137,7 +137,7 @@ final class NpathComplexityVisitor extends NodeVisitorAbstract implements Resett
                 ]);
             }
 
-            $result[] = $this->createCallableWithMetrics($scope, $file, $metrics, $ordinals[$fqn]);
+            $result[] = $this->createCallableWithMetrics($scope, $file, $metrics);
         }
 
         return $result;

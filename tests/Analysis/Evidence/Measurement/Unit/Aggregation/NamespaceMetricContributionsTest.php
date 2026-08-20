@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -70,9 +71,9 @@ final class NamespaceMetricContributionsTest extends TestCase
     {
         $repository = new InMemoryMetricRepository();
         $file = RelativePath::fromString('src/Multi.php');
-        $classPath = new DeclarationPath(SymbolPath::forClass('One', 'Service'), $file, 10);
-        $methodPath = new DeclarationPath(SymbolPath::forMethod('One', 'Service', 'run'), $file, 20);
-        $functionPath = new DeclarationPath(SymbolPath::forGlobalFunction('One', 'helper'), $file, 30);
+        $classPath = DeclarationPath::of(SymbolPath::forClass('One', 'Service'), $file, DeclarationOrdinal::fromRank(0));
+        $methodPath = DeclarationPath::of(SymbolPath::forMethod('One', 'Service', 'run'), $file, DeclarationOrdinal::fromRank(0));
+        $functionPath = DeclarationPath::of(SymbolPath::forGlobalFunction('One', 'helper'), $file, DeclarationOrdinal::fromRank(0));
 
         $repository->add(SymbolPath::forFile($file), MetricBag::fromArray(['loc' => 20, 'tokens' => 30]), $file, 1);
         $repository->addSubject(
@@ -83,6 +84,7 @@ final class NamespaceMetricContributionsTest extends TestCase
         );
         $repository->addCallable(new CallableWithMetrics(
             $methodPath,
+            0,
             CallableKind::Method,
             null,
             $classPath,
@@ -91,6 +93,7 @@ final class NamespaceMetricContributionsTest extends TestCase
         ));
         $repository->addCallable(new CallableWithMetrics(
             $functionPath,
+            0,
             CallableKind::Function,
             null,
             null,
@@ -136,13 +139,13 @@ final class NamespaceMetricContributionsTest extends TestCase
         $file = RelativePath::fromString('src/Multi.php');
         $repository->add(SymbolPath::forFile($file), new MetricBag(), $file, 1);
         $repository->addSubject(
-            MetricSubject::declaration(new DeclarationPath(SymbolPath::forClass('One', 'First'), $file, 10)),
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('One', 'First'), $file, DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
             $file,
             2,
         );
         $repository->addSubject(
-            MetricSubject::declaration(new DeclarationPath(SymbolPath::forClass('One', 'First'), $file, 20)),
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('One', 'First'), $file, DeclarationOrdinal::fromRank(1))),
             new MetricBag(),
             $file,
             3,

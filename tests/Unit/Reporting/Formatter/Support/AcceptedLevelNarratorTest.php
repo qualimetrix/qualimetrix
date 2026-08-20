@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -105,11 +106,7 @@ final class AcceptedLevelNarratorTest extends TestCase
     {
         return new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 10),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forMethod('App', 'Foo', 'bar'),
-                RelativePath::fromString('src/Foo.php'),
-                0,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'bar'), RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: SymbolPath::forMethod('App', 'Foo', 'bar'),
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',

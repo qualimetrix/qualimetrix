@@ -24,6 +24,7 @@ use Qualimetrix\Analysis\Policy\Baseline\InertBaselineEntry;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Analysis\Policy\Baseline\RunScope;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -295,7 +296,7 @@ final class BaselineUpdaterTest extends TestCase
 
         $noNumber = new Violation(
             location: new Location(RelativePath::fromString('src/Foo.php'), 1),
-            subject: MetricSubject::declaration(new DeclarationPath($symbol, RelativePath::fromString('src/Foo.php'), 42)),
+            subject: MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/Foo.php'), DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',

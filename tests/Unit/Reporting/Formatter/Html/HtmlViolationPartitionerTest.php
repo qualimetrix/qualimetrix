@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Finding\Contract\OccurrenceKey;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -283,7 +284,7 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
         $logical = SymbolPath::forMethod('App', 'Service', 'run');
-        $subject = MetricSubject::declaration(new DeclarationPath($logical, RelativePath::fromString('src/Service.php'), 101));
+        $subject = MetricSubject::declaration(DeclarationPath::of($logical, RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0)));
         $occurrence = OccurrenceKey::semantic('test', ['id' => 1]);
         $violation = self::violation(new Location(RelativePath::fromString('src/Service.php'), 10), $logical, 'r', 'r', 'message', Severity::Warning, occurrenceKey: $occurrence, subject: $subject);
 
@@ -300,10 +301,10 @@ final class HtmlViolationPartitionerTest extends TestCase
         $node = new HtmlTreeNode('Service', 'App\\Service', 'class');
         $logical = SymbolPath::forMethod('App', 'Service', 'run');
         $firstSubject = MetricSubject::declaration(
-            new DeclarationPath($logical, RelativePath::fromString('src/Service.php'), 101),
+            DeclarationPath::of($logical, RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0)),
         );
         $secondSubject = MetricSubject::declaration(
-            new DeclarationPath($logical, RelativePath::fromString('src/Service.php'), 202),
+            DeclarationPath::of($logical, RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(1)),
         );
 
         $this->partitioner->attach(
@@ -428,7 +429,7 @@ final class HtmlViolationPartitionerTest extends TestCase
     {
         $subject ??= match ($symbolPath->getType()) {
             \Qualimetrix\Core\Symbol\SymbolType::File, \Qualimetrix\Core\Symbol\SymbolType::Namespace_, \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
-            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), $location->line ?? 0)),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
         return new Violation(location: $location, subject: $subject, symbolPath: $symbolPath, ruleName: $ruleName, violationCode: $violationCode, message: $message, severity: $severity, metricValue: $metricValue, level: $level, relatedLocations: $relatedLocations, recommendation: $recommendation, threshold: $threshold, dependencyTarget: $dependencyTarget, dependencyType: $dependencyType, acceptedLevel: $acceptedLevel, occurrenceKey: $occurrenceKey);
     }

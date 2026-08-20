@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessingResult;
 use Qualimetrix\Analysis\Run\Contract\Collection\SuccessfulFileProcessing;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -49,7 +50,8 @@ final class FileProcessingResultTest extends TestCase
         $methodBag = MetricBag::fromArray(['ccn' => 5]);
 
         $callableMetrics = [new CallableWithMetrics(
-            new DeclarationPath($symbolPath, RelativePath::fromString('path/to/file.php'), 0),
+            DeclarationPath::of($symbolPath, RelativePath::fromString('path/to/file.php'), DeclarationOrdinal::fromRank(0)),
+            0,
             CallableKind::Method,
             null,
             null,
@@ -77,10 +79,11 @@ final class FileProcessingResultTest extends TestCase
         $classBag = MetricBag::fromArray(['wmc' => 15]);
 
         $classMetrics = [
-            'declaration:class:App\\Service@path/to/file.php:16' => [
-                'subject' => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new DeclarationPath($symbolPath, RelativePath::fromString('path/to/file.php'), 16)),
+            'declaration:class:App\\Service@path/to/file.php#1' => [
+                'subject' => \Qualimetrix\Core\Symbol\MetricSubject::declaration(DeclarationPath::of($symbolPath, RelativePath::fromString('path/to/file.php'), DeclarationOrdinal::fromRank(1))),
                 'metrics' => $classBag,
                 'line' => 5,
+                'start' => 16,
             ],
         ];
 
@@ -94,7 +97,7 @@ final class FileProcessingResultTest extends TestCase
 
         self::assertTrue($result->isSuccessful());
         self::assertCount(1, $result->classMetrics());
-        self::assertArrayHasKey('declaration:class:App\\Service@path/to/file.php:16', $result->classMetrics());
+        self::assertArrayHasKey('declaration:class:App\\Service@path/to/file.php#1', $result->classMetrics());
     }
 
     #[Test]

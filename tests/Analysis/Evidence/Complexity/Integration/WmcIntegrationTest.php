@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -120,7 +121,8 @@ final class WmcIntegrationTest extends TestCase
         // Class 1
         $class1Path = SymbolPath::forClass('App', 'Class1');
         $repository->addCallable(new CallableWithMetrics(
-            new DeclarationPath(SymbolPath::forMethod('App', 'Class1', 'method1'), RelativePath::fromString('test1.php'), 100),
+            DeclarationPath::of(SymbolPath::forMethod('App', 'Class1', 'method1'), RelativePath::fromString('test1.php'), DeclarationOrdinal::fromRank(0)),
+            100,
             CallableKind::Method,
             null,
             null,
@@ -131,7 +133,8 @@ final class WmcIntegrationTest extends TestCase
         // Class 2
         $class2Path = SymbolPath::forClass('App', 'Class2');
         $repository->addCallable(new CallableWithMetrics(
-            new DeclarationPath(SymbolPath::forMethod('App', 'Class2', 'methodA'), RelativePath::fromString('test2.php'), 100),
+            DeclarationPath::of(SymbolPath::forMethod('App', 'Class2', 'methodA'), RelativePath::fromString('test2.php'), DeclarationOrdinal::fromRank(0)),
+            100,
             CallableKind::Method,
             null,
             null,
@@ -139,7 +142,8 @@ final class WmcIntegrationTest extends TestCase
             (new MetricBag())->with('ccn', 15),
         ));
         $repository->addCallable(new CallableWithMetrics(
-            new DeclarationPath(SymbolPath::forMethod('App', 'Class2', 'methodB'), RelativePath::fromString('test2.php'), 200),
+            DeclarationPath::of(SymbolPath::forMethod('App', 'Class2', 'methodB'), RelativePath::fromString('test2.php'), DeclarationOrdinal::fromRank(0)),
+            200,
             CallableKind::Method,
             null,
             null,
@@ -163,7 +167,8 @@ final class WmcIntegrationTest extends TestCase
     private function addMethod(InMemoryMetricRepository $repository, SymbolPath $method, SymbolPath $class, int $ccn, int $startFilePos): void
     {
         $repository->addCallable(new CallableWithMetrics(
-            new DeclarationPath($method, RelativePath::fromString('test.php'), $startFilePos),
+            DeclarationPath::of($method, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
+            $startFilePos,
             CallableKind::Method,
             null,
             null,

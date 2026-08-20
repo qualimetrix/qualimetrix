@@ -12,6 +12,8 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityCollector;
 use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityOptions;
 use Qualimetrix\Analysis\Evidence\Complexity\NpathComplexityRule;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricRepositoryInterface;
@@ -25,6 +27,7 @@ use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -74,7 +77,12 @@ final class NpathSaturationCeilingTest extends TestCase
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse(self::source($branchCount)) ?? [];
         $traverser = new NodeTraverser();
-        $traverser->addVisitor($collector->getVisitor());
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor = $collector->getVisitor();
+        self::assertInstanceOf(DeclarationIndexAwareInterface::class, $visitor);
+        $visitor->useDeclarationIndex($registrar->index());
+        $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
 
         $collected = $collector->collect(new SplFileInfo(__FILE__), $ast);
@@ -82,11 +90,7 @@ final class NpathSaturationCeilingTest extends TestCase
         self::assertIsInt($npath);
 
         $symbol = SymbolPath::forMethod('App', 'Subject', 'explode');
-        $subject = MetricSubject::declaration(new DeclarationPath(
-            $symbol,
-            RelativePath::fromString('src/Subject.php'),
-            8,
-        ));
+        $subject = MetricSubject::declaration(DeclarationPath::of($symbol, RelativePath::fromString('src/Subject.php'), DeclarationOrdinal::fromRank(0)));
         $metrics = (new MetricBag())->with(MetricName::COMPLEXITY_NPATH, $npath);
         $repository = self::createStub(MetricRepositoryInterface::class);
         $repository->method('allCallables')->willReturn([

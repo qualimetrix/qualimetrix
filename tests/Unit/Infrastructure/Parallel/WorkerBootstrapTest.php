@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Run\Collection\FileProcessor;
 use Qualimetrix\Analysis\Run\Contract\Collection\FileProcessorInterface;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use Qualimetrix\Infrastructure\Ast\CachedFileParser;
 use Qualimetrix\Infrastructure\Ast\PhpFileParser;
 use Qualimetrix\Infrastructure\Parallel\WorkerBootstrap;
@@ -488,7 +489,7 @@ final class WorkerBootstrapTest extends TestCase
 
 class TestDependencyTraversalParticipant extends NodeVisitorAbstract implements DependencyTraversalParticipantInterface
 {
-    public function beginFile(RelativePath $file): void {}
+    public function beginFile(RelativePath $file, FileDeclarationIndex $index): void {}
 
     /** @return list<Dependency> */
     public function dependencies(): array

@@ -5,21 +5,22 @@ declare(strict_types=1);
 namespace Qualimetrix\Analysis\Evidence\Measurement\Visitor;
 
 use InvalidArgumentException;
-
-use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 
-/** Owns mutable lexical, callable, collision, and file-entry subject state for one file. */
-final class VisitorFileEntryScope
+/**
+ * Where the traversal stands inside one file.
+ *
+ * Namespaces, class-likes, properties and callables are entered and left in
+ * step with the AST, and every visitor asks this one scope rather than keeping
+ * its own stacks. The subject id of each frame is kept here too: which subject
+ * is *current* follows from where the traversal is, while what that subject is
+ * made of belongs to {@see FileEntrySubjectRegistry}.
+ */
+final class VisitorLexicalScope
 {
-    /** @var array<string, array{components: array<string, int|string>, group: string, ordinal: int}> */
-    private array $subjects = [];
-
-    /** @var array<string, int> */
-    private array $groupCounts = [];
-
     /** @var array<string, int> */
     private array $callableTraversalOrdinals = [];
 
@@ -29,7 +30,7 @@ final class VisitorFileEntryScope
     /** @var list<string> */
     private array $callableSubjects = [];
 
-    /** @var list<array{namespace: ?string, class: string, start: int, anonymous: bool, subject: ?string}> */
+    /** @var list<array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string}> */
     private array $classes = [];
 
     /** @var list<?string> */
@@ -42,12 +43,13 @@ final class VisitorFileEntryScope
 
     private int $closureCounter = 0;
 
-    private int $nextSubject = 0;
+    public function __construct(
+        private readonly FileEntrySubjectRegistry $subjects,
+        private readonly DeclarationNumbering $numbering,
+    ) {}
 
     public function reset(): void
     {
-        $this->subjects = [];
-        $this->groupCounts = [];
         $this->callableTraversalOrdinals = [];
         $this->callables = [];
         $this->callableSubjects = [];
@@ -56,7 +58,7 @@ final class VisitorFileEntryScope
         $this->properties = [];
         $this->namespace = null;
         $this->closureCounter = 0;
-        $this->nextSubject = 0;
+        $this->subjects->reset();
     }
 
     public function enterNamespace(?string $namespace): void
@@ -74,20 +76,20 @@ final class VisitorFileEntryScope
     {
         $parent = $this->currentClass();
         $anonymous = $name === null || ($parent['anonymous'] ?? false);
-        $class = $name ?? '{anonymous@' . $position . '}';
-        $subject = $anonymous
-            ? null
-            : $this->register(
-                MetricSubjectCodec::encodeClass($this->namespace ?? '', $class, $position),
-                implode("\0", ['class', $this->namespace ?? '', $class, (string) $position]),
-            );
+        $ordinal = $name === null
+            ? $this->numbering->forUnnamedClassLike($position)
+            : $this->numbering->forClass($this->namespace, $name, $position);
+        $class = $name ?? '{anonymous#' . $ordinal->value . '}';
 
         $this->classes[] = [
             'namespace' => $this->namespace,
             'class' => $class,
             'start' => $position,
+            'ordinal' => $ordinal,
             'anonymous' => $anonymous,
-            'subject' => $subject,
+            'subject' => $anonymous
+                ? null
+                : $this->subjects->register(MetricSubjectCodec::encodeClass($this->namespace ?? '', $class), $ordinal),
         ];
     }
 
@@ -129,27 +131,28 @@ final class VisitorFileEntryScope
         }
 
         $classContext = $this->currentClass();
-        $anonymousClassContext = $classContext['anonymous'] ?? false;
         $logicalOwner = $class === null ? null : $this->qualified($namespace, $class);
         $logicalFqn = $logicalOwner === null
             ? $this->qualified($namespace, $member)
             : $logicalOwner . '::' . $member;
         $base = $logicalFqn . '@' . $startFilePos;
-        $ordinal = $this->callableTraversalOrdinals[$base] ?? 0;
-        $this->callableTraversalOrdinals[$base] = $ordinal + 1;
+        $traversalOrdinal = $this->callableTraversalOrdinals[$base] ?? 0;
+        $this->callableTraversalOrdinals[$base] = $traversalOrdinal + 1;
 
         $scope = new VisitorCallableScope(
             $namespace,
             $class,
-            $anonymousClassContext,
+            $classContext['anonymous'] ?? false,
             $member,
             $logicalFqn,
-            $base . '#' . $ordinal,
+            $base . '#' . $traversalOrdinal,
             $startFilePos,
             $sourceLine,
             $kind,
             $anonymousSyntax,
             $classStartFilePos,
+            $this->numbering->forCallable($namespace, $class, $member, $kind, $startFilePos),
+            self::lexicalClassOrdinal($classContext, $classStartFilePos),
         );
         $this->callables[] = $scope;
         $this->callableSubjects[] = $this->callableSubject($scope);
@@ -169,7 +172,7 @@ final class VisitorFileEntryScope
         return $this->namespace;
     }
 
-    /** @return ?array{namespace: ?string, class: string, start: int, anonymous: bool, subject: ?string} */
+    /** @return ?array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string} */
     public function currentClass(): ?array
     {
         return $this->classes === [] ? null : $this->classes[array_key_last($this->classes)];
@@ -186,54 +189,38 @@ final class VisitorFileEntryScope
             return $this->callableSubjects[array_key_last($this->callableSubjects)];
         }
 
-        return $this->currentClass()['subject'] ?? 'file';
+        return $this->currentClass()['subject'] ?? $this->subjects->fileSubjectId();
     }
 
-    /** @return array<string, int|string> */
-    public function subjectComponents(string $id): array
-    {
-        if ($id === 'file') {
-            return MetricSubjectCodec::encodeFile();
-        }
-        $subject = $this->subjects[$id] ?? null;
-        if ($subject === null) {
-            throw new LogicException('Unknown file-entry subject reference');
-        }
-        $components = $subject['components'];
-        if (($this->groupCounts[$subject['group']] ?? 0) > 1) {
-            $components['collisionOrdinal'] = $subject['ordinal'];
-        }
-
-        return $components;
-    }
-
+    /**
+     * The wire subject of a callable declared inside an anonymous class stays
+     * the file: the enclosing class has no name of its own, only its order
+     * among the unnamed declarations of the file, and pinning a member to that
+     * would make the member move whenever another anonymous class appears
+     * above it.
+     */
     private function callableSubject(VisitorCallableScope $scope): string
     {
         if ($scope->anonymousClassContext) {
-            return 'file';
+            return $this->subjects->fileSubjectId();
         }
+
         $namespace = $scope->namespace ?? '';
         $components = $scope->class !== null && \in_array($scope->kind, [CallableKind::Method, CallableKind::PropertyHook], true)
-            ? MetricSubjectCodec::encodeMethod($namespace, $scope->class, $scope->member, $scope->startFilePos)
-            : MetricSubjectCodec::encodeFunction($namespace, $scope->member, $scope->startFilePos);
-        $group = implode("\0", [$scope->kind->value, $namespace, $scope->class ?? '', $scope->member, (string) $scope->startFilePos]);
+            ? MetricSubjectCodec::encodeMethod($namespace, $scope->class, $scope->member)
+            : MetricSubjectCodec::encodeFunction($namespace, $scope->member);
 
-        return $this->register($components, $group);
+        return $this->subjects->register($components, $scope->ordinal);
+    }
+
+    /** @param ?array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string} $classContext */
+    private static function lexicalClassOrdinal(?array $classContext, ?int $classStartFilePos): ?DeclarationOrdinal
+    {
+        return $classStartFilePos === null ? null : ($classContext['ordinal'] ?? null);
     }
 
     private function qualified(?string $namespace, string $name): string
     {
         return $namespace === null || $namespace === '' ? $name : $namespace . '\\' . $name;
-    }
-
-    /** @param array<string, int|string> $components */
-    private function register(array $components, string $group): string
-    {
-        $ordinal = $this->groupCounts[$group] ?? 0;
-        $this->groupCounts[$group] = $ordinal + 1;
-        $id = 'subject-' . $this->nextSubject++;
-        $this->subjects[$id] = ['components' => $components, 'group' => $group, 'ordinal' => $ordinal];
-
-        return $id;
     }
 }

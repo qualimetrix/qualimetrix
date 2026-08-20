@@ -19,11 +19,12 @@ use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\CodeSmell\BooleanArgument\BooleanArgumentSmells;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ControlFlow\ControlFlowSmells;
 use Qualimetrix\Analysis\Evidence\CodeSmell\Debug\DebugCodeSmells;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait;
 
 /** Traverses AST nodes and delegates code-smell semantics to subject companions. */
-final class CodeSmellVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
+final class CodeSmellVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
     use VisitorMethodTrackingTrait;
 
