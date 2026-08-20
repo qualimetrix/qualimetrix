@@ -26,6 +26,7 @@ use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use ReflectionClass;
 use SplFileInfo;
 
 /**
@@ -45,22 +46,24 @@ use SplFileInfo;
 final class ClassProducerOrdinalTest extends TestCase
 {
     /**
-     * Every call site of the shared helper, and the collector that owns it.
+     * The class-metric producers, and the file whose call site of the shared
+     * helper belongs to each.
      *
-     * @var array<string, class-string<ClassMetricsProviderInterface&AbstractCollector>>
+     * `TypeCoverageCollector` is the producer; the helper sits in the visitor
+     * it drives, which is why the two columns are not the same file.
+     *
+     * @var array<class-string<ClassMetricsProviderInterface>, string>
      */
     private const array PRODUCERS = [
-        'src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php' => UnusedPrivateCollector::class,
-        'src/Analysis/Evidence/Cohesion/LcomCollector.php' => LcomCollector::class,
-        'src/Analysis/Evidence/Cohesion/TccLccCollector.php' => TccLccCollector::class,
-        'src/Analysis/Evidence/Coupling/RfcCollector.php' => RfcCollector::class,
-        'src/Analysis/Evidence/Design/InheritanceDepthCollector.php' => InheritanceDepthCollector::class,
-        'src/Analysis/Evidence/Design/TypeCoverageVisitor.php' => TypeCoverageCollector::class,
-        'src/Analysis/Evidence/Size/LocCollector.php' => LocCollector::class,
-        'src/Analysis/Evidence/Size/MethodCountCollector.php' => MethodCountCollector::class,
+        UnusedPrivateCollector::class => 'src/Analysis/Evidence/CodeSmell/UnusedPrivateCollector.php',
+        LcomCollector::class => 'src/Analysis/Evidence/Cohesion/LcomCollector.php',
+        TccLccCollector::class => 'src/Analysis/Evidence/Cohesion/TccLccCollector.php',
+        RfcCollector::class => 'src/Analysis/Evidence/Coupling/RfcCollector.php',
+        InheritanceDepthCollector::class => 'src/Analysis/Evidence/Design/InheritanceDepthCollector.php',
+        TypeCoverageCollector::class => 'src/Analysis/Evidence/Design/TypeCoverageVisitor.php',
+        LocCollector::class => 'src/Analysis/Evidence/Size/LocCollector.php',
+        MethodCountCollector::class => 'src/Analysis/Evidence/Size/MethodCountCollector.php',
     ];
-
-    private const string HELPER = 'src/Analysis/Evidence/Measurement/Contract/DeclarationIndexAwareTrait.php';
 
     /**
      * The surviving record is the second declaration, because the class maps
@@ -72,9 +75,8 @@ final class ClassProducerOrdinalTest extends TestCase
      */
     #[Test]
     #[DataProvider('provideClassProducers')]
-    public function itNumbersTheSecondDeclarationOfOneClassIdentity(string $producer): void
+    public function itNumbersTheSecondDeclarationOfOneClassIdentity(string $producer, string $source): void
     {
-        $source = self::duplicateClass();
         $file = sys_get_temp_dir() . '/qmx-dup-class-' . bin2hex(random_bytes(6)) . '.php';
         file_put_contents($file, $source);
 
@@ -108,10 +110,44 @@ final class ClassProducerOrdinalTest extends TestCase
     }
 
     /**
-     * A ninth call site of the helper is a producer no fixture above covers.
+     * A ninth class-metric producer is one no fixture above covers.
+     *
+     * The producers are enumerated by what makes them producers — the contract
+     * they implement, resolved through the autoloader — and not by the text of
+     * the helper call, which a new producer is free to spell differently or to
+     * reach through the trait's other method.
      */
     #[Test]
-    public function itCoversEveryCallSiteOfTheSharedHelper(): void
+    public function itCoversEveryClassMetricProducer(): void
+    {
+        $found = [];
+        foreach (self::productionClasses() as $class) {
+            if (!is_a($class, ClassMetricsProviderInterface::class, true)) {
+                continue;
+            }
+
+            $reflection = new ReflectionClass($class);
+            if ($reflection->isAbstract() || $reflection->isInterface()) {
+                continue;
+            }
+
+            $found[] = $class;
+        }
+        sort($found);
+        $covered = array_keys(self::PRODUCERS);
+        sort($covered);
+
+        self::assertSame($covered, $found);
+    }
+
+    /**
+     * The call site each producer's fixture stands for still lies where it did.
+     *
+     * Subordinate to the enumeration above: it is what makes the fixtures'
+     * claim about the *helper* checkable, not what makes the set complete.
+     */
+    #[Test]
+    public function itFindsTheHelperCallSiteOfEveryCoveredProducer(): void
     {
         $root = \dirname(__DIR__, 6);
         $callSites = [];
@@ -123,18 +159,41 @@ final class ClassProducerOrdinalTest extends TestCase
                 continue;
             }
 
-            $relative = substr($entry->getPathname(), \strlen($root) + 1);
-            if ($relative === self::HELPER) {
-                continue;
-            }
-
             if (str_contains((string) file_get_contents($entry->getPathname()), '$this->classWithMetrics(')) {
-                $callSites[] = $relative;
+                $callSites[] = substr($entry->getPathname(), \strlen($root) + 1);
             }
         }
         sort($callSites);
+        $covered = array_values(self::PRODUCERS);
+        sort($covered);
 
-        self::assertSame(array_keys(self::PRODUCERS), $callSites);
+        self::assertSame($covered, $callSites);
+    }
+
+    /**
+     * @return list<class-string>
+     */
+    private static function productionClasses(): array
+    {
+        $root = \dirname(__DIR__, 6);
+        $classes = [];
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($root . '/src', FilesystemIterator::SKIP_DOTS),
+        );
+        foreach ($iterator as $entry) {
+            if (!$entry instanceof SplFileInfo || $entry->getExtension() !== 'php') {
+                continue;
+            }
+
+            $relative = substr($entry->getPathname(), \strlen($root) + 5);
+            /** @var class-string $class */
+            $class = 'Qualimetrix\\' . str_replace('/', '\\', substr($relative, 0, -4));
+            if (class_exists($class)) {
+                $classes[] = $class;
+            }
+        }
+
+        return $classes;
     }
 
     private static function deliverIndex(object $participant, FileDeclarationIndex $index): void
@@ -145,12 +204,19 @@ final class ClassProducerOrdinalTest extends TestCase
     }
 
     /**
-     * @return iterable<string, array{class-string<ClassMetricsProviderInterface&AbstractCollector>}>
+     * @return iterable<string, array{class-string<ClassMetricsProviderInterface&AbstractCollector>, string}>
      */
     public static function provideClassProducers(): iterable
     {
-        foreach (self::PRODUCERS as $producer) {
-            yield $producer => [$producer];
+        $forms = [
+            'flat namespace' => self::duplicateClass(),
+            'braced namespace' => self::bracedDuplicateClass(),
+        ];
+
+        foreach (self::PRODUCERS as $producer => $_callSite) {
+            foreach ($forms as $form => $source) {
+                yield $producer . ', ' . $form => [$producer, $source];
+            }
         }
     }
 
@@ -189,6 +255,47 @@ final class ClassProducerOrdinalTest extends TestCase
                     public function shout(): string
                     {
                         return strtoupper($this->greeting);
+                    }
+                }
+            }
+            PHP;
+    }
+
+    private static function bracedDuplicateClass(): string
+    {
+        return <<<'PHP'
+            <?php
+
+            namespace App {
+                if (\PHP_VERSION_ID > 80000) {
+                    class Greeter
+                    {
+                        private string $greeting = 'first';
+
+                        public function greet(): string
+                        {
+                            return $this->greeting;
+                        }
+
+                        public function shout(): string
+                        {
+                            return strtoupper($this->greeting);
+                        }
+                    }
+                } else {
+                    class Greeter
+                    {
+                        private string $greeting = 'second';
+
+                        public function greet(): string
+                        {
+                            return $this->greeting;
+                        }
+
+                        public function shout(): string
+                        {
+                            return strtoupper($this->greeting);
+                        }
                     }
                 }
             }

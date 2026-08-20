@@ -2556,15 +2556,24 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesProjectSymbolCountEqualsLeafNsTotal
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesSymbolClassCountMatchesActual
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesSymbolMethodCountMatchesActual
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itCoversEveryCallSiteOfTheSharedHelper
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateCollector"
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector"
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector"
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Coupling\RfcCollector"
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector"
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\TypeCoverageCollector"
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Size\LocCollector"
- - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Size\MethodCountCollector"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itCoversEveryClassMetricProducer
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itFindsTheHelperCallSiteOfEveryCoveredProducer
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateCollector, braced namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateCollector, flat namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector, braced namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Cohesion\LcomCollector, flat namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector, braced namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Cohesion\TccLccCollector, flat namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Coupling\RfcCollector, braced namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Coupling\RfcCollector, flat namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector, braced namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\InheritanceDepthCollector, flat namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\TypeCoverageCollector, braced namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Design\TypeCoverageCollector, flat namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Size\LocCollector, braced namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Size\LocCollector, flat namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Size\MethodCountCollector, braced namespace"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\ClassProducerOrdinalTest::itNumbersTheSecondDeclarationOfOneClassIdentity"Qualimetrix\Analysis\Evidence\Size\MethodCountCollector, flat namespace"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itAnalysesIrregularNamespaceFormsUnderEveryRule
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itAssignsTheSameNonZeroOrdinalInAWorker
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itDiscriminatesTwoDeclarationsOfOneLogicalIdentityByOrdinal

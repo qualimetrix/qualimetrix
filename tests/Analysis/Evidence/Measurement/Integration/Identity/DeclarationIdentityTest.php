@@ -141,9 +141,13 @@ final class DeclarationIdentityTest extends TestCase
      * Runs the whole rule set, not the single rule the other cases pin.
      *
      * A file with two braced namespaces used to kill the run with
-     * `Required metric "classCount.sum" not found in MetricBag`; the namespace
-     * bags it left empty are filled by rules no single-rule run reaches, so
-     * pinning one rule here would have kept that crash green.
+     * `Required metric "classCount.sum" not found in MetricBag` — from a global
+     * collector, which is why the crash needs neither a wide rule set nor a
+     * class inside the braces to reproduce (checked against 372d8315: the two
+     * function-only files below already kill it under the single-rule config).
+     * The wide run is not what catches that one; it is what puts every other
+     * rule on these namespace forms, and the smelly file below is what keeps
+     * "wide" from quietly becoming a claim about a config that narrowed.
      */
     #[Test]
     public function itAnalysesIrregularNamespaceFormsUnderEveryRule(): void
@@ -209,10 +213,40 @@ final class DeclarationIdentityTest extends TestCase
             }
             PHP);
 
+        $this->write('Smelly.php', <<<'PHP'
+            <?php
+
+            namespace Fixture\Smelly {
+                class Smelly
+                {
+                    public function show(int $a): void
+                    {
+                        var_dump($a);
+                        $this->toggle(true);
+                    }
+
+                    public function toggle(bool $flag): void
+                    {
+                        if ($flag) {
+                            echo 'on';
+                        }
+                    }
+                }
+            }
+            PHP);
+
         $report = $this->report(config: self::EVERY_RULE);
+        $rules = array_unique(array_map(
+            static fn(array $violation): string => (string) $violation['rule'],
+            $report['violations'],
+        ));
 
         self::assertSame(0, $report['coverage']['failed'], (string) json_encode($report['coverage']));
-        self::assertSame(4, $report['coverage']['analyzed']);
+        self::assertSame(5, $report['coverage']['analyzed']);
+        // Both fire inside a braced namespace and neither is reachable under
+        // the single-rule config the other cases use.
+        self::assertContains('code-smell.debug-code', $rules);
+        self::assertContains('code-smell.boolean-argument', $rules);
     }
 
     #[Test]
