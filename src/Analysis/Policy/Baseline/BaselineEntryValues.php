@@ -23,15 +23,37 @@ final readonly class BaselineEntryValues
     ) {}
 
     /**
+     * `count` and `magnitudes` are never independently meaningful — a
+     * magnitude-shaped entry's count is its magnitude list's length, by
+     * {@see BaselineEntry}'s own invariant — so the writer stops serializing
+     * `count` once `magnitudes` is present, and this decoder derives it back
+     * rather than reading a field that could disagree with the list. Allowing
+     * both fields to appear side by side would resurrect exactly the
+     * redundancy being removed, so a file that still writes `count` next to
+     * `magnitudes` is rejected as malformed rather than silently accepted.
+     *
      * @param array<mixed, mixed> $raw
      *
      * @throws BaselineEntryRejection
      */
     public static function decode(array $raw): self
     {
+        $magnitudes = self::readMagnitudes($raw);
+
+        if ($magnitudes !== null) {
+            if (\array_key_exists('count', $raw)) {
+                throw new BaselineEntryRejection(
+                    InertEntryReason::Malformed,
+                    '"count" must not be present alongside "magnitudes"; it is derived from the magnitude list',
+                );
+            }
+
+            return new self(\count($magnitudes), $magnitudes, self::readMode($raw));
+        }
+
         return new self(
             self::readRequiredInt($raw, 'count', '"count" must be an integer'),
-            self::readMagnitudes($raw),
+            null,
             self::readMode($raw),
         );
     }

@@ -38,7 +38,6 @@ final class BaselineEntryParserTest extends TestCase
         $entry = $this->parser->parse('callable:App\Foo::bar', [
             'channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable',
             'magnitudes' => [25],
-            'count' => 1,
         ]);
 
         self::assertInstanceOf(BaselineEntry::class, $entry);
@@ -161,7 +160,7 @@ final class BaselineEntryParserTest extends TestCase
         // JSON has no literal for infinity, but an overflowing exponent
         // decodes to one.
         $entry = $this->parser->parse('callable:App\Foo::bar', json_decode(
-            '{"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[1e400],"count":1}',
+            '{"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[1e400]}',
             true,
             512,
             \JSON_THROW_ON_ERROR,
@@ -170,16 +169,27 @@ final class BaselineEntryParserTest extends TestCase
         self::assertInertFor($entry, InertEntryReason::Malformed);
     }
 
+    /**
+     * `count` is derived from `magnitudes`, so a file that writes both is
+     * refused outright — the disagreement this used to test (`count`
+     * mismatching the magnitude list's length) can no longer even be
+     * expressed once `count` is forbidden alongside `magnitudes`.
+     */
     #[Test]
-    public function itTurnsAMagnitudeListThatDisagreesWithTheCountInert(): void
+    public function itTurnsAnEntryWithCountAlongsideMagnitudesInert(): void
     {
         $entry = $this->parser->parse('callable:App\Foo::bar', [
             'channel' => 'complexity.cyclomatic#complexity.cyclomatic.callable',
             'magnitudes' => [10, 20],
-            'count' => 3,
+            'count' => 2,
         ]);
 
         self::assertInertFor($entry, InertEntryReason::Malformed);
+        self::assertInstanceOf(InertBaselineEntry::class, $entry);
+        self::assertSame(
+            '"count" must not be present alongside "magnitudes"; it is derived from the magnitude list',
+            $entry->detail,
+        );
     }
 
     #[Test]
@@ -211,7 +221,6 @@ final class BaselineEntryParserTest extends TestCase
         $entry = $this->parser->parse('callable:App\Foo::bar', [
             'channel' => 'code-smell.goto#code-smell.goto',
             'magnitudes' => [1.0],
-            'count' => 1,
         ]);
 
         self::assertInertFor($entry, InertEntryReason::ShapeMismatch);

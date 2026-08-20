@@ -24,6 +24,18 @@ final class BaselineEntryValuesTest extends TestCase
     {
         $values = BaselineEntryValues::decode([
             'count' => 2,
+            'mode' => 'suppress',
+        ]);
+
+        self::assertSame(2, $values->count);
+        self::assertNull($values->magnitudes);
+        self::assertSame(BaselineEntryMode::Suppress, $values->mode);
+    }
+
+    #[Test]
+    public function itDerivesCountFromMagnitudesLengthWhenMagnitudesArePresent(): void
+    {
+        $values = BaselineEntryValues::decode([
             'magnitudes' => [1, 2.5],
             'mode' => 'suppress',
         ]);
@@ -31,6 +43,32 @@ final class BaselineEntryValuesTest extends TestCase
         self::assertSame(2, $values->count);
         self::assertSame([1, 2.5], $values->magnitudes);
         self::assertSame(BaselineEntryMode::Suppress, $values->mode);
+    }
+
+    /**
+     * Regression: run in isolation against the code before P1.1 (`git apply -R`
+     * on just `BaselineEntry.php`/`BaselineEntryValues.php`), this test fails —
+     * not with a different exception, but because it never throws at all.
+     * Verified 2026-08-20: the pre-fix `decode()` read `count` and `magnitudes`
+     * independently and, since 2 already agreed with the length of the list,
+     * accepted the redundant pair silently and returned normally, reaching
+     * `self::fail()`. That silent acceptance is exactly the redundancy P1.1
+     * removes: a file could carry two numbers that happened to agree with no
+     * way to tell they were required to.
+     */
+    #[Test]
+    public function itRejectsCountAlongsideMagnitudes(): void
+    {
+        try {
+            BaselineEntryValues::decode(['count' => 2, 'magnitudes' => [1, 2.5]]);
+            self::fail('"count" next to "magnitudes" must be rejected.');
+        } catch (BaselineEntryRejection $rejection) {
+            self::assertSame(InertEntryReason::Malformed, $rejection->reason);
+            self::assertSame(
+                '"count" must not be present alongside "magnitudes"; it is derived from the magnitude list',
+                $rejection->getMessage(),
+            );
+        }
     }
 
     #[Test]
@@ -81,7 +119,7 @@ final class BaselineEntryValuesTest extends TestCase
     #[Test]
     public function itLeavesFiniteValidationToTheBaselineEntryInvariant(): void
     {
-        $values = BaselineEntryValues::decode(['count' => 1, 'magnitudes' => [\INF]]);
+        $values = BaselineEntryValues::decode(['magnitudes' => [\INF]]);
         $identity = new BaselineIdentity(
             'project:',
             new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
