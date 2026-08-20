@@ -28,9 +28,6 @@ final readonly class Baseline
     /** @var array<string, BaselineEntry> identity key => entry */
     private array $byIdentityKey;
 
-    /** @var array<string, list<BaselineEntry|InertBaselineEntry>> selector => entries */
-    private array $bySelector;
-
     /**
      * The analysed path set that produced this file, in the normal form of
      * {@see normalizeScope()} — ADR 0017 states the normalisation as an invariant of
@@ -75,7 +72,6 @@ final readonly class Baseline
         $this->scope = self::normalizeScope($scope);
 
         $byIdentityKey = [];
-        $bySelector = [];
 
         foreach ($entries as $entry) {
             $key = $entry->identity->key();
@@ -88,15 +84,9 @@ final readonly class Baseline
             }
 
             $byIdentityKey[$key] = $entry;
-            $bySelector[$entry->selector()->value][] = $entry;
-        }
-
-        foreach ($inertEntries as $inert) {
-            $bySelector[$inert->selector->value][] = $inert;
         }
 
         $this->byIdentityKey = $byIdentityKey;
-        $this->bySelector = $bySelector;
     }
 
     /**
@@ -166,25 +156,6 @@ final readonly class Baseline
     public function hasIdentity(BaselineIdentity $identity): bool
     {
         return isset($this->byIdentityKey[$identity->key()]);
-    }
-
-    /**
-     * Every entry — valid or inert — carrying this selector.
-     *
-     * Returns a list rather than a single entry because the digest, however
-     * unlikely to collide, is not a proof of uniqueness (see
-     * {@see EntrySelector}). A caller that finds two reports the ambiguity;
-     * it never picks one.
-     *
-     * @return list<BaselineEntry|InertBaselineEntry>
-     */
-    public function findBySelector(EntrySelector|string $selector): array
-    {
-        $value = $selector instanceof EntrySelector
-            ? $selector->value
-            : (EntrySelector::tryFromString($selector)->value ?? '');
-
-        return $this->bySelector[$value] ?? [];
     }
 
     /**

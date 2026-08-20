@@ -10,10 +10,11 @@ namespace Qualimetrix\Analysis\Policy\Baseline;
  * Selectors are normalized by value before classification, preserving their
  * first occurrence. Three buckets rather than one, because a selector can
  * fail in two distinct ways a user needs to tell apart: it named nothing in
- * the file, or it named more than one thing. {@see Baseline::findBySelector()} returns a list
- * rather than a single entry precisely because the digest is not a proof of
- * uniqueness — the caller reports the ambiguity and picks nothing, which is
- * what {@see $ambiguous} exists to carry back.
+ * the file, or it named more than one thing. {@see BaselineCleaner::remove()}
+ * looks a selector up against a list of entries rather than a single one
+ * precisely because the digest is not a proof of uniqueness — the caller
+ * reports the ambiguity and picks nothing, which is what {@see $ambiguous}
+ * exists to carry back.
  */
 final readonly class BaselineCleanupRemoval
 {

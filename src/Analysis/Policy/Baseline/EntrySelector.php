@@ -38,7 +38,7 @@ use Stringable;
  * distributed.
  *
  * A collision, if one ever occurs, is visible rather than silent: a lookup
- * returns both entries ({@see Baseline::findBySelector()}) and the caller
+ * returns both entries ({@see BaselineCleaner::remove()}) and the caller
  * reports the ambiguity instead of guessing.
  */
 final readonly class EntrySelector implements Stringable
