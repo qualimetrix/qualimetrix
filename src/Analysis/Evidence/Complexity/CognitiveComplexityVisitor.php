@@ -34,6 +34,7 @@ use PhpParser\Node\Stmt\Switch_;
 use PhpParser\Node\Stmt\While_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope;
@@ -62,7 +63,7 @@ use Qualimetrix\Core\Path\RelativePath;
  *
  * @see https://www.sonarsource.com/docs/CognitiveComplexity.pdf
  */
-final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
+final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
     use VisitorMethodTrackingTrait;
 
@@ -128,7 +129,6 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
     {
         $result = [];
 
-        $ordinals = $this->callableCollisionOrdinals($this->scopes);
         foreach ($this->scopes as $fqn => $scope) {
             $metrics = (new MetricBag())->with('cognitive', $this->complexities[$fqn] ?? 0);
 
@@ -140,7 +140,7 @@ final class CognitiveComplexityVisitor extends NodeVisitorAbstract implements Re
                 ]);
             }
 
-            $result[] = $this->createCallableWithMetrics($scope, $file, $metrics, $ordinals[$fqn]);
+            $result[] = $this->createCallableWithMetrics($scope, $file, $metrics);
         }
 
         return $result;

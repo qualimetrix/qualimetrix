@@ -10,12 +10,13 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareTrait;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
@@ -39,8 +40,10 @@ use SplFileInfo;
  *
  * Anonymous classes are ignored.
  */
-final class MethodCountCollector extends AbstractCollector implements ClassMetricsProviderInterface
+final class MethodCountCollector extends AbstractCollector implements DeclarationIndexAwareInterface, ClassMetricsProviderInterface
 {
+    use DeclarationIndexAwareTrait;
+
     private const NAME = 'method-count';
 
     public const string METRIC_METHOD_COUNT_TOTAL = 'methodCountTotal';
@@ -202,7 +205,8 @@ final class MethodCountCollector extends AbstractCollector implements ClassMetri
                 ->with(MetricName::STRUCTURE_WOC, $woc);
 
             $result[] = new ClassWithMetrics(
-                declarationPath: new DeclarationPath(SymbolPath::forClass($metrics->namespace ?? '', $metrics->className), $file, $metrics->startFilePos),
+                declarationPath: $this->declarationPathOf(SymbolPath::forClass($metrics->namespace ?? '', $metrics->className), $file, $metrics->startFilePos),
+                startFilePos: $metrics->startFilePos,
                 line: $metrics->line,
                 metrics: $bag,
             );

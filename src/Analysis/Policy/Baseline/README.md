@@ -28,7 +28,7 @@ Baseline/
 ├── BaselineCapture.php          # VO/factory: baseline plus materialized rejected-group outcomes
 ├── UncapturedGroup.php          # VO: a group that produced no entry, and why
 ├── UncapturedReason.php         # Enum: undeclared / configuration-error channel / no finite magnitude
-├── BaselineLoader.php           # Loads the exact typed-subject version 12 file
+├── BaselineLoader.php           # Loads the exact typed-subject version 13 file
 ├── CanonicalBaselineReader.php  # Reads the canonical one-entry-per-line layout without decoding the whole document, or declines so the loader decodes it
 ├── BaselineLoadException.php    # Envelope failure (missing/unreadable/invalid JSON/version); exit 3
 ├── BaselineWriter.php           # Writes atomically under a compare-and-swap guard
@@ -102,16 +102,21 @@ report it otherwise, and "Baseline with 0 entries written" would read as success
 - **Version 12**: A `magnitude`-shaped entry no longer stores `count` (derived
   from the magnitude list's length instead), and the semantic occurrence key
   is 16 hex characters instead of 64
+- **Version 13**: A declaration key carries an assigned ordinal instead of a
+  byte offset, so editing text above a declaration no longer moves its key
 
-Only version 12 is loadable. Versions 5, 10 and 11 cannot supply exact declaration
-identity and are rejected with guidance to run a fresh analysis, deliberately map
-or split accepted entries, review the mapping, and write a version 12 baseline.
+Only version 13 is loadable. Versions 5, 10, 11 and 12 are rejected with guidance
+to run a fresh analysis, deliberately map or split accepted entries, review the
+mapping, and write a version 13 baseline. Versions 5, 10 and 11 cannot supply
+exact declaration identity at all; version 12 stores a position from which the
+declaration it meant cannot be recovered, so no converter can exist for it
+either.
 
 ## Parsing, Capture, and Explanation Boundaries
 
 | Owner                        | Typed input and output                                                                                                        | Responsibility and invariant                                                                                                                                                                                                                                                                                                                                                                                                                        | Focused contract                                         |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `BaselineEntryParser`        | `parse(string, mixed): BaselineEntry\|InertBaselineEntry`                                                                     | Reads the outer JSON object and exact identity/occurrence/edge, delegates count/magnitudes/mode to `BaselineEntryValues`, validates channel declaration shape, and converts every rejection into a raw-preserving inert entry. Known identities retain their exact v12 selector; unknown identities receive a deterministic raw selector.                                                                                                           | `BaselineEntryParserTest`, `BaselineWorkflowTest`        |
+| `BaselineEntryParser`        | `parse(string, mixed): BaselineEntry\|InertBaselineEntry`                                                                     | Reads the outer JSON object and exact identity/occurrence/edge, delegates count/magnitudes/mode to `BaselineEntryValues`, validates channel declaration shape, and converts every rejection into a raw-preserving inert entry. Known identities retain their exact v13 selector; unknown identities receive a deterministic raw selector.                                                                                                           | `BaselineEntryParserTest`, `BaselineWorkflowTest`        |
 | `BaselineEntryValues`        | `decode(array): BaselineEntryValues` exposing readonly `count`, `?list<int\|float> magnitudes`, and `?BaselineEntryMode mode` | Owns only strict JSON value decoding. `count` is required and must be an integer for an occurrence-shaped entry, and is rejected as malformed when it appears (non-null) alongside `magnitudes`; it also rejects non-list/empty/non-numeric magnitudes and unknown modes, with the parser's existing reason/detail. `BaselineEntry` remains the owner of positive count, finite values, and count/list agreement.                                   | `BaselineEntryValuesTest`, `BaselineEntryParserTest`     |
 | `BaselineGenerator`          | `generate(list<Violation>, list<string>): BaselineCapture`                                                                    | Groups once by complete `BaselineIdentity`, preserves first-seen group/refusal order, asks the channel registry only while capturing a group, and reads the injected clock exactly once after grouping. It passes typed rejected records to `BaselineCapture::fromRejectedGroups`, which alone materializes `UncapturedGroup`. Occurrence is identified by the declaration's null direction; magnitude groups require one finite number per member. | `BaselineGeneratorTest`, `BaselineWorkflowTest`          |
 | `BoundaryExplanationService` | measured violations, threshold maps, optional `MetricRepositoryInterface` -> `BoundaryExplanation`                            | Builds one typed repository index from declarations, callables, logical classes, and aggregate rows. Measured evidence wins over the repository. Annotation matching requires the exact subject and `ThresholdOverride::matches()`; highest control specificity wins, then smallest finite span, then first extraction on a tie. Baseline, configured, and annotation sources stay independently nullable and zero remains a value.                 | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest` |
@@ -304,7 +309,7 @@ without touching the other.
 ### Historical migration report types
 
 The retained v5 reader and migration report VOs describe historical continuity
-data only. They are not a conversion route into version 12: neither a v5 nor a
+data only. They are not a conversion route into version 13: neither a v5 nor a
 v10 logical symbol key can infer the exact declaration subject now required.
 Version 11 construction therefore starts from a fresh analysis and an explicit,
 reviewed map or split of every acceptance.
@@ -362,7 +367,7 @@ user copies rather than composes it. `<symbol>#<channel>` cannot serve: `#` alre
 separates the two halves of a channel key, and two forbidden edges out of one class on
 one channel agree on everything else.
 
-## File Contract (version 12)
+## File Contract (version 13)
 
 The file is one JSON document, written in a canonical layout: **one entry per
 line**, two-space indentation, a subject key on the line above the entries it
@@ -370,11 +375,11 @@ owns.
 
 ```json
 {
-  "version": 12,
+  "version": 13,
   "generated": "2026-08-05T12:00:00+03:00",
   "scope": ["src"],
   "entries": {
-    "declaration:callable:App\\OrderService::calculate@src/OrderService.php:0": [
+    "declaration:callable:App\\OrderService::calculate@src/OrderService.php": [
       {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","occurrence":"bd41b8a3f6cad9e1","magnitudes":[25]}
     ],
     "file:src/Legacy/dup.php": [
@@ -400,7 +405,7 @@ pair, not the whole file).
 
 | Field       | Contract                                                      |
 | ----------- | ------------------------------------------------------------- |
-| `version`   | Exactly `12`                                                  |
+| `version`   | Exactly `13`                                                  |
 | `generated` | ISO 8601, from an injected clock (`Core\Time\ClockInterface`) |
 | `scope`     | The analysed path set that produced this file, normalized     |
 | `entries`   | Canonical symbol keys → deterministic entry lists             |

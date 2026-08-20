@@ -25,6 +25,7 @@ use PhpParser\Node\Stmt\If_;
 use PhpParser\Node\Stmt\While_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope;
@@ -47,7 +48,7 @@ use Qualimetrix\Core\Path\RelativePath;
  * - ?? (null coalescing): +1
  * - ?-> (nullsafe): +1
  */
-final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
+final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
     use VisitorMethodTrackingTrait;
 
@@ -88,11 +89,10 @@ final class CyclomaticComplexityVisitor extends NodeVisitorAbstract implements R
     {
         $result = [];
 
-        $ordinals = $this->callableCollisionOrdinals($this->scopes);
         foreach ($this->scopes as $fqn => $scope) {
             $metrics = (new MetricBag())->with('ccn', $this->complexities[$fqn] ?? 1);
 
-            $result[] = $this->createCallableWithMetrics($scope, $file, $metrics, $ordinals[$fqn]);
+            $result[] = $this->createCallableWithMetrics($scope, $file, $metrics);
         }
 
         return $result;

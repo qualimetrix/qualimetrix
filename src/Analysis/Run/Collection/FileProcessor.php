@@ -135,11 +135,26 @@ final class FileProcessor implements FileProcessorInterface
         return array_values($callables);
     }
 
+    /**
+     * Merging by canonical key assumes one key means one declaration. The
+     * assumption is checked here rather than assumed: two producers that
+     * disagreed about a declaration number would report two different
+     * declarations under one key, and their file positions would differ.
+     */
     private function mergeCallableMetrics(
         \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics $existing,
         \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics $callable,
         string $key,
     ): \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics {
+        if ($existing->startFilePos !== $callable->startFilePos) {
+            throw new LogicException(\sprintf(
+                'Callable declaration %s was collected at file positions %d and %d',
+                $key,
+                $existing->startFilePos,
+                $callable->startFilePos,
+            ));
+        }
+
         if ($existing->sourceLine !== null
             && $callable->sourceLine !== null
             && $existing->sourceLine !== $callable->sourceLine
@@ -152,6 +167,7 @@ final class FileProcessor implements FileProcessorInterface
 
         return new \Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics(
             $existing->declarationPath,
+            $existing->startFilePos,
             $existing->kind,
             $existing->anonymousSyntax,
             $existing->lexicalClassContext,
@@ -162,7 +178,7 @@ final class FileProcessor implements FileProcessorInterface
     }
 
     /**
-     * @return array<string, array{subject: \Qualimetrix\Core\Symbol\MetricSubject, metrics: MetricBag, line: int}>
+     * @return array<string, array{subject: \Qualimetrix\Core\Symbol\MetricSubject, metrics: MetricBag, line: int, start: int}>
      */
     private function extractClassMetrics(\Qualimetrix\Core\Path\RelativePath $file): array
     {
@@ -173,12 +189,14 @@ final class FileProcessor implements FileProcessorInterface
                 foreach ($collector->getClassesWithMetrics($file) as $classWithMetrics) {
                     $key = $classWithMetrics->subject->toCanonical();
                     if (isset($classMetrics[$key])) {
+                        self::assertOneClassDeclarationPerKey($key, $classMetrics[$key]['start'], $classWithMetrics->startFilePos);
                         $classMetrics[$key]['metrics'] = $classMetrics[$key]['metrics']->merge($classWithMetrics->metrics);
                     } else {
                         $classMetrics[$key] = [
                             'subject' => $classWithMetrics->subject,
                             'metrics' => $classWithMetrics->metrics,
                             'line' => $classWithMetrics->line,
+                            'start' => $classWithMetrics->startFilePos,
                         ];
                     }
                 }
@@ -186,6 +204,23 @@ final class FileProcessor implements FileProcessorInterface
         }
 
         return $classMetrics;
+    }
+
+    /**
+     * Merging by canonical key assumes one key means one declaration; two
+     * producers that disagreed about a class declaration number would report
+     * two different declarations under one key, at two file positions.
+     */
+    private static function assertOneClassDeclarationPerKey(string $key, int $existing, int $collected): void
+    {
+        if ($existing !== $collected) {
+            throw new LogicException(\sprintf(
+                'Class declaration %s was collected at file positions %d and %d',
+                $key,
+                $existing,
+                $collected,
+            ));
+        }
     }
 
     /**

@@ -12,6 +12,7 @@ use PhpParser\Node\Param;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Function_;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait;
 
@@ -21,7 +22,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrai
  * Checks parameters of ClassMethod, Function_, Closure, and ArrowFunction nodes.
  * Uses SensitiveNameMatcher to identify credential-related parameter names.
  */
-final class SensitiveParameterVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
+final class SensitiveParameterVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
     use VisitorMethodTrackingTrait;
 

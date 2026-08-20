@@ -29,7 +29,10 @@ Core/
 ├── Symbol/
 │   ├── CallableKind.php                   # PHP callable declaration kind enum
 │   ├── ClassType.php
+│   ├── DeclarationKey.php                 # What the file index groups positions by
+│   ├── DeclarationOrdinal.php             # Assigned rank of one declaration in its file
 │   ├── DeclarationPath.php                # Durable source declaration identity
+│   ├── FileDeclarationIndex.php           # Sole owner of declaration numbering per file
 │   ├── LogicalClassPath.php               # Validated class-level logical identity
 │   ├── MetricSubject.php                  # Declaration, class, or aggregate metric subject
 │   ├── MetricSubjectCodec.php             # Scalar wire codec for metric subjects
@@ -143,7 +146,8 @@ source line, and contribution bag through sequential and parallel collection.
 Value Object — one concrete callable declaration with collected metrics.
 
 **Fields:**
-- `declarationPath: DeclarationPath` — exact source declaration identity, including file and byte offset
+- `declarationPath: DeclarationPath` — exact source declaration identity: logical symbol, file, and assigned ordinal
+- `startFilePos: int` — the position this declaration was collected at; an in-run join key, never part of a stored identity
 - `kind: CallableKind` — method, function, property hook, or anonymous callable
 - `anonymousSyntax: ?string` — `closure` or `arrow` for anonymous callables
 - `lexicalClassContext: ?DeclarationPath` — enclosing class declaration where applicable
@@ -501,7 +505,7 @@ authoritative container `RelativePath`.
 
 `decodeEntry(array<string, scalar>, RelativePath): MetricSubject` is the DataBag
 ingress. It selects exactly `subjectKind`, `logicalKind`, `namespace`, `class`,
-`member`, `startFilePos`, and `collisionOrdinal`, retains only `int|string`, and
+`member`, and `collisionOrdinal`, retains only `int|string`, and
 delegates all grammar validation to `decode()`. Unrelated entry data is ignored;
 a retained bool or float is dropped and therefore fails when the component is
 required. Entry data can never replace the caller-supplied container path.

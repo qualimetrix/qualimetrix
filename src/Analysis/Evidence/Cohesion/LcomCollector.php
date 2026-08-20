@@ -12,12 +12,13 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareTrait;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
@@ -35,8 +36,10 @@ use SplFileInfo;
  *
  * Anonymous classes are ignored.
  */
-final class LcomCollector extends AbstractCollector implements ClassMetricsProviderInterface, LcomCollectionConfigurableInterface
+final class LcomCollector extends AbstractCollector implements DeclarationIndexAwareInterface, ClassMetricsProviderInterface, LcomCollectionConfigurableInterface
 {
+    use DeclarationIndexAwareTrait;
+
     private const NAME = 'lcom';
 
     private LcomCollectionConfiguration $runtimeConfiguration;
@@ -98,7 +101,8 @@ final class LcomCollector extends AbstractCollector implements ClassMetricsProvi
             $bag = (new MetricBag())->with(MetricName::STRUCTURE_LCOM, $lcom);
 
             $result[] = new ClassWithMetrics(
-                declarationPath: new DeclarationPath(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos),
+                declarationPath: $this->declarationPathOf(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos),
+                startFilePos: $classData->startFilePos,
                 line: $classData->line,
                 metrics: $bag,
             );

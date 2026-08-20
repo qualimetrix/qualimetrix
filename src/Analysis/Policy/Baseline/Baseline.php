@@ -23,7 +23,7 @@ use InvalidArgumentException;
 final readonly class Baseline
 {
     /** The only file version this type represents (ADR 0017). */
-    public const int VERSION = 12;
+    public const int VERSION = 13;
 
     /** @var array<string, BaselineEntry> identity key => entry */
     private array $byIdentityKey;

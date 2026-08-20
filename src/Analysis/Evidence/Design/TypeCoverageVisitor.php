@@ -17,10 +17,11 @@ use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\Stmt\Trait_;
 use PhpParser\NodeVisitorAbstract;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareTrait;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -35,8 +36,10 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * Magic methods __construct, __destruct, __clone are excluded from return type counting.
  * Anonymous classes are skipped.
  */
-final class TypeCoverageVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
+final class TypeCoverageVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
+    use DeclarationIndexAwareTrait;
+
     /** @var array<string, array{paramTotal: int, paramTyped: int, returnTotal: int, returnTyped: int, propertyTotal: int, propertyTyped: int}> */
     private array $classTypeInfo = [];
 
@@ -126,7 +129,8 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Resettabl
             }
 
             $result[] = new ClassWithMetrics(
-                declarationPath: new DeclarationPath(SymbolPath::forClass($info['namespace'] ?? '', $info['class']), $file, $info['startFilePos']),
+                declarationPath: $this->declarationPathOf(SymbolPath::forClass($info['namespace'] ?? '', $info['class']), $file, $info['startFilePos']),
+                startFilePos: $info['startFilePos'],
                 line: $info['line'],
                 metrics: $bag,
             );

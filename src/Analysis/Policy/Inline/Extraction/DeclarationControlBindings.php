@@ -58,7 +58,7 @@ final readonly class DeclarationControlBindings
     /**
      * @param array<Node> $ast
      * @param list<CallableWithMetrics> $callableMetrics
-     * @param array<string, array{subject: MetricSubject, metrics: mixed, line: int}> $classMetrics
+     * @param array<string, array{subject: MetricSubject, metrics: mixed, line: int, start: int}> $classMetrics
      */
     public static function from(array $ast, RelativePath $file, array $callableMetrics, array $classMetrics): self
     {
@@ -68,18 +68,17 @@ final readonly class DeclarationControlBindings
         $callableStarts = [];
         foreach ($callableMetrics as $callable) {
             $subject = MetricSubject::declaration($callable->declarationPath);
-            $byStart[$callable->declarationPath->startFilePos][] = $subject;
+            $byStart[$callable->startFilePos][] = $subject;
             $callableStarts[] = [
-                'start' => $callable->declarationPath->startFilePos,
+                'start' => $callable->startFilePos,
                 'subject' => $subject,
                 'lexicalClassContext' => $callable->lexicalClassContext?->toCanonical(),
             ];
         }
 
         foreach ($classMetrics as $classMetric) {
-            $declaration = $classMetric['subject']->declarationPath();
-            if ($declaration !== null) {
-                $byStart[$declaration->startFilePos][] = $classMetric['subject'];
+            if ($classMetric['subject']->declarationPath() !== null) {
+                $byStart[$classMetric['start']][] = $classMetric['subject'];
             }
         }
 
@@ -99,20 +98,24 @@ final readonly class DeclarationControlBindings
     /**
      * Rejects metadata that cannot describe one concrete source declaration.
      *
+     * The compared identity is the canonical declaration key, ordinal included,
+     * so two producers that gave one declaration two different numbers are
+     * rejected here: their keys differ while their position is the same.
+     *
      * @param array<Node> $ast
      * @param list<CallableWithMetrics> $callableMetrics
-     * @param array<string, array{subject: MetricSubject, metrics: mixed, line: int}> $classMetrics
+     * @param array<string, array{subject: MetricSubject, metrics: mixed, line: int, start: int}> $classMetrics
      */
     private static function assertCompatibleSourceMetadata(array $ast, array $callableMetrics, array $classMetrics): void
     {
         $metadata = [
             ...array_map(static fn(CallableWithMetrics $callable): array => [
-                'start' => $callable->declarationPath->startFilePos,
-                'identity' => $callable->declarationPath->logical->toCanonical() . "\0" . $callable->kind->value . ':' . ($callable->anonymousSyntax ?? ''),
+                'start' => $callable->startFilePos,
+                'identity' => $callable->declarationPath->toCanonical() . "\0" . $callable->kind->value . ':' . ($callable->anonymousSyntax ?? ''),
             ], $callableMetrics),
             ...array_map(static fn(array $classMetric): array => [
-                'start' => ($classMetric['subject']->declarationPath() ?? throw new LogicException('Class metrics must have a declaration subject'))->startFilePos,
-                'identity' => $classMetric['subject']->declarationPath()->logical->toCanonical() . "\0class",
+                'start' => $classMetric['start'],
+                'identity' => ($classMetric['subject']->declarationPath() ?? throw new LogicException('Class metrics must have a declaration subject'))->toCanonical() . "\0class",
             ], $classMetrics),
         ];
         $metadataByStart = array_reduce($metadata, static function (array $groups, array $item): array {

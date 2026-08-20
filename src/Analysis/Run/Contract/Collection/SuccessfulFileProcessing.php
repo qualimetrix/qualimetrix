@@ -18,7 +18,7 @@ final readonly class SuccessfulFileProcessing
 {
     /**
      * @param list<CallableWithMetrics> $callableMetrics
-     * @param array<string, array{subject: MetricSubject, metrics: MetricBag, line: int}> $classMetrics
+     * @param array<string, array{subject: MetricSubject, metrics: MetricBag, line: int, start: int}> $classMetrics
      * @param array<string, array{symbolPath: SymbolPath, metrics: MetricBag, line: int}> $namespaceMetrics
      * @param list<Dependency> $dependencies
      * @param list<Suppression> $suppressions

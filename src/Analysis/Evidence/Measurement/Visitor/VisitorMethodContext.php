@@ -11,6 +11,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 
 /** Composes lexical traversal scope and immutable callable projection. */
 final class VisitorMethodContext
@@ -30,6 +32,11 @@ final class VisitorMethodContext
         $this->fileEntryScope->reset();
     }
 
+    public function useDeclarationIndex(FileDeclarationIndex $index): void
+    {
+        $this->fileEntryScope->useDeclarationIndex($index);
+    }
+
     public function enter(Node $node): ?VisitorCallableScope
     {
         match (true) {
@@ -46,7 +53,7 @@ final class VisitorMethodContext
         );
     }
 
-    /** @param ?array{namespace: ?string, class: string, start: int, anonymous: bool, subject: ?string} $class */
+    /** @param ?array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string} $class */
     private function enterCallable(Node $node, ?array $class, ?string $namespace): ?VisitorCallableScope
     {
         return match (true) {
@@ -68,7 +75,7 @@ final class VisitorMethodContext
         };
     }
 
-    /** @param ?array{namespace: ?string, class: string, start: int, anonymous: bool, subject: ?string} $class */
+    /** @param ?array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string} $class */
     private function enterAnonymousCallable(Node $node, ?array $class, ?string $namespace, string $syntax): VisitorCallableScope
     {
         return $this->fileEntryScope->enterCallable(
@@ -114,19 +121,9 @@ final class VisitorMethodContext
         return $this->fileEntryScope->subjectComponents($subjectId);
     }
 
-    public function createCallableWithMetrics(VisitorCallableScope $scope, RelativePath $file, MetricBag $metrics, ?int $ordinal = null): CallableWithMetrics
+    public function createCallableWithMetrics(VisitorCallableScope $scope, RelativePath $file, MetricBag $metrics): CallableWithMetrics
     {
-        return $this->callableMetadata->create($scope, $file, $metrics, $ordinal);
-    }
-
-    /**
-     * @param array<string, VisitorCallableScope> $scopes
-     *
-     * @return array<string, int|null>
-     */
-    public function callableCollisionOrdinals(array $scopes): array
-    {
-        return $this->callableMetadata->collisionOrdinals($scopes);
+        return $this->callableMetadata->create($scope, $file, $metrics);
     }
 
     /**
@@ -140,7 +137,7 @@ final class VisitorMethodContext
         return $this->callableMetadata->projectLogicalMetricMap($metrics, $scopes);
     }
 
-    /** @param ?array{namespace: ?string, class: string, start: int, anonymous: bool, subject: ?string} $class */
+    /** @param ?array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string} $class */
     private function enterMember(string $member, Node $node, CallableKind $kind, ?array $class): VisitorCallableScope
     {
         return $this->fileEntryScope->enterCallable(
@@ -155,7 +152,7 @@ final class VisitorMethodContext
         );
     }
 
-    /** @param ?array{namespace: ?string, class: string, start: int, anonymous: bool, subject: ?string} $class */
+    /** @param ?array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string} $class */
     private function enterPropertyHook(Node\PropertyHook $node, ?array $class): VisitorCallableScope
     {
         $property = $this->fileEntryScope->currentProperty();

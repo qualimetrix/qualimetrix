@@ -10,12 +10,13 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareTrait;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
@@ -43,8 +44,10 @@ use SplFileInfo;
  * - 50-100: Complex class
  * - > 100: Very complex, hard to test
  */
-final class RfcCollector extends AbstractCollector implements ClassMetricsProviderInterface
+final class RfcCollector extends AbstractCollector implements DeclarationIndexAwareInterface, ClassMetricsProviderInterface
 {
+    use DeclarationIndexAwareTrait;
+
     private const NAME = 'rfc';
 
     private const METRIC_RFC = MetricName::RFC_TOTAL;
@@ -108,7 +111,8 @@ final class RfcCollector extends AbstractCollector implements ClassMetricsProvid
                 ->with(self::METRIC_RFC_EXTERNAL, $data->getExternalMethodsCount());
 
             $result[] = new ClassWithMetrics(
-                declarationPath: new DeclarationPath(SymbolPath::forClass($data->namespace ?? '', $data->className), $file, $data->startFilePos),
+                declarationPath: $this->declarationPathOf(SymbolPath::forClass($data->namespace ?? '', $data->className), $file, $data->startFilePos),
+                startFilePos: $data->startFilePos,
                 line: $data->line,
                 metrics: $bag,
             );

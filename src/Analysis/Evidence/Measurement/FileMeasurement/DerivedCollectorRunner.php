@@ -135,6 +135,7 @@ final readonly class DerivedCollectorRunner
                 $existing = $callables[$key] ?? null;
                 $callables[$key] = $existing === null ? $callable : new CallableWithMetrics(
                     $existing->declarationPath,
+                    $existing->startFilePos,
                     $existing->kind,
                     $existing->anonymousSyntax,
                     $existing->lexicalClassContext,
@@ -163,6 +164,7 @@ final readonly class DerivedCollectorRunner
                 $existing = $classes[$key] ?? null;
                 $classes[$key] = $existing === null ? $class : new ClassWithMetrics(
                     $existing->declarationPath,
+                    $existing->startFilePos,
                     $existing->line,
                     $existing->metrics->merge($class->metrics),
                 );

@@ -11,6 +11,7 @@ use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\Print_;
 use PhpParser\Node\Scalar\InterpolatedString;
 use PhpParser\NodeVisitorAbstract;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ResettableVisitorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrait;
 
@@ -24,7 +25,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorMethodTrackingTrai
  *
  * Shared superglobal analysis logic lives in {@see SuperglobalAnalyzer}.
  */
-final class SecurityPatternVisitor extends NodeVisitorAbstract implements ResettableVisitorInterface
+final class SecurityPatternVisitor extends NodeVisitorAbstract implements DeclarationIndexAwareInterface, ResettableVisitorInterface
 {
     use VisitorMethodTrackingTrait;
 

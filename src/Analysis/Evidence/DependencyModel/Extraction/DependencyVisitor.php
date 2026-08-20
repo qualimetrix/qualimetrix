@@ -24,7 +24,9 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\PropertyHan
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\StaticAccessHandler;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TraitUseHandler;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationKey;
 use Qualimetrix\Core\Symbol\DeclarationPath;
+use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
 /**
@@ -48,6 +50,7 @@ use Qualimetrix\Core\Symbol\SymbolPath;
 final class DependencyVisitor extends NodeVisitorAbstract implements DependencyTraversalParticipantInterface
 {
     private ?RelativePath $file = null;
+    private ?FileDeclarationIndex $declarationIndex = null;
     private ?string $currentClass = null;
     private ?DependencyContext $currentContext = null;
 
@@ -68,11 +71,12 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
     }
 
     /**
-     * Initializes the visitor for a new file (null clears the current file).
+     * Initializes the visitor for a new file.
      */
-    public function beginFile(RelativePath $file): void
+    public function beginFile(RelativePath $file, FileDeclarationIndex $index): void
     {
         $this->file = $file;
+        $this->declarationIndex = $index;
         $this->reset();
     }
 
@@ -171,17 +175,18 @@ final class DependencyVisitor extends NodeVisitorAbstract implements DependencyT
             ? $this->resolver->getNamespace() . '\\' . $className
             : $className;
 
-        if ($this->file === null) {
-            throw new LogicException('DependencyVisitor requires a relative file path before traversing declarations');
+        if ($this->file === null || $this->declarationIndex === null) {
+            throw new LogicException('DependencyVisitor requires a relative file path and declaration index before traversing declarations');
         }
 
+        $logical = SymbolPath::fromClassFqn($this->currentClass);
         $this->currentContext = new DependencyContext(
             $this->resolver,
             $this->file,
-            new DeclarationPath(
-                SymbolPath::fromClassFqn($this->currentClass),
+            DeclarationPath::of(
+                $logical,
                 $this->file,
-                $node->getStartFilePos(),
+                $this->declarationIndex->ordinalOf(DeclarationKey::forLogical($logical), $node->getStartFilePos()),
             ),
         );
         $this->classLikeHandler->handle($node, $this->currentContext);

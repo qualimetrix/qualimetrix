@@ -9,11 +9,12 @@ use Override;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareTrait;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
 use Qualimetrix\Analysis\Evidence\Measurement\DataBag;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
@@ -31,8 +32,10 @@ use SplFileInfo;
  * Scalar metrics per class:
  * - unusedPrivate.total: total count of all unused private members
  */
-final class UnusedPrivateCollector extends AbstractCollector implements ClassMetricsProviderInterface
+final class UnusedPrivateCollector extends AbstractCollector implements DeclarationIndexAwareInterface, ClassMetricsProviderInterface
 {
+    use DeclarationIndexAwareTrait;
+
     private const NAME = 'unused-private';
 
     public const string ENTRY_METHOD = MetricName::STRUCTURE_UNUSED_PRIVATE_METHOD;
@@ -88,7 +91,8 @@ final class UnusedPrivateCollector extends AbstractCollector implements ClassMet
             $bag = $this->buildClassMetricBag($classData);
 
             $result[] = new ClassWithMetrics(
-                declarationPath: new DeclarationPath(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos),
+                declarationPath: $this->declarationPathOf(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos),
+                startFilePos: $classData->startFilePos,
                 line: $classData->line,
                 metrics: $bag,
             );

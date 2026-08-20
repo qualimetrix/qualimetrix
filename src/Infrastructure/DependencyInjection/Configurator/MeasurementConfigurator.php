@@ -9,6 +9,7 @@ use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationR
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurationStoreInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\Runtime\LcomCollectionConfigurationStore;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedMetricExtractorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MeasurementAggregationInterface;
@@ -38,9 +39,12 @@ final class MeasurementConfigurator implements ContainerConfiguratorInterface
 
     public function configure(ContainerBuilder $container): void
     {
+        $container->register(DeclarationRegistrarFactory::class, DeclarationRegistrarFactory::class);
+
         $container->register(self::COMPOSITE_COLLECTOR, self::COMPOSITE_COLLECTOR_CLASS)
             ->setArguments([
                 '$collectors' => [],
+                '$declarationRegistrarFactory' => new Reference(DeclarationRegistrarFactory::class),
                 '$derivedCollectors' => [],
                 '$dependencyTraversalParticipant' => new Reference(DependencyTraversalParticipantInterface::class),
             ])

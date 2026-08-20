@@ -7,6 +7,7 @@ namespace Qualimetrix\Infrastructure\Parallel;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfigurableInterface;
 use Qualimetrix\Analysis\Evidence\Cohesion\Contract\LcomCollectionConfiguration;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\FileMeasurementCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
@@ -200,6 +201,7 @@ final class WorkerBootstrap
         );
         $compositeCollector = new $fileMeasurementCollectorClass(
             $collectors,
+            new DeclarationRegistrarFactory(),
             $derivedCollectors,
             $dependencyTraversalParticipant,
         );

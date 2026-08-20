@@ -59,7 +59,7 @@ final readonly class FileProcessingResult
         return $this->successfulPayload()->callableMetrics;
     }
 
-    /** @return array<string, array{subject: MetricSubject, metrics: MetricBag, line: int}> */
+    /** @return array<string, array{subject: MetricSubject, metrics: MetricBag, line: int, start: int}> */
     public function classMetrics(): array
     {
         return $this->successfulPayload()->classMetrics;

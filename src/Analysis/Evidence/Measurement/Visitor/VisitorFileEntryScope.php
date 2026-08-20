@@ -9,16 +9,17 @@ use InvalidArgumentException;
 use LogicException;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\VisitorCallableScope;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationKey;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
+use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
+use Qualimetrix\Core\Symbol\SymbolPath;
 
-/** Owns mutable lexical, callable, collision, and file-entry subject state for one file. */
+/** Owns mutable lexical, callable, and file-entry subject state for one file. */
 final class VisitorFileEntryScope
 {
-    /** @var array<string, array{components: array<string, int|string>, group: string, ordinal: int}> */
+    /** @var array<string, array{components: array<string, int|string>, ordinal: DeclarationOrdinal}> */
     private array $subjects = [];
-
-    /** @var array<string, int> */
-    private array $groupCounts = [];
 
     /** @var array<string, int> */
     private array $callableTraversalOrdinals = [];
@@ -29,7 +30,7 @@ final class VisitorFileEntryScope
     /** @var list<string> */
     private array $callableSubjects = [];
 
-    /** @var list<array{namespace: ?string, class: string, start: int, anonymous: bool, subject: ?string}> */
+    /** @var list<array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string}> */
     private array $classes = [];
 
     /** @var list<?string> */
@@ -44,10 +45,11 @@ final class VisitorFileEntryScope
 
     private int $nextSubject = 0;
 
+    private ?FileDeclarationIndex $declarationIndex = null;
+
     public function reset(): void
     {
         $this->subjects = [];
-        $this->groupCounts = [];
         $this->callableTraversalOrdinals = [];
         $this->callables = [];
         $this->callableSubjects = [];
@@ -57,6 +59,11 @@ final class VisitorFileEntryScope
         $this->namespace = null;
         $this->closureCounter = 0;
         $this->nextSubject = 0;
+    }
+
+    public function useDeclarationIndex(FileDeclarationIndex $index): void
+    {
+        $this->declarationIndex = $index;
     }
 
     public function enterNamespace(?string $namespace): void
@@ -74,18 +81,22 @@ final class VisitorFileEntryScope
     {
         $parent = $this->currentClass();
         $anonymous = $name === null || ($parent['anonymous'] ?? false);
-        $class = $name ?? '{anonymous@' . $position . '}';
+        $ordinal = $name === null
+            ? $this->index()->ordinalOf(DeclarationKey::forUnnamedClassLike(), $position)
+            : $this->index()->ordinalOf(
+                DeclarationKey::forLogical(SymbolPath::forClass($this->namespace ?? '', $name)),
+                $position,
+            );
+        $class = $name ?? '{anonymous#' . $ordinal->value . '}';
         $subject = $anonymous
             ? null
-            : $this->register(
-                MetricSubjectCodec::encodeClass($this->namespace ?? '', $class, $position),
-                implode("\0", ['class', $this->namespace ?? '', $class, (string) $position]),
-            );
+            : $this->register(MetricSubjectCodec::encodeClass($this->namespace ?? '', $class), $ordinal);
 
         $this->classes[] = [
             'namespace' => $this->namespace,
             'class' => $class,
             'start' => $position,
+            'ordinal' => $ordinal,
             'anonymous' => $anonymous,
             'subject' => $subject,
         ];
@@ -135,8 +146,8 @@ final class VisitorFileEntryScope
             ? $this->qualified($namespace, $member)
             : $logicalOwner . '::' . $member;
         $base = $logicalFqn . '@' . $startFilePos;
-        $ordinal = $this->callableTraversalOrdinals[$base] ?? 0;
-        $this->callableTraversalOrdinals[$base] = $ordinal + 1;
+        $traversalOrdinal = $this->callableTraversalOrdinals[$base] ?? 0;
+        $this->callableTraversalOrdinals[$base] = $traversalOrdinal + 1;
 
         $scope = new VisitorCallableScope(
             $namespace,
@@ -144,12 +155,14 @@ final class VisitorFileEntryScope
             $anonymousClassContext,
             $member,
             $logicalFqn,
-            $base . '#' . $ordinal,
+            $base . '#' . $traversalOrdinal,
             $startFilePos,
             $sourceLine,
             $kind,
             $anonymousSyntax,
             $classStartFilePos,
+            $this->callableOrdinal($namespace, $class, $member, $kind, $startFilePos),
+            self::lexicalClassOrdinal($classContext, $classStartFilePos),
         );
         $this->callables[] = $scope;
         $this->callableSubjects[] = $this->callableSubject($scope);
@@ -169,7 +182,7 @@ final class VisitorFileEntryScope
         return $this->namespace;
     }
 
-    /** @return ?array{namespace: ?string, class: string, start: int, anonymous: bool, subject: ?string} */
+    /** @return ?array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string} */
     public function currentClass(): ?array
     {
         return $this->classes === [] ? null : $this->classes[array_key_last($this->classes)];
@@ -200,13 +213,18 @@ final class VisitorFileEntryScope
             throw new LogicException('Unknown file-entry subject reference');
         }
         $components = $subject['components'];
-        if (($this->groupCounts[$subject['group']] ?? 0) > 1) {
-            $components['collisionOrdinal'] = $subject['ordinal'];
+        if (!$subject['ordinal']->isFirst()) {
+            $components['collisionOrdinal'] = $subject['ordinal']->value;
         }
 
         return $components;
     }
 
+    /**
+     * The wire subject of a callable declared inside an anonymous class stays
+     * the file: the enclosing identity is positional, so pinning a member of it
+     * would put a byte offset back into the key.
+     */
     private function callableSubject(VisitorCallableScope $scope): string
     {
         if ($scope->anonymousClassContext) {
@@ -214,11 +232,31 @@ final class VisitorFileEntryScope
         }
         $namespace = $scope->namespace ?? '';
         $components = $scope->class !== null && \in_array($scope->kind, [CallableKind::Method, CallableKind::PropertyHook], true)
-            ? MetricSubjectCodec::encodeMethod($namespace, $scope->class, $scope->member, $scope->startFilePos)
-            : MetricSubjectCodec::encodeFunction($namespace, $scope->member, $scope->startFilePos);
-        $group = implode("\0", [$scope->kind->value, $namespace, $scope->class ?? '', $scope->member, (string) $scope->startFilePos]);
+            ? MetricSubjectCodec::encodeMethod($namespace, $scope->class, $scope->member)
+            : MetricSubjectCodec::encodeFunction($namespace, $scope->member);
 
-        return $this->register($components, $group);
+        return $this->register($components, $scope->ordinal);
+    }
+
+    private function callableOrdinal(?string $namespace, ?string $class, string $member, CallableKind $kind, int $startFilePos): DeclarationOrdinal
+    {
+        $logical = $class !== null && \in_array($kind, [CallableKind::Method, CallableKind::PropertyHook], true)
+            ? SymbolPath::forMethod($namespace ?? '', $class, $member)
+            : SymbolPath::forGlobalFunction($namespace ?? '', $member);
+
+        return $this->index()->ordinalOf(DeclarationKey::forLogical($logical), $startFilePos);
+    }
+
+    /** @param ?array{namespace: ?string, class: string, start: int, ordinal: DeclarationOrdinal, anonymous: bool, subject: ?string} $classContext */
+    private static function lexicalClassOrdinal(?array $classContext, ?int $classStartFilePos): ?DeclarationOrdinal
+    {
+        return $classStartFilePos === null ? null : ($classContext['ordinal'] ?? null);
+    }
+
+    private function index(): FileDeclarationIndex
+    {
+        return $this->declarationIndex
+            ?? throw new LogicException('Declaration numbering requires the file declaration index of the current traversal');
     }
 
     private function qualified(?string $namespace, string $name): string
@@ -227,12 +265,10 @@ final class VisitorFileEntryScope
     }
 
     /** @param array<string, int|string> $components */
-    private function register(array $components, string $group): string
+    private function register(array $components, DeclarationOrdinal $ordinal): string
     {
-        $ordinal = $this->groupCounts[$group] ?? 0;
-        $this->groupCounts[$group] = $ordinal + 1;
         $id = 'subject-' . $this->nextSubject++;
-        $this->subjects[$id] = ['components' => $components, 'group' => $group, 'ordinal' => $ordinal];
+        $this->subjects[$id] = ['components' => $components, 'ordinal' => $ordinal];
 
         return $id;
     }

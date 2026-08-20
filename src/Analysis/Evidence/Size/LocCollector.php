@@ -10,6 +10,8 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\AbstractCollector;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareTrait;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricDefinition;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricName;
@@ -17,7 +19,6 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceMetricProviderIn
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\NamespaceWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Core\Path\RelativePath;
-use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 use SplFileInfo;
 
@@ -34,8 +35,10 @@ use SplFileInfo;
  * counts as LLOC but NOT as CLOC. Only lines where ALL tokens are
  * comments/whitespace count as CLOC.
  */
-final class LocCollector extends AbstractCollector implements ClassMetricsProviderInterface, NamespaceMetricProviderInterface
+final class LocCollector extends AbstractCollector implements DeclarationIndexAwareInterface, ClassMetricsProviderInterface, NamespaceMetricProviderInterface
 {
+    use DeclarationIndexAwareTrait;
+
     private const NAME = 'loc';
 
     /** @var list<NamespaceWithMetrics> */
@@ -134,7 +137,8 @@ final class LocCollector extends AbstractCollector implements ClassMetricsProvid
                 ->with(MetricName::SIZE_CLASS_LOC, $classLoc);
 
             $result[] = new ClassWithMetrics(
-                declarationPath: new DeclarationPath(SymbolPath::forClass($range['namespace'] ?? '', $range['className']), $file, $range['startFilePos']),
+                declarationPath: $this->declarationPathOf(SymbolPath::forClass($range['namespace'] ?? '', $range['className']), $file, $range['startFilePos']),
+                startFilePos: $range['startFilePos'],
                 line: $range['startLine'],
                 metrics: $bag,
             );
