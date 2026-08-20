@@ -126,6 +126,18 @@ final class BaselineEntryTest extends TestCase
         );
     }
 
+    #[Test]
+    public function itOmitsCountWhenMagnitudesArePresent(): void
+    {
+        $entry = new BaselineEntry(self::identity(), [40.0, 65.0], 2);
+
+        self::assertSame(
+            ['channel' => 'code-smell.goto#code-smell.goto', 'magnitudes' => [40.0, 65.0]],
+            $entry->toArray(),
+        );
+        self::assertArrayNotHasKey('count', $entry->toArray());
+    }
+
     /**
      * The observable ADR 0017 names outright: a normalized `40.0` is written as
      * `40` and decodes as an `int`. Stated here rather than left to surface

@@ -8,7 +8,7 @@ use DateTimeImmutable;
 use JsonException;
 
 /**
- * Reads a version 11 baseline file.
+ * Reads a version 12 baseline file.
  *
  * Two failure classes, deliberately handled differently:
  *
@@ -40,6 +40,27 @@ final readonly class BaselineLoader
      * producers of ISO 8601 add.
      */
     private const array GENERATED_FORMATS = ['Y-m-d\TH:i:sP', 'Y-m-d\TH:i:s.uP'];
+
+    /**
+     * Rejection reasons for baseline versions this build refuses outright,
+     * keyed by the version number found in the file. Each holds a `%v%`
+     * placeholder for {@see Baseline::VERSION}, so bumping that constant
+     * cannot leave a message naming a stale target version. Adding "this
+     * build's own previous version is now rejected" when `VERSION` moves is
+     * one line of data here, not a fourth `if` branch to write from scratch.
+     */
+    private const array REJECTED_VERSION_REASONS = [
+        5 => 'This baseline is version 5, a historical format that cannot be loaded or converted to version %v% '
+            . 'because declaration identity cannot be inferred from a logical symbol key. Run a fresh analysis, '
+            . 'deliberately map or split accepted entries, review every mapping, then write a new version %v% '
+            . 'baseline (or regenerate and review the accepted state).',
+        10 => 'Baseline version 10 cannot be converted automatically because declaration identity cannot be inferred '
+            . 'from a logical symbol key. Run a fresh analysis, deliberately map or split accepted entries, then '
+            . 'write a new version %v% baseline (or regenerate and review the accepted state).',
+        11 => 'Baseline version 11 cannot be converted automatically: version %v% drops the redundant "count" field '
+            . 'and shortens the occurrence key, and there is no converter for either change. Run a fresh analysis '
+            . 'and write a new version %v% baseline (or regenerate and review the accepted state).',
+    ];
 
     public function __construct(
         private BaselineEntryParser $entryParser,
@@ -136,10 +157,14 @@ final readonly class BaselineLoader
     }
 
     /**
-     * Version 5 is a historical format, not an alternate route into the
-     * current schema. Its logical symbol keys cannot determine the exact
-     * declaration subjects a version 11 baseline requires, so its accepted
-     * entries need the same explicit mapping and review as version 10.
+     * Version 5 and version 10 are historical formats, not alternate routes
+     * into the current schema: their logical symbol keys cannot determine
+     * the exact declaration subjects a {@see Baseline::VERSION} baseline
+     * requires, so their accepted entries need explicit mapping and review.
+     * Version 11 already carries exact declaration subjects — it is refused
+     * for a different reason: this build has no converter for the "count"
+     * removal or the shortened occurrence key {@see Baseline::VERSION}
+     * introduces.
      */
     private function assertVersion(mixed $version): void
     {
@@ -151,21 +176,9 @@ final readonly class BaselineLoader
             return;
         }
 
-        if ($version === 10) {
-            throw new BaselineLoadException(
-                'Baseline version 10 cannot be converted automatically because declaration identity cannot be inferred '
-                . 'from a logical symbol key. Run a fresh analysis, deliberately map or split accepted entries, then '
-                . 'write a new version 11 baseline (or regenerate and review the accepted state).',
-            );
-        }
-
-        if ($version === 5) {
-            throw new BaselineLoadException(
-                'This baseline is version 5, a historical format that cannot be loaded or converted to version 11 '
-                . 'because declaration identity cannot be inferred from a logical symbol key. Run a fresh analysis, '
-                . 'deliberately map or split accepted entries, review every mapping, then write a new version 11 '
-                . 'baseline (or regenerate and review the accepted state).',
-            );
+        $reason = self::REJECTED_VERSION_REASONS[$version] ?? null;
+        if ($reason !== null) {
+            throw new BaselineLoadException(strtr($reason, ['%v%' => (string) Baseline::VERSION]));
         }
 
         throw new BaselineLoadException(\sprintf(

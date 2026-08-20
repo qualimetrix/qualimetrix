@@ -63,7 +63,7 @@ final class BaselineWriterTest extends TestCase
         $data = json_decode((string) file_get_contents($path), true, 512, \JSON_THROW_ON_ERROR);
 
         self::assertSame(['version', 'generated', 'scope', 'entries'], array_keys($data));
-        self::assertSame(11, $data['version']);
+        self::assertSame(12, $data['version']);
         self::assertSame('2026-08-05T12:00:00+03:00', $data['generated']);
         self::assertSame(['src'], $data['scope']);
     }
@@ -417,13 +417,13 @@ final class BaselineWriterTest extends TestCase
 
         $path = $this->tempDir . '/hand-written.json';
         file_put_contents($path, json_encode([
-            'version' => 11,
+            'version' => 12,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => ['src'],
             'entries' => [
                 'callable:App\Foo::bar' => [
-                    ['channel' => $duplicated, 'magnitudes' => [3], 'count' => 1],
-                    ['channel' => $duplicated, 'magnitudes' => [9], 'count' => 1],
+                    ['channel' => $duplicated, 'magnitudes' => [3]],
+                    ['channel' => $duplicated, 'magnitudes' => [9]],
                     $undeclared,
                     $undeclared,
                 ],
@@ -489,14 +489,14 @@ final class BaselineWriterTest extends TestCase
     {
         $path = $this->tempDir . '/mixed.json';
         file_put_contents($path, json_encode([
-            'version' => 11,
+            'version' => 12,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => ['src'],
             'entries' => [
                 'class:App\Foo' => [
                     ['channel' => 'zzz.undeclared#zzz.undeclared', 'count' => 1],
                     ['channel' => 'aaa.undeclared#aaa.undeclared', 'count' => 1],
-                    ['channel' => 'maintainability.index#maintainability.index.class', 'magnitudes' => [42], 'count' => 1],
+                    ['channel' => 'maintainability.index#maintainability.index.class', 'magnitudes' => [42]],
                 ],
             ],
         ], \JSON_THROW_ON_ERROR));
@@ -536,7 +536,7 @@ final class BaselineWriterTest extends TestCase
         // No source hash: nothing was read, so there is nothing to conflict with.
         $this->writer->write($this->baseline(), $path, $this->projectRoot);
 
-        self::assertStringContainsString('"version": 11', (string) file_get_contents($path));
+        self::assertStringContainsString('"version": 12', (string) file_get_contents($path));
     }
 
     /**
@@ -655,7 +655,7 @@ final class BaselineWriterTest extends TestCase
         $lines = explode("\n", (string) file_get_contents($path));
 
         self::assertSame('{', $lines[0]);
-        self::assertSame('  "version": 11,', $lines[1]);
+        self::assertSame('  "version": 12,', $lines[1]);
         self::assertSame('  "scope": ["src"],', $lines[3]);
         self::assertSame('  "entries": {', $lines[4]);
         self::assertSame('    "callable:App\\\\Foo::bar": [', $lines[5]);

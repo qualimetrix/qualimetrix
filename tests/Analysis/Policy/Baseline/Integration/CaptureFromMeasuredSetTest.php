@@ -201,14 +201,9 @@ final class CaptureFromMeasuredSetTest extends TestCase
         $entries = [];
 
         foreach ($baseline->entries as $entry) {
-            $entries[$entry->identity->subjectKey][] = array_filter(
-                [
-                    'channel' => $entry->identity->channel->toKey(),
-                    'magnitudes' => $entry->magnitudes,
-                    'count' => $entry->count,
-                ],
-                static fn(mixed $value): bool => $value !== null,
-            );
+            // Mirrors BaselineWriter (P1.1): "count" is derived from
+            // "magnitudes" and is not written alongside it.
+            $entries[$entry->identity->subjectKey][] = $entry->toArray();
         }
 
         // tempnam() creates the file it names, and the loader wants a `.json`

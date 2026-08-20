@@ -15,6 +15,15 @@ use Qualimetrix\Analysis\Finding\Contract\ChannelShape;
  * entry(identity) = { magnitudes: number[] | null, count: int }
  * ```
  *
+ * **`count` is not stored when `magnitudes` is present.** The two are never
+ * independent — the constructor already requires `count === count(magnitudes)`
+ * — so {@see toArray()} omits `count` for a magnitude-shaped entry and
+ * serializes only `magnitudes`. {@see BaselineEntryValues::decode()} is the
+ * inverse on the way back in: it derives `count` from the magnitude list's
+ * length instead of reading a field the file no longer carries. An
+ * occurrence-shaped entry, which has no magnitudes to count, still writes
+ * `count` as before.
+ *
  * The comparison that decides whether a later run's group is still accepted
  * lives with the filter, not here (ADR 0017); this
  * class owns the entry's *shape* and its normal form.
@@ -153,9 +162,9 @@ final readonly class BaselineEntry
 
         if ($this->magnitudes !== null) {
             $data['magnitudes'] = $this->magnitudes;
+        } else {
+            $data['count'] = $this->count;
         }
-
-        $data['count'] = $this->count;
 
         if ($this->mode !== null) {
             $data['mode'] = $this->mode->value;

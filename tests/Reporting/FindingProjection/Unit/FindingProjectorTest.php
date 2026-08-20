@@ -149,7 +149,7 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($pipeline, [$ignored], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $ignored->subject->toCanonical() => [
-                    ['channel' => $ignored->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+                    ['channel' => $ignored->channel()->toKey(), 'magnitudes' => [25]],
                 ],
             ]),
         ));
@@ -180,7 +180,7 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($pipeline, [$violation], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $violation->subject->toCanonical() => [
-                    ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+                    ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25]],
                 ],
             ]),
         ));
@@ -244,7 +244,7 @@ final class FindingProjectorTest extends TestCase
 
         $baselinePath = $this->writeBaselineFile([
             $violation->subject->toCanonical() => [
-                ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+                ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25]],
             ],
         ]);
 
@@ -270,7 +270,7 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $violation->subject->toCanonical() => [
-                    ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+                    ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25]],
                 ],
             ]),
         ));
@@ -340,7 +340,7 @@ final class FindingProjectorTest extends TestCase
         $result = $this->project($this->createPipeline(), [$violation], new FindingProjectionOptions(
             baselinePath: $this->writeBaselineFile([
                 $violation->subject->toCanonical() => [
-                    ['channel' => $violation->channel()->toKey(), 'magnitudes' => [1], 'count' => 1],
+                    ['channel' => $violation->channel()->toKey(), 'magnitudes' => [1]],
                 ],
             ]),
         ));
@@ -447,7 +447,7 @@ final class FindingProjectorTest extends TestCase
 
         $baselinePath = $this->writeBaselineFile([
             $violation->subject->toCanonical() => [
-                ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+                ['channel' => $violation->channel()->toKey(), 'magnitudes' => [25]],
             ],
             $otherSubjectKey => [
                 ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 3],
@@ -480,7 +480,7 @@ final class FindingProjectorTest extends TestCase
 
         $baselinePath = $this->writeBaselineFile([
             $stillFiring->subject->toCanonical() => [
-                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25], 'count' => 1],
+                ['channel' => $stillFiring->channel()->toKey(), 'magnitudes' => [25]],
                 ['channel' => 'code-smell.goto#code-smell.goto', 'count' => 2],
             ],
         ]);
@@ -1008,7 +1008,8 @@ final class FindingProjectorTest extends TestCase
      * Writes a temporary version 11 baseline JSON file.
      *
      * @param array<string, list<array<string, mixed>>> $entries subject key => list of entry objects
-     *                                                           (each in the `channel`/`magnitudes`/`count` shape)
+     *                                                           (each in the `channel`/`magnitudes` or
+     *                                                           `channel`/`count` shape)
      */
     private function writeBaselineFile(array $entries): string
     {
@@ -1018,7 +1019,7 @@ final class FindingProjectorTest extends TestCase
         $this->tempFiles[] = $path;
 
         $data = [
-            'version' => 11,
+            'version' => 12,
             'generated' => (new DateTimeImmutable())->format('c'),
             'scope' => ['src'],
             'entries' => $entries,

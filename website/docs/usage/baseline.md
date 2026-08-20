@@ -1,6 +1,6 @@
 # Baseline
 
-A baseline records accepted debt so an existing project can adopt Qualimetrix without treating every current finding as new work. Version 11 is a **reported-magnitude ceiling**, not a list of hashes to ignore: an existing group stays accepted only while it does not grow or become worse.
+A baseline records accepted debt so an existing project can adopt Qualimetrix without treating every current finding as new work. Version 12 is a **reported-magnitude ceiling**, not a list of hashes to ignore: an existing group stays accepted only while it does not grow or become worse.
 
 ## Create and use a baseline
 
@@ -26,7 +26,7 @@ Commit the file with the project so local development and CI use the same accept
 
 Baseline lifecycle commands measure the findings after source/configuration `@qmx-ignore` suppression and configured path or namespace exclusions. `check` uses that same set; its `--exclude-path` and `--exclude-namespace` options can safely narrow it further, but can leave an entry inert. The lifecycle commands do not accept those CLI-only exclusions, so capture and maintenance cannot silently use a different option surface. `--no-suppression-annotations` is report-only: it restores annotated findings after baseline measurement and never widens the set. `--report=git:...` likewise narrows presentation only.
 
-Each baseline entry identifies a canonical typed subject, a channel, an optional semantic occurrence, and an optional dependency edge. The subject distinguishes exact declarations from logical classes and file/namespace/project aggregates. For a magnitude channel, the file stores the group count and its reported values; for an occurrence channel, it stores the count only. The current group is accepted when it has no more findings at every severity level than the stored group. This handles repairs without guessing which individual finding disappeared.
+Each baseline entry identifies a canonical typed subject, a channel, an optional semantic occurrence, and an optional dependency edge. The subject distinguishes exact declarations from logical classes and file/namespace/project aggregates. For a magnitude channel, the file stores the group's reported values only — its count is the length of that list, not a separate field; for an occurrence channel, it stores the count. The current group is accepted when it has no more findings at every severity level than the stored group. This handles repairs without guessing which individual finding disappeared.
 
 The baseline does not make a non-firing rule fire. A finding that vanishes is stale, not proven fixed.
 
@@ -57,10 +57,10 @@ bin/qmx baseline:generate baseline.json src/ --mode=suppress --force
 ### Replace an older baseline
 
 ```bash
-bin/qmx baseline:generate baseline-v11.json src/
+bin/qmx baseline:generate baseline-v12.json src/
 ```
 
-Only version 11 is loadable. Neither a version 5 hash nor a version 10 logical symbol key can infer the exact declaration subject, semantic occurrence, or dependency edge now required. Run a fresh analysis, map or split every previously accepted group deliberately, review the result, and write a new v11 file. `baseline:generate --force` may replace bytes only after that review; it is not an automatic converter and does not infer old identity. The removed migration command has no alias or compatibility shim.
+Only version 12 is loadable. Neither a version 5 hash nor a version 10 logical symbol key can infer the exact declaration subject, semantic occurrence, or dependency edge now required, and a version 11 file cannot supply the shortened occurrence key or the derived `count` either — there is no converter from any prior version. Run a fresh analysis, map or split every previously accepted group deliberately, review the result, and write a new v12 file. `baseline:generate --force` may replace bytes only after that review; it is not an automatic converter and does not infer old identity. The removed migration command has no alias or compatibility shim.
 
 ### Tighten after repairs
 

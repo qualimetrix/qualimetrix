@@ -28,7 +28,7 @@ Baseline/
 ├── BaselineCapture.php          # VO/factory: baseline plus materialized rejected-group outcomes
 ├── UncapturedGroup.php          # VO: a group that produced no entry, and why
 ├── UncapturedReason.php         # Enum: undeclared / configuration-error channel / no finite magnitude
-├── BaselineLoader.php           # Loads the exact typed-subject version 11 file
+├── BaselineLoader.php           # Loads the exact typed-subject version 12 file
 ├── CanonicalBaselineReader.php  # Reads the canonical one-entry-per-line layout without decoding the whole document, or declines so the loader decodes it
 ├── BaselineLoadException.php    # Envelope failure (missing/unreadable/invalid JSON/version); exit 3
 ├── BaselineWriter.php           # Writes atomically under a compare-and-swap guard
@@ -45,7 +45,7 @@ Baseline/
 ├── BaselineCleanupReason.php    # Enum: stale / channel no longer declared / inert
 ├── BaselineCleanupRemoval.php   # VO: what one `--remove` run did — removed/not-found/ambiguous
 │
-├── BaselineMigrator.php         # Historical continuity report logic for a fresh capture against v5 records; not a v11 conversion route
+├── BaselineMigrator.php         # Historical continuity report logic for a fresh capture against v5 records; not a v12 conversion route
 ├── BaselineMigratorResult.php   # VO: the migrated baseline plus its MigrationReport
 ├── MigrationReport.php          # VO: carried/dropped/fresh pair counts, dropped entries and unreadable v5 rows enumerated in full
 ├── MigrationReportDroppedEntry.php # VO: one v5 (symbolKey, rule) pair the fresh capture no longer backs
@@ -99,17 +99,20 @@ report it otherwise, and "Baseline with 0 entries written" would read as success
 - **Version 10**: Entries record accepted magnitudes under logical symbol keys
 - **Version 11**: Identity uses exact typed subjects and may include semantic
   occurrence, dependency target, and dependency type
+- **Version 12**: A `magnitude`-shaped entry no longer stores `count` (derived
+  from the magnitude list's length instead), and the semantic occurrence key
+  is 16 hex characters instead of 64
 
-Only version 11 is loadable. Versions 5 and 10 cannot supply exact declaration
+Only version 12 is loadable. Versions 5, 10 and 11 cannot supply exact declaration
 identity and are rejected with guidance to run a fresh analysis, deliberately map
-or split accepted entries, review the mapping, and write a version 11 baseline.
+or split accepted entries, review the mapping, and write a version 12 baseline.
 
 ## Parsing, Capture, and Explanation Boundaries
 
 | Owner                        | Typed input and output                                                                                                        | Responsibility and invariant                                                                                                                                                                                                                                                                                                                                                                                                                        | Focused contract                                         |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `BaselineEntryParser`        | `parse(string, mixed): BaselineEntry\|InertBaselineEntry`                                                                     | Reads the outer JSON object and exact identity/occurrence/edge, delegates count/magnitudes/mode to `BaselineEntryValues`, validates channel declaration shape, and converts every rejection into a raw-preserving inert entry. Known identities retain their exact v11 selector; unknown identities receive a deterministic raw selector.                                                                                                           | `BaselineEntryParserTest`, `BaselineWorkflowTest`        |
-| `BaselineEntryValues`        | `decode(array): BaselineEntryValues` exposing readonly `count`, `?list<int\|float> magnitudes`, and `?BaselineEntryMode mode` | Owns only strict JSON value decoding. It rejects missing or non-integer count, non-list/non-numeric magnitudes, and unknown modes with the parser's existing reason/detail; `BaselineEntry` remains the owner of positive count, finite values, and count/list agreement.                                                                                                                                                                           | `BaselineEntryValuesTest`, `BaselineEntryParserTest`     |
+| `BaselineEntryParser`        | `parse(string, mixed): BaselineEntry\|InertBaselineEntry`                                                                     | Reads the outer JSON object and exact identity/occurrence/edge, delegates count/magnitudes/mode to `BaselineEntryValues`, validates channel declaration shape, and converts every rejection into a raw-preserving inert entry. Known identities retain their exact v12 selector; unknown identities receive a deterministic raw selector.                                                                                                           | `BaselineEntryParserTest`, `BaselineWorkflowTest`        |
+| `BaselineEntryValues`        | `decode(array): BaselineEntryValues` exposing readonly `count`, `?list<int\|float> magnitudes`, and `?BaselineEntryMode mode` | Owns only strict JSON value decoding. `count` is required and must be an integer for an occurrence-shaped entry, and is rejected as malformed when it appears (non-null) alongside `magnitudes`; it also rejects non-list/empty/non-numeric magnitudes and unknown modes, with the parser's existing reason/detail. `BaselineEntry` remains the owner of positive count, finite values, and count/list agreement.                                   | `BaselineEntryValuesTest`, `BaselineEntryParserTest`     |
 | `BaselineGenerator`          | `generate(list<Violation>, list<string>): BaselineCapture`                                                                    | Groups once by complete `BaselineIdentity`, preserves first-seen group/refusal order, asks the channel registry only while capturing a group, and reads the injected clock exactly once after grouping. It passes typed rejected records to `BaselineCapture::fromRejectedGroups`, which alone materializes `UncapturedGroup`. Occurrence is identified by the declaration's null direction; magnitude groups require one finite number per member. | `BaselineGeneratorTest`, `BaselineWorkflowTest`          |
 | `BoundaryExplanationService` | measured violations, threshold maps, optional `MetricRepositoryInterface` -> `BoundaryExplanation`                            | Builds one typed repository index from declarations, callables, logical classes, and aggregate rows. Measured evidence wins over the repository. Annotation matching requires the exact subject and `ThresholdOverride::matches()`; highest control specificity wins, then smallest finite span, then first extraction on a tie. Baseline, configured, and annotation sources stay independently nullable and zero remains a value.                 | `BoundaryExplanationServiceTest`, `BaselineWorkflowTest` |
 
@@ -301,7 +304,7 @@ without touching the other.
 ### Historical migration report types
 
 The retained v5 reader and migration report VOs describe historical continuity
-data only. They are not a conversion route into version 11: neither a v5 nor a
+data only. They are not a conversion route into version 12: neither a v5 nor a
 v10 logical symbol key can infer the exact declaration subject now required.
 Version 11 construction therefore starts from a fresh analysis and an explicit,
 reviewed map or split of every acceptance.
@@ -359,7 +362,7 @@ user copies rather than composes it. `<symbol>#<channel>` cannot serve: `#` alre
 separates the two halves of a channel key, and two forbidden edges out of one class on
 one channel agree on everything else.
 
-## File Contract (version 11)
+## File Contract (version 12)
 
 The file is one JSON document, written in a canonical layout: **one entry per
 line**, two-space indentation, a subject key on the line above the entries it
@@ -367,15 +370,15 @@ owns.
 
 ```json
 {
-  "version": 11,
+  "version": 12,
   "generated": "2026-08-05T12:00:00+03:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:App\\OrderService::calculate@src/OrderService.php:0": [
-      {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","occurrence":"body","magnitudes":[25],"count":1}
+      {"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","occurrence":"bd41b8a3f6cad9e1","magnitudes":[25]}
     ],
     "file:src/Legacy/dup.php": [
-      {"channel":"duplication.code-duplication#duplication.code-duplication","magnitudes":[40,100],"count":2}
+      {"channel":"duplication.code-duplication#duplication.code-duplication","magnitudes":[40,100]}
     ],
     "class:App\\Web\\Controller": [
       {"channel":"architecture.layer-violation#architecture.layer-violation","edge":{"target":"class:App\\Db\\Connection","type":"new"},"count":1}
@@ -388,25 +391,40 @@ The layout is the schema's presentation, not part of it: the file is ordinary
 JSON, and a reformatted copy still loads. What the layout buys is that an entry
 is the unit of acceptance *and* the unit of diff — tightening one ceiling is a
 one-line change with the subject key visible above it — and that the file is
-two thirds the size `JSON_PRETTY_PRINT` produced for the same entries (60 401 B
-against 90 365 B on this repository's own baseline, at 264 entries).
+two thirds the size `JSON_PRETTY_PRINT` produced for the same entries. Version
+12 shrinks it further, by 7.2% on this repository's own 264-entry baseline:
+`count` is not written for a `magnitude` entry (it is redundant with the
+magnitude list's length), and the semantic `occurrence` key is 16 hex
+characters instead of 64 (its discrimination domain is one (subject, channel)
+pair, not the whole file).
 
 | Field       | Contract                                                      |
 | ----------- | ------------------------------------------------------------- |
-| `version`   | Exactly `11`                                                  |
+| `version`   | Exactly `12`                                                  |
 | `generated` | ISO 8601, from an injected clock (`Core\Time\ClockInterface`) |
 | `scope`     | The analysed path set that produced this file, normalized     |
 | `entries`   | Canonical symbol keys → deterministic entry lists             |
 
 Entry invariants:
 
-- `count` is a positive integer and is always present.
+- `count` is a positive integer. It is present for an `occurrence`-shaped
+  entry, and **absent** for a `magnitude`-shaped entry — there it is derived
+  from the length of `magnitudes` on load, and a file that writes both is
+  rejected as malformed rather than trusted to agree with itself.
 - `magnitudes` holds exactly `count` finite numbers and is present exactly for
   channels declared `magnitude`; it is absent for `occurrence` channels. Each value is
   `round($v, 6)` and `-0.0` normalizes to `0`. The list is stored ascending — a
   determinism convention only, since the comparison counts members per severity level
   and never reads it positionally.
-- `occurrence` is optional and distinguishes semantic occurrences of the same channel.
+- `occurrence` is optional and distinguishes semantic occurrences of the same
+  channel. It is 16 lowercase hex characters — a truncated SHA-256 of the
+  semantic evidence, via {@see \Qualimetrix\Analysis\Finding\Contract\OccurrenceKey}
+  — not the full digest: the domain it distinguishes within is one (subject,
+  channel) pair, units of members, so 64 bits of headroom is far more than it
+  needs. This value also feeds `Violation::getFingerprint()`, so shortening it
+  is a breaking change to the GitLab Code Quality `fingerprint` and the SARIF
+  `partialFingerprints.primaryLocationLineHash` it derives — every previously
+  computed fingerprint changes.
 - `edge` is present exactly when the finding carries a dependency target; target and
   optional dependency type are part of the selector-bearing identity.
 - `mode` is optional; `suppress` is the only recognized value.

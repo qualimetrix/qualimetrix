@@ -51,15 +51,14 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 11,
+                "version": 12,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src", "tests"],
                 "entries": {
                     "callable:App\\OrderService::calculate": [
                         {
                             "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
-                            "magnitudes": [25],
-                            "count": 1
+                            "magnitudes": [25]
                         }
                     ],
                     "file:src/Legacy/bootstrap.php": [
@@ -79,7 +78,7 @@ final class BaselineLoaderTest extends TestCase
     public function itRecordsTheContentHashOfTheFileItRead(): void
     {
         $json = <<<'JSON'
-            {"version": 11, "generated": "2026-08-05T12:00:00+03:00", "scope": [], "entries": {}}
+            {"version": 12, "generated": "2026-08-05T12:00:00+03:00", "scope": [], "entries": {}}
             JSON;
 
         $baseline = $this->loadJson($json);
@@ -88,26 +87,46 @@ final class BaselineLoaderTest extends TestCase
     }
 
     #[Test]
-    public function itRejectsVersionTenBeforeReadingEntriesAndGivesManualV11Guidance(): void
+    public function itRejectsVersionTenBeforeReadingEntriesAndGivesManualV12Guidance(): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
             'Baseline version 10 cannot be converted automatically because declaration identity cannot be inferred '
             . 'from a logical symbol key. Run a fresh analysis, deliberately map or split accepted entries, then '
-            . 'write a new version 11 baseline (or regenerate and review the accepted state).',
+            . 'write a new version 12 baseline (or regenerate and review the accepted state).',
         );
 
         $this->loadJson('{"version": 10, "entries": "never parsed"}');
     }
 
+    /**
+     * Version 11 is the immediate predecessor, not a historical format: it
+     * has exact declaration subjects already. It is still refused rather than
+     * converted, because P1 has no converter for the "count" and
+     * occurrence-key changes either — the plan states this baseline
+     * compatibility is not maintained.
+     */
     #[Test]
-    public function itRejectsVersionFiveAsHistoricalAndRequiresManualV11Review(): void
+    public function itRejectsVersionElevenAndRequiresARegeneratedV12Baseline(): void
     {
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage(
-            'This baseline is version 5, a historical format that cannot be loaded or converted to version 11 '
+            'Baseline version 11 cannot be converted automatically: version 12 drops the redundant "count" field '
+            . 'and shortens the occurrence key, and there is no converter for either change. Run a fresh analysis '
+            . 'and write a new version 12 baseline (or regenerate and review the accepted state).',
+        );
+
+        $this->loadJson('{"version": 11, "entries": "never parsed"}');
+    }
+
+    #[Test]
+    public function itRejectsVersionFiveAsHistoricalAndRequiresManualV12Review(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage(
+            'This baseline is version 5, a historical format that cannot be loaded or converted to version 12 '
             . 'because declaration identity cannot be inferred from a logical symbol key. Run a fresh analysis, '
-            . 'deliberately map or split accepted entries, review every mapping, then write a new version 11 '
+            . 'deliberately map or split accepted entries, review every mapping, then write a new version 12 '
             . 'baseline (or regenerate and review the accepted state).',
         );
 
@@ -134,7 +153,7 @@ final class BaselineLoaderTest extends TestCase
         $this->expectExceptionMessageMatches('/scope/');
 
         $this->loadJson(<<<'JSON'
-            {"version": 11, "generated": "2026-01-01T00:00:00+00:00", "entries": {}}
+            {"version": 12, "generated": "2026-01-01T00:00:00+00:00", "entries": {}}
             JSON);
     }
 
@@ -144,7 +163,7 @@ final class BaselineLoaderTest extends TestCase
         $this->expectException(RuntimeException::class);
 
         $this->loadJson(<<<'JSON'
-            {"version": 11, "generated": "not-a-date", "scope": [], "entries": {}}
+            {"version": 12, "generated": "not-a-date", "scope": [], "entries": {}}
             JSON);
     }
 
@@ -168,7 +187,7 @@ final class BaselineLoaderTest extends TestCase
         $this->expectExceptionMessageMatches('/ISO 8601/');
 
         $this->loadJson(\sprintf(
-            '{"version": 11, "generated": %s, "scope": [], "entries": {}}',
+            '{"version": 12, "generated": %s, "scope": [], "entries": {}}',
             json_encode($generated, \JSON_THROW_ON_ERROR),
         ));
     }
@@ -184,7 +203,7 @@ final class BaselineLoaderTest extends TestCase
     public function itAcceptsEveryIso8601SpellingTheContractNames(string $generated, string $expectedUtc): void
     {
         $baseline = $this->loadJson(\sprintf(
-            '{"version": 11, "generated": %s, "scope": [], "entries": {}}',
+            '{"version": 12, "generated": %s, "scope": [], "entries": {}}',
             json_encode($generated, \JSON_THROW_ON_ERROR),
         ));
 
@@ -203,7 +222,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 11,
+                "version": 12,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["tests/", "src", "src/", "src"],
                 "entries": {}
@@ -223,7 +242,7 @@ final class BaselineLoaderTest extends TestCase
     public function itTurnsAnEntryWhoseComponentsCarryTheKeySeparatorInert(): void
     {
         $baseline = $this->loadJson((string) json_encode([
-            'version' => 11,
+            'version' => 12,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => [],
             'entries' => [
@@ -263,7 +282,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 11,
+                "version": 12,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": [],
                 "entries": {
@@ -308,15 +327,14 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 11,
+                "version": 12,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
                 "entries": {
                     "callable:App\\Good::method": [
                         {
                             "channel": "complexity.cyclomatic#complexity.cyclomatic.callable",
-                            "magnitudes": [25],
-                            "count": 1
+                            "magnitudes": [25]
                         }
                     ],
                     "callable:App\\Bad::method": [
@@ -340,7 +358,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 11,
+                "version": 12,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
                 "entries": { "callable:App\\Foo::bar": { "channel": "code-smell.goto#code-smell.goto" } }
@@ -361,7 +379,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 11,
+                "version": 12,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
                 "entries": {
@@ -388,13 +406,13 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 11,
+                "version": 12,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
                 "entries": {
                     "callable:App\\Foo::bar": [
                         { "channel": "code-smell.goto#code-smell.goto", "count": 1 },
-                        { "channel": "code-smell.goto#code-smell.goto", "magnitudes": [5], "count": 1 }
+                        { "channel": "code-smell.goto#code-smell.goto", "magnitudes": [5] }
                     ]
                 }
             }
@@ -416,7 +434,7 @@ final class BaselineLoaderTest extends TestCase
     {
         $baseline = $this->loadJson(<<<'JSON'
             {
-                "version": 11,
+                "version": 12,
                 "generated": "2026-08-05T12:00:00+03:00",
                 "scope": ["src"],
                 "entries": {
@@ -511,7 +529,7 @@ final class BaselineLoaderTest extends TestCase
     public function itReadsACanonicalFileWithNoEntries(): void
     {
         $baseline = $this->loadJson(
-            "{\n  \"version\": 11,\n  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
+            "{\n  \"version\": 12,\n  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
             . "  \"scope\": [\"src\"],\n  \"entries\": {}\n}\n",
             'empty.json',
         );
@@ -601,10 +619,10 @@ final class BaselineLoaderTest extends TestCase
     #[Test]
     public function itDeclinesARepeatedSubjectKeyTheWholeDocumentPathWouldCollapse(): void
     {
-        $entry = '{"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[%d],"count":1}';
+        $entry = '{"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[%d]}';
 
         $repeated = "{\n"
-            . "  \"version\": 11,\n"
+            . "  \"version\": 12,\n"
             . "  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
             . "  \"scope\": [\"src\"],\n"
             . "  \"entries\": {\n"
@@ -683,10 +701,10 @@ final class BaselineLoaderTest extends TestCase
     {
         $canonical = self::canonicalDocument();
 
-        yield 'document not opened on its own line' => ['{"version": 11}'];
+        yield 'document not opened on its own line' => ['{"version": 12}'];
         yield 'document opened with a bracket' => ["[\n" . substr($canonical, 2)];
         yield 'envelope field indented four spaces' => [str_replace("  \"version\"", "    \"version\"", $canonical)];
-        yield 'envelope field without its comma' => [str_replace("  \"version\": 11,\n", "  \"version\": 11\n", $canonical)];
+        yield 'envelope field without its comma' => [str_replace("  \"version\": 12,\n", "  \"version\": 12\n", $canonical)];
         yield 'envelope value that is not JSON' => [str_replace('"scope": ["src","tests"]', '"scope": [src]', $canonical)];
         yield 'subject key indented two spaces' => [str_replace("    \"class:", "  \"class:", $canonical)];
         yield 'subject key that is not a JSON string' => [str_replace("    \"class:App\\\\Legacy\\\\Report\":", '    class:App\Legacy\Report:', $canonical)];
@@ -694,7 +712,7 @@ final class BaselineLoaderTest extends TestCase
         // Tabs are legal JSON whitespace, so this one stays a valid document
         // and is declined purely for not being the layout.
         yield 'entry indented with tabs' => [str_replace("      {\"channel\":\"complexity.wmc", "\t\t\t\t\t\t{\"channel\":\"complexity.wmc", $canonical)];
-        yield 'entry line that is not JSON' => [str_replace('{"channel":"complexity.wmc#complexity.wmc","magnitudes":[70],"count":1}', '{"channel": unquoted}', $canonical)];
+        yield 'entry line that is not JSON' => [str_replace('{"channel":"complexity.wmc#complexity.wmc","magnitudes":[70]}', '{"channel": unquoted}', $canonical)];
         yield 'entries object never closed' => [str_replace("  }\n}\n", "}\n", $canonical)];
         yield 'last line without its newline' => [rtrim($canonical, "\n")];
     }
@@ -725,12 +743,12 @@ final class BaselineLoaderTest extends TestCase
         }
 
         return "{\n"
-            . "  \"version\": 11,\n"
+            . "  \"version\": 12,\n"
             . "  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
             . "  \"scope\": [\"src\"],\n"
             . "  \"entries\": {\n"
             . "    \"class:App\\\\Deep\": [\n"
-            . "      {\"channel\":\"complexity.wmc#complexity.wmc\",\"count\":1,\"magnitudes\":" . $magnitudes . "}\n"
+            . "      {\"channel\":\"complexity.wmc#complexity.wmc\",\"magnitudes\":" . $magnitudes . "}\n"
             . "    ]\n"
             . "  }\n"
             . "}\n";
@@ -750,17 +768,17 @@ final class BaselineLoaderTest extends TestCase
     private static function canonicalDocument(): string
     {
         return "{\n"
-            . "  \"version\": 11,\n"
+            . "  \"version\": 12,\n"
             . "  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
             . "  \"scope\": [\"src\",\"tests\"],\n"
             . "  \"entries\": {\n"
             . "    \"callable:App\\\\OrderService::calculate\": [\n"
-            . "      {\"channel\":\"complexity.cognitive#complexity.cognitive.callable\",\"magnitudes\":[18],\"count\":1},\n"
-            . "      {\"channel\":\"complexity.cyclomatic#complexity.cyclomatic.callable\",\"magnitudes\":[25],\"count\":1},\n"
+            . "      {\"channel\":\"complexity.cognitive#complexity.cognitive.callable\",\"magnitudes\":[18]},\n"
+            . "      {\"channel\":\"complexity.cyclomatic#complexity.cyclomatic.callable\",\"magnitudes\":[25]},\n"
             . "      {\"channel\":\"nonsense.not-a-channel#nonsense.not-a-channel\",\"count\":1}\n"
             . "    ],\n"
             . "    \"class:App\\\\Legacy\\\\Report\": [\n"
-            . "      {\"channel\":\"complexity.wmc#complexity.wmc\",\"magnitudes\":[70],\"count\":1}\n"
+            . "      {\"channel\":\"complexity.wmc#complexity.wmc\",\"magnitudes\":[70]}\n"
             . "    ]\n"
             . "  }\n"
             . "}\n";

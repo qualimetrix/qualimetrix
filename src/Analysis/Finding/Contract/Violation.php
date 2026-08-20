@@ -104,7 +104,12 @@ final readonly class Violation
      *
      * Format: channel:subject[:occurrence][:edge]
      *
-     * @internal Not used in production code. May be removed in a future version.
+     * Used by {@see \Qualimetrix\Reporting\Formatter\GitLabCodeQualityFormatter::generateFingerprint()}
+     * (hashed with md5, for cross-MR finding tracking) and by
+     * {@see \Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter} (as
+     * `partialFingerprints.primaryLocationLineHash`, for GitHub code scanning
+     * alert identity). A change to any input here — the occurrence key length
+     * included — resets both.
      */
     public function getFingerprint(): string
     {

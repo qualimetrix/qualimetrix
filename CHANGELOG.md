@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Baseline files are written one entry per line inside the same JSON document: a tightened ceiling is a one-line diff, and the file is two thirds its former size (60 401 B against 90 365 B for this project's own 264 entries). The schema and version 11 are unchanged, and a reformatted file still loads.
+- Baseline files are written one entry per line inside the same JSON document: a tightened ceiling is a one-line diff, and the file is two thirds its former size (60 401 B against 90 365 B for this project's own 264 entries). The layout is presentation only — the schema is unchanged at the time of this line-per-entry change, and a reformatted file still loads. (The schema itself changes separately; see the version 12 entry below.)
 - Corrected computed-metric reference examples to use the registered `metrics` output format.
 - Added universal per-rule `exclude_namespace_channels` configuration for suppressing selected namespace-aggregate violation channels without hiding class findings or sibling channels.
 - `architecture.coverage` now includes analysed classes outside every declared layer even when they have no dependency edges, so `coverage: error` can enforce complete project ownership instead of checking only graph endpoints.
@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 - An `exclude_namespace_channels` key must now address a channel the rule it is written under actually produces; a key naming another rule's channel ends the run with exit code 3 instead of being accepted and excluding nothing. The message lists the owning rule's channels.
+- Baseline files are now version 12. A magnitude-shaped entry no longer stores `count` alongside `magnitudes` — it is redundant with the magnitude list's length, and a file that still writes both is refused as malformed — shrinking this project's own 232 such entries by 2 320 B. The semantic occurrence key is now 16 hex characters instead of 64, since its discrimination domain is one (subject, channel) pair, not the whole baseline (2 064 B saved across 43 entries). Both changes reset the `getFingerprint()`-derived identifiers GitLab Code Quality and SARIF output use to track findings across runs: expect previously-seen GitLab findings to show once as new, and closed/dismissed GitHub code scanning alerts to reappear as open. There is no converter for either change or for the prior version; version 11 (and earlier) baselines are rejected and must be regenerated with `bin/qmx baseline:generate <baseline> <paths...> --force`, with the resulting acceptances reviewed like any other regeneration.
 
 ### Fixed
 - A baseline entry whose identity is also claimed by an unreadable line beside it no longer suppresses. The documented rule — a duplicated identity makes an entry inert — counted only the lines the parser accepted, so a hand-edited pair was resolved by which of the two happened to parse.
