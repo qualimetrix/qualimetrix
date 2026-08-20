@@ -100,12 +100,7 @@ final class LcomCollector extends AbstractCollector implements DeclarationIndexA
 
             $bag = (new MetricBag())->with(MetricName::STRUCTURE_LCOM, $lcom);
 
-            $result[] = new ClassWithMetrics(
-                declarationPath: $this->declarationPathOf(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos),
-                startFilePos: $classData->startFilePos,
-                line: $classData->line,
-                metrics: $bag,
-            );
+            $result[] = $this->classWithMetrics(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos, $classData->line, $bag);
         }
 
         return $result;

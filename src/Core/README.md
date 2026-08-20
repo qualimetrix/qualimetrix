@@ -131,7 +131,7 @@ Optional interface for collectors that provide class-level metrics.
 Analogous to `CallableMetricsProviderInterface` but for class-level data. Allows extracting class metrics without knowing concrete collector types.
 
 **Methods:**
-- `getClassesWithMetrics(): list<ClassWithMetrics>` — returns class metrics after AST traversal
+- `getClassesWithMetrics(RelativePath $file): list<ClassWithMetrics>` — returns class metrics after AST traversal
 
 **Usage:** Implemented by collectors that gather class-level metrics (e.g., TccLccCollector, RfcCollector).
 
@@ -156,16 +156,14 @@ Value Object — one concrete callable declaration with collected metrics.
 
 ### ClassWithMetrics
 
-Value Object — a class with collected metrics.
+Value Object — one concrete class declaration with its collected metrics.
 
 **Fields:**
-- `namespace: ?string` — namespace (null for global scope)
-- `class: string` — class name
-- `line: int` — line number
+- `declarationPath: DeclarationPath` — exact source declaration identity: logical symbol, file, and assigned ordinal
+- `startFilePos: int` — the position this declaration was collected at; an in-run join key, never part of a stored identity
+- `line: int` — line number, presentation only
 - `metrics: MetricBag` — collected metrics
-
-**Methods:**
-- `getSymbolPath(): SymbolPath` — creates SymbolPath for this class
+- `subject: MetricSubject` — the declaration subject derived from `declarationPath`
 
 ### MetricBag
 

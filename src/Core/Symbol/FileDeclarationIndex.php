@@ -16,7 +16,10 @@ use InvalidArgumentException;
  * An unregistered pair is answered, not rejected: reaching it means the asking
  * producer and the registrar tracked lexical context differently, which costs
  * one misattributed measurement today and must not escalate to killing the run
- * on a legal user file.
+ * on a legal user file. Answering registers the pair, which cannot disturb what
+ * another producer is told: a position always comes from the node itself, so a
+ * producer whose lexical context diverged asks under a different *key*, and a
+ * key the registrar did see already holds every position of that file.
  */
 final class FileDeclarationIndex
 {

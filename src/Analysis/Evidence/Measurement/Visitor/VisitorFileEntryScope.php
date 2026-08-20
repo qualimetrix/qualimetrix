@@ -222,8 +222,10 @@ final class VisitorFileEntryScope
 
     /**
      * The wire subject of a callable declared inside an anonymous class stays
-     * the file: the enclosing identity is positional, so pinning a member of it
-     * would put a byte offset back into the key.
+     * the file: the enclosing class has no name of its own, only its order
+     * among the unnamed declarations of the file, and pinning a member to that
+     * would make the member move whenever another anonymous class appears
+     * above it.
      */
     private function callableSubject(VisitorCallableScope $scope): string
     {

@@ -27,6 +27,15 @@ trait DeclarationIndexAwareTrait
         $this->declarationIndex = $index;
     }
 
+    /**
+     * Keeps the position that identifies the declaration and the position it
+     * was collected at from ever being taken from two different places.
+     */
+    private function classWithMetrics(SymbolPath $logical, RelativePath $file, int $startFilePos, int $line, MetricBag $metrics): ClassWithMetrics
+    {
+        return new ClassWithMetrics($this->declarationPathOf($logical, $file, $startFilePos), $startFilePos, $line, $metrics);
+    }
+
     private function declarationPathOf(SymbolPath $logical, RelativePath $file, int $startFilePos): DeclarationPath
     {
         $index = $this->declarationIndex

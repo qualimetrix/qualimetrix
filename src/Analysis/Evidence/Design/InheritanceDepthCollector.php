@@ -102,12 +102,7 @@ final class InheritanceDepthCollector extends AbstractCollector implements Decla
             // Note: Parent information is stored in dependency graph as DependencyType::Extends
             // NocCollector will use that information for NOC calculation
 
-            $result[] = new ClassWithMetrics(
-                declarationPath: $this->declarationPathOf(SymbolPath::forClass($info->namespace ?? '', $info->className), $file, $info->startFilePos),
-                startFilePos: $info->startFilePos,
-                line: $info->line,
-                metrics: $bag,
-            );
+            $result[] = $this->classWithMetrics(SymbolPath::forClass($info->namespace ?? '', $info->className), $file, $info->startFilePos, $info->line, $bag);
         }
 
         return $result;

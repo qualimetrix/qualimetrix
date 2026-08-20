@@ -136,12 +136,7 @@ final class TccLccCollector extends AbstractCollector implements DeclarationInde
                 ->with(MetricName::COHESION_LCC, $lcc)
                 ->with(MetricName::COHESION_PURE_METHOD_COUNT, $pureCount);
 
-            $result[] = new ClassWithMetrics(
-                declarationPath: $this->declarationPathOf(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos),
-                startFilePos: $classData->startFilePos,
-                line: $classData->line,
-                metrics: $bag,
-            );
+            $result[] = $this->classWithMetrics(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos, $classData->line, $bag);
         }
 
         return $result;

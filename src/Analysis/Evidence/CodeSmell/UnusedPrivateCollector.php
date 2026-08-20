@@ -90,12 +90,7 @@ final class UnusedPrivateCollector extends AbstractCollector implements Declarat
         foreach ($this->visitor->getClassData() as $classData) {
             $bag = $this->buildClassMetricBag($classData);
 
-            $result[] = new ClassWithMetrics(
-                declarationPath: $this->declarationPathOf(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos),
-                startFilePos: $classData->startFilePos,
-                line: $classData->line,
-                metrics: $bag,
-            );
+            $result[] = $this->classWithMetrics(SymbolPath::forClass($classData->namespace ?? '', $classData->className), $file, $classData->startFilePos, $classData->line, $bag);
         }
 
         return $result;

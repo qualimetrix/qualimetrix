@@ -136,12 +136,7 @@ final class LocCollector extends AbstractCollector implements DeclarationIndexAw
             $bag = (new MetricBag())
                 ->with(MetricName::SIZE_CLASS_LOC, $classLoc);
 
-            $result[] = new ClassWithMetrics(
-                declarationPath: $this->declarationPathOf(SymbolPath::forClass($range['namespace'] ?? '', $range['className']), $file, $range['startFilePos']),
-                startFilePos: $range['startFilePos'],
-                line: $range['startLine'],
-                metrics: $bag,
-            );
+            $result[] = $this->classWithMetrics(SymbolPath::forClass($range['namespace'] ?? '', $range['className']), $file, $range['startFilePos'], $range['startLine'], $bag);
         }
 
         return $result;

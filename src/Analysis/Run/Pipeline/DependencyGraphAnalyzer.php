@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyGraphBuilderInterface;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyTraversalParticipantInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarInterface;
 use Qualimetrix\Analysis\Run\Contract\Discovery\FileDiscoveryInterface;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisFailure;
@@ -58,12 +59,8 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
 
             try {
                 $ast = $this->fileParser->parse($file);
-                // Numbering belongs to one traversal of one file: the registrar
-                // and its index are rebuilt per file, and the visitor shared
-                // with the check path is rebound to this path's index.
-                $registrar = $this->declarationRegistrarFactory->createForFile();
                 $traverser = new NodeTraverser();
-                $traverser->addVisitor($registrar);
+                $registrar = $this->beginNumbering($traverser);
                 $traverser->addVisitor($this->dependencyVisitor);
                 $this->dependencyVisitor->beginFile($path, $registrar->index());
                 $traverser->traverse($ast);
@@ -83,6 +80,20 @@ final readonly class DependencyGraphAnalyzer implements DependencyGraphAnalyzerI
             $this->graphBuilder->build($dependencies, array_values($logicalClassUniverse)),
             new AnalysisCoverage($analyzedFiles, [], $failures),
         );
+    }
+
+    /**
+     * Numbering belongs to one traversal of one file: the registrar and its
+     * index are rebuilt per file, and the visitor shared with the check path
+     * is rebound to this path's index. The registrar goes in first so a
+     * producer asking about the node it is entering finds it registered.
+     */
+    private function beginNumbering(NodeTraverser $traverser): DeclarationRegistrarInterface
+    {
+        $registrar = $this->declarationRegistrarFactory->createForFile();
+        $traverser->addVisitor($registrar);
+
+        return $registrar;
     }
 
     /**

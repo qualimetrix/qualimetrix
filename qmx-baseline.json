@@ -1,6 +1,6 @@
 {
   "version": 13,
-  "generated": "2026-08-20T15:51:16+00:00",
+  "generated": "2026-08-20T17:20:14+00:00",
   "scope": ["src"],
   "entries": {
     "declaration:callable:Qualimetrix\\Analysis\\Configuration\\Contract\\Discovery\\ComposerAutoloadPathReaderInterface::extractAutoloadPaths@src/Analysis/Configuration/Contract/Discovery/ComposerAutoloadPathReaderInterface.php": [
@@ -437,9 +437,6 @@
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Coupling\\InstabilityRule@src/Analysis/Evidence/Coupling/InstabilityRule.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[30]}
     ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\DependencyModel\\Extraction\\DependencyVisitor@src/Analysis/Evidence/DependencyModel/Extraction/DependencyVisitor.php": [
-      {"channel":"coupling.cbo#coupling.cbo.class","magnitudes":[22]}
-    ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Design\\DitGlobalCollector@src/Analysis/Evidence/Design/DitGlobalCollector.php": [
       {"channel":"computed.health#health.cohesion","magnitudes":[30]}
     ],
@@ -448,9 +445,6 @@
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Maintainability\\MaintainabilityIndexCollector@src/Analysis/Evidence/Maintainability/MaintainabilityIndexCollector.php": [
       {"channel":"design.data-class#design.data-class","magnitudes":[100]}
-    ],
-    "declaration:class:Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DeclarationIndexAwareInterface@src/Analysis/Evidence/Measurement/Contract/DeclarationIndexAwareInterface.php": [
-      {"channel":"coupling.cbo#coupling.cbo.class","magnitudes":[22]}
     ],
     "declaration:class:Qualimetrix\\Analysis\\Evidence\\Measurement\\DataBag@src/Analysis/Evidence/Measurement/DataBag.php": [
       {"channel":"coupling.class-rank#coupling.class-rank","count":1}
@@ -623,7 +617,7 @@
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Coupling": [
       {"channel":"coupling.cbo#coupling.cbo.namespace","magnitudes":[17]},
-      {"channel":"coupling.instability#coupling.instability.namespace","magnitudes":[0.955224]}
+      {"channel":"coupling.instability#coupling.instability.namespace","magnitudes":[0.954545]}
     ],
     "ns:Qualimetrix\\Analysis\\Evidence\\Design": [
       {"channel":"size.class-count#size.class-count","magnitudes":[21]}
@@ -669,9 +663,9 @@
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"26a58f2d85548561","magnitudes":[31]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"31b8775fc4e026b1","magnitudes":[29]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"34b279d1e8cbb107","magnitudes":[21]},
-      {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"3cb43ce379aa0d09","magnitudes":[37]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"67c3f109dc2d3e97","magnitudes":[28]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"9964fabbf3e849d9","magnitudes":[46]},
+      {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"a2cd51cb8b09fe18","magnitudes":[32]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"cf1eed47dd349df2","magnitudes":[45]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"d3feecf066ef9d58","magnitudes":[30]},
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"fd45a3650ac682e6","magnitudes":[20,20,20,20]},

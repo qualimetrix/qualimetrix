@@ -3257,46 +3257,6 @@
             "closure_package": "P3",
             "consumers": [
                 {
-                    "owner": "Analysis.Evidence.CodeSmell",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\CodeSmell\\UnusedPrivateCollector",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Evidence.Cohesion",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\LcomCollector",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Evidence.Cohesion",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Cohesion\\TccLccCollector",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Evidence.Coupling",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Coupling\\RfcCollector",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Evidence.Design",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\InheritanceDepthCollector",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Evidence.Design",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Design\\TypeCoverageVisitor",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Evidence.Size",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\LocCollector",
-                    "closes_in": null
-                },
-                {
-                    "owner": "Analysis.Evidence.Size",
-                    "source_fqcn": "Qualimetrix\\Analysis\\Evidence\\Size\\MethodCountCollector",
-                    "closes_in": null
-                },
-                {
                     "owner": "Analysis.Run",
                     "source_fqcn": "Qualimetrix\\Analysis\\Run\\Collection\\CollectionOrchestrator",
                     "closes_in": null
@@ -3508,9 +3468,15 @@
             "path": "src/Analysis/Evidence/Measurement/Contract/DeclarationRegistrarInterface.php",
             "kind": "interface",
             "owner": "Analysis.Evidence.Measurement",
-            "visibility": "internal",
+            "visibility": "contract",
             "closure_package": "P3",
-            "consumers": []
+            "consumers": [
+                {
+                    "owner": "Analysis.Run",
+                    "source_fqcn": "Qualimetrix\\Analysis\\Run\\Pipeline\\DependencyGraphAnalyzer",
+                    "closes_in": null
+                }
+            ]
         },
         "Qualimetrix\\Analysis\\Evidence\\Measurement\\Contract\\DerivedCollectorInterface": {
             "path": "src/Analysis/Evidence/Measurement/Contract/DerivedCollectorInterface.php",

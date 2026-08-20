@@ -128,12 +128,7 @@ final class TypeCoverageVisitor extends NodeVisitorAbstract implements Declarati
                 );
             }
 
-            $result[] = new ClassWithMetrics(
-                declarationPath: $this->declarationPathOf(SymbolPath::forClass($info['namespace'] ?? '', $info['class']), $file, $info['startFilePos']),
-                startFilePos: $info['startFilePos'],
-                line: $info['line'],
-                metrics: $bag,
-            );
+            $result[] = $this->classWithMetrics(SymbolPath::forClass($info['namespace'] ?? '', $info['class']), $file, $info['startFilePos'], $info['line'], $bag);
         }
 
         return $result;

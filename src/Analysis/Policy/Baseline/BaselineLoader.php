@@ -8,7 +8,7 @@ use DateTimeImmutable;
 use JsonException;
 
 /**
- * Reads a version 12 baseline file.
+ * Reads a version 13 baseline file.
  *
  * Two failure classes, deliberately handled differently:
  *

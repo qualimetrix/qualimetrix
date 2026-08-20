@@ -22,16 +22,16 @@ final class RatchetKeyGrammarTest extends TestCase
     /** @return iterable<string, array{string, string, ?int}> */
     public static function provideDeclarationKeys(): iterable
     {
-        yield 'plain method' => ['declaration:method:App\Service::run@src/Service.php', 'src/Service.php', null];
-        yield 'second declaration of one identity' => ['declaration:method:App\Service::run@src/Service.php#1', 'src/Service.php', 1];
-        yield 'closure ordinal belongs to the logical part' => ['declaration:func:App\{closure#3}@src/Service.php', 'src/Service.php', null];
-        yield 'anonymous class rank belongs to the logical part' => ['declaration:method:App\{anonymous#2}::run@src/Service.php', 'src/Service.php', null];
-        yield 'both, with a declaration ordinal of its own' => ['declaration:method:App\{anonymous#2}::run@src/Service.php#4', 'src/Service.php', 4];
+        yield 'plain method' => ['declaration:callable:App\Service::run@src/Service.php', 'src/Service.php', null];
+        yield 'second declaration of one identity' => ['declaration:callable:App\Service::run@src/Service.php#1', 'src/Service.php', 1];
+        yield 'closure ordinal belongs to the logical part' => ['declaration:callable:App\{closure#3}@src/Service.php', 'src/Service.php', null];
+        yield 'anonymous class rank belongs to the logical part' => ['declaration:callable:App\{anonymous#2}::run@src/Service.php', 'src/Service.php', null];
+        yield 'both, with a declaration ordinal of its own' => ['declaration:callable:App\{anonymous#2}::run@src/Service.php#4', 'src/Service.php', 4];
         // The split is on the LAST `@`, so a logical part carrying one — the
         // shape anonymous classes had before they were ranked — still resolves
         // to the file. The price is a file path containing `@`, which this
         // grammar deliberately does not promise to parse.
-        yield 'logical part carrying an at sign' => ['declaration:method:App\{anonymous@71}::run@src/Service.php', 'src/Service.php', null];
+        yield 'logical part carrying an at sign' => ['declaration:callable:App\{anonymous@71}::run@src/Service.php', 'src/Service.php', null];
     }
 
     #[Test]
@@ -60,7 +60,7 @@ final class RatchetKeyGrammarTest extends TestCase
     #[Test]
     public function itRejectsAKeyThatStillCarriesAPosition(): void
     {
-        [$file] = self::parse('declaration:method:App\Service::run@src/Service.php:1234');
+        [$file] = self::parse('declaration:callable:App\Service::run@src/Service.php:1234');
 
         self::assertMatchesRegularExpression('/:\d+$/', $file);
     }

@@ -91,7 +91,7 @@ log between the first two spans.
 
 High fan-in of the public Measurement surface is governed by point thresholds,
 not a namespace-wide exclusion. Current CBO thresholds give one-edge headroom:
-`AbstractCollector` 27, `AggregationStrategy` 38, `MetricBag` 67,
+`AbstractCollector` 27, `AggregationStrategy` 38, `MetricBag` 68,
 `MetricDefinition` 33, `MetricName` 63, `MetricRepositoryInterface` 46,
 `ResettableVisitorInterface` 23, and `SymbolLevel` 34. `MetricBag` and
 `MetricRepositoryInterface` also carry rounded point ClassRank warning/error

@@ -155,6 +155,7 @@ final class DeclarationControlBindingsTest extends TestCase
         $second = DeclarationPath::of(SymbolPath::forMethod('App', 'Named', 'run'), $file, DeclarationOrdinal::fromRank(1));
 
         $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Incompatible declaration metadata at file position');
         DeclarationControlBindings::from($ast, $file, [
             new CallableWithMetrics($first, $method->getStartFilePos(), CallableKind::Method, null, $classDeclaration, $owner, new MetricBag()),
             new CallableWithMetrics($second, $method->getStartFilePos(), CallableKind::Method, null, $classDeclaration, $owner, new MetricBag()),
@@ -184,6 +185,7 @@ final class DeclarationControlBindingsTest extends TestCase
         $hookSecond = DeclarationPath::of(SymbolPath::forMethod('App', 'Named', 'value::get'), $file, DeclarationOrdinal::fromRank(1));
 
         $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Incompatible declaration metadata at file position');
         DeclarationControlBindings::from($ast, $file, [
             new CallableWithMetrics($hookFirst, $hook->getStartFilePos(), CallableKind::PropertyHook, null, $classFirst, $owner, new MetricBag()),
             new CallableWithMetrics($hookSecond, $hook->getStartFilePos(), CallableKind::PropertyHook, null, $classSecond, $owner, new MetricBag()),
@@ -203,9 +205,10 @@ final class DeclarationControlBindingsTest extends TestCase
         $functionDeclaration = DeclarationPath::of(SymbolPath::forGlobalFunction('App', 'run'), $file, DeclarationOrdinal::fromRank(1));
 
         $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Incompatible declaration metadata at file position');
         DeclarationControlBindings::from($ast, $file, [
-            new CallableWithMetrics($methodDeclaration, 0, CallableKind::Method, null, null, null, new MetricBag()),
-            new CallableWithMetrics($functionDeclaration, 0, CallableKind::Function, null, null, null, new MetricBag()),
+            new CallableWithMetrics($methodDeclaration, $method->getStartFilePos(), CallableKind::Method, null, null, null, new MetricBag()),
+            new CallableWithMetrics($functionDeclaration, $method->getStartFilePos(), CallableKind::Function, null, null, null, new MetricBag()),
         ], []);
     }
 
@@ -222,9 +225,10 @@ final class DeclarationControlBindingsTest extends TestCase
         $methodDeclaration = DeclarationPath::of(SymbolPath::forMethod('App', 'Named', 'run'), $file, DeclarationOrdinal::fromRank(1));
 
         $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Incompatible declaration metadata at file position');
         DeclarationControlBindings::from($ast, $file, [
-            new CallableWithMetrics($hookDeclaration, 0, CallableKind::PropertyHook, null, null, null, new MetricBag()),
-            new CallableWithMetrics($methodDeclaration, 0, CallableKind::Method, null, null, null, new MetricBag()),
+            new CallableWithMetrics($hookDeclaration, $hook->getStartFilePos(), CallableKind::PropertyHook, null, null, null, new MetricBag()),
+            new CallableWithMetrics($methodDeclaration, $hook->getStartFilePos(), CallableKind::Method, null, null, null, new MetricBag()),
         ], []);
     }
 
@@ -241,9 +245,10 @@ final class DeclarationControlBindingsTest extends TestCase
         $second = DeclarationPath::of(SymbolPath::forGlobalFunction('App', '{closure}'), $file, DeclarationOrdinal::fromRank(1));
 
         $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('Incompatible declaration metadata at file position');
         DeclarationControlBindings::from($ast, $file, [
-            new CallableWithMetrics($first, 0, CallableKind::AnonymousCallable, 'closure', null, null, new MetricBag()),
-            new CallableWithMetrics($second, 0, CallableKind::AnonymousCallable, 'arrow', null, null, new MetricBag()),
+            new CallableWithMetrics($first, $closure->getStartFilePos(), CallableKind::AnonymousCallable, 'closure', null, null, new MetricBag()),
+            new CallableWithMetrics($second, $closure->getStartFilePos(), CallableKind::AnonymousCallable, 'arrow', null, null, new MetricBag()),
         ], []);
     }
 
@@ -260,7 +265,8 @@ final class DeclarationControlBindingsTest extends TestCase
         $second = DeclarationPath::of(SymbolPath::forClass('App', 'Other'), $file, DeclarationOrdinal::fromRank(1));
 
         $this->expectException(LogicException::class);
-        DeclarationControlBindings::from($ast, $file, [], $this->classMetrics($first, $second));
+        $this->expectExceptionMessage('Incompatible declaration metadata at file position');
+        DeclarationControlBindings::from($ast, $file, [], $this->classMetricsAt($class->getStartFilePos(), $first, $second));
     }
 
     /** @return list<Node> */
@@ -300,25 +306,6 @@ final class DeclarationControlBindingsTest extends TestCase
         $metrics = [];
         foreach ($declarations as $declaration) {
             $classMetrics = new ClassWithMetrics($declaration, $start, 1, new MetricBag());
-            $metrics[$classMetrics->subject->toCanonical()] = [
-                'subject' => $classMetrics->subject,
-                'metrics' => $classMetrics->metrics,
-                'line' => $classMetrics->line,
-                'start' => $classMetrics->startFilePos,
-            ];
-        }
-
-        return $metrics;
-    }
-
-    /**
-     * @return array<string, array{subject: \Qualimetrix\Core\Symbol\MetricSubject, metrics: MetricBag, line: int, start: int}>
-     */
-    private function classMetrics(DeclarationPath ...$declarations): array
-    {
-        $metrics = [];
-        foreach ($declarations as $declaration) {
-            $classMetrics = new ClassWithMetrics($declaration, 0, 1, new MetricBag());
             $metrics[$classMetrics->subject->toCanonical()] = [
                 'subject' => $classMetrics->subject,
                 'metrics' => $classMetrics->metrics,

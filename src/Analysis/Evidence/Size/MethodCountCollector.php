@@ -204,12 +204,7 @@ final class MethodCountCollector extends AbstractCollector implements Declaratio
                 // PDepend WOC metric
                 ->with(MetricName::STRUCTURE_WOC, $woc);
 
-            $result[] = new ClassWithMetrics(
-                declarationPath: $this->declarationPathOf(SymbolPath::forClass($metrics->namespace ?? '', $metrics->className), $file, $metrics->startFilePos),
-                startFilePos: $metrics->startFilePos,
-                line: $metrics->line,
-                metrics: $bag,
-            );
+            $result[] = $this->classWithMetrics(SymbolPath::forClass($metrics->namespace ?? '', $metrics->className), $file, $metrics->startFilePos, $metrics->line, $bag);
         }
 
         return $result;

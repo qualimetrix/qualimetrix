@@ -133,6 +133,7 @@ final readonly class DerivedCollectorRunner
             foreach ($collector->getCallablesWithMetrics($file) as $callable) {
                 $key = $callable->kind->value . ':' . $callable->declarationPath->toCanonical();
                 $existing = $callables[$key] ?? null;
+                self::assertOneDeclarationPerKey($key, $existing?->startFilePos, $callable->startFilePos);
                 $callables[$key] = $existing === null ? $callable : new CallableWithMetrics(
                     $existing->declarationPath,
                     $existing->startFilePos,
@@ -162,6 +163,7 @@ final readonly class DerivedCollectorRunner
             foreach ($collector->getClassesWithMetrics($file) as $class) {
                 $key = $class->subject->toCanonical();
                 $existing = $classes[$key] ?? null;
+                self::assertOneDeclarationPerKey($key, $existing?->startFilePos, $class->startFilePos);
                 $classes[$key] = $existing === null ? $class : new ClassWithMetrics(
                     $existing->declarationPath,
                     $existing->startFilePos,
@@ -172,6 +174,23 @@ final readonly class DerivedCollectorRunner
         }
 
         return $classes;
+    }
+
+    /**
+     * Derived metrics are computed on the merged record, so the merge happens
+     * before the check in FileProcessor would run. Two declarations sharing one
+     * number must not reach a formula as one declaration.
+     */
+    private static function assertOneDeclarationPerKey(string $key, ?int $existing, int $collected): void
+    {
+        if ($existing !== null && $existing !== $collected) {
+            throw new LogicException(\sprintf(
+                'Declaration %s was collected at file positions %d and %d',
+                $key,
+                $existing,
+                $collected,
+            ));
+        }
     }
 
     private function metricKey(string $metricName, MetricSubject $subject, ?CallableKind $callableKind = null): string

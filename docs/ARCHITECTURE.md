@@ -71,10 +71,10 @@ of truth.
 `external` excludes `Qualimetrix\**`; `coverage: error` makes
 an uncovered project class fail even when it has no dependency edges.
 
-The published topology records 659 governed test/support/fixture artifacts,
-102 fixture directories, 518 PHPUnit classes, and 7,036 semantic test IDs. The
-self-analysis input contains 787 analyzed files; its active v11 baseline has
-269 groups across 203 subjects, and the current dogfood result is zero findings.
+The published topology records 692 governed test/support/fixture artifacts,
+102 fixture directories, 551 PHPUnit classes, and 7,348 semantic test IDs. The
+self-analysis input contains 787 analyzed files; its active v13 baseline has
+267 groups across 201 subjects, and the current dogfood result is zero findings.
 
 The manifest checker is the exact owner/visibility/import authority. It runs as
 `composer architecture:check` before selfcheck and rejects unlisted imports even
@@ -154,7 +154,7 @@ over `Analysis/Evidence/*`.
 
 ### 6. Baseline Ceiling
 
-The version 12 baseline retains the post-rule, reported-magnitude ceiling. It compares
+The version 13 baseline retains the post-rule, reported-magnitude ceiling. It compares
 only groups of findings that currently fire, after source/configuration
 suppression and exclusions but before git report scoping. A measured breach is
 promoted to Error; a malformed, stale, or otherwise inapplicable entry is

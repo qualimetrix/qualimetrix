@@ -110,12 +110,7 @@ final class RfcCollector extends AbstractCollector implements DeclarationIndexAw
                 ->with(self::METRIC_RFC_OWN, $data->getOwnMethodsCount())
                 ->with(self::METRIC_RFC_EXTERNAL, $data->getExternalMethodsCount());
 
-            $result[] = new ClassWithMetrics(
-                declarationPath: $this->declarationPathOf(SymbolPath::forClass($data->namespace ?? '', $data->className), $file, $data->startFilePos),
-                startFilePos: $data->startFilePos,
-                line: $data->line,
-                metrics: $bag,
-            );
+            $result[] = $this->classWithMetrics(SymbolPath::forClass($data->namespace ?? '', $data->className), $file, $data->startFilePos, $data->line, $bag);
         }
 
         return $result;

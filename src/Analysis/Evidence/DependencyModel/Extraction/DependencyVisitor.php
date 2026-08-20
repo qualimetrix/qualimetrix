@@ -46,6 +46,8 @@ use Qualimetrix\Core\Symbol\SymbolPath;
  * at file top level, backing a "global function") have no owning symbol —
  * their dependencies are not tracked, matching how top-level `function`
  * declarations are handled. See `FunctionLikeHandler` for signature extraction.
+ *
+ * @qmx-threshold coupling.cbo 23 -- Fourteen dependency kinds behind six handlers, plus the two declaration-numbering types an edge source needs; raw CBO 22 gets one-edge headroom.
  */
 final class DependencyVisitor extends NodeVisitorAbstract implements DependencyTraversalParticipantInterface
 {
