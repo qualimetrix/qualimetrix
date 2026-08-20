@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -151,7 +152,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $symbol = SymbolPath::forClass('App\\Tests', 'UserServiceTest');
         $violation = new Violation(
             location: new Location($path, 42),
-            subject: MetricSubject::declaration(new DeclarationPath($symbol, $path, 42)),
+            subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
@@ -191,7 +192,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $symbol = SymbolPath::forClass('App\\Tests', 'UserServiceTest');
         $violation = new Violation(
             location: new Location($path, 42),
-            subject: MetricSubject::declaration(new DeclarationPath($symbol, $path, 42)),
+            subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
@@ -292,7 +293,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
 
         return new Violation(
             location: new Location($path, 10),
-            subject: MetricSubject::declaration(new DeclarationPath($symbol, $path, 10)),
+            subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(1))),
             symbolPath: $symbol,
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
@@ -311,7 +312,7 @@ final class ViolationFilterOrchestratorTest extends TestCase
         $this->tempFiles[] = $path;
 
         file_put_contents($path, json_encode([
-            'version' => 12,
+            'version' => 13,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => ['src'],
             'entries' => $entries,

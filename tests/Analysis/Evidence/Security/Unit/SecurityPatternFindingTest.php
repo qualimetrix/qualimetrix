@@ -107,11 +107,10 @@ final class SecurityPatternFindingTest extends TestCase
                 'logicalKind' => 'class',
                 'namespace' => 'App',
                 'class' => 'Controller',
-                'startFilePos' => 10,
                 'line' => 11,
                 'superglobal' => '_GET',
             ],
-            'declaration:class:App\\Controller@src/Controller.php:10',
+            'declaration:class:App\\Controller@src/Controller.php',
             11,
             '_GET',
         ];
@@ -122,12 +121,11 @@ final class SecurityPatternFindingTest extends TestCase
                 'namespace' => 'App',
                 'class' => 'Controller',
                 'member' => 'run',
-                'startFilePos' => 20,
                 'collisionOrdinal' => 1,
                 'line' => 21,
                 'superglobal' => '_POST',
             ],
-            'declaration:callable:App\\Controller::run@src/Controller.php:20#1',
+            'declaration:callable:App\\Controller::run@src/Controller.php#1',
             21,
             '_POST',
         ];
@@ -137,10 +135,9 @@ final class SecurityPatternFindingTest extends TestCase
                 'logicalKind' => 'function',
                 'namespace' => 'App',
                 'member' => 'run',
-                'startFilePos' => 30,
                 'line' => 31,
             ],
-            'declaration:func:App::run@src/Controller.php:30',
+            'declaration:func:App::run@src/Controller.php',
             31,
             '',
         ];
@@ -216,21 +213,20 @@ final class SecurityPatternFindingTest extends TestCase
                 'subjectKind' => 'declaration',
                 'logicalKind' => 'function',
                 'namespace' => 'App',
-                'startFilePos' => 1,
                 'line' => 1,
             ],
             'Missing metric subject component "member"',
         ];
-        yield 'string source position' => [
+        yield 'string collision ordinal' => [
             [
                 'subjectKind' => 'declaration',
                 'logicalKind' => 'class',
                 'namespace' => 'App',
                 'class' => 'Controller',
-                'startFilePos' => '1',
+                'collisionOrdinal' => '1',
                 'line' => 1,
             ],
-            'Metric subject component "startFilePos" must be a non-negative integer',
+            'Metric subject component "collisionOrdinal" must be a non-negative integer',
         ];
         yield 'negative collision ordinal' => [
             [
@@ -238,7 +234,6 @@ final class SecurityPatternFindingTest extends TestCase
                 'logicalKind' => 'class',
                 'namespace' => 'App',
                 'class' => 'Controller',
-                'startFilePos' => 1,
                 'collisionOrdinal' => -1,
                 'line' => 1,
             ],

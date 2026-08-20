@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -286,7 +287,8 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
             1,
         );
         $repository->addCallable(new CallableWithMetrics(
-            new DeclarationPath(SymbolPath::forMethod('App\\Service', 'Svc1', 'doIt'), RelativePath::fromString('src/S/Svc1.php'), 50),
+            DeclarationPath::of(SymbolPath::forMethod('App\\Service', 'Svc1', 'doIt'), RelativePath::fromString('src/S/Svc1.php'), DeclarationOrdinal::fromRank(0)),
+            50,
             CallableKind::Method,
             null,
             null,
@@ -340,7 +342,8 @@ final class TreeAwareNamespaceAggregatorTest extends TestCase
         int|float $value,
     ): void {
         $repository->addCallable(new CallableWithMetrics(
-            new DeclarationPath(SymbolPath::forMethod($namespace, $class, $method), RelativePath::fromString($file), 10),
+            DeclarationPath::of(SymbolPath::forMethod($namespace, $class, $method), RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)),
+            10,
             CallableKind::Method,
             null,
             null,

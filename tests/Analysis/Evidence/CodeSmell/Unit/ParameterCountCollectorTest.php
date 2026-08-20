@@ -14,6 +14,8 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCountCollector;
 use Qualimetrix\Analysis\Evidence\CodeSmell\ParameterCountVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\AggregationStrategy;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Run\Collection\FileProcessor;
@@ -699,6 +701,11 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $indexAwareVisitor = $this->collector->getVisitor();
+        self::assertInstanceOf(DeclarationIndexAwareInterface::class, $indexAwareVisitor);
+        $indexAwareVisitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($this->collector->getVisitor());
         $traverser->traverse($ast);
 
@@ -726,6 +733,11 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $indexAwareVisitor2 = $this->collector->getVisitor();
+        self::assertInstanceOf(DeclarationIndexAwareInterface::class, $indexAwareVisitor2);
+        $indexAwareVisitor2->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($this->collector->getVisitor());
         $traverser->traverse($ast);
 

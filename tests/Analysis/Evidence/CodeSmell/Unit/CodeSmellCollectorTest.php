@@ -11,6 +11,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\CodeSmell\CodeSmellCollector;
 use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityVisitor;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
 use SplFileInfo;
@@ -83,7 +85,7 @@ final class CodeSmellCollectorTest extends TestCase
         self::assertSame('App', $entry['namespace']);
         self::assertSame('Example', $entry['class']);
         self::assertSame('run', $entry['member']);
-        self::assertIsInt($entry['startFilePos']);
+        self::assertArrayNotHasKey('collisionOrdinal', $entry);
     }
 
     #[Test]
@@ -99,6 +101,12 @@ $owned = static fn(bool $password) => null;
 PHP) ?? [];
         $callableVisitor = new CyclomaticComplexityVisitor();
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $indexAwareVisitor = $this->collector->getVisitor();
+        self::assertInstanceOf(DeclarationIndexAwareInterface::class, $indexAwareVisitor);
+        $indexAwareVisitor->useDeclarationIndex($registrar->index());
+        $callableVisitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($this->collector->getVisitor());
         $traverser->addVisitor($callableVisitor);
         $traverser->traverse($ast);
@@ -106,16 +114,7 @@ PHP) ?? [];
         $bag = $this->collector->collect(new SplFileInfo(__FILE__), $ast);
         $entry = $bag->entries('codeSmell.boolean_argument')[1];
         $file = RelativePath::fromString('src/Example.php');
-        $decoded = MetricSubjectCodec::decode(
-            [
-                'subjectKind' => (string) $entry['subjectKind'],
-                'logicalKind' => (string) $entry['logicalKind'],
-                'namespace' => (string) $entry['namespace'],
-                'member' => (string) $entry['member'],
-                'startFilePos' => (int) $entry['startFilePos'],
-            ],
-            $file,
-        );
+        $decoded = MetricSubjectCodec::decodeEntry($entry, $file);
         $callables = $callableVisitor->getCallablesWithMetrics($file);
 
         self::assertCount(3, $callables);
@@ -240,6 +239,11 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $indexAwareVisitor2 = $this->collector->getVisitor();
+        self::assertInstanceOf(DeclarationIndexAwareInterface::class, $indexAwareVisitor2);
+        $indexAwareVisitor2->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($this->collector->getVisitor());
         $traverser->traverse($ast);
 

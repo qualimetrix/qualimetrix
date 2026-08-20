@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -110,11 +111,7 @@ final class WorstClassDrillDownTest extends TestCase
         $violations = [
             new Violation(
                 location: new Location(RelativePath::fromString('src/Service/Foo.php'), 10),
-                subject: MetricSubject::declaration(new DeclarationPath(
-                    $classPath,
-                    RelativePath::fromString('src/Service/Foo.php'),
-                    0,
-                )),
+                subject: MetricSubject::declaration(DeclarationPath::of($classPath, RelativePath::fromString('src/Service/Foo.php'), DeclarationOrdinal::fromRank(0))),
                 symbolPath: $classPath,
                 ruleName: 'test.rule',
                 violationCode: 'T001',
@@ -123,11 +120,7 @@ final class WorstClassDrillDownTest extends TestCase
             ),
             new Violation(
                 location: new Location(RelativePath::fromString('src/Service/Foo.php'), 20),
-                subject: MetricSubject::declaration(new DeclarationPath(
-                    $methodPath,
-                    RelativePath::fromString('src/Service/Foo.php'),
-                    0,
-                )),
+                subject: MetricSubject::declaration(DeclarationPath::of($methodPath, RelativePath::fromString('src/Service/Foo.php'), DeclarationOrdinal::fromRank(0))),
                 symbolPath: $methodPath,
                 ruleName: 'test.rule',
                 violationCode: 'T002',

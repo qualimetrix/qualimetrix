@@ -17,6 +17,7 @@ use Qualimetrix\Analysis\Evidence\Size\MethodCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountMetrics;
 use Qualimetrix\Analysis\Evidence\Size\MethodCountVisitor;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use SplFileInfo;
 
 #[CoversClass(MethodCountCollector::class)]
@@ -927,6 +928,8 @@ PHP;
 
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
+
+        $this->collector->useDeclarationIndex(new FileDeclarationIndex());
 
         $traverser = new NodeTraverser();
         $traverser->addVisitor($this->collector->getVisitor());

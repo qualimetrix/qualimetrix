@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Analysis\Policy\Architecture\Contract\LayerPolicyPreparationInterface;
 use Qualimetrix\Analysis\Policy\Architecture\LayerViolation\LayerViolationRule;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -147,11 +148,7 @@ final class NamespaceExclusionFilterTest extends TestCase
         return new Violation(
             location: new Location(RelativePath::fromString('src/Entity/User.php'), 10),
             symbolPath: SymbolPath::forClass($namespace, 'User'),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass($namespace, 'User'),
-                RelativePath::fromString('src/Entity/User.php'),
-                10,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($namespace, 'User'), RelativePath::fromString('src/Entity/User.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: $ruleName,
             violationCode: $ruleName,
             message: 'Test',
@@ -166,11 +163,7 @@ final class NamespaceExclusionFilterTest extends TestCase
         return new Violation(
             location: new Location($file, 10),
             symbolPath: SymbolPath::forFile($file),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass($subjectNamespace, 'User'),
-                $file,
-                10,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($subjectNamespace, 'User'), $file, DeclarationOrdinal::fromRank(0))),
             ruleName: $ruleName,
             violationCode: $ruleName,
             message: 'Test',
@@ -219,11 +212,7 @@ final class NamespaceExclusionFilterTest extends TestCase
         return new Violation(
             location: new Location(RelativePath::fromString('src/Entity/User.php'), 10),
             symbolPath: SymbolPath::forClass('App\\Entity', 'User'),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                SymbolPath::forClass('App\\Entity', 'User'),
-                RelativePath::fromString('src/Entity/User.php'),
-                10,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass('App\\Entity', 'User'), RelativePath::fromString('src/Entity/User.php'), DeclarationOrdinal::fromRank(0))),
             ruleName: $channel->ruleName,
             violationCode: $channel->violationCode,
             message: 'Test',

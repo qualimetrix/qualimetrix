@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\MetricSubjectIndex;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -25,12 +26,13 @@ final class MetricSubjectIndexTest extends TestCase
     {
         $index = new MetricSubjectIndex();
         $logical = SymbolPath::forMethod('App', 'Service', 'run');
-        $first = new DeclarationPath($logical, RelativePath::fromString('src/First.php'), 100);
-        $second = new DeclarationPath($logical, RelativePath::fromString('src/Second.php'), 200);
+        $first = DeclarationPath::of($logical, RelativePath::fromString('src/First.php'), DeclarationOrdinal::fromRank(0));
+        $second = DeclarationPath::of($logical, RelativePath::fromString('src/Second.php'), DeclarationOrdinal::fromRank(0));
         $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Service'));
 
         $index->addCallable(new CallableWithMetrics(
             $first,
+            0,
             CallableKind::Method,
             null,
             null,
@@ -40,6 +42,7 @@ final class MetricSubjectIndexTest extends TestCase
         ));
         $index->addCallable(new CallableWithMetrics(
             $second,
+            0,
             CallableKind::Method,
             null,
             null,

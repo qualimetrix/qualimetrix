@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineUpdater;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -248,7 +249,7 @@ final class BaselineUpdateCommandTest extends TestCase
 
         return new BaselineIdentity(
             MetricSubject::declaration(
-                new DeclarationPath($symbol, RelativePath::fromString('src/Legacy.php'), 7),
+                DeclarationPath::of($symbol, RelativePath::fromString('src/Legacy.php'), DeclarationOrdinal::fromRank(0)),
             )->toCanonical(),
             ViolationChannel::fromKey($channelKey),
         );
@@ -262,7 +263,7 @@ final class BaselineUpdateCommandTest extends TestCase
 
         return new Violation(
             location: new Location($path, 7),
-            subject: MetricSubject::declaration(new DeclarationPath($symbol, $path, 7)),
+            subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: $channel->ruleName,
             violationCode: $channel->violationCode,

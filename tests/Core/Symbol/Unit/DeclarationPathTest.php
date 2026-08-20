@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
 
@@ -23,23 +24,20 @@ final class DeclarationPathTest extends TestCase
         $file = RelativePath::fromString('src/Service.php');
 
         self::assertSame(
-            'declaration:callable:App\\Service::handle@src/Service.php:42',
-            (new DeclarationPath($logical, $file, 42))->toCanonical(),
+            'declaration:callable:App\\Service::handle@src/Service.php',
+            (DeclarationPath::of($logical, $file, DeclarationOrdinal::fromRank(0)))->toCanonical(),
         );
         self::assertSame(
-            'declaration:callable:App\\Service::handle@src/Service.php:42#1',
-            (new DeclarationPath($logical, $file, 42, 1))->toCanonical(),
+            'declaration:callable:App\\Service::handle@src/Service.php#1',
+            (DeclarationPath::of($logical, $file, DeclarationOrdinal::fromRank(1)))->toCanonical(),
         );
     }
 
     #[Test]
-    public function itRejectsANegativeStartPosition(): void
+    public function itRejectsANegativeOrdinalRank(): void
     {
-        $logical = SymbolPath::forMethod('App', 'Service', 'handle');
-        $file = RelativePath::fromString('src/Service.php');
-
         $this->expectException(InvalidArgumentException::class);
-        new DeclarationPath($logical, $file, -1);
+        DeclarationOrdinal::fromRank(-1);
     }
 
     #[Test]
@@ -48,7 +46,7 @@ final class DeclarationPathTest extends TestCase
     {
         self::assertStringStartsWith(
             'declaration:',
-            (new DeclarationPath($logical, RelativePath::fromString('src/Declaration.php'), 42))->toCanonical(),
+            (DeclarationPath::of($logical, RelativePath::fromString('src/Declaration.php'), DeclarationOrdinal::fromRank(0)))->toCanonical(),
         );
     }
 
@@ -59,7 +57,7 @@ final class DeclarationPathTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Declaration logical symbol must identify a class, method, or function');
 
-        new DeclarationPath($logical, RelativePath::fromString('src/Aggregate.php'), 42);
+        DeclarationPath::of($logical, RelativePath::fromString('src/Aggregate.php'), DeclarationOrdinal::fromRank(0));
     }
 
     /**

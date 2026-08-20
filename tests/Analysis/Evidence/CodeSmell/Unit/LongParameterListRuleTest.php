@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Finding\Contract\Rule\RuleCategory;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Threshold\ThresholdOverride;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -753,12 +754,12 @@ final class LongParameterListRuleTest extends TestCase
         $file = RelativePath::fromString('src/Service/UserService.php');
         $logical = SymbolPath::forMethod('App\\Service', 'UserService', 'create');
         $controlled = new SymbolInfo(
-            MetricSubject::declaration(new DeclarationPath($logical, $file, 100)),
+            MetricSubject::declaration(DeclarationPath::of($logical, $file, DeclarationOrdinal::fromRank(0))),
             $file,
             10,
         );
         $uncontrolled = new SymbolInfo(
-            MetricSubject::declaration(new DeclarationPath($logical, $file, 200)),
+            MetricSubject::declaration(DeclarationPath::of($logical, $file, DeclarationOrdinal::fromRank(1))),
             $file,
             20,
         );
@@ -835,7 +836,7 @@ final class LongParameterListRuleTest extends TestCase
         $relativePath = RelativePath::fromString($file);
 
         return new SymbolInfo(
-            MetricSubject::declaration(new DeclarationPath($symbolPath, $relativePath, $line)),
+            MetricSubject::declaration(DeclarationPath::of($symbolPath, $relativePath, DeclarationOrdinal::fromRank(0))),
             $relativePath,
             $line,
         );

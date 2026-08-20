@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\Handler\TypeDependencyHelper;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Core\Path\RelativePath;
 
 #[CoversClass(TypeDependencyHelper::class)]
@@ -158,7 +159,11 @@ PHP;
             return [];
         }
 
-        $this->visitor->beginFile(RelativePath::fromString('test.php'));
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $this->traverser = new NodeTraverser();
+        $this->traverser->addVisitor($registrar);
+        $this->traverser->addVisitor($this->visitor);
+        $this->visitor->beginFile(RelativePath::fromString('test.php'), $registrar->index());
         $this->traverser->traverse($ast);
 
         return $this->visitor->dependencies();

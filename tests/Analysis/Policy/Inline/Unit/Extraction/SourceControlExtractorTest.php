@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Extraction\SourceControlExtractor;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -55,17 +56,22 @@ final class SourceControlExtractorTest extends TestCase
         self::assertCount(2, $methods);
 
         $file = RelativePath::fromString('src/Example.php');
-        $classDeclaration = new DeclarationPath(SymbolPath::forClass('App', 'Named'), $file, $class->getStartFilePos());
+        $classDeclaration = DeclarationPath::of(SymbolPath::forClass('App', 'Named'), $file, DeclarationOrdinal::fromRank(0));
         $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Named'));
-        $run = new DeclarationPath(SymbolPath::forMethod('App', 'Named', 'run'), $file, $methods[0]->getStartFilePos());
-        $invalid = new DeclarationPath(SymbolPath::forMethod('App', 'Named', 'invalid'), $file, $methods[1]->getStartFilePos());
-        $classMetrics = new ClassWithMetrics($classDeclaration, $class->getStartLine(), new MetricBag());
+        $run = DeclarationPath::of(SymbolPath::forMethod('App', 'Named', 'run'), $file, DeclarationOrdinal::fromRank(0));
+        $invalid = DeclarationPath::of(SymbolPath::forMethod('App', 'Named', 'invalid'), $file, DeclarationOrdinal::fromRank(0));
+        $classMetrics = new ClassWithMetrics($classDeclaration, $class->getStartFilePos(), $class->getStartLine(), new MetricBag());
         $callables = [
-            new CallableWithMetrics($run, CallableKind::Method, null, $classDeclaration, $owner, new MetricBag()),
-            new CallableWithMetrics($invalid, CallableKind::Method, null, $classDeclaration, $owner, new MetricBag()),
+            new CallableWithMetrics($run, $methods[0]->getStartFilePos(), CallableKind::Method, null, $classDeclaration, $owner, new MetricBag()),
+            new CallableWithMetrics($invalid, $methods[1]->getStartFilePos(), CallableKind::Method, null, $classDeclaration, $owner, new MetricBag()),
         ];
         $classes = [
-            $classMetrics->subject->toCanonical() => ['subject' => $classMetrics->subject, 'metrics' => $classMetrics->metrics, 'line' => $classMetrics->line],
+            $classMetrics->subject->toCanonical() => [
+                'subject' => $classMetrics->subject,
+                'metrics' => $classMetrics->metrics,
+                'line' => $classMetrics->line,
+                'start' => $classMetrics->startFilePos,
+            ],
         ];
 
         $controls = (new SourceControlExtractor())->extract(
@@ -89,7 +95,8 @@ final class SourceControlExtractorTest extends TestCase
     public function itKeepsDistinctControlScopesWhileCollapsingTrueDuplicates(): void
     {
         $subject = new ClassWithMetrics(
-            new DeclarationPath(SymbolPath::forClass('App', 'Named'), RelativePath::fromString('src/Example.php'), 10),
+            DeclarationPath::of(SymbolPath::forClass('App', 'Named'), RelativePath::fromString('src/Example.php'), DeclarationOrdinal::fromRank(0)),
+            10,
             1,
             new MetricBag(),
         )->subject;
@@ -111,31 +118,35 @@ final class SourceControlExtractorTest extends TestCase
         ));
     }
 
+    /**
+     * P1's identity comparison excluded the ordinal, so two producers giving
+     * one physical declaration two different ordinals were merged into one
+     * binding. P2 makes the ordinal part of identity ({@see
+     * DeclarationControlBindings::assertCompatibleSourceMetadata()}), so the
+     * same disagreement is now rejected outright rather than silently
+     * applying one control to both.
+     */
     #[Test]
-    public function itAppliesOneDirectControlToEveryOrdinalCollision(): void
+    public function itRejectsSourceControlBindingWhenTwoOrdinalsClaimOnePhysicalPosition(): void
     {
         $ast = $this->parse("<?php\n/** @qmx-ignore complexity.cyclomatic collision */\nfunction run(int \$value): void {}\n");
         $function = (new NodeFinder())->findFirstInstanceOf($ast, Node\Stmt\Function_::class);
         self::assertInstanceOf(Node\Stmt\Function_::class, $function);
 
         $file = RelativePath::fromString('src/Example.php');
-        $first = new DeclarationPath(SymbolPath::forGlobalFunction('App', 'run'), $file, $function->getStartFilePos(), 0);
-        $second = new DeclarationPath(SymbolPath::forGlobalFunction('App', 'run'), $file, $function->getStartFilePos(), 1);
-        $controls = (new SourceControlExtractor())->extract(
+        $first = DeclarationPath::of(SymbolPath::forGlobalFunction('App', 'run'), $file, DeclarationOrdinal::fromRank(0));
+        $second = DeclarationPath::of(SymbolPath::forGlobalFunction('App', 'run'), $file, DeclarationOrdinal::fromRank(1));
+
+        $this->expectException(LogicException::class);
+        (new SourceControlExtractor())->extract(
             $ast,
             $file,
             [
-                new CallableWithMetrics($first, CallableKind::Function, null, null, null, new MetricBag()),
-                new CallableWithMetrics($second, CallableKind::Function, null, null, null, new MetricBag()),
+                new CallableWithMetrics($first, $function->getStartFilePos(), CallableKind::Function, null, null, null, new MetricBag()),
+                new CallableWithMetrics($second, $function->getStartFilePos(), CallableKind::Function, null, null, null, new MetricBag()),
             ],
             [],
         );
-
-        $subjects = array_map(
-            static fn(Suppression $suppression): string => $suppression->subject?->toCanonical() ?? '',
-            $controls->suppressions,
-        );
-        self::assertSame([$first->toCanonical(), $second->toCanonical()], $subjects);
     }
 
     #[Test]

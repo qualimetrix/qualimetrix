@@ -12,6 +12,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\Dependency;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -23,11 +24,7 @@ final class DependencyTest extends TestCase
     public function itConstructorWithAllProperties(): void
     {
         $location = new Location(RelativePath::fromString('src/Service/UserService.php'), 42);
-        $source = new DeclarationPath(
-            SymbolPath::fromClassFqn('App\Service\UserService'),
-            RelativePath::fromString('src/Service/UserService.php'),
-            0,
-        );
+        $source = DeclarationPath::of(SymbolPath::fromClassFqn('App\Service\UserService'), RelativePath::fromString('src/Service/UserService.php'), DeclarationOrdinal::fromRank(0));
         $target = new LogicalClassPath(SymbolPath::fromClassFqn('App\Repository\UserRepository'));
         $dependency = new Dependency(
             source: $source,
@@ -184,11 +181,7 @@ final class DependencyTest extends TestCase
     private function dependency(string $source, string $target, DependencyType $type, Location $location): Dependency
     {
         return new Dependency(
-            new DeclarationPath(
-                SymbolPath::fromClassFqn($source),
-                $location->file ?? RelativePath::fromString('test.php'),
-                0,
-            ),
+            DeclarationPath::of(SymbolPath::fromClassFqn($source), $location->file ?? RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath(SymbolPath::fromClassFqn($target)),
             $type,
             $location,

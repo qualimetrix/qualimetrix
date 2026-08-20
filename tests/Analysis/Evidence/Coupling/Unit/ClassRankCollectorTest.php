@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -129,21 +130,13 @@ final class ClassRankCollectorTest extends TestCase
         $graph = $this->graph([], [new LogicalClassPath($class)]);
         $repository = new InMemoryMetricRepository();
         $repository->addSubject(
-            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new DeclarationPath(
-                $class,
-                RelativePath::fromString('src/FirstTwin.php'),
-                10,
-            )),
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(DeclarationPath::of($class, RelativePath::fromString('src/FirstTwin.php'), DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
             RelativePath::fromString('src/FirstTwin.php'),
             10,
         );
         $repository->addSubject(
-            \Qualimetrix\Core\Symbol\MetricSubject::declaration(new DeclarationPath(
-                $class,
-                RelativePath::fromString('src/SecondTwin.php'),
-                20,
-            )),
+            \Qualimetrix\Core\Symbol\MetricSubject::declaration(DeclarationPath::of($class, RelativePath::fromString('src/SecondTwin.php'), DeclarationOrdinal::fromRank(0))),
             new MetricBag(),
             RelativePath::fromString('src/SecondTwin.php'),
             20,
@@ -369,7 +362,7 @@ final class ClassRankCollectorTest extends TestCase
     private function dep(string $source, string $target): Dependency
     {
         return new Dependency(
-            new DeclarationPath(SymbolPath::fromClassFqn($source), RelativePath::fromString('test.php'), 0),
+            DeclarationPath::of(SymbolPath::fromClassFqn($source), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
             new LogicalClassPath(SymbolPath::fromClassFqn($target)),
             DependencyType::New_,
             new Location(RelativePath::fromString('test.php'), 1),

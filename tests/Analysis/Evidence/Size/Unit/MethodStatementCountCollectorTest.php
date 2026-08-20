@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Size\MethodStatementCountCollector;
 use Qualimetrix\Analysis\Evidence\Size\MethodStatementCountVisitor;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\FileDeclarationIndex;
 use SplFileInfo;
 
 #[CoversClass(MethodStatementCountCollector::class)]
@@ -149,7 +150,7 @@ PHP;
         self::assertNotNull($anonymousMethod);
         self::assertNull($anonymousMethod->classAggregationOwner);
         self::assertNotNull($anonymousMethod->lexicalClassContext);
-        self::assertStringStartsWith('{anonymous@', $anonymousMethod->lexicalClassContext->logical->type ?? '');
+        self::assertStringStartsWith('{anonymous#', $anonymousMethod->lexicalClassContext->logical->type ?? '');
     }
 
     #[Test]
@@ -193,8 +194,11 @@ PHP;
         self::assertNotNull($ast);
 
         $collector = new MethodStatementCountCollector();
+        $visitor = $collector->getVisitor();
+        \assert($visitor instanceof \Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface);
+        $visitor->useDeclarationIndex(new FileDeclarationIndex());
         $traverser = new NodeTraverser();
-        $traverser->addVisitor($collector->getVisitor());
+        $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
         $collector->collect(new SplFileInfo('/tmp/example.php'), $ast);
 

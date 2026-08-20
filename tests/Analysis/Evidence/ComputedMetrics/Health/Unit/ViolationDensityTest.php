@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -277,11 +278,7 @@ final class ViolationDensityTest extends TestCase
         for ($i = 0; $i < $count; $i++) {
             $violations[] = new Violation(
                 location: new Location(RelativePath::fromString("src/{$class}.php"), $i + 1),
-                subject: MetricSubject::declaration(new DeclarationPath(
-                    SymbolPath::forClass($namespace, $class),
-                    RelativePath::fromString("src/{$class}.php"),
-                    $i,
-                )),
+                subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forClass($namespace, $class), RelativePath::fromString("src/{$class}.php"), DeclarationOrdinal::fromRank(0))),
                 symbolPath: SymbolPath::forClass($namespace, $class),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.callable',

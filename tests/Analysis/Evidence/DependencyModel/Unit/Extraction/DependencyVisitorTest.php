@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyLocation;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Core\Path\RelativePath;
 
 #[CoversClass(DependencyVisitor::class)]
@@ -453,7 +454,7 @@ PHP);
         sort($sources);
         self::assertSame(['App\Port', 'App\Service', 'App\Shared', 'App\State'], $sources);
         foreach ($deps as $dependency) {
-            self::assertStringContainsString('@test.php:', $dependency->source->toCanonical());
+            self::assertStringContainsString('@test.php', $dependency->source->toCanonical());
         }
     }
 
@@ -466,7 +467,7 @@ PHP);
         self::assertCount(1, $second);
         self::assertSame('Second\B', $second[0]->sourceLogical()->toString());
         self::assertSame('Second\Two', $second[0]->targetLogical()->toString());
-        self::assertStringContainsString('@second.php:', $second[0]->source->toCanonical());
+        self::assertStringContainsString('@second.php', $second[0]->source->toCanonical());
     }
 
     #[Test]
@@ -763,7 +764,11 @@ PHP, 'src/Subject.php');
             return [];
         }
 
-        $this->visitor->beginFile(RelativePath::fromString($file));
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $this->traverser = new NodeTraverser();
+        $this->traverser->addVisitor($registrar);
+        $this->traverser->addVisitor($this->visitor);
+        $this->visitor->beginFile(RelativePath::fromString($file), $registrar->index());
         $this->traverser->traverse($ast);
 
         return $this->visitor->dependencies();

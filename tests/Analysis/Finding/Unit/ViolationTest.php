@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Analysis\Finding\Contract\ViolationChannel;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -279,11 +280,7 @@ final class ViolationTest extends TestCase
     public function itUsesSubjectOccurrenceAndEdgeRatherThanLocationOrMessageForFingerprint(): void
     {
         $path = RelativePath::fromString('src/Foo.php');
-        $subject = MetricSubject::declaration(new DeclarationPath(
-            SymbolPath::forMethod('App', 'Foo', 'run'),
-            $path,
-            120,
-        ));
+        $subject = MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Foo', 'run'), $path, DeclarationOrdinal::fromRank(0)));
         $occurrence = OccurrenceKey::semantic('dependency', ['target' => 'Vendor\\Api']);
         $violation = new Violation(
             location: new Location($path, 900),

@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -456,10 +457,11 @@ final class InMemoryMetricRepositoryTest extends TestCase
     {
         $symbol = SymbolPath::forMethod('App', 'Service', 'run');
         $file = RelativePath::fromString('src/Service.php');
-        $declaration = new DeclarationPath($symbol, $file, 420);
+        $declaration = DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0));
         $subject = MetricSubject::declaration($declaration);
         $callable = new CallableWithMetrics(
             $declaration,
+            0,
             CallableKind::Method,
             null,
             null,
@@ -494,7 +496,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
     {
         $symbol = SymbolPath::forMethod('App', 'Service', 'run');
         $file = RelativePath::fromString('src/Service.php');
-        $declaration = new DeclarationPath($symbol, $file, 420);
+        $declaration = DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0));
         $subject = MetricSubject::declaration($declaration);
 
         $plain = new InMemoryMetricRepository();
@@ -503,6 +505,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $typed = new InMemoryMetricRepository();
         $typed->addCallable(new CallableWithMetrics(
             $declaration,
+            0,
             CallableKind::Method,
             null,
             null,
@@ -529,11 +532,12 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $repository = new InMemoryMetricRepository();
         $symbol = SymbolPath::forMethod('App', 'Service', 'run');
         $file = RelativePath::fromString('src/Service.php');
-        $declaration = new DeclarationPath($symbol, $file, 420);
+        $declaration = DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(0));
         $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Service'));
 
         $repository->addCallable(new CallableWithMetrics(
             $declaration,
+            0,
             CallableKind::Method,
             null,
             null,
@@ -545,6 +549,7 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         $repository->addCallable(new CallableWithMetrics(
             $declaration,
+            0,
             CallableKind::Method,
             null,
             null,
@@ -558,8 +563,8 @@ final class InMemoryMetricRepositoryTest extends TestCase
     public function itKeepsLogicalClassProjectionsLocationFreeForExactClassDeclarationsInEitherMergeOrder(): void
     {
         $class = SymbolPath::forClass('App', 'Service');
-        $firstPath = new DeclarationPath($class, RelativePath::fromString('src/A.php'), 100);
-        $secondPath = new DeclarationPath($class, RelativePath::fromString('src/B.php'), 200);
+        $firstPath = DeclarationPath::of($class, RelativePath::fromString('src/A.php'), DeclarationOrdinal::fromRank(0));
+        $secondPath = DeclarationPath::of($class, RelativePath::fromString('src/B.php'), DeclarationOrdinal::fromRank(0));
         $firstSubject = MetricSubject::declaration($firstPath);
         $secondSubject = MetricSubject::declaration($secondPath);
 
@@ -591,7 +596,8 @@ final class InMemoryMetricRepositoryTest extends TestCase
         $method = SymbolPath::forMethod('App', 'Service', 'run');
         $owner = new LogicalClassPath(SymbolPath::forClass('App', 'Service'));
         $firstCallable = new CallableWithMetrics(
-            new DeclarationPath($method, RelativePath::fromString('src/A.php'), 100),
+            DeclarationPath::of($method, RelativePath::fromString('src/A.php'), DeclarationOrdinal::fromRank(0)),
+            100,
             CallableKind::Method,
             null,
             null,
@@ -600,7 +606,8 @@ final class InMemoryMetricRepositoryTest extends TestCase
             11,
         );
         $secondCallable = new CallableWithMetrics(
-            new DeclarationPath($method, RelativePath::fromString('src/B.php'), 200),
+            DeclarationPath::of($method, RelativePath::fromString('src/B.php'), DeclarationOrdinal::fromRank(0)),
+            200,
             CallableKind::Method,
             null,
             null,
@@ -771,7 +778,8 @@ final class InMemoryMetricRepositoryTest extends TestCase
         int $startFilePos,
     ): void {
         $repository->addCallable(new CallableWithMetrics(
-            new DeclarationPath($symbol, $file, $startFilePos),
+            DeclarationPath::of($symbol, $file, DeclarationOrdinal::fromRank(1)),
+            $startFilePos,
             CallableKind::Method,
             null,
             null,

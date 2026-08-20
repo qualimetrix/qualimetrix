@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -132,7 +133,7 @@ final class ProjectScopedChannelProjectionTest extends TestCase
 
         return new Violation(
             location: new Location($path, 10),
-            subject: MetricSubject::declaration(new DeclarationPath($symbol, $path, 10)),
+            subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: $channel->ruleName,
             violationCode: $channel->violationCode,

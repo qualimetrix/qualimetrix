@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
 use Qualimetrix\Analysis\Policy\Baseline\Filter\GroupCeilingVerdict;
 use Qualimetrix\Core\Observation\WorseDirection;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -610,11 +611,7 @@ final class BaselineCeilingStageAcceptanceTest extends TestCase
     {
         $symbolPath = self::someClass();
         $classInfo = new SymbolInfo(
-            MetricSubject::declaration(new DeclarationPath(
-                $symbolPath,
-                RelativePath::fromString('src/OrderService.php'),
-                0,
-            )),
+            MetricSubject::declaration(DeclarationPath::of($symbolPath, RelativePath::fromString('src/OrderService.php'), DeclarationOrdinal::fromRank(0))),
             RelativePath::fromString('src/OrderService.php'),
             10,
         );

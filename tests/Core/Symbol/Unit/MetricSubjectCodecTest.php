@@ -22,9 +22,9 @@ final class MetricSubjectCodecTest extends TestCase
         $file = RelativePath::fromString('src/Example.php');
 
         self::assertSame('file:src/Example.php', MetricSubjectCodec::decode(MetricSubjectCodec::encodeFile(), $file)->toCanonical());
-        self::assertSame('declaration:class:App\\Thing@src/Example.php:11', MetricSubjectCodec::decode(MetricSubjectCodec::encodeClass('App', 'Thing', 11), $file)->toCanonical());
-        self::assertSame('declaration:callable:App\\Thing::run@src/Example.php:12#0', MetricSubjectCodec::decode(MetricSubjectCodec::encodeMethod('App', 'Thing', 'run', 12, 0), $file)->toCanonical());
-        self::assertSame('declaration:func:App::helper@src/Example.php:13', MetricSubjectCodec::decode(MetricSubjectCodec::encodeFunction('App', 'helper', 13), $file)->toCanonical());
+        self::assertSame('declaration:class:App\\Thing@src/Example.php', MetricSubjectCodec::decode(MetricSubjectCodec::encodeClass('App', 'Thing'), $file)->toCanonical());
+        self::assertSame('declaration:callable:App\\Thing::run@src/Example.php', MetricSubjectCodec::decode(MetricSubjectCodec::encodeMethod('App', 'Thing', 'run'), $file)->toCanonical());
+        self::assertSame('declaration:func:App::helper@src/Example.php', MetricSubjectCodec::decode(MetricSubjectCodec::encodeFunction('App', 'helper'), $file)->toCanonical());
     }
 
     #[Test]
@@ -65,11 +65,14 @@ final class MetricSubjectCodecTest extends TestCase
     {
         $file = RelativePath::fromString('src/Example.php');
 
-        $ordinary = MetricSubjectCodec::encodeMethod('App', 'Thing', 'run', 12);
+        $ordinary = MetricSubjectCodec::encodeMethod('App', 'Thing', 'run');
         self::assertArrayNotHasKey('collisionOrdinal', $ordinary);
         self::assertSame(
-            'declaration:callable:App\\Thing::run@src/Example.php:12#1',
-            MetricSubjectCodec::decode(MetricSubjectCodec::encodeMethod('App', 'Thing', 'run', 12, 1), $file)->toCanonical(),
+            'declaration:callable:App\\Thing::run@src/Example.php#1',
+            MetricSubjectCodec::decode(
+                [...MetricSubjectCodec::encodeMethod('App', 'Thing', 'run'), 'collisionOrdinal' => 1],
+                $file,
+            )->toCanonical(),
         );
     }
 
@@ -79,17 +82,17 @@ final class MetricSubjectCodecTest extends TestCase
         $file = RelativePath::fromString('src/Container.php');
         $entries = [
             ['subjectKind' => 'file'],
-            MetricSubjectCodec::encodeClass('App', 'Thing', 11),
-            MetricSubjectCodec::encodeMethod('App', 'Thing', 'run', 12, 1),
-            MetricSubjectCodec::encodeFunction('App', 'helper', 13),
+            MetricSubjectCodec::encodeClass('App', 'Thing'),
+            [...MetricSubjectCodec::encodeMethod('App', 'Thing', 'run'), 'collisionOrdinal' => 1],
+            MetricSubjectCodec::encodeFunction('App', 'helper'),
         ];
 
         self::assertSame(
             [
                 'file:src/Container.php',
-                'declaration:class:App\Thing@src/Container.php:11',
-                'declaration:callable:App\Thing::run@src/Container.php:12#1',
-                'declaration:func:App::helper@src/Container.php:13',
+                'declaration:class:App\Thing@src/Container.php',
+                'declaration:callable:App\Thing::run@src/Container.php#1',
+                'declaration:func:App::helper@src/Container.php',
             ],
             array_map(static fn(array $entry): string => MetricSubjectCodec::decodeEntry($entry, $file)->toCanonical(), $entries),
         );
@@ -100,7 +103,7 @@ final class MetricSubjectCodecTest extends TestCase
     {
         $subject = MetricSubjectCodec::decodeEntry(
             [
-                ...MetricSubjectCodec::encodeMethod('App', 'Thing', 'run', 12),
+                ...MetricSubjectCodec::encodeMethod('App', 'Thing', 'run'),
                 'file' => 'src/Injected.php',
                 'line' => 99,
                 'enabled' => true,
@@ -109,21 +112,20 @@ final class MetricSubjectCodecTest extends TestCase
             RelativePath::fromString('src/Container.php'),
         );
 
-        self::assertSame('declaration:callable:App\Thing::run@src/Container.php:12', $subject->toCanonical());
+        self::assertSame('declaration:callable:App\Thing::run@src/Container.php', $subject->toCanonical());
     }
 
     #[Test]
     public function itDropsWrongTypedRetainedEntryComponentsBeforeGrammarValidation(): void
     {
-        $this->expectExceptionObject(new InvalidArgumentException('Missing metric subject component "startFilePos"'));
+        $this->expectExceptionObject(new InvalidArgumentException('Missing metric subject component "namespace"'));
 
         MetricSubjectCodec::decodeEntry(
             [
                 'subjectKind' => 'declaration',
                 'logicalKind' => 'class',
-                'namespace' => 'App',
+                'namespace' => false,
                 'class' => 'Thing',
-                'startFilePos' => false,
             ],
             RelativePath::fromString('src/Container.php'),
         );
@@ -139,7 +141,6 @@ final class MetricSubjectCodecTest extends TestCase
             'namespace' => 'App',
             'class' => 'Thing',
             'member' => 'run',
-            'startFilePos' => 12,
             $key => $value,
         ];
 
@@ -156,7 +157,6 @@ final class MetricSubjectCodecTest extends TestCase
             'namespace' => 'Missing metric subject component "namespace"',
             'class' => 'Missing metric subject component "class"',
             'member' => 'Missing metric subject component "member"',
-            'startFilePos' => 'Missing metric subject component "startFilePos"',
         ];
         foreach ($messages as $key => $message) {
             yield $key . '-bool' => [$key, false, $message];
@@ -169,11 +169,11 @@ final class MetricSubjectCodecTest extends TestCase
     public function itDropsOptionalRetainedBoolOrFloat(bool|float $value): void
     {
         $subject = MetricSubjectCodec::decodeEntry(
-            [...MetricSubjectCodec::encodeMethod('App', 'Thing', 'run', 12), 'collisionOrdinal' => $value],
+            [...MetricSubjectCodec::encodeMethod('App', 'Thing', 'run'), 'collisionOrdinal' => $value],
             RelativePath::fromString('src/Container.php'),
         );
 
-        self::assertSame('declaration:callable:App\Thing::run@src/Container.php:12', $subject->toCanonical());
+        self::assertSame('declaration:callable:App\Thing::run@src/Container.php', $subject->toCanonical());
     }
 
     /** @return iterable<string, array{bool|float}> */

@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Policy\Inline\Contract\Suppression\SuppressionType;
 use Qualimetrix\Analysis\Policy\Inline\Suppression\SuppressionFilter;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -930,7 +931,7 @@ final class FindingProjectorTest extends TestCase
 
         return new Violation(
             location: new Location($path, $line),
-            subject: MetricSubject::declaration(new DeclarationPath($symbol, $path, $line)),
+            subject: MetricSubject::declaration(DeclarationPath::of($symbol, $path, DeclarationOrdinal::fromRank(0))),
             symbolPath: $symbol,
             ruleName: $ruleName,
             violationCode: $violationCode ?? ($ruleName === 'code-smell.goto' ? $ruleName : $ruleName . '.callable'),
@@ -1019,7 +1020,7 @@ final class FindingProjectorTest extends TestCase
         $this->tempFiles[] = $path;
 
         $data = [
-            'version' => 12,
+            'version' => 13,
             'generated' => (new DateTimeImmutable())->format('c'),
             'scope' => ['src'],
             'entries' => $entries,
@@ -1035,7 +1036,7 @@ final class FindingProjectorTest extends TestCase
         $symbol = SymbolPath::forClass($namespace, $class);
 
         return MetricSubject::declaration(
-            new DeclarationPath($symbol, RelativePath::fromString($file), 0),
+            DeclarationPath::of($symbol, RelativePath::fromString($file), DeclarationOrdinal::fromRank(0)),
         )->toCanonical();
     }
 

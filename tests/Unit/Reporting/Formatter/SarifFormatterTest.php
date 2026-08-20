@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -56,13 +57,9 @@ final class SarifFormatterTest extends TestCase
     public function itFingerprintsDuplicateLogicalDeclarationsByTheirCanonicalSubjects(): void
     {
         $logical = SymbolPath::forMethod('App\\Service', 'DuplicateService', 'run');
-        $make = static fn(int $startFilePos): Violation => self::violation(
+        $make = static fn(int $ordinal): Violation => self::violation(
             location: new Location(RelativePath::fromString('src/Service/DuplicateService.php'), 42),
-            subject: MetricSubject::declaration(new DeclarationPath(
-                $logical,
-                RelativePath::fromString('src/Service/DuplicateService.php'),
-                $startFilePos,
-            )),
+            subject: MetricSubject::declaration(DeclarationPath::of($logical, RelativePath::fromString('src/Service/DuplicateService.php'), DeclarationOrdinal::fromRank($ordinal))),
             symbolPath: $logical,
             ruleName: 'complexity.cyclomatic',
             violationCode: 'complexity.cyclomatic.callable',
@@ -856,11 +853,7 @@ final class SarifFormatterTest extends TestCase
             \Qualimetrix\Core\Symbol\SymbolType::File,
             \Qualimetrix\Core\Symbol\SymbolType::Namespace_,
             \Qualimetrix\Core\Symbol\SymbolType::Project => \Qualimetrix\Core\Symbol\MetricSubject::aggregate($symbolPath),
-            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(new \Qualimetrix\Core\Symbol\DeclarationPath(
-                $symbolPath,
-                $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'),
-                $location->line ?? 0,
-            )),
+            default => \Qualimetrix\Core\Symbol\MetricSubject::declaration(\Qualimetrix\Core\Symbol\DeclarationPath::of($symbolPath, $location->file ?? \Qualimetrix\Core\Path\RelativePath::fromString('tests/Reporting/fixture.php'), \Qualimetrix\Core\Symbol\DeclarationOrdinal::fromRank(0))),
         };
 
         return new Violation(

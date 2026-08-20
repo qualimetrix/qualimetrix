@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisCoverage;
 use Qualimetrix\Analysis\Run\Contract\Pipeline\AnalysisResult;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -115,7 +116,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
     {
         $symbol = SymbolPath::forClass('App\\Legacy', 'Bootstrap');
         $symbolKey = MetricSubject::declaration(
-            new DeclarationPath($symbol, RelativePath::fromString('src/Legacy/Bootstrap.php'), 0),
+            DeclarationPath::of($symbol, RelativePath::fromString('src/Legacy/Bootstrap.php'), DeclarationOrdinal::fromRank(0)),
         )->toCanonical();
 
         $baselinePath = $this->writeBaseline([
@@ -272,7 +273,7 @@ final class ViolationFilterOrchestratorBaselineReportingTest extends TestCase
         $this->tempFiles[] = $path;
 
         file_put_contents($path, json_encode([
-            'version' => 12,
+            'version' => 13,
             'generated' => '2026-08-05T12:00:00+03:00',
             'scope' => $scope,
             'entries' => $entries,

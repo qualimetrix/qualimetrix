@@ -18,6 +18,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableMetricsProviderIn
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\CallableWithMetrics;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassMetricsProviderInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\DerivedCollectorInterface;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricCollectorInterface;
@@ -26,6 +27,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\CompositeCollector;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -57,7 +59,7 @@ final class CompositeCollectorTest extends TestCase
             '<?php namespace App; use Vendor\\Base; final class Subject extends Base {}',
         ) ?? [];
 
-        $result = (new CompositeCollector([$collector], [], new DependencyVisitor()))->collect(
+        $result = (new CompositeCollector([$collector], new DeclarationRegistrarFactory(), [], new DependencyVisitor()))->collect(
             new SplFileInfo(__FILE__),
             $ast,
             RelativePath::fromString('Subject.php'),
@@ -84,7 +86,7 @@ final class CompositeCollectorTest extends TestCase
             '<?php namespace App; use Vendor\\Port; final class Subject implements Port {}',
         ) ?? [];
 
-        $result = (new CompositeCollector([], [], new DependencyVisitor()))->collect(
+        $result = (new CompositeCollector([], new DeclarationRegistrarFactory(), [], new DependencyVisitor()))->collect(
             new SplFileInfo(__FILE__),
             $ast,
             RelativePath::fromString('Subject.php'),
@@ -102,7 +104,7 @@ final class CompositeCollectorTest extends TestCase
         $collector1 = $this->createCollector('loc', $metrics1);
         $collector2 = $this->createCollector('ccn', $metrics2);
 
-        $composite = new CompositeCollector([$collector1, $collector2]);
+        $composite = new CompositeCollector([$collector1, $collector2], new DeclarationRegistrarFactory());
         $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
 
         self::assertSame(100, $result->metrics->get('loc'));
@@ -112,7 +114,7 @@ final class CompositeCollectorTest extends TestCase
     #[Test]
     public function itReturnsEmptyBagWithNoCollectors(): void
     {
-        $composite = new CompositeCollector([]);
+        $composite = new CompositeCollector([], new DeclarationRegistrarFactory());
         $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
 
         self::assertSame([], $result->metrics->all());
@@ -129,7 +131,7 @@ final class CompositeCollectorTest extends TestCase
         $collector2->expects(self::once())->method('reset');
         $collector2->method('getVisitor')->willReturn(new class extends NodeVisitorAbstract {});
 
-        $composite = new CompositeCollector([$collector1, $collector2]);
+        $composite = new CompositeCollector([$collector1, $collector2], new DeclarationRegistrarFactory());
         $composite->reset();
     }
 
@@ -139,7 +141,7 @@ final class CompositeCollectorTest extends TestCase
         $collector1 = $this->createCollector('test1', new MetricBag());
         $collector2 = $this->createCollector('test2', new MetricBag());
 
-        $composite = new CompositeCollector([$collector1, $collector2]);
+        $composite = new CompositeCollector([$collector1, $collector2], new DeclarationRegistrarFactory());
 
         self::assertCount(2, $composite->getCollectors());
     }
@@ -155,7 +157,7 @@ final class CompositeCollectorTest extends TestCase
             yield $collector;
         })();
 
-        $composite = new CompositeCollector($generator);
+        $composite = new CompositeCollector($generator, new DeclarationRegistrarFactory());
         $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
 
         self::assertSame(42, $result->metrics->get('from_generator'));
@@ -179,7 +181,7 @@ final class CompositeCollectorTest extends TestCase
         $collector2->method('getVisitor')->willReturn($visitor2);
         $collector2->method('collect')->willReturn(new MetricBag());
 
-        $composite = new CompositeCollector([$collector1, $collector2]);
+        $composite = new CompositeCollector([$collector1, $collector2], new DeclarationRegistrarFactory());
         $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
 
         self::assertTrue($callTracker->visitor1Called);
@@ -192,7 +194,7 @@ final class CompositeCollectorTest extends TestCase
         $metrics = (new MetricBag())->with('single', 42);
         $collector = $this->createCollector('single', $metrics);
 
-        $composite = new CompositeCollector([$collector]);
+        $composite = new CompositeCollector([$collector], new DeclarationRegistrarFactory());
         $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
 
         self::assertSame(42, $result->metrics->get('single'));
@@ -231,7 +233,7 @@ final class CompositeCollectorTest extends TestCase
                 return (new MetricBag())->with('derived_ccn', $ccn * 2);
             });
 
-        $composite = new CompositeCollector([$baseCollector], [$derivedCollector]);
+        $composite = new CompositeCollector([$baseCollector], new DeclarationRegistrarFactory(), [$derivedCollector]);
         $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
 
         // Should have both base and derived metrics
@@ -273,7 +275,7 @@ final class CompositeCollectorTest extends TestCase
             ->willReturnCallback(static fn(MetricBag $bag): MetricBag =>
                 (new MetricBag())->with('tripled', ($bag->get('value') ?? 0) * 3));
 
-        $composite = new CompositeCollector([$baseCollector], [$derived1, $derived2]);
+        $composite = new CompositeCollector([$baseCollector], new DeclarationRegistrarFactory(), [$derived1, $derived2]);
         $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
 
         self::assertSame(10, $result->metrics->get('value:test'));
@@ -288,7 +290,7 @@ final class CompositeCollectorTest extends TestCase
         $collector = $this->createCollector('base', $metrics);
 
         // Empty derived collectors array
-        $composite = new CompositeCollector([$collector], []);
+        $composite = new CompositeCollector([$collector], new DeclarationRegistrarFactory(), []);
         $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
 
         self::assertSame(42, $result->metrics->get('base'));
@@ -311,7 +313,7 @@ final class CompositeCollectorTest extends TestCase
         $derivedCollector->method('getMetricDefinitions')->willReturn([]);
         $derivedCollector->method('calculate')->willReturn(new MetricBag());
 
-        $composite = new CompositeCollector([$baseCollector], [$derivedCollector]);
+        $composite = new CompositeCollector([$baseCollector], new DeclarationRegistrarFactory(), [$derivedCollector]);
         $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
 
         // Should only have base metrics
@@ -346,7 +348,7 @@ final class CompositeCollectorTest extends TestCase
                     : new MetricBag();
             });
 
-        $composite = new CompositeCollector([$baseCollector], [$derivedCollector]);
+        $composite = new CompositeCollector([$baseCollector], new DeclarationRegistrarFactory(), [$derivedCollector]);
         $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
 
         self::assertSame(5, $result->metrics->get('no_separator'));
@@ -362,7 +364,7 @@ final class CompositeCollectorTest extends TestCase
         $derivedCollector = self::createStub(DerivedCollectorInterface::class);
         $derivedCollector->method('getName')->willReturn('derived');
 
-        $composite = new CompositeCollector([$collector], [$derivedCollector]);
+        $composite = new CompositeCollector([$collector], new DeclarationRegistrarFactory(), [$derivedCollector]);
 
         $derivedCollectors = $composite->getDerivedCollectors();
 
@@ -386,7 +388,7 @@ final class CompositeCollectorTest extends TestCase
             yield $derivedCollector;
         })();
 
-        $composite = new CompositeCollector([$collector], $generator);
+        $composite = new CompositeCollector([$collector], new DeclarationRegistrarFactory(), $generator);
 
         self::assertCount(1, $composite->getDerivedCollectors());
     }
@@ -424,7 +426,7 @@ final class CompositeCollectorTest extends TestCase
                 return (new MetricBag())->with('ratio', $ccn / $loc);
             });
 
-        $composite = new CompositeCollector([$baseCollector], [$derivedCollector]);
+        $composite = new CompositeCollector([$baseCollector], new DeclarationRegistrarFactory(), [$derivedCollector]);
         $result = $composite->collect(new SplFileInfo(__FILE__), [], \Qualimetrix\Core\Path\RelativePath::fromString('CompositeCollectorTest.php'));
 
         // Should have derived metrics for each FQN
@@ -436,11 +438,8 @@ final class CompositeCollectorTest extends TestCase
     public function itRoutesClassDerivedMetricsOnlyToTheirExactClassDeclaration(): void
     {
         $class = new ClassWithMetrics(
-            new DeclarationPath(
-                SymbolPath::forClass('App\\Design', 'TypedService'),
-                RelativePath::fromString('CompositeCollectorTest.php'),
-                330,
-            ),
+            DeclarationPath::of(SymbolPath::forClass('App\\Design', 'TypedService'), RelativePath::fromString('CompositeCollectorTest.php'), DeclarationOrdinal::fromRank(0)),
+            330,
             45,
             MetricBag::fromArray([
                 'typeCoverage.paramTyped' => 2,
@@ -465,7 +464,7 @@ final class CompositeCollectorTest extends TestCase
             ),
         );
 
-        $result = (new CompositeCollector([$baseCollector], [$derivedCollector]))->collect(
+        $result = (new CompositeCollector([$baseCollector], new DeclarationRegistrarFactory(), [$derivedCollector]))->collect(
             new SplFileInfo(__FILE__),
             [],
             RelativePath::fromString('CompositeCollectorTest.php'),
@@ -482,18 +481,18 @@ final class CompositeCollectorTest extends TestCase
         $collector = $this->createCollector('test', $metrics);
 
         // Test with array
-        $composite1 = new CompositeCollector([$collector]);
+        $composite1 = new CompositeCollector([$collector], new DeclarationRegistrarFactory());
         self::assertCount(1, $composite1->getCollectors());
 
         // Test with ArrayIterator
-        $composite2 = new CompositeCollector(new ArrayIterator([$collector]));
+        $composite2 = new CompositeCollector(new ArrayIterator([$collector]), new DeclarationRegistrarFactory());
         self::assertCount(1, $composite2->getCollectors());
 
         // Test with Generator
         $generator = (static function () use ($collector): Generator {
             yield $collector;
         })();
-        $composite3 = new CompositeCollector($generator);
+        $composite3 = new CompositeCollector($generator, new DeclarationRegistrarFactory());
         self::assertCount(1, $composite3->getCollectors());
     }
 
@@ -507,7 +506,7 @@ final class CompositeCollectorTest extends TestCase
         $collector1 = $this->createCollector('c1', $metrics1);
         $collector2 = $this->createCollector('c2', $metrics2);
 
-        $composite = new CompositeCollector([$collector1, $collector2]);
+        $composite = new CompositeCollector([$collector1, $collector2], new DeclarationRegistrarFactory());
         $result = $composite->collect(new SplFileInfo(__FILE__), [], RelativePath::fromString('CompositeCollectorTest.php'));
 
         // Second value should override first (MetricBag::merge behavior)
@@ -535,7 +534,7 @@ final class CompositeCollectorTest extends TestCase
         $derivedB->method('getMetricDefinitions')->willReturn([]);
         $derivedB->method('calculate')->willReturn(new MetricBag());
 
-        $composite = new CompositeCollector([$baseCollector], [$derivedA, $derivedB]);
+        $composite = new CompositeCollector([$baseCollector], new DeclarationRegistrarFactory(), [$derivedA, $derivedB]);
 
         self::expectException(LogicException::class);
         self::expectExceptionMessageMatches('/Cyclic dependency.*derivedA.*derivedB|Cyclic dependency.*derivedB.*derivedA/');
@@ -642,7 +641,8 @@ final class CompositeCollectorTest extends TestCase
         $classPath = SymbolPath::forClass($namespace, $class);
 
         return new CallableWithMetrics(
-            new DeclarationPath(SymbolPath::forMethod($namespace, $class, $method), RelativePath::fromString('CompositeCollectorTest.php'), $startFilePos),
+            DeclarationPath::of(SymbolPath::forMethod($namespace, $class, $method), RelativePath::fromString('CompositeCollectorTest.php'), DeclarationOrdinal::fromRank(0)),
+            $startFilePos,
             CallableKind::Method,
             null,
             null,

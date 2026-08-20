@@ -17,6 +17,8 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyResolver;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Extraction\DependencyVisitor;
 use Qualimetrix\Analysis\Evidence\Design\TypeCoverageVisitor;
 use Qualimetrix\Analysis\Evidence\Maintainability\HalsteadVisitor;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationIndexAwareInterface;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Core\Path\RelativePath;
 
 /**
@@ -39,7 +41,12 @@ final class AnonymousClassContextRegressionTest extends TestCase
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($this->getFixtureCode()) ?? [];
 
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
         $traverser = new NodeTraverser();
+        $traverser->addVisitor($registrar);
+        if ($visitor instanceof DeclarationIndexAwareInterface) {
+            $visitor->useDeclarationIndex($registrar->index());
+        }
         $traverser->addVisitor($visitor);
         $traverser->traverse($ast);
     }
@@ -288,13 +295,15 @@ PHP;
 
         $resolver = new DependencyResolver();
         $visitor = new DependencyVisitor($resolver);
-        $visitor->beginFile(RelativePath::fromString('test.php'));
 
         $parser = (new ParserFactory())->createForHostVersion();
         $ast = $parser->parse($code) ?? [];
 
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
         $traverser = new NodeTraverser();
+        $traverser->addVisitor($registrar);
         $traverser->addVisitor($visitor);
+        $visitor->beginFile(RelativePath::fromString('test.php'), $registrar->index());
         $traverser->traverse($ast);
 
         $deps = $visitor->dependencies();

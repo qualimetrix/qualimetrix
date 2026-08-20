@@ -53,6 +53,7 @@ use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveOptions;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectivePolicy;
 use Qualimetrix\Analysis\Policy\Inline\Directive\InlineDirectiveRule;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\MetricSubjectCodec;
@@ -419,7 +420,7 @@ final class ChannelCoverageTest extends TestCase
         $logical = SymbolPath::forMethod('App\\Service', 'UserService', $member);
 
         return new SymbolInfo(
-            MetricSubject::declaration(new DeclarationPath($logical, $file, 100)),
+            MetricSubject::declaration(DeclarationPath::of($logical, $file, DeclarationOrdinal::fromRank(0))),
             $file,
             10,
         );
@@ -430,7 +431,7 @@ final class ChannelCoverageTest extends TestCase
         $logical = SymbolPath::forClass('App', $class);
 
         return new SymbolInfo(
-            MetricSubject::declaration(new DeclarationPath($logical, $file, 100)),
+            MetricSubject::declaration(DeclarationPath::of($logical, $file, DeclarationOrdinal::fromRank(0))),
             $file,
             10,
         );

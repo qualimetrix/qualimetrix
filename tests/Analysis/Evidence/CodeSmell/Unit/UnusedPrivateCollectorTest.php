@@ -14,6 +14,7 @@ use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateClassData;
 use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateCollector;
 use Qualimetrix\Analysis\Evidence\CodeSmell\UnusedPrivateVisitor;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\ClassWithMetrics;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use SplFileInfo;
 
@@ -1462,6 +1463,9 @@ PHP;
         $ast = $parser->parse($code) ?? [];
 
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $this->collector->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($this->collector->getVisitor());
         $traverser->traverse($ast);
     }

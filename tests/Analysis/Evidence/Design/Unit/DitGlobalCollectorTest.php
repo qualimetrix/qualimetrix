@@ -15,6 +15,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\MetricBag;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -33,7 +34,7 @@ final class DitGlobalCollectorTest extends TestCase
     private function createExtends(string $childFqn, string $parentFqn): Dependency
     {
         return new Dependency(
-            source: new DeclarationPath(SymbolPath::fromClassFqn($childFqn), RelativePath::fromString('test.php'), 0),
+            source: DeclarationPath::of(SymbolPath::fromClassFqn($childFqn), RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0)),
             target: new LogicalClassPath(SymbolPath::fromClassFqn($parentFqn)),
             type: DependencyType::Extends,
             location: new Location(RelativePath::fromString('test.php'), 1),

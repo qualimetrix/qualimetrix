@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Complexity\CyclomaticComplexityVisitor;
+use Qualimetrix\Analysis\Evidence\Measurement\Contract\DeclarationRegistrarFactory;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepository;
 use Qualimetrix\Analysis\Evidence\Measurement\Visitor\VisitorMethodContext;
 use Qualimetrix\Core\Path\RelativePath;
@@ -64,6 +65,9 @@ class Service {
 }
 PHP;
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $context->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($probe);
         $traverser->traverse($parser->parse($firstFile) ?? []);
 
@@ -105,6 +109,9 @@ PHP;
                 return null;
             }
         };
+        $secondRegistrar = (new DeclarationRegistrarFactory())->createForFile();
+        $secondTraverser->addVisitor($secondRegistrar);
+        $context->useDeclarationIndex($secondRegistrar->index());
         $secondTraverser->addVisitor($secondProbe);
         $secondTraverser->traverse($secondFile);
 
@@ -137,6 +144,9 @@ PHP;
 
         $visitor = new CyclomaticComplexityVisitor();
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse((new ParserFactory())->createForHostVersion()->parse($code) ?? []);
 
@@ -197,7 +207,6 @@ PHP;
                 $collectedCallable->sourceLine,
                 $linesByDeclaration[$collectedCallable->declarationPath->toCanonical()],
             );
-            self::assertNotSame($collectedCallable->declarationPath->startFilePos, $collectedCallable->sourceLine);
         }
     }
 
@@ -206,6 +215,9 @@ PHP;
     {
         $visitor = new CyclomaticComplexityVisitor();
         $traverser = new NodeTraverser();
+        $registrar = (new DeclarationRegistrarFactory())->createForFile();
+        $traverser->addVisitor($registrar);
+        $visitor->useDeclarationIndex($registrar->index());
         $traverser->addVisitor($visitor);
         $traverser->traverse((new ParserFactory())->createForHostVersion()->parse(<<<'PHP'
 <?php
@@ -218,7 +230,8 @@ PHP) ?? []);
         self::assertCount(2, $callables);
         self::assertSame('func:App::duplicate', $callables[0]->declarationPath->logical->toCanonical());
         self::assertSame('func:App::duplicate', $callables[1]->declarationPath->logical->toCanonical());
-        self::assertNotSame($callables[0]->declarationPath->startFilePos, $callables[1]->declarationPath->startFilePos);
+        self::assertNotSame($callables[0]->declarationPath->ordinal->value, $callables[1]->declarationPath->ordinal->value);
+        self::assertNotSame($callables[0]->declarationPath->toCanonical(), $callables[1]->declarationPath->toCanonical());
         self::assertSame(1, $callables[0]->metrics->get('ccn'));
         self::assertSame(2, $callables[1]->metrics->get('ccn'));
     }

@@ -21,6 +21,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Contract\SymbolLevel;
 use Qualimetrix\Analysis\Evidence\Measurement\FileMeasurement\DerivedCollectorRunner;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -135,8 +136,8 @@ final class DerivedCollectorRunnerTest extends TestCase
     #[Test]
     public function itKeepsDuplicateLogicalCallablesAtTheirExactDeclarations(): void
     {
-        $first = $this->callable(10, 3);
-        $second = $this->callable(20, 5);
+        $first = $this->callable(10, 3, 0);
+        $second = $this->callable(20, 5, 1);
         $derived = $this->derived(
             'derived',
             ['base'],
@@ -338,12 +339,13 @@ final class DerivedCollectorRunnerTest extends TestCase
         };
     }
 
-    private function callable(int $startFilePos, int $raw): CallableWithMetrics
+    private function callable(int $startFilePos, int $raw, int $ordinal = 0): CallableWithMetrics
     {
         $file = RelativePath::fromString('DerivedCollectorRunnerTest.php');
 
         return new CallableWithMetrics(
-            new DeclarationPath(SymbolPath::forMethod('App', 'Service', 'run'), $file, $startFilePos),
+            DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), $file, DeclarationOrdinal::fromRank($ordinal)),
+            $startFilePos,
             CallableKind::Method,
             null,
             null,
@@ -352,14 +354,11 @@ final class DerivedCollectorRunnerTest extends TestCase
         );
     }
 
-    private function class(int $startFilePos, int $raw): ClassWithMetrics
+    private function class(int $startFilePos, int $raw, int $ordinal = 0): ClassWithMetrics
     {
         return new ClassWithMetrics(
-            new DeclarationPath(
-                SymbolPath::forClass('App', 'Service'),
-                RelativePath::fromString('DerivedCollectorRunnerTest.php'),
-                $startFilePos,
-            ),
+            DeclarationPath::of(SymbolPath::forClass('App', 'Service'), RelativePath::fromString('DerivedCollectorRunnerTest.php'), DeclarationOrdinal::fromRank($ordinal)),
+            $startFilePos,
             1,
             MetricBag::fromArray(['raw' => $raw]),
         );

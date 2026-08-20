@@ -22,6 +22,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -242,7 +243,7 @@ final class BaselineCleanupCommandTest extends TestCase
 
         return new BaselineIdentity(
             MetricSubject::declaration(
-                new DeclarationPath($symbol, RelativePath::fromString('src/Web/Controller.php'), 0),
+                DeclarationPath::of($symbol, RelativePath::fromString('src/Web/Controller.php'), DeclarationOrdinal::fromRank(0)),
             )->toCanonical(),
             ViolationChannel::fromKey(self::EDGE_CHANNEL),
             edge: new BaselineEdge($target, DependencyType::New_),

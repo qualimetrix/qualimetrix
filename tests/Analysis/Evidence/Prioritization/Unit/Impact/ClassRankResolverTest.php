@@ -16,6 +16,7 @@ use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolInfo;
@@ -287,11 +288,7 @@ final class ClassRankResolverTest extends TestCase
     {
         $subject = match ($symbolPath->getType()) {
             SymbolType::File, SymbolType::Namespace_, SymbolType::Project => MetricSubject::aggregate($symbolPath),
-            default => MetricSubject::declaration(new DeclarationPath(
-                $symbolPath,
-                RelativePath::fromString('test.php'),
-                0,
-            )),
+            default => MetricSubject::declaration(DeclarationPath::of($symbolPath, RelativePath::fromString('test.php'), DeclarationOrdinal::fromRank(0))),
         };
 
         return new Violation(

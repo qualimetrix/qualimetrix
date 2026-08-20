@@ -13,6 +13,7 @@ use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Evidence\DependencyModel\DependencyGraph;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -89,13 +90,13 @@ final class DependencyGraphProjectorTest extends TestCase
         return new DependencyGraph(
             dependencies: [
                 new Dependency(
-                    new DeclarationPath($producer, RelativePath::fromString('Producer.php'), 0),
+                    DeclarationPath::of($producer, RelativePath::fromString('Producer.php'), DeclarationOrdinal::fromRank(0)),
                     new LogicalClassPath($consumer),
                     DependencyType::TypeHint,
                     new Location(RelativePath::fromString('Producer.php'), 10),
                 ),
                 new Dependency(
-                    new DeclarationPath($consumer, RelativePath::fromString('Consumer.php'), 0),
+                    DeclarationPath::of($consumer, RelativePath::fromString('Consumer.php'), DeclarationOrdinal::fromRank(0)),
                     new LogicalClassPath($ignored),
                     DependencyType::TypeHint,
                     new Location(RelativePath::fromString('Consumer.php'), 12),

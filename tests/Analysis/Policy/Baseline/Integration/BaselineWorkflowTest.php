@@ -19,6 +19,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\Filter\BaselineCeilingStage;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -178,7 +179,7 @@ final class BaselineWorkflowTest extends TestCase
         $this->expectExceptionMessage(
             'Baseline version 10 cannot be converted automatically because declaration identity cannot be inferred '
             . 'from a logical symbol key. Run a fresh analysis, deliberately map or split accepted entries, then '
-            . 'write a new version 12 baseline (or regenerate and review the accepted state).',
+            . 'write a new version 13 baseline (or regenerate and review the accepted state).',
         );
 
         $loader->load($this->baselinePath);
@@ -305,7 +306,7 @@ final class BaselineWorkflowTest extends TestCase
         // Should detect that method2 was resolved
         self::assertCount(1, $resolved);
         self::assertSame(
-            'declaration:callable:App\Service\UserService::method2@BaselineWorkflowTest.php:20',
+            'declaration:callable:App\Service\UserService::method2@BaselineWorkflowTest.php',
             $resolved[0]->identity->subjectKey,
         );
     }
@@ -327,7 +328,7 @@ final class BaselineWorkflowTest extends TestCase
                 location: new Location(RelativePath::fromString('src/Service.php'), 1),
             ),
             new Violation(
-                subject: MetricSubject::declaration(new DeclarationPath(SymbolPath::forMethod("App\\Service", "Service", "handle"), RelativePath::fromString("src/Service.php"), 10)),
+                subject: MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod("App\\Service", "Service", "handle"), RelativePath::fromString("src/Service.php"), DeclarationOrdinal::fromRank(0))),
                 ruleName: 'complexity.cyclomatic',
                 violationCode: 'complexity.cyclomatic.callable',
                 message: 'Complexity 15',
@@ -349,7 +350,7 @@ final class BaselineWorkflowTest extends TestCase
         $data = json_decode((string) file_get_contents($this->baselinePath), true);
         self::assertArrayHasKey('file:src/Service.php', $data['entries']);
         // Method canonical should be unchanged
-        self::assertArrayHasKey('declaration:callable:App\Service\Service::handle@src/Service.php:10', $data['entries']);
+        self::assertArrayHasKey('declaration:callable:App\Service\Service::handle@src/Service.php', $data['entries']);
 
         // Load baseline — paths kept as-is (relative)
         $loader = new BaselineLoader(new BaselineEntryParser($declarations));
@@ -466,10 +467,6 @@ final class BaselineWorkflowTest extends TestCase
 
     private static function declarationSubject(SymbolPath $symbolPath, int $startFilePos): MetricSubject
     {
-        return MetricSubject::declaration(new DeclarationPath(
-            $symbolPath,
-            RelativePath::fromString(basename(__FILE__)),
-            $startFilePos,
-        ));
+        return MetricSubject::declaration(DeclarationPath::of($symbolPath, RelativePath::fromString(basename(__FILE__)), DeclarationOrdinal::fromRank(0)));
     }
 }

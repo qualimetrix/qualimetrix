@@ -20,6 +20,7 @@ use Qualimetrix\Analysis\Evidence\Measurement\Repository\InMemoryMetricRepositor
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Profiler\Contract\ProfilerInterface;
 use Qualimetrix\Core\Symbol\CallableKind;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -162,7 +163,8 @@ final class NamespaceToProjectAggregatorTest extends TestCase
         $relFile = RelativePath::fromString($file);
         for ($i = 1; $i <= $count; $i++) {
             $repository->addCallable(new CallableWithMetrics(
-                new DeclarationPath(SymbolPath::forMethod($namespace, $class, "m{$i}"), $relFile, $i * 10),
+                DeclarationPath::of(SymbolPath::forMethod($namespace, $class, "m{$i}"), $relFile, DeclarationOrdinal::fromRank(0)),
+                $i * 10,
                 CallableKind::Method,
                 null,
                 null,

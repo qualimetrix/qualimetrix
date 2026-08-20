@@ -29,6 +29,7 @@ use Qualimetrix\Analysis\Policy\Baseline\BaselineWriter;
 use Qualimetrix\Analysis\Policy\Baseline\BoundaryExplanationService;
 use Qualimetrix\Core\Path\AbsolutePath;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
@@ -335,7 +336,7 @@ final class BaselineRunBeforeLoadTest extends TestCase
     private static function subject(): MetricSubject
     {
         return MetricSubject::declaration(
-            new DeclarationPath(self::symbol(), RelativePath::fromString(self::SOURCE_FILE), 1),
+            DeclarationPath::of(self::symbol(), RelativePath::fromString(self::SOURCE_FILE), DeclarationOrdinal::fromRank(0)),
         );
     }
 

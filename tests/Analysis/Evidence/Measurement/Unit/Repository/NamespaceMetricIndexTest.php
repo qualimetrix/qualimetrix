@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\Measurement\Repository\NamespaceMetricIndex;
 use Qualimetrix\Core\Path\RelativePath;
+use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\LogicalClassPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
@@ -24,7 +25,7 @@ final class NamespaceMetricIndexTest extends TestCase
         $index = new NamespaceMetricIndex();
         $class = new SymbolInfo(MetricSubject::logicalClass(new LogicalClassPath(SymbolPath::forClass('App', 'Service'))), null, null);
         $callable = new SymbolInfo(
-            MetricSubject::declaration(new DeclarationPath(SymbolPath::forMethod('App', 'Service', 'run'), RelativePath::fromString('src/Service.php'), 100)),
+            MetricSubject::declaration(DeclarationPath::of(SymbolPath::forMethod('App', 'Service', 'run'), RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
             RelativePath::fromString('src/Service.php'),
             10,
         );
@@ -47,7 +48,7 @@ final class NamespaceMetricIndexTest extends TestCase
         $index = new NamespaceMetricIndex();
         $logicalClass = SymbolPath::forClass('App', 'Service');
         $exactClass = new SymbolInfo(
-            MetricSubject::declaration(new DeclarationPath($logicalClass, RelativePath::fromString('src/Service.php'), 10)),
+            MetricSubject::declaration(DeclarationPath::of($logicalClass, RelativePath::fromString('src/Service.php'), DeclarationOrdinal::fromRank(0))),
             RelativePath::fromString('src/Service.php'),
             2,
         );
