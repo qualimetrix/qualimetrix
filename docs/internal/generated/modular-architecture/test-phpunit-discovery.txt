@@ -407,7 +407,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellFindingTest::itRejectsInvalidEntries"missing method member"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellFindingTest::itRejectsInvalidEntries"missing subject kind"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellFindingTest::itRejectsInvalidEntries"negative collision ordinal"
- - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellFindingTest::itRejectsInvalidEntries"string source position"
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellFindingTest::itRejectsInvalidEntries"string collision ordinal"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellFindingTest::itRejectsInvalidEntries"unknown logical kind"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellFindingTest::itRejectsInvalidEntries"unknown subject kind"
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\CodeSmellVisitorBooleanArgumentTest::itDetectsBooleanArgumentSmells"arrow function with bool parameter"
@@ -501,6 +501,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeRuleTest::smellDetectedProducesViolation
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeSmellsTest::itDetectsDebugZvalDump
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DebugCodeSmellsTest::itRecognizesOutputCallsButNotReturnModeOrDebugApis
+ - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\DuplicateDeclarationWireSubjectTest::itTransportsTheOrdinalOfTheSecondDeclarationOfOneIdentity
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EmptyCatchRuleTest::disabledRuleReturnsNoViolations
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EmptyCatchRuleTest::nameAndDescriptionAreCorrect
  - Qualimetrix\Tests\Analysis\Evidence\CodeSmell\Unit\EmptyCatchRuleTest::noSmellsProducesNoViolations
@@ -2108,6 +2109,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itResetsDependenciesAndImportsWhenReusedForAnotherFile
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itReturnsDependencyModelOwnedLocationsForExtractedDependencies
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DependencyVisitorTest::itStillDetectsInstantiationInsideClosureBody
+ - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\DuplicateDeclarationEdgeSourceTest::itNumbersTheSecondDeclarationOfOneClassIdentityInItsEdges
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\Handler\TypeDependencyHelperTest::parentTypeHintDoesNotProduceDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\Handler\TypeDependencyHelperTest::selfInParameterTypeHintDoesNotProduceDependency
  - Qualimetrix\Tests\Analysis\Evidence\DependencyModel\Unit\Extraction\Handler\TypeDependencyHelperTest::selfInPropertyTypeHintDoesNotProduceDependency
@@ -2554,6 +2556,22 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesProjectSymbolCountEqualsLeafNsTotal
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesSymbolClassCountMatchesActual
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Aggregation\MetricInvariantTest::itVerifiesSymbolMethodCountMatchesActual
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itAnalysesIrregularNamespaceFormsWithoutFailing
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itAssignsTheSameNonZeroOrdinalInAWorker
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itDiscriminatesTwoDeclarationsOfOneLogicalIdentityByOrdinal
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itKeepsARealAcceptedFindingAcceptedWhenTextAboveItChanges
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itKeepsAnAnonymousClassMemberKeyWhenTextAboveItChanges
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itKeepsEveryKeyWhenTextAboveTheDeclarationsChanges
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itNumbersEachFileOnItsOwnAcrossWorkerCounts
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\DeclarationIdentityTest::itRenumbersAnAnonymousClassWhenAnotherIsDeclaredAboveIt
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\RatchetKeyGrammarTest::itFindsNoPositionInAnyDeclarationKeyOfTheRepositoryRatchet
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\RatchetKeyGrammarTest::itRejectsAKeyThatStillCarriesAPosition
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\RatchetKeyGrammarTest::itSplitsADeclarationKeyIntoItsFileAndItsOrdinal"anonymous class rank belongs to the logical part"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\RatchetKeyGrammarTest::itSplitsADeclarationKeyIntoItsFileAndItsOrdinal"both, with a declaration ordinal of its own"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\RatchetKeyGrammarTest::itSplitsADeclarationKeyIntoItsFileAndItsOrdinal"closure ordinal belongs to the logical part"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\RatchetKeyGrammarTest::itSplitsADeclarationKeyIntoItsFileAndItsOrdinal"logical part carrying an at sign"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\RatchetKeyGrammarTest::itSplitsADeclarationKeyIntoItsFileAndItsOrdinal"plain method"
+ - Qualimetrix\Tests\Analysis\Evidence\Measurement\Integration\Identity\RatchetKeyGrammarTest::itSplitsADeclarationKeyIntoItsFileAndItsOrdinal"second declaration of one identity"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\AggregationHelperTest::percentile5IsIncludedInAggregationStrategyEnum
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\AggregationHelperTest::percentile5ReturnsExpectedValue"100 values 1..100"
  - Qualimetrix\Tests\Analysis\Evidence\Measurement\Unit\Aggregation\AggregationHelperTest::percentile5ReturnsExpectedValue"MI-like distribution"
@@ -2954,7 +2972,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternFindingTest::itRejectsInvalidEntries"missing logical kind"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternFindingTest::itRejectsInvalidEntries"missing subject kind"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternFindingTest::itRejectsInvalidEntries"negative collision ordinal"
- - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternFindingTest::itRejectsInvalidEntries"string source position"
+ - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternFindingTest::itRejectsInvalidEntries"string collision ordinal"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternFindingTest::itRejectsInvalidEntries"unknown logical kind"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternFindingTest::itRejectsInvalidEntries"unknown subject kind"
  - Qualimetrix\Tests\Analysis\Evidence\Security\Unit\SecurityPatternVisitorTest::itDetectsCommandInjection"$_SERVER not dangerous"
@@ -3290,6 +3308,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itRespectsBoundaryThresholds"below warning"
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itReturnsEmptyWhenBelowThreshold
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\ClassCountRuleTest::itReturnsEmptyWhenDisabled
+ - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\DuplicateClassDeclarationTest::itNumbersTheSecondDeclarationOfOneClassIdentity
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itCountsComplexFile
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itCountsDocBlock
  - Qualimetrix\Tests\Analysis\Evidence\Size\Unit\LocCollectorTest::itCountsHashComment
@@ -5052,9 +5071,9 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAnUnsupportedVersionWrittenInTheCanonicalLayout
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsAnyOtherVersion
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsInvalidJson
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionElevenAndRequiresARegeneratedV12Baseline
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionFiveAsHistoricalAndRequiresManualV12Review
- - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionTenBeforeReadingEntriesAndGivesManualV12Guidance
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionElevenAndRequiresARegeneratedV13Baseline
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionFiveAsHistoricalAndRequiresManualV13Review
+ - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itRejectsVersionTenBeforeReadingEntriesAndGivesManualV13Guidance
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itSpendsTheSameNestingBudgetOnAnEntryAsTheWholeDocumentPath
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAMalformedSymbolBucketInert
  - Qualimetrix\Tests\Analysis\Policy\Baseline\Unit\BaselineLoaderTest::itTurnsAnEntryWhoseComponentsCarryTheKeySeparatorInert
@@ -5253,16 +5272,17 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Directive\InlineDirectivePolicyTest::itStillAccountsForARuleLeftEnabledByItsOptions
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itBindsNamedAndAnonymousCallablesToTheirDeclarationsAndLexicalOwners
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itFallsBackToTheNearestNamedClassOrFileForUnboundProperties
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itRejectsCallableMetadataThatOnlyDisagreesByOrdinalAtOneMethodPosition
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itRejectsClosureAndArrowMetadataAtOneClosurePosition
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itRejectsDifferentClassMetadataAtOneClassPosition
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itRejectsMethodAndFunctionMetadataAtOneMethodPosition
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itRejectsPropertyHookAndClassMetadataThatOnlyDisagreeByOrdinalAtOnePosition
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itRejectsPropertyHookAndMethodMetadataAtOneHookPosition
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itRetainsEveryCallableCollisionForDirectAndParameterBindings
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DeclarationControlBindingsTest::itRetainsPropertyHookAndClassCollisions
- - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itAppliesOneDirectControlToEveryOrdinalCollision
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\DuplicateClassControlBindingTest::itBindsEachClassDeclarationToItsOwnMethods
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itExtractsSourceControlsWithoutRunDeclarationBindings
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itKeepsDistinctControlScopesWhileCollapsingTrueDuplicates
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itKeepsPhysicalControlsAndBindsSymbolControlsAndMalformedThresholds
+ - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\Extraction\SourceControlExtractorTest::itRejectsSourceControlBindingWhenTwoOrdinalsClaimOnePhysicalPosition
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itAcceptsArbitraryOrdering
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itAcceptsNullsAsNoOpHalves
  - Qualimetrix\Tests\Analysis\Policy\Inline\Unit\IndependentAxisValidatorTest::itIgnoresErrorWasExplicitFlag
@@ -5432,6 +5452,7 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\MultiNamespaceAnalysisTest::itAnalyzesEveryNamespaceBlockWithoutLosingMetrics#2
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\MultiNamespaceAnalysisTest::itMergesCompleteMetricFamiliesForAStatementOnlyGlobalNamespace
  - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\MultiNamespaceAnalysisTest::itPreservesNamespaceContributionsAcrossTheWorkerWire
+ - Qualimetrix\Tests\Analysis\Run\Integration\Pipeline\TraversalPathAgreementTest::itGivesEdgeSourcesTheSameDeclarationPathOnBothPaths
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\CollectionOrchestratorTest::itCollectsDependenciesFromResults
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\CollectionOrchestratorTest::itCollectsMetricsFromFiles
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\CollectionOrchestratorTest::itConvertsUnexpectedSequentialExceptionsToTypedPerFileFailures
@@ -5456,6 +5477,8 @@ Available tests:
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\CollectionOrchestratorTest::itReportsProgressDuringCollection
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\CollectionOrchestratorTest::itRequiresExplicitProgressAndLoggerCollaborators
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\CollectionOrchestratorTest::itSelectsStrategyFreshOnEachCollectCall
+ - Qualimetrix\Tests\Analysis\Run\Unit\Collection\DeclarationNumberCollisionTest::itRejectsTwoCallableDeclarationsSharingOneKey
+ - Qualimetrix\Tests\Analysis\Run\Unit\Collection\DeclarationNumberCollisionTest::itRejectsTwoClassDeclarationsSharingOneKey
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessingResultTest::itCreatesFailureResult
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessingResultTest::itCreatesSuccessResult
  - Qualimetrix\Tests\Analysis\Run\Unit\Collection\FileProcessingResultTest::itCreatesSuccessResultWithClassMetrics
@@ -6239,10 +6262,18 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itAcceptsEveryExistingDeclarationSymbolType"function"
  - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itAcceptsEveryExistingDeclarationSymbolType"method"
  - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itBuildsAStableCanonicalIdentityAndAddsAnOrdinalOnlyForCollisions
- - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itRejectsANegativeStartPosition
+ - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itRejectsANegativeOrdinalRank
  - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itRejectsAnAggregateLogicalSymbol"file"
  - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itRejectsAnAggregateLogicalSymbol"namespace"
  - Qualimetrix\Tests\Unit\Core\Symbol\DeclarationPathTest::itRejectsAnAggregateLogicalSymbol"project"
+ - Qualimetrix\Tests\Unit\Core\Symbol\FileDeclarationIndexTest::itAnswersAnUnregisteredPairInsteadOfRejectingIt
+ - Qualimetrix\Tests\Unit\Core\Symbol\FileDeclarationIndexTest::itCountsEachKeySeparately
+ - Qualimetrix\Tests\Unit\Core\Symbol\FileDeclarationIndexTest::itKeepsAnAlreadyAnsweredRankWhenALaterDeclarationArrives
+ - Qualimetrix\Tests\Unit\Core\Symbol\FileDeclarationIndexTest::itNumbersUnnamedClassLikeDeclarationsAsOneFileWideGroup
+ - Qualimetrix\Tests\Unit\Core\Symbol\FileDeclarationIndexTest::itRanksPositionsOfOneKeyInSourceOrder
+ - Qualimetrix\Tests\Unit\Core\Symbol\FileDeclarationIndexTest::itRejectsANegativePosition
+ - Qualimetrix\Tests\Unit\Core\Symbol\FileDeclarationIndexTest::itRepeatsTheSameAnswerForARepeatedQuestion
+ - Qualimetrix\Tests\Unit\Core\Symbol\FileDeclarationIndexTest::itSeparatesUnnamedClassLikeDeclarationsFromEveryLogicalIdentity
  - Qualimetrix\Tests\Unit\Core\Symbol\LogicalClassPathTest::itRejectsACallableSymbol
  - Qualimetrix\Tests\Unit\Core\Symbol\LogicalClassPathTest::itWrapsOnlyAClassSymbol
  - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectCodecTest::itDecodesEveryEntryShapeWhileUsingTheContainerFile
@@ -6261,8 +6292,6 @@ Available tests:
  - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectCodecTest::itRejectsEveryRequiredRetainedBoolOrFloat"member-float"
  - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectCodecTest::itRejectsEveryRequiredRetainedBoolOrFloat"namespace-bool"
  - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectCodecTest::itRejectsEveryRequiredRetainedBoolOrFloat"namespace-float"
- - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectCodecTest::itRejectsEveryRequiredRetainedBoolOrFloat"startFilePos-bool"
- - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectCodecTest::itRejectsEveryRequiredRetainedBoolOrFloat"startFilePos-float"
  - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectCodecTest::itRejectsEveryRequiredRetainedBoolOrFloat"subjectKind-bool"
  - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectCodecTest::itRejectsEveryRequiredRetainedBoolOrFloat"subjectKind-float"
  - Qualimetrix\Tests\Unit\Core\Symbol\MetricSubjectCodecTest::itRejectsMissingUnknownAndWrongTypedComponents
