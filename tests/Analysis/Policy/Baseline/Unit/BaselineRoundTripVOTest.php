@@ -123,6 +123,59 @@ final class BaselineRoundTripVOTest extends TestCase
         self::assertSame([$symbol], $reloaded->subjectKeys());
     }
 
+    /**
+     * A read-then-write cycle is what `baseline:cleanup` and `baseline:update`
+     * do to a file nobody asked to change. It has to be a no-op on the bytes,
+     * or every such command produces a diff of its own.
+     */
+    #[Test]
+    public function itRewritesACanonicalFileByteForByte(): void
+    {
+        $path = $this->tempDir . '/baseline.json';
+        $root = AbsolutePath::fromString('/home/user/project');
+
+        $this->writer->write($this->severalSubjects(), $path, $root);
+        $first = (string) file_get_contents($path);
+
+        $this->writer->write($this->loader->load($path), $path, $root);
+
+        self::assertSame($first, (string) file_get_contents($path));
+    }
+
+    private function severalSubjects(): Baseline
+    {
+        return new Baseline(
+            generated: new DateTimeImmutable('2026-05-19T12:00:00+00:00'),
+            scope: ['src'],
+            entries: [
+                new BaselineEntry(
+                    new BaselineIdentity(
+                        'callable:App\Foo::bar',
+                        new ViolationChannel('complexity.cyclomatic', 'complexity.cyclomatic.callable'),
+                    ),
+                    [25],
+                    1,
+                ),
+                new BaselineEntry(
+                    new BaselineIdentity(
+                        'callable:App\Foo::bar',
+                        new ViolationChannel('complexity.cognitive', 'complexity.cognitive.callable'),
+                    ),
+                    [18],
+                    1,
+                ),
+                new BaselineEntry(
+                    new BaselineIdentity(
+                        'class:App\Legacy\Report',
+                        new ViolationChannel('code-smell.goto', 'code-smell.goto'),
+                    ),
+                    null,
+                    2,
+                ),
+            ],
+        );
+    }
+
     private function roundTrip(string ...$symbolKeys): Baseline
     {
         $entries = [];

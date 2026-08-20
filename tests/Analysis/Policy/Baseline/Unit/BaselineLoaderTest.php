@@ -6,16 +6,19 @@ namespace Qualimetrix\Tests\Analysis\Policy\Baseline\Unit;
 
 use DateTimeZone;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineEntryParser;
 use Qualimetrix\Analysis\Policy\Baseline\BaselineLoader;
+use Qualimetrix\Analysis\Policy\Baseline\CanonicalBaselineReader;
 use Qualimetrix\Analysis\Policy\Baseline\InertEntryReason;
 use Qualimetrix\Tests\Analysis\Finding\Support\StubChannelDeclarationRegistry;
 use RuntimeException;
 
 #[CoversClass(BaselineLoader::class)]
+#[CoversClass(CanonicalBaselineReader::class)]
 final class BaselineLoaderTest extends TestCase
 {
     private BaselineLoader $loader;
@@ -404,9 +407,364 @@ final class BaselineLoaderTest extends TestCase
         self::assertSame([], $baseline->inertEntries);
     }
 
-    private function loadJson(string $json): \Qualimetrix\Analysis\Policy\Baseline\Baseline
+    /**
+     * Pins which route each file takes. Without this, both fast-path
+     * assertions would still pass with the fast path deleted, because the
+     * fallback answers everything.
+     */
+    #[Test]
+    public function itRecognisesTheCanonicalLayoutAndDeclinesAnyOther(): void
     {
-        $path = $this->tempDir . '/baseline.json';
+        $reader = new CanonicalBaselineReader(
+            new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()),
+        );
+
+        $canonical = self::canonicalDocument();
+        $reflowed = (string) json_encode(
+            json_decode($canonical, true, 512, \JSON_THROW_ON_ERROR),
+            \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES,
+        );
+
+        self::assertNotNull($reader->read($this->put($canonical, 'canonical.json')));
+        self::assertNull($reader->read($this->put($reflowed, 'reflowed.json')));
+        self::assertNull($reader->read($this->tempDir . '/absent.json'));
+    }
+
+    private function put(string $json, string $name): string
+    {
+        $path = $this->tempDir . '/' . $name;
+        file_put_contents($path, $json);
+
+        return $path;
+    }
+
+    /**
+     * The canonical layout and the same document reformatted are read by two
+     * different routes; a user who reflows the file by hand must still get the
+     * baseline the writer meant.
+     */
+    #[Test]
+    public function itReadsACanonicalFileAndAReflowedCopyOfItIdentically(): void
+    {
+        $canonical = self::canonicalDocument();
+
+        $fast = $this->loadJson($canonical, 'canonical.json');
+        $reflowed = $this->loadJson(
+            (string) json_encode(
+                json_decode($canonical, true, 512, \JSON_THROW_ON_ERROR),
+                \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES,
+            ),
+            'reflowed.json',
+        );
+
+        self::assertSame(
+            self::describe($fast),
+            self::describe($reflowed),
+            'the reflowed copy took the fallback route and must still mean the same baseline',
+        );
+    }
+
+    #[Test]
+    public function itHashesTheFileTheSameWayOnEitherRoute(): void
+    {
+        $canonical = self::canonicalDocument();
+
+        $loaded = $this->loadJson($canonical, 'canonical.json');
+
+        self::assertSame(hash('sha256', $canonical), $loaded->sourceContentHash);
+    }
+
+    #[Test]
+    public function itReadsACanonicalFileWithNoEntries(): void
+    {
+        $baseline = $this->loadJson(
+            "{\n  \"version\": 11,\n  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
+            . "  \"scope\": [\"src\"],\n  \"entries\": {}\n}\n",
+            'empty.json',
+        );
+
+        self::assertSame([], $baseline->entries);
+        self::assertSame([], $baseline->inertEntries);
+        self::assertSame(['src'], $baseline->scope);
+    }
+
+    /**
+     * A canonical envelope is still checked: recognising the layout must not
+     * become a way past the version gate.
+     */
+    #[Test]
+    public function itRejectsAnUnsupportedVersionWrittenInTheCanonicalLayout(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Unsupported baseline version: 4');
+
+        $this->loadJson(
+            "{\n  \"version\": 4,\n  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
+            . "  \"scope\": [\"src\"],\n  \"entries\": {}\n}\n",
+            'v4.json',
+        );
+    }
+
+    /**
+     * A comma between two subject blocks is mandatory, and `json_decode`
+     * rejects the document without it. Reading it anyway would apply ceilings
+     * out of a file the loader is supposed to refuse outright.
+     */
+    #[Test]
+    public function itDeclinesASubjectBlockClosedWithoutACommaBeforeTheNext(): void
+    {
+        $broken = str_replace("    ],\n", "    ]\n", self::canonicalDocument());
+
+        self::assertNull(json_decode($broken, true), 'the fixture must be invalid JSON, or it proves nothing');
+        self::assertNull($this->reader()->read($this->put($broken, 'no-comma.json')));
+    }
+
+    /**
+     * The mirror case, and the everyday one: deleting the last subject block
+     * by hand leaves the block before it closed with a comma and nothing after
+     * it to separate.
+     */
+    #[Test]
+    public function itDeclinesATrailingCommaAfterTheLastSubjectBlock(): void
+    {
+        $broken = self::replaceLast("    ]\n", "    ],\n", self::canonicalDocument());
+
+        self::assertNull(json_decode($broken, true), 'the fixture must be invalid JSON, or it proves nothing');
+        self::assertNull($this->reader()->read($this->put($broken, 'extra-comma.json')));
+    }
+
+    /**
+     * A subject block has to end on its own closing line. Accepting whatever
+     * line happens to follow the entries would swallow a truncated block.
+     */
+    #[Test]
+    public function itDeclinesASubjectBlockClosedByAnythingElse(): void
+    {
+        $broken = str_replace("    ],\n", "    } ,\n", self::canonicalDocument());
+
+        self::assertNull($this->reader()->read($this->put($broken, 'bad-closer.json')));
+    }
+
+    /**
+     * Bytes after the closing brace belong to a different document. Accepting
+     * them would mean answering about a file only half of which was read.
+     */
+    #[Test]
+    public function itDeclinesBytesAfterTheClosingBrace(): void
+    {
+        foreach (['trailing-line.json' => "{}\n", 'trailing-fragment.json' => 'junk'] as $name => $suffix) {
+            $broken = self::canonicalDocument() . $suffix;
+
+            self::assertNull(json_decode($broken, true), 'the fixture must be invalid JSON, or it proves nothing');
+            self::assertNull($this->reader()->read($this->put($broken, $name)), $name);
+        }
+    }
+
+    /**
+     * The divergence the guard exists for: `json_decode` keeps the last of two
+     * identical keys and yields one entry, while a streaming reader that kept
+     * both would yield two — and the second one suppresses.
+     */
+    #[Test]
+    public function itDeclinesARepeatedSubjectKeyTheWholeDocumentPathWouldCollapse(): void
+    {
+        $entry = '{"channel":"complexity.cyclomatic#complexity.cyclomatic.callable","magnitudes":[%d],"count":1}';
+
+        $repeated = "{\n"
+            . "  \"version\": 11,\n"
+            . "  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
+            . "  \"scope\": [\"src\"],\n"
+            . "  \"entries\": {\n"
+            . "    \"callable:App\\\\OrderService::calculate\": [\n"
+            . '      ' . \sprintf($entry, 70) . "\n"
+            . "    ],\n"
+            . "    \"callable:App\\\\OrderService::calculate\": [\n"
+            . '      ' . \sprintf($entry, 90) . "\n"
+            . "    ]\n"
+            . "  }\n"
+            . "}\n";
+
+        $path = $this->put($repeated, 'repeated-subject.json');
+
+        self::assertNull($this->reader()->read($path));
+
+        $loaded = $this->loader->load($path);
+
+        self::assertCount(1, $loaded->entries, 'the whole-document path keeps one of the two');
+        self::assertSame(
+            [90.0],
+            $loaded->entries[0]->toArray()['magnitudes'] ?? null,
+            'and it keeps the last',
+        );
+    }
+
+    /**
+     * Unlike a repeated subject key, a repeated envelope field would not make
+     * the two paths disagree — both would keep the last. The guard is here so
+     * the reader never has to be the one picking a winner, and it is pinned so
+     * that intent cannot be dropped silently.
+     */
+    #[Test]
+    public function itDeclinesARepeatedEnvelopeField(): void
+    {
+        $repeated = str_replace(
+            "  \"scope\": [\"src\",\"tests\"],\n",
+            "  \"scope\": [\"src\"],\n  \"scope\": [\"src\",\"tests\"],\n",
+            self::canonicalDocument(),
+        );
+
+        $path = $this->put($repeated, 'repeated-envelope.json');
+
+        self::assertNull($this->reader()->read($path));
+        self::assertSame(['src', 'tests'], $this->loader->load($path)->scope);
+    }
+
+    /**
+     * An entry decoded on its own starts counting nesting from zero, while the
+     * same entry inside the document is already three containers deep. Equal
+     * budgets there would mean one path reading what the other refuses.
+     */
+    #[Test]
+    public function itSpendsTheSameNestingBudgetOnAnEntryAsTheWholeDocumentPath(): void
+    {
+        foreach ([509 => 'accepted', 510 => 'declined'] as $nesting => $expected) {
+            $document = self::deepEntryDocument($nesting);
+            $path = $this->put($document, 'deep-' . $nesting . '.json');
+
+            $wholeDocument = json_decode($document, true) !== null;
+            $fastPath = $this->reader()->read($path) !== null;
+
+            self::assertSame($expected === 'accepted', $wholeDocument, "whole document, nesting {$nesting}");
+            self::assertSame($wholeDocument, $fastPath, "the two paths must agree at nesting {$nesting}");
+        }
+    }
+
+    /**
+     * Every remaining shape the recogniser must decline. Each case breaks one
+     * distinct expectation, so a guard that stops holding takes its case down
+     * with it.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function provideUnrecognisedShapes(): iterable
+    {
+        $canonical = self::canonicalDocument();
+
+        yield 'document not opened on its own line' => ['{"version": 11}'];
+        yield 'document opened with a bracket' => ["[\n" . substr($canonical, 2)];
+        yield 'envelope field indented four spaces' => [str_replace("  \"version\"", "    \"version\"", $canonical)];
+        yield 'envelope field without its comma' => [str_replace("  \"version\": 11,\n", "  \"version\": 11\n", $canonical)];
+        yield 'envelope value that is not JSON' => [str_replace('"scope": ["src","tests"]', '"scope": [src]', $canonical)];
+        yield 'subject key indented two spaces' => [str_replace("    \"class:", "  \"class:", $canonical)];
+        yield 'subject key that is not a JSON string' => [str_replace("    \"class:App\\\\Legacy\\\\Report\":", '    class:App\Legacy\Report:', $canonical)];
+        yield 'entry indented four spaces' => [str_replace("      {\"channel\":\"complexity.wmc", "    {\"channel\":\"complexity.wmc", $canonical)];
+        // Tabs are legal JSON whitespace, so this one stays a valid document
+        // and is declined purely for not being the layout.
+        yield 'entry indented with tabs' => [str_replace("      {\"channel\":\"complexity.wmc", "\t\t\t\t\t\t{\"channel\":\"complexity.wmc", $canonical)];
+        yield 'entry line that is not JSON' => [str_replace('{"channel":"complexity.wmc#complexity.wmc","magnitudes":[70],"count":1}', '{"channel": unquoted}', $canonical)];
+        yield 'entries object never closed' => [str_replace("  }\n}\n", "}\n", $canonical)];
+        yield 'last line without its newline' => [rtrim($canonical, "\n")];
+    }
+
+    #[Test]
+    #[DataProvider('provideUnrecognisedShapes')]
+    public function itDeclinesEveryShapeItDoesNotRecognise(string $document): void
+    {
+        self::assertNull($this->reader()->read($this->put($document, 'shape.json')));
+    }
+
+    private function reader(): CanonicalBaselineReader
+    {
+        return new CanonicalBaselineReader(
+            new BaselineEntryParser(StubChannelDeclarationRegistry::withDefaults()),
+        );
+    }
+
+    /**
+     * An entry whose own nesting is exactly $nesting containers deep, alone in
+     * an otherwise minimal canonical document.
+     */
+    private static function deepEntryDocument(int $nesting): string
+    {
+        $magnitudes = '1';
+        for ($level = 0; $level < $nesting - 2; $level++) {
+            $magnitudes = '[' . $magnitudes . ']';
+        }
+
+        return "{\n"
+            . "  \"version\": 11,\n"
+            . "  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
+            . "  \"scope\": [\"src\"],\n"
+            . "  \"entries\": {\n"
+            . "    \"class:App\\\\Deep\": [\n"
+            . "      {\"channel\":\"complexity.wmc#complexity.wmc\",\"count\":1,\"magnitudes\":" . $magnitudes . "}\n"
+            . "    ]\n"
+            . "  }\n"
+            . "}\n";
+    }
+
+    private static function replaceLast(string $search, string $replace, string $subject): string
+    {
+        $at = strrpos($subject, $search);
+
+        return $at === false ? $subject : substr_replace($subject, $replace, $at, \strlen($search));
+    }
+
+    /**
+     * Two subjects, several entries under one of them, and a line the parser
+     * cannot make an entry of — the shapes a subject block can take.
+     */
+    private static function canonicalDocument(): string
+    {
+        return "{\n"
+            . "  \"version\": 11,\n"
+            . "  \"generated\": \"2026-08-05T12:00:00+03:00\",\n"
+            . "  \"scope\": [\"src\",\"tests\"],\n"
+            . "  \"entries\": {\n"
+            . "    \"callable:App\\\\OrderService::calculate\": [\n"
+            . "      {\"channel\":\"complexity.cognitive#complexity.cognitive.callable\",\"magnitudes\":[18],\"count\":1},\n"
+            . "      {\"channel\":\"complexity.cyclomatic#complexity.cyclomatic.callable\",\"magnitudes\":[25],\"count\":1},\n"
+            . "      {\"channel\":\"nonsense.not-a-channel#nonsense.not-a-channel\",\"count\":1}\n"
+            . "    ],\n"
+            . "    \"class:App\\\\Legacy\\\\Report\": [\n"
+            . "      {\"channel\":\"complexity.wmc#complexity.wmc\",\"magnitudes\":[70],\"count\":1}\n"
+            . "    ]\n"
+            . "  }\n"
+            . "}\n";
+    }
+
+    /**
+     * Observable state rather than counts: two paths agreeing on how many
+     * entries there are says nothing about them being the same entries.
+     *
+     * @return list<string>
+     */
+    private static function describe(\Qualimetrix\Analysis\Policy\Baseline\Baseline $baseline): array
+    {
+        $described = [
+            'generated=' . $baseline->generated->format('c'),
+            'scope=' . implode(',', $baseline->scope),
+        ];
+
+        foreach ($baseline->entries as $entry) {
+            $described[] = 'entry ' . $entry->identity->key()
+                . ' ' . (string) json_encode($entry->toArray(), \JSON_THROW_ON_ERROR);
+        }
+
+        foreach ($baseline->inertEntries as $entry) {
+            $described[] = 'inert ' . $entry->subjectKey . ' ' . $entry->reason->name
+                . ' ' . $entry->detail
+                . ' ' . (string) json_encode($entry->raw, \JSON_THROW_ON_ERROR);
+        }
+
+        return $described;
+    }
+
+    private function loadJson(
+        string $json,
+        string $name = 'baseline.json',
+    ): \Qualimetrix\Analysis\Policy\Baseline\Baseline {
+        $path = $this->tempDir . '/' . $name;
         file_put_contents($path, $json);
 
         return $this->loader->load($path);

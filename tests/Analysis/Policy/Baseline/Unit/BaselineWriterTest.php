@@ -628,6 +628,55 @@ final class BaselineWriterTest extends TestCase
         self::assertSame(['.'], $data['scope']);
     }
 
+    #[Test]
+    public function itWritesOneLinePerEntryInsideOneValidJsonDocument(): void
+    {
+        $path = $this->write($this->baseline());
+        $content = (string) file_get_contents($path);
+
+        self::assertIsArray(json_decode($content, true, 512, \JSON_THROW_ON_ERROR));
+
+        $entryLines = array_values(array_filter(
+            explode("\n", $content),
+            static fn(string $line): bool => str_starts_with($line, '      {'),
+        ));
+
+        self::assertCount(3, $entryLines);
+
+        foreach ($entryLines as $line) {
+            self::assertIsArray(json_decode(rtrim($line, ','), true, 512, \JSON_THROW_ON_ERROR));
+        }
+    }
+
+    #[Test]
+    public function itIndentsTheCanonicalLayoutTwoSpacesPerLevel(): void
+    {
+        $path = $this->write($this->baseline());
+        $lines = explode("\n", (string) file_get_contents($path));
+
+        self::assertSame('{', $lines[0]);
+        self::assertSame('  "version": 11,', $lines[1]);
+        self::assertSame('  "scope": ["src"],', $lines[3]);
+        self::assertSame('  "entries": {', $lines[4]);
+        self::assertSame('    "callable:App\\\\Foo::bar": [', $lines[5]);
+        self::assertSame('    ],', $lines[7]);
+    }
+
+    /**
+     * A file the loader read and the writer wrote back unchanged must be the
+     * same file: anything else makes an unrelated command produce a diff.
+     */
+    #[Test]
+    public function itRewritesAFileItJustReadWithoutMovingAByte(): void
+    {
+        $path = $this->write($this->baseline());
+        $first = (string) file_get_contents($path);
+
+        $this->writer->write($this->loader->load($path), $path, $this->projectRoot);
+
+        self::assertSame($first, (string) file_get_contents($path));
+    }
+
     private function write(Baseline $baseline, string $name = 'baseline.json'): string
     {
         $path = $this->tempDir . '/' . $name;
