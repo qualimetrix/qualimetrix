@@ -78,7 +78,7 @@ Qualimetrix\Analysis\Finding\Contract\ChannelDeclaration	Analysis.Finding	34	14
 Qualimetrix\Analysis\Finding\Contract\ChannelDeclarationRegistryInterface	Analysis.Finding	10	4
 Qualimetrix\Analysis\Finding\Contract\ChannelIdentityInterface	Analysis.Finding	7	3
 Qualimetrix\Analysis\Finding\Contract\ChannelPresentation	Analysis.Finding	1	1
-Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface	Analysis.Finding	2	2
+Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface	Analysis.Finding	3	3
 Qualimetrix\Analysis\Finding\Contract\ChannelShape	Analysis.Finding	5	2
 Qualimetrix\Analysis\Finding\Contract\ChannelUniverseInterface	Analysis.Finding	5	3
 Qualimetrix\Analysis\Finding\Contract\Configuration\FindingCliOverrides	Analysis.Finding	1	1

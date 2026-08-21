@@ -18,6 +18,7 @@ use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support\StubChannelPresentation;
 
 /**
  * Validates {@see SarifFormatter} output against the official SARIF 2.1.0
@@ -36,7 +37,7 @@ final class SarifSchemaValidationTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->formatter = new SarifFormatter(new SarifRuleCollector());
+        $this->formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
     }
 
     #[Test]

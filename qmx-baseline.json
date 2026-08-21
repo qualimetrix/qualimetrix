@@ -645,7 +645,7 @@
       {"channel":"computed.health#health.cohesion","magnitudes":[34]}
     ],
     "ns:Qualimetrix\\Reporting\\Formatter\\Sarif": [
-      {"channel":"computed.health#health.cohesion","magnitudes":[40]}
+      {"channel":"computed.health#health.cohesion","magnitudes":[46.2]}
     ],
     "project:": [
       {"channel":"duplication.code-duplication#duplication.code-duplication","occurrence":"1eefcbbb02d84e4e","magnitudes":[16]},

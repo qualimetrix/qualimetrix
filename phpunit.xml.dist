@@ -67,6 +67,7 @@
             <directory>tests/Analysis/Evidence/Design/Integration</directory>
             <directory>tests/Analysis/Evidence/ComputedMetrics/Integration</directory>
             <directory>tests/Analysis/Run/Integration</directory>
+            <directory>tests/Reporting/Formatter/Sarif/Integration</directory>
         </testsuite>
         <testsuite name="Functional">
             <directory>tests/Functional</directory>

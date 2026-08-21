@@ -6114,6 +6114,8 @@ Available tests:
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest::itSurvivesAReportNarrowedToAGitScopeContainingNothing
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest::itSurvivesNamespaceExclusionCoveringTheNamespace
  - Qualimetrix\Tests\Reporting\FindingProjection\Unit\ProjectScopedChannelProjectionTest::itSurvivesPathExclusionCoveringTheFile
+ - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::anUnknownCodeKeepsTheHumanisedFallbackAndTheRepositoryUrl
+ - Qualimetrix\Tests\Reporting\Formatter\Sarif\Integration\SarifRuleDescriptorCoverageTest::everyChannelOfTheRealUniverseGetsItsProducersOwnDescriptorAndAWorkingHelpUri
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsEveryRequestFieldToDotProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itForwardsNamespaceFiltersToJsonProjection
  - Qualimetrix\Tests\Reporting\GraphProjection\Unit\DependencyGraphProjectorTest::itProjectsSupportedFormats"dot"
@@ -7158,17 +7160,19 @@ Available tests:
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itCollectsRulesFromEmptyViolations
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itCollectsRulesWithCorrectStructure
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itDeduplicatesRulesByViolationCode
- - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFallsBackForUnknownRuleDescription
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFallsBackForACodeNoChannelCarries
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFallsBackHelpUriWhenNoDot
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFallsBackToRepositoryUrlForHelpUri
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFallsBackWhenThePresentationResolvesToNull
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFormatsRuleNameConvertingDotSeparated
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFormatsRuleNameConvertingKebabCase
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itFormatsRuleNameHandlingSingleWord
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itGivesSubCodesOfOneRuleDistinctIdsAndTheSameDescription
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itMapsErrorLevel
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itMapsWarningLevel
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itPromotesRulesToErrorSeverity
- - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itReturnsDescriptionsForKnownRules
- - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itReturnsHelpUriForKnownCategories
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itReturnsDescriptionsForKnownChannelsFromTheRealPresentation
+ - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifRuleCollectorTest::itReturnsHelpUriForKnownChannelsFromTheRealPresentation
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifSchemaValidationTest::emptyReport_conformsToSarif2_1_0Schema
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifSchemaValidationTest::itConformsToTheSarifSchemaWhenAReportCarriesAMeasuredBreach
  - Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\SarifSchemaValidationTest::reportWithMixedSeverityViolations_conformsToSarif2_1_0Schema

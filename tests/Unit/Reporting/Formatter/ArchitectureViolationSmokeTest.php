@@ -54,6 +54,7 @@ use Qualimetrix\Reporting\Health\HealthHintProjector;
 use Qualimetrix\Reporting\Health\HealthScoreResolver;
 use Qualimetrix\Reporting\Report;
 use Qualimetrix\Reporting\ReportBuilder;
+use Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif\Support\StubChannelPresentation;
 
 /**
  * Smoke coverage for every output formatter against the full set of
@@ -253,7 +254,7 @@ final class ArchitectureViolationSmokeTest extends TestCase
     #[Test]
     public function itRendersArchitectureViolationsViaSarifFormatter(): void
     {
-        $formatter = new SarifFormatter(new SarifRuleCollector());
+        $formatter = new SarifFormatter(new SarifRuleCollector(new StubChannelPresentation()));
         $report = $this->buildArchitectureReport();
 
         $output = $formatter->format($report, new FormatterContext());

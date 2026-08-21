@@ -7,13 +7,25 @@ namespace Qualimetrix\Tests\Unit\Reporting\Formatter\Sarif;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 use Qualimetrix\Core\Path\RelativePath;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 
+/**
+ * The old version of this test asserted the collector's `match` table
+ * against violation codes the product never emits (`violationCode:
+ * 'complexity.cyclomatic'` — the product emits `complexity.cyclomatic.callable`
+ * / `.class`), so it validated the table against itself. This version drives
+ * the collector against `complexity.cyclomatic.callable`, a code the real
+ * container's {@see ChannelPresentationInterface} actually resolves — see
+ * `docs/internal/plans/sarif-channel-descriptions.md`, package P4, for the
+ * broader guard that sweeps every channel of the real universe.
+ */
 #[CoversClass(SarifRuleCollector::class)]
 final class SarifRuleCollectorTest extends TestCase
 {
@@ -21,7 +33,10 @@ final class SarifRuleCollectorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->collector = new SarifRuleCollector();
+        $presentation = (new ContainerFactory())->create()->get(ChannelPresentationInterface::class);
+        \assert($presentation instanceof ChannelPresentationInterface);
+
+        $this->collector = new SarifRuleCollector($presentation);
     }
 
     // --- collectRules ---
@@ -39,7 +54,7 @@ final class SarifRuleCollectorTest extends TestCase
             location: new Location(RelativePath::fromString('src/Service.php'), 10),
             symbolPath: SymbolPath::forClass('App', 'Service'),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -49,12 +64,12 @@ final class SarifRuleCollectorTest extends TestCase
         self::assertCount(1, $rules);
         $rule = $rules[0];
 
-        self::assertSame('complexity.cyclomatic', $rule['id']);
-        self::assertSame('Complexity Cyclomatic', $rule['name']);
+        self::assertSame('complexity.cyclomatic.callable', $rule['id']);
+        self::assertSame('Complexity Cyclomatic Callable', $rule['name']);
         self::assertArrayHasKey('text', $rule['shortDescription']);
-        self::assertSame('Code complexity exceeds threshold', $rule['shortDescription']['text']);
+        self::assertSame('Checks cyclomatic complexity at method and class levels', $rule['shortDescription']['text']);
         self::assertArrayHasKey('text', $rule['fullDescription']);
-        self::assertStringStartsWith('https://', $rule['helpUri']);
+        self::assertSame('https://qualimetrix.dev/rules/complexity/', $rule['helpUri']);
         self::assertSame('warning', $rule['defaultConfiguration']['level']);
     }
 
@@ -65,7 +80,7 @@ final class SarifRuleCollectorTest extends TestCase
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Too complex',
             severity: Severity::Warning,
         );
@@ -74,7 +89,7 @@ final class SarifRuleCollectorTest extends TestCase
             location: new Location(RelativePath::fromString('b.php'), 5),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Also too complex',
             severity: Severity::Warning,
         );
@@ -91,7 +106,7 @@ final class SarifRuleCollectorTest extends TestCase
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Complex',
             severity: Severity::Warning,
         );
@@ -99,9 +114,9 @@ final class SarifRuleCollectorTest extends TestCase
         $v2 = self::violation(
             location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
-            ruleName: 'size.loc',
-            violationCode: 'size.loc',
-            message: 'Too long',
+            ruleName: 'size.class-count',
+            violationCode: 'size.class-count',
+            message: 'Too many classes',
             severity: Severity::Error,
         );
 
@@ -109,8 +124,8 @@ final class SarifRuleCollectorTest extends TestCase
 
         self::assertCount(2, $rules);
         $ids = array_column($rules, 'id');
-        self::assertContains('complexity.cyclomatic', $ids);
-        self::assertContains('size.loc', $ids);
+        self::assertContains('complexity.cyclomatic.callable', $ids);
+        self::assertContains('size.class-count', $ids);
     }
 
     #[Test]
@@ -120,7 +135,7 @@ final class SarifRuleCollectorTest extends TestCase
             location: new Location(RelativePath::fromString('a.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('a.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Complex',
             severity: Severity::Warning,
         );
@@ -129,7 +144,7 @@ final class SarifRuleCollectorTest extends TestCase
             location: new Location(RelativePath::fromString('b.php'), 1),
             symbolPath: SymbolPath::forFile(RelativePath::fromString('b.php')),
             ruleName: 'complexity.cyclomatic',
-            violationCode: 'complexity.cyclomatic',
+            violationCode: 'complexity.cyclomatic.callable',
             message: 'Very complex',
             severity: Severity::Error,
         );
@@ -138,6 +153,40 @@ final class SarifRuleCollectorTest extends TestCase
 
         self::assertCount(1, $rules);
         self::assertSame('error', $rules[0]['defaultConfiguration']['level']);
+    }
+
+    #[Test]
+    public function itGivesSubCodesOfOneRuleDistinctIdsAndTheSameDescription(): void
+    {
+        $namespaceLevel = self::violation(
+            location: new Location(RelativePath::fromString('a.php'), 1),
+            symbolPath: SymbolPath::forNamespace('App'),
+            ruleName: 'coupling.cbo',
+            violationCode: 'coupling.cbo.namespace',
+            message: 'Too coupled',
+            severity: Severity::Warning,
+        );
+
+        $classLevel = self::violation(
+            location: new Location(RelativePath::fromString('a.php'), 1),
+            symbolPath: SymbolPath::forClass('App', 'Service'),
+            ruleName: 'coupling.cbo',
+            violationCode: 'coupling.cbo.class',
+            message: 'Too coupled',
+            severity: Severity::Warning,
+        );
+
+        $rules = $this->collector->collectRules([$namespaceLevel, $classLevel]);
+
+        self::assertCount(2, $rules);
+        $byId = array_column($rules, null, 'id');
+        self::assertArrayHasKey('coupling.cbo.namespace', $byId);
+        self::assertArrayHasKey('coupling.cbo.class', $byId);
+        self::assertNotSame($byId['coupling.cbo.namespace']['id'], $byId['coupling.cbo.class']['id']);
+        self::assertSame(
+            $byId['coupling.cbo.namespace']['shortDescription']['text'],
+            $byId['coupling.cbo.class']['shortDescription']['text'],
+        );
     }
 
     // --- formatRuleName ---
@@ -163,35 +212,65 @@ final class SarifRuleCollectorTest extends TestCase
     // --- getRuleDescription ---
 
     #[Test]
-    public function itReturnsDescriptionsForKnownRules(): void
+    public function itReturnsDescriptionsForKnownChannelsFromTheRealPresentation(): void
     {
-        self::assertSame('Code complexity exceeds threshold', $this->collector->getRuleDescription('complexity.cyclomatic'));
-        self::assertSame('Code complexity exceeds threshold', $this->collector->getRuleDescription('complexity.cognitive'));
-        self::assertSame('Maintainability index below threshold', $this->collector->getRuleDescription('maintainability.index'));
-        self::assertSame('Circular dependency detected', $this->collector->getRuleDescription('architecture.circular-dependency'));
-        self::assertSame('Duplicated code block detected', $this->collector->getRuleDescription('duplication.code-duplication'));
-        self::assertSame('Too many parameters', $this->collector->getRuleDescription('size.long-parameter-list'));
-        self::assertSame('Constructor has too many dependencies', $this->collector->getRuleDescription('code-smell.constructor-overinjection'));
+        self::assertSame(
+            'Checks cyclomatic complexity at method and class levels',
+            $this->collector->getRuleDescription('complexity.cyclomatic.callable'),
+        );
+        self::assertSame(
+            'Detects circular dependencies between classes',
+            $this->collector->getRuleDescription('architecture.circular-dependency'),
+        );
+        self::assertSame(
+            'Detects duplicated code blocks',
+            $this->collector->getRuleDescription('duplication.code-duplication'),
+        );
+        self::assertSame(
+            'Checks number of constructor parameters (dependencies)',
+            $this->collector->getRuleDescription('code-smell.constructor-overinjection'),
+        );
     }
 
     #[Test]
-    public function itFallsBackForUnknownRuleDescription(): void
+    public function itFallsBackForACodeNoChannelCarries(): void
     {
         $description = $this->collector->getRuleDescription('custom.my-rule');
         self::assertSame('Custom my rule', $description);
     }
 
+    /**
+     * Demonstrates the fallback's own discriminating power (plan P4 DoD): an
+     * empty `ComputedMetricDefinition::$description` resolves to `null` per
+     * {@see ChannelPresentationInterface}'s own contract — indistinguishable
+     * here from "no channel at all" — so the collector must fall back rather
+     * than surface a blank string as if it were a legitimate answer.
+     */
+    #[Test]
+    public function itFallsBackWhenThePresentationResolvesToNull(): void
+    {
+        $blank = self::createStub(ChannelPresentationInterface::class);
+        $blank->method('presentationFor')->willReturn(null);
+
+        $collector = new SarifRuleCollector($blank);
+
+        self::assertSame('Health cohesion', $collector->getRuleDescription('health.cohesion'));
+        self::assertSame(SarifRuleCollector::INFORMATION_URI, $collector->getHelpUri('health.cohesion'));
+    }
+
     // --- getHelpUri ---
 
     #[Test]
-    public function itReturnsHelpUriForKnownCategories(): void
+    public function itReturnsHelpUriForKnownChannelsFromTheRealPresentation(): void
     {
-        self::assertStringContainsString('complexity/', $this->collector->getHelpUri('complexity.cyclomatic'));
-        self::assertStringContainsString('coupling/', $this->collector->getHelpUri('coupling.cbo'));
-        self::assertStringContainsString('cohesion/', $this->collector->getHelpUri('cohesion.tcc'));
-        self::assertStringContainsString('code-smell/', $this->collector->getHelpUri('code-smell.empty-catch'));
-        self::assertStringContainsString('security/', $this->collector->getHelpUri('security.sql-injection'));
-        self::assertStringContainsString('architecture/', $this->collector->getHelpUri('duplication.code-duplication'));
+        self::assertSame('https://qualimetrix.dev/rules/complexity/', $this->collector->getHelpUri('complexity.cyclomatic.callable'));
+        self::assertSame('https://qualimetrix.dev/rules/coupling/', $this->collector->getHelpUri('coupling.cbo.class'));
+        self::assertSame('https://qualimetrix.dev/rules/cohesion/', $this->collector->getHelpUri('cohesion.lcom'));
+        self::assertSame('https://qualimetrix.dev/rules/code-smell/', $this->collector->getHelpUri('code-smell.empty-catch'));
+        self::assertSame('https://qualimetrix.dev/rules/security/', $this->collector->getHelpUri('security.sql-injection'));
+        // The historical defect this plan removes: `duplication.*` no longer
+        // resolves to the `architecture/` page.
+        self::assertSame('https://qualimetrix.dev/rules/duplication/', $this->collector->getHelpUri('duplication.code-duplication'));
     }
 
     #[Test]
@@ -271,5 +350,4 @@ final class SarifRuleCollectorTest extends TestCase
             occurrenceKey: $occurrenceKey,
         );
     }
-
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Qualimetrix\Reporting\Formatter\Sarif;
 
+use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
 
@@ -11,7 +12,13 @@ use Qualimetrix\Analysis\Finding\Contract\Violation;
  * Collects and describes SARIF rule entries from a set of violations.
  *
  * Builds the rules array for the SARIF tool driver, including human-readable
- * names, descriptions, and documentation URLs derived from rule categories.
+ * names, descriptions, and documentation URLs. Both the description and the
+ * `helpUri` are derived from the channel's producing rule via
+ * {@see ChannelPresentationInterface} — see
+ * `docs/internal/plans/sarif-channel-descriptions.md` ("Decision") for why
+ * this class holds no table of its own: the two tables it used to carry
+ * (`getRuleDescription()`'s `match`, `CATEGORY_DOCS_MAP`) had already drifted
+ * from the rules they were copying.
  */
 final class SarifRuleCollector
 {
@@ -25,20 +32,9 @@ final class SarifRuleCollector
      */
     private const DOCS_BASE_URI = 'https://qualimetrix.dev/';
 
-    /** @var array<string, string> Maps rule category prefix to its docs page path segment, relative to {@see DOCS_BASE_URI} */
-    private const CATEGORY_DOCS_MAP = [
-        'complexity' => 'rules/complexity/',
-        'coupling' => 'rules/coupling/',
-        'cohesion' => 'rules/cohesion/',
-        'design' => 'rules/design/',
-        'maintainability' => 'rules/maintainability/',
-        'size' => 'rules/size/',
-        'code-smell' => 'rules/code-smell/',
-        'architecture' => 'rules/architecture/',
-        'security' => 'rules/security/',
-        'duplication' => 'rules/architecture/',
-        'computed' => 'rules/maintainability/',
-    ];
+    public function __construct(
+        private readonly ChannelPresentationInterface $presentation,
+    ) {}
 
     /**
      * Collects unique rules from violations.
@@ -101,57 +97,44 @@ final class SarifRuleCollector
     }
 
     /**
-     * Returns human-readable description for a rule.
+     * Returns human-readable description for a channel.
      *
-     * The CCN here is a flat `match` lookup table mapping rule codes to SARIF
-     * description strings: one arm per rule, no nesting, cognitive complexity 1.
-     * Splitting it would spread one table across several methods and make it
-     * harder to see that every rule has a description — the metric is measuring
-     * table size, not decision depth. Raised rather than ignored so genuine
-     * growth in branching still trips the rule.
-     *
-     * @qmx-threshold complexity.cyclomatic warning=30 error=40 — Flat SARIF rule-description table must remain exhaustive.
+     * Derived from {@see ChannelPresentationInterface}, which joins the
+     * channel to its producing rule's own description. Falls back to a
+     * humanised rendering of the code itself when no channel carries it, or
+     * when the resolved description is empty — the same fallback for both,
+     * since neither is a legitimate answer to show the user.
      */
-    public function getRuleDescription(string $ruleName): string
+    public function getRuleDescription(string $violationCode): string
     {
-        return match ($ruleName) {
-            'complexity.cyclomatic', 'complexity.cognitive', 'complexity.npath' => 'Code complexity exceeds threshold',
-            'complexity.wmc' => 'Weighted methods per class exceeds threshold',
-            'size.class-count', 'size.method-count', 'size.property-count', 'size.namespace-size' => 'Code size exceeds threshold',
-            'size.loc' => 'Lines of code exceeds threshold',
-            'size.long-parameter-list' => 'Too many parameters',
-            'maintainability.index' => 'Maintainability index below threshold',
-            'cohesion.lcom' => 'Lack of cohesion of methods',
-            'design.inheritance', 'design.noc' => 'Inheritance structure issue',
-            'design.type-coverage' => 'Type coverage below threshold',
-            'coupling.cbo', 'coupling.instability', 'coupling.distance' => 'Coupling issue',
-            'architecture.circular-dependency' => 'Circular dependency detected',
-            'duplication.code-duplication' => 'Duplicated code block detected',
-            'code-smell.constructor-overinjection' => 'Constructor has too many dependencies',
-            'design.data-class' => 'Data Class detected (public interface is mostly data access, low complexity)',
-            'design.god-class' => 'God Class detected (complex, large, low cohesion)',
-            'code-smell.unused-private' => 'Unused private member detected',
-            default => ucfirst(str_replace(['.', '-'], ' ', $ruleName)),
-        };
+        $presentation = $this->presentation->presentationFor($violationCode);
+
+        if ($presentation === null) {
+            return ucfirst(str_replace(['.', '-'], ' ', $violationCode));
+        }
+
+        return $presentation->description;
     }
 
     /**
-     * Returns the documentation URL for a rule, based on its category prefix.
+     * Returns the documentation URL for a channel.
      *
-     * Maps known category prefixes (e.g. "complexity", "code-smell") to the
-     * corresponding page on the Qualimetrix website. Falls back to the repository URL
-     * for unknown or user-defined rule names.
+     * Built from the producing rule's declared documentation page (see
+     * {@see ChannelPresentationInterface}), rewriting the `.md` extension to
+     * a trailing slash to match the site's clean-URL routing — the same
+     * rewrite {@see \Qualimetrix\Analysis\Finding\Contract\Rule\RuleDocsPageReader}'s
+     * docblock documents. Falls back to the repository URL for unknown or
+     * user-defined codes.
      */
-    public function getHelpUri(string $ruleName): string
+    public function getHelpUri(string $violationCode): string
     {
-        $dotPos = strpos($ruleName, '.');
-        $category = $dotPos !== false ? substr($ruleName, 0, $dotPos) : $ruleName;
+        $presentation = $this->presentation->presentationFor($violationCode);
 
-        if (isset(self::CATEGORY_DOCS_MAP[$category])) {
-            return self::DOCS_BASE_URI . self::CATEGORY_DOCS_MAP[$category];
+        if ($presentation === null) {
+            return self::INFORMATION_URI;
         }
 
-        return self::INFORMATION_URI;
+        return self::DOCS_BASE_URI . preg_replace('/\.md$/', '/', $presentation->docsPage);
     }
 
     /**

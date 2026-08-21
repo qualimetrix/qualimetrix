@@ -9,6 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Qualimetrix\Analysis\Evidence\DependencyModel\Contract\DependencyType;
 use Qualimetrix\Analysis\Finding\Contract\AcceptedLevel;
+use Qualimetrix\Analysis\Finding\Contract\ChannelPresentationInterface;
 use Qualimetrix\Analysis\Finding\Contract\Location;
 use Qualimetrix\Analysis\Finding\Contract\Severity;
 use Qualimetrix\Analysis\Finding\Contract\Violation;
@@ -17,12 +18,23 @@ use Qualimetrix\Core\Symbol\DeclarationOrdinal;
 use Qualimetrix\Core\Symbol\DeclarationPath;
 use Qualimetrix\Core\Symbol\MetricSubject;
 use Qualimetrix\Core\Symbol\SymbolPath;
+use Qualimetrix\Infrastructure\DependencyInjection\ContainerFactory;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifFormatter;
 use Qualimetrix\Reporting\Formatter\Sarif\SarifRuleCollector;
 use Qualimetrix\Reporting\FormatterContext;
 use Qualimetrix\Reporting\GroupBy;
 use Qualimetrix\Reporting\ReportBuilder;
 
+/**
+ * Some fixtures below use `complexity.cyclomatic` without its `.callable` /
+ * `.class` suffix and other made-up codes the product never emits — kept as
+ * they were to test SarifFormatter's own JSON-shaping mechanics, not the
+ * channel/rule join. Real container so rule descriptions that ARE real
+ * channels (`cohesion.lcom`, `design.inheritance`, `code-smell.boolean-argument`)
+ * assert their actual text; see
+ * `tests/Reporting/Formatter/Sarif/Integration/SarifRuleDescriptorCoverageTest.php`
+ * for the guard that sweeps every real channel.
+ */
 #[CoversClass(SarifFormatter::class)]
 final class SarifFormatterTest extends TestCase
 {
@@ -30,7 +42,10 @@ final class SarifFormatterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->formatter = new SarifFormatter(new SarifRuleCollector());
+        $presentation = (new ContainerFactory())->create()->get(ChannelPresentationInterface::class);
+        \assert($presentation instanceof ChannelPresentationInterface);
+
+        $this->formatter = new SarifFormatter(new SarifRuleCollector($presentation));
     }
 
     #[Test]
@@ -193,7 +208,7 @@ final class SarifFormatterTest extends TestCase
         $rule = $run['tool']['driver']['rules'][0];
         self::assertSame('complexity.cyclomatic', $rule['id']);
         self::assertSame('Complexity Cyclomatic', $rule['name']);
-        self::assertSame('Code complexity exceeds threshold', $rule['shortDescription']['text']);
+        self::assertSame('Complexity cyclomatic', $rule['shortDescription']['text']);
         // Max severity is Error, so defaultConfiguration level should be 'error'
         self::assertSame('error', $rule['defaultConfiguration']['level']);
 
@@ -406,8 +421,8 @@ final class SarifFormatterTest extends TestCase
 
         self::assertNotNull($lcomRule);
         self::assertNotNull($inheritanceRule);
-        self::assertSame('Lack of cohesion of methods', $lcomRule['shortDescription']['text']);
-        self::assertSame('Inheritance structure issue', $inheritanceRule['shortDescription']['text']);
+        self::assertSame('Checks Lack of Cohesion of Methods (high values indicate class should be split)', $lcomRule['shortDescription']['text']);
+        self::assertSame('Checks Depth of Inheritance Tree (deep hierarchies increase complexity)', $inheritanceRule['shortDescription']['text']);
     }
 
     #[Test]
@@ -569,7 +584,7 @@ final class SarifFormatterTest extends TestCase
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
                 ruleName: 'complexity.cyclomatic',
-                violationCode: 'complexity.cyclomatic',
+                violationCode: 'complexity.cyclomatic.class',
                 message: 'Too complex',
                 severity: Severity::Error,
             ))
@@ -604,7 +619,7 @@ final class SarifFormatterTest extends TestCase
         }
 
         // Known categories map to their docs page
-        self::assertSame('https://qualimetrix.dev/rules/complexity/', $rulesByCode['complexity.cyclomatic']['helpUri']);
+        self::assertSame('https://qualimetrix.dev/rules/complexity/', $rulesByCode['complexity.cyclomatic.class']['helpUri']);
         self::assertSame('https://qualimetrix.dev/rules/code-smell/', $rulesByCode['code-smell.boolean-argument']['helpUri']);
 
         // Unknown category falls back to repository URL
@@ -635,7 +650,7 @@ final class SarifFormatterTest extends TestCase
 
         $rule = $data['runs'][0]['tool']['driver']['rules'][0];
         // Should use the description matching 'complexity.cyclomatic', not 'cyclomatic-complexity'
-        self::assertSame('Code complexity exceeds threshold', $rule['shortDescription']['text']);
+        self::assertSame('Complexity cyclomatic', $rule['shortDescription']['text']);
     }
 
     #[Test]
