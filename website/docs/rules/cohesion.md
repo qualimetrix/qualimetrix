@@ -8,7 +8,7 @@ See also: [LCOM (Lack of Cohesion of Methods)](#lcom----lack-of-cohesion-of-meth
 
 ## LCOM -- Lack of Cohesion of Methods
 
-**Rule ID:** `design.lcom`
+**Rule ID:** `cohesion.lcom`
 
 LCOM4 counts disconnected groups of related instance methods. A value of `1`
 means that the class is cohesive; values above `1` indicate independent groups
@@ -22,7 +22,7 @@ exclude interface-mandated methods from the graph:
 
 ```yaml
 rules:
-  design.lcom:
+  cohesion.lcom:
     warning: 3
     error: 5
     exclude_readonly: true

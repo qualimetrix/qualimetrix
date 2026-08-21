@@ -311,7 +311,7 @@ final class RuntimeConfiguratorTest extends TestCase
                     ['source' => 'custom', 'values' => [
                         'cache.enabled' => false,
                         'parallel.workers' => 0,
-                        'rules' => ['design.lcom' => ['exclude_methods' => ['getName']]],
+                        'rules' => ['cohesion.lcom' => ['exclude_methods' => ['getName']]],
                     ]],
                 ], $root),
                 $root,
@@ -346,7 +346,7 @@ final class RuntimeConfiguratorTest extends TestCase
                 'cache.enabled' => false,
                 'parallel.workers' => 0,
                 'memory_limit' => '1',
-                'rules' => ['design.lcom' => ['exclude_methods' => ['getName']]],
+                'rules' => ['cohesion.lcom' => ['exclude_methods' => ['getName']]],
             ]],
         ], $root);
         $this->configurator->resetRunState();
@@ -446,8 +446,8 @@ final class RuntimeConfiguratorTest extends TestCase
                 'cache.dir' => 'cache',
                 'cache.enabled' => false,
                 'parallel.workers' => 3,
-                'rules' => ['design.lcom' => ['exclude_methods' => ['getName']]],
-                'only_rules' => ['design.lcom'],
+                'rules' => ['cohesion.lcom' => ['exclude_methods' => ['getName']]],
+                'only_rules' => ['cohesion.lcom'],
             ]],
         ], AbsolutePath::fromString('/project'));
     }

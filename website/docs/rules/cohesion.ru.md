@@ -8,7 +8,7 @@
 
 ## LCOM -- Недостаток связности методов
 
-**Rule ID:** `design.lcom`
+**Rule ID:** `cohesion.lcom`
 
 LCOM4 считает изолированные группы связанных instance-методов. Значение `1`
 означает, что класс связный; значение больше `1` указывает на независимые
@@ -23,7 +23,7 @@ constant-методы в один виртуальный узел.
 
 ```yaml
 rules:
-  design.lcom:
+  cohesion.lcom:
     warning: 3
     error: 5
     exclude_readonly: true

@@ -1,0 +1,68 @@
+# how_obtained: booted the real DI container (ContainerFactory::create) and read
+# ChannelUniverseInterface::channels() + producerOf() + RuleExecutionInterface::allRules().
+# Blind spots of this method, named rather than assumed:
+#  - the run-time computed.*/health.* family is absent here: this container has no
+#    resolved configuration, so the definition catalog is empty. producerOf() resolves
+#    that family through the catalog (ChannelUniverse.php:150), not through this map.
+#  - a violationCode emitted but never declared would not appear; that gap is covered
+#    by ChannelEmissionStaticGuardTest / ChannelCoverageTest, not by this table.
+#  - SARIF also emits non-channel descriptors (QMX-ANALYSIS-* notifications), which are
+#    built in SarifFormatter, not in SarifRuleCollector, and are out of scope here.
+violation_code	channel_rule_name	producer_rule	producer_description
+annotation.invalid-threshold	annotation.invalid-threshold	annotation.directive	Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.
+annotation.unresolved-directive	annotation.unresolved-directive	annotation.directive	Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.
+annotation.unsupported-threshold	annotation.unsupported-threshold	annotation.directive	Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.
+annotation.unused-directive	annotation.unused-directive	annotation.directive	Reports inline @qmx directives that address nothing, cannot apply, or no longer do anything.
+architecture.circular-dependency	architecture.circular-dependency	architecture.circular-dependency	Detects circular dependencies between classes
+architecture.coverage	architecture.coverage	architecture.layer-violation	Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+architecture.empty-template	architecture.empty-template	architecture.layer-violation	Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+architecture.layer-violation	architecture.layer-violation	architecture.layer-violation	Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+architecture.pending-layer-matched	architecture.pending-layer-matched	architecture.layer-violation	Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+architecture.potential-shadow	architecture.potential-shadow	architecture.layer-violation	Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+architecture.unassigned-class	architecture.unassigned-class	architecture.layer-violation	Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+architecture.unreachable-layer	architecture.unreachable-layer	architecture.layer-violation	Detects dependencies between layers that are not explicitly allowed by the architecture policy.
+code-smell.boolean-argument	code-smell.boolean-argument	code-smell.boolean-argument	Detects boolean arguments in method/function signatures
+code-smell.constructor-overinjection	code-smell.constructor-overinjection	code-smell.constructor-overinjection	Checks number of constructor parameters (dependencies)
+code-smell.count-in-loop	code-smell.count-in-loop	code-smell.count-in-loop	Detects count() calls in loop conditions
+code-smell.debug-code	code-smell.debug-code	code-smell.debug-code	Detects debug code (var_dump, print_r, dd, etc)
+code-smell.empty-catch	code-smell.empty-catch	code-smell.empty-catch	Detects empty catch blocks
+code-smell.error-suppression	code-smell.error-suppression	code-smell.error-suppression	Detects usage of error suppression operator (@)
+code-smell.eval	code-smell.eval	code-smell.eval	Detects usage of eval() function
+code-smell.exit	code-smell.exit	code-smell.exit	Detects usage of exit() and die()
+code-smell.goto	code-smell.goto	code-smell.goto	Detects usage of goto statement
+code-smell.identical-subexpression	code-smell.identical-subexpression	code-smell.identical-subexpression	Detects identical sub-expressions indicating copy-paste errors or logic bugs
+code-smell.long-parameter-list	code-smell.long-parameter-list	code-smell.long-parameter-list	Checks number of parameters per method
+code-smell.superglobals	code-smell.superglobals	code-smell.superglobals	Detects direct access to superglobals
+code-smell.unreachable-code	code-smell.unreachable-code	code-smell.unreachable-code	Detects unreachable code after terminal statements
+code-smell.unused-private	code-smell.unused-private	code-smell.unused-private	Detects unused private methods, properties, and constants
+complexity.cognitive.callable	complexity.cognitive	complexity.cognitive	Checks cognitive complexity at method and class levels
+complexity.cognitive.class	complexity.cognitive	complexity.cognitive	Checks cognitive complexity at method and class levels
+complexity.cyclomatic.callable	complexity.cyclomatic	complexity.cyclomatic	Checks cyclomatic complexity at method and class levels
+complexity.cyclomatic.class	complexity.cyclomatic	complexity.cyclomatic	Checks cyclomatic complexity at method and class levels
+complexity.npath.callable	complexity.npath	complexity.npath	Checks NPath complexity at method and class levels
+complexity.npath.class	complexity.npath	complexity.npath	Checks NPath complexity at method and class levels
+complexity.wmc	complexity.wmc	complexity.wmc	Checks Weighted Methods per Class (sum of method complexities)
+coupling.cbo.class	coupling.cbo	coupling.cbo	Checks CBO (Coupling Between Objects) at class and namespace levels
+coupling.cbo.namespace	coupling.cbo	coupling.cbo	Checks CBO (Coupling Between Objects) at class and namespace levels
+coupling.class-rank	coupling.class-rank	coupling.class-rank	Checks ClassRank (PageRank on dependency graph) to identify critical hub classes
+coupling.distance	coupling.distance	coupling.distance	Checks distance from main sequence at namespace level
+coupling.instability.class	coupling.instability	coupling.instability	Checks instability at class and namespace levels
+coupling.instability.namespace	coupling.instability	coupling.instability	Checks instability at class and namespace levels
+design.data-class	design.data-class	design.data-class	Detects classes whose public interface is mostly data access rather than behavior (Data Classes)
+design.god-class	design.god-class	design.god-class	Detects God Classes (overly complex, large, low cohesion)
+design.inheritance	design.inheritance	design.inheritance	Checks Depth of Inheritance Tree (deep hierarchies increase complexity)
+design.lcom	design.lcom	design.lcom	Checks Lack of Cohesion of Methods (high values indicate class should be split)
+design.noc	design.noc	design.noc	Checks Number of Children (many direct subclasses indicate wide impact)
+design.type-coverage.param	design.type-coverage	design.type-coverage	Checks type coverage of parameters, return types, and properties per class
+design.type-coverage.property	design.type-coverage	design.type-coverage	Checks type coverage of parameters, return types, and properties per class
+design.type-coverage.return	design.type-coverage	design.type-coverage	Checks type coverage of parameters, return types, and properties per class
+duplication.code-duplication	duplication.code-duplication	duplication.code-duplication	Detects duplicated code blocks
+maintainability.index	maintainability.index	maintainability.index	Checks Maintainability Index (lower values indicate harder to maintain code)
+security.command-injection	security.command-injection	security.command-injection	Detects potential command injection vulnerabilities
+security.hardcoded-credentials	security.hardcoded-credentials	security.hardcoded-credentials	Detects hardcoded credentials in code
+security.sensitive-parameter	security.sensitive-parameter	security.sensitive-parameter	Detects sensitive parameters missing #[\SensitiveParameter] attribute
+security.sql-injection	security.sql-injection	security.sql-injection	Detects potential SQL injection vulnerabilities
+security.xss	security.xss	security.xss	Detects potential XSS vulnerabilities
+size.class-count	size.class-count	size.class-count	Checks number of classes per namespace
+size.method-count	size.method-count	size.method-count	Checks number of methods per class
+size.property-count	size.property-count	size.property-count	Checks if classes have too many properties

@@ -385,8 +385,8 @@ final class TopIssuesRendererTest extends TestCase
         $violation = self::violation(
             location: new Location(RelativePath::fromString('project/src/Service.php'), 5),
             symbolPath: SymbolPath::forClass('App\Service', 'Service'),
-            ruleName: 'design.lcom',
-            violationCode: 'design.lcom',
+            ruleName: 'cohesion.lcom',
+            violationCode: 'cohesion.lcom',
             message: 'LCOM4 value 3 exceeds threshold of 2',
             severity: Severity::Warning,
             recommendation: 'Class could be split into 3 cohesive parts',

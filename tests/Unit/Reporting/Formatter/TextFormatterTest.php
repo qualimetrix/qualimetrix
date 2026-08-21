@@ -585,8 +585,8 @@ final class TextFormatterTest extends TestCase
         $builder->addViolation(self::violation(
             location: new Location(RelativePath::fromString('src/Bar.php'), 5),
             symbolPath: SymbolPath::forClass('App', 'Bar'),
-            ruleName: 'design.lcom',
-            violationCode: 'design.lcom',
+            ruleName: 'cohesion.lcom',
+            violationCode: 'cohesion.lcom',
             message: 'LCOM high',
             severity: Severity::Warning,
         ));
@@ -599,7 +599,7 @@ final class TextFormatterTest extends TestCase
 
         self::assertStringContainsString('Technical debt by rule:', $output);
         self::assertStringContainsString('complexity.cyclomatic', $output);
-        self::assertStringContainsString('design.lcom', $output);
+        self::assertStringContainsString('cohesion.lcom', $output);
         self::assertStringContainsString('... and 2 more', $output);
     }
 

@@ -369,8 +369,8 @@ final class SarifFormatterTest extends TestCase
             ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/A.php'), 10),
                 symbolPath: SymbolPath::forClass('App', 'A'),
-                ruleName: 'design.lcom',
-                violationCode: 'design.lcom',
+                ruleName: 'cohesion.lcom',
+                violationCode: 'cohesion.lcom',
                 message: 'LCOM too high',
                 severity: Severity::Warning,
             ))
@@ -396,7 +396,7 @@ final class SarifFormatterTest extends TestCase
         $lcomRule = null;
         $inheritanceRule = null;
         foreach ($rules as $rule) {
-            if ($rule['id'] === 'design.lcom') {
+            if ($rule['id'] === 'cohesion.lcom') {
                 $lcomRule = $rule;
             }
             if ($rule['id'] === 'design.inheritance') {

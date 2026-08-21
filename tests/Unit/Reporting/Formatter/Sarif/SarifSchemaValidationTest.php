@@ -69,8 +69,8 @@ final class SarifSchemaValidationTest extends TestCase
             ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Service/OrderService.php'), 120),
                 symbolPath: SymbolPath::forMethod('App\\Service', 'OrderService', 'processOrder'),
-                ruleName: 'design.lcom',
-                violationCode: 'design.lcom',
+                ruleName: 'cohesion.lcom',
+                violationCode: 'cohesion.lcom',
                 message: 'LCOM4 of 8 exceeds threshold',
                 severity: Severity::Warning,
                 metricValue: 8,

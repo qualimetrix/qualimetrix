@@ -4,7 +4,7 @@
 
 `Analysis\\Evidence\\Cohesion` owns the LCOM4 and TCC/LCC class-cohesion
 collectors, their AST visitors and per-class calculation data, the
-`design.lcom` rule with its options, and the LCOM collection configuration
+`cohesion.lcom` rule with its options, and the LCOM collection configuration
 needed by its named sequential and parallel consumers.
 `ClassVisitorStackTrait` is private scaffolding shared only by the two Cohesion
 visitors.
@@ -39,9 +39,10 @@ Cohesion/
 They retain their collector names, metric keys, class-level aggregation
 definitions, visitor reset semantics, and anonymous-class exclusion.
 
-`design.lcom` remains the stable rule ID and retains its Design category,
-warning/error defaults of 3/5, readonly and minimum-method eligibility checks,
-CLI aliases, and threshold-override behaviour. `LcomOptions::excludeMethods`
+`cohesion.lcom` is the stable rule ID and carries the Cohesion category (renamed
+from Design, see ADR), warning/error defaults of 3/5, readonly and
+minimum-method eligibility checks, CLI aliases, and threshold-override
+behaviour. `LcomOptions::excludeMethods`
 continues to configure the LCOM graph. Finding resolves the effective rule
 configuration, and Cohesion projects its exact value to
 `LcomCollectionConfiguration`. The instance-owned
@@ -68,7 +69,7 @@ Owned tests live in `tests/Analysis/Evidence/Cohesion/Unit/` and cover LCOM
 data/collection, TCC/LCC data/collection, and the LCOM rule options,
 eligibility, thresholds, controls and output identity.
 
-- The three metric IDs and the `design.lcom` rule ID remain unchanged.
+- The three metric IDs and the `cohesion.lcom` rule ID remain unchanged.
 - `excludeMethods` affects both direct collection and configured runtime runs.
 - Visitor and runtime state are replaced between files and analysis runs.
 - LCOM and TCC/LCC continue to ignore anonymous classes.

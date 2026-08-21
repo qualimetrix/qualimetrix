@@ -225,14 +225,14 @@ final class RuleThresholdKeyGroupRegistry
             '' => [self::BARE_PAIR],
         ],
 
-        // design.inheritance / design.noc / design.lcom / complexity.wmc — flat, bare.
+        // design.inheritance / design.noc / cohesion.lcom / complexity.wmc — flat, bare.
         'design.inheritance' => [
             '' => [self::BARE_PAIR],
         ],
         'design.noc' => [
             '' => [self::BARE_PAIR],
         ],
-        'design.lcom' => [
+        'cohesion.lcom' => [
             '' => [self::BARE_PAIR],
         ],
         'complexity.wmc' => [

@@ -68,6 +68,7 @@ What follows from this decision — trade-offs, constraints, future implications
 - [0025 — Channel Selectors in Configuration Keys](0025-channel-selectors-in-configuration-keys.md) — `exclude_namespace_channels` keys read the full ADR 0024 grammar; shared `ChannelSelector`; exclusion queries take the whole `ViolationChannel`; a key must address a channel its owning rule produces
 - [0026 — Assigned Declaration Ordinal and the Named Limits of Key Stability](0026-assigned-declaration-ordinal.md) — supersedes ADR 0021 in one part: a declaration key stores an assigned rank instead of a byte offset, `FileDeclarationIndex` is the sole owner of numbering, and the sibling-stability property is restated with closures and anonymous classes named as exemptions; baseline version 13
 - [0027 — Weight of Class Measures Accessors, Not Visibility](0027-weight-of-class-measures-accessors-not-visibility.md) — `woc` becomes the Lanza & Marinescu ratio and `design.data-class` gates on a low value; accessor-ness is decided by name, never by body; `isDataClass` stops being an exclusion
+- [0028 — LCOM Rule Name and Category](0028-lcom-rule-name-and-category.md) — renames `design.lcom` to `cohesion.lcom` and its category from `Design` to a new `Cohesion` case, so `--only-rule='cohesion.*'` addresses it and `design.*` no longer sweeps it in; ADR 0025's own mention of the old name is deliberately left unchanged
 
 
 ## Index maintenance

@@ -25,6 +25,7 @@ enum RuleCategory: string
     case Complexity = 'complexity';
     case Size = 'size';
     case Design = 'design';
+    case Cohesion = 'cohesion';
     case Maintainability = 'maintainability';
     case Coupling = 'coupling';
     case Architecture = 'architecture';

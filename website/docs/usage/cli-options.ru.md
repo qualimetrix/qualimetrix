@@ -527,7 +527,7 @@ bin/qmx check src/ --disable-rule=size.class-count
 bin/qmx check src/ --disable-rule=complexity.*
 
 # Отключить несколько
-bin/qmx check src/ --disable-rule=complexity.* --disable-rule=design.lcom
+bin/qmx check src/ --disable-rule=complexity.* --disable-rule=cohesion.lcom
 
 # Отключить только один канал computed finding
 bin/qmx check src/ --disable-rule=health.complexity
@@ -640,10 +640,10 @@ bin/qmx check src/ --rule-opt=complexity.cyclomatic:callable.error=30
 | ------------------------------------ | -------------------- | ------------------- |
 | `--dit-warning=N`                    | design.inheritance   | warning             |
 | `--dit-error=N`                      | design.inheritance   | error               |
-| `--lcom-warning=N`                   | design.lcom          | warning             |
-| `--lcom-error=N`                     | design.lcom          | error               |
-| `--lcom-min-methods=N`               | design.lcom          | minMethods          |
-| `--lcom-exclude-readonly`            | design.lcom          | excludeReadonly     |
+| `--lcom-warning=N`                   | cohesion.lcom        | warning             |
+| `--lcom-error=N`                     | cohesion.lcom        | error               |
+| `--lcom-min-methods=N`               | cohesion.lcom        | minMethods          |
+| `--lcom-exclude-readonly`            | cohesion.lcom        | excludeReadonly     |
 | `--noc-warning=N`                    | design.noc           | warning             |
 | `--noc-error=N`                      | design.noc           | error               |
 | `--type-coverage-param-warning=N`    | design.type-coverage | param_warning       |

@@ -114,7 +114,7 @@ final class SarifRuleCollector
             'size.loc' => 'Lines of code exceeds threshold',
             'size.long-parameter-list' => 'Too many parameters',
             'maintainability.index' => 'Maintainability index below threshold',
-            'design.lcom' => 'Lack of cohesion of methods',
+            'cohesion.lcom' => 'Lack of cohesion of methods',
             'design.inheritance', 'design.noc' => 'Inheritance structure issue',
             'design.type-coverage' => 'Type coverage below threshold',
             'coupling.cbo', 'coupling.instability', 'coupling.distance' => 'Coupling issue',

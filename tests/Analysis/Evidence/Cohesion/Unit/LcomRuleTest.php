@@ -31,7 +31,7 @@ final class LcomRuleTest extends TestCase
     {
         $rule = new LcomRule(new LcomOptions());
 
-        self::assertSame('design.lcom', $rule->getName());
+        self::assertSame('cohesion.lcom', $rule->getName());
     }
 
     #[Test]
@@ -50,7 +50,7 @@ final class LcomRuleTest extends TestCase
     {
         $rule = new LcomRule(new LcomOptions());
 
-        self::assertSame(RuleCategory::Design, $rule->getCategory());
+        self::assertSame(RuleCategory::Cohesion, $rule->getCategory());
     }
 
     #[Test]
@@ -137,7 +137,7 @@ final class LcomRuleTest extends TestCase
         self::assertStringContainsString('exceeds threshold of 3', $violations[0]->message);
         self::assertStringContainsString('Class could be split into 4 cohesive parts', $violations[0]->message);
         self::assertSame(4, $violations[0]->metricValue);
-        self::assertSame('design.lcom', $violations[0]->ruleName);
+        self::assertSame('cohesion.lcom', $violations[0]->ruleName);
     }
 
     #[Test]
@@ -243,7 +243,7 @@ final class LcomRuleTest extends TestCase
         self::assertSame($subject->toCanonical(), $violations[0]->subject->toCanonical());
 
         self::assertSame([], $rule->analyze($contextFor($eligible, [
-            'src/Candidate.php' => [new ThresholdOverride('design.lcom', 4, 6, 1, $subject, ControlScope::Class_, 100)],
+            'src/Candidate.php' => [new ThresholdOverride('cohesion.lcom', 4, 6, 1, $subject, ControlScope::Class_, 100)],
         ])));
     }
 

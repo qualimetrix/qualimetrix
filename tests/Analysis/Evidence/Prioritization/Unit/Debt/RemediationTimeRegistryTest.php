@@ -44,7 +44,7 @@ final class RemediationTimeRegistryTest extends TestCase
         yield 'design.inheritance' => ['design.inheritance', 30];
         yield 'design.noc' => ['design.noc', 20];
         yield 'design.type-coverage' => ['design.type-coverage', 15];
-        yield 'design.lcom' => ['design.lcom', 45];
+        yield 'cohesion.lcom' => ['cohesion.lcom', 45];
         yield 'size.class-count' => ['size.class-count', 30];
         yield 'size.method-count' => ['size.method-count', 20];
         yield 'size.property-count' => ['size.property-count', 15];

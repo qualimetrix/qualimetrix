@@ -90,7 +90,7 @@ coupling.instability#coupling.instability.namespace magnitude:higher
 design.data-class#design.data-class magnitude:lower
 design.god-class#design.god-class magnitude:higher
 design.inheritance#design.inheritance magnitude:higher
-design.lcom#design.lcom magnitude:higher
+cohesion.lcom#cohesion.lcom magnitude:higher
 design.noc#design.noc magnitude:higher
 design.type-coverage#design.type-coverage.param magnitude:lower
 design.type-coverage#design.type-coverage.property magnitude:lower

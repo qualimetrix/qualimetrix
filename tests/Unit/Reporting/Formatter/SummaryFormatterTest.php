@@ -1215,8 +1215,8 @@ final class SummaryFormatterTest extends TestCase
         $violations[] = self::violation(
             location: new Location(RelativePath::fromString('src/Bar.php'), 5),
             symbolPath: SymbolPath::forClass('App', 'Bar'),
-            ruleName: 'design.lcom',
-            violationCode: 'design.lcom',
+            ruleName: 'cohesion.lcom',
+            violationCode: 'cohesion.lcom',
             message: 'LCOM high',
             severity: Severity::Warning,
         );
@@ -1228,7 +1228,7 @@ final class SummaryFormatterTest extends TestCase
         // Debt breakdown must show ALL rules, not just those within the display limit
         self::assertStringContainsString('Technical debt by rule:', $output);
         self::assertStringContainsString('complexity.cyclomatic', $output);
-        self::assertStringContainsString('design.lcom', $output);
+        self::assertStringContainsString('cohesion.lcom', $output);
         // Violation counts in breakdown must reflect all violations
         self::assertStringContainsString('3 violations', $output);
         self::assertStringContainsString('1 violation)', $output);

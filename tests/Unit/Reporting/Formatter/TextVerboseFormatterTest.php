@@ -229,8 +229,8 @@ final class TextVerboseFormatterTest extends TestCase
             ->addViolation(self::violation(
                 location: new Location(RelativePath::fromString('src/Bar.php'), 5),
                 symbolPath: SymbolPath::forClass('App', 'Bar'),
-                ruleName: 'design.lcom',
-                violationCode: 'design.lcom',
+                ruleName: 'cohesion.lcom',
+                violationCode: 'cohesion.lcom',
                 message: 'LCOM is 5',
                 severity: Severity::Warning,
                 metricValue: 5,
@@ -245,7 +245,7 @@ final class TextVerboseFormatterTest extends TestCase
         self::assertStringContainsString('Technical debt by rule:', $output);
         self::assertStringContainsString('complexity.cyclomatic', $output);
         self::assertStringContainsString('2 violations', $output);
-        self::assertStringContainsString('design.lcom', $output);
+        self::assertStringContainsString('cohesion.lcom', $output);
         self::assertStringContainsString('1 violation', $output);
     }
 

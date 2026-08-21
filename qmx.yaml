@@ -1545,7 +1545,7 @@ rules:
     exclude_paths:
       - src/Analysis/Evidence/Measurement/Runtime/CollectorRuntimeConfigurationStore.php
 
-  design.lcom:
+  cohesion.lcom:
     warning: 5
     error: 5
     exclude_paths:

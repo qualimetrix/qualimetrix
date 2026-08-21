@@ -263,7 +263,7 @@ same thing. It is accepted for consistency of grammar, not because it adds reach
 !!! warning "Only namespace-aggregate findings are removed"
     The option filters findings whose subject is a **namespace**. A rule that reports per
     occurrence (`code-smell.*`, `security.*`, `architecture.layer-violation`) or only per class
-    (`design.lcom`) has nothing for it to remove, and a key naming such a channel is accepted
+    (`cohesion.lcom`) has nothing for it to remove, and a key naming such a channel is accepted
     and then does nothing. The layer-policy diagnostics — `architecture.coverage`,
     `architecture.unreachable-layer`, `architecture.potential-shadow`,
     `architecture.empty-template`, `architecture.pending-layer-matched` — report against the project as a whole and are likewise

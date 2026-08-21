@@ -53,7 +53,7 @@ final readonly class LcomOptions implements RuleOptionsInterface, ThresholdAware
         $excludeKey = $config['exclude_methods'] ?? $config['excludeMethods'] ?? null;
 
         if (\is_string($excludeKey)) {
-            // Support comma-separated values from CLI (e.g., --rule-opt='design.lcom:exclude_methods=getName,getDescription')
+            // Support comma-separated values from CLI (e.g., --rule-opt='cohesion.lcom:exclude_methods=getName,getDescription')
             $excludeMethods = str_contains($excludeKey, ',')
                 ? array_map('trim', explode(',', $excludeKey))
                 : [$excludeKey];

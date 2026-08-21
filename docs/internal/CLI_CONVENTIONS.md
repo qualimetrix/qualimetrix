@@ -98,7 +98,7 @@ Dynamic options generated from rule classes via the repeatable class-level attri
 --cyclomatic-class-warning    # complexity.cyclomatic, class level
 --cbo-warning                 # coupling.cbo, class level (default)
 --cbo-ns-warning              # coupling.cbo, namespace level
---lcom-min-methods            # design.lcom, non-threshold option
+--lcom-min-methods            # cohesion.lcom, non-threshold option
 --mi-exclude-tests            # maintainability.index, boolean option
 ```
 

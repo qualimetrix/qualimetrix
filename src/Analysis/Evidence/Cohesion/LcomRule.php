@@ -34,7 +34,7 @@ use Qualimetrix\Core\Symbol\SymbolType;
 #[CliAlias('lcom-exclude-methods', 'excludeMethods')]
 final class LcomRule extends AbstractRule
 {
-    public const string NAME = 'design.lcom';
+    public const string NAME = 'cohesion.lcom';
 
     public function getName(): string
     {
@@ -48,7 +48,7 @@ final class LcomRule extends AbstractRule
 
     public function getCategory(): RuleCategory
     {
-        return RuleCategory::Design;
+        return RuleCategory::Cohesion;
     }
 
     /**
@@ -148,7 +148,7 @@ final class LcomRule extends AbstractRule
     }
 
     /**
-     * `design.lcom` reports LCOM4 (`$lcomValue` — see the emission above)
+     * `cohesion.lcom` reports LCOM4 (`$lcomValue` — see the emission above)
      * as `metricValue`, judged worse the higher it goes:
      * {@see LcomOptions::getSeverity()}'s `$value >= $this->error` (line 94)
      * / `$value >= $this->warning` (line 98).

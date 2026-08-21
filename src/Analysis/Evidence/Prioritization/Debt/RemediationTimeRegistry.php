@@ -38,7 +38,7 @@ final class RemediationTimeRegistry
         'design.inheritance' => 30,
         'design.noc' => 20,
         'design.type-coverage' => 15,
-        'design.lcom' => 45,
+        'cohesion.lcom' => 45,
 
         // Size
         'size.class-count' => 30,

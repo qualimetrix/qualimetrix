@@ -51,9 +51,9 @@ Configuration: `qmx.yaml` (auto-discovered) or `--config=path`. Suppression: `@q
 - [Complexity Rules](https://qualimetrix.dev/rules/complexity/): CCN, Cognitive, NPath, WMC — thresholds and configuration
 - [Coupling Rules](https://qualimetrix.dev/rules/coupling/): CBO, Instability, Distance, ClassRank
 - [Size Rules](https://qualimetrix.dev/rules/size/): Method count, class count, property count
-- [Design Rules](https://qualimetrix.dev/rules/design/): LCOM, DIT, NOC, type coverage
+- [Design Rules](https://qualimetrix.dev/rules/design/): DIT, NOC, type coverage
 - [Maintainability Rules](https://qualimetrix.dev/rules/maintainability/): Maintainability Index
-- [Cohesion](https://qualimetrix.dev/rules/cohesion/): TCC/LCC metrics
+- [Cohesion](https://qualimetrix.dev/rules/cohesion/): LCOM rule, TCC/LCC metrics
 - [Architecture Rules](https://qualimetrix.dev/rules/architecture/): Circular dependency detection
 - [Code Smell Rules](https://qualimetrix.dev/rules/code-smell/): Boolean args, eval, goto, god class, data class, unused private, etc.
 - [Security Rules](https://qualimetrix.dev/rules/security/): SQL injection, XSS, command injection, hardcoded credentials
