@@ -137,9 +137,9 @@ So the join belongs to a small run-time service, not to a compiler pass.
 
 ### Contract
 
-`Analysis\Finding` owns both facts, so it owns the join. One narrow contract,
-one implementation registered beside the other channel views in
-`RuleConfigurator`:
+`Analysis\Finding` owns the identity and description halves, so it owns the
+join for them. One narrow contract, one implementation registered beside the
+other channel views in `RuleConfigurator`:
 
 ```
 interface ChannelPresentationInterface
@@ -151,10 +151,28 @@ interface ChannelPresentationInterface
 }
 ```
 
-`SarifRuleCollector` takes this one view. `Reporting` already imports
-`ChannelDeclarationRegistryInterface`, a sibling view on the same instance, so
-the edge is not new in kind — but the exact import is new and must be listed in
-the manifest.
+**The computed-metric half cannot live in `Finding`, and this plan asserted
+otherwise until P2 disproved it.** An earlier draft read "Finding owns both
+facts, so it owns the join" — including preferring
+`ComputedMetricDefinition::$description` for the `computed.*` / `health.*`
+family. Building that inside `Finding` produces a cycle:
+`Analysis\Evidence\ComputedMetrics` already imports `Analysis\Finding` (11
+edges in `production-cross-owner-imports.tsv` — `AbstractRule`, `Location`,
+`AnalysisContext`), and there is no edge back. `Finding` cannot reach the
+definition catalog.
+
+The resolution is the one this codebase already made for the identical
+constraint: the family preference is layered on by a decorator in
+`Infrastructure\Rule`, which depends on both capabilities — the same package,
+for the same reason, as `ChannelUniverse`, the other object that resolves this
+family at run time. `ChannelPresentationInterface` is aliased to the decorator.
+The decorator delegates the join and overrides only the description, so it is
+composition, not a second join.
+
+Worth recording as a method failure, not just a fact: the claim was about the
+direction of an existing dependency edge, and neither this plan nor two rounds
+of review by three reviewers looked at the generated import inventory that
+answers it in one grep.
 
 **Decided: the contract.** The rejected alternative was to inject
 `ChannelIdentityInterface` *and* `RuleExecutionInterface` into the collector and
